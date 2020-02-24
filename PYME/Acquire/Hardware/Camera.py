@@ -66,10 +66,21 @@ def check_mapexists(mdh, type='dark'):
 
 
 class CameraMapMixin(object):
+    def update_flatfield_map(self):
+        """The flatfield map should be constant, we can cache this"""
+        self._prefilled = MetaDataHandler.NestedClassMDHandler()
+        check_mapexists(self._prefilled, type='flatfield')
+        
     def fill_camera_map_metadata(self, mdh):
+        # populate prefilled info the first time we call the function
+        if not hasattr(self, '_prefilled'):
+            self.update_flatfield_map()
+            
+        mdh.copyEntriesFrom(self._prefilled)
+        
+        # do not cache dark and variance maps as these change with integration time (and potentially ROI, although we ignore this currently).
         check_mapexists(mdh, type='dark')
         check_mapexists(mdh, type='variance')
-        check_mapexists(mdh, type='flatfield')
 
 
 class Camera(object):
