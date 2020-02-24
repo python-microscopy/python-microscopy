@@ -20,13 +20,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+Fit the recovery of a fluorophore from the dark state. Use with the PYMEAcquire protocol "recover671.py" which switches the
+laser on and off in pulses to allow bleaching steps followed by recovery steps of varying length. Frame numbers in this file
+match those in the protocol.
 
+Probably sufferring from bitrot.
+"""
+from . import intensProf
+from . import kinModels
+from PYME.Analysis import _fithelpers
+import numpy as np
 
-def FitTrace(tr, mdh):
-    from . import intensProf
-    from . import kinModels
-    from PYME.Analysis import _fithelpers
-    import numpy as np
+def FitTrace(tr, mdh):    
     import matplotlib.pyplot as plt
     #tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
 
