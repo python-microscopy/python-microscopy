@@ -204,9 +204,11 @@ class Spooler:
         self.dtStart = dt
         
         self.tStart = time.time()
-          
+        
+        # create an in-memory metadata handler and populate this prior to copying data over to the spooler
+        # metadata handler. This significantly improves performance if the spooler metadata handler has high latency
+        # (as is the case for both the HDFMetaDataHandler and, especially, the QueueMetaDataHandler).
         mdt = MetaDataHandler.NestedClassMDHandler()
-          
         mdt.setEntry('StartTime', self.tStart)
 
         #loop over all providers of metadata

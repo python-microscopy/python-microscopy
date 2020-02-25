@@ -35,8 +35,10 @@ from PYME.util import fProfile, mProfile
 def main():
     op = ArgumentParser(description="PYME node server for task distribution. This should run on every node of the cluster")
 
-    op.add_argument('-p', '--port', dest='port', default=conf.get('nodeserver-port', 1237), type=int,
-                    help="port number to serve on (default: 1237, see also 'nodeserver-port' config entry)")
+
+    #NOTE - currently squatting on port 15347 for testing - TODO can we use an ephemeral port?
+    op.add_argument('-p', '--port', dest='port', default=conf.get('nodeserver-port', 15347), type=int,
+                    help="port number to serve on (default: 15347, see also 'nodeserver-port' config entry)")
 
     op.add_argument('-a', '--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
                     help='Optionally restrict advertisements to local machine')

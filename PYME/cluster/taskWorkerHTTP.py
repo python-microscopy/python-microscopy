@@ -388,7 +388,7 @@ if __name__ == '__main__':
     op.add_argument('-p', dest='profile', default=False, action='store_true',
                     help="enable profiling")
     op.add_argument('--profile-dir', dest='profile_dir')
-    op.add_argument('-s', '--server-port', dest='server_port', type=int, default=config.get('nodeserver-port', 1237),
+    op.add_argument('-s', '--server-port', dest='server_port', type=int, default=config.get('nodeserver-port', 15347),
                     help='Optionally restrict advertisements to local machine')
     
     args = op.parse_args()

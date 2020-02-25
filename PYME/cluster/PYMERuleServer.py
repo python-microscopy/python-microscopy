@@ -19,6 +19,8 @@ from argparse import ArgumentParser
 
 LOG_STREAMS = True
 
+
+
 def log_stream(stream, logger):
     while LOG_STREAMS:
         line = stream.readline()
@@ -28,9 +30,10 @@ def main():
     global LOG_STREAMS
     
     op = ArgumentParser(description="PYME rule server for task distribution. This should run once per cluster.")
-    
-    op.add_argument('-p', '--port', dest='port', default=config.get('ruleserver-port', 1234), type=int,
-                  help="port number to serve on (default: 1234, see also 'ruleserver-port' config entry)")
+
+    #NOTE - currently squatting on port 15346 for testing - TODO can we use an ephemeral port
+    op.add_argument('-p', '--port', dest='port', default=config.get('ruleserver-port', 15346), type=int,
+                  help="port number to serve on (default: 15346, see also 'ruleserver-port' config entry)")
     
     op.add_argument('-a','--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
                   help='Optionally restrict advertisements to local machine')
