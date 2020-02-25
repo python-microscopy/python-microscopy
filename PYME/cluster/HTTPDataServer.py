@@ -850,9 +850,10 @@ def main(protocol="HTTP/1.0"):
     #httpd = http.server.HTTPServer(server_address, PYMEHTTPRequestHandler)
     httpd.daemon_threads = True
 
+    #get the actual adress (port) we bound to
     sa = httpd.socket.getsockname()
-    
-    ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
+    service_name = 'PYMEDataServer [%s]: ' % options.server_filter + procName
+    ns.register_service(service_name, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address
@@ -878,6 +879,8 @@ def main(protocol="HTTP/1.0"):
         logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+        
+        ns.unregister(service_name)
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)

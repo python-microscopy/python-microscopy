@@ -73,8 +73,11 @@ def main():
     else:
         #assume 'local'
         ns = sqlite_ns.getNS('_pyme-taskdist')
-        
-    ns.register_service('PYMERuleServer: ' + GetComputerName(), externalAddr, int(serverPort))
+
+    time.sleep(0.5)
+    #get the actual adress (port) we bound to
+    sa = proc.distributor.socket.getsockname()
+    ns.register_service('PYMERuleServer: ' + GetComputerName(), externalAddr, int(sa[1]))
 
     try:
         while proc.is_alive():

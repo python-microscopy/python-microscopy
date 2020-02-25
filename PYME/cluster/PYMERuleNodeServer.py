@@ -98,7 +98,11 @@ def main():
     proc.start()
         
     # TODO - do we need this advertisement
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
+    #get the actual adress (port) we bound to
+    time.sleep(0.5)
+    sa = proc.nodeserver.socket.getsockname()
+    serverPort = int(sa[1])
+    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, serverPort)
 
     time.sleep(2)
     logger.debug('Launching worker processors')
