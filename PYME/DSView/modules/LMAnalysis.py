@@ -391,8 +391,8 @@ class AnalysisController(object):
     def _checkTQ(self):
         def _genURI(taskQueueName):
             try:
-                from PYME.misc import pyme_zeroconf 
-                ns = pyme_zeroconf.getNS()
+                from PYME.misc import hybrid_ns
+                ns = hybrid_ns.getNS()
                 return ns.resolve(taskQueueName)
             except:
                 return 'PYRONAME://' + taskQueueName

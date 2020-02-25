@@ -86,6 +86,7 @@ import shutil
 import sys
 import ujson as json
 import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import sqlite_ns
 
 try:
     # noinspection PyCompatibility
@@ -807,7 +808,8 @@ def main(protocol="HTTP/1.0"):
     default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
-    op.add_option('--no-advertise', dest='advertise', action="store_false", default=True, help='do not advertise with zeroconf')
+    op.add_option('-a', '--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
+                    help='Optionally restrict advertisements to local machine')
 
 
     options, args = op.parse_args()
@@ -824,7 +826,19 @@ def main(protocol="HTTP/1.0"):
     logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
 
-    server_address = ('', int(options.port))
+    if options.advertisements == 'local':
+        ns = sqlite_ns.getNS('_pyme-http')
+        server_address = ('127.0.0.1', int(options.port))
+        ip_addr = '127.0.0.1'
+    else:
+        #default
+        ns = pzc.getNS('_pyme-http')
+        server_address = ('', int(options.port))
+        
+        try:
+            ip_addr = socket.gethostbyname(socket.gethostname())
+        except:
+            ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
 
     PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
     PYMEHTTPRequestHandler.bandwidthTesting = options.test
@@ -836,16 +850,8 @@ def main(protocol="HTTP/1.0"):
     httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()
-
-    try:
-        ip_addr = socket.gethostbyname(socket.gethostname())
-    except:
-        ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
     
-
-    if options.advertise:
-        ns = pzc.getNS('_pyme-http')
-        ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
+    ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address

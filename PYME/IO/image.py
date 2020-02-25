@@ -400,8 +400,8 @@ class ImageStack(object):
             taskQueueName = 'TaskQueues.%s' % compName
             
             try:
-                from PYME.misc import pyme_zeroconf 
-                ns = pyme_zeroconf.getNS()
+                from PYME.misc import hybrid_ns
+                ns = hybrid_ns.getNS()
                 URI = ns.resolve(taskQueueName)
             except:
                 URI = 'PYRONAME://' + taskQueueName

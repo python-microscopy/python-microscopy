@@ -31,9 +31,9 @@ import PYME.Acquire.Spooler as sp
 from PYME.IO.FileUtils import fileID
 
 try:
-    from PYME.misc import pyme_zeroconf
+    from PYME.misc import hybrid_ns
     
-    ns = pyme_zeroconf.getNS()
+    ns = hybrid_ns.getNS()
 except ImportError:
     ns = None
 

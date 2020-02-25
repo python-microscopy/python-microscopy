@@ -7,9 +7,13 @@ class HybridNS(object):
     """
     
     def __init__(self, protocol='_pyme-sql'):
+        self._protocol = protocol
         self._zc_ns = pyme_zeroconf.getNS(protocol)
-        self._sqlite_ns = sqlite_ns.getNS(protocol)
         
+    @property
+    def _sqlite_ns(self):
+        #get this on the fly to work around sqlite threading issues (is cached on a per-thread basis in the sqlite_ns module)
+        return sqlite_ns.getNS(self._protocol)
     
     def register(self, name, URI):
         """ This only exists for principally for pyro compatibility - use register_service for non pyro uses

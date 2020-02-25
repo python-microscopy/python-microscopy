@@ -18,6 +18,7 @@ import random
 import hashlib
 
 from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
 from six import string_types
 
@@ -28,13 +29,14 @@ logger = logging.getLogger(__name__)
 
 def _getTaskQueueURI(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-taskdist')
+    ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
     
     def _search():
         for name, info in ns.get_advertised_services():
             if name.startswith('PYMERuleServer'):
+                print(info, info.address)
                 queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
                 
     _search()

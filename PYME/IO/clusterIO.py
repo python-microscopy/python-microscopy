@@ -83,6 +83,7 @@ Function Documentation
 """
 import six
 import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 #import urllib
 import socket
 import requests
@@ -155,7 +156,8 @@ def get_ns():
         if _ns is None:
             #stagger query times
             time.sleep(3*np.random.rand())
-            _ns = pzc.getNS('_pyme-http')
+            #_ns = pzc.getNS('_pyme-http')
+            _ns = hybrid_ns.getNS('_pyme-http')
             #wait for replies
             time.sleep(5)
 

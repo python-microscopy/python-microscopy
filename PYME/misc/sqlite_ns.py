@@ -3,8 +3,14 @@ import time
 import tempfile
 import os
 import collections
+import socket
 
 NSInfo = collections.namedtuple('NSInfo', ('name', 'address', 'port', 'creation_time', 'URI'))
+def make_info(info):
+    """Translate our results into something that looks like ``zeroconf.ServiceInfo`` - specifically convert the ip address
+    into the expected format"""
+    name, address, port, creation_time, URI = info
+    return NSInfo(name, socket.inet_aton(address), port, creation_time, URI)
 
 class SQLiteNS(object):
     """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver using a locally held sqlite database
@@ -34,7 +40,7 @@ class SQLiteNS(object):
     
     def get_advertised_services(self):
         names = [r[0] for r in self._conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
-        services = [(n, (self._conn.execute("SELECT * FROM dns WHERE name=? ORDER BY creation_time DESC ", (n,)).fetchone())) for n in names]
+        services = [(n, make_info(self._conn.execute("SELECT * FROM dns WHERE name=? ORDER BY creation_time DESC ", (n,)).fetchone())) for n in names]
         return services
     
     def register_service(self, name, address, port, desc={}, URI=''):
@@ -63,13 +69,16 @@ class SQLiteNS(object):
 
 nsd = {}
 
+import threading
 
 def getNS(protocol='_pyme-pyro'):
+    #TODO - is it better to do this, or to open and close the connection around each call?
+    thread_id = threading.current_thread().ident
     try:
-        ns = nsd[protocol]
+        ns = nsd[(protocol, thread_id)]
     except KeyError:
         ns = SQLiteNS(protocol)
-        nsd[protocol] = ns
+        nsd[(protocol, thread_id)] = ns
         #time.sleep(1) #wait for the services to come up
     
     return ns

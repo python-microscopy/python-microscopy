@@ -37,21 +37,22 @@ class ClusterOfOne(object):
             self._kill_procs([self._data_server,])
             
         logger.info('Launching data server')
-        self._data_server = subprocess.Popen('%s -m PYME.cluster.HTTPDataServer' % sys.executable, shell=True)
+        self._data_server = subprocess.Popen('%s -m PYME.cluster.HTTPDataServer -a local' % sys.executable, shell=True)
         
     def _launch_rule_server(self):
         if not self._rule_server is None:
             self._kill_procs([self._rule_server, ])
 
         logger.info('Launching rule server')
-        self._rule_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleServer' % sys.executable, shell=True)
+        self._rule_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleServer -a local'
+                                             '' % sys.executable, shell=True)
         
     def _launch_node_server(self):
         if not self._node_server is None:
             self._kill_procs([self._node_server, ])
 
         logger.info('Launching node server')
-        self._node_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleNodeServer' % sys.executable, shell=True)
+        self._node_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleNodeServer -a local' % sys.executable, shell=True)
         
     def _launch_cluster_ui(self, gui=False):
         if not self._cluster_ui is None:

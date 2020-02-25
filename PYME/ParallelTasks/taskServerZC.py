@@ -34,7 +34,7 @@ from HDFTaskQueue import *
 from PYME.ParallelTasks.DSTaskQueue import DSTaskQueue
 
 import PYME.version
-from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -377,7 +377,7 @@ def main():
     Pyro.core.initServer()
     #ns=Pyro.naming.NameServerLocator().getNS()
     
-    ns = pzc.getNS()
+    ns = hybrid_ns.getNS()
     daemon=Pyro.core.Daemon(host = ip_addr)
     daemon.useNameServer(ns)
 

@@ -15,6 +15,7 @@ from PYME.IO import DataSources
 from PYME.IO import clusterIO
 from PYME.IO import clusterResults
 from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
 from six import string_types
 
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _getTaskQueueURI(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-taskdist')
+    ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
     

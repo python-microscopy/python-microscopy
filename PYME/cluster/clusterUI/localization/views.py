@@ -50,6 +50,7 @@ FIDUCIAL_PARAMS = [
 
 def settings_form(analysisModule):
     #params = FINDING_PARAMS + DEFAULT_PARAMS
+    analysisModule=str(analysisModule)
 
     categorized_fields = collections.OrderedDict()
 
@@ -87,7 +88,7 @@ def settings_form(analysisModule):
 # Create your views here.
 def settings(request, analysisModule='LatGaussFitFR'):
     import PYME.localization.FitFactories
-    analysisModule=analysisModule
+    analysisModule=str(analysisModule)
 
     if request.method == 'POST':
         f = settings_form(analysisModule)(request.POST)
