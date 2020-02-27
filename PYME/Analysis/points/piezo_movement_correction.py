@@ -80,10 +80,33 @@ def flag_piezo_movement(data_source, events, fps=None):
 
 def correct_target_positions(data_source, events):
     """
-    ProtocolFocus event descriptions list the intended focus target. Some piezo's have a target tolerance and log their
+    ProtocolFocus event descriptions list the intended focus target. Some piezos have a target tolerance and log their
     landing position with PiezoOnTarget.
-    If the piezo is additionally an OffsetPiezo, we will try and correct for that offset
+
     :param data_source:
     :param events:
     :return:
     """
+    return
+
+
+TEST_EVENTS = np.array([#(b'PiezoOnTarget', 0, b'48.262'),
+       ('ProtocolFocus', 0, '0, 49.988'),
+       ('PiezoOnTarget', 1 * 0.00125, '48.307'),
+       ('ProtocolTask', 1 * 0.00125, '1, DisableLock, '),
+       ('PiezoOffsetUpdate', 2 * 0.00125, '-1.6720'),
+       ('ProtocolFocus', 801 * 0.00125, '801, 51.188'),
+       ('PiezoOnTarget', 850 * 0.00125, '49.489'),
+       ('ProtocolFocus', 1601 * 0.00125, '1601, 52.388'),
+       ('PiezoOnTarget', 1650 * 0.00125, '50.705'),
+       ('ProtocolFocus', 2401 * 0.00125, '2401, 53.588'),
+       ('ProtocolTask', 1.58222556e+09, 'EnableLock, '),
+       ('ProtocolTask', 1.58222556e+09, 'LaunchAnalysis, ')],
+      dtype=[('EventName', 'U32'), ('Time', '<f8'), ('EventDescr', 'U256')])
+
+TEST_DATA_SOURCE = np.arange(2500).astype([('t', '<i4')])
+
+def test_flag_piezo_movement():
+    moving = flag_piezo_movement(TEST_DATA_SOURCE, TEST_EVENTS)
+
+test_flag_piezo_movement()
