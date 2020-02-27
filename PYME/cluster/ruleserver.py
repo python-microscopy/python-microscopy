@@ -729,10 +729,10 @@ class WFRuleServer(webframework.APIHTTPServer, RuleServer):
     Largely an artifact of initial experiments using cherrypy (allowed quickly switching between cherrypy
     and our internal webframework).
     """
-    def __init__(self, port):
+    def __init__(self, port, bind_addr=''):
         RuleServer.__init__(self)
         
-        server_address = ('', port)
+        server_address = (bind_addr, port)
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
 
@@ -767,22 +767,28 @@ import threading
 
 class ServerThread(threading.Thread):
     """"""
-    def __init__(self, port, profile=False):
+    def __init__(self, port, bind_addr='', profile=False):
         self.port = int(port)
         self._profile = profile
+        self.bind_addr = bind_addr
         threading.Thread.__init__(self)
         
     def run(self):
         """"""
-        import socket
+        
         if self._profile:
             from PYME.util import mProfile
         
             mProfile.profileOn(['ruleserver.py', ])
             profileOutDir = config.get('dataserver-root', os.curdir) + '/LOGS/%s/mProf' % computerName.GetComputerName()
-        
-        self.externalAddr = socket.gethostbyname(socket.gethostname())
-        self.distributor = WFRuleServer(self.port)
+
+        if self.bind_addr == '':
+            import socket
+            self.externalAddr = socket.gethostbyname(socket.gethostname())
+        else:
+            self.externalAddr = self.bind_addr
+            
+        self.distributor = WFRuleServer(self.port, bind_addr=self.bind_addr)
 
         logger.info('Starting ruleserver on %s:%d' % (self.externalAddr, self.port))
         try:

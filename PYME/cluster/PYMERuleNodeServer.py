@@ -94,7 +94,7 @@ def main():
         nodeserver_log_dir = os.path.join(os.curdir, 'LOGS', GetComputerName())
 
 
-    proc = rulenodeserver.ServerThread(distributors[0], serverPort, profile=False)
+    proc = rulenodeserver.ServerThread(distributors[0], serverPort, externalAddr=externalAddr, profile=False)
     proc.start()
         
     # TODO - do we need this advertisement

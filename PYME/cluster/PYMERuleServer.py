@@ -44,9 +44,9 @@ def main():
     
     if args.advertisements == 'local':
         #bind on localhost
-        externalAddr = '127.0.0.1'
+        bind_addr = '127.0.0.1'
     else:
-        externalAddr = socket.gethostbyname(socket.gethostname())
+        bind_addr = '' #bind all interfaces
     
     #set up logging
     data_root = config.get('dataserver-root')
@@ -64,7 +64,7 @@ def main():
         distLogErr.addHandler(dist_err_handler)
     
     
-    proc = ruleserver.ServerThread(serverPort, profile=False)
+    proc = ruleserver.ServerThread(serverPort, bind_addr=bind_addr, profile=False)
     proc.start()
     #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
 
@@ -77,7 +77,7 @@ def main():
     time.sleep(0.5)
     #get the actual adress (port) we bound to
     sa = proc.distributor.socket.getsockname()
-    ns.register_service('PYMERuleServer: ' + GetComputerName(), externalAddr, int(sa[1]))
+    ns.register_service('PYMERuleServer: ' + GetComputerName(), proc.externalAddr, int(sa[1]))
 
     try:
         while proc.is_alive():
