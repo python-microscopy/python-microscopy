@@ -49,6 +49,8 @@ import  PYME.ui.manualFoldPanel as afp
 from . import seqdialog
 from . import AnalysisSettingsUI
 
+from PYME.misc import hybrid_ns
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -116,7 +118,7 @@ class PanSpool(afp.foldingPane):
             self.rbSpoolQueue.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
             hsizer.Add(self.rbSpoolQueue, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
             self.rbSpoolQueue.SetValue(True)
-        else:
+        elif (self._N_data_servers >= 1):
             self.rbSpoolCluster.SetValue(True)
     
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -180,7 +182,7 @@ class PanSpool(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
     
         self.cbClusterh5 = wx.CheckBox(pan, -1, 'Spool to h5 on cluster (cluster of 1)')
-        self.cbClusterh5.SetValue(False)
+        self.cbClusterh5.SetValue(self._N_data_servers == 1) #set to true if we have a single node cluster
     
         hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -316,6 +318,10 @@ class PanSpool(afp.foldingPane):
         """
         afp.foldingPane.__init__(self, parent, caption='Spooling', **kwargs)
         self.scope = scope
+
+        #check to see if we have a cluster
+        self._N_data_servers = len(hybrid_ns.getNS('_pyme-http').get_advertised_services())
+        
         self._init_ctrls()
         
         #self.spoolController = SpoolController(scope, defDir, **kwargs)
