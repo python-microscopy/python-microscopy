@@ -7,15 +7,19 @@ def flag_piezo_movement(data_source, events, fps=None):
 
     Parameters
     ----------
-
+    data_source: dict-like, PYME.IO.tabular
+        container for localizations, must have 't' in units of frames.
+    events: list or dict
+        acquisition events
     Returns
     -------
+    moving: ndarray
+        boolean array where elements correspond to each localization in data_source. False indicates the piezo is stable
+        while True flags localizations from frames where the piezo doesn't have a well defined position.
 
     """
 
-
-    t = data_source['t']
-    moving = np.zeros(len(t), dtype=bool)
+    moving = np.zeros(len(data_source['t']), dtype=bool)
 
     focus_frames, focus_positions, focus_times, ontarget_times, ontarget_positions = [], [], [], [], []
     for event in events:
@@ -23,20 +27,20 @@ def flag_piezo_movement(data_source, events, fps=None):
             # ProtocolFocus description is 'frame#, position'
             f_frame, f_position = str(event['EventDescr']).split(',')
             focus_frames.append(float(f_frame))
-            focus_positions.append(float(f_position))
+            # focus_positions.append(float(f_position))
             focus_times.append(event['Time'])
 
         if str(event['EventName']) == 'PiezoOnTarget':
             # PiezoOnTarget description is the position
-            ontarget_positions.append(float(event['EventDescr']))
+            # ontarget_positions.append(float(event['EventDescr']))
             ontarget_times.append(float(event['Time']))
 
     # convert to arrays
     focus_frames = np.asarray(focus_frames)
     focus_times = np.asarray(focus_times)
-    focus_positions = np.asarray(focus_positions)
+    # focus_positions = np.asarray(focus_positions)
     ontarget_times = np.asarray(ontarget_times)
-    ontarget_positions = np.asarray(ontarget_positions)
+    # ontarget_positions = np.asarray(ontarget_positions)
 
     I_time_focus = np.argsort(focus_times)
 
@@ -59,21 +63,27 @@ def flag_piezo_movement(data_source, events, fps=None):
     ontarget_frames = np.ceil((ontarget_times - start_time) * fps).astype(int)
 
     # now go through each ProtocolFocus and flag localizations in between that and the closest on-target
-    focus_frames_s = np.sort(focus_frames)
-    for f_ind in range(len(focus_frames_s)):
+    for frame in focus_frames:
         # find the next on-target
-        valid_ontargets = ontarget_frames > focus_frames_s[f_ind]
-        ot_inds = np.argsort(focus_frames - focus_frames_s[f_ind])
+        valid_ontargets = ontarget_frames > frame
+        ot_inds = np.argsort(focus_frames - frame)
         try:
             ot_ind = ot_inds[valid_ontargets][0]
             ontarget_frame = ontarget_frames[ot_ind]
         except IndexError:
-            ontarget_frame = t.max() + 1  # flag to the last localization
+            ontarget_frame = data_source['t'].max() + 1  # flag to the last localization
 
-        moving[focus_frames_s[f_ind]:ontarget_frame] = True
-
-        focus[]
+        # flag frames, inclusively between firing the focus change and knowing we're settled
+        moving[np.logical_and(data_source['t'] >= frame, data_source['t'] <= ontarget_frame)] = True
 
     return moving
 
-def piezo_offset_correction(data_source, events):
+def correct_target_positions(data_source, events):
+    """
+    ProtocolFocus event descriptions list the intended focus target. Some piezo's have a target tolerance and log their
+    landing position with PiezoOnTarget.
+    If the piezo is additionally an OffsetPiezo, we will try and correct for that offset
+    :param data_source:
+    :param events:
+    :return:
+    """
