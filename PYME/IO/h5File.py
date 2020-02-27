@@ -6,7 +6,7 @@ import numpy as np
 import traceback
 from . import h5rFile
 
-EVENTS_DTYPE = np.dtype([('EventDescr', 'U256'), ('EventName', 'U32'), ('Time', '<f8')])
+from PYME.IO.events import event_array_from_hdf5, EVENT_ORDER, event_array_from_list
 
 #file_cache = {}
 
@@ -108,8 +108,8 @@ class H5File(h5rFile.H5RFile):
             return self.mdh.to_JSON()
         elif filename == 'events.json':
             try:
-                events = self._h5file.root.Events[:]
-                return json.dumps(zip(events['EventName'], events['EventDescr'], events['Time']))
+                events = event_array_from_hdf5(self._h5file)
+                return json.dumps(zip(events[field] for field in EVENT_ORDER))
             except AttributeError:
                 raise IOError('File has no events')
             #raise NotImplementedError('reading events not yet implemented')
@@ -127,14 +127,7 @@ class H5File(h5rFile.H5RFile):
         if filename in ['metadata.json', 'MetaData']:
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
-            events = json.loads(data)
-            
-            events_array = np.empty(len(events), dtype=EVENTS_DTYPE)
-            
-            for j, ev in events:
-                events_array['EventName'][j], events_array['EventDescr'][j], events_array['Time'][j] = ev
-                
-            self.addEvents(events_array)
+            self.addEvents(event_array_from_list(json.loads(data)))
         
         elif filename.startswith('frame'):
             #FIXME - this will not preserve ordering

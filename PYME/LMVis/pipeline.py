@@ -23,6 +23,7 @@
 ################
 from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
+from PYME.IO.events import event_array_from_hdf5, event_array_from_table
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
 from PYME.LMVis import renderers
@@ -645,9 +646,7 @@ class Pipeline:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
 
             if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = h5f.root.Events[:].astype([('EventName', '<U256'),
-                                                         ('Time', '<f8'),
-                                                         ('EventDescr', '<U256')])
+                self.events = event_array_from_hdf5(h5f)
 
         elif filename.endswith('.hdf'):
             #recipe output - handles generically formatted .h5
@@ -662,9 +661,7 @@ class Pipeline:
                         
                     if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
                         # this does not handle multiple events tables per hdf file
-                        self.events = t[:].astype([('EventName', '<U256'),
-                                                         ('Time', '<f8'),
-                                                         ('EventDescr', '<U256')])
+                        self.events = event_array_from_table(t)
 
             if 'MetaData' in h5f.root:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))

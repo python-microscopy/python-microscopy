@@ -31,6 +31,7 @@ import sys
 #import gnomevfs
 
 from PYME.IO import tabular
+from PYME.IO.events import event_array_from_hdf5
 from scipy import histogram2d, arange, minimum, concatenate, newaxis
 from PIL import Image
 
@@ -65,7 +66,7 @@ def generateThumbnail(inputFile, thumbSize):
         threeD = True
 
     if 'Events' in dir(f1.h5f.root):
-        events = f1.h5f.root.Events[:].astype([('EventName', '<U256'), ('Time', '<f8'), ('EventDescr', '<U256')])
+        events = event_array_from_hdf5(f1.h5f)
 
         evKeyNames = set()
         for e in events:
