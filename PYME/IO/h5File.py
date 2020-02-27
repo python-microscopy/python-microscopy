@@ -6,7 +6,7 @@ import numpy as np
 import traceback
 from . import h5rFile
 
-EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', '<f8')])
+EVENTS_DTYPE = np.dtype([('EventDescr', 'U256'), ('EventName', 'U32'), ('Time', '<f8')])
 
 #file_cache = {}
 

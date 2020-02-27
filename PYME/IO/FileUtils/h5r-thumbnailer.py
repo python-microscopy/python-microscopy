@@ -65,13 +65,13 @@ def generateThumbnail(inputFile, thumbSize):
         threeD = True
 
     if 'Events' in dir(f1.h5f.root):
-        events = f1.h5f.root.Events[:]
+        events = f1.h5f.root.Events[:].astype([('EventName', '<U256'), ('Time', '<f8'), ('EventDescr', '<U256')])
 
         evKeyNames = set()
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if b'ProtocolFocus' in evKeyNames:
+        if 'ProtocolFocus' in evKeyNames:
             stack = True
 
 

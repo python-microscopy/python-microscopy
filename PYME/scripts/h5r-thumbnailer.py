@@ -68,7 +68,7 @@ def generateThumbnail(inputFile, thumbSize):
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if b'ProtocolFocus' in evKeyNames:
+        if 'ProtocolFocus' in evKeyNames:
             stack = True
 
 

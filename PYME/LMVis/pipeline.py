@@ -202,33 +202,33 @@ def _processEvents(ds, events, mdh):
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if b'ProtocolFocus' in evKeyNames:
+        if 'ProtocolFocus' in evKeyNames:
             zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
-        if b'ScannerXPos' in evKeyNames:
+        if 'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
                 x0 = mdh.getEntry('Positioning.Stage_X')
-            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
+            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
             ev_mappings['xm'] = xm
             eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
-        if b'ScannerYPos' in evKeyNames:
+        if 'ScannerYPos' in evKeyNames:
             y0 = 0
             if 'Positioning.Stage_Y' in mdh.getEntryNames():
                 y0 = mdh.getEntry('Positioning.Stage_Y')
-            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
+            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
             ev_mappings['ym'] = ym
             eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
-        if b'ShiftMeasure' in evKeyNames:
-            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
+        if 'ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
                                                               0)
-            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
                                                               1)
-            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
                                                               2)
 
             ev_mappings['driftx'] = driftx
@@ -253,7 +253,7 @@ def _processEvents(ds, events, mdh):
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
         except:
             # It doesn't really matter if this fails, print our traceback anyway
@@ -645,7 +645,9 @@ class Pipeline:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
 
             if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = h5f.root.Events[:]
+                self.events = h5f.root.Events[:].astype([('EventName', '<U256'),
+                                                         ('Time', '<f8'),
+                                                         ('EventDescr', '<U256')])
 
         elif filename.endswith('.hdf'):
             #recipe output - handles generically formatted .h5
@@ -659,7 +661,10 @@ class Pipeline:
                     self.addDataSource(t.name, tab)
                         
                     if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
-                        self.events = t[:]  # this does not handle multiple events tables per hdf file
+                        # this does not handle multiple events tables per hdf file
+                        self.events = t[:].astype([('EventName', '<U256'),
+                                                         ('Time', '<f8'),
+                                                         ('EventDescr', '<U256')])
 
             if 'MetaData' in h5f.root:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))

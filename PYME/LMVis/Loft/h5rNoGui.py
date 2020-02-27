@@ -169,8 +169,10 @@ class Pipeline:
                 evKeyNames.add(e['EventName'])
 
 
-            if b'ProtocolFocus' in evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
+            if 'ProtocolFocus' in evKeyNames:
+                self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh,
+                                                                   self.mdh.getEntry('StartTime'),
+                                                                   self.mdh.getEntry('Protocol.PiezoStartPos'))
                 self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
                 #self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
@@ -182,7 +184,8 @@ class Pipeline:
                 x0 = 0
                 if 'Positioning.Stage_X' in self.mdh.getEntryNames():
                     x0 = self.mdh.getEntry('Positioning.Stage_X')
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
+                self.xm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh,
+                                                                   self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
 
 
                 self.selectedDataSource.scan_x = 1.e3*self.xm(self.selectedDataSource['t']-.01)

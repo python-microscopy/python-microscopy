@@ -47,30 +47,36 @@ def Plug(dsviewer):
 
         charts = []
 
-        if b'ProtocolFocus' in dsviewer.elv.evKeyNames:
+        if 'ProtocolFocus' in dsviewer.elv.evKeyNames:
             dsviewer.zm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh, image.mdh.getEntry('StartTime'), image.mdh.getEntry('Protocol.PiezoStartPos'))
-            charts.append(('Focus [um]', dsviewer.zm, b'ProtocolFocus'))
+            charts.append(('Focus [um]', dsviewer.zm, 'ProtocolFocus'))
 
-        if b'ScannerXPos' in dsviewer.elv.evKeyNames:
+        if 'ScannerXPos' in dsviewer.elv.evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in image.mdh.getEntryNames():
                 x0 = image.mdh.getEntry('Positioning.Stage_X')
-            dsviewer.xm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh, image.mdh.getEntry('StartTime'), x0, b'ScannerXPos', 0)
-            charts.append(('XPos [um]', dsviewer.xm, b'ScannerXPos'))
+            dsviewer.xm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh,
+                                                                   image.mdh.getEntry('StartTime'), x0,
+                                                                   'ScannerXPos', 0)
+            charts.append(('XPos [um]', dsviewer.xm, 'ScannerXPos'))
 
-        if b'ScannerYPos' in dsviewer.elv.evKeyNames:
+        if 'ScannerYPos' in dsviewer.elv.evKeyNames:
             y0 = 0
             if 'Positioning.Stage_Y' in image.mdh.getEntryNames():
                 y0 = image.mdh.getEntry('Positioning.Stage_Y')
-            dsviewer.ym = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh, image.mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
-            charts.append(('YPos [um]', dsviewer.ym, b'ScannerYPos'))
+            dsviewer.ym = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh,
+                                                                   image.mdh.getEntry('StartTime'), y0,
+                                                                   'ScannerYPos', 0)
+            charts.append(('YPos [um]', dsviewer.ym, 'ScannerYPos'))
 
-        if b'ScannerZPos' in dsviewer.elv.evKeyNames:
+        if 'ScannerZPos' in dsviewer.elv.evKeyNames:
             z0 = 0
             if 'Positioning.PIFoc' in image.mdh.getEntryNames():
                 z0 = image.mdh.getEntry('Positioning.PIFoc')
-            dsviewer.zm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh, image.mdh.getEntry('StartTime'), z0, b'ScannerZPos', 0)
-            charts.append(('ZPos [um]', dsviewer.zm, b'ScannerZPos'))
+            dsviewer.zm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh,
+                                                                   image.mdh.getEntry('StartTime'), z0,
+                                                                   'ScannerZPos', 0)
+            charts.append(('ZPos [um]', dsviewer.zm, 'ScannerZPos'))
 
         dsviewer.elv.SetCharts(charts)
         
