@@ -26,7 +26,19 @@ import numpy as np
 import sys
 import six
 
-def timeToFrames(t, events, mdh):
+def times_to_frames(t, events, mdh):
+    """
+    Use events and metadata to convert time-stamps to frame numbers
+    :param t: ndarray
+        times [seconds since the epoch] to map to frame numbers
+    :param events: ndarray
+        TODO - if events-related type fixing goes through, use events helpers to accept list here as well
+    :param mdh: PYME.IO.MetaDataHandler
+        Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
+    :return:
+        fr: ndarray
+            array of frame numbers corresponding to `t` input
+    """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
@@ -74,7 +86,19 @@ def timeToFrames(t, events, mdh):
 
         return fr
 
-def framesToTime(fr, events, mdh):
+def frames_to_times(fr, events, mdh):
+    """
+    Use events and metadata to convert frame numbers to seconds
+    :param fr: ndarray
+        frame numbers to map to time (in seconds since the epoch), e.g. localization data_souce['t']
+    :param events: ndarray
+        TODO - if events-related type fixing goes through, use events helpers to accept list here as well
+    :param mdh: PYME.IO.MetaDataHandler
+        Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
+    :return:
+        t: ndarray
+            times [seconds since the epoch] to map to frame numbers
+    """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
@@ -152,7 +176,7 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
     x = x[I]
     y = y[I]
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1):
@@ -177,7 +201,7 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
 
     #print array(x) - metadata.getEntry('StartTime'), timeToFrames(array(x), events, metadata)
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0):
     x = []
@@ -202,5 +226,5 @@ def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'Pr
     y += backlash*(dy < 0)
 
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 

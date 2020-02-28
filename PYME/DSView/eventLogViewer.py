@@ -25,7 +25,7 @@ import wx
 import numpy as np
 import time
 import pylab
-from PYME.Analysis.piecewiseMapping import timeToFrames, framesToTime
+from PYME.Analysis.piecewiseMapping import times_to_frames, frames_to_times
 
 class eventLogPanel(wx.Panel):
     def __init__(self, parent, eventSource, metaData, frameRange, charts = [], size=(-1, -1), activate=False):
@@ -87,9 +87,9 @@ class eventLogPanel(wx.Panel):
         tPerFrame = self.metaData.getEntry('Camera.CycleTime')
 
         #maxT = tPerFrame*self.frameRange[1]
-        maxT = framesToTime(self.frameRange[1], self.eventSource, self.metaData) - self.startTime
+        maxT = frames_to_times(self.frameRange[1], self.eventSource, self.metaData) - self.startTime
         #minT = tPerFrame*self.frameRange[0]
-        minT = framesToTime(self.frameRange[0], self.eventSource, self.metaData) - self.startTime
+        minT = frames_to_times(self.frameRange[0], self.eventSource, self.metaData) - self.startTime
 
         timeLabelSize = max(dc.GetTextExtent('%3.4g' % maxT)[0], dc.GetTextExtent('[s]' % maxT)[0])
 
@@ -131,7 +131,7 @@ class eventLogPanel(wx.Panel):
         tickSpacing = round(tickSpacing/(10**np.floor(np.log10(tickSpacing))))*(10**np.floor(np.log10(tickSpacing)))
         tickStart = np.ceil(self.frameRange[0]/tickSpacing)*tickSpacing
         ticks = np.arange(tickStart, self.frameRange[1]+.01, tickSpacing)
-        tickTimes = framesToTime(ticks, self.eventSource, self.metaData) - self.startTime
+        tickTimes = frames_to_times(ticks, self.eventSource, self.metaData) - self.startTime
 
         for t, tt in zip(ticks, tickTimes):
             #y = (t -self.frameRange[0])*pixPerFrame + 2*textHeight
@@ -431,13 +431,13 @@ class eventLogTPanel(wx.Panel):
         pixPerS = float(self.Size[1] - 3*textHeight)/(maxT - minT)
         self.pixPerS = pixPerS
 
-        maxF = timeToFrames(maxT+ self.startTime, self.eventSource, self.metaData) #- self.startTime
-        minF = timeToFrames(minT+ self.startTime, self.eventSource, self.metaData) #- self.startTime
+        maxF = times_to_frames(maxT + self.startTime, self.eventSource, self.metaData) #- self.startTime
+        minF = times_to_frames(minT + self.startTime, self.eventSource, self.metaData) #- self.startTime
 
         #print minF, maxF
 
         if (maxF < minF) < 30: #show when camera was actually recording
-            fTimes = framesToTime(np.arange(minF, maxF + .1), self.eventSource, self.metaData) - self.startTime
+            fTimes = frames_to_times(np.arange(minF, maxF + .1), self.eventSource, self.metaData) - self.startTime
             tPerFrame = self.metaData.getEntry('Camera.CycleTime')
 
             old_pen = dc.GetPen()
@@ -492,7 +492,7 @@ class eventLogTPanel(wx.Panel):
         tickStart = np.ceil(minF/tickSpacing)*tickSpacing
         #print(tickStart, maxF+.01, tickSpacing)
         ticks = np.arange(tickStart, maxF+.01, tickSpacing)
-        tickTimes = framesToTime(ticks, self.eventSource, self.metaData) - self.startTime
+        tickTimes = frames_to_times(ticks, self.eventSource, self.metaData) - self.startTime
 
         #print minT, maxT,nFrames, nTicksTarget, tickStart, tickSpacing
 
@@ -635,7 +635,7 @@ class eventLogTPanel(wx.Panel):
             #dc.SetPen(wx.Pen(wx.BLUE, 2))
             dc.SetPen(wx.Pen(self.lineColours[sourceEv],2))
 
-            xvt = framesToTime(xv, self.eventSource, self.metaData) - self.startTime
+            xvt = frames_to_times(xv, self.eventSource, self.metaData) - self.startTime
             
             #print xv,xvt, vv
 
