@@ -1,28 +1,29 @@
 import numpy as np
+from PYME.Analysis import piecewiseMapping as piecewise_mapping
 
 
-def flag_piezo_movement(data_source, events, fps=None):
+def flag_piezo_movement(frames, events, metadata):
     """
     Flags localizations detected on frames between ProtocolFocus and PiezoOnTarget events.
 
     Parameters
     ----------
-    data_source: dict-like, PYME.IO.tabular
-        container for localizations, must have 't' in units of frames.
+    frames: ndarray
+        frame numbers, typically localization data_source['t']
     events: list or dict
         acquisition events
-    fps: float
-        frames per second, or 1/mdh['Camera.CycleTime']
+    metadata: PYME.IO.MetaDataHandler
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
 
     Returns
     -------
     moving: ndarray
-        boolean array where elements correspond to each localization in data_source. False indicates the piezo is stable
-        while True flags localizations from frames where the piezo doesn't have a well defined position.
+        boolean array where elements correspond to each element in `frames`. False indicates the piezo is stable
+        while True flags elements in `frames` where the piezo doesn't have a well defined position.
 
     """
 
-    moving = np.zeros(len(data_source['t']), dtype=bool)
+    moving = np.zeros_like(frames, dtype=bool)
 
     focus_frames, focus_times, ontarget_times, = [], [], []
     for event in events:
@@ -43,22 +44,7 @@ def flag_piezo_movement(data_source, events, fps=None):
     I_time_focus = np.argsort(focus_times)
 
     # convert on-target times to frames
-    if fps is None:
-        # estimate FPS if it wasn't an input
-        t0, t1 = focus_times[I_time_focus][:2]
-        f0, f1 = focus_frames[I_time_focus][:2]
-        fps = (f1 - f0) / (t1 - t0)
-
-    try:
-        # We should always have a frame 0 ProtocolFocus
-        start_time = focus_times[focus_frames == 0]
-    except IndexError:
-        # back-calculate in a pinch
-        f0, t0 = focus_frames[I_time_focus][0], focus_times[I_time_focus][0]
-        start_time = t0 - (f0 / fps)
-
-    # convert to frames, and ceil so we flag edge-cases as still moving
-    ontarget_frames = np.ceil((ontarget_times - start_time) * fps).astype(int)
+    ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
 
     # now go through each ProtocolFocus and flag localizations in between that and the closest on-target
     for frame in focus_frames:
