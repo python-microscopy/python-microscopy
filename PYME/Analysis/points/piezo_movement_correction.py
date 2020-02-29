@@ -27,13 +27,15 @@ def flag_piezo_movement(frames, events, metadata):
 
     focus_frames, focus_times, ontarget_times, = [], [], []
     for event in events:
-        if str(event['EventName']) == 'ProtocolFocus':
+        # fixme - bytes don't belong here
+        if event['EventName'] == b'ProtocolFocus':
             # ProtocolFocus description is 'frame#, position'
-            f_frame, f_position = str(event['EventDescr']).split(',')
+            f_frame, f_position = event['EventDescr'].split(b',')
             focus_frames.append(float(f_frame))
             focus_times.append(event['Time'])
 
-        if str(event['EventName']) == 'PiezoOnTarget':
+        # fixme - bytes don't belong here
+        if event['EventName'] == b'PiezoOnTarget':
             ontarget_times.append(float(event['Time']))
 
     # convert to arrays
@@ -55,10 +57,10 @@ def flag_piezo_movement(frames, events, metadata):
             ot_ind = ot_inds[valid_ontargets][0]
             ontarget_frame = ontarget_frames[ot_ind]
         except IndexError:
-            ontarget_frame = data_source['t'].max() + 1  # flag to the last localization
+            ontarget_frame =frames.max() + 1  # flag to the last localization
 
         # flag frames, inclusively between firing the focus change and knowing we're settled
-        moving[np.logical_and(data_source['t'] >= frame, data_source['t'] <= ontarget_frame)] = True
+        moving[np.logical_and(frames >= frame, frames <= ontarget_frame)] = True
 
     return moving
 

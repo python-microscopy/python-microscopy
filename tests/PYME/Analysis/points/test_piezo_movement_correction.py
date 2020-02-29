@@ -12,12 +12,19 @@ TEST_EVENTS = np.array([('PiezoOnTarget', 0, '48.262'),
        ('ProtocolFocus', 2401 * 0.00125, '2401, 53.588'),
        ('ProtocolTask', 1.58222556e+09, 'EnableLock, '),
        ('ProtocolTask', 1.58222556e+09, 'LaunchAnalysis, ')],
-      dtype=[('EventName', 'U32'), ('Time', '<f8'), ('EventDescr', 'U256')])
+                       # fixme - but the S32 and S256 back to unicode once we fix event typing elsewhere
+      dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
 
 TEST_DATA_SOURCE = np.arange(2500).astype([('t', '<i4')])
 
 def test_flag_piezo_movement():
+    from PYME.IO.MetaDataHandler import NestedClassMDHandler
     from PYME.Analysis.points.piezo_movement_correction import flag_piezo_movement
-    moving = flag_piezo_movement(TEST_DATA_SOURCE, TEST_EVENTS)
+    mdh = NestedClassMDHandler()
+    mdh['Camera.CycleTime'] = 0.00125
+    mdh['StartTime'] = 0
+    moving = flag_piezo_movement(TEST_DATA_SOURCE['t'], TEST_EVENTS, mdh)
     assert np.all(moving[np.where(TEST_DATA_SOURCE['t'] >= 2401)])
     assert not np.all(np.all(moving[np.where(TEST_DATA_SOURCE['t'] >= 2400)]))
+
+test_flag_piezo_movement()
