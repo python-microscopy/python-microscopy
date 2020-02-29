@@ -10,7 +10,7 @@ def flag_piezo_movement(frames, events, metadata):
     ----------
     frames: ndarray
         frame numbers, typically localization data_source['t']
-    events: list or dict
+    events: list or structured ndarray
         acquisition events
     metadata: PYME.IO.MetaDataHandler
         metadata with 'Camera.CycleTime' and 'StartTime' entries
@@ -40,10 +40,7 @@ def flag_piezo_movement(frames, events, metadata):
 
     # convert to arrays
     focus_frames = np.asarray(focus_frames, dtype=int)
-    focus_times = np.asarray(focus_times)
     ontarget_times = np.asarray(ontarget_times)
-
-    I_time_focus = np.argsort(focus_times)
 
     # convert on-target times to frames
     ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
@@ -64,7 +61,7 @@ def flag_piezo_movement(frames, events, metadata):
 
     return moving
 
-def correct_target_positions(data_source, events, cycle_time, start_time):
+def correct_target_positions(frames, events, metadata):
     """
     ProtocolFocus event descriptions list the intended focus target. Some piezos have a target tolerance and log their
     landing position with PiezoOnTarget.
@@ -73,7 +70,7 @@ def correct_target_positions(data_source, events, cycle_time, start_time):
     ----------
     data_source: dict-like, PYME.IO.tabular
         container for localizations, must have 't' in units of frames.
-    events: list or dict
+    events: list or structured ndarray
         acquisition events
 
     Returns
@@ -82,32 +79,28 @@ def correct_target_positions(data_source, events, cycle_time, start_time):
         focus positions for each localization in data_source.
 
     """
-    try:
-        corrected_focus = np.copy(data_source['focus'])
-    except KeyError:
-        corrected_focus = np.zeros(len(data_source['t']), dtype=float)
-
+    # fixme - remove all the bytes stuff
+    # fixme - at the moment does not correct for offset piezo's offset between ProtocolFocus and OnTarget positions
     ontarget_times, ontarget_positions = [], []
     for event in events:
-        if event['EventName'] == 'PiezoOnTarget':
+        if event['EventName'] == b'PiezoOnTarget':
             ontarget_times.append(float(event['Time']))
             ontarget_positions.append(float(event['EventDescr']))
 
-    # sort in time
-    I = np.argsort(ontarget_times)
-    ontarget_times = np.asarray(ontarget_times)[I]
-    ontarget_positions = np.asarray(ontarget_positions)[I]
+    ontarget_times = np.asarray(ontarget_times)
+    ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
 
-    # todo - use piecewise mapping for a standard time to frame conversion
-    try:
-        # We should always have a frame 0 ProtocolFocus
-        start_time = focus_times[focus_frames == 0]
-    except IndexError:
-        # back-calculate in a pinch
-        f0, t0 = focus_frames[I_time_focus][0], focus_times[I_time_focus][0]
-        start_time = t0 - (f0 / fps)
+    # spoof ProtocolFocus events from PiezoOnTarget events
+    bonus_events = np.empty(len(events) + len(ontarget_times),
+                            dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
+    bonus_events[:len(events)][:] = events[:]
+    bonus_events[len(events):]['EventName'] = b'ProtocolFocus'
+    bonus_events[len(events):]['Time'] = ontarget_times
+    bonus_events[len(events):]['EventDescr'] = [', '.join((str(f), str(p))) for f, p in zip(ontarget_frames, ontarget_positions)]
 
-    # convert to frames, and ceil so we flag edge-cases as still moving
-    ontarget_frames = np.ceil((ontarget_times - start_time) * fps).astype(int)
 
-    return focus
+    focus_mapping = piecewise_mapping.GeneratePMFromEventList(bonus_events, metadata, metadata['StartTime'],
+                                                              metadata.getOrDefault('Protocol.PiezoStartPos',
+                                                                                    min(ontarget_positions)))
+
+    return focus_mapping(frames)
