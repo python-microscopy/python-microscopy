@@ -55,7 +55,7 @@ def flag_piezo_movement(frames, events, metadata):
             ontarget_frame = ontarget_frames[ot_ind]
         except IndexError:
             ontarget_frame =frames.max() + 1  # flag to the last localization
-
+        # fixme - do we need to do anything about StartAc events here?
         # flag frames, inclusively between firing the focus change and knowing we're settled
         moving[np.logical_and(frames >= frame, frames <= ontarget_frame)] = True
 
@@ -80,7 +80,8 @@ def correct_target_positions(frames, events, metadata):
 
     """
     # fixme - remove all the bytes stuff
-    # fixme - at the moment does not correct for offset piezo's offset between ProtocolFocus and OnTarget positions
+    # fixme - at the moment does not correct for offset piezo's offset between ProtocolFocus and OnTarget positions.
+    #   since we normally reject frames before the OnTarget maybe not a huge deal, but might we worth fixing.
     ontarget_times, ontarget_positions = [], []
     for event in events:
         if event['EventName'] == b'PiezoOnTarget':
@@ -101,6 +102,6 @@ def correct_target_positions(frames, events, metadata):
 
     focus_mapping = piecewise_mapping.GeneratePMFromEventList(bonus_events, metadata, metadata['StartTime'],
                                                               metadata.getOrDefault('Protocol.PiezoStartPos',
-                                                                                    min(ontarget_positions)))
+                                                                                    ontarget_positions[0]))
 
     return focus_mapping(frames)
