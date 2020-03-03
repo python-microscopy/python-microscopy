@@ -25,7 +25,7 @@ try:
     import bioformats
     #javabridge.start_vm(class_path=bioformats.JARS, run_headless=True)
 except:
-    pass
+    raise ImportError('Please make sure python-javabridge (https://pythonhosted.org/javabridge/) and python-bioformats (https://pythonhosted.org/python-bioformats/) are working before you use this module.')
 
 numVMRefs = 0
 
@@ -60,7 +60,7 @@ from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
     moduleName = 'BioformatsDataSource'
-    def __init__(self, filename, taskQueue=None, chanNum = 0):
+    def __init__(self, filename, taskQueue=None, chanNum = 0, series=None):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
         
@@ -95,7 +95,14 @@ class DataSource(BaseDataSource):
         #tf = tifffile.TIFFfile(self.filename)
         ensure_VM()
         self.bff = bioformats.ImageReader(filename)
+        self._nSeries = None
+        if self.nSeries > 1:
+            import os
+            ftype = (os.path.basename(filename).split('.')[-1]).upper()
+            print('This {} file stores {} series of data. Use setSeries(series=<series number>) to switch series.'.format(ftype, self.nSeries+1))
         
+        self.setSeries(series)
+
         self.sizeX = self.bff.rdr.getSizeX()
         self.sizeY = self.bff.rdr.getSizeY()
         self.sizeZ = self.bff.rdr.getSizeZ()
@@ -109,7 +116,16 @@ class DataSource(BaseDataSource):
         
         self.additionalDims = 'TC'
                 
+    def setSeries(self, series):
+        if series is not None:
+            self.bff.rdr.setSeries(series)
 
+    
+    @property
+    def nSeries(self):
+        if self._nSeries is None:
+            self._nSeries = self.bff.rdr.getSeriesCount()
+        return self._nSeries
 
     def getSlice(self, ind):
         #self.im.seek(ind)
