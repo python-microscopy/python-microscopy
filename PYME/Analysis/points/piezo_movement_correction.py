@@ -90,7 +90,7 @@ def correct_target_positions(frames, events, metadata):
 
 def normalize_ontarget_events(events, metadata):
     """
-    Generates a acquisition event array where events from piezo's with offsets and/or on-target events are spoofed to
+    Generates a acquisition event array where events from (offset) piezo's with on-target events are spoofed to
     look like standard ProtocolFocus events.
 
     Parameters
@@ -104,6 +104,12 @@ def normalize_ontarget_events(events, metadata):
     bonus_events: ndarray
         events with piezo offsets accounted for and PiezoOnTarget events spoofed as ProtocolFocus events
 
+    Notes
+    -----
+    The on-target events are fired from standard piezo classes, not the OffsetPiezo subclasses, so the PiezoOnTarget
+    positions and ProtocolFocus events have an offset between them which we remove in the output normalized events if
+    there are PiezoOffsetUpdate events available to do so.
+
     """
     # fixme - remove bytes junk from event dtype
     ontarget_times, ontarget_positions = [], []
@@ -111,6 +117,10 @@ def normalize_ontarget_events(events, metadata):
         if event['EventName'] == b'PiezoOnTarget':
             ontarget_times.append(float(event['Time']))
             ontarget_positions.append(float(event['EventDescr']))
+
+    if len(ontarget_times) == 0:
+        # nothing to do
+        return events
 
     offset_map = piecewise_mapping.GeneratePMFromEventList(events, metadata, 0, 0, eventName=b'PiezoOffsetUpdate',
                                                            dataPos=0)
