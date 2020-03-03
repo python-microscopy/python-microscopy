@@ -180,6 +180,17 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
 
 
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1):
+    """
+
+    :param events:
+    :param metadata:
+    :param x0: why?
+    :param y0:
+    :param eventName:
+    :param dataPos: int
+        position in comma-separated event['EventDesc'] str of the float which makes 'y' for this mapping
+    :return:
+    """
     x = []
     y = []
 
