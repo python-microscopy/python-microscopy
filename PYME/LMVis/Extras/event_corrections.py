@@ -20,14 +20,21 @@ class EventCorrections(object):
         """
 
         """
-        from PYME.recipes.localisations import FlagPiezoMovement
+        from PYME.recipes.event_corrections import FlagPiezoMovement
         recipe = self.pipeline.recipe
 
         # hold off auto-running the recipe until we configure things
         recipe.trait_set(execute_on_invalidation=False)
         try:
+            # make sure we have events accessible
+            try:
+                recipe.namespace[self.pipeline.selectedDataSourceKey].events
+            except AttributeError:
+                logger.debug('Using pipeline.events for flagging piezo movement in %s data source' %
+                             self.pipeline.selectedDataSourceKey)
+                recipe.namespace[self.pipeline.selectedDataSourceKey].events = self.pipeline.events
             mod = FlagPiezoMovement(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                    output_name='motion_flagged')
+                                    input_events='')
 
             recipe.add_module(mod)
             if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
@@ -42,14 +49,14 @@ class EventCorrections(object):
         """
 
         """
-        from PYME.recipes.localisations import CorrectFocusTargets
+        from PYME.recipes.event_corrections import CorrectFocusTargets
         recipe = self.pipeline.recipe
 
         # hold off auto-running the recipe until we configure things
         recipe.trait_set(execute_on_invalidation=False)
         try:
             mod = CorrectFocusTargets(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                    output_name='target_focus_corrected')
+                                      input_events=self.pipeline.events, output_name='target_focus_corrected')
 
             recipe.add_module(mod)
             if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
