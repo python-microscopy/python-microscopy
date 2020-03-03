@@ -203,7 +203,10 @@ def _processEvents(ds, events, mdh):
             evKeyNames.add(e['EventName'])
 
         if b'ProtocolFocus' in evKeyNames:
-            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
+            from PYME.Analysis.points.piezo_movement_correction import normalize_ontarget_events
+            normalized_focus_events = normalize_ontarget_events(events, mdh)
+            zm = piecewiseMapping.GeneratePMFromEventList(normalized_focus_events,
+                                                          mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
