@@ -971,3 +971,51 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
 
         namespace[self.outputName] = mapped
 
+@register_module('FlagPiezoMovement')
+class FlagPiezoMovement(ModuleBase):
+    """
+    """
+    input_name = Input('localizations')
+    column_name = CStr('piezo_moving')
+    output_name = Output('motion_flagged')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import piezo_movement_correction
+
+        points = namespace[self.input_name]
+
+        mapped = tabular.MappingFilter(points)
+
+        moving = piezo_movement_correction.flag_piezo_movement(points['t'], points.events, points.mdh)
+
+        mapped.addColumn(self.column_name, moving)
+
+        mapped.mdh = points.mdh
+        mapped.events = points.events
+
+        namespace[self.output_name] = mapped
+
+@register_module('CorrectFocusTargets')
+class CorrectFocusTargets(ModuleBase):
+    """
+    """
+    input_name = Input('localizations')
+    column_name = CStr('focus')
+    output_name = Output('target_focus_corrected')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import piezo_movement_correction
+
+        points = namespace[self.input_name]
+
+        mapped = tabular.MappingFilter(points)
+
+        focus = piezo_movement_correction.correct_target_positions(points['t'], points.events, points.mdh)
+
+        mapped.addColumn(self.column_name, focus)
+
+        mapped.mdh = points.mdh
+        mapped.events = points.events
+
+        namespace[self.output_name] = mapped
+
