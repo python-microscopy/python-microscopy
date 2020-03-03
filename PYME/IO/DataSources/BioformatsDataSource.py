@@ -102,12 +102,6 @@ class DataSource(BaseDataSource):
             print('This {} file stores {} series of data. Use setSeries(series=<series number>) to switch series.'.format(ftype, self.nSeries+1))
         
         self.setSeries(series)
-
-        self.sizeX = self.bff.rdr.getSizeX()
-        self.sizeY = self.bff.rdr.getSizeY()
-        self.sizeZ = self.bff.rdr.getSizeZ()
-        self.sizeT = self.bff.rdr.getSizeT()
-        self.sizeC = self.bff.rdr.getSizeC()
     
         #self.shape = [self.sizeX, self.sizeY, self.sizeZ*self.sizeT, self.sizeC]
         #axisOrder = self.bff.rdr.getDimensionOrder()
@@ -119,6 +113,14 @@ class DataSource(BaseDataSource):
     def setSeries(self, series):
         if series is not None:
             self.bff.rdr.setSeries(series)
+        self.setXYZTC()
+
+    def setXYZTC(self):
+        self.sizeX = self.bff.rdr.getSizeX()
+        self.sizeY = self.bff.rdr.getSizeY()
+        self.sizeZ = self.bff.rdr.getSizeZ()
+        self.sizeT = self.bff.rdr.getSizeT()
+        self.sizeC = self.bff.rdr.getSizeC()
 
     
     @property
