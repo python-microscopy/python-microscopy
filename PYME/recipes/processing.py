@@ -1673,21 +1673,17 @@ class AverageFramesByZStep(ModuleBase):
     output = Output('averaged_by_frame')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis.points import piezo_movement_correction
         from scipy.stats import mode
         import time
 
         image_stack = namespace[self.input_image]
 
         if self.input_zvals == '':
-            # z from events if we can
+            # z from events
             frames = np.arange(image_stack.data.shape[2], dtype=int)
-            
-            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
-            z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
-                                                          image_stack.mdh['StartTime'],
-                                                          image_stack.mdh['Protocol.PiezoStartPos'])
-            z_vals = z_mapping(frames)
+
+            z_vals = piezo_movement_correction.correct_target_positions(frames, image_stack.events, image_stack.mdh)
         else:
             #z values are provided as input
             z_vals = namespace[self.input_zvals][self.z_column_name]
@@ -1770,10 +1766,13 @@ class ResampleZ(ModuleBase):
         # generate grid for sampling
         xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
                                  indexing='ij')
-
+        # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
+        I = np.argsort(z_vals)
+        sorted_z_vals = z_vals[I]
         regular = []
         for ci in range(stack.data.shape[3]):
-            interp = RegularGridInterpolator((x, y, z_vals), stack.data[:, :, :, ci], method='linear')
+            # fixme - simplify this once BaseDataSource indexing works better
+            interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
         regular_stack = ImageStack(regular, mdh=stack.mdh)
