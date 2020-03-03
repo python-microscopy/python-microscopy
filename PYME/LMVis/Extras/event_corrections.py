@@ -45,28 +45,6 @@ class EventCorrections(object):
         finally:  # make sure that we configure the pipeline recipe as it was
             recipe.trait_set(execute_on_invalidation=True)
 
-    def OnCorrectFocusTargets(self, event=None):
-        """
-
-        """
-        from PYME.recipes.event_corrections import CorrectFocusTargets
-        recipe = self.pipeline.recipe
-
-        # hold off auto-running the recipe until we configure things
-        recipe.trait_set(execute_on_invalidation=False)
-        try:
-            mod = CorrectFocusTargets(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                      input_events=self.pipeline.events, output_name='target_focus_corrected')
-
-            recipe.add_module(mod)
-            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
-                return
-
-            recipe.execute()
-            self.pipeline.selectDataSource('target_focus_corrected')
-        finally:  # make sure that we configure the pipeline recipe as it was
-            recipe.trait_set(execute_on_invalidation=True)
-
 
 def Plug(vis_frame):
     """Plugs this module into the gui"""
