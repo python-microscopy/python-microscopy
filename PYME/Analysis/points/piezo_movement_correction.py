@@ -12,7 +12,7 @@ def flag_piezo_movement(frames, events, metadata):
         frame numbers, typically localization data_source['t']
     events: list or structured ndarray
         acquisition events
-    metadata: PYME.IO.MetaDataHandler
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
         metadata with 'Camera.CycleTime' and 'StartTime' entries
 
     Returns
@@ -64,49 +64,48 @@ def flag_piezo_movement(frames, events, metadata):
 def correct_target_positions(frames, events, metadata):
     """
     ProtocolFocus event descriptions list the intended focus target. Some piezos have a target tolerance and log their
-    landing position with PiezoOnTarget.
+    landing position with PiezoOnTarget. PiezoOffsetUpdate events are also accounted for.
 
     Parameters
     ----------
-    data_source: dict-like, PYME.IO.tabular
-        container for localizations, must have 't' in units of frames.
+    frames: ndarray
+        time array, e.g. data_source['t'], in units of frames
     events: list or structured ndarray
         acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
 
     Returns
     -------
     corrected_focus: ndarray
-        focus positions for each localization in data_source.
+        focus positions for each element in `frames`
 
     """
-    # fixme - remove all the bytes stuff
-    # fixme - at the moment does not correct for offset piezo's offset between ProtocolFocus and OnTarget positions.
-    #   since we normally reject frames before the OnTarget maybe not a huge deal, but might we worth fixing.
-    ontarget_times, ontarget_positions = [], []
-    for event in events:
-        if event['EventName'] == b'PiezoOnTarget':
-            ontarget_times.append(float(event['Time']))
-            ontarget_positions.append(float(event['EventDescr']))
+    normalized_events = normalize_ontarget_events(events, metadata)
 
-    ontarget_times = np.asarray(ontarget_times)
-    ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
-
-    # spoof ProtocolFocus events from PiezoOnTarget events
-    bonus_events = np.empty(len(events) + len(ontarget_times),
-                            dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
-    bonus_events[:len(events)][:] = events[:]
-    bonus_events[len(events):]['EventName'] = b'ProtocolFocus'
-    bonus_events[len(events):]['Time'] = ontarget_times
-    bonus_events[len(events):]['EventDescr'] = [', '.join((str(f), str(p))) for f, p in zip(ontarget_frames, ontarget_positions)]
-
-
-    focus_mapping = piecewise_mapping.GeneratePMFromEventList(bonus_events, metadata, metadata['StartTime'],
-                                                              metadata.getOrDefault('Protocol.PiezoStartPos',
-                                                                                    ontarget_positions[0]))
+    focus_mapping = piecewise_mapping.GeneratePMFromEventList(normalized_events, metadata, metadata['StartTime'],
+                                                              metadata.getOrDefault('Protocol.PiezoStartPos', 0.))
 
     return focus_mapping(frames)
 
 def normalize_ontarget_events(events, metadata):
+    """
+    Generates a acquisition event array where events from piezo's with offsets and/or on-target events are spoofed to
+    look like standard ProtocolFocus events.
+
+    Parameters
+    ----------
+    events: list or structured ndarray
+        acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
+    Returns
+    -------
+    bonus_events: ndarray
+        events with piezo offsets accounted for and PiezoOnTarget events spoofed as ProtocolFocus events
+
+    """
+    # fixme - remove bytes junk from event dtype
     ontarget_times, ontarget_positions = [], []
     for event in events:
         if event['EventName'] == b'PiezoOnTarget':
