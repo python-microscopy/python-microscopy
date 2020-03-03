@@ -976,6 +976,7 @@ class FlagPiezoMovement(ModuleBase):
     """
     """
     input_name = Input('localizations')
+    input_events = Input('')
     column_name = CStr('piezo_moving')
     output_name = Output('motion_flagged')
 
@@ -983,10 +984,11 @@ class FlagPiezoMovement(ModuleBase):
         from PYME.Analysis.points import piezo_movement_correction
 
         points = namespace[self.input_name]
+        events = namespace[self.input_events] if self.input_events != '' else points.events
 
         mapped = tabular.MappingFilter(points)
 
-        moving = piezo_movement_correction.flag_piezo_movement(points['t'], points.events, points.mdh)
+        moving = piezo_movement_correction.flag_piezo_movement(points['t'], events, points.mdh)
 
         mapped.addColumn(self.column_name, moving)
 
@@ -1000,6 +1002,7 @@ class CorrectFocusTargets(ModuleBase):
     """
     """
     input_name = Input('localizations')
+    input_events = Input('')
     column_name = CStr('focus')
     output_name = Output('target_focus_corrected')
 
@@ -1007,10 +1010,11 @@ class CorrectFocusTargets(ModuleBase):
         from PYME.Analysis.points import piezo_movement_correction
 
         points = namespace[self.input_name]
+        events = namespace[self.input_events] if self.input_events != '' else points.events
 
         mapped = tabular.MappingFilter(points)
 
-        focus = piezo_movement_correction.correct_target_positions(points['t'], points.events, points.mdh)
+        focus = piezo_movement_correction.correct_target_positions(points['t'], events, points.mdh)
 
         mapped.addColumn(self.column_name, focus)
 
