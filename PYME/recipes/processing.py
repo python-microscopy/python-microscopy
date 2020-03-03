@@ -1754,7 +1754,7 @@ class ResampleZ(ModuleBase):
     output = Output('regular_stack')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis.points import piezo_movement_correction
         from scipy.interpolate import RegularGridInterpolator
 
         stack = namespace[self.input]
@@ -1762,11 +1762,7 @@ class ResampleZ(ModuleBase):
         # grab z from events if we can
         frames = np.arange(stack.data.shape[2], dtype=int)
 
-        # GeneratePMFromEventList internally handles converting time stamps to frame numbers
-        z_mapping = piecewiseMapping.GeneratePMFromEventList(stack.events, stack.mdh,
-                                                             stack.mdh['StartTime'],
-                                                             stack.mdh['Protocol.PiezoStartPos'])
-        z_vals = z_mapping(frames)
+        z_vals = piezo_movement_correction.correct_target_positions(frames, stack.events, stack.mdh)
 
         x = np.arange(0, stack.mdh['voxelsize.x'] * stack.data.shape[0], stack.mdh['voxelsize.x'])
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
