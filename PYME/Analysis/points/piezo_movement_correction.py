@@ -105,3 +105,28 @@ def correct_target_positions(frames, events, metadata):
                                                                                     ontarget_positions[0]))
 
     return focus_mapping(frames)
+
+def normalize_ontarget_events(events, metadata):
+    ontarget_times, ontarget_positions = [], []
+    for event in events:
+        if event['EventName'] == b'PiezoOnTarget':
+            ontarget_times.append(float(event['Time']))
+            ontarget_positions.append(float(event['EventDescr']))
+
+    offset_map = piecewise_mapping.GeneratePMFromEventList(events, metadata, 0, 0, eventName=b'PiezoOffsetUpdate',
+                                                           dataPos=0)
+
+    ontarget_times = np.asarray(ontarget_times)
+    ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
+
+
+    # spoof ProtocolFocus events from PiezoOnTarget events
+    bonus_events = np.empty(len(events) + len(ontarget_times),
+                            dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
+    bonus_events[:len(events)][:] = events[:]
+    bonus_events[len(events):]['EventName'] = b'ProtocolFocus'
+    bonus_events[len(events):]['Time'] = ontarget_times
+    bonus_events[len(events):]['EventDescr'] = [', '.join((str(f), str(p - offset_map(np.asarray([f]))[0]))) for f, p in
+                                                zip(ontarget_frames, ontarget_positions)]
+
+    return bonus_events
