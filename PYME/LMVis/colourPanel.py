@@ -290,7 +290,7 @@ class colourPanel(wx.Panel):
         if ret == wx.ID_OK:
             val = float(dlg.tVal.GetValue())
 
-            key = dlg.tKey.GetValue().encode()
+            key = dlg.tKey.GetValue()
 
             if key == "":
                 return
