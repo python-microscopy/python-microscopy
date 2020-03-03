@@ -303,6 +303,7 @@ class PSFTools(HasTraits):
         from PYME.Analysis.PSFEst import extractImages
         import wx
         from PYME.Analysis.points.astigmatism import astigTools
+        import sys
 
         # query user for type of calibration
         # NB - GPU fit is not enabled here because it exits on number of iterations, which is not necessarily convergence for very bright beads!
@@ -408,8 +409,7 @@ class PSFTools(HasTraits):
         #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
         #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
 
-
-        if use_web_view:
+        if use_web_view and (sys.platform != 'linux' and int(wx.version()[0]) > 3):  # fixme - remove special case once PYME github issue #94 is resolved
             fig = mpld3.fig_to_html(f)
             data = json.dumps(results)
 
