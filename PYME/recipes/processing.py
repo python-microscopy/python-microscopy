@@ -1767,6 +1767,9 @@ class ResampleZ(ModuleBase):
         xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
                                  indexing='ij')
         # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
+        uni, counts = np.unique(z_vals, return_counts=True)
+        if np.any(counts > 1):
+            raise RuntimeError('Resampling requires one frame per z-step. Please run AverageFramesByZStep first')
         I = np.argsort(z_vals)
         sorted_z_vals = z_vals[I]
         regular = []
