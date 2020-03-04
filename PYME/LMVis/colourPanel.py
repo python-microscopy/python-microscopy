@@ -290,12 +290,12 @@ class colourPanel(wx.Panel):
         if ret == wx.ID_OK:
             val = float(dlg.tVal.GetValue())
 
-            key = dlg.tKey.GetValue()
+            key = str(dlg.tKey.GetValue())  # unicode builds of wx 3 return a unicode str, which breaks wx.ListCtrl.InsertStringItem
 
             if key == "":
                 return
 
-            self.pipeline.colour_mapper.species_ratios[key] = float(val)
+            self.pipeline.colour_mapper.species_ratios[key] = val
 
             ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
