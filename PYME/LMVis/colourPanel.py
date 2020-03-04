@@ -290,7 +290,7 @@ class colourPanel(wx.Panel):
         if ret == wx.ID_OK:
             val = float(dlg.tVal.GetValue())
 
-            key = str(dlg.tKey.GetValue())  # unicode builds of wx 3 return a unicode str, which breaks wx.ListCtrl.InsertStringItem
+            key = str(dlg.tKey.GetValue())  # unicode builds of wx3 return a unicode str, which breaks wx.ListCtrl.InsertStringItem (on py2)
 
             if key == "":
                 return
