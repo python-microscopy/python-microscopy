@@ -256,7 +256,9 @@ class ProcessColour(ModuleBase):
                     cr = mdh['Protocol.ColorRange%d' % i]
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
                     
-        namespace[self.output] = output
+        cached_output = tabular.CachingResultsFilter(output)
+        cached_output.mdh = output.mdh
+        namespace[self.output] = cached_output
 
 
 @register_module('TimeBlocks')
