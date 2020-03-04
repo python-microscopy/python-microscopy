@@ -150,7 +150,7 @@ class DataSource(BaseDataSource):
             print((self.path))
             
             #tf = tifffile.TIFFfile(self.filename)
-            self.bff = BioformatsFile(path)
+            self.bff = BioformatsFile(path, url)
 
         if series is not None:
             self.bff.rdr.setSeries(series)
