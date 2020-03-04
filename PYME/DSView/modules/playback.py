@@ -122,7 +122,7 @@ class PlayPanel(wx.Panel):
 
     def OnFrame(self):
         self.do.zp +=1
-        if self.do.zp >= self.do.ds.shape[2]:
+        if self.do.zp >= (self.do.ds.shape[2]-1):
             self.do.zp = 0
 
         #self.vp.update()
