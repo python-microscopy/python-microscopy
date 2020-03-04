@@ -200,7 +200,7 @@ class GenImageDialog(wx.Dialog):
 
     def getJitterVariable(self):
         try:
-            return self.cJitterVariable.GetStringSelection()
+            return str(self.cJitterVariable.GetStringSelection())
         except AttributeError:
             return 0
 
@@ -212,7 +212,7 @@ class GenImageDialog(wx.Dialog):
 
     def getJitterVariableZ(self):
         try:
-            return self.cJitterVariableZ.GetStringSelection()
+            return str(self.cJitterVariableZ.GetStringSelection())
         except AttributeError:
             return 0
 
@@ -236,7 +236,7 @@ class GenImageDialog(wx.Dialog):
 
     def getColour(self):
         if 'colours' in dir(self):
-            return [self.lColour.GetString(n).encode() for n in self.lColour.GetSelections()]
+            return [str(self.lColour.GetString(n)) for n in self.lColour.GetSelections()]
         else:
             return [None]
 
