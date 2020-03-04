@@ -304,13 +304,17 @@ class BaseHDFSource(FitResultsSource):
         
         if isinstance(h5fFile, tables.file.File):
             try:
-                self.fitResults = getattr(h5fFile.root, tablename)[:]
+                fr = getattr(h5fFile.root, tablename)
+                self.fitResults = fr[:]
+                
+                #allow access using unnested original names
+                self._keys = unNestNames(fr.description._v_nested_names)
+
             except (AttributeError, tables.NoSuchNodeError):
                 logger.exception('Was expecting to find a "%s" table' % tablename)
                 raise
     
-            #allow access using unnested original names
-            self._keys = unNestNames(getattr(h5fFile.root, tablename).description._v_nested_names)
+            
         
         else:
             if isinstance(h5fFile, h5rFile.H5RFile):
@@ -352,7 +356,9 @@ class H5RSource(BaseHDFSource):
 
         #sort by time
         if 'tIndex' in self._keys:
-            self.fitResults.sort(order='tIndex')
+            I = self.fitResults['tIndex'].argsort()
+            self.fitResults = self.fitResults[I]
+            #self.fitResults.sort(order='tIndex')
         
 
     def getInfo(self):
@@ -382,7 +388,8 @@ class HDFSource(H5RSource):
 
         #sort by time
         if 'tIndex' in self._keys:
-            self.fitResults.sort(order='tIndex')
+            I = self.fitResults['tIndex'].argsort()
+            self.fitResults = self.fitResults[I]
 
     def keys(self):
         return self._keys #+ self.transkeys.keys()
