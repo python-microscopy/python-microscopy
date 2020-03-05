@@ -868,15 +868,25 @@ class ImageStack(object):
             self.mode = 'LM'
             
         
-    def _loadBioformats(self, filename, series_num=None):
-        #from PYME.IO.FileUtils import readTiff
-        from PYME.IO.DataSources import BioformatsDataSource
-        
+    def _loadBioformats(self, filename):
         try:
             import bioformats
         except ImportError:
             logger.exception('Error importing bioformats - is the python-bioformats module installed?')
             raise
+            
+        from PYME.IO.DataSources import BioformatsDataSource
+        series_num = None
+        
+        if '?' in filename:
+            #we have a query string to pick the series
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                series_num = int(urllib.parse.parse_qs(query)['series'][0])
+            except KeyError:
+                pass
 
         #mdfn = self.FindAndParseMetadata(filename)
         print("Bioformats:loading data")
