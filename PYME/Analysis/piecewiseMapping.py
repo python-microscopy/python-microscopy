@@ -214,6 +214,25 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
 
     return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
+def bool_map_between_events(events, metadata, trigger_high, trigger_low, default=False):
+    t, y = [], []
+
+    fps = metadata.getEntry('Camera.CycleTime')
+
+    for event in events:
+        if event['EventName'] == trigger_high:
+            t.append(event['Time'])
+            y.append(True)
+        elif event['EventName'] == trigger_low:
+            t.append(event['Time'])
+            y.append(False)
+
+    t = np.asarray(t)
+    y = np.asarray(y)
+    I = np.argsort(t)
+
+    return piecewiseMap(default, times_to_frames(t[I], events, metadata), y[I], fps, xIsSecs=False)
+
 def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0):
     x = []
     y = []
