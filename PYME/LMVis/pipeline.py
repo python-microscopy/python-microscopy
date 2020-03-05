@@ -274,8 +274,6 @@ class Pipeline:
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
-        self.colour_mapper = None
-
         self.blobSettings = BlobSettings()
         self.objects = None
 
@@ -783,15 +781,30 @@ class Pipeline:
         from PYME.recipes.localisations import ProcessColour
         from PYME.recipes.tablefilters import FilterTable
         
-        self.colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
         #we keep a copy of this so that the colour panel can find it.
-        self.recipe.add_module(self.colour_mapper)
+        self.recipe.add_module(colour_mapper)
         self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
+        
+    @property
+    def colour_mapper(self):
+        """ Search for a colour mapper rather than use a hard coded reference - allows loading of saved pipelines with colour mapping"""
+        from PYME.recipes.localisations import ProcessColour
+        
+        # find ProcessColour instance(s) in the pipeline
+        mappers = [m for m in self.recipe.modules if isinstance(m, ProcessColour)]
+        
+        if len(mappers) > 0:
+            #return the first mapper we find
+            return mappers[0]
+        
+        else:
+            return None
 
     def OpenChannel(self, filename='', ds=None, channel_name='', **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
