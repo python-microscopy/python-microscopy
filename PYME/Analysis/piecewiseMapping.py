@@ -213,7 +213,7 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
 
 def bool_map_between_events(events, metadata, trigger_high, trigger_low, default=False):
     """
-    generate a TTL output mapping using events to trigger high/low
+    generate a TTL output mapping [input time in units of frames] using events to trigger high/low
 
     Parameters
     ----------
