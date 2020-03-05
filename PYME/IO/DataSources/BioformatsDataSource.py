@@ -65,14 +65,14 @@ from .BaseDataSource import BaseDataSource
 
 
 class BioformatsFile(bioformats.ImageReader):
-    def __init__(self, path=None, url=None, perform_init=True):
+    def __init__(self, *args, **kwargs):
         # self.path is always the file path or the url, whichever is specified
         # url overrides a file path 
         ensure_VM()
         self._md = None
         self._series_count = None
         self._series_names = None
-        super(BioformatsFile, self).__init__(path, url, perform_init)
+        super(BioformatsFile, self).__init__(self, *args, **kwargs)
 
     @property
     def series_count(self):
@@ -85,8 +85,7 @@ class BioformatsFile(bioformats.ImageReader):
         if self._md is None:
             self._md = []
             _io = self.rdr.getSeries()
-            idxs = np.arange(self.series_count)
-            for _i in idxs:
+            for _i in range(self.series_count):
                 self.rdr.setSeries(_i)
                 series_md = javabridge.jutil.jdictionary_to_string_dictionary(self.rdr.getSeriesMetadata())
                 self._md.append(series_md)
@@ -98,13 +97,14 @@ class BioformatsFile(bioformats.ImageReader):
         # return a list of series names in the file
         if self._series_names is None:
             self._series_names = []
-            idxs = np.arange(self.series_count)
-            try:
-                for _i in idxs:
+            
+            for _i in range(self.series_count):
+                try:
                     self._series_names.append(self.md[_i]['Image name'])
-            except(KeyError):
-                print('Image names not found, naming by integers.')
-                self._series_names = ['Image {}'.format(_i) for _i in idxs.astype(str)]
+                except(KeyError):
+                    print('Image names not found, naming by integers.')
+                    self._series_names.append('Image {}'.format(_i))
+                    
         return self._series_names
 
     def __del__(self):
@@ -112,46 +112,16 @@ class BioformatsFile(bioformats.ImageReader):
 
 class DataSource(BaseDataSource):
     moduleName = 'BioformatsDataSource'
-    def __init__(self, path=None, url=None, taskQueue=None, chanNum = 0, series=None):
+    def __init__(self, image_file, taskQueue=None, chanNum = 0, series=None):
         self.chanNum = chanNum
 
-        if isinstance(path, BioformatsFile):
-            self.bff = path
+        if isinstance(image_file, BioformatsFile):
+            self.bff = image_file
         else:
-            if url is not None:
-                path = url
-            self.path = getFullExistingFilename(path)#convert relative path to full path
-            
-            #self.data = readTiff.read3DTiff(self.filename)
+            self.filename = getFullExistingFilename(image_file)#convert relative path to full path
 
-            #self.im = Image.open(filename)
-
-            #self.im.seek(0)
-
-            #PIL's endedness support is subtly broken - try to fix it
-            #NB this is untested for floating point tiffs
-            #self.endedness = 'LE'
-            #if self.im.ifd.prefix =='MM':
-            #    self.endedness = 'BE'
-
-            #to find the number of images we have to loop over them all
-            #this is obviously not ideal as PIL loads the image data into memory for each
-            #slice and this is going to represent a huge performance penalty for large stacks
-            #should still let them be opened without having all images in memory at once though
-            #self.numSlices = self.im.tell()
-            
-            #try:
-            #    while True:
-            #        self.numSlices += 1
-            #        self.im.seek(self.numSlices)
-                    
-            #except EOFError:
-            #    pass
-
-            print((self.path))
-            
-            #tf = tifffile.TIFFfile(self.filename)
-            self.bff = BioformatsFile(path, url)
+            print(self.filename)
+            self.bff = BioformatsFile(self.filename)
 
         if series is not None:
             self.bff.rdr.setSeries(series)
