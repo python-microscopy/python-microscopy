@@ -73,7 +73,7 @@ class LUTOverlayLayer(OverlayLayer):
             
             lb_width = self._lut_width_px * view_size_x / gl_canvas.Size[0]
             
-            visible_layers = [l for l in gl_canvas.layers if getattr(l, 'visble', True)]
+            visible_layers = [l for l in gl_canvas.layers if (getattr(l, 'visible', True) and getattr(l, 'show_lut', True))]
             
             for j, l in enumerate(visible_layers):
                 cmap = l.colour_map
@@ -83,10 +83,7 @@ class LUTOverlayLayer(OverlayLayer):
                 
                 # upper left x
                 lb_ul_x = lb_ur_x - lb_width
-          
-    
-                
-    
+
                 glBegin(GL_QUAD_STRIP)
     
                 for i in numpy.arange(0, 1.01, .01):
