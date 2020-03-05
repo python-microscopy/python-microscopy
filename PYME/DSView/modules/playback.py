@@ -125,10 +125,6 @@ class PlayPanel(wx.Panel):
             self.d0.zp = 0
         else:
             self.do.zp +=1
-        if self.do.zp >= (self.do.ds.shape[2]-1):
-            self.do.zp = 0
-
-        #self.vp.update()
 
     def OnSeekStart(self, event):
         self.do.zp = 0
