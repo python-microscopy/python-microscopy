@@ -212,6 +212,27 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
     return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 def bool_map_between_events(events, metadata, trigger_high, trigger_low, default=False):
+    """
+    generate a TTL output mapping using events to trigger high/low
+
+    Parameters
+    ----------
+    events: list or structured ndarray
+        acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
+    trigger_high: bytes
+        name of event to set output mapping high
+    :param trigger_low: bytes
+        name of event to set output mapping low
+    :param default: bool
+        start mapping low (False) or high (True) at t=0
+
+    Returns
+    -------
+    bool_map: piecewiseMap
+        callable mapping object
+    """
     t, y = [], []
 
     fps = metadata.getEntry('Camera.CycleTime')
