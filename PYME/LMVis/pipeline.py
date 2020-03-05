@@ -113,17 +113,25 @@ def _add_eventvars_to_ds(ds, ev_mappings):
         z_focus = 1.e3 * zm(ds['t'])
         ds.addColumn('focus', z_focus)
 
+        # handle additional focus related events, if present
+        corrected_focus_mapping = ev_mappings.get('corrected_focus')
+        if corrected_focus_mapping:
+            ds.addColumn('ontarget_focus_correction', (1e3 * corrected_focus_mapping(ds['t'])) - ds['focus'])
+
+        piezo_moving = ev_mappings.get('piezo_moving')
+        if piezo_moving:
+            ds.addColumn('piezo_moving', piezo_moving(ds['t']))
+
     xm = ev_mappings.get('xm', None)
     if xm:
+        # todo - comment on why the -0.01??
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
-        #ds.setMapping('x', 'x + scanx')
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
-        #ds.setMapping('y', 'y + scany')
 
     driftx = ev_mappings.get('driftx', None)
     drifty = ev_mappings.get('drifty', None)
@@ -166,23 +174,27 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     if not 'y' in mapped_ds.keys():
         mapped_ds.setMapping('y', '10*t')
 
-    #set up correction for foreshortening and z focus stepping
+    # set up correction for foreshortening and z focus stepping
     if not 'foreShort' in dir(mapped_ds):
         mapped_ds.addVariable('foreShort', 1.)
-
+    if 'ontarget_focus_correction' not in mapped_ds.keys():
+        mapped_ds.addVariable('ontarget_focus_correction', 0)
     if not 'focus' in mapped_ds.keys():
-        #set up a dummy focus variable if not already present
+        # set up a dummy focus variable if not already present
         mapped_ds.setMapping('focus', '0*x')
+
+    if not 'corrected_focus' in mapped_ds.keys():
+        mapped_ds.setMapping('corrected_focus', 'foreShort * (focus + ontarget_focus_correction)')
 
     if not 'z' in mapped_ds.keys():
         if 'fitResults_z0' in mapped_ds.keys():
-            mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
+            mapped_ds.setMapping('z', 'fitResults_z0 + corrected_focus')
         elif 'astigmatic_z' in mapped_ds.keys():
-            mapped_ds.setMapping('z', 'astigmatic_z + foreShort*focus')
+            mapped_ds.setMapping('z', 'astigmatic_z + corrected_focus')
         elif 'astigZ' in mapped_ds.keys():  # legacy handling
-            mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
+            mapped_ds.setMapping('z', 'astigZ + corrected_focus')
         else:
-            mapped_ds.setMapping('z', 'foreShort*focus')
+            mapped_ds.setMapping('z', 'corrected_focus')
 
     if not 'A' in mapped_ds.keys() and 'fitResults_photons' in mapped_ds.keys():
         mapped_ds.setMapping('A', 'fitResults_photons')
@@ -202,12 +214,16 @@ def _processEvents(ds, events, mdh):
             evKeyNames.add(e['EventName'])
 
         if b'ProtocolFocus' in evKeyNames:
-            from PYME.Analysis.piezo_movement_correction import normalize_ontarget_events
-            normalized_focus_events = normalize_ontarget_events(events, mdh)
-            zm = piecewiseMapping.GeneratePMFromEventList(normalized_focus_events,
-                                                          mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
+            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+
+        if b'PiezoOnTarget' in evKeyNames:
+            from PYME.Analysis.piezo_movement_correction import flag_piezo_movement, map_corrected_focus
+            corrected_focus_mapping = map_corrected_focus(events, mdh)
+            piezo_unstable_mapping = flag_piezo_movement(events, mdh)
+            ev_mappings['corrected_focus'] = corrected_focus_mapping
+            ev_mappings['piezo_moving'] = piezo_unstable_mapping
 
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
