@@ -61,6 +61,27 @@ def flag_piezo_movement(frames, events, metadata):
 
     return moving
 
+def map_corrected_focus(events, metadata):
+    """
+    ProtocolFocus event descriptions list the intended focus target. Some piezos have a target tolerance and log their
+    landing position with PiezoOnTarget. PiezoOffsetUpdate events are also accounted for.
+
+    Parameters
+    ----------
+    events: list or structured ndarray
+        acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
+
+    Returns
+    -------
+    focus_mapping: PYME.Analysis.piecewiseMapping.piecewiseMap
+        callable function to return focus positions for each input frame number
+
+    """
+    normalized_events = normalize_ontarget_events(events, metadata)
+    return piecewise_mapping.GeneratePMFromEventList(normalized_events, metadata, metadata['StartTime'],
+                                                              metadata.getOrDefault('Protocol.PiezoStartPos', 0.))
 def correct_target_positions(frames, events, metadata):
     """
     ProtocolFocus event descriptions list the intended focus target. Some piezos have a target tolerance and log their
@@ -81,11 +102,7 @@ def correct_target_positions(frames, events, metadata):
         focus positions for each element in `frames`
 
     """
-    normalized_events = normalize_ontarget_events(events, metadata)
-
-    focus_mapping = piecewise_mapping.GeneratePMFromEventList(normalized_events, metadata, metadata['StartTime'],
-                                                              metadata.getOrDefault('Protocol.PiezoStartPos', 0.))
-
+    focus_mapping = map_corrected_focus(events, metadata)
     return focus_mapping(frames)
 
 def normalize_ontarget_events(events, metadata):
