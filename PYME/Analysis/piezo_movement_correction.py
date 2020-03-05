@@ -23,43 +23,28 @@ def flag_piezo_movement(frames, events, metadata):
 
     """
 
-    moving = np.zeros_like(frames, dtype=bool)
+    piezo_moving = map_piezo_moving(events, metadata)
+    return piezo_moving(frames)
 
-    focus_frames, focus_times, ontarget_times, = [], [], []
-    for event in events:
-        # fixme - bytes don't belong here
-        if event['EventName'] == b'ProtocolFocus':
-            # ProtocolFocus description is 'frame#, position'
-            f_frame, f_position = event['EventDescr'].split(b',')
-            focus_frames.append(float(f_frame))
-            focus_times.append(event['Time'])
+def map_piezo_moving(events, metadata):
+    """
+    Generates mapping function to flag whether input frames are between ProtocolFocus and PiezoOnTarget events.
 
-        # fixme - bytes don't belong here
-        if event['EventName'] == b'PiezoOnTarget':
-            ontarget_times.append(float(event['Time']))
+    Parameters
+    ----------
+    events: list or structured ndarray
+        acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
 
-    # convert to arrays
-    focus_frames = np.asarray(focus_frames, dtype=int)
-    ontarget_times = np.asarray(ontarget_times)
+    Returns
+    -------
+    piezo_moving: PYME.Analysis.piecewiseMapping.piecewiseMap
+        callable object returning True for input frame numbers where the piezo is not settled.
 
-    # convert on-target times to frames
-    ontarget_frames = piecewise_mapping.times_to_frames(ontarget_times, events, metadata).astype(int)
-
-    # now go through each ProtocolFocus and flag localizations in between that and the closest on-target
-    for frame in focus_frames:
-        # find the next on-target
-        valid_ontargets = ontarget_frames > frame
-        ot_inds = np.argsort(ontarget_frames - frame)
-        try:
-            ot_ind = ot_inds[valid_ontargets][0]
-            ontarget_frame = ontarget_frames[ot_ind]
-        except IndexError:
-            ontarget_frame =frames.max() + 1  # flag to the last localization
-        # fixme - do we need to do anything about StartAc events here?
-        # flag frames, inclusively between firing the focus change and knowing we're settled
-        moving[np.logical_and(frames >= frame, frames <= ontarget_frame)] = True
-
-    return moving
+    """
+    return piecewise_mapping.bool_map_between_events(events, metadata, b'ProtocolFocus', b'PiezoOnTarget',
+                                                     default=False)
 
 def map_corrected_focus(events, metadata):
     """

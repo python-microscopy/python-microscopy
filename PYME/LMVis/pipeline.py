@@ -219,9 +219,9 @@ def _processEvents(ds, events, mdh):
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         if b'PiezoOnTarget' in evKeyNames:
-            from PYME.Analysis.piezo_movement_correction import flag_piezo_movement, map_corrected_focus
+            from PYME.Analysis.piezo_movement_correction import map_piezo_moving, map_corrected_focus
             corrected_focus_mapping = map_corrected_focus(events, mdh)
-            piezo_unstable_mapping = flag_piezo_movement(events, mdh)
+            piezo_unstable_mapping = map_piezo_moving(events, mdh)
             ev_mappings['corrected_focus'] = corrected_focus_mapping
             ev_mappings['piezo_moving'] = piezo_unstable_mapping
 
