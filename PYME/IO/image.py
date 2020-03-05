@@ -869,20 +869,44 @@ class ImageStack(object):
             
         
     def _loadBioformats(self, filename):
-        #from PYME.IO.FileUtils import readTiff
-        from PYME.IO.DataSources import BioformatsDataSource
-        
         try:
             import bioformats
         except ImportError:
             logger.exception('Error importing bioformats - is the python-bioformats module installed?')
             raise
+            
+        from PYME.IO.DataSources import BioformatsDataSource
+        series_num = None
+        
+        if '?' in filename:
+            #we have a query string to pick the series
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                series_num = int(urllib.parse.parse_qs(query)['series'][0])
+            except KeyError:
+                pass
 
         #mdfn = self.FindAndParseMetadata(filename)
         print("Bioformats:loading data")
-        self.dataSource = BioformatsDataSource.DataSource(filename, None)
+        bioformats_file = BioformatsDataSource.BioformatsFile(filename)
+        if series_num is None and bioformats_file.series_count > 1:
+            print('File has multiple series, need to pick one.')
+
+            if self.haveGUI:
+                import wx
+                dlg = wx.SingleChoiceDialog(None, 'Series', 'Select a series', bioformats_file.series_names)
+                if dlg.ShowModal() == wx.ID_OK:
+                    series_num = dlg.GetSelection()
+            else:
+                logger.warning('No GUI, using 0th series.')
+
+        self.dataSource = BioformatsDataSource.DataSource(bioformats_file, series=series_num)
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
         
+        # NOTE: We are triple-loading metadata. BioformatsDataSource.BioformatsFile.rdr has metadata (hard to access), 
+        # BioformatsDataSource.BioformatsFile has metadata, and now we are loading the same metadata again here.
         print("Bioformats:loading metadata")
         OMEXML = bioformats.get_omexml_metadata(filename).encode('utf8')
         print("Bioformats:parsing metadata")
