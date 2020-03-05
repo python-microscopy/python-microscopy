@@ -13,7 +13,7 @@ class FlagPiezoMovement(ModuleBase):
     output_name = Output('motion_flagged')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import piezo_movement_correction
+        from PYME.Analysis import piezo_movement_correction
 
         points = namespace[self.input_name]
         events = namespace[self.input_events] if self.input_events != '' else points.events
@@ -39,7 +39,7 @@ class CorrectFocusTargets(ModuleBase):
     output_name = Output('target_focus_corrected')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import piezo_movement_correction
+        from PYME.Analysis import piezo_movement_correction
 
         points = namespace[self.input_name]
         events = namespace[self.input_events] if self.input_events != '' else points.events

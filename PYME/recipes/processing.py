@@ -257,7 +257,6 @@ class OpticalFlow(ModuleBase):
         return flow_x, flow_y
         
     def execute(self, namespace):
-        import multiprocessing
         image = namespace[self.inputName]
         flow_x = []
         flow_y = []
@@ -336,7 +335,6 @@ class WavefrontVelocity(ModuleBase):
         
     
     def execute(self, namespace):
-        from skimage.measure import profile_line
         print('Calculating wavefront velocities')
         wavefronts = namespace[self.inputWavefronts]
         
@@ -1061,7 +1059,7 @@ class Deconvolve(Filter):
     _decCache = {}
 
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
@@ -1252,7 +1250,6 @@ class DeconvolveMotionCompensating(Deconvolve):
         return self._decCache[decKey]
     
     def applyFilter(self, data, chanNum, frNum, im):
-        from PYME.Analysis import optic_flow
         d = np.atleast_3d(data.astype('f') - self.offset)
     
         #Pad the data (if desired)
@@ -1298,7 +1295,7 @@ class DeconvolveMotionCompensating(Deconvolve):
         return res
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
@@ -1673,7 +1670,7 @@ class AverageFramesByZStep(ModuleBase):
     output = Output('averaged_by_frame')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import piezo_movement_correction
+        from PYME.Analysis import piezo_movement_correction
         from scipy.stats import mode
         import time
 
@@ -1750,7 +1747,7 @@ class ResampleZ(ModuleBase):
     output = Output('regular_stack')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import piezo_movement_correction
+        from PYME.Analysis import piezo_movement_correction
         from scipy.interpolate import RegularGridInterpolator
 
         stack = namespace[self.input]

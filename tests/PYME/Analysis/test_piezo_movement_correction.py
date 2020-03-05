@@ -24,13 +24,13 @@ TEST_MDH['Camera.CycleTime'] = 0.00125
 TEST_MDH['StartTime'] = 0
 
 def test_flag_piezo_movement():
-    from PYME.Analysis.points.piezo_movement_correction import flag_piezo_movement
+    from PYME.Analysis.piezo_movement_correction import flag_piezo_movement
 
     moving = flag_piezo_movement(TEST_DATA_SOURCE['t'], TEST_EVENTS, TEST_MDH)
     assert np.all(moving[np.where(TEST_DATA_SOURCE['t'] >= 2401)])
     assert not np.all(np.all(moving[np.where(TEST_DATA_SOURCE['t'] >= 2400)]))
 
 def test_focus_correction():
-    from PYME.Analysis.points.piezo_movement_correction import correct_target_positions
+    from PYME.Analysis.piezo_movement_correction import correct_target_positions
     corrected_focus = correct_target_positions(TEST_DATA_SOURCE['t'], TEST_EVENTS, TEST_MDH)
     # fixme - write an actual test

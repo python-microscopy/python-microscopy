@@ -25,7 +25,6 @@ from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
-from PYME.LMVis import renderers
 from PYME.LMVis.triBlobs import BlobSettings
 
 from PYME.Analysis import piecewiseMapping
@@ -203,7 +202,7 @@ def _processEvents(ds, events, mdh):
             evKeyNames.add(e['EventName'])
 
         if b'ProtocolFocus' in evKeyNames:
-            from PYME.Analysis.points.piezo_movement_correction import normalize_ontarget_events
+            from PYME.Analysis.piezo_movement_correction import normalize_ontarget_events
             normalized_focus_events = normalize_ontarget_events(events, mdh)
             zm = piecewiseMapping.GeneratePMFromEventList(normalized_focus_events,
                                                           mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
