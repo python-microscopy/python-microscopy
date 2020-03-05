@@ -27,7 +27,8 @@
 # except:
 #     pass
 
-# Try/pass loop removed to reveal loading issues
+# Try/pass removed to reveal loading issues
+# unclear why try ... pass block was present in the first place TODO - check for potential regressions caused by removal
 import javabridge
 import bioformats
 
