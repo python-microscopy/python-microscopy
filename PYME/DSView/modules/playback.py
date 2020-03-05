@@ -121,11 +121,10 @@ class PlayPanel(wx.Panel):
             self.bPlay.SetBitmapLabel(self.bmPlay)
 
     def OnFrame(self):
-        self.do.zp +=1
-        if self.do.zp >= self.do.ds.shape[2]:
-            self.do.zp = 0
-
-        #self.vp.update()
+        if self.do.zp >= (self.do.ds.shape[2]-1):
+            self.d0.zp = 0
+        else:
+            self.do.zp +=1
 
     def OnSeekStart(self, event):
         self.do.zp = 0
