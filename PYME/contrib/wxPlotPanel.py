@@ -42,9 +42,12 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
         #self.draw()
 
         self._resizeflag = False
+        
+        self._vis_flag = False
 
         self.Bind(wx.EVT_IDLE, self._onIdle)
         self.Bind(wx.EVT_SIZE, self._onSize)
+        self.Bind(wx.EVT_SET_FOCUS, lambda e: self.draw())
 
     def SetColor( self, rgbtuple=None ):
         """Set figure and canvas colours to be the same."""
@@ -64,6 +67,15 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
         if self._resizeflag:
             self._resizeflag = False
             self._SetSize()
+            
+        #print(self.IsShown())
+        if self.IsShownOnScreen():
+            if not self._vis_flag:
+                #print('s')
+                self._vis_flag = True
+                self.draw()
+        else:
+            self._vis_flag = False
 
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
@@ -73,7 +85,7 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
             self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
                                          float( pixels[1] )/self.figure.get_dpi() )
             try:
-                if self.IsShown():
+                if self.IsShownOnScreen():
                     self.draw()
             except:
                 pass

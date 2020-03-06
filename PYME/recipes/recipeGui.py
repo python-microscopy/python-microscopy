@@ -289,7 +289,7 @@ class RecipeView(wx.Panel):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.bNewRecipe = wx.Button(self, -1, 'New Recipe')
+        self.bNewRecipe = wx.Button(self, -1, 'Clear Recipe')
         hsizer.Add(self.bNewRecipe, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bNewRecipe.Bind(wx.EVT_BUTTON, self.OnNewRecipe)
 
@@ -320,7 +320,7 @@ class RecipeView(wx.Panel):
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
-        self.bApply = wx.Button(self, -1, 'Apply')
+        self.bApply = wx.Button(self, -1, 'Apply Text Changes')
         vsizer.Add(self.bApply, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
                                        
