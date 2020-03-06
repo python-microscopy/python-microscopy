@@ -92,6 +92,7 @@ class ModuleBase(HasTraits):
     @on_trait_change('anytrait')
     def invalidate_parent(self):
         if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
+            #print('invalidating')
             self._parent.prune_dependencies_from_namespace(self.outputs)
             
             self._parent.invalidate_data()
@@ -219,6 +220,23 @@ class ModuleBase(HasTraits):
                 pass
 
         return HasTraits.trait_view(self, name, view_element)
+    
+    def edit_no_invalidate(self, *args, **kwargs):
+        inv_mode = self._invalidate_parent
+        
+        try:
+            #print('turning off invalidation')
+            self._invalidate_parent = False
+            old_traits = self.get()
+            #print('edit_traits')
+            self.edit_traits(*args, **kwargs, kind='modal')
+            self._invalidate_parent = inv_mode
+            if not self.get() == old_traits:
+                #print('invalidating ...')
+                self.invalidate_parent()
+        finally:
+            self._invalidate_parent = inv_mode
+        
 
     @property
     def hide_in_overview(self):

@@ -397,7 +397,7 @@ class RecipeView(wx.Panel):
             def closed(self, info, is_ok):
                 wx.CallLater(10, p.update)
         
-        k.edit_traits(handler=MControl())
+        k.edit_no_invalidate(handler=MControl())
         
         
 class RecipeManager(object):
