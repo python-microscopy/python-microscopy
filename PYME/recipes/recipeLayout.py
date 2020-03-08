@@ -414,7 +414,7 @@ def to_svg(dg):
     import svgwrite
     node_positions, connecting_lines = layout(dg)
 
-    ipsv = np.array(node_positions.values())
+    ipsv = np.array(list(node_positions.values()))
     try:
         xmn, ymn = ipsv.min(0)
         xmx, ymx = ipsv.max(0)
