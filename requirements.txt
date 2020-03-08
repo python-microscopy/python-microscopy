@@ -39,6 +39,7 @@ psutil
 #sphinx
 ujson
 jinja2
+django==1.11
 
 #dispatch
 git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
