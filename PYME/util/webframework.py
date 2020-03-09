@@ -17,11 +17,13 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
-def register_endpoint(path, output_is_json=True):
+def register_endpoint(path, output_is_json=True, mimetype='application/json', compress=True):
     def _reg_ep(func):
         #_endpoints[path] = func
         func._expose_path = path
         func._jsonify = not output_is_json
+        func._mimetype = mimetype
+        func._compress = compress
         return func
 
     return _reg_ep
@@ -92,10 +94,10 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         if handler._jsonify:
             resp = json.dumps(resp)
         
-        compress_output = 'gzip' in self.headers.get('Accept-Encoding', '')
+        compress_output = handler._compress and ('gzip' in self.headers.get('Accept-Encoding', ''))
 
         self.send_response(200)
-        self.send_header("Content-Type", 'application/json')
+        self.send_header("Content-Type", handler._mimetype)
         if compress_output:
             self.send_header('Content-Encoding', 'gzip')
             resp = self._gzip_compress(resp) #FIXME - write directly to wfile rather than to a BytesIO object - how do we find the content-length?
