@@ -109,7 +109,7 @@ def main():
     
     app = wx.App()
 
-    ico = wx.Icon(PYME.resources.getIconPath('PYMELogo.png'))
+    ico = wx.Icon(PYME.resources.getIconPath('pymeLogo.png'))
     
     class ClusterIcon(TaskBarIcon):
         TBMENU_CLUSTERUI = wx.NewId()
