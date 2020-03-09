@@ -51,16 +51,19 @@ import warnings
 
 from PYME.Acquire import eventLog
 import threading
-from PYME.ui import mytimer
+#sfrom PYME.ui import mytimer
 
 class FrameWrangler(object):
-    def __init__(self, _cam, _ds = None):
+    def __init__(self, _cam, _ds = None, event_loop=None):
         #wx.EvtHandler.__init__(self)
         #self.timer = wx.Timer(self)
         #self.Bind(wx.EVT_TIMER, self.Notify)
         
-        self.timer = mytimer.SingleShotTimer(self.Notify)
+        if event_loop is None:
+            from PYME.ui import mytimer
+            self._event_loop = mytimer
         
+        self.timer = self._event_loop.SingleTargetTimer(self.Notify)
         
         self.currentFrame = _ds
         self.cam = _cam
@@ -232,7 +235,7 @@ class FrameWrangler(object):
         while (self._poll_camera):
             if (not self.cam.CamReady()):# and self.piezoReady())):
                 # Stop the aquisition if there is a hardware error
-                mytimer.call_in_main_thread(self.stop)
+                self._event_loop.call_in_main_thread(self.stop)
             else:
                 #is there a picture waiting for us?
                 #if so do the relevant processing
@@ -255,7 +258,7 @@ class FrameWrangler(object):
                         #stop the aquisition - we're going to restart after we're read out to purge the buffer
                         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
                         #currently being written to
-                        mytimer.call_in_main_thread(self.cam.StopAq)
+                        self._event_loop.call_in_main_thread(self.cam.StopAq)
                         #self.needExposureStart = True
             
                     self.onExpReady()

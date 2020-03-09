@@ -54,7 +54,7 @@ class MultiTimer(wx.Timer):
 
 mytimer=MultiTimer #alias for backwards compatibility
 
-class SingleShotTimer(wx.Timer):
+class SingleTargetTimer(wx.Timer):
     """
     Single shot timer which only calls a single function when it fires
     
@@ -68,8 +68,11 @@ class SingleShotTimer(wx.Timer):
     def Notify(self):
         self._target()
         
-    def start(self, delay_ms):
-        wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
+    def start(self, delay_ms, single_shot=True):
+        if single_shot:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
+        else:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_CONTINUOUS)
         
     def stop(self):
         self.Stop()
