@@ -28,8 +28,6 @@ As hardware control in PYMEAcquire is largely driven by and synchronized with
 camera frames, this also encompasses the 'heart' or core of the program which 
 everything else responds to."""
 
-import wx
-
 import numpy as np
 
 import ctypes
@@ -51,16 +49,18 @@ import traceback
 import dispatch
 import warnings
 
-from PYME.Acquire import eventLog   
-
+from PYME.Acquire import eventLog
 import threading
+from PYME.ui import mytimer
 
-
-class FrameWrangler(wx.EvtHandler):
+class FrameWrangler(object):
     def __init__(self, _cam, _ds = None):
-        wx.EvtHandler.__init__(self)
-        self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.Notify)
+        #wx.EvtHandler.__init__(self)
+        #self.timer = wx.Timer(self)
+        #self.Bind(wx.EVT_TIMER, self.Notify)
+        
+        self.timer = mytimer.SingleShotTimer(self.Notify)
+        
         
         self.currentFrame = _ds
         self.cam = _cam
@@ -232,7 +232,7 @@ class FrameWrangler(wx.EvtHandler):
         while (self._poll_camera):
             if (not self.cam.CamReady()):# and self.piezoReady())):
                 # Stop the aquisition if there is a hardware error
-                wx.CallAfter(self.stop)
+                mytimer.call_in_main_thread(self.stop)
             else:
                 #is there a picture waiting for us?
                 #if so do the relevant processing
@@ -255,7 +255,7 @@ class FrameWrangler(wx.EvtHandler):
                         #stop the aquisition - we're going to restart after we're read out to purge the buffer
                         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
                         #currently being written to
-                        wx.CallAfter(self.cam.StopAq)
+                        mytimer.call_in_main_thread(self.cam.StopAq)
                         #self.needExposureStart = True
             
                     self.onExpReady()
@@ -370,7 +370,7 @@ class FrameWrangler(wx.EvtHandler):
             self.inNotify = False
             
             #restart the time so we get called again
-            self.timer.Start(self.tiint, wx.TIMER_ONE_SHOT)
+            self.timer.start(self.tiint)
             
             
     @property
@@ -398,7 +398,7 @@ class FrameWrangler(wx.EvtHandler):
     def stop(self):
         "Stop sequence aquisition"
 
-        self.timer.Stop()
+        self.timer.stop()
         self.aqOn = False
 
         #logger.debug('acquire _current_frame_lock in stop()')
@@ -433,7 +433,7 @@ class FrameWrangler(wx.EvtHandler):
         self.n_Frames = 0
 
         #start our timer, this will call Notify
-        wx.CallAfter(self.timer.Start, self.tiint, wx.TIMER_ONE_SHOT)
+        self.timer.start(self.tiint)
         return True
 
 

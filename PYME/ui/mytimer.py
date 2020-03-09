@@ -26,7 +26,10 @@ import time
 
 
 
-class mytimer(wx.Timer):
+class MultiTimer(wx.Timer):
+    """
+    Timer which calls multiple handlers
+    """
     def __init__(self, PROFILE=False):
         wx.Timer.__init__(self)
         self.WantNotification = []
@@ -45,3 +48,44 @@ class mytimer(wx.Timer):
                 #    self.times[ar] = self.times[ar]+ te
                 #else:
                 self.times[ar] = te
+                
+    def register_callback(self, callback):
+        self.WantNotification.append(callback)
+
+mytimer=MultiTimer #alias for backwards compatibility
+
+class SingleShotTimer(wx.Timer):
+    """
+    Single shot timer which only calls a single function when it fires
+    
+    This is a very light-weight wrapper around wx.Timer to permit consistent usage with non GUI timers.
+    
+    """
+    def __init__(self, target):
+        wx.Timer.__init__(self)
+        self._target = target
+        
+    def Notify(self):
+        self._target()
+        
+    def start(self, delay_ms):
+        wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
+        
+    def stop(self):
+        self.Stop()
+        
+def call_in_main_thread(callable, *args, **kwargs):
+    """
+    Alias to permit different frontends
+    
+    Parameters
+    ----------
+    callable
+    args
+    kwargs
+
+    Returns
+    -------
+
+    """
+    wx.CallAfter(callable, *args, **kwargs)
