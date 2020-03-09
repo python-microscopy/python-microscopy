@@ -229,7 +229,7 @@ class ModuleBase(HasTraits):
             self._invalidate_parent = False
             old_traits = self.get()
             #print('edit_traits')
-            self.edit_traits(*args, **kwargs, kind='modal')
+            self.edit_traits(*args, kind='modal', **kwargs)
             self._invalidate_parent = inv_mode
             if not self.get() == old_traits:
                 #print('invalidating ...')
