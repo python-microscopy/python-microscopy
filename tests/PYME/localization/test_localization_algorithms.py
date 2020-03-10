@@ -40,6 +40,16 @@ def test_LatGaussFitFR():
     
     assert errors_over_pred_IQR < 2.5
 
+def test_Dumbell3DFitR():
+    from PYME.localization.Test import fitTestJigWC as fitTestJig
+    
+    tj = fitTestJig.fitTestJig.fromMDFile(os.path.join(TESTPATH, 'dumbell_3d.md'))
+    tj.runTests(nTests=100)
+    
+    errors_over_pred_IQR = fitTestJig.IQR((tj.error('x0') / tj.res['fitError']['x0']))
+    print(errors_over_pred_IQR)
+    
+    assert errors_over_pred_IQR < 2.5
 
 def test_InterpFitR_astigmatism():
     """Test the 3D interpolated fit by fitting some randomly generated events. The pass condition here is fairly
