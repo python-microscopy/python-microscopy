@@ -41,7 +41,7 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
             data = data.encode()
         
         zbuf = BytesIO()
-        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf, compresslevel=3)
         zfile.write(data)
         zfile.close()
     
