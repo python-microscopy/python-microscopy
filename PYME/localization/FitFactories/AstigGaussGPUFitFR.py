@@ -176,7 +176,7 @@ class GaussianFitFactory:
         need_maps_filtered, need_mem_allocated = False, False
         # check if our filter sizes are the same
         if small_filter_size != _warpdrive.small_filter_size:
-            _warpdrive.change_filters(small_filter_size, 2 * small_filter_size)
+            _warpdrive.set_filter_kernels(small_filter_size, 2 * small_filter_size)
             # need to rerun map filters
             need_maps_filtered = True
 
