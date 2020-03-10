@@ -7,19 +7,30 @@ import numpy as np
 from numpy import ctypeslib
 import ctypes
 import ctypes.util
-import ctypes.wintypes
+
 import warnings
 import six
 
 from .uc480_h import *
-from ctypes.wintypes import BYTE
-from ctypes.wintypes import WORD
-from ctypes.wintypes import DWORD
-from ctypes.wintypes import BOOL
-HCAM = ctypes.wintypes.HANDLE
-from ctypes.wintypes import HDC
-from ctypes.wintypes import HWND
-from ctypes.wintypes import INT
+
+#wintypes fails on linux, copy definitions here so that we are cross platform
+BYTE = ctypes.c_byte
+WORD = ctypes.c_ushort
+DWORD = ctypes.c_ulong
+BOOL = ctypes.c_long
+
+HANDLE = ctypes.c_void_p
+
+HCAM = HANDLE
+HWND = HANDLE
+
+ULONG = ctypes.c_ulong
+LONG = ctypes.c_long
+USHORT = ctypes.c_ushort
+SHORT = ctypes.c_short
+INT = ctypes.c_int
+    
+    
 from ctypes import Structure
 c_char = ctypes.c_byte
 c_char_p = ctypes.POINTER(ctypes.c_byte)
