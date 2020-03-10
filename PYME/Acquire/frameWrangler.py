@@ -62,6 +62,8 @@ class FrameWrangler(object):
         if event_loop is None:
             from PYME.ui import mytimer
             self._event_loop = mytimer
+        else:
+            self._event_loop = event_loop
         
         self.timer = self._event_loop.SingleTargetTimer(self.Notify)
         

@@ -19,12 +19,15 @@ class _Timer(object):
         self._next_trigger = sys.float_info.max
         self._single_shot = True
         self._delay_s = -1
+        
+        logger.debug('Created timer')
     
     def notify(self):
         raise NotImplementedError('Over-ride in derived class')
     
     def check(self, t):
         if t > self._next_trigger:
+            #logger.debug('Timer triggered')
             self._next_trigger = sys.float_info.max
             try:
                 self.notify()
@@ -81,6 +84,7 @@ class EventLoop(object):
             try:
                 # process stuff which needs to run in this thread
                 callable, args, kwargs = self._deferreds.get(timeout=0.01)
+                logger.debug('Calling %s' % repr((callable, args, kwargs)))
                 callable(*args, **kwargs)
             except(queue.Empty):
                 #do timer stuff

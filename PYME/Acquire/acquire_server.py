@@ -23,10 +23,12 @@
 """
 This contains the bulk of the GUI code for the main window of PYMEAcquire.
 """
-import logging
+#import matplotlib #import before we start logging to avoid log messages in debug
+
 import os
 import time
 
+import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -39,9 +41,11 @@ import six
 from PYME.util import webframework
 import threading
 
+from PYME.Acquire import event_loop
 
-class PYMEAcquireServer(object):
+class PYMEAcquireServer(event_loop.EventLoop):
     def __init__(self, options = None):
+        event_loop.EventLoop.__init__(self)
         self.options = options
 
         self.snapNum = 0
@@ -50,9 +54,8 @@ class PYMEAcquireServer(object):
         protocol.MainFrame = self
 
         self.initDone = False
-
         self.postInit = [] #for protocol compat
-
+        
         self.scope = microscope.microscope()
 
         self.roi_on = False
@@ -84,8 +87,9 @@ class PYMEAcquireServer(object):
         -------
 
         """
-        self._is_running = True
+        #self._is_running = True
 
+        logger.debug('Starting initialisation')
         self._initialize_hardware()
         #poll to see if the init script has run
         self._wait_for_init_complete()
@@ -101,17 +105,14 @@ class PYMEAcquireServer(object):
 
         logger.debug('Finished post-init')
         
-        while self._is_running:
-            for fcn in self._want_loop_notification:
-                fcn()
-            
-            # 100 ms refresh rate
-            time.sleep(0.1)
-            
-        self._shutdown()
-        
-    def stop(self):
-        self._is_running = False
+        try:
+            logger.debug('Starting event loop')
+            self.loop_forever()
+        except:
+            logger.exception('Exception in event loop')
+        finally:
+            logger.debug('Shutting down')
+            self._shutdown()
 
 
     def _initialize_hardware(self):
@@ -132,8 +133,10 @@ class PYMEAcquireServer(object):
         logger.debug('Backround initialization done')
         
     def _on_frame_group(self, *args, **kwargs):
+        #logger.debug('_on_frame_group')
         with self._new_frame_condition:
             self._current_frame = self.scope.frameWrangler.currentFrame
+            #logger.debug(repr(self.scope.frameWrangler.currentFrame))
             self._new_frame_condition.notify()
             
     def _on_scope_state_change(self, *args, **kwargs):
@@ -142,7 +145,7 @@ class PYMEAcquireServer(object):
             self._state_updated_condition.notify()
     
     def _start_polling_camera(self):
-        self.scope.startFrameWrangler()
+        self.scope.startFrameWrangler(event_loop=self)
         self.scope.frameWrangler.onFrameGroup.connect(self._on_frame_group)
         
     @webframework.register_endpoint('/get_frame_pzf', mimetype='image/pzf')
@@ -156,8 +159,9 @@ class PYMEAcquireServer(object):
         """
         from PYME.IO import PZFFormat
         with self._new_frame_condition:
-            while not self._current_frame is None:
+            while self._current_frame is None:
                 self._new_frame_condition.wait()
+                logger.debug(self._current_frame is None)
                 
             ret = PZFFormat.dumps(self._current_frame, compression=PZFFormat.DATA_COMP_HUFFCODE)
             self._current_frame = None
@@ -165,7 +169,7 @@ class PYMEAcquireServer(object):
         return ret
     
     @webframework.register_endpoint('/get_frame_png', mimetype='image/png')
-    def get_frame_png(self):
+    def get_frame_png(self, min=None, max=None):
         """
         Get a frame in PNG format
         
@@ -182,13 +186,25 @@ class PYMEAcquireServer(object):
         out = BytesIO()
         
         with self._new_frame_condition:
-            while not self._current_frame is None:
+            while self._current_frame is None:
                 self._new_frame_condition.wait()
 
-            im = np.sqrt(self._current_frame).astype('uint8')
+            #im = np.sqrt(self._current_frame.squeeze()).astype('uint8')
             
-            #im = self._current_frame - self._current_frame.min()
-            #im = (255*im/im.max()).astype('uint8')
+            im = self._current_frame.squeeze()
+                 
+            if min is None:
+                min = im.min()
+            else:
+                min=float(min)
+            
+            if max is None:
+                max = im.max()
+            else:
+                max= float(max)
+                
+                
+            im = (255*(im - min)/(max-min)).astype('uint8')
 
             Image.fromarray(im.T).save(out, 'PNG')
             self._current_frame = None
@@ -196,6 +212,11 @@ class PYMEAcquireServer(object):
         s = out.getvalue()
         out.close()
         return s
+
+    @webframework.register_endpoint('/get_frame_png_b64', mimetype='image/png')
+    def get_frame_png_b64(self, min=None, max=None):
+        import base64
+        return base64.b64encode(self.get_frame_png(min, max))
         
     @webframework.register_endpoint('/get_scope_state', output_is_json=False)
     def get_scope_state(self, keys=None):
@@ -252,7 +273,6 @@ class PYMEAcquireServer(object):
         
         return 'OK' #TODO - check for errors
 
-
     def OnMCamSetPixelSize(self, event):
         from PYME.Acquire.ui import voxelSizeDialog
 
@@ -288,20 +308,22 @@ class PYMEAcquireServer(object):
         logger.info(msg)
 
 
+from PYME.Acquire import webui
 class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
-    """
-    Combines the RuleServer with it's web framework.
-
-    Largely an artifact of initial experiments using cherrypy (allowed quickly switching between cherrypy
-    and our internal webframework).
-    """
-    
     def __init__(self, options, port, bind_addr=''):
         PYMEAcquireServer.__init__(self, options)
         
         server_address = (bind_addr, port)
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
+        
+        self._main_page = webui.load_template('PYMEAcquire.html')
+        
+        
+    @webframework.register_endpoint('/', mimetype='text/html')
+    def main_page(self):
+        #return self._main_page
+        return webui.load_template('PYMEAcquire.html')
         
     def run(self):
         self._poll_thread = threading.Thread(target=self.main_loop)

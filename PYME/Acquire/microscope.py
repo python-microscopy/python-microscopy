@@ -22,10 +22,10 @@
 ##################
 
 #imports for timing
-import requests
-import tables
-import numpy as np
-import yaml
+#import requests
+#import tables
+#import numpy as np
+#import yaml
 
 import wx
 #from PYME.Acquire import previewaquisator as previewaquisator
@@ -620,7 +620,7 @@ class microscope(object):
         warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
         return self.frameWrangler
     
-    def startFrameWrangler(self):
+    def startFrameWrangler(self, event_loop=None):
         """Start the frame wrangler. Gets called during post-init phase of aquiremainframe.
         
         """
@@ -630,7 +630,7 @@ class microscope(object):
         except AttributeError:
             pass
         
-        self.frameWrangler = FrameWrangler(self.cam)
+        self.frameWrangler = FrameWrangler(self.cam, event_loop=event_loop)
         self.frameWrangler.HardwareChecks.extend(self.hardwareChecks)
         self.frameWrangler.Prepare()
 

@@ -22,7 +22,6 @@
 ##################
 
 import numpy as np
-#import wx
 import datetime
 import time
 

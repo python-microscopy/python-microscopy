@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PYMEAcquire</title>
+</head>
+<body>
+
+<img src="" id="cam_image">
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script>
+    // Long Polling to update image
+    (function poll(){
+        $.ajax({ url: "/get_frame_png_b64", success: function(data){
+            $("#cam_image").attr("src", "data:image/png;base64,"+data);
+            }, dataType: "text", complete: poll, timeout: 30000 });
+    })();
+</script>
+</body>
+</html>
