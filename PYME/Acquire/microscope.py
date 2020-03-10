@@ -27,7 +27,7 @@
 #import numpy as np
 #import yaml
 
-import wx
+#import wx
 #from PYME.Acquire import previewaquisator as previewaquisator
 from PYME.Acquire.frameWrangler import FrameWrangler
 
@@ -525,6 +525,8 @@ class microscope(object):
         
         TODO: could use a rewrite / new inspection.        
         """
+        import wx
+        
         if not 'shutterOpen' in dir(self.cam):
             return
         im = source.currentFrame
