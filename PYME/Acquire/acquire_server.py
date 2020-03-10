@@ -379,6 +379,8 @@ if __name__ == '__main__':
     mProfile.profileOn(['acquire_server.py', 'microscope.py', 'frameWrangler.py'])
     #fp = fProfile.thread_profiler()
     #fp.profileOn()
-    main()
-    #fp.profileOff()
-    mProfile.report()
+    try:
+        main()
+    finally:
+        #fp.profileOff()
+        mProfile.report()
