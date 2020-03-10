@@ -68,7 +68,6 @@ class FFBase(object):
         xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
         yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
         zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
-		
         
         dataROI = self.data[xslice, yslice, zslice]
 
@@ -98,6 +97,66 @@ class FFBase(object):
             bgMean = 0
             
         return X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice
+
+    def get3DROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        """Helper fcn to extract ROI from frame at given x,y,z point.
+        
+        Returns:
+            X - x coordinates of ROI in nm
+            Y - y coordinates of ROI in nm
+            Z - z coordinates of ROI in nm
+            data - raw pixel data of ROI
+            background - extimated background for ROI
+            sigma - estimated error (std. dev) of pixel values
+            xslice - x slice into original data array used to get ROI
+            yslice - y slice into original data array
+            zslice - z slice into original data array
+        """
+        
+
+        x = int(round(x))
+        y = int(round(y))
+
+        if (z is None): # use position of maximum intensity
+            z = self.data[x,y,:].argmax()
+        z = int(round(z))
+
+        #pixel size in nm
+        vx = 1e3 * self.metadata.voxelsize.x
+        vy = 1e3 * self.metadata.voxelsize.y
+        vz = 1e3 * self.metadata.voxelsize.z
+        
+        roiHalfSize = int(roiHalfSize)
+
+        xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
+        yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
+        zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
+        
+        dataROI = self.data[xslice, yslice, zslice]
+
+        # Create a grid to evaluate on
+        X, Y, Z = np.mgrid[xslice, yslice, zslice]
+
+        X = vx*X
+        Y = vy*Y
+        Z = vz*Z
+	
+        #estimate errors in data
+        nSlices = dataROI.shape[2]
+        
+        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        ### Fixed for better Poisson noise approx
+        if self.noiseSigma is None:
+            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataROI, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        else:
+            sigma = self.noiseSigma[xslice, yslice, zslice]
+
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+            bgROI = self.background[xslice, yslice, zslice]
+        else: 
+            bgROI = np.zeros_like(Z)
+            
+        return X, Y, Z, dataROI, bgROI, sigma, xslice, yslice, zslice
         
     def getSplitROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image.
