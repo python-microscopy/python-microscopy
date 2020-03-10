@@ -92,7 +92,7 @@ def _verifyClusterResultsFilename(resultsFilename):
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, fdialog.GetValue().encode())
+            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 
