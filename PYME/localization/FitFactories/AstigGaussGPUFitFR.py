@@ -161,28 +161,38 @@ class GaussianFitFactory:
             # if self.background is a buffer, the background is already on the GPU and has not been flatfielded
             pass
 
-        # Account for any changes we need to make in memory allocation on the GPU
-        if not _warpdrive:  # Initialize new detector object for this process
-            guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
-                                                             600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
-            small_filter_size = self.metadata.getEntry('Analysis.DetectionFilterSize')
-            large_filter_size = 2 * small_filter_size
-            _warpdrive = warpdrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
+        # Account for any changes we need to make to the detector instance
+        small_filter_size = self.metadata.getEntry('Analysis.DetectionFilterSize')
+        guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
+                                                         600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
+
+        if not _warpdrive:  # if we don't have a detector, make one and return
+            _warpdrive = warpdrive.detector(small_filter_size, 2 * small_filter_size, guess_psf_sigma_pix)
             _warpdrive.allocate_memory(np.shape(self.data))
             _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'],
                                     self.metadata['Camera.NoiseFactor'], self.metadata['Camera.TrueEMGain'])
+            return
 
-        # If the data is coming from a different region of the camera, reallocate
-        elif _warpdrive.varmap.shape == self.varmap.shape:
+        need_maps_filtered, need_mem_allocated = False, False
+        # check if our filter sizes are the same
+        if small_filter_size != _warpdrive.small_filter_size:
+            _warpdrive.change_filters(small_filter_size, 2 * small_filter_size)
+            # need to rerun map filters
+            need_maps_filtered = True
+
+        # check if the data is coming from a different camera region
+        if _warpdrive.varmap.shape != self.varmap.shape:
+            need_mem_allocated, need_maps_filtered = True, True
+        else:
             # check if both corners are the same
-            topLeft = np.array_equal(self.varmap[:20, :20], _warpdrive.varmap[:20, :20])
-            botRight = np.array_equal(self.varmap[-20:, -20:], _warpdrive.varmap[-20:, -20:])
-            if not (topLeft or botRight):
-                _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap,
-                                        self.metadata['Camera.ElectronsPerCount'], self.metadata['Camera.NoiseFactor'],
-                                        self.metadata['Camera.TrueEMGain'])
-        else:  # data is a different shape - we know that we need to re-allocate and prepvar
+            top_left = np.array_equal(self.varmap[:20, :20], _warpdrive.varmap[:20, :20])
+            bot_right = np.array_equal(self.varmap[-20:, -20:], _warpdrive.varmap[-20:, -20:])
+            if not (top_left or bot_right):
+                need_maps_filtered = True
+
+        if need_mem_allocated:
             _warpdrive.allocate_memory(np.shape(self.data))
+        if need_maps_filtered:
             _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap,
                                     self.metadata['Camera.ElectronsPerCount'], self.metadata['Camera.NoiseFactor'],
                                     self.metadata['Camera.TrueEMGain'])
