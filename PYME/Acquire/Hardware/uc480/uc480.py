@@ -123,25 +123,35 @@ libuc480=None # initialise at module level
 cameraType = None # initialise
 
 def loadLibrary(cameratype='uc480'):
+    import platform
+    arch, plat = platform.architecture()
 
-        global libuc480
-        global cameraType
+    global libuc480
+    global cameraType
 
-        # make sure we load only once - if requested again make sure cameratype matches with already loaded
-        if libuc480 is not None:
-            if cameratype != cameraType:
-                raise ValueError('requesting loading library for type %s but already loaded for type %s - conflict!'
-                                 % (cameratype, cameraType))
-            return
-        
-        cameraType = cameratype # store for later availability by outside modules
-        #libuc480 = ctypes.cdll.LoadLibrary(lib)
+    # make sure we load only once - if requested again make sure cameratype matches with already loaded
+    if libuc480 is not None:
+        if cameratype != cameraType:
+            raise ValueError('requesting loading library for type %s but already loaded for type %s - conflict!'
+                             % (cameratype, cameraType))
+        return
+    
+    cameraType = cameratype # store for later availability by outside modules
+    #libuc480 = ctypes.cdll.LoadLibrary(lib)
+    if plat.startswith('Windows'):
         if cameratype=='uc480':
                 libuc480 = ctypes.WinDLL('uc480_64')
                 print("loading uc480_64")
         elif cameratype=='ueye':
                 libuc480 = ctypes.WinDLL('ueye_api_64')
                 print("loading ueye_api_64")
+        else:
+                raise RuntimeError("unknown camera type")
+    else:
+        #linux or osx
+        if cameratype=='ueye':
+                libuc480 = ctypes.CDLL('libueye_api.so')
+                print("loading 'libueye_api.so'")
         else:
                 raise RuntimeError("unknown camera type")
 
