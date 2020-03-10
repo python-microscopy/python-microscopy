@@ -190,19 +190,16 @@ class GaussianFitFactory:
     def get_results(self):
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
-        dpars = np.reshape(_warpdrive.dpars, (_warpdrive.maxCandCount, 6))[:_warpdrive.candCount, :]
+        dpars = np.reshape(_warpdrive.fit_res, (_warpdrive.n_max_candidates_per_frame, 6))[:_warpdrive.n_candidates, :]
         dpars[:, 0] *= (1000*self.metadata.voxelsize.y)
         dpars[:, 1] *= (1000*self.metadata.voxelsize.x)
         dpars[:, 4] *= (1000*self.metadata.voxelsize.y)
         dpars[:, 5] *= (1000*self.metadata.voxelsize.x)
 
-        fitErrors=None
         LLH = None
-
-
         if _warpdrive.calculate_crb:
-            LLH = _warpdrive.LLH[:_warpdrive.candCount]
-            CRLB = np.reshape(_warpdrive.CRLB, (_warpdrive.maxCandCount, 6))[:_warpdrive.candCount, :]
+            LLH = _warpdrive.LLH[:_warpdrive.n_candidates]
+            CRLB = np.reshape(_warpdrive.CRLB, (_warpdrive.n_max_candidates_per_frame, 6))[:_warpdrive.n_candidates, :]
             # fixme: Should never have negative CRLB, yet Yu reports ocassional instances in Matlab verison, check
             CRLB[:, 0] = np.sqrt(np.abs(CRLB[:, 0]))*(1000*self.metadata.voxelsize.y)
             CRLB[:, 1] = np.sqrt(np.abs(CRLB[:, 1]))*(1000*self.metadata.voxelsize.x)
@@ -210,20 +207,20 @@ class GaussianFitFactory:
             CRLB[:, 5] = np.sqrt(np.abs(CRLB[:, 5]))*(1000*self.metadata.voxelsize.x)
 
         #return self.chan1.dpars # each fit produces column vector of results, append them all horizontally for return
-        res_list = np.empty(_warpdrive.candCount, FitResultsDType)
+        res_list = np.empty(_warpdrive.n_candidates, FitResultsDType)
         resultCode = 0
         
         tIndex = int(self.metadata.getOrDefault('tIndex', 0))
 
         # package our results with the right labels
         if _warpdrive.calculate_crb:
-            for ii in range(_warpdrive.candCount):
+            for ii in range(_warpdrive.n_candidates):
                 res_list[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :],
-                                           LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.candCount)
+                                           LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.n_candidates)
         else:
-            for ii in range(_warpdrive.candCount):
+            for ii in range(_warpdrive.n_candidates):
                 res_list[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None,
-                                           LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.candCount)
+                                           LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.n_candidates)
 
         return np.hstack(res_list)
 
@@ -259,7 +256,7 @@ class GaussianFitFactory:
 
         _warpdrive.get_candidates(threshold, roi_size)
 
-        if _warpdrive.candCount == 0:  # exit if our job is already done
+        if _warpdrive.n_candidates == 0:  # exit if our job is already done
             resList = np.empty(0, FitResultsDType)
             return resList
         _warpdrive.fit_candidates(roi_size)
