@@ -161,7 +161,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
         with self._new_frame_condition:
             while self._current_frame is None:
                 self._new_frame_condition.wait()
-                logger.debug(self._current_frame is None)
+                #logger.debug(self._current_frame is None)
                 
             ret = PZFFormat.dumps(self._current_frame, compression=PZFFormat.DATA_COMP_RAW)
             self._current_frame = None
@@ -273,13 +273,14 @@ class PYMEAcquireServer(event_loop.EventLoop):
             while self._state_valid:
                 self._state_updated_condition.wait()
     
+            logger.debug('returning updated state')
             ret = {k: self.scope.state[k] for k in keys}
             self._state_valid = True
     
         return ret
     
     @webframework.register_endpoint('/update_scope_state')
-    def update_scope_state(self, body=''):
+    def update_scope_state(self, body='', output_is_json=False):
         import json
         state = json.loads(body)
         
