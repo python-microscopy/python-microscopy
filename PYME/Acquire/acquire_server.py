@@ -163,7 +163,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
                 self._new_frame_condition.wait()
                 logger.debug(self._current_frame is None)
                 
-            ret = PZFFormat.dumps(self._current_frame, compression=PZFFormat.DATA_COMP_HUFFCODE)
+            ret = PZFFormat.dumps(self._current_frame, compression=PZFFormat.DATA_COMP_RAW)
             self._current_frame = None
             
         return ret
@@ -217,6 +217,20 @@ class PYMEAcquireServer(event_loop.EventLoop):
     def get_frame_png_b64(self, min=None, max=None):
         import base64
         return base64.b64encode(self.get_frame_png(min, max))
+
+    @webframework.register_endpoint('/get_frame_raw', mimetype='application/octet-stream')
+    def get_frame_raw(self, min=None, max=None):
+        import numpy as np
+        with self._new_frame_condition:
+            while self._current_frame is None:
+                self._new_frame_condition.wait()
+                #logger.debug(self._current_frame is None)
+        
+            ret = bytes(self._current_frame.data)
+            #ret=bytes(np.arange(5).data)
+            self._current_frame = None
+    
+        return ret
         
     @webframework.register_endpoint('/get_scope_state', output_is_json=False)
     def get_scope_state(self, keys=None):

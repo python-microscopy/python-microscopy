@@ -8,14 +8,161 @@
 
 <img src="" id="cam_image">
 
+<canvas id="cam_canvas"></canvas>
+
+<form>
+    <label for="display_min">min:</label>
+    <input type="text" id="display_min" value="950">
+    <label for="display_max">max:</label>
+    <input type="text" id="display_max" value="1050">
+</form>
+
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script>
     // Long Polling to update image
-    (function poll(){
+    function poll_png(){
         $.ajax({ url: "/get_frame_png_b64", success: function(data){
             $("#cam_image").attr("src", "data:image/png;base64,"+data);
-            }, dataType: "text", complete: poll, timeout: 30000 });
-    })();
+            }, dataType: "text", complete: function(jqXHR, status){
+                if (status == 'success') {poll_png();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
+            }, timeout: 30000 });
+    }
+
+    function decode_pzf(buffer){
+        dv = new DataView(buffer);
+        fmt_id = new TextDecoder("utf-8").decode(new Uint8Array(buffer, 0, 2));
+
+        if (fmt_id != "BD"){throw "Invalid PZF format"}
+        //console.log(fmt_id);
+        version = dv.getUint8(2);
+        fmt = dv.getUint8(3); //0 : u1, 1:u2, 2 : f4
+
+        comp = dv.getUint8(4); // 0: raw, 1 : huffcode, 2 : chuncked huffcode
+        quant = dv.getUint8(5); // 0: unquantized, 1: sqrt quantized
+        dim_order = dv.getUint8(6); //'C' or 'F'
+
+        //RESERVED (1 byte)
+        //SequenceID = int64 (offset=8)
+        //FrameNum = int32 (offset =16)
+
+        width = dv.getUint32(20, true);
+        height = dv.getUint32(24, true);
+        depth = dv.getInt32(28, true);
+
+        //FrameTimestamp = uint64, offset= 32
+
+        quant_offset = dv.getFloat32(40, true);
+        quant_scale = dv.getFloat32(44, true);
+
+        if (version >= 3){
+            data_offset = dv.getUint32(48, true);
+        } else {
+            data_offset = 48;
+        }
+
+        data = new Uint8Array(buffer, data_offset);
+        //console.log(data);
+
+        if (comp != 0){
+            console.log(comp);
+            console.log('Data is compressed, decompression not yet implemented, so following will fail');
+            data = huffman_decompress(data);
+        }
+
+        if (quant == 1){
+            //Data is quantized, dequantize
+            data = new Float32Array(data);
+            data = data.map(function(d){
+                d= d*quant_scale;
+                return d*d + quant_offset;
+            });
+
+            switch(fmt){
+                case 0:
+                    //uint8
+                    data = new Uint8Array(data);
+                    break;
+                case 1:
+                    //uint16
+                    data = new Uint16Array(data);
+                    break;
+                case 2:
+                    //float32
+                    break;
+                default:
+                    console.log('Unrecognised data type')
+            }
+        } else {
+            switch(fmt) {
+                case 0:
+                    //uint8
+                    break;
+                case 1:
+                    //uint16
+                    //console.log(data.buffer, data.byteOffset);
+                    data = new Uint16Array(data.buffer, data.byteOffset);
+                    break;
+                case 2:
+                    //float32
+                    data = new Float32Array(data.buffer, data.byteOffset);
+                    break;
+                default:
+                    console.log('Unrecognised data type')
+            }
+        }
+
+        //console.log(data);
+        return {
+            data: data,
+            width: width,
+            height: height,
+            depth: depth
+            // TODO - add more of the metadata
+        }
+    }
+
+    function map_array(data, cmin, cmax){
+        out = new Uint8ClampedArray(data.length*4);
+
+        for (j = 0; j< data.length; j++){
+            k = j*4;
+            v = (data[j] - cmin)/(cmax-cmin);
+            //console.log(v)
+            v_ = 255*v; //simple grayscale map - FIXME
+            out[k] = v_;
+            out[k+1] = v_;
+            out[k+2] = v_;
+            out[k+3] = 255; //alpha
+        }
+
+        return out
+    }
+
+    // Long Polling to update image
+    function poll_array(){
+        $.ajax({
+            url: "/get_frame_pzf",
+            success: function(data){
+                //console.log(data);
+                decoded = decode_pzf(data);
+                //console.log(decoded);
+                im = new ImageData(map_array(decoded.data, parseFloat($("#display_min").val()), parseFloat($("#display_max").val())), decoded.width, decoded.height);
+                var canvas = document.getElementById("cam_canvas");
+                $("#cam_canvas").attr({width: decoded.width, height : decoded.height});
+                var ctx = canvas.getContext('2d');
+                //console.log(im);
+                ctx.putImageData(im, 0, 0);
+                },
+            //dataType: "text",
+            complete: function(jqXHR, status){
+                    if (status == 'success') {poll_array();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
+                },
+            timeout: 30000,
+            xhrFields: {responseType: 'arraybuffer'}
+        });
+    }
+
+    poll_array();
 </script>
 </body>
 </html>
