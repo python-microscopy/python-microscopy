@@ -12,7 +12,7 @@
 <script>
     // Long Polling to update image
     (function poll(){
-        $.ajax({ url: "/get_frame_png_b64", success: function(data){
+        $.ajax({ url: "/get_frame_png_b64?min=0&max=200", success: function(data){
             $("#cam_image").attr("src", "data:image/png;base64,"+data);
             }, dataType: "text", complete: poll, timeout: 30000 });
     })();
