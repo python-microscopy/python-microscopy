@@ -106,7 +106,7 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         self.solver = FitModelWeighted
 
     def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-        X, Y, Z, data, background, sigma, xslice, yslice, zslice = self.get3DROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
+        X, Y, Z, data, background, sigma, xslice, yslice, zslice = self.getROIAtPoint(x, y, z, roiHalfSize, axialHalfSize, 3)
 
         dataMean = data - background
 

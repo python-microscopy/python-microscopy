@@ -27,6 +27,9 @@ from scipy import ndimage
 
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
+def ensure_int(*args):
+    return map(lambda x: int(round(x)), args)
+
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None, roi_offset=[0,0]):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
@@ -37,13 +40,121 @@ class FFBase(object):
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         self.noiseSigma = noiseSigma
         self.roi_offset = roi_offset # offset (x, y) from camera ROI to permit best common ROI for both channels when splitting
+        self._vx = None
+        self._vy = None
+        self._vz = None
+        self._conversion_factor = 1e3
+
+    @property
+    def pixel_size(self, conversion_factor=1e3):
+        # return the pixel size in nm
+        if self._vx is None or self._conversion_factor != conversion_factor:
+            self._vx = conversion_factor*self.metadata.voxelsize.x
+            self._vy = conversion_factor*self.metadata.voxelsize.y
+            self._vz = conversion_factor*self.metadata.voxelsize.z
+        return self._vx, self._vy, self._vz
+
+    def getData(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15, dim=2, multichannel=False):
+
+        # Create absolute bounds
+        xlb = 0
+        ylb = 0
+
+        if multichannel:
+            #pixel size in nm
+            vx = 1e3 * self.metadata.voxelsize.x
+            vy = 1e3 * self.metadata.voxelsize.y
+
+            #position in nm from camera origin
+            roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
+            x_ = (x + roi_x0) * vx
+            y_ = (y + roi_y0) * vy
+            #look up shifts
+            if not self.metadata.getOrDefault('Analysis.FitShifts', False):
+                DeltaX = self.metadata.chroma.dx.ev(x_, y_)
+                DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+            else:
+                DeltaX = 0
+                DeltaY = 0
         
-    def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+            #find shift in whole pixels
+            dxp = int(DeltaX / vx)
+            dyp = int(DeltaY / vy)
+
+        # Create slice bounds
+        xl = max((x - roiHalfSize), xlb)
+        xu = min((x + roiHalfSize + 1),self.data.shape[0])
+        yl = max((y - roiHalfSize), ylb)
+        yu = min((y + roiHalfSize + 1), self.data.shape[1])
+        zl = max((z - axialHalfSize), 0)
+        zu = min((z + axialHalfSize + 1), self.data.shape[2])
+
+        # create slices
+        xslice = slice(int(xl),int(xu))
+        yslice = slice(int(yl),int(yu))
+        zslice = slice(int(zl),int(zu))
+        
+        dataROI = self.data[xslice, yslice, zslice]
+
+        if dim == 2:
+            dataROI = dataROI.mean(2)
+
+        return dataROI, xslice, yslice, zslice
+
+    def getGrid(self, xslice, yslice, zslice, dim=2):
+        #pixel size in nm
+        vx = 1e3 * self.metadata.voxelsize.x
+        vy = 1e3 * self.metadata.voxelsize.y
+        vz = 1e3 * self.metadata.voxelsize.z
+
+        # Create a grid to evaluate on
+        if dim == 2:
+            X = np.mgrid[xslice]
+            Y = np.mgrid[yslice]
+            Z = None
+        elif dim==3:    
+            X, Y, Z = np.mgrid[xslice, yslice, zslice]
+            Z = vz*Z
+
+        X = vx*(X + self.roi_offset[0])
+        Y = vy*(Y + self.roi_offset[1])
+
+        return X, Y, Z
+
+    def getSigma(self, dataROI, xslice, yslice, zslice):
+        # nSlices = dataROI.shape[2]
+        nSlices = (zslice.stop - zslice.start)
+        if zslice.step is not None:
+            nSlices = int(round(nSlices/zslice.step))
+
+        if self.noiseSigma is None:
+            sigma = (np.sqrt(self.metadata.Camera.ReadNoise**2 + 
+                           (self.metadata.Camera.NoiseFactor**2)*
+                           self.metadata.Camera.ElectronsPerCount*
+                           self.metadata.Camera.TrueEMGain*
+                           (np.maximum(dataROI, 1) + 1)/nSlices)/
+                           self.metadata.Camera.ElectronsPerCount)
+        else:
+            sigma = self.noiseSigma[xslice, yslice, zslice]
+        
+        return sigma
+
+    def getBackground(self, xslice, yslice, zslice, dim=2):
+        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+            bgROI = self.background[xslice, yslice, zslice]
+            if dim == 2:
+                bgROI = bgROI.mean(2)
+        else: 
+            bgROI = 0
+        return bgROI
+
+    def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15, dim=2):
         """Helper fcn to extract ROI from frame at given x,y, point.
         
         Returns:
             X - x coordinates of pixels in ROI in nm
             Y - y coordinates of pixels in ROI
+            Z - z coordinates of ROI in nm (optional)
             data - raw pixel data of ROI
             background - extimated background for ROI
             sigma - estimated error (std. dev) of pixel values
@@ -52,111 +163,66 @@ class FFBase(object):
             zslice - z slice into original data array
         """
         
+        if (dim !=2) and (dim != 3):
+            raise ValueError('Invalid dimension {}'.format(dim))
 
-        x = int(round(x))
-        y = int(round(y))
+        # x = int(round(x))
+        # y = int(round(y))
 
-        #pixel size in nm
-        vx = 1e3 * self.metadata.voxelsize.x
-        vy = 1e3 * self.metadata.voxelsize.y
+        # #pixel size in nm
+        # vx = 1e3 * self.metadata.voxelsize.x
+        # vy = 1e3 * self.metadata.voxelsize.y
         
-        roiHalfSize = int(roiHalfSize)
+        # roiHalfSize = int(roiHalfSize)
         
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
-        xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
-        yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
-        zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
+        x, y, z, roiHalfSize, axialHalfSize = ensure_int(x, y, z, roiHalfSize, axialHalfSize)
+
+        # xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
+        # yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
+        # zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
         
-        dataROI = self.data[xslice, yslice, zslice]
+        # dataROI = self.data[xslice, yslice, zslice]
 
-        #average in z
-        dataMean = dataROI.mean(2)
+        # #average in z
+        # dataMean = dataROI.mean(2)
 
-        #generate grid to evaluate function on        
-        X = vx*(np.mgrid[xslice] + self.roi_offset[0])
-        Y = vy*(np.mgrid[yslice] + self.roi_offset[1])
+        dataMean, xslice, yslice, zslice = self.getData(x, y, z, roiHalfSize, axialHalfSize, dim)
+
+        # #generate grid to evaluate function on        
+        # X = vx*(np.mgrid[xslice] + self.roi_offset[0])
+        # Y = vy*(np.mgrid[yslice] + self.roi_offset[1])
+
+        X, Y, Z = self.getGrid(xslice, yslice, zslice, dim)
 	
-        #estimate errors in data
-        nSlices = dataROI.shape[2]
+        # #estimate errors in data
+        # nSlices = dataROI.shape[2]
         
-        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        ### Fixed for better Poisson noise approx
-        if self.noiseSigma is None:
-            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataMean, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        else:
-            sigma = self.noiseSigma[xslice, yslice, zslice]
+        # #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        # ### Fixed for better Poisson noise approx
+        # if self.noiseSigma is None:
+        #     sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataMean, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        # else:
+        #     sigma = self.noiseSigma[xslice, yslice, zslice]
 
-        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, zslice]
+        sigma = self.getSigma(dataMean, xslice, yslice, zslice)
 
-            #average in z
-            bgMean = bgROI.mean(2)
-        else: 
-            bgMean = 0
-            
-        return X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice
+        # if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        #     bgROI = self.background[xslice, yslice, zslice]
 
-    def get3DROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        """Helper fcn to extract ROI from frame at given x,y,z point.
+        #     #average in z
+        #     bgMean = bgROI.mean(2)
+        # else: 
+        #     bgMean = 0
+
+        bgMean = self.getBackground(xslice, yslice, zslice, dim)
         
-        Returns:
-            X - x coordinates of ROI in nm
-            Y - y coordinates of ROI in nm
-            Z - z coordinates of ROI in nm
-            data - raw pixel data of ROI
-            background - extimated background for ROI
-            sigma - estimated error (std. dev) of pixel values
-            xslice - x slice into original data array used to get ROI
-            yslice - y slice into original data array
-            zslice - z slice into original data array
-        """
-        
-
-        x = int(round(x))
-        y = int(round(y))
-
-        if (z is None): # use position of maximum intensity
-            z = self.data[x,y,:].argmax()
-        z = int(round(z))
-
-        #pixel size in nm
-        vx = 1e3 * self.metadata.voxelsize.x
-        vy = 1e3 * self.metadata.voxelsize.y
-        vz = 1e3 * self.metadata.voxelsize.z
-        
-        roiHalfSize = int(roiHalfSize)
-
-        xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
-        yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
-        zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
-        
-        dataROI = self.data[xslice, yslice, zslice]
-
-        # Create a grid to evaluate on
-        X, Y, Z = np.mgrid[xslice, yslice, zslice]
-
-        X = vx*X
-        Y = vy*Y
-        Z = vz*Z
-	
-        #estimate errors in data
-        nSlices = dataROI.shape[2]
-        
-        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        ### Fixed for better Poisson noise approx
-        if self.noiseSigma is None:
-            sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*(np.maximum(dataROI, 1) + 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        else:
-            sigma = self.noiseSigma[xslice, yslice, zslice]
-
-        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-            bgROI = self.background[xslice, yslice, zslice]
-        else: 
-            bgROI = np.zeros_like(Z)
-            
-        return X, Y, Z, dataROI, bgROI, sigma, xslice, yslice, zslice
+        if dim == 2:
+            return X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice
+        elif dim == 3:
+            return X, Y, Z, dataMean, bgMean, sigma, xslice, yslice, zslice
         
     def getSplitROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image.
@@ -175,9 +241,14 @@ class FFBase(object):
             yslice2 - y slice into original data array (channel 2)
         """
         
-        x = round(x)
-        y = round(y)
-        
+        # x = round(x)
+        # y = round(y)
+
+        if (z is None): # use position of maximum intensity
+            z = self.data[x,y,:].argmax()
+
+        x, y, z, roiHalfSize, axialHalfSize = ensure_int(x, y, z, roiHalfSize, axialHalfSize)
+
         #pixel size in nm
         vx = 1e3*self.metadata.voxelsize.x
         vy = 1e3*self.metadata.voxelsize.y
@@ -391,6 +462,8 @@ class FFBase(object):
         
     def FromPoints(self, ofd):
         """Fit at a number of points."""
+        # TODO: This function is only called from remFitBuf in one specific case
+        # I don't think we ever use. We should delete or refactor this.
         
         res = np.empty(len(self.ofd), self.FitResultsDType)
         if 'Analysis.ROISize' in self.metadata.getEntryNames():
