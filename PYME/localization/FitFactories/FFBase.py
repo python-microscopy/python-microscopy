@@ -555,7 +555,7 @@ class FFBase(object):
         # TODO: This function is only called from remFitBuf in one specific case
         # I don't think we ever use. We should delete this or make it a working function.
         
-        res = np.empty(len(ofd), self.FitResultsDType)
+        res = np.empty(len(ofd), FitResultsDType)
         if 'Analysis.ROISize' in self.metadata.getEntryNames():
             rs = self.metadata.getEntry('Analysis.ROISize')
             for i in range(len(ofd)):
@@ -569,3 +569,4 @@ class FFBase(object):
         return res
         
 FitFactory = FFBase
+FitResultsDType = None  # Implemented in a derived class
