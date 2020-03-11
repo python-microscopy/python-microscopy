@@ -21,7 +21,7 @@ except:
 #import win32api
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
-#from PYME.IO.FileUtils.freeSpace import get_free_space
+from PYME.IO import unifiedIO
 
 
 #import PYME.Acquire.Protocols
@@ -96,13 +96,18 @@ class SpoolController(object):
         
     @property
     def dirname(self):
-        if not self._user_dir is None:
-            return self._user_dir
-        
         if self.spoolType == 'Cluster':
-            return '/'.join(self._subdir)
+            dir = self.get_cluster_dirname(self._user_dir) if self._user_dir is not None else '/'.join(self._subdir)
         else:
-            return os.sep.join([self._base_dir, ] + self._subdir)
+            dir = self._user_dir if self._user_dir is not None else os.sep.join([self._base_dir, ] + self._subdir)
+        return dir
+
+    def get_cluster_dirname(self, dirname):
+        # Typically we'll be below the base directory, which we want to remove
+        dir = dirname.replace(self._base_dir + os.sep, '')
+        # if we weren't below PYMEData dir, which probably isn't great, at least drop any windows nonsense
+        dir = dir.split(':')[-1]
+        return unifiedIO.fix_name(dir.replace(os.sep, '/'))
         
     @property
     def seriesName(self):
@@ -168,7 +173,7 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        self._dirname = dirname + os.sep
+        self._user_dir = dirname + os.sep
         #if we've had to quit for whatever reason start where we left off
         self._update_series_counter()
             
