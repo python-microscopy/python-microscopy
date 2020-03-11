@@ -635,7 +635,7 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
+        if self.newStyleTaskDistribution and self.image.filename.upper().startswith('PYME-CLUSTER'):
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
