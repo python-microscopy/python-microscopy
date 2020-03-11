@@ -27,9 +27,6 @@ from . import fitCommon
 
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
-def ensure_int(*args):
-    return map(lambda x: int(np.floor(x)), args)
-
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None, roi_offset=[0,0]):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
@@ -67,26 +64,6 @@ class FFBase(object):
 
         if multichannel:
             #find ROI which works in both channels
-
-        
-        # #find ROI which works in both channels
-        # #if dxp < 0:
-        # x01 = max(x - roiHalfSize, max(0, dxp))
-        # x11 = min(max(x01, x + roiHalfSize + 1), self.data.shape[0] + min(0, dxp))
-        # x02 = x01 - dxp
-        # x12 = x11 - dxp
-        
-        # y01 = max(y - roiHalfSize, max(0, dyp))
-        # y11 = min(max(y + roiHalfSize + 1,  y01), self.data.shape[1] + min(0, dyp))
-        # y02 = y01 - dyp
-        # y12 = y11 - dyp
-        
-        # xslice = slice(int(x01), int(x11))
-        # xslice2 = slice(int(x02), int(x12))
-        
-        # yslice = slice(int(y01), int(y11))
-        # yslice2 = slice(int(y02), int(y12))
-
             #look up shifts
             if not self.metadata.getOrDefault('Analysis.FitShifts', False):
                 #pixel size in nm
@@ -125,7 +102,7 @@ class FFBase(object):
         zl = max((z - axialHalfSize), 0)
         zu = min((z + axialHalfSize + 1), self.data.shape[2])
 
-        xl, xu, yl, yu, zl, zu = ensure_int(xl, xu, yl, yu, zl, zu)
+        xl, xu, yl, yu, zl, zu = int(xl), int(xu), int(yl), int(yu), int(zl), int(zu)
 
         # create slices
         xslice = slice(xl,xu)
@@ -137,7 +114,7 @@ class FFBase(object):
             xu2 = yu - dxp
             yl2 = yl - dyp
             yu2 = yu - dyp
-            xl2, xu2, yl2, yu2 = ensure_int(xl2, xu2, yl2, yu2)
+            xl2, xu2, yl2, yu2 = int(xl2), int(xu2), int(yl2), int(yu2)
             xslice2 = slice(xl2, xu2)
             yslice2 = slice(yl2, yu2)
 
@@ -176,9 +153,9 @@ class FFBase(object):
         Y = vy*(Y + self.roi_offset[1])
 
         if multichannel:
-            dxp, dyp = ensure_int(DeltaX/vx, DeltaY/vy)
+            dxp, dyp = int(DeltaX/vx), int(DeltaY/vy)
             Xr = X + DeltaX - vx*dxp
-            Yr = Y + DeltaY - vy*dxp
+            Yr = Y + DeltaY - vy*dyp
 
             return X, Y, Xr, Yr
 
@@ -253,7 +230,12 @@ class FFBase(object):
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
-        x, y, z, roiHalfSize, axialHalfSize = ensure_int(x, y, z, roiHalfSize, axialHalfSize)
+        # TODO: Do we need this round? Or is floor acceptable?
+        x = round(x)
+        y = round(y)
+        z = round(z)
+
+        x, y, z, roiHalfSize, axialHalfSize = int(x), int(y), int(z), int(roiHalfSize), int(axialHalfSize)
 
         # xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
         # yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
@@ -322,7 +304,12 @@ class FFBase(object):
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
-        x, y, z, roiHalfSize, axialHalfSize = ensure_int(x, y, z, roiHalfSize, axialHalfSize)
+        # TODO: Do we need this round? Or is floor acceptable?
+        x = round(x)
+        y = round(y)
+        z = round(z)
+
+        x, y, z, roiHalfSize, axialHalfSize = int(x), int(y), int(z), int(roiHalfSize), int(axialHalfSize)
 
         # #pixel size in nm
         # vx = 1e3*self.metadata.voxelsize.x
@@ -449,7 +436,12 @@ class FFBase(object):
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
-        x, y, z, roiHalfSize, axialHalfSize = ensure_int(x, y, z, roiHalfSize, axialHalfSize)
+        # TODO: Do we need this round? Or is floor acceptable?
+        x = round(x)
+        y = round(y)
+        z = round(z)
+
+        x, y, z, roiHalfSize, axialHalfSize = int(x), int(y), int(z), int(roiHalfSize), int(axialHalfSize)
     
         # #pixel size in nm
         # vx = 1e3 * self.metadata.voxelsize.x
@@ -562,17 +554,16 @@ class FFBase(object):
         """Fit at a number of points."""
         # TODO: This function is only called from remFitBuf in one specific case
         # I don't think we ever use. We should delete this or make it a working function.
-        # self.ofd and self.FitResultsDType both do not exist.
         
-        res = np.empty(len(self.ofd), self.FitResultsDType)
+        res = np.empty(len(ofd), self.FitResultsDType)
         if 'Analysis.ROISize' in self.metadata.getEntryNames():
             rs = self.metadata.getEntry('Analysis.ROISize')
-            for i in range(len(self.ofd)):
-                p = self.ofd[i]
+            for i in range(len(ofd)):
+                p = ofd[i]
                 res[i] = self.FromPoint(p.x, p.y, roiHalfSize=rs)
         else:
-            for i in range(len(self.ofd)):
-                p = self.ofd[i]
+            for i in range(len(ofd)):
+                p = ofd[i]
                 res[i] = self.FromPoint(p.x, p.y)
                 
         return res
