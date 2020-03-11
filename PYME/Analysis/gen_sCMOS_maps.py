@@ -9,6 +9,13 @@ from PYME.IO.FileUtils import nameUtils
 import logging
 logger = logging.getLogger(__name__)
 
+MAP_TYPE_TO_MDH_KEY = {
+    'flatfield': 'Camera.FlatfieldMapID',
+    'variance': 'Camera.VarianceMapID',
+    'dark': 'Camera.DarkMapID'
+}
+MDH_KEY_TO_MAP_TYPE = {v:k for k, v in MAP_TYPE_TO_MDH_KEY.items()}
+
 def _meanvards(dataSource, start=0, end=-1):
     """
     Calculate the mean and variance of a data source
@@ -42,12 +49,25 @@ def _meanvards(dataSource, start=0, end=-1):
 
     return (m,v)
 
-def map_filename(mdh, type):
-    if type != 'flatfield':
-        itime = int(1000*mdh['Camera.IntegrationTime'])
-        return '%s_%dms.tif' % (type,itime)
+def map_filename(mdh, map_type):
+    """
+    Generate a default filestub to save/search for camera maps
+    Parameters
+    ----------
+    mdh: PYME.IO.MetaDataHandler
+        dict-like metadata
+    map_type: str
+        standards are 'flatfield', 'variance', and 'dark'
+    Returns
+    -------
+    filename: str
+        filename of camera map including integration time, if relevant.
+    """
+    if map_type != 'flatfield':
+        itime = int(1000 * mdh['Camera.IntegrationTime'])
+        return '%s_%dms.tif' % (map_type, itime)
     else:
-        return '%s.tif' % (type)
+        return '%s.tif' % (map_type)
 
 
 def makePathUnlessExists(path):
