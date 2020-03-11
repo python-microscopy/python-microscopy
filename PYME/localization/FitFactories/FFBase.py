@@ -551,5 +551,11 @@ class FFBase(object):
         raise NotImplementedError('This function should be over-ridden in derived class')
 
 
-FitFactory = FFBase
-FitResultsDType = None  # Implemented in a derived class
+# Implemented in a derived classes
+FitFactory = FFBase  # Class containing the fitting code (e.g. FFBase)
+FitResult = None  # How do we store the fit results? This usually casts FitFactory output to an array of FitResultsDType
+FitResultsDType = None  # Numpy dtype for storing fit results
+
+DESCRIPTION = ''  # What type of object does this fitter fit?
+LONG_DESCRIPTION = ''  # A longer description
+USE_FOR = ''  # Type of localization data (e.g. 2D single color)
