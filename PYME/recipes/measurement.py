@@ -794,7 +794,7 @@ class TilePhysicalCoords(ModuleBase):
 
     input_measurements = Input('measurements')
     input_supertile = Input('input')
-    measurement_units = CStr('um')
+    measurement_units = CStr('nm')
     output_name = Output('meas_physical_coords')
     
     def execute(self, namespace):
@@ -1020,5 +1020,4 @@ class TravelingSalesperson(ModuleBase):
         out.mdh['TravelingSalesperson.OriginalDistance'] = ogd
 
         namespace[self.output] = out
-
 
