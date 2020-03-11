@@ -149,6 +149,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
 
 
     def __init__(self, camNum):
+        CameraMapMixin.__init__(self)
         #define properties
         self.CameraAcquiring = ATBool()
         self.SensorCooling = ATBool()
