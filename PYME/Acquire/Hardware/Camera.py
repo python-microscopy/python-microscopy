@@ -66,21 +66,69 @@ def check_mapexists(mdh, type='dark'):
 
 
 class CameraMapMixin(object):
-    def update_flatfield_map(self):
-        """The flatfield map should be constant, we can cache this"""
-        self._prefilled = MetaDataHandler.NestedClassMDHandler()
-        check_mapexists(self._prefilled, type='flatfield')
-        
+    """
+    Handles metadata propagation. Should be used with multiple inheritance with any camera class using camera maps. Maps
+    are cached as being present or not, so the `clear_cache` method should be called if camera maps are installed during
+    use (or restart PYMEAcquire). Preference is given to camera map locations on the cluster rather than local.
+    """
+    def __init__(self, map_fields=('dark', 'variance', 'flatfield')):
+        """
+        Parameters
+        ----------
+        map_fields: tuple of str
+            Camera maps in use by the inheriting camera. Due to way this class is mixed into camera classes, you will
+            likely never change this parameter of the init function, but if you are, e.g. not using a flatfield map with
+            your camera, you can change the `_camera_map_fields` attribute after camera initialization to only include
+            the maps you are using
+        """
+        self._camera_map_fields = map_fields
+        self._camera_map_cache = {}
+
+    def prefill_camera_map_cache(self, integration_time):
+        """
+        Search the cluster / local camera map directories and pre-fill the camera map cache for a given integration time
+        Parameters
+        ----------
+        integration_time: float
+            integration time in milliseconds
+        """
+        self.fill_camera_map_metadata({'Camera.IntegrationTime': integration_time,
+                                       'Camera.SerialNumber': self.GetSerialNumber()})
+
     def fill_camera_map_metadata(self, mdh):
-        # populate prefilled info the first time we call the function
-        if not hasattr(self, '_prefilled'):
-            self.update_flatfield_map()
-            
-        mdh.copyEntriesFrom(self._prefilled)
-        
-        # do not cache dark and variance maps as these change with integration time (and potentially ROI, although we ignore this currently).
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
+        """
+        Store camera map locations in the input metadata. The results (including camera-map does not exist) are cached.
+        Parameters
+        ----------
+        mdh: PYME.IO.MetaDataHandler
+            dict-like metadata
+        """
+        from PYME.Analysis.gen_sCMOS_maps import map_filename, MAP_TYPE_TO_MDH_KEY
+        from PYME.IO.FileUtils import nameUtils
+        from PYME.IO import clusterIO
+        import os
+
+        for map in self._camera_map_fields:
+            map_fn = map_filename(mdh, map)
+            if map_fn in self._camera_map_cache.keys():
+                map_location = self._camera_map_cache[map_fn]
+                if map_location is not None:  # don't write field if we're just faking it
+                    mdh[MAP_TYPE_TO_MDH_KEY[map]] = map_location
+            else:
+                local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), map_fn)
+                cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], map_fn)
+                if clusterIO.exists(cluster_path):
+                    c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
+                    self._camera_map_cache[map_fn] = c_path
+                    mdh[MAP_TYPE_TO_MDH_KEY[map]] = c_path
+                elif os.path.exists(local_path):
+                    self._camera_map_cache[map_fn] = local_path
+                    mdh[MAP_TYPE_TO_MDH_KEY[map]] = local_path
+                else:  # map doesn't exist, negative cache it so we don't keep checking
+                    self._camera_map_cache[map_fn] = None
+
+    def clear_cache(self):
+        self._camera_map_cache = {}
 
 
 class Camera(object):
