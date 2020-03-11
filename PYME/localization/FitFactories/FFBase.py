@@ -549,24 +549,7 @@ class FFBase(object):
         uses FitResultsDType to pre-allocate an array for the results)"""
         
         raise NotImplementedError('This function should be over-ridden in derived class')
-        
-    def FromPoints(self, ofd):
-        """Fit at a number of points."""
-        # TODO: This function is only called from remFitBuf in one specific case
-        # I don't think we ever use. We should delete this or make it a working function.
-        
-        res = np.empty(len(ofd), FitResultsDType)
-        if 'Analysis.ROISize' in self.metadata.getEntryNames():
-            rs = self.metadata.getEntry('Analysis.ROISize')
-            for i in range(len(ofd)):
-                p = ofd[i]
-                res[i] = self.FromPoint(p.x, p.y, roiHalfSize=rs)
-        else:
-            for i in range(len(ofd)):
-                p = ofd[i]
-                res[i] = self.FromPoint(p.x, p.y)
-                
-        return res
-        
+
+
 FitFactory = FFBase
 FitResultsDType = None  # Implemented in a derived class
