@@ -33,7 +33,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
 
     int x1_len;
     int x2_len;
-    int outDimensions[1];
+    npy_intp outDimensions[1];
     int id, j;
     
     PyObject *ox1 =0;
@@ -124,7 +124,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
 
     outDimensions[0] = nBins;
         
-    out = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
     if (out == NULL)
     {
       Py_DECREF(ax1);
@@ -194,7 +194,7 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
 
     int x1_len;
     int x2_len;
-    int outDimensions[1];
+    npy_intp outDimensions[1];
     int id, j;
 
     PyObject *ox1 =0;
@@ -300,7 +300,7 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
 
     outDimensions[0] = nBins;
 
-    out = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
     if (out == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
@@ -671,7 +671,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
 
     int x1_len;
     int x2_len;
-    int outDimensions[1];
+    npy_intp outDimensions[1];
     int id, j;
 
     PyObject *ox1 =0;
@@ -765,7 +765,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
 
     outDimensions[0] = nBins;
 
-    out = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
     if (out == NULL)
     {
       Py_DECREF(ax1);
