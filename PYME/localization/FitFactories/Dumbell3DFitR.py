@@ -109,7 +109,7 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         dataMean = data - background
 
         #estimate some start parameters...
-        A = (data - data.min()).max() #amplitude
+        A = dataMean.max() - dataMean.min() #amplitude
 
         vx, vy, vz = self.pixel_size
 
@@ -133,7 +133,7 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
                            z0+jitter_mag*np.random.randn(),  # z1
                            sxy,                              # sigma_xy
                            3*sxy,                            # sigma_z
-                           dataMean.min()]                   # background
+                           bgm]                              # background
 
         # do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y, Z)
