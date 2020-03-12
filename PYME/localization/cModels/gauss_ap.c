@@ -79,7 +79,7 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
@@ -192,7 +192,7 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
     numP = PyArray_Size((PyObject*)Pvals)/3;
     //size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 1,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
@@ -326,7 +326,7 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
 
     //size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
@@ -491,7 +491,7 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -625,7 +625,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -810,7 +810,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -1046,7 +1046,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -1107,7 +1107,7 @@ static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;
     int ix,iy,iz;
-    int size[3];
+    npy_intp size[3];
 
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1184,7 +1184,7 @@ static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
     size[1] = PyArray_Size((PyObject*)Yvals);
     size[2] = PyArray_Size((PyObject*)Zvals);
 
-    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,size,NPY_DOUBLE);
 
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1228,7 +1228,7 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[2];
+    npy_intp size[2];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1291,7 +1291,7 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1330,7 +1330,7 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[3];
+    npy_intp size[3];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1393,7 +1393,7 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
     size[2] = PyArray_Size((PyObject*)Yvals);
     size[0] = 7;
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1444,7 +1444,7 @@ static PyObject * genGaussJac(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[3];
+    npy_intp size[3];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1507,7 +1507,7 @@ static PyObject * genGaussJac(PyObject *self, PyObject *args, PyObject *keywds)
     size[2] = PyArray_Size((PyObject*)Yvals);
     size[0] = 7;
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1557,7 +1557,7 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[3];
+    npy_intp size[3];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1641,7 +1641,7 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
     }
         
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1695,7 +1695,7 @@ static PyObject * genGaussA(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[2];
+    npy_intp size[2];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1758,7 +1758,7 @@ static PyObject * genGaussA(PyObject *self, PyObject *args, PyObject *keywds)
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
@@ -1795,7 +1795,7 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
 {
     double *res = 0;  
     int ix,iy; 
-    int size[2];
+    npy_intp size[2];
     
     PyObject *oX =0;
     PyObject *oY=0;
@@ -1858,7 +1858,7 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     
     //fix strides
     PyArray_STRIDES(out)[0] = sizeof(double);
