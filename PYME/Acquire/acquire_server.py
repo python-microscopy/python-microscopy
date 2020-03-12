@@ -334,6 +334,26 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         
         self._main_page = webui.load_template('PYMEAcquire.html')
         
+    @webframework.register_endpoint('/do_login')
+    def do_login(self, email, password, on_success='/'):
+        from PYME.util import authenticate
+        
+        try:
+            auth = authenticate.get_token(email, password)
+        except:
+            auth = None
+            
+        if auth:
+            return webframework.HTTPRedirectResponse(on_success, headers=[('Set-Cookie', 'auth=%s; path=/; HttpOnly' % auth)])
+        else:
+            return webframework.HTTPRedirectResponse('/login?reason="failure"&on_success="%s"'%on_success, headers=[('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
+     
+    @webframework.register_endpoint('/login', mimetype='text/html')
+    def login(self, reason='', on_success='/'):
+        from jinja2 import Template
+        
+        return Template(webui.load_template('login.html')).render(reason=reason, on_success=on_success)
+        
         
     @webframework.register_endpoint('/', mimetype='text/html')
     def main_page(self):

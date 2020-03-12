@@ -27,6 +27,42 @@ def register_endpoint(path, output_is_json=True, mimetype='application/json', co
         return func
 
     return _reg_ep
+
+class HTTPResponse(object):
+    """ permit setting headers etc"""
+    def __init__(self, body, headers=None, response_code=200):
+        self.body = body
+        self.headers= headers
+        self.response_code = response_code
+        
+    def write_response(self, method, handler):
+        resp = self.body
+        if method._jsonify:
+            resp = json.dumps(resp)
+    
+        compress_output = method._compress and ('gzip' in handler.headers.get('Accept-Encoding', ''))
+    
+        handler.send_response(self.response_code)
+        handler.send_header("Content-Type", method._mimetype)
+        if compress_output:
+            handler.send_header('Content-Encoding', 'gzip')
+            resp = handler._gzip_compress(resp) #FIXME - write directly to wfile rather than to a BytesIO object - how do we find the content-length?
+    
+        handler.send_header("Content-Length", "%d" % len(resp))
+        if self.headers is not None:
+            for k, v in self.headers:
+                handler.send_header(k, v)
+        handler.end_headers()
+    
+        handler.wfile.write(resp)
+        
+class HTTPRedirectResponse(HTTPResponse):
+    def __init__(self, redirect_to, headers=None, response_code=303):
+        new_headers = [('Location', redirect_to)]
+        if not headers is None:
+            new_headers.extend(headers)
+        HTTPResponse.__init__(self, '', new_headers, response_code)
+        
         
 
 class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -89,6 +125,10 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             import traceback
             self.send_error(500, 'Server Error\n %s' % traceback.format_exc())
+            return
+        
+        if isinstance(resp, HTTPResponse):
+            resp.write_response(handler, self)
             return
         
         if handler._jsonify:
