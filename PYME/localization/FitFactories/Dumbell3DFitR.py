@@ -124,21 +124,20 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         jitter_mag = 70  # TODO: Don't hardcode this?
         sxy = 250/2.35   # Guess for lateral sigma
 
-        rand_x = np.random.randn()
-        rand_y = np.random.randn()
-        rand_z = np.random.randn()
+        rand_x = jitter_mag*np.random.randn()
+        rand_y = jitter_mag*np.random.randn()
+        rand_z = jitter_mag*np.random.randn()
 
-        startParameters = [3*A,                                # A
-                           x0+jitter_mag*rand_x,  # x0
-                           y0+jitter_mag*rand_y,  # y0
-                           z0+jitter_mag*rand_z,  # z0
-                        #    A,                                # B
-                           x0-jitter_mag*rand_x,  # x1
-                           y0-jitter_mag*rand_y,  # y1
-                           z0-jitter_mag*rand_z,  # z1
-                           sxy,                              # sigma_xy
-                           2.5*sxy,                           # sigma_z
-                           dataMean.min()]                   # background
+        startParameters = [3*A,             # A
+                           x0+rand_x,       # x0
+                           y0+rand_y,       # y0
+                           z0+rand_z,       # z0
+                           x0-rand_x,       # x1
+                           y0-rand_y,       # y1
+                           z0-rand_z,       # z1
+                           sxy,             # sigma_xy
+                           2.5*sxy,         # sigma_z
+                           dataMean.min()]  # background
 
         # do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y, Z)
