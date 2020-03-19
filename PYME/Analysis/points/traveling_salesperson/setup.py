@@ -3,9 +3,9 @@ import sys
 import os
 
 if sys.platform == 'darwin'  :  # MacOS
-    linkArgs = []
+    link_args = []
 else:
-    linkArgs = ['-static-libgcc']
+    link_args = ['-static-libgcc']
 
 # windows VC++ has really shocking c standard support so we need to include
 # custom stdint.h and intypes.h files from https://code.google.com/archive/p/msinttypes
@@ -24,11 +24,11 @@ def configuration(parent_package='', top_path=None):
 
     cur_dir = os.path.dirname(__file__)
 
-    ext = Extension(name='.'.join([parent_package, 'two_opt_utils']),
+    ext = Extension(name='.'.join([parent_package, 'traveling_salesperson', 'two_opt_utils']),
                     sources=[os.path.join(cur_dir, 'two_opt_utils.pyx')],
                     include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
-                    extra_link_args=linkArgs)
+                    extra_link_args=link_args)
 
     config = Configuration('traveling_salesperson', parent_package, top_path, ext_modules=cythonize([ext]))
     return config
