@@ -73,7 +73,6 @@ def tsp_sort(positions, start=0, epsilon=0.01, return_path_length=False):
     # bootstrap with a greedy sort
     route, ogd, gsd = greedy_sort(positions, start_index, distances)
     route, final_distance, gsd = two_opt.two_opt(distances, epsilon, route)
-
     if return_path_length:
         return positions[route, :], ogd, final_distance
     return positions[route, :]

@@ -4,6 +4,11 @@ import time
 import threading
 
 class TSPQueue(object):
+    """
+    Object which masquerades as an n x 2 positions array for use in position queuing. Delays are added in the
+    __getitem__ call according to the t_step attribute which allows positions to be sorted in the background while
+    positions near the beginning of the route are already accessible.
+    """
     def __init__(self, positions, start=0, epsilon=0.01, t_step=1):
         from scipy.spatial import distance_matrix, cKDTree
         from PYME.Analysis.points.traveling_salesperson import sort
@@ -36,11 +41,31 @@ class TSPQueue(object):
         return len(self.route)
 
     def queue_two_opt(self, initial_route, epsilon, t_step, distances, og_distance):
-        from PYME.Analysis.points.traveling_salesperson import two_opt, two_opt_utils
+        """
+        Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route. Does so in a way which
+        is convenient for quickly accessing the beginning of the sorted list, as t_step is used to periodically advance
+        the first index which can be moved by the sort
+
+        Parameters
+        ----------
+        initial_route: ndarray
+            [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
+            may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+        epsilon: float
+            exit tolerence on relative improvement. 0.01 corresponds to 1%
+        t_step: float
+            average time after which to advance an index. A single step can easily be longer if the nested for loop
+            takes a considerable amount of time, after which multiple indices will be moved to the 'sorted' route to
+            catch up.
+        distances: ndarray
+            distance array, which distances[i, j] is the distance from the ith to the jth point
+        og_distance: float
+            path-length of initial_route
+
+        """
+        from PYME.Analysis.points.traveling_salesperson import two_opt_utils
         route = initial_route.astype(int)
         endpoint_offset = 0
-
-        # initialize values we'll be updating
         improvement = 1
         best_distance = og_distance
         k_max = distances.shape[0] - 1
@@ -66,10 +91,15 @@ class TSPQueue(object):
 
             improvement = (last_distance - best_distance) / last_distance
         # add the rest of the route
-        self.route = route
-        # return route, best_distance, og_distance
+        self.route.extend(route[self.start_ind:])
 
     def __getitem__(self, item):
+        """
+        Get a position(s), sorted in an effort to minimize path length. Will not return immediately - the two-opt
+        sorting is allowed to continue until the next time it wants to move the first index at which point it will check
+        to see if it has delayed too long and needs to simply add a couple positions from the greedy-sort bootstrapped
+        route to the final route, which can be accessed from this call.
+        """
         # our positions array is shape n, 2
         if len(item) == 1:
             n, xy = item, slice(None, None, None)
