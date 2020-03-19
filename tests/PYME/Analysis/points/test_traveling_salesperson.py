@@ -51,3 +51,12 @@ def test_c_calculate_path_length():
     distances = distance_matrix(positions, positions)
     route = np.random.choice(distances.shape[0], distances.shape[0], replace=False)
     np.testing.assert_almost_equal(cpl(distances, route), c_cpl(distances, route), decimal=1)
+
+def test_swap():
+    from PYME.Analysis.points.traveling_salesperson.two_opt import two_opt_swap
+    route = np.arange(100, dtype=int)
+    i = 30
+    k = 60
+    tos_route = two_opt_swap(route, i, k)
+    route[i:k + 1] = route[k:i - 1: -1]
+    assert np.array_equal(tos_route, route)
