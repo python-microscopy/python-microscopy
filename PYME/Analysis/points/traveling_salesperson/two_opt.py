@@ -121,9 +121,9 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
         last_distance = best_distance
         for i in range(1, distances.shape[0] - 2):  # don't swap the first position
             for k in range(i + 1, distances.shape[0] - endpoint_offset):
-                d_dist = two_opt_test(route, i, k, distances, k_max)
+                d_dist = two_opt_utils.two_opt_test(route, i, k, distances, k_max)
                 if d_dist < 0:
-                    route = two_opt_utils.two_opt_swap(route, i, k)
+                    route = two_opt_swap(route, i, k)
                     best_distance = best_distance + d_dist #calculate_path_length(distances, route)
 
         improvement = (last_distance - best_distance) / last_distance
