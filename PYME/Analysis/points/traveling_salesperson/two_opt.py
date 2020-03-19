@@ -1,5 +1,6 @@
 
 import numpy as np
+from PYME.Analysis.points.traveling_salesperson import two_opt_utils
 
 def calculate_path_length(distances, route):
     """
@@ -108,7 +109,7 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
     see https://en.wikipedia.org/wiki/2-opt for pseudo code
 
     """
-    route = initial_route if initial_route is not None else np.arange(distances.shape[0], dtype=int)
+    route = initial_route.astype(int) if initial_route is not None else np.arange(distances.shape[0], dtype=int)
     endpoint_offset = int(fixed_endpoint)
 
     og_distance = calculate_path_length(distances, route)
@@ -122,8 +123,8 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
             for k in range(i + 1, distances.shape[0] - endpoint_offset):
                 d_dist = two_opt_test(route, i, k, distances, k_max)
                 if d_dist < 0:
-                    route = two_opt_swap(route, i, k)
-                    best_distance =  best_distance + d_dist #calculate_path_length(distances, route)
+                    route = two_opt_utils.two_opt_swap(route, i, k)
+                    best_distance = best_distance + d_dist #calculate_path_length(distances, route)
 
         improvement = (last_distance - best_distance) / last_distance
 
