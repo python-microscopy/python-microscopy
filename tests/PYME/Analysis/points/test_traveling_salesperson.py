@@ -40,3 +40,14 @@ def test_tsp_sort():
     positions, og_distance, final_distance = sort.tsp_sort(og_positions, return_path_length=True)
     np.testing.assert_array_equal(np.unique(positions), np.unique(og_positions))
     assert final_distance < og_distance
+
+def test_c_calculate_path_length():
+    from PYME.Analysis.points.traveling_salesperson.two_opt_utils import calculate_path_length as c_cpl
+    from PYME.Analysis.points.traveling_salesperson.two_opt import calculate_path_length as cpl
+    n = 500
+    x = np.random.rand(n) * 100
+    y = np.random.rand(n) * 100
+    positions = np.stack([x, y], axis=1)
+    distances = distance_matrix(positions, positions)
+    route = np.random.choice(distances.shape[0], distances.shape[0], replace=False)
+    np.testing.assert_almost_equal(cpl(distances, route), c_cpl(distances, route), decimal=1)

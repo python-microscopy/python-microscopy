@@ -130,6 +130,10 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
 
     return route, best_distance, og_distance
 
+def c_two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
+    route = initial_route.astype(int) if initial_route is not None else np.arange(distances.shape[0], dtype=int)
+    return two_opt_utils.two_opt(distances.astype(float), route, float(epsilon), int(fixed_endpoint))
+
 
 def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
     """
