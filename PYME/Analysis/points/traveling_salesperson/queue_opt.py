@@ -79,7 +79,7 @@ class TSPQueue(object):
                 for ind in range(int(steps)):
                     # append to master route
                     self.route.append(route[self.start_ind])
-            print('n sorted: %d' % self.start_ind)
+            print('n sorted: %d, after %f s' % (self.start_ind, (time.time() - self.t0)))
             for i in range(self.start_ind, distances.shape[0] - 2):
                 # start swapping at the current 'start' of our route
                 for k in range(i + 1, distances.shape[0] - endpoint_offset):
