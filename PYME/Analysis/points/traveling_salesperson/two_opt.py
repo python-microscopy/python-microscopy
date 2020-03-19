@@ -123,8 +123,9 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
             for k in range(i + 1, distances.shape[0] - endpoint_offset):
                 d_dist = two_opt_utils.two_opt_test(route, i, k, distances, k_max)
                 if d_dist < 0:
-                    route = two_opt_swap(route, i, k)
-                    best_distance = best_distance + d_dist #calculate_path_length(distances, route)
+                    # do the swap in-place since we tested before we leaped and we don't need the old route
+                    route[i:k + 1] = route[k:i - 1: -1]
+                    best_distance = best_distance + d_dist
 
         improvement = (last_distance - best_distance) / last_distance
 
