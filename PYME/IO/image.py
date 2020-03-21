@@ -89,7 +89,7 @@ class ImageBounds:
             if 'Splitter.Channel0ROI' in mdh.getEntryNames():
                 rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
                 x1 = rw * 1e3 * mdh['voxelsize.x']
-                x1 = rh * 1e3 * mdh['voxelsize.x']
+                y1 = rh * 1e3 * mdh['voxelsize.x']
             else:
                 y1 = y1 / 2
 
