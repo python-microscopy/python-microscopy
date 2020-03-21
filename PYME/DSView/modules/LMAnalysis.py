@@ -92,7 +92,7 @@ def _verifyClusterResultsFilename(resultsFilename):
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, fdialog.GetValue().encode())
+            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 
@@ -635,7 +635,7 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
+        if self.newStyleTaskDistribution and self.image.filename.upper().startswith('PYME-CLUSTER'):
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
