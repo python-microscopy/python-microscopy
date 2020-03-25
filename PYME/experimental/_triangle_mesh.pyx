@@ -300,6 +300,29 @@ cdef class TriangleMesh(TrianglesBase):
         print('Data munged to vertices, faces')
         return cls(vertices, faces, **kwargs)
 
+    @classmethod
+    def from_delaunay(cls, tri, vertices, **kwargs):
+        """
+        Convert a scipy.spatial.Delaunay tesselation of vertices to a mesh 
+        (for wireframe viewing).
+
+        Parameters
+        ----------
+            tri : scipy.spatial.Delaunay
+                Delaunay triangulation of vertices in 3D Euclidean space.
+            vertices : np.array
+                Vertices triangulted in tri.
+        """
+
+        # Create faces
+        f021 = tri.simplices[:,[0,2,1]]
+        f013 = tri.simplices[:,[0,1,3]]
+        f032 = tri.simplices[:,[0,3,2]]
+        f123 = tri.simplices[:,[1,2,3]]
+        faces = np.vstack([f021, f013, f032, f123])
+
+        return cls(vertices, faces, **kwargs)
+
     @property
     def x(self):
         return self.vertices[:,0]
@@ -326,8 +349,8 @@ cdef class TriangleMesh(TrianglesBase):
 
     @property
     def component(self):
-        # if np.all(self._vertices['component'] == -1):
-        self.find_connected_components()
+        if np.all(self._vertices['component'] == -1):
+            self.find_connected_components()
         return self._vertices['component']
 
     @property
