@@ -324,7 +324,12 @@ class ScaledShell(object):
         return rcs < r_cs_shell
 
     def _visualize_shell(self, d_zenith=0.1, points=None):
-        from mayavi import mlab
+        try:
+            from mayavi import mlab
+        except(ImportError):
+            raise ImportError('Could not import mayavi.mlab.\
+             Please make sure mayavi is installed to display fitted shell')
+
         if not points:
             x, y, z = self.x, self.y, self.z
         else:
