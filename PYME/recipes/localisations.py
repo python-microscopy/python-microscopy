@@ -109,7 +109,7 @@ class DensityMapping(ModuleBase):
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
-        namespace[self.outputImage] = renderer.Generate(self.get())
+        namespace[self.outputImage] = renderer.Generate(self.trait_get())
 
     @property
     def default_view(self):
