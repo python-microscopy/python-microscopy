@@ -90,7 +90,6 @@ class SphericalHarmonicShellManager(object):
         self.pipeline.selectDataSource('shell_mapped')
 
         self.vis_frame.RefreshView()
-        self.vis_frame.CreateFoldPanel()
 
         shell._visualize_shell()
 
@@ -123,7 +122,7 @@ class SphericalHarmonicShellManager(object):
         self.pipeline.selectDataSource('shell%d_mapped' % shell_number)
 
         self.vis_frame.RefreshView()
-        self.vis_frame.CreateFoldPanel()
+        # self.vis_frame.CreateFoldPanel()
 
         shell._visualize_shell(self.d_angle, (points['x'], points['y'], points['z']))
 
