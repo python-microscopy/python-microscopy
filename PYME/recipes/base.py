@@ -85,7 +85,7 @@ class ModuleBase(HasTraits):
         self._invalidate_parent = invalidate_parent
 
         HasTraits.__init__(self)
-        self.set(**kwargs)
+        self.trait_set(**kwargs)
         
         self._check_outputs()
 
@@ -180,11 +180,11 @@ class ModuleBase(HasTraits):
 
     @property
     def inputs(self):
-        return {v for k, v in self.get().items() if k.startswith('input') and not v == ""}
+        return {v for k, v in self.trait_get().items() if k.startswith('input') and not v == ""}
 
     @property
     def outputs(self):
-        return {v for k, v in self.get().items() if k.startswith('output')}
+        return {v for k, v in self.trait_get().items() if k.startswith('output')}
     
     @property
     def file_inputs(self):
@@ -201,7 +201,7 @@ class ModuleBase(HasTraits):
 
         """
         #print(self.get().items())
-        return [v.lstrip('{').rstrip('}') for k, v in self.get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
+        return [v.lstrip('{').rstrip('}') for k, v in self.trait_get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
     
     def get_name(self):
         return module_names[self.__class__]
@@ -227,11 +227,11 @@ class ModuleBase(HasTraits):
         try:
             #print('turning off invalidation')
             self._invalidate_parent = False
-            old_traits = self.get()
+            old_traits = self.trait_get()
             #print('edit_traits')
             self.edit_traits(*args, kind='modal', **kwargs)
             self._invalidate_parent = inv_mode
-            if not self.get() == old_traits:
+            if not self.trait_get() == old_traits:
                 #print('invalidating ...')
                 self.invalidate_parent()
         finally:

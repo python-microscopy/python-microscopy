@@ -23,7 +23,6 @@
 import numpy as np
 import sys
 
-
 class ClusterAnalyser:
     """
 
@@ -258,6 +257,8 @@ class ClusterAnalyser:
         from PYME.recipes import tablefilters, localisations, measurement
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
+        import wx
+        import os
 
         # build a recipe programatically
         distogram = ModuleCollection()
@@ -288,7 +289,17 @@ class ClusterAnalyser:
         plt.bar(self.pairwiseDistances[selectedChans]['bins'] - 0.5*binsz,
                 self.pairwiseDistances[selectedChans]['counts'], width=binsz)
 
-
+        hist_dlg = wx.FileDialog(None, message="Save histogram as csv...",
+                                #  defaultDir=os.getcwd(),
+                                 defaultFile='disthist_{}.csv'.format(os.path.basename(self.pipeline.filename)), 
+                                 wildcard='CSV (*.csv)|*.csv', 
+                                 style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    
+        if hist_dlg.ShowModal() == wx.ID_OK:
+            histfn = hist_dlg.GetPath()
+            np.savetxt(histfn, np.vstack([self.pairwiseDistances[selectedChans]['bins']- 0.5*binsz,
+                                          self.pairwiseDistances[selectedChans]['counts']]).T, 
+                                          delimiter=',', header='Bins [nm],Counts')
 
     def OnClustersInTime(self, event=None):
         #FIXME - this would probably be better in an addon module outside of the core project
