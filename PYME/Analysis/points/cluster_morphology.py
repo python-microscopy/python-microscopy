@@ -52,9 +52,11 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
     except AttributeError:
         raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 
-    pixX = np.round((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
-    pixY = np.round((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
-    pixZ = np.round((points['z'] - im_oz) / label_image.sliceSize).astype('i')
+    # Image origin is referenced to top-left corner of pixelated image.
+    # FIXME - localisations are currently referenced to centre of raw pixels
+    pixX = np.floor((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
+    pixY = np.floor((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
+    pixZ = np.floor((points['z'] - im_oz) / label_image.sliceSize).astype('i')
 
     label_data = label_image.data
 
@@ -175,7 +177,6 @@ def measure_3d(x, y, z, output=None):
     output['sigma_z'] = np.sqrt(zz_c.sum() / (N - 1))
     
     #radius of gyration
-    # TODO - can we kill the camelCase here?
     output['gyrationRadius'] = np.sqrt(np.mean(xx_c + yy_c + zz_c))
 
     #principle axes
