@@ -383,7 +383,7 @@ class DBSCANClustering(ModuleBase):
     import multiprocessing
     inputName = Input('filtered')
 
-    columns = ListStr(['x', 'y', 'z'])
+    columns = Enum(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
     
