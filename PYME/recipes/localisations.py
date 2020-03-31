@@ -402,6 +402,10 @@ class DBSCANClustering(ModuleBase):
         inp = namespace[self.inputName]
         mapped = tabular.MappingFilter(inp)
 
+        print('How did the columns come out?')
+        print(type(self.columns))
+        print(self.columns)
+
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         if self.multithreaded:
             core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
@@ -425,6 +429,25 @@ class DBSCANClustering(ModuleBase):
     @property
     def hide_in_overview(self):
         return ['columns']
+
+    @property
+    def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
+        from traitsui.api import View, Item, TextEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+                    Item('searchRadius'),
+                    Item('minClumpSize'),
+                    Item('multithreaded'),
+                    Item('numberOfJobs'),
+                    Item('clumpColumnName'),
+                    Item('outputName'), 
+                    buttons=['OK', 'Cancel'])
 
 #TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
