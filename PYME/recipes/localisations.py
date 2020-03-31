@@ -402,10 +402,6 @@ class DBSCANClustering(ModuleBase):
         inp = namespace[self.inputName]
         mapped = tabular.MappingFilter(inp)
 
-        print('How did the columns come out?')
-        print(type(self.columns))
-        print(self.columns)
-
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         if self.multithreaded:
             core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
