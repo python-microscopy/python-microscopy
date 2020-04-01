@@ -427,17 +427,20 @@ class DBSCANClustering(ModuleBase):
         return ['columns']
     
     @property
-    def pipeline_view(self):
+    def _pipeline_view(self, show_label=False):
         from traitsui.api import View, Item, TextEditor
         from PYME.ui.custom_traits_editors import CBEditor
-
-        return View(Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+        
+        items = [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
                     Item('searchRadius'),
                     Item('minClumpSize'),
                     Item('multithreaded'),
                     Item('numberOfJobs'),
-                    Item('clumpColumnName'),
-                    )
+                    Item('clumpColumnName'),]
+        if show_label:
+            return View(Group(items,label='DBSCANClustering'))
+        else:
+            return View(items)
 
     @property
     def default_view(self):
