@@ -31,25 +31,11 @@ class ExtractTableChannel(ModuleBase):
         except:
             return []
 
-    @property
-    def pipeline_view(self):
-        from traitsui.api import View, Group, Item
+    def _view_items(self, params=None):
+        from traitsui.api import Item
         from PYME.ui.custom_traits_editors import CBEditor
-
-        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
-
-        return View(Group(Item('channel', editor=CBEditor(choices=self._colour_choices)), label=modname))
-
-    @property
-    def default_view(self):
-        from traitsui.api import View, Group, Item
-        from PYME.ui.custom_traits_editors import CBEditor
-
-        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('channel', editor=CBEditor(choices=self._colour_choices)),
-                    Item('_'),
-                    Item('outputName'), buttons=['OK'])
+        return [Item('channel', editor=CBEditor(choices=self._colour_choices)),]
+    
 
 
 @register_module('DensityMapping')
@@ -110,15 +96,10 @@ class DensityMapping(ModuleBase):
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
         namespace[self.outputImage] = renderer.Generate(self.trait_get())
-
-    @property
-    def default_view(self):
-        from traitsui.api import View, Group, Item, TextEditor, CSVListEditor
-        from PYME.ui.custom_traits_editors import CBEditor
-    
-        return View(Item('inputLocalizations', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('renderingModule'),
+        
+    def _view_items(self, params=None):
+        from traitsui.api import Group, Item
+        return [Item('renderingModule'),
                     Item('pixelSize'),
                     Item('colours', style='text'),#editor=CSVListEditor()),
                     Item('softRender'),
@@ -140,8 +121,7 @@ class DensityMapping(ModuleBase):
                         Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
                         label='Output Image Size',
                     ),
-                    Item('_'),
-                    Item('outputImage'), buttons=['OK'])
+                ]
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
@@ -425,39 +405,17 @@ class DBSCANClustering(ModuleBase):
     @property
     def hide_in_overview(self):
         return ['columns']
-    
-    @property
-    def _pipeline_view(self, show_label=False):
-        from traitsui.api import View, Item, TextEditor
-        from PYME.ui.custom_traits_editors import CBEditor
         
-        items = [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+    def _view_items(self, params=None):
+        from traitsui.api import Item, TextEditor
+        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
                     Item('searchRadius'),
                     Item('minClumpSize'),
                     Item('multithreaded'),
                     Item('numberOfJobs'),
                     Item('clumpColumnName'),]
-        if show_label:
-            return View(Group(items,label='DBSCANClustering'))
-        else:
-            return View(items)
 
-    @property
-    def default_view(self):
-        from traitsui.api import View, Item, TextEditor
-        from PYME.ui.custom_traits_editors import CBEditor
 
-        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
-                    Item('searchRadius'),
-                    Item('minClumpSize'),
-                    Item('multithreaded'),
-                    Item('numberOfJobs'),
-                    Item('clumpColumnName'),
-                    Item('_'),
-                    Item('outputName'), 
-                    buttons=['OK'])
 
 #TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
