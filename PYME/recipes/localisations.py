@@ -428,10 +428,6 @@ class DBSCANClustering(ModuleBase):
 
     @property
     def default_view(self):
-        import wx
-        if wx.GetApp() is None:
-            return None
-        
         from traitsui.api import View, Item, TextEditor
         from PYME.ui.custom_traits_editors import CBEditor
 
