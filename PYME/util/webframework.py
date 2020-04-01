@@ -7,23 +7,28 @@ from socketserver import ThreadingMixIn
 try:
     # noinspection PyCompatibility
     import urlparse
+    import Cookie as cookies
 except ImportError:
     #py3
     # noinspection PyCompatibility
     import urllib.parse as urlparse
+    from http import cookies
 
 import json
     
 import logging
 logger = logging.getLogger(__name__)
 
-def register_endpoint(path, output_is_json=True, mimetype='application/json', compress=True):
+def register_endpoint(path, output_is_json=True, mimetype='application/json', compress=True, cookies=False, authenticate=False):
     def _reg_ep(func):
         #_endpoints[path] = func
         func._expose_path = path
         func._jsonify = not output_is_json
         func._mimetype = mimetype
         func._compress = compress
+        func._parse_cookies = cookies
+        func._authenticate = authenticate
+            
         return func
 
     return _reg_ep
@@ -119,6 +124,24 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, 'No handler for %s' % up.path)
             return
         
+        try:
+            kwargs.pop('authenticated_as') #if anything fails we are not authenticated NB - this stops people from passing authenticated_as on the query string.
+        except KeyError:
+            pass
+        
+        if handler._parse_cookies or  handler._authenticate:
+            req_cookies = cookies.SimpleCookie(self.headers.get('Cookie'))
+            if handler._parse_cookies:
+                kwargs['cookies'] = req_cookies
+                
+            if handler._authenticate:
+                from PYME.util import authenticate
+                try:
+                    auth_token = req_cookies.get('auth').value
+                    kwargs['authenticated_as'] = authenticate.validate_token(auth_token)['email']
+                except:
+                    pass
+                    
          
         try:
             resp = handler(**kwargs)

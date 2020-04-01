@@ -36,9 +36,9 @@ import jwt
 from six.moves import input
 
 auth_db_path = os.path.join(PYME.config.user_config_dir, '.auth')
-auth_db = sqlite3.connect(auth_db_path)
 
 def _init_db():
+    auth_db = sqlite3.connect(auth_db_path)
     with auth_db as con:
         tableNames = [a[0] for a in con.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
         
@@ -49,15 +49,24 @@ def _init_db():
         if not 'secrets' in tableNames:
             con.execute("CREATE TABLE secrets (type TEXT NOT NULL UNIQUE , secret TEXT NOT NULL )")
             con.execute("INSERT INTO secrets VALUES ('SALT', ?)", (binascii.hexlify(os.urandom(24)),))
+    
+    auth_db.close()
             
 _init_db()
 
 def get_salt():
-    return auth_db.execute("SELECT secret FROM secrets WHERE type='SALT'").fetchone()[0]
+    auth_db = sqlite3.connect(auth_db_path)
+    salt = auth_db.execute("SELECT secret FROM secrets WHERE type='SALT'").fetchone()[0]
+    auth_db.close()
+    
+    return salt
 
 def _get_token_secret():
     try:
-        return str(auth_db.execute("SELECT secret FROM secrets WHERE type='TOKEN'").fetchone()[0])
+        auth_db = sqlite3.connect(auth_db_path)
+        secret = str(auth_db.execute("SELECT secret FROM secrets WHERE type='TOKEN'").fetchone()[0])
+        auth_db.close()
+        return secret
     except TypeError:
         # generate a secret the first time we want one
         secret = binascii.hexlify(os.urandom(24))
@@ -71,7 +80,9 @@ def hash_password(password):
     return binascii.hexlify(hashlib.pbkdf2_hmac('sha256', bytes(password), bytes(get_salt()), 100000))
 
 def authenticate_hash(email, password_hash):
+    auth_db = sqlite3.connect(auth_db_path)
     hash = auth_db.execute("SELECT password FROM users WHERE email=?", (email,)).fetchone()[0]
+    auth_db.close()
     return password_hash==hash
 
 def authenticate(email, password):
@@ -80,22 +91,28 @@ def authenticate(email, password):
 def add_user(email, password):
     if len(password) < 8:
         raise ValueError('Minimum password length is 8 characters')
-    
+
+    auth_db = sqlite3.connect(auth_db_path)
     with auth_db:
         auth_db.execute("INSERT INTO users VALUES(?,?)", (email, hash_password(password)))
+    auth_db.close()
         
 def _change_password(email, password):
     """ DO NOT EXPOSE IN UI """
     if len(password) < 8:
         raise ValueError('Minimum password length is 8 characters')
-    
+
+    auth_db = sqlite3.connect(auth_db_path)
     with auth_db:
         auth_db.execute("UPDATE users SET password=? WHERE email=?", (hash_password(password), email))
+    auth_db.close()
 
 def _delete_user(email):
     """ DO NOT EXPOSE IN UI """
+    auth_db = sqlite3.connect(auth_db_path)
     with auth_db:
         auth_db.execute("DELETE FROM users WHERE email=?", (email,))
+    auth_db.close()
         
 def get_token(email, password, lifetime=datetime.timedelta(days=1), **kwargs):
     if authenticate(email, password):

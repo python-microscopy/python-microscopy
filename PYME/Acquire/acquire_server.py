@@ -341,6 +341,7 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         try:
             auth = authenticate.get_token(email, password)
         except:
+            #logger.exception('Error getting auth token')
             auth = None
             
         if auth:
@@ -353,12 +354,19 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         from jinja2 import Template
         
         return Template(webui.load_template('login.html')).render(reason=reason, on_success=on_success)
-        
-        
-    @webframework.register_endpoint('/', mimetype='text/html')
-    def main_page(self):
+
+    @webframework.register_endpoint('/logout')
+    def logout(self, on_success='/'):
+        return webframework.HTTPRedirectResponse(on_success, headers=[
+            ('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
+
+    @webframework.register_endpoint('/', mimetype='text/html', authenticate=True)
+    def main_page(self, authenticated_as=None):
         #return self._main_page
-        return webui.load_template('PYMEAcquire.html')
+        from jinja2 import Template
+        
+        print('authenticated_as=', authenticated_as)
+        return Template(webui.load_template('PYMEAcquire.html')).render(authenticated_as=authenticated_as)
         
     def run(self):
         self._poll_thread = threading.Thread(target=self.main_loop)
@@ -411,11 +419,12 @@ def main():
 if __name__ == '__main__':
     from PYME.util import mProfile, fProfile
     
-    mProfile.profileOn(['acquire_server.py', 'microscope.py', 'frameWrangler.py'])
+    #mProfile.profileOn(['acquire_server.py', 'microscope.py', 'frameWrangler.py'])
     #fp = fProfile.thread_profiler()
     #fp.profileOn()
     try:
         main()
     finally:
         #fp.profileOff()
-        mProfile.report()
+        #mProfile.report()
+        pass
