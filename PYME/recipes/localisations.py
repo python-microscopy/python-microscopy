@@ -425,6 +425,19 @@ class DBSCANClustering(ModuleBase):
     @property
     def hide_in_overview(self):
         return ['columns']
+    
+    @property
+    def pipeline_view(self):
+        from traitsui.api import View, Item, TextEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+                    Item('searchRadius'),
+                    Item('minClumpSize'),
+                    Item('multithreaded'),
+                    Item('numberOfJobs'),
+                    Item('clumpColumnName'),
+                    )
 
     @property
     def default_view(self):
@@ -432,14 +445,16 @@ class DBSCANClustering(ModuleBase):
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
                     Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
                     Item('searchRadius'),
                     Item('minClumpSize'),
                     Item('multithreaded'),
                     Item('numberOfJobs'),
                     Item('clumpColumnName'),
+                    Item('_'),
                     Item('outputName'), 
-                    buttons=['OK', 'Cancel'])
+                    buttons=['OK'])
 
 #TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
