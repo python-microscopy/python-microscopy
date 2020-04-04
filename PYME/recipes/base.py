@@ -646,7 +646,11 @@ class ModuleCollection(HasTraits):
 
     def toYAML(self):
         import yaml
-        return yaml.safe_dump(self.get_cleaned_module_list(), default_flow_style=False)
+        class MyDumper(yaml.SafeDumper):
+            def represent_mapping(self, tag, value, flow_style=None):
+                return super(MyDumper, self).represent_mapping(tag, value, False)
+            
+        return yaml.dump(self.get_cleaned_module_list(), Dumper=MyDumper)
         
     def toJSON(self):
         import json
