@@ -96,7 +96,9 @@
 
     <div id="app">
         <table class="table table-sm">
+            {% raw %}
             <tr v-for="(val, prop_name) in state" :key="prop_name"><td>{{ prop_name }}</td><td>{{ val }}</td></tr>
+            {% endraw %}
         </table>
     </div>
 </main>
@@ -277,7 +279,10 @@
     function get_state(){
         $.ajax({
             url: "/get_scope_state",
-            success: function(data){ app.state=data;$("#int_time").val(1000*app.state['Camera.IntegrationTime'])}
+            success: function(data){
+                app.state=data;
+                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+            }
 
         })
     }
@@ -287,7 +292,10 @@
     function poll_state(){
         $.ajax({
             url: "/scope_state_longpoll",
-            success: function(data){ app.state=data;$("#int_time").val(1000*app.state['Camera.IntegrationTime'])},
+            success: function(data){ console.log(data);
+                app.state=data;
+                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+            },
             complete: function(jqXHR, status){
                     if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
                 }
