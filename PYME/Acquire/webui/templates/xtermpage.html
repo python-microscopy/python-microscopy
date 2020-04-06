@@ -1,0 +1,97 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+
+    <title></title>
+    <link id="favicon" rel="shortcut icon" type="image/x-icon" href="/ipstatic/base/images/favicon-terminal.ico">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="/ipstatic/components/xterm.js-css/index.css" type="text/css" />
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        .container {
+            height: 100%;
+        }
+    </style>
+
+    <script src="/ipstatic/components/requirejs/require.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      require.config({
+
+          baseUrl: '/ipstatic/',
+          paths: {
+            jquery: 'components/jquery/jquery.min',
+            xterm: 'components/xterm.js/index',
+            'xtermjs-fit': 'components/xterm.js-fit/index',
+          },
+
+          waitSeconds: 30,
+      });
+
+    </script>
+
+
+</head>
+
+<body>
+<noscript>
+    <div id='noscript'>
+      Jupyter Notebook requires JavaScript.<br>
+      Please enable it to proceed.
+  </div>
+</noscript>
+
+
+{#<div id="site">#}
+
+{#<div class="terminado-container-container">#}
+  <div id="terminado-container" class="container"></div>
+{#</div>#}
+{#</div>#}
+
+<script type="text/javascript">
+    requirejs([
+        'jquery',
+        'terminal/js/terminado',
+], function(
+    $,
+    terminado
+    ){
+    "use strict";
+    requirejs([], function() {});
+
+    var protocol = (window.location.protocol.indexOf("https") === 0) ? "wss" : "ws";
+    var ws_url = protocol+"://"+window.location.host+ "{{ws_url_path}}";
+
+
+    var terminal = terminado.make_terminal($("#terminado-container")[0], ws_url);
+    terminal.term.setOption('convertEol', true);
+    terminal.term.setOption('fontSize', 12);
+    terminal.term.setOption('theme', {background: '#343a40'});
+
+
+    window.onresize = function() {
+      terminal.term.fit();
+      // send the new size to the server so that it can trigger a resize in the running process.
+      terminal.socket.send(JSON.stringify(["set_size", terminal.term.rows, terminal.term.cols,
+                                    $(window).height(), $(window).width()]));
+    };
+
+    // Expose terminal for fiddling with in the browser
+    window.terminal = terminal;
+
+});
+</script>
+
+
+
+</body>
+
+</html>
