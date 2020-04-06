@@ -896,6 +896,10 @@ class ModuleCollection(HasTraits):
     def to_svg(self):
         from . import recipeLayout
         return recipeLayout.to_svg(self.dependancyGraph())
+    
+    def _repr_svg_(self):
+        """ Make us look pretty in Jupyter"""
+        return self.to_svg()
         
 
         
