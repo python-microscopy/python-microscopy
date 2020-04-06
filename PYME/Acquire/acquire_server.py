@@ -389,6 +389,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     
     from PYME import config
+    from PYME.Acquire.webui import ipy
     
     logger = logging.getLogger(__name__)
     parser = OptionParser()
@@ -412,6 +413,13 @@ def main():
     logger.info('using initialization script %s' % init_file)
     
     server = AcquireHTTPServer(options, 8999)
+    ns = dict(scope=server.scope)
+    print('namespace:', ns)
+    ipy.launch_ipy_server_thread(user_ns=ns)
+    
+    import webbrowser
+    webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up
+    
     server.run()
     
 

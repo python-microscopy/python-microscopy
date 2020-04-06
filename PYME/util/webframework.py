@@ -19,6 +19,8 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
+WEBSOCKET_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
 def register_endpoint(path, output_is_json=True, mimetype='application/json', compress=True, cookies=False, authenticate=False):
     def _reg_ep(func):
         #_endpoints[path] = func
@@ -143,6 +145,10 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
                     pass
                     
          
+        if self.headers.get('Upgrade', None) == 'websocket':
+            self._websocket_upgrade(handler, kwargs)
+            return
+        
         try:
             resp = handler(**kwargs)
         except Exception:
@@ -170,6 +176,16 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         self.wfile.write(resp)
         return
+    
+    
+    def _websocket_upgrade(self, handler, kwargs):
+        ws_key = self.headers.get('Sec-WebSocket-Key')
+        ws_version = self.headers.get('Sec-WebSocket-Version', 0)
+
+        self.send_response(101)
+        
+        
+        
 
 
     def do_GET(self):
