@@ -86,11 +86,15 @@ class SimController(object):
         self.excitation_crossections = excitation_crossections
         
         self.n_chans = n_chans
-        self.splitter_info = splitter_info
+        self.z_offsets, self.spec_chans = splitter_info
         self.spectralSignatures = np.array(spectral_signatures)
         
         self.points = []
         self._empirical_hist = None
+        
+    @property
+    def splitter_info(self):
+        return self.z_offsets[:self.n_chans], self.spec_chans[:self.n_chans]
     
     def gen_fluors_wormlike(self, kbp, persistLength, numFluors, flatten=False, z_scale=1.0, num_colours=1, wrap=True):
         import numpy as np
@@ -228,6 +232,7 @@ class SimController(object):
             
     
     def change_num_channels(self, n_chans):
+        self.n_chans = n_chans
         try:
             self.scope.frameWrangler.stop()
             self.scope.cam.SetSensorDimensions(n_chans * len(self.scope.cam.YVals), len(self.scope.cam.YVals),
@@ -237,3 +242,4 @@ class SimController(object):
         except AttributeError:
             logger.exception('Error setting new camera dimensions')
             pass
+        

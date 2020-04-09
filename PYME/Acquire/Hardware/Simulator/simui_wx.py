@@ -395,7 +395,7 @@ class dSimControl(afp.foldPanel):
         grid.SetRowLabelValue(1, 'Z offset [nm]')
         
         #hard code some initial values
-        z_offset, spec = self.sim_controller.splitter_info
+        z_offset, spec = self.sim_controller.z_offsets, self.sim_controller.spec_chans
         
         for i in range(4):
             grid.SetColLabelValue(i, 'Chan %d' % i)
@@ -408,16 +408,15 @@ class dSimControl(afp.foldPanel):
     def getSplitterInfo(self):
         nChans = int(self.cNumSplitterChans.GetStringSelection()[0])
         
-        zOffsets = [float(self.gSplitter.GetCellValue(1, i)) for i in range(nChans)]
-        specChans = [int(self.gSplitter.GetCellValue(0, i)) for i in range(nChans)]
+        self.sim_controller.z_offsets = [float(self.gSplitter.GetCellValue(1, i)) for i in range(nChans)]
+        self.sim_controller.spec_chans = [int(self.gSplitter.GetCellValue(0, i)) for i in range(nChans)]
         
         self.sim_controller.n_chans = nChans
-        self.sim_controller.splitter_info = (zOffsets, specChans)
         
     
     def __init__(self, parent, sim_controller):
         afp.foldPanel.__init__(self, parent, -1)
-        self.sim_controller = sim_controller
+        self.sim_controller = sim_controller # type: .simcontrol.SimController
         
         self._init_ctrls(parent)
         
@@ -544,6 +543,8 @@ class dSimControl(afp.foldPanel):
         self.gSplitter.Refresh()
         
         self.sim_controller.change_num_channels(n_chans)
+        if (len(self.sim_controller.points) > 0):
+            self._generate_and_set_fluorophores()
     
     def OnModelPresets(self, event=None):
         model = self.cModelPresets.GetStringSelection()

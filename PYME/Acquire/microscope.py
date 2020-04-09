@@ -905,7 +905,7 @@ class microscope(object):
                                     lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
         self.state.registerHandler('Positioning.%s_target' % axis_name,
-                                       lambda: units_um*multiplier*piezo.GetTargetPos(channel))
+                                       lambda: units_um*multiplier*piezo.GetTargetPos(channel)) #FIXME - target position does not belong in state ---
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """

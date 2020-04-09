@@ -37,7 +37,7 @@
           position: relative;
           top: 0;
           height: calc(100vh - 48px);
-          padding-top: .5rem;
+          /*padding-top: .5rem;*/
           overflow-x: hidden;
           overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
         }
@@ -82,6 +82,13 @@
 
         }
 
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            /* display: none; <- Crashes Chrome on hover */
+            -webkit-appearance: none;
+             margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+        }
+
     </style>
 </head>
 <body>
@@ -103,15 +110,15 @@
     <div class="row">
         <nav class="col-md-3 d-none d-md-block bg-light sidebar">
       <div class="sidebar-sticky">
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-2 mt-2 mb-1 text-muted">
               <span>Display</span>
           </h6>
 
           <form class="form-inline" action="javascript:void(0);">
             <div class="input-group input-group-sm">
                 <div class="input-group-prepend"><span class="input-group-text">Range</span></div>
-                <input type="number" id="display_min" value="950" class="form-control">
-                <input type="number" id="display_max" value="1050" class="form-control">
+                <input type="number" id="display_min" value="950" class="form-control" size="5">
+                <input type="number" id="display_max" value="1050" class="form-control" size="5">
 
                 <div class="input-group-append">
                     <span class="input-group-text"><label><input type="checkbox" name="autoscale" id="display_autoscale"class="form-control" style="height: 10pt;">&nbsp auto</label></span>
@@ -120,24 +127,66 @@
 
               <div class="input-group input-group-sm">
                 <div class="input-group-prepend"><span class="input-group-text">Zoom</span></div>
-                <input type="number" id="display_zoom" value="100" class="form-control">
+                  <select type="number" id="display_zoom" value="100" class="form-control">
+                      <option>25</option>
+                      <option>50</option>
+                      <option selected="selected">100</option>
+                      <option>200</option>
+                      <option>400</option>
+                  </select>
                   <div class="input-group-append"><span class="input-group-text">&percnt;</span></div>
 
             </div>
 
           </form>
 
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+          {% raw %}
+          <div id="hw">
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted">
               <span>Camera</span>
           </h6>
           <form class="form-inline" action="javascript:void(0);">
               <div class="input-group input-group-sm">
-              <label class="form-control-sm">Integration time [ms]: <input type="number" id="int_time" value="10.0" class="form-control form-control-sm"></label>
+              <label class="form-control-sm">Integration time [ms]: <input type="number" id="int_time" v-model.lazy.number="integration_time_ms" class="form-control form-control-sm"></label>
               </div>
           </form>
 
+
+
+              <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Lasers</span></h6>
+              <form class="form-inline" action="javascript:void(0);">
+                  <div class="input-group input-group-sm" v-for="lname in laser_names">
+                    <label class="form-control-sm">{{ lname }}&nbsp;
+                        <input type="range" :id="lname + 'power'" v-model.lazy.number="state['Lasers.' + lname + '.Power']" class="form-control form-control-sm">&nbsp;
+                        <input type="number" :id="lname + 'power'" v-model.lazy.number="state['Lasers.' + lname + '.Power']" class="form-control form-control-sm" style="width: 50px">
+                    </label>
+
+                  <div class="form-check">
+                      <input class="form-check-input" type="checkbox" v-model="state['Lasers.' + lname + '.On']" :id="'laser-check-' + lname">
+                      <label class="form-check-label" :for="'laser-check-' + lname">
+                        On
+                      </label>
+                    </div>
+
+                </div>
+              </form>
+
+              <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Positioning</span></h6>
+              <form class="form-inline" action="javascript:void(0);">
+                <div class="input-group input-group-sm">
+                    <label class="form-control-sm">x [um]: <input type="number" id="x_pos" v-model.lazy.number="state['Positioning.x']" class="form-control form-control-sm"></label>
+                </div>
+                  <div class="input-group input-group-sm">
+                    <label class="form-control-sm">y [um]: <input type="number" id="y_pos" v-model.lazy.number="state['Positioning.y']" class="form-control form-control-sm"></label>
+                </div>
+              </form>
+          </div>
+          {% endraw %}
+
       </div>
     </nav>
+
+
 <main role="main" class="col-md-9 ml-sm-auto col-lg-9 px-0 mainfh">
     <div class="mainscroll">
 
@@ -356,7 +405,8 @@
 
     poll_array();
 
-    var scope_state;
+    var scope_state = {};
+    scope_state['Camera.IntegrationTime']=0.1 //default start option
 
     var app = new Vue({
         el: '#app',
@@ -366,12 +416,36 @@
             }
     });
 
+    var hw = new Vue({
+        el: '#hw',
+        data: {
+            message: 'Hello Vue!',
+            state: scope_state
+
+            },
+        computed: {
+            integration_time_ms: function () {
+                return this.state['Camera.IntegrationTime']*1000;
+                },
+
+            laser_names: function () {
+                lks = Object.keys(this.state).filter(function(key){return key.startsWith('Lasers') && key.endsWith('On');})
+                laser_info = lks.map(function(k){
+                    lname= k.split('.')[1];
+                    return lname;
+                });
+                return laser_info;
+                }
+            }
+    });
+
     function get_state(){
         $.ajax({
             url: "/get_scope_state",
             success: function(data){
                 app.state=data;
-                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+                hw.state = data;
+                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
             }
 
         })
@@ -384,7 +458,8 @@
             url: "/scope_state_longpoll",
             success: function(data){ console.log(data);
                 app.state=data;
-                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+                hw.state = data;
+                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
             },
             complete: function(jqXHR, status){
                     if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
