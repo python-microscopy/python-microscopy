@@ -332,6 +332,8 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
         
+        self.add_static_handler('static', webframework.StaticFileHandler(os.path.join(os.path.dirname(__file__), 'webui', 'static')))
+        
         self._main_page = webui.load_template('PYMEAcquire.html')
         
     @webframework.register_endpoint('/do_login')

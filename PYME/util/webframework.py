@@ -70,6 +70,132 @@ class HTTPRedirectResponse(HTTPResponse):
             new_headers.extend(headers)
         HTTPResponse.__init__(self, '', new_headers, response_code)
         
+
+import mimetypes
+class StaticFileHandler(object):
+    """ Adapted from std. library SimpleHTTPServer"""
+    def __init__(self, static_path):
+        #TODO - sanity checks on static path
+        self.static_path = static_path
+
+    def _translate_static_path(self, path):
+        """Translate a /-separated PATH to the local filename syntax.
+
+        Components that mean special things to the local file system
+        (e.g. drive or directory names) are ignored.  (XXX They should
+        probably be diagnosed.)
+
+        Modified from SimpleHTTPServer.translate_path
+
+        """
+        import os, posixpath
+        if not self.static_path:
+            raise RuntimeError('Static file handling not configured')
+    
+    
+        # abandon query parameters
+        path = path.split('?', 1)[0]
+        path = path.split('#', 1)[0]
+        # Don't forget explicit trailing slash when normalizing. Issue17324
+        trailing_slash = path.rstrip().endswith('/')
+        path = posixpath.normpath(urlparse.unquote(path))
+        words = path.split('/')
+        words = filter(None, words)
+        path = self.static_path
+        for word in words:
+            drive, word = os.path.splitdrive(word)
+            head, word = os.path.split(word)
+            if word in (os.curdir, os.pardir):
+                raise RuntimeError('Attempted to acess a file out of current tree')
+            path = os.path.join(path, word)
+        if trailing_slash:
+            path += '/'
+        return path
+
+    def _send_static_head(self, path, session):
+        """Common code for GET and HEAD commands.
+
+        This sends the response code and MIME headers.
+
+        Return value is either a file object (which has to be copied
+        to the outputfile by the caller unless the command was HEAD,
+        and must be closed by the caller under all circumstances), or
+        None, in which case the caller has nothing further to do.
+        
+        - adapted from SimpleHTTPServer
+
+        """
+        import os
+        path = self._translate_static_path(path)
+        f = None
+        
+        
+        ctype = self.guess_type(path)
+        try:
+            # Always read in binary mode. Opening files in text mode may cause
+            # newline translations, making the actual size of the content
+            # transmitted *less* than the content-length!
+            f = open(path, 'rb')
+        except IOError:
+            session.send_error(404, "File not found")
+            return None
+        try:
+            session.send_response(200)
+            session.send_header("Content-type", ctype)
+            fs = os.fstat(f.fileno())
+            session.send_header("Content-Length", str(fs[6]))
+            session.send_header("Last-Modified", session.date_time_string(fs.st_mtime))
+            session.end_headers()
+            return f
+        except:
+            f.close()
+            raise
+        
+    def guess_type(self, path):
+        """Guess the type of a file.
+
+        Argument is a PATH (a filename).
+
+        Return value is a string of the form type/subtype,
+        usable for a MIME Content-type header.
+
+        The default implementation looks the file's extension
+        up in the table self.extensions_map, using application/octet-stream
+        as a default; however it would be permissible (if
+        slow) to look inside the data to make a better guess.
+
+        """
+        import posixpath
+
+        base, ext = posixpath.splitext(path)
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        else:
+            return self.extensions_map['']
+
+    if not mimetypes.inited:
+        mimetypes.init() # try to read system mime.types
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream', # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+        })
+    
+    def get_file(self, path, session):
+        import shutil
+        f = self._send_static_head(path, session)
+        if f:
+            try:
+                shutil.copyfileobj(f, session.wfile)
+            finally:
+                f.close()
+        
+        
         
 
 class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -123,6 +249,12 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         try:
             handler = self.server._endpoints[up.path]
         except KeyError:
+            # handle static file requests
+            for prefix, handler in self.server.static_handlers.items():
+                relpath = up.path.lstrip('/')
+                if relpath.startswith(prefix):
+                    return handler.get_file(relpath[len(prefix):], self)
+                
             self.send_error(404, 'No handler for %s' % up.path)
             return
         
@@ -184,9 +316,7 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         self.send_response(101)
         
-        
-        
-
+    
 
     def do_GET(self):
         return self._process_request()
@@ -205,7 +335,7 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
 
 class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
-    def __init__(self, server_address):
+    def __init__(self, server_address, static_handlers = None):
         http.server.HTTPServer.__init__(self, server_address, JSONAPIRequestHandler)
 
         #make a mapping of endpoints to functions
@@ -217,3 +347,10 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
                 self._endpoints[endpoint_path] = func
                 
         logging.debug('Registered endpoints: %s' % self._endpoints.keys())
+        
+        self.static_handlers = {}
+        if not static_handlers is None:
+            self.static_handlers.update(static_handlers)
+        
+    def add_static_handler(self, prefix, handler):
+        self.static_handlers[prefix] = handler
