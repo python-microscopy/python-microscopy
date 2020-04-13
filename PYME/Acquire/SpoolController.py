@@ -95,6 +95,8 @@ class SpoolController(object):
 
         self._analysis_launchers = queue.Queue(3)
         
+        self._status_changed_condition = threading.Condition()
+        
         #settings which were managed by GUI
         self.hdf_compression_level = 2 # zlib compression level that pytables should use (spool to file and queue)
         self.z_stepped = False  # z-step during acquisition
@@ -118,7 +120,6 @@ class SpoolController(object):
         else:
             return ['File', 'Cluster']
         
-    @webframework.register_endpoint('/info', output_is_json=False)
     def get_info(self):
         info =  {'settings' : {'method' : self.spoolType,
                                 'hdf_compression_level': self.hdf_compression_level,
@@ -133,21 +134,11 @@ class SpoolController(object):
                 }
         
         try:
-            info['spooler_status'] = self.spooler.status()
+            info['status'] = self.spooler.status()
         except AttributeError:
-            pass
+            info['status'] = {'spooling':False}
         
         return info
-    
-    @webframework.register_endpoint('/settings', output_is_json=False)
-    def web_settings(self, body):
-        import json
-        try:
-            self.update_settings(json.loads(body))
-            return 'OK'
-        except:
-            logger.exception()
-            return 'Failure'
     
     def update_settings(self, settings):
         method = settings.pop('method', None)
@@ -259,6 +250,9 @@ class SpoolController(object):
         self._update_series_counter()
             
     def _ProgressUpate(self, **kwargs):
+        with self._status_changed_condition:
+            self._status_changed_condition.notify_all()
+            
         self.onSpoolProgress.send(self)
         
     def _get_queue_name(self, fn, pcs=False):
@@ -361,7 +355,6 @@ class SpoolController(object):
     def rel_dirname(self):
         return self._sep.join(self._subdir)
 
-    @webframework.register_endpoint('/stop_spooling')
     def StopSpooling(self):
         """GUI callback to stop spooling."""
         self.spooler.StopSpool()
@@ -453,4 +446,45 @@ class SpoolController(object):
         # make sure our analysis launchers have a chance to finish their job before exiting
         while not self._analysis_launchers.empty():
             self._analysis_launchers.get().join()
+            
+
+
+class SpoolControllerWrapper(object):
+    def __init__(self, spool_controller):
+        self.spool_controller = spool_controller # type: SpoolController
+
+    @webframework.register_endpoint('/info', output_is_json=False)
+    def info(self):
+        return self.spool_controller.get_info()
+
+    @webframework.register_endpoint('/info_longpoll', output_is_json=False)
+    def info_longpoll(self):
+        with self.spool_controller._status_changed_condition:
+            return self.spool_controller.get_info()
+
+    @webframework.register_endpoint('/settings', output_is_json=False)
+    def settings(self, body):
+        import json
+        try:
+            self.spool_controller.update_settings(json.loads(body))
+            return 'OK'
+        except:
+            logger.exception('Error setting spool controller settings')
+            return 'Failure'
+
+    @webframework.register_endpoint('/stop_spooling', output_is_json=False)
+    def stop_spooling(self):
+        self.spool_controller.StopSpooling()
+        return 'OK'
+
+    @webframework.register_endpoint('/start_spooling', output_is_json=False)
+    def start_spooling(self, filename=None, max_frames=sys.maxsize):
+        self.spool_controller.StartSpooling(fn=filename, maxFrames=max_frames)
+        return 'OK'
+        
+    
+        
+    
+    
+    
 

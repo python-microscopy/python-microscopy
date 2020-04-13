@@ -324,6 +324,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
 
 
 from PYME.Acquire import webui
+from PYME.Acquire import SpoolController
 class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
     def __init__(self, options, port, bind_addr=''):
         PYMEAcquireServer.__init__(self, options)
@@ -332,8 +333,7 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
         
-        
-        self.add_endpoints(self.scope.spoolController, '/spool_controller')
+        self.add_endpoints(SpoolController.SpoolControllerWrapper(self.scope.spoolController), '/spool_controller')
         self.add_static_handler('static', webframework.StaticFileHandler(os.path.join(os.path.dirname(__file__), 'webui', 'static')))
         
         self._main_page = webui.load_template('PYMEAcquire.html')

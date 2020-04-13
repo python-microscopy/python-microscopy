@@ -76,16 +76,11 @@
 
     poll_array();
 
-    var scope_state = {};
-    scope_state['Camera.IntegrationTime']=0.1 //default start option
-
-    var app = new Vue({
-        el: '#app',
-        data: {
-            message: 'Hello Vue!',
-            state: scope_state
-            }
-    });
+    function log_ajax_error(jqXHR, textStatus, errorThrown){
+        console.log(textStatus);
+        console.log(errorThrown);
+        console.log(jqXHR);
+    }
 
     function update_server_state(state){
         //console.log('updating state', state);
@@ -94,12 +89,7 @@
             data : JSON.stringify(state),
             processData: false,
             type: 'POST',
-            error: function(jqXHR, textStatus, errorThrown){
-                console.log("failed to update state");
-                console.log(textStatus);
-                console.log(errorThrown);
-                console.log(jqXHR);
-            }
+            error: log_ajax_error,
         })
     }
 
@@ -109,16 +99,27 @@
         return d;
     }
 
+    function start_spooling(filename=null,max_frames=null){
+        //console.log('updating state', state);
+        $.ajax({
+            url : "/spool_controller/start_spooling",
+            //data : JSON.stringify(state),
+            processData: false,
+            type: 'GET',
+            error: log_ajax_error,
+        })
+    }
+
     Vue.component('position-control', {
        props: {'value' : Number, 'axis' : String, 'delta' : {type:[Number,], default: 1.0}},
        template: `<div class="input-group input-group-sm">
                     
-                    <label class="form-control-sm"> {{ axis }} [um]:
-                    <button type="button" class="btn btn-light" v-on:click="set_position(axis, value - delta)">&lt;</button>
+                    <label class="form-control-sm"> {{ axis }} [um]:&nbsp;
+                    <button type="button" class="btn btn-dark" v-on:click="set_position(axis, value - delta)">&lt;</button>
                       <input type="number" v-bind:value="value" style="width: 80px"
-                      v-on:change="set_position(axis, $event.target.value);$emit('input', $event.target.value)" class="form-control form-control-sm">
+                      v-on:change="set_position(axis, $event.target.value);$emit('input', $event.target.value)" class="form-control form-control-sm bg-dark text-light">
                       
-                      <button type="button" class="btn btn-light" v-on:click="set_position(axis, value + delta)">&gt;</button>
+                      <button type="button" class="btn btn-dark" v-on:click="set_position(axis, value + delta)">&gt;</button>
                     </label>
                   </div>`,
        methods:{
@@ -138,7 +139,7 @@
                                :max="max_power"
                                v-on:change="set_laser_power(name, $event.target.value)">&nbsp;
 
-                        <input type="number" class="form-control form-control-sm" style="width: 50px"
+                        <input type="number" class="form-control form-control-sm bg-dark text-light" style="width: 50px"
                                :value="power" v-on:change="set_laser_power(name, $event.target.value)">
                     </label>
 
@@ -161,12 +162,23 @@
         }
     });
 
+    var scope_state = {};
+    scope_state['Camera.IntegrationTime']=0.1 //default start option
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            message: 'Hello Vue!',
+            state: scope_state
+            }
+    });
+
     var hw = new Vue({
         el: '#hw',
         data: {
             message: 'Hello Vue!',
-            state: scope_state
-
+            state: scope_state,
+            spooler : {status:{spooling:false,},},
             },
         computed: {
             integration_time_ms: function () {
@@ -223,6 +235,24 @@
     }
 
     poll_state();
+
+    function poll_spooler(){
+        $.ajax({
+            url: "/spool_controller/info_longpoll",
+            success: function(data){
+                //console.log(data);
+                //app.state=data;
+                hw.spooler = data;
+                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+            },
+            complete: function(jqXHR, status){
+                    if (status == 'success') {poll_spooler();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
+                }
+
+        })
+    }
+
+    poll_spooler();
 
 
     $(window).on('load', function(){$("#home-tab").tab('show');});

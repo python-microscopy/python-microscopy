@@ -27,33 +27,33 @@
 
 <div class="container-fluid">
     <div class="row">
-        <nav class="col-md-3 d-none d-md-block bg-light sidebar">
+        <nav class="col-md-3 col-lg-3 d-md-block bg-dark text-light sidebar">
             <div class="sidebar-sticky">
                 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-2 mt-2 mb-1 text-muted"><span>Display</span></h6>
 
                 <form class="form-inline" action="javascript:void(0);">
                     <div class="input-group input-group-sm">
-                        <div class="input-group-prepend"><span class="input-group-text">Range</span></div>
-                        <input type="number" id="display_min" value="950" class="form-control" size="5">
-                        <input type="number" id="display_max" value="1050" class="form-control" size="5">
+                        <div class="form-control-sm"><span class="">Range&nbsp;</span></div>
+                        <input type="number" id="display_min" value="950" class="form-control bg-dark text-light" style="width: 50px">
+                        <input type="number" id="display_max" value="1050" class="form-control bg-dark text-light" style="width: 50px">
 
                         <div class="input-group-append">
-                            <span class="input-group-text"><label><input type="checkbox" name="autoscale"
+                            <span class="form-control-sm"><label><input type="checkbox" name="autoscale"
                                                                          id="display_autoscale" class="form-control"
                                                                          style="height: 10pt;">&nbsp auto</label></span>
                         </div>
                     </div>
 
-                    <div class="input-group input-group-sm">
-                        <div class="input-group-prepend"><span class="input-group-text">Zoom</span></div>
-                        <select type="number" id="display_zoom" value="100" class="form-control">
+                    <div class="input-group input-group-sm mt-1">
+                        <div class="form-control-sm"><span class="">Zoom</span></div>
+                        <select type="number" id="display_zoom" value="100" class="form-control-sm bg-dark text-light">
                             <option>25</option>
                             <option>50</option>
                             <option selected="selected">100</option>
                             <option>200</option>
                             <option>400</option>
                         </select>
-                        <div class="input-group-append"><span class="input-group-text">&percnt;</span></div>
+                        <div class="form-control-sm"><span class="">&percnt;</span></div>
 
                     </div>
 
@@ -65,8 +65,8 @@
 
                     <form class="form-inline" action="javascript:void(0);">
                         <div class="input-group input-group-sm">
-                            <label class="form-control-sm">Integration time [ms]:
-                                <input type="number" id="int_time" class="form-control form-control-sm"
+                            <label class="form-control-sm">Integration time [ms]:&nbsp;
+                                <input type="number" id="int_time" class="form-control form-control-sm bg-dark text-light"
                                        v-model.lazy.number="integration_time_ms"
                                        v-on:change="update_server_state({'Camera.IntegrationTime': $event.target.value/1000.});">
                             </label>
@@ -83,12 +83,24 @@
                     </form>
 
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Positioning</span></h6>
-                    <form class="form-inline" action="javascript:void(0);">
+                    <form class="form-inline mt-1" action="javascript:void(0);">
                         <position-control v-model.number="state['Positioning.x']" axis="x" :delta="1"></position-control>
                         <position-control v-model.number="state['Positioning.y']" axis="y" :delta="1"></position-control>
                         <position-control v-model.number="state['Positioning.z']" axis="z" :delta="0.2"></position-control>
 
                     </form>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Acquisition</span></h6>
+
+                    <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
+                    <div v-if="spooler.status.spooling" class="mt-1 text-center">
+                        <p>Currently spooling, {{ spooler.status.frames_spooled }} frames spooled</p>
+                        <button class="btn btn-danger" onclick="$.ajax('/spool_controller/stop_spooling');">Stop spooling</button>
+                    </div>
+                    <div v-else class="mt-1 text-center">
+                        <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start spooling</button>
+                    </div>
+
                 </div>
                 {% endraw %}
 
