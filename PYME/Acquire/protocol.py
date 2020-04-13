@@ -32,6 +32,7 @@ from sys import maxsize as maxint
 
 #minimal protocol which does nothing
 class Protocol:
+    filename=None
     def __init__(self):
         pass
 

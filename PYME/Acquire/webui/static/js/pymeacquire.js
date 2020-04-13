@@ -98,9 +98,68 @@
                 console.log("failed to update state");
                 console.log(textStatus);
                 console.log(errorThrown);
+                console.log(jqXHR);
             }
         })
     }
+
+    function dict_fill(key, value){
+        var d = {};
+        d[key] = value;
+        return d;
+    }
+
+    Vue.component('position-control', {
+       props: {'value' : Number, 'axis' : String, 'delta' : {type:[Number,], default: 1.0}},
+       template: `<div class="input-group input-group-sm">
+                    
+                    <label class="form-control-sm"> {{ axis }} [um]:
+                    <button type="button" class="btn btn-light" v-on:click="set_position(axis, value - delta)">&lt;</button>
+                      <input type="number" v-bind:value="value" style="width: 80px"
+                      v-on:change="set_position(axis, $event.target.value);$emit('input', $event.target.value)" class="form-control form-control-sm">
+                      
+                      <button type="button" class="btn btn-light" v-on:click="set_position(axis, value + delta)">&gt;</button>
+                    </label>
+                  </div>`,
+       methods:{
+           set_position: function(axis, value){
+                //console.log(delta);
+                update_server_state(dict_fill('Positioning.' + axis, parseFloat(value)));
+           }
+       }
+    });
+
+    Vue.component('laser-control', {
+       props: ['power', 'on','name', 'max_power'],
+       template: `<div class="input-group input-group-sm">
+                    <label class="form-control-sm">{{ name }}&nbsp;
+                        <input type="range" class="form-control form-control-sm"
+                               :value="power"
+                               :max="max_power"
+                               v-on:change="set_laser_power(name, $event.target.value)">&nbsp;
+
+                        <input type="number" class="form-control form-control-sm" style="width: 50px"
+                               :value="power" v-on:change="set_laser_power(name, $event.target.value)">
+                    </label>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               :value="on" :id="'laser-check-' + name"
+                               v-on:change="set_laser_on(name, $event.target.checked)">
+                        <label class="form-check-label" :for="'laser-check-' + name">On</label>
+                    </div>
+
+               </div>`,
+        methods: {
+            set_laser_power: function (lname, value) {
+                update_server_state(dict_fill('Lasers.' + lname + '.Power', parseFloat(value)));
+            },
+            set_laser_on: function (lname, value) {
+                //console.log('turning ' + lname + ' on: ' + value);
+                update_server_state(dict_fill('Lasers.' + lname + '.On', value));
+            },
+        }
+    });
 
     var hw = new Vue({
         el: '#hw',
@@ -150,7 +209,8 @@
     function poll_state(){
         $.ajax({
             url: "/scope_state_longpoll",
-            success: function(data){ console.log(data);
+            success: function(data){
+                //console.log(data);
                 app.state=data;
                 hw.state = data;
                 //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])

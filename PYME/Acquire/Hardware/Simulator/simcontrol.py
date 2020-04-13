@@ -40,7 +40,7 @@ class SimController(object):
     
     def __init__(self, scope=None, states=['Caged', 'On', 'Blinked', 'Bleached'],
                  stateTypes=[fluor.FROM_ONLY, fluor.ALL_TRANS, fluor.ALL_TRANS, fluor.TO_ONLY], transistion_tensor=None,
-                 excitation_crossections=(1, 100),
+                 excitation_crossections=(1., 100.),
                  activeState=fluor.states.active, n_chans=1, splitter_info=([0, -200, 300., 500.], [0, 1, 1, 0]),
                  spectral_signatures=[[1, 0.3], [.7, .7], [0.2, 1]]):
         """
@@ -96,7 +96,7 @@ class SimController(object):
     def splitter_info(self):
         return self.z_offsets[:self.n_chans], self.spec_chans[:self.n_chans]
     
-    def gen_fluors_wormlike(self, kbp, persistLength, numFluors, flatten=False, z_scale=1.0, num_colours=1, wrap=True):
+    def gen_fluors_wormlike(self, kbp=50e3, persistLength=1500, numFluors=1000, flatten=False, z_scale=1.0, num_colours=1, wrap=True):
         import numpy as np
         
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)

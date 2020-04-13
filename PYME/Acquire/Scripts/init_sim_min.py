@@ -141,6 +141,7 @@ lasers.join() #make sure we have everything before starting simulator control
 def simcontrol(scope):
     from PYME.Acquire.Hardware.Simulator import simcontrol
     scope.simcontrol = simcontrol.SimController(scope)
+    scope.simcontrol.gen_fluors_wormlike()
 
 # @init_gui('Laser controls')
 # def laser_controls(MainFrame, scope):

@@ -279,8 +279,8 @@ class PYMEAcquireServer(event_loop.EventLoop):
     
         return ret
     
-    @webframework.register_endpoint('/update_scope_state')
-    def update_scope_state(self, body='', output_is_json=False):
+    @webframework.register_endpoint('/update_scope_state', output_is_json=False)
+    def update_scope_state(self, body=''):
         import json
         state = json.loads(body)
         
@@ -332,6 +332,8 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
         
+        
+        self.add_endpoints(self.scope.spoolController, '/spool_controller')
         self.add_static_handler('static', webframework.StaticFileHandler(os.path.join(os.path.dirname(__file__), 'webui', 'static')))
         
         self._main_page = webui.load_template('PYMEAcquire.html')

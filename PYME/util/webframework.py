@@ -340,11 +340,7 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
 
         #make a mapping of endpoints to functions
         self._endpoints = {}
-        for a in dir(self):
-            func = getattr(self, a)
-            endpoint_path = getattr(func, '_expose_path', None)
-            if not endpoint_path is None:
-                self._endpoints[endpoint_path] = func
+        self.add_endpoints(self)
                 
         logging.debug('Registered endpoints: %s' % self._endpoints.keys())
         
@@ -354,3 +350,10 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
         
     def add_static_handler(self, prefix, handler):
         self.static_handlers[prefix] = handler
+        
+    def add_endpoints(self, cls, prefix=''):
+        for a in dir(cls):
+            func = getattr(cls, a)
+            endpoint_path = getattr(func, '_expose_path', None)
+            if not endpoint_path is None:
+                self._endpoints[prefix + endpoint_path] = func
