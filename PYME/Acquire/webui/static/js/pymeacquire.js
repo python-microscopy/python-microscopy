@@ -117,7 +117,7 @@
                     <label class="form-control-sm"> {{ axis }} [um]:&nbsp;
                     <button type="button" class="btn btn-dark" v-on:click="set_position(axis, value - delta)">&lt;</button>
                       <input type="number" v-bind:value="value" style="width: 80px"
-                      v-on:change="set_position(axis, $event.target.value);$emit('input', $event.target.value)" class="form-control form-control-sm bg-dark text-light">
+                      v-on:change="set_position(axis, $event.target.value);$emit('input', $event.target.value)" class="form-control form-control-sm">
                       
                       <button type="button" class="btn btn-dark" v-on:click="set_position(axis, value + delta)">&gt;</button>
                     </label>
@@ -139,7 +139,7 @@
                                :max="max_power"
                                v-on:change="set_laser_power(name, $event.target.value)">&nbsp;
 
-                        <input type="number" class="form-control form-control-sm bg-dark text-light" style="width: 50px"
+                        <input type="number" class="form-control form-control-sm" style="width: 50px"
                                :value="power" v-on:change="set_laser_power(name, $event.target.value)">
                     </label>
 

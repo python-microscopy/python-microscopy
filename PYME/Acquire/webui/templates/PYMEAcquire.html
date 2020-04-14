@@ -5,8 +5,9 @@
     <title>PYMEAcquire</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+{#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"#}
+{#          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">#}
+    <link rel="stylesheet" href="/static/css/pyme-bootstrap.css">
     <link rel="stylesheet" href="/static/css/pymeacquire.css">
 </head>
 <body>
@@ -27,26 +28,26 @@
 
 <div class="container-fluid">
     <div class="row">
-        <nav class="col-md-3 col-lg-3 d-md-block bg-dark text-light sidebar">
+        <nav class="col-md-3 col-lg-3 d-md-block sidebar">
             <div class="sidebar-sticky">
-                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-2 mt-2 mb-1 text-muted"><span>Display</span></h6>
+                <h6 class="sidebar-heading"><span>Display</span></h6>
 
                 <form class="form-inline" action="javascript:void(0);">
                     <div class="input-group input-group-sm">
                         <div class="form-control-sm"><span class="">Range&nbsp;</span></div>
-                        <input type="number" id="display_min" value="950" class="form-control bg-dark text-light" style="width: 50px">
-                        <input type="number" id="display_max" value="1050" class="form-control bg-dark text-light" style="width: 50px">
+                        <input type="number" id="display_min" value="950" class="form-control form-control-sm" style="width: 50px">
+                        <input type="number" id="display_max" value="1050" class="form-control form-control-sm" style="width: 50px">
 
                         <div class="input-group-append">
                             <span class="form-control-sm"><label><input type="checkbox" name="autoscale"
-                                                                         id="display_autoscale" class="form-control"
+                                                                         id="display_autoscale" class="form-control form-control-sm"
                                                                          style="height: 10pt;">&nbsp auto</label></span>
                         </div>
                     </div>
 
                     <div class="input-group input-group-sm mt-1">
                         <div class="form-control-sm"><span class="">Zoom</span></div>
-                        <select type="number" id="display_zoom" value="100" class="form-control-sm bg-dark text-light">
+                        <select type="number" id="display_zoom" value="100" class="form-control form-control-sm">
                             <option>25</option>
                             <option>50</option>
                             <option selected="selected">100</option>
@@ -61,12 +62,12 @@
 
                 {% raw %}
                 <div id="hw">
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Camera</span></h6>
+                    <h6 class="sidebar-heading"><span>Camera</span></h6>
 
                     <form class="form-inline" action="javascript:void(0);">
                         <div class="input-group input-group-sm">
                             <label class="form-control-sm">Integration time [ms]:&nbsp;
-                                <input type="number" id="int_time" class="form-control form-control-sm bg-dark text-light"
+                                <input type="number" id="int_time" class="form-control form-control-sm"
                                        v-model.lazy.number="integration_time_ms"
                                        v-on:change="update_server_state({'Camera.IntegrationTime': $event.target.value/1000.});">
                             </label>
@@ -74,7 +75,7 @@
                     </form>
 
 
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Lasers</span></h6>
+                    <h6 class="sidebar-heading"><span>Lasers</span></h6>
 
                     <form class="form-inline" action="javascript:void(0);">
                         <laser-control v-for="lname in laser_names" :name="lname" :key="lname"
@@ -82,7 +83,7 @@
                                        :on="state['Lasers.' + lname + '.On']" :max_power="state['Lasers.' + lname + '.MaxPower']"></laser-control>
                     </form>
 
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Positioning</span></h6>
+                    <h6 class="sidebar-heading"><span>Positioning</span></h6>
                     <form class="form-inline mt-1" action="javascript:void(0);">
                         <position-control v-model.number="state['Positioning.x']" axis="x" :delta="1"></position-control>
                         <position-control v-model.number="state['Positioning.y']" axis="y" :delta="1"></position-control>
@@ -90,7 +91,7 @@
 
                     </form>
 
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-1 mt-4 mb-1 text-muted"><span>Acquisition</span></h6>
+                    <h6 class="sidebar-heading"><span>Acquisition</span></h6>
 
                     <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
                     <div v-if="spooler.status.spooling" class="mt-1 text-center">
@@ -139,7 +140,7 @@
             </div>
 
             <div class="basebar navbar-dark bg-dark">
-                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                <ul class="nav nav-tabs-bottom" id="myTab" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
                            aria-selected="false">Home</a>
