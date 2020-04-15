@@ -419,7 +419,49 @@ class PairwiseDistanceHistogram(ModuleBase):
                 pass
         
         namespace[self.outputName] = res
+
+@register_module('Ripleys')
+class Ripleys(ModuleBase):
+    """ Calculates Ripley's K/L functions for a point set """
+    inputPositions = Input('input')
+    inputPositions2 = Input('')
+    outputName = Output('ripleys')
+    normalization = Enum(['K', 'L'])
+    nbins = Int(50)
+    binSize = Float(50.)
+    pixelSize = Float(5.0)
+    area = Float(100.0)
+    threaded = Bool(False)
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import spatial_descriptive
+
+        points_real = namespace[self.inputPositions]
+        points_sim = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
         
+        bb, K = spatial_descriptive.ripleys_k(points_real['x'], points_real['y'], 
+                                              points_sim['x'], points_sim['y'], 
+                                              self.nbins, self.binSize, 
+                                              self.area, z=points_real['z'], 
+                                              zu=points_sim['z'], threaded=self.threaded)
+
+        if self.normalization == 'L':
+            d = 2 if (np.count_nonzero(points_real['z']) == 0) else 3
+            bb, L = spatial_descriptive.ripleys_l(bb, K, d)
+            res = tabular.DictSource({'bins': bb, 'vals': L})
+        else:
+            res = tabular.DictSource({'bins': bb, 'vals': K})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = points_real.mdh
+        except AttributeError:
+            try:
+                res.mdh = points_sim.mdh
+            except AttributeError:
+                pass
+
+        namespace[self.outputName] = res
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):

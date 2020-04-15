@@ -43,11 +43,11 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Analysis>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
+        visFr.AddMenuItem('Analysis>Clustering', "Ripley's K/L", self.OnRipleys, helpText='')
         visFr.AddMenuItem('Analysis>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
         visFr.AddMenuItem('Analysis>Clustering', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
-
         visFr.AddMenuItem('Analysis>Clustering', 'Test Ring Probability', self.OnRingTest,
                           helpText='')
 
@@ -92,6 +92,58 @@ class ClusterAnalyser:
             recipe.execute()
 
             pipeline.selectDataSource(clumper.outputName)
+
+    def OnRipleys(self, event=None):
+        """
+        Run's Ripley's K or L on the current dataset.
+        """
+        from PYME.LMVis.renderers import HistogramRenderer, Histogram3DRenderer
+        from PYME.simulation import locify
+        from PYME.IO import tabular
+        from PYME.recipes.measurement import Ripleys
+        import matplotlib.pyplot as plt
+
+        pipeline = self.visFr.pipeline
+        recipe = pipeline.recipe
+
+        # Generate a histogram rendering of the dataset as a mask for Ripley's K
+        two_d = np.count_nonzero(pipeline.dataSources[pipeline.selectedDataSourceKey]['z']) == 0
+        renderer = HistogramRenderer(self.visFr, pipeline) if two_d else Histogram3DRenderer(self.visFr, pipeline)
+        imf = renderer.GenerateGUI()
+
+        # Simulate random uniform points
+        x, y, z = locify.locify(imf.image.data, imf.image.pixelSize, 1)
+        xl, yl, _, _, zl, _ = pipeline.imageBounds.bounds
+        x+=xl
+        y+=yl
+        z+=zl
+
+        simulated_ds_name = 'ripleys_simulated'
+
+        pipeline.addDataSource(simulated_ds_name, tabular.mappingFilter({'x':x,'y':y,'z':z}))
+
+        r = Ripleys(recipe, inputPositions=pipeline.selectedDataSourceKey, 
+                    inputPositions2=simulated_ds_name,
+                    pixelSize=imf.image.pixelSize,
+                    area=np.sum(imf.image.data[:,:,:,]>0))
+
+        if r.configure_traits(kind='modal'):
+            recipe.add_module(r)
+            recipe.execute()
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        if r.normalization == 'L':
+            ax.axhline(y=0, c='k', linestyle='--')
+            ax.set_ylabel('L')
+        else:
+            if two_d:
+                ax.plot(pipeline.dataSources[r.outputName]['bins'], np.pi*(pipeline.dataSources[r.outputName]['bins']+r.binSize)**2, c='k', linestyle='--')
+            else:
+                ax.plot(pipeline.dataSources[r.outputName]['bins'], np.pi*(4.0/3.0)*np.pi*(pipeline.dataSources[r.outputName]['bins']+r.binSize)**3, c='k', linestyle='--')
+            ax.set_ylabel('K')
+        ax.scatter(pipeline.dataSources[r.outputName]['bins'], pipeline.dataSources[r.outputName]['vals'], s=0.1, c='r')
+        ax.set_xlabel('Distance (nm)')
 
     def OnNearestNeighbor(self, event=None):
         """
