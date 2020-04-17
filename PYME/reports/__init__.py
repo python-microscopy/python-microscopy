@@ -33,4 +33,4 @@ class UnifiedLoader(jinja2.BaseLoader):
 
 
 env = jinja2.Environment(loader=UnifiedLoader())
-env.filters.update(filters.get_filters())
+env.filters.update(filters.populate_filters())

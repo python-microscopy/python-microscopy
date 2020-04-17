@@ -32,23 +32,25 @@ DEFAULT_FILTERS['roundsf'] = round_sf
 
 # ------------ load filters from plugins
 
-def get_filters():
+def populate_filters():
     """
     Load default PYME filters as well as filters declared in the config tree.
     :return: dict
         keys are filter names, values are the filter handles
     """
     filters = DEFAULT_FILTERS.copy()
-    plugin_filter_info = config.get_report_filters()
-    for m, filts in plugin_filter_info.items():
+    
+    for plugin, filts in config.get_plugin_report_filters():
         try:
-            logger.debug('Trying to import %s' % m)
-            mod = import_module(m)
-            for filter in filts:
-                if filter in filters.keys():
-                    raise RuntimeError('Filter %s already defined' % filter)
+            for modname, filter in filts:
+                logger.debug('Trying to import %s' % modname)
+                mod = import_module(modname)
+            
+                filtername = '.'.join(plugin, filter)
+                if filtername in filters.keys():
+                    raise RuntimeError('Filter %s already defined' % filtername)
                 
-                filters[filter] = getattr(mod, filter)
+                filters[filtername] = getattr(mod, filter)
         except:
             logger.error('Failed to load filters from plugin: %s' % m)
     return filters
