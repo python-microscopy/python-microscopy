@@ -46,11 +46,11 @@ def populate_filters():
                 logger.debug('Trying to import %s' % modname)
                 mod = import_module(modname)
             
-                filtername = '.'.join(plugin, filter)
+                filtername = '.'.join([plugin, filter])
                 if filtername in filters.keys():
                     raise RuntimeError('Filter %s already defined' % filtername)
                 
                 filters[filtername] = getattr(mod, filter)
         except:
-            logger.error('Failed to load filters from plugin: %s' % m)
+            logger.error('Failed to load filters from plugin: %s' % plugin)
     return filters

@@ -32,12 +32,8 @@ overall template for a configuration directory is as follows: ::
       |     |- recipes
       |     |      |- anothermodule.txt
       |     |
-      |     |- reports
-      |     |     |- templates
-      |     |     |     |-somemodule.txt
-      |     |     |
-      |     |     |- filters
-      |     |     |     |-somemodule.yaml
+      |     |- <plugin-name>.yaml
+      |     |- <another-plugin-name>.yaml
       |
       |- protocols
       |     |- a_protocol.py
@@ -80,6 +76,8 @@ parameter values are supported using standard yaml notation.
     h5f-flush_interval: 1
     PYMEAcquire-extra_init_dir: "C:/pyme-init-scripts"
 
+
+
 plugins/visgui/<plugin_name>.txt, plugins/dsview/<plugin_name>.txt, plugins/recipes/<plugin_name>.txt
 -----------------------
 If we were to use the plugin architecture to register some of the native visgui plugins (rather than using explicit
@@ -91,30 +89,53 @@ module import path.
     PYME.LMVis.Extras.photophysics
     PYME.LMVis.Extras.particleTracking
 
-The same structure holds for dh5view plugins and dsview/<plugin_name>.txt and recipes/<plugin_name>.txt
+The same structure holds for dh5view plugins and dsview/<plugin_name>.txt and recipes/<plugin_name>.txt. NOTE - this
+method of plugiin registration is supported for backwards compatibility only - new plugins should drop as single
+<plugin-name>.yaml config file as detailed below.
 
-plugins/reports/templates/<plugin_name>.txt
------------------------
-jinja2 templates can be used to generate reports via absolute path, or using the plugin architecture. Each line of a
-templates/<plugin_name>.txt file should be a relative path to the template from plugin_name directory. You must be able
-to call `import plugin_name`. For example, a nep-fitting report template at
-nep-fitting/nep_fitting/reports/templates/my-report.html could be discovered by a templates/nep_fitting.txt of
 
-::
+plugins/<plugin-name>.yaml
+--------------------------
 
-    reports/templates/my-report.html
-    reports/templates/my-other-report.xhtml
+A yaml file containing plugin information. This supersedes the previous separate plugin directories outlined above.
+It should be formatted according to the following example. All sections are optional and may be omitted if the plugin
+doesn't supply the features in question:
 
-plugins/reports/filters/<plugin_name>.yaml
------------------------
-jinja2 filters can be plugged-in using a yaml file, where the keys are fully qualified module import paths and the
-values are the function names of the filters. Were they not laoded by default, the filters/<plugin_name>.yaml file for
-one of the default PYME filters would be
+.. code-block:: yaml
 
-::
-
-    PYME.Analysis.graphing_filters:
-        plot
+    # a list of fully qualified module import paths for VisGUI plugins
+    visgui:
+        - somepackage.somemodule
+        - somepackage.anothermodule
+        
+    # a list of fully qualified import paths for dh5view plugins
+    dh5view:
+        - somepackage.somemodule
+        
+    # a list of fully qualified import paths for recipe modules
+    recipes:
+        - somepackage.somemodule
+        
+    # a section detailing templates and filters for jinga2 generated reports
+    reports:
+        # an importable module containing the templates
+        # the module is just used to get the file path (i.e. we do `os.path.join(os.path.dirname(somemodule), template_name)`)
+        templates: somepackage.somemodule
+        
+        # jinga2 filters. Note that these will need to be pre-fixed by the plugin name when used in templates
+        # to avoid name collisions with builtin filters or those from other plugins ie {{ value | myplugin.myfilter }}
+        filters:
+            somepackage.somemodule:
+                - filter1
+                - filter2
+            somepagage.anothermodule:
+                -filter3
+                
+    config:
+        # any plugin specific config / settings which you want to put here - just a placeholder for now, but an implicit
+        # promise that we won't clobber this key in the future.
+        
+    
 
 In addition to the configuration derived from config.yaml, a few legacy environment variables are recognized. Subpackages
 are also permitted to save configuration files in the ``.PYME`` directory.
