@@ -45,6 +45,9 @@ def get_filters():
             logger.debug('Trying to import %s' % m)
             mod = import_module(m)
             for filter in filts:
+                if filter in filters.keys():
+                    raise RuntimeError('Filter %s already defined' % filter)
+                
                 filters[filter] = getattr(mod, filter)
         except:
             logger.error('Failed to load filters from plugin: %s' % m)
