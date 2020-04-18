@@ -292,6 +292,107 @@ import logging
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
 
+# def get_plugins(application):
+#     """
+#     Get a list of plugins for a given application
+#
+#     Modules are registered by adding fully resolved module paths (one per line) to a text file in the relevant directory.
+#     The code searches **all** files in the relevant directories, and the intention is that there is one registration file
+#     for each standalone package that provides modules and can e.g. be conda or pip-installed which contains a list of all
+#     the plugins that package provides. The registration filename should ideally be the same as the package name, although
+#     further subdivision for large packages is fine. registration filenames should however be unique - e.g. by prefixing
+#     with the package name. By structuring it this way, a package can add this file to the ``anaconda/etc/PYME/plugins/XXX/``
+#     folder through the standard conda packaging tools and it will be automatically discovered without conflicts
+#
+#     Parameters
+#     ----------
+#     application : basestring
+#         One of 'visgui', 'dsviewer', or 'recipes'
+#
+#     Returns
+#     -------
+#     list of fully resolved module paths
+#
+#     """
+#     plugin_paths = []
+#
+#     for config_dir in config_dirs:
+#         plugin_dir = os.path.join(config_dir, 'plugins', application)
+#
+#         try:
+#             reg_files = glob.glob(os.path.join(plugin_dir, '*.txt'))
+#         except OSError:
+#             reg_files = []
+#
+#         for fn in reg_files:
+#             with open(fn, 'r') as f:
+#                 plugin_paths.extend(f.readlines())
+#
+#     logger.debug('plugin paths: ' +  str(plugin_paths))
+#
+#     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
+
+
+report_template_dirs = {}
+report_filters = {}
+plugins = {}
+
+def _parse_plugin_config():
+    import importlib
+    
+    for config_dir in config_dirs:
+        #parse the new style .yaml based config first
+        plugin_yamls = glob.glob(os.path.join(config_dir, 'plugins','*.yaml'))
+        
+        for fn in plugin_yamls:
+            plugin_name = os.path.splitext(os.path.basename(fn))[0]
+            with open(fn, 'r') as f:
+                plugin_conf = yaml.safe_load(f)
+            
+            for app in ['visgui', 'dh5view', 'recipes']:
+                plugins[app] = plugins.get(app, set()) | set(plugin_conf.get(app, []))
+            
+            try:
+                report_template_dirs[plugin_name] = os.path.dirname(importlib.import_module(plugin_conf['reports']['templates']).__file__)
+            except KeyError:
+                pass
+            except ImportError:
+                logger.exception('Error finding templates for plugin %s' % plugin_name)
+                
+                
+            try:
+                report_filters[plugin_name] = plugin_conf['reports']['filters']
+            except KeyError:
+                pass
+            
+        #parse legacy .txt based plugin definitions
+        def _get_app_txt_plugins(application):
+            plugin_paths = []
+
+            try:
+                reg_files = glob.glob(os.path.join(config_dir, 'plugins', application, '*.txt'))
+            except OSError:
+                reg_files = []
+
+            for fn in reg_files:
+                with open(fn, 'r') as f:
+                    plugin_paths.extend(f.readlines())
+
+            return [p.strip() for p in plugin_paths if not p.strip() == '']
+            
+
+        for app in ['visgui', 'dh5view', 'recipes']:
+            plugins[app] = plugins.get(app, set()) | set(_get_app_txt_plugins(app))
+
+_parse_plugin_config()
+                
+                
+def get_plugin_report_filters():
+    return report_filters.items()
+
+def get_plugin_template_dirs():
+    return report_template_dirs
+            
 def get_plugins(application):
     """
     Get a list of plugins for a given application
@@ -314,75 +415,7 @@ def get_plugins(application):
     list of fully resolved module paths
 
     """
-    plugin_paths = []
-
-    for config_dir in config_dirs:
-        plugin_dir = os.path.join(config_dir, 'plugins', application)
-
-        try:
-            reg_files = glob.glob(os.path.join(plugin_dir, '*.txt'))
-        except OSError:
-            reg_files = []
-
-        for fn in reg_files:
-            with open(fn, 'r') as f:
-                plugin_paths.extend(f.readlines())
-
-    logger.debug('plugin paths: ' +  str(plugin_paths))
-        
-    return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
-
-def get_report_filters():
-    """
-    Find (jinja2) filters registered as plugins
-
-    Returns
-    -------
-    filter_info: dict
-        keys are modules to import, and values are lists of functions/filters in that module
-    """
-    import yaml
-    filter_info = {}
-    for config_dir in config_dirs:
-        filter_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'filters/*.yaml'))
-        for plugin_file in filter_glob:
-            with open(plugin_file) as f:
-                #  empty yaml will break the dict update, check for content first
-                content = yaml.safe_load(f)
-                if content is not None:
-                    filter_info.update(content)
-    return filter_info
-
-def get_plugin_report_templates():
-    """
-    Find (jinja2) templates registered as plugins
-
-    Returns
-    -------
-    templates: dict
-        keys: mock relative path to the template of the format 'plugin_name/report_filename.extension'. Note the front-
-            slash is used in the key, not necessarily the OS path split.
-        values: full path to the template, as informed by the content of 'plugin_name.txt' in the config tree.
-    """
-    import importlib
-    templates = {}
-    for config_dir in config_dirs:
-        template_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'templates/*.txt'))
-
-        for fn in template_glob:
-            plugin_name = os.path.split(fn)[-1].strip('.txt')
-            try:
-                plugin_mod = importlib.import_module(plugin_name)
-            except ImportError:
-                logger.error('Searching for report templates. Cannot import %s' % plugin_name)
-                continue
-            plugin_dir = os.path.dirname(plugin_mod.__file__)
-            with open(fn, 'r') as f:
-                for template in f:
-                    template_name = os.path.split(template)[-1]
-                    templates[plugin_name + '/' + template_name] = os.path.join(plugin_dir, template)
-    return templates
-
+    return plugins[application]
 
 def get_custom_protocols():
     """
