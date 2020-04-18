@@ -120,6 +120,8 @@ doesn't supply the features in question:
     reports:
         # an importable module containing the templates
         # the module is just used to get the file path (i.e. we do `os.path.join(os.path.dirname(somemodule), template_name)`)
+        # this module will get imported every time anything in PYME runs, so please make it lightweight (i.e. an
+        # empty __init__.py in a dedicated templates folder which only has templates as the other contents)
         templates: somepackage.somemodule
         
         # jinga2 filters. Note that these will need to be pre-fixed by the plugin name when used in templates
@@ -353,6 +355,8 @@ def _parse_plugin_config():
                 plugins[app] = plugins.get(app, set()) | set(plugin_conf.get(app, []))
             
             try:
+                # TODO - do we actually want to do the import here, or should we defer it to get_plugin_template_dirs()?
+                # doing it here risks putting startup times for anything PYME related at the mercy of a badly written plugin
                 report_template_dirs[plugin_name] = os.path.dirname(importlib.import_module(plugin_conf['reports']['templates']).__file__)
             except KeyError:
                 pass
