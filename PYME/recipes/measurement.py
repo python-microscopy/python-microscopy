@@ -434,20 +434,20 @@ class Ripleys(ModuleBase):
     threaded = Bool(False)
 
     def execute(self, namespace):
-        from PYME.Analysis.points import spatial_descriptive
+        from PYME.Analysis.points import ripleys
 
         points_real = namespace[self.inputPositions]
         points_sim = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
         
-        bb, K = spatial_descriptive.ripleys_k(points_real['x'], points_real['y'], 
-                                              points_sim['x'], points_sim['y'], 
-                                              self.nbins, self.binSize, 
-                                              self.area, z=points_real['z'], 
-                                              zu=points_sim['z'], threaded=self.threaded)
+        bb, K = ripleys.ripleys_k(points_real['x'], points_real['y'],
+                                  points_sim['x'], points_sim['y'],
+                                  self.nbins, self.binSize,
+                                  self.area, z=points_real['z'],
+                                  zu=points_sim['z'], threaded=self.threaded)
 
         if self.normalization == 'L':
             d = 2 if (np.count_nonzero(points_real['z']) == 0) else 3
-            bb, L = spatial_descriptive.ripleys_l(bb, K, d)
+            bb, L = ripleys.ripleys_l(bb, K, d)
             res = tabular.DictSource({'bins': bb, 'vals': L})
         else:
             res = tabular.DictSource({'bins': bb, 'vals': K})
