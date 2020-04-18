@@ -424,29 +424,35 @@ class PairwiseDistanceHistogram(ModuleBase):
 class Ripleys(ModuleBase):
     """ Calculates Ripley's K/L functions for a point set """
     inputPositions = Input('input')
-    inputPositions2 = Input('')
+    inputMask = Input('')
     outputName = Output('ripleys')
     normalization = Enum(['K', 'L'])
     nbins = Int(50)
     binSize = Float(50.)
-    pixelSize = Float(5.0)
-    area = Float(100.0)
+    sampling = Float(5.)
     threaded = Bool(False)
 
     def execute(self, namespace):
         from PYME.Analysis.points import ripleys
 
         points_real = namespace[self.inputPositions]
-        points_sim = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
+        mask = namespace.get(self.inputMask, None)
         
-        bb, K = ripleys.ripleys_k(points_real['x'], points_real['y'],
-                                  points_sim['x'], points_sim['y'],
-                                  self.nbins, self.binSize,
-                                  self.area, z=points_real['z'],
-                                  zu=points_sim['z'], threaded=self.threaded)
+        three_d = np.count_nonzero(points_real['z']) > 0
+        
+        #FIXME - correct for origin offset in localizations
+        
+        if three_d:
+            bb, K = ripleys.ripleys_k(x = points_real['x'], y = points_real['y'], z=points_real['z'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded)
+        else:
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded)
 
         if self.normalization == 'L':
-            d = 2 if (np.count_nonzero(points_real['z']) == 0) else 3
+            d = 3 if three_d else 2
             bb, L = ripleys.ripleys_l(bb, K, d)
             res = tabular.DictSource({'bins': bb, 'vals': L})
         else:
@@ -456,10 +462,7 @@ class Ripleys(ModuleBase):
         try:
             res.mdh = points_real.mdh
         except AttributeError:
-            try:
-                res.mdh = points_sim.mdh
-            except AttributeError:
-                pass
+            pass
 
         namespace[self.outputName] = res
 
