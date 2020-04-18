@@ -434,22 +434,26 @@ class Ripleys(ModuleBase):
 
     def execute(self, namespace):
         from PYME.Analysis.points import ripleys
+        from PYME.IO import MetaDataHandler
 
         points_real = namespace[self.inputPositions]
         mask = namespace.get(self.inputMask, None)
         
         three_d = np.count_nonzero(points_real['z']) > 0
         
-        #FIXME - correct for origin offset in localizations
+        try:
+            origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
+        except:
+            origin_coords = (0,0,0)
         
         if three_d:
             bb, K = ripleys.ripleys_k(x = points_real['x'], y = points_real['y'], z=points_real['z'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded)
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
         else:
             bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded)
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
 
         if self.normalization == 'L':
             d = 3 if three_d else 2

@@ -339,43 +339,7 @@ class ImageStack(object):
     def origin(self):
         #the origin, in nm from the camera - used for overlaying with different ROIs
         
-            
-        if 'Origin.x' in self.mdh.getEntryNames():
-            return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
-        
-        elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
-            #has ROI information
-            try:
-                voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
-            except AttributeError:
-                voxx = self.pixelSize
-                voxy = voxx
-            
-            roi_x0, roi_y0 = MetaDataHandler.get_camera_roi_origin(self.mdh)
-            
-            ox = (roi_x0)*voxx
-            oy = (roi_y0)*voxy
-            
-            oz = 0
-            
-            if 'AcquisitionType' in self.mdh.getEntryNames() and self.mdh['AcquisitionType'] == 'Stack':
-                oz = self.mdh['StackSettings.StartPos']*1e3
-            elif 'Positioning.PIFoc' in self.mdh.getEntryNames():
-                oz = self.mdh['Positioning.PIFoc']*1e3
-            
-            return ox, oy, oz
-            
-        elif 'Source.Camera.ROIPosX' in self.mdh.getEntryNames():
-            #a rendered image with information about the source ROI
-            voxx, voxy = 1e3*self.mdh['Source.voxelsize.x'], 1e3*self.mdh['Source.voxelsize.y']
-            
-            ox = (self.mdh['Source.Camera.ROIPosX'] - 1)*voxx
-            oy = (self.mdh['Source.Camera.ROIPosY'] - 1)*voxy
-            
-            return ox, oy, 0
-            
-        else:
-            return 0,0, 0
+        return MetaDataHandler.origin_nm(self, self.pixelSize)
             
 
 
