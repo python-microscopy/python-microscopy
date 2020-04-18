@@ -2,7 +2,7 @@ import numpy as np
 
 from PYME.Analysis.points import DistHist
 
-def ripleys_k(x, y, xu, yu, n_bins, bin_size, area, z=None, zu=None, threaded=False):
+def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None, zu=None, threaded=False):
     """
     Ripley's K-function for examining clustering and dispersion of points within a
     region R, where R is defined by a mask (2D or 3D) of the data.
@@ -21,7 +21,7 @@ def ripleys_k(x, y, xu, yu, n_bins, bin_size, area, z=None, zu=None, threaded=Fa
             Number of spatial bins
         bin_size: float
             Width of spatial bins (nm)
-        area : float
+        mask_area : float
             Area of region R (sum of the mask)
         z : np.array
             z-position of raw data
@@ -67,10 +67,93 @@ def ripleys_k(x, y, xu, yu, n_bins, bin_size, area, z=None, zu=None, threaded=Fa
             dww[dw==0] = 0  # d[w==0]
             hist += dww
 
-    K = (area/(lx**2))*np.cumsum(hist)  # Ripley's K-function
+    K = (mask_area / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
 
     # return bins, K-function
     return bb, K
+
+def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
+    vx, vy, vz = mask.voxelsize
+    x0_m, y0_m, z0_m = mask.origin
+    x0_p, y0_p, z0_p = coord_origin
+    stride_x, stride_y, stride_z = [max(1, int(sampling / v)) for v in [vx, vy, vz]]
+    
+    if three_d:
+        #convert mask to boolean image
+        bool_mask = np.atleast_3d(mask.data[:, :, :, 0].squeeze()) > 0.5
+        
+        # generate uniformly sampled coordinates on mask
+        xu, yu, zu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y,
+                     0:bool_mask.shape[2]:stride_z]
+        xu, yu, zu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p, vz * zu[
+            bool_mask] + z0_m - z0_p
+        
+        mask_area = bool_mask.sum() * vx * vy * vz
+    else:
+        #convert mask to boolean image
+        bool_mask = mask.data[:, :, :, 0].squeeze() > 0.5
+        if bool_mask.ndim > 2:
+            raise RuntimeError('Trying to calculate 2D Ripleys with 3D mask')
+        
+        zu = None
+        xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
+        xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
+        mask_area = bool_mask.sum() * vx * vy * vz
+        
+    return xu, yu, zu, mask_area
+    
+
+def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, threaded=False, sampling=5.0, coord_origin=(0,0,0)):
+    """
+    Ripley's K-function for examining clustering and dispersion of points within a
+    region R, where R is defined by a mask (2D or 3D) of the data.
+    
+    x : np.array
+            x-position of raw data
+        y : np.array
+            y-position of raw data
+        n_bins : int
+            Number of spatial bins
+        bin_size: float
+            Width of spatial bins (nm)
+        mask : PYME.IO.image.ImageStack
+            a mask of allowing the Ripleys to be computed within a given area
+        bbox : optional, a tuple (x0, y0, x1, y1), or (x0, y0, z0, x1, y1, z1)
+            bounding box of the region to consider if no mask provided (defaults to min and max of supplied data)
+        z : optional, np.array
+            z-position of raw data
+        threaded : bool
+            Calculate pairwise distances using multithreading (faster)
+        sampling : float
+            spacing (in nm) of samples from mask / region.
+        coord_origin : 3-tuple
+            Offset in nm of the x, y, and z coordinates w.r.t. the camera origin (used to make sure mask aligns)
+
+    """
+    three_d = z is not None
+    
+    if mask:
+        xu, yu, zu, mask_area = points_from_mask(mask, sampling, three_d, coord_origin)
+    else:
+        if three_d:
+            if not bbox:
+                bbox = [x.min(), y.min(), z.min(), x.max(), y.max(), z.max()]
+                
+            xu, yu, zu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling, bbox[2]:bbox[5]:sampling]
+            mask_area = np.prod((bbox[3:] - bbox[:3]))
+        else:
+            if not bbox:
+                bbox = [x.min(), y.min(), x.max(), y.max()]
+    
+            xu, yu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling]
+            zu = None
+            mask_area = np.prod((bbox[2:] - bbox[:2]))
+            
+    return ripleys_k_from_mask_points(x=x, y=y, z=z,
+                                      xu=xu, yu=yu, zu=zu,
+                                      n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, threaded=threaded)
+        
+        
 
 def ripleys_l(bb, K, d=2):
     """
