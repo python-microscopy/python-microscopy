@@ -264,9 +264,8 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    @webframework.register_endpoint('/start_spooling')
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      pzf_compression_settings=None, cluster_h5 = False):
+                      pzf_compression_settings=None, cluster_h5 = None):
         """Start spooling
         """
         
