@@ -5,7 +5,7 @@ import numpy as np
 ## exhaustive, but the Ripley's functions are definitely broken if they 
 ## don't pass
 def test_ripleys_k_2d():
-    from PYME.Analysis.points.ripleys import ripleys_k
+    from PYME.Analysis.points.ripleys import ripleys_k_from_mask_points
     
     v = np.linspace(0,100,100)
     xr,yr = np.meshgrid(v,v)
@@ -17,13 +17,13 @@ def test_ripleys_k_2d():
 
     A = 100**2
         
-    bb, K = ripleys_k(xu, yu, xu, yu, NBINS, BIN_SIZE, A, 
+    bb, K = ripleys_k_from_mask_points(xu, yu, xu, yu, NBINS, BIN_SIZE, A,
                       z=np.zeros_like(xu), zu=None, threaded=False)
 
     assert (np.sum((np.pi*(bb+BIN_SIZE)**2-K)**2) < 1e-4)
 
 def test_ripleys_k_3d():
-    from PYME.Analysis.points.ripleys import ripleys_k
+    from PYME.Analysis.points.ripleys import ripleys_k_from_mask_points
     
     v = np.linspace(0,10,10)
     xr,yr,zr = np.meshgrid(v,v,v)
@@ -36,7 +36,7 @@ def test_ripleys_k_3d():
 
     A = 10**3
         
-    bb, K = ripleys_k(xu, yu, xu, yu, NBINS, BIN_SIZE, A, 
+    bb, K = ripleys_k_from_mask_points(xu, yu, xu, yu, NBINS, BIN_SIZE, A,
                       z=zu, zu=zu, threaded=False)
 
     assert (np.sum(((4.0/3.0)*np.pi*(bb+BIN_SIZE)**3-K)**2) < 1e-4)
