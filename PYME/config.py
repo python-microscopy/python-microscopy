@@ -109,7 +109,7 @@ doesn't supply the features in question:
         - somepackage.anothermodule
         
     # a list of fully qualified import paths for dh5view plugins
-    dh5view:
+    dsviewer:
         - somepackage.somemodule
         
     # a list of fully qualified import paths for recipe modules
@@ -351,7 +351,7 @@ def _parse_plugin_config():
             with open(fn, 'r') as f:
                 plugin_conf = yaml.safe_load(f)
             
-            for app in ['visgui', 'dh5view', 'recipes']:
+            for app in ['visgui', 'dsviewer', 'recipes']:
                 plugins[app] = plugins.get(app, set()) | set(plugin_conf.get(app, []))
             
             try:
@@ -385,7 +385,7 @@ def _parse_plugin_config():
             return [p.strip() for p in plugin_paths if not p.strip() == '']
             
 
-        for app in ['visgui', 'dh5view', 'recipes']:
+        for app in ['visgui', 'dsviewer', 'recipes']:
             plugins[app] = plugins.get(app, set()) | set(_get_app_txt_plugins(app))
 
 _parse_plugin_config()
