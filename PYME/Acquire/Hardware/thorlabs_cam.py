@@ -129,5 +129,8 @@ class ThorlabsCamera(Camera.Camera):
     
     def GetNumImsBuffered(self):
         return 1 # FIXME! - this is a fudge which should get things working for now
+    
+    def GetCCDTemp(self):
+        return 27.0 #FIXME - Fake value as a fudge
         
             
