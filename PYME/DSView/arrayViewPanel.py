@@ -643,7 +643,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.update()
     
     def OnKeyPress(self, event):
-        if event.GetKeyCode() == wx.WXK_PRIOR:
+        if event.GetKeyCode() == wx.WXK_PAGEUP:
             self.do.zp = max(0, self.do.zp - 1)
             #self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
@@ -655,7 +655,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 #    if not self.refrTimer.IsRunning():
                 #        self.refrTimer.Start(.2, True)
 
-        elif event.GetKeyCode() == wx.WXK_NEXT:
+        elif event.GetKeyCode() == wx.WXK_PAGEDOWN:
             self.do.zp = min(self.do.zp + 1, self.do.ds.shape[2] - 1)
             #self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
