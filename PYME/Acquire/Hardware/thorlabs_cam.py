@@ -26,7 +26,7 @@ class ThorlabsCamera(Camera.Camera):
         which : str, int, or none
             Which camera to open - either a serial number, an index into available_cameras
         """
-        Camera.Camera.__init__()
+        Camera.Camera.__init__(self)
         
         if isinstance(which, six.string_types):
             if not which in available_cameras:
