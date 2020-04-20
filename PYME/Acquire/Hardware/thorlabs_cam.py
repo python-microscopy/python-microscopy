@@ -63,7 +63,7 @@ class ThorlabsCamera(Camera.Camera):
         return self._cam.exposure_time_us/1.0e6
     
     def SetIntegTime(self, iTime):
-        self._cam.exposure_time_us = iTime*1.0e6
+        self._cam.exposure_time_us = int(iTime*1.0e6)
         
     def GetCycleTime(self):
         return 1.0/self._cam.get_measured_frame_rate_fps()
