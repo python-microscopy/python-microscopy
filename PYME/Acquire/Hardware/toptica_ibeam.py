@@ -18,13 +18,13 @@ class TopticaIBeamLaser(Laser):
     
     def TurnOn(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write(b'la off\n')
+            ser.write(b'la on\n')
             ser.flush()
             self.isOn = True
     
     def TurnOff(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write(b'la on\n')
+            ser.write(b'la off\n')
             ser.flush()
             self.isOn = False
     
