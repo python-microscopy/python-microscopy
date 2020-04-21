@@ -29,7 +29,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
     min_points = Int(10, desc='Number of points/node to truncate octree at')
 
     def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
-        super(OctreeRenderLayer, self).__init__(pipeline, method, dsname, context,**kwargs)
+        TriangleRenderLayer.__init__(self, pipeline, method, dsname, context, **kwargs)
 
         self.on_trait_change(self.update, 'depth')
         self.on_trait_change(self.update, 'density')
@@ -81,6 +81,36 @@ class OctreeRenderLayer(TriangleRenderLayer):
             shifts = (box_sizes[:,None]*OCT_SHIFT[None,:])*0.5
             v = (c[:,None,:] + shifts)
 
+            #
+            #     z
+            #     ^
+            #     |
+            #    v4 ----------v6
+            #    /|           /|
+            #   / |          / |
+            #  v5----------v7  |
+            #  |  |    c    |  |
+            #  | v0---------|-v2
+            #  | /          | /
+            #  v1-----------v3---> y
+            #  /
+            # x
+            #
+            # Now note that the counterclockwise triangles (when viewed straight-on) formed along the faces of the cube are:
+            #
+            # v0 v2 v1
+            # v0 v1 v5
+            # v0 v5 v4
+            # v0 v6 v2
+            # v0 v4 v6
+            # v1 v2 v3
+            # v1 v3 v7
+            # v1 v7 v5
+            # v2 v6 v7
+            # v2 v7 v3
+            # v4 v5 v6
+            # v5 v7 v6
+
             # Counterclockwise triangles (when viewed straight-on) formed along
             # the faces of an octree box
             t0 = np.vstack(v[:,[0,0,0,0,0,1,1,1,2,2,4,5],:])
@@ -89,7 +119,10 @@ class OctreeRenderLayer(TriangleRenderLayer):
 
             x, y, z = np.hstack([t0,t1,t2]).reshape(-1, 3).T  # positions
 
+            # Now we create the normal as the cross product
             tn = np.cross((t2-t1),(t0-t1))
+
+            # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
             xn, yn, zn = np.repeat(tn.T, 3, axis=1)  # normals
 
             # Color is fixed constnat for octree
