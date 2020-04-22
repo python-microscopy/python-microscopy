@@ -107,7 +107,7 @@ class ParticleTracker:
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_tracks')
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
-            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputName)
+            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputName, method='tracks')
             visFr.add_layer(layer)
         
         #dlg.Destroy()

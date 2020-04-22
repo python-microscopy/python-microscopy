@@ -1,5 +1,5 @@
 from . import manualFoldPanel
-from PYME.LMVis.layers import pointcloud, mesh
+from PYME.LMVis.layers import pointcloud, mesh, tracks
 import PYME.resources
 import wx
 
@@ -78,6 +78,8 @@ class LayerCaptionBar(manualFoldPanel.CaptionBar):
             self._icon = wx.Bitmap(PYME.resources.getIconPath('points.png'))
         elif isinstance(layer, mesh.TriangleRenderLayer):
             self._icon = wx.Bitmap(PYME.resources.getIconPath('mesh.png'))
+        elif isinstance(layer, tracks.TrackRenderLayer):
+            self._icon = wx.Bitmap(PYME.resources.getIconPath('tracks.png'))
 
         self._layer.on_trait_change(self._refresh)
 
