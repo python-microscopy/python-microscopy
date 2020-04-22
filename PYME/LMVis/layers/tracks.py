@@ -59,7 +59,7 @@ class TrackRenderLayer(EngineLayer):
     _datasource_keys = List()
     _datasource_choices = List()
     
-    def __init__(self, pipeline, method='points', dsname='', context=None, **kwargs):
+    def __init__(self, pipeline, method='tracks', dsname='', context=None, **kwargs):
         EngineLayer.__init__(self, context=context, **kwargs)
         self._pipeline = pipeline
         self.engine = None
@@ -157,7 +157,7 @@ class TrackRenderLayer(EngineLayer):
 
         NClumps = int(ci.max())
 
-        clist = [[] for i in xrange(NClumps)]
+        clist = [[] for i in range(NClumps)]
         for i, cl_i in enumerate(ci):
             clist[int(cl_i - 1)].append(i)
 
