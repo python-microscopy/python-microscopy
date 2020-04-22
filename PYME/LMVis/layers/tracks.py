@@ -32,6 +32,8 @@ class Track3DEngine(BaseEngine):
             glNormalPointerf(layer.get_normals())
             glColorPointerf(layer.get_colors())
 
+            glLineWidth(layer.line_width)
+
             for i, cl in enumerate(layer.clumpSizes):
                 if cl > 0:
                     glDrawArrays(GL_LINE_STRIP, layer.clumpStarts[i], cl)
@@ -53,6 +55,7 @@ class TrackRenderLayer(EngineLayer):
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour points')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Tranparency')
+    line_width = Float(1.0, desc='Track line width')
     method = Enum(*ENGINES.keys(), desc='Method used to display tracks')
     clump_key = CStr('clumpIndex', desc="Name of column containing the track identifier")
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of points')
@@ -164,7 +167,7 @@ class TrackRenderLayer(EngineLayer):
         self.clumpSizes = [len(cl_i) for cl_i in clist]
         self.clumpStarts = np.cumsum([0, ] + self.clumpSizes)
 
-        #reorder x, y, z, c in clump order
+        #reorder x, y, z, c in clump order  
         I = np.hstack([np.array(cl) for cl in clist])
 
         x = x[I]
@@ -229,7 +232,8 @@ class TrackRenderLayer(EngineLayer):
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update),
                                  show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
                      Group(Item('cmap', label='LUT'),
-                           #Item('alpha'),
+                           Item('alpha'),
+                           Item('line_width')
                            )])
         #buttons=['OK', 'Cancel'])
     
