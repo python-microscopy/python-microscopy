@@ -259,3 +259,6 @@ class MultiwellTilePanel(TilePanel):
         # self.scope.tiler.on_stop.connect(self._on_stop)
         # self.scope.tiler.progress.connect(self._update)
         self.scope.tiler.start()
+
+    def OnStop(self, event=None):
+        self.scope.tiler.stop()

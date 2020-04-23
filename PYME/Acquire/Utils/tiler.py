@@ -242,19 +242,30 @@ class MultiwellCircularTiler(object):
         self.max_ind = self.n_x * self.n_y
 
     def start_next(self):
+        try:
+            self.tiler.on_stop.disconnect()
+        except:
+            pass
+
         if self.ind < self.max_ind:
             self.scope.state.setItems({'Positioning.x': self._x_wells[self.ind],
                                        'Positioning.y': self._y_wells[self.ind]},
                                       stopCamera=True)  # stop cam to make sure the next tiler gets the right center pos
 
             tile_dir = os.path.join(self.tile_dir, 'well_%d' % self.ind)
-            tiler = CircularTiler(self.scope, tile_dir, self.well_scan_radius, self.tile_spacing, self.dwelltime,
+            self.tiler = CircularTiler(self.scope, tile_dir, self.well_scan_radius, self.tile_spacing, self.dwelltime,
                                   self.background, self.evt_log, self.trigger, self.base_tile_size, False)
-            tiler.start()
+            self.tiler.start()
             self.ind += 1
-            tiler.on_stop.connect(self.start_next())  # todo - is it problematic not ot call disconnect?
+            self.tiler.on_stop.connect(self.start_next())  # todo - is it problematic not ot call disconnect?
 
 
     def start(self):
         self.start_next()
+
+    def stop(self):
+        try:
+            self.tiler.stop()
+        except AttributeError:
+            pass
         
