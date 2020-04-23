@@ -79,7 +79,7 @@ class LUTOverlayLayer(OverlayLayer):
                 cmap = l.colour_map
                 
                 # upper right x
-                lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0] - j*1.5*lb_width
+                lb_ur_x = -gl_canvas.view.translation[0] + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0] - j*1.5*lb_width
                 
                 # upper left x
                 lb_ul_x = lb_ur_x - lb_width
