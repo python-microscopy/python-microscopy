@@ -236,8 +236,8 @@ class MultiwellCircularTiler(object):
         self._x_wells = np.asarray(self._x_wells)
 
         # add the current scope position offset
-        self._x_wells += self.curr_pos[0]
-        self._y_wells += self.curr_pos[1]
+        self._x_wells += self.curr_pos['x']
+        self._y_wells += self.curr_pos['y']
 
         self.max_ind = self.n_x * self.n_y
 
