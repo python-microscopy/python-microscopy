@@ -241,7 +241,16 @@ class MultiwellCircularTiler(object):
 
         self.max_ind = self.n_x * self.n_y
 
-    def start_next(self):
+    def start_next(self, *args, **kwargs):
+        """
+        Creates and starts the tiler for the next well until we're finished.
+
+        Parameters
+        ----------
+        args
+        kwargs:
+            necessary as dispatch calls will include a signal keyword argument
+        """
         try:
             self.tiler.on_stop.disconnect()
         except:
@@ -257,13 +266,14 @@ class MultiwellCircularTiler(object):
                                   self.background, self.evt_log, self.trigger, self.base_tile_size, False)
             self.tiler.start()
             self.ind += 1
-            self.tiler.on_stop.connect(self.start_next())  # todo - is it problematic not ot call disconnect?
+            self.tiler.on_stop.connect(self.start_next)
 
 
     def start(self):
         self.start_next()
 
     def stop(self):
+        self.max_ind = 0
         try:
             self.tiler.stop()
         except AttributeError:
