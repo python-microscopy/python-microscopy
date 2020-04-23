@@ -733,7 +733,7 @@ class ModuleCollection(HasTraits):
             with open(data) as f:
                 data = f.read()
     
-        l = yaml.load(data)
+        l = yaml.load(data, Loader=yaml.FullLoader)
         return self._update_from_module_list(l)
 
     @classmethod
