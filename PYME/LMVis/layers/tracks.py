@@ -270,7 +270,7 @@ class TrackRenderLayer(EngineLayer):
     
     @property
     def default_view(self):
-        from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
+        from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor, TextEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
         
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
@@ -280,7 +280,7 @@ class TrackRenderLayer(EngineLayer):
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update),
                                  show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
                      Group(Item('cmap', label='LUT'),
-                           Item('alpha'),
+                           Item('alpha', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
                            Item('line_width')
                            )])
         #buttons=['OK', 'Cancel'])
