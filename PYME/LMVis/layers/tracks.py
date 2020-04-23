@@ -11,6 +11,8 @@ from pylab import cm
 import numpy as np
 import dispatch
 
+from PYME.Analysis.Tracking.trackUtils import ClumpManager
+
 
 class Track3DEngine(BaseEngine):
     def __init__(self, context=None):
@@ -113,7 +115,14 @@ class TrackRenderLayer(EngineLayer):
     
     def _get_cdata(self):
         try:
-            cdata = self.datasource[self.vertexColour]
+            if isinstance(self.datasource, ClumpManager):
+                cdata = []
+                for track in self.datasource.all:
+                    cdata.extend(track[self.vertexColour])
+                cdata = np.array(cdata)
+            else:
+                # Assume tabular dataset
+                cdata = self.datasource[self.vertexColour]
         except KeyError:
             cdata = np.array([0, 1])
         
@@ -128,7 +137,12 @@ class TrackRenderLayer(EngineLayer):
         print('lw update')
         self._datasource_choices = self._pipeline.layer_data_source_names
         if not self.datasource is None:
-            self._datasource_keys = sorted(self.datasource.keys())
+            if isinstance(self.datasource, ClumpManager):
+                # Grab the keys from the first Track in the ClumpManager
+                self._datasource_keys = sorted(self.datasource[0].keys())
+            else:
+                # Assume we have a tabular data source
+                self._datasource_keys = sorted(self.datasource.keys())
         
         if not (self.engine is None or self.datasource is None):
             self.update_from_datasource(self.datasource)
@@ -139,41 +153,75 @@ class TrackRenderLayer(EngineLayer):
         return self._bbox
     
     def update_from_datasource(self, ds):
-        x, y = ds[self.x_key], ds[self.y_key]
-        
-        if not self.z_key is None:
-            try:
-                z = ds[self.z_key]
-            except KeyError:
+        if isinstance(ds, ClumpManager):
+            x = []
+            y = []
+            z = []
+            c = []
+            self.clumpSizes = []
+
+            # Copy data from tracks. This is already in clump order
+            # thanks to ClumpManager
+            for track in ds.all:
+                x.extend(track['x'])
+                y.extend(track['y'])
+                z.extend(track['z'])
+                self.clumpSizes.append(track.nEvents)
+
+                if not self.vertexColour == '':
+                    c.extend(track[self.vertexColour])
+                else:
+                    c.extend([0 for i in track['x']])
+
+            x = np.array(x)
+            y = np.array(y)
+            z = np.array(z)
+            c = np.array(c)
+
+            print(x,y,z,c)
+            print(x.shape,y.shape,z.shape,c.shape)
+
+        else:
+            # Assume tabular data source        
+            x, y = ds[self.x_key], ds[self.y_key]
+            
+            if not self.z_key is None:
+                try:
+                    z = ds[self.z_key]
+                except KeyError:
+                    z = 0 * x
+            else:
                 z = 0 * x
-        else:
-            z = 0 * x
-        
-        if not self.vertexColour == '':
-            c = ds[self.vertexColour]
-        else:
-            c = 0 * x
+            
+            if not self.vertexColour == '':
+                c = ds[self.vertexColour]
+            else:
+                c = 0 * x
 
-        # Work out clump start and finish indices
-        # TODO - optimize / precompute????
-        ci = ds[self.clump_key]
+            # Work out clump start and finish indices
+            # TODO - optimize / precompute????
+            ci = ds[self.clump_key]
 
-        NClumps = int(ci.max())
+            NClumps = int(ci.max())
 
-        clist = [[] for i in range(NClumps)]
-        for i, cl_i in enumerate(ci):
-            clist[int(cl_i - 1)].append(i)
+            clist = [[] for i in range(NClumps)]
+            for i, cl_i in enumerate(ci):
+                clist[int(cl_i - 1)].append(i)
 
-        self.clumpSizes = [len(cl_i) for cl_i in clist]
+            # This and self.clumpStarts are class attributes for 
+            # compatibility with the old Track rendering layer, 
+            # PYME.LMVis.gl_render3D.TrackLayer
+            self.clumpSizes = [len(cl_i) for cl_i in clist]
+
+            #reorder x, y, z, c in clump order  
+            I = np.hstack([np.array(cl) for cl in clist])
+
+            x = x[I]
+            y = y[I]
+            z = z[I]
+            c = c[I]
+
         self.clumpStarts = np.cumsum([0, ] + self.clumpSizes)
-
-        #reorder x, y, z, c in clump order  
-        I = np.hstack([np.array(cl) for cl in clist])
-
-        x = x[I]
-        y = y[I]
-        z = z[I]
-        c = c[I]
         
         #do normal vertex stuff
         vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
