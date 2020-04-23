@@ -178,8 +178,8 @@ class TrackRenderLayer(EngineLayer):
             z = np.array(z)
             c = np.array(c)
 
-            print(x,y,z,c)
-            print(x.shape,y.shape,z.shape,c.shape)
+            # print(x,y,z,c)
+            # print(x.shape,y.shape,z.shape,c.shape)
 
         else:
             # Assume tabular data source        
