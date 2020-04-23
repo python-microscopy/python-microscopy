@@ -286,7 +286,7 @@ class HistLimitPanel(wx.Panel):
         #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx.Bitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
