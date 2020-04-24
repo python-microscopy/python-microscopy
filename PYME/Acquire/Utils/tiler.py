@@ -161,8 +161,7 @@ class CircularTiler(Tiler):
 
 class MultiwellCircularTiler(object):
     """
-    Creates a circular tiler for each well at a given spacing. For now create a singular, very large pyramid image of
-    overview (practical? Maybe, maybe not, but would look coolest in the viewer).
+    Creates a circular tiler for each well at a given spacing. For now create a separate tilepyramid for each well.
     """
     def __init__(self, well_scan_radius, x_spacing, y_spacing, n_x, n_y, scope, tile_dir, tile_spacing=None,
                  dwelltime=1, background=0, evtLog=False, trigger=False, base_tile_size=256):
