@@ -552,9 +552,13 @@ class MarchingCubes(object):
         """
 
         cube_index = self.cube_index(self.values)
-        edge = MC_EDGES[cube_index]
-        intersections = self.create_intersection_list(edge, self.vertices, self.values)
-        triangles = MC_TRIANGLES[cube_index]
+        
+        #we don't need to calculate anything if all vertices of a cube are above or below the threshold
+        mask = ~((cube_index == 0) | (cube_index == 0xFF))
+        
+        edge = MC_EDGES[cube_index[mask]]
+        intersections = self.create_intersection_list(edge, self.vertices[mask,:,:], self.values[mask,:])
+        triangles = MC_TRIANGLES[cube_index[mask]]
         self.create_triangles(intersections, triangles)
 
         # for v_index in range(self.vertices.shape[0]):
