@@ -142,7 +142,10 @@ class TriangleRenderLayer(EngineLayer):
         try:
             return self._pipeline.get_layer_data(self.dsname)
         except AttributeError:
-            return None
+            try:
+                return self._pipeline[self.dsname]
+            except AttributeError:
+                return None
         #return self.datasource
     
     @property
@@ -170,8 +173,10 @@ class TriangleRenderLayer(EngineLayer):
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        if not self._pipeline is None:
+        try:
             self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
+        except AttributeError:
+            pass
         
         if not self.datasource is None:
             dks = ['constant',]

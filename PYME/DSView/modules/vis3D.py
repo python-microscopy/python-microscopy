@@ -65,13 +65,18 @@ class visualiser:
         glcanvas.SetCurrent(glcanvas.gl_context)
         glcanvas.initialize()
         #glcanvas.Refresh()
+        
+        glcanvas.layer_data={}
 
         for i in range(self.image.data.shape[3]):
             isolevel = self.do.Offs[i] + .5/self.do.Gains[i]
             T = isosurface.isosurface(self.image.data[:,:,:,i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
-            layer = TriangleRenderLayer(None, method='shaded', cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6])
+            glcanvas.layer_data[self.image.names[i]] = T
+            layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded',
+                                        cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6],
+                                        normal_mode='Per face') #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
             glcanvas.layers.append(layer)
-            layer.update_from_datasource(T)
+            #layer.update_from_datasource(T)
             print(layer.bbox)
             
             layer.engine._outlines=False
