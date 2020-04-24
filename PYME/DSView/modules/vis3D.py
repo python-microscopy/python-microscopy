@@ -31,7 +31,10 @@ class visualiser:
         self.image = dsviewer.image
         self.tq = None
         
-        dsviewer.AddMenuItem('&3D', '3D Isosurface', self.On3DIsosurf)
+        self.canvases = []
+        
+        dsviewer.AddMenuItem('&3D', '3D Isosurface (mayavi)', self.On3DIsosurf)
+        dsviewer.AddMenuItem('&3D', '3D Isosurface (builtin)', self.isosurf_builtin)
         dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface(s) as u3d', self.save_u3d)
@@ -49,10 +52,44 @@ class visualiser:
         self.dsviewer.f3d.scene.stereo = True
 
         for i in range(self.image.data.shape[3]):
-            c = mlab.contour3d(self.image.data[:,:,:,i].astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
+            c = mlab.contour3d(self.image.data[:,:,:,i].squeeze().astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
             self.lastSurf = c
-            c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+            c.mlab_source.dataset.spacing = self.image.voxelsize
             
+    def isosurf_builtin(self, event=None):
+        from PYME.experimental import isosurface
+        from PYME.LMVis import gl_render3D_shaders as glrender
+        from PYME.LMVis.layers.mesh import TriangleRenderLayer
+
+        glcanvas = glrender.showGLFrame()
+        glcanvas.SetCurrent(glcanvas.gl_context)
+        glcanvas.initialize()
+        #glcanvas.Refresh()
+
+        for i in range(self.image.data.shape[3]):
+            isolevel = self.do.Offs[i] + .5/self.do.Gains[i]
+            T = isosurface.isosurface(self.image.data[:,:,:,i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
+            layer = TriangleRenderLayer(None, method='shaded', cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6])
+            glcanvas.layers.append(layer)
+            layer.update_from_datasource(T)
+            print(layer.bbox)
+            
+            layer.engine._outlines=False
+            layer.show_lut=False
+            
+        #print(glcanvas.bbox, glcanvas.GetSize())
+        
+        self.canvases.append(glcanvas)
+        
+        #def refr():
+        glcanvas.displayMode = '3D'
+        glcanvas.fit_bbox()
+        glcanvas.Refresh()
+            
+        #wx.CallAfter(glcanvas.Refresh)
+        
+
+
 
     def On3DVolume(self, event):
         try:

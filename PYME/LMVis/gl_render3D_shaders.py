@@ -756,6 +756,16 @@ class LMGLShaderCanvas(GLCanvas):
         centre = 0.5*(bb[:3] + bb[3:])
         
         self.view.translation[0], self.view.translation[1], self.view.translation[2] = centre
+        
+    def fit_bbox(self):
+        bb = self.bbox
+        if bb is None:
+            return
+    
+        sz = (bb[3:] - bb[:3])
+    
+        self.view.scale = 1.5/max(np.abs(sz))
+        self.recenter_bbox()
 
     def set_view(self, view):
         self.view=view
@@ -925,6 +935,9 @@ class LegacyGLCanvas(LMGLShaderCanvas):
 
 def showGLFrame():
     f = wx.Frame(None, size=(800, 800))
+    #sizer = wx.BoxSizer(wx.VERTICAL)
     c = LMGLShaderCanvas(f)
+    #sizer.Add(c, 1, wx.EXPAND, 0)
+    #f.SetSizer(sizer)
     f.Show()
     return c

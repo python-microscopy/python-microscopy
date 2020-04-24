@@ -129,14 +129,20 @@ class TriangleRenderLayer(EngineLayer):
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
         if not self._pipeline is None:
-            self._pipeline.onRebuild.connect(self.update)
+            try:
+                self._pipeline.onRebuild.connect(self.update)
+            except AttributeError:
+                pass
 
     @property
     def datasource(self):
         """
         Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
         """
-        return self._pipeline.get_layer_data(self.dsname)
+        try:
+            return self._pipeline.get_layer_data(self.dsname)
+        except AttributeError:
+            return None
         #return self.datasource
     
     @property
@@ -164,7 +170,8 @@ class TriangleRenderLayer(EngineLayer):
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
+        if not self._pipeline is None:
+            self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
         
         if not self.datasource is None:
             dks = ['constant',]

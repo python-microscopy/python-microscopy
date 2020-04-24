@@ -673,7 +673,10 @@ def image_to_vertex_values(im, voxelsize=1.0):
     -------
 
     """
-    V = voxelsize*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    if np.isscalar(voxelsize):
+        V = voxelsize*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    else:
+        V = np.array(voxelsize)[:,None,None,None]*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
     
     def _rs(v):
         return v.reshape(3, -1).T.reshape(-1, 1, 3)
