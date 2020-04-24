@@ -672,6 +672,7 @@ class XMLMDHandler(MDHandlerBase):
 
 class OMEXMLMDHandler(XMLMDHandler):
     def __init__(self, XMLData = None, mdToCopy=None):
+        from PYME.IO.voxel_size import VoxelSize
         if not XMLData is None:
             #loading an existing file
             self.doc = parseString(XMLData)
@@ -684,21 +685,44 @@ class OMEXMLMDHandler(XMLMDHandler):
                 
                 #try to load pixel size etc fro OME metadata
                 pix = self.doc.getElementsByTagName('Pixels')[0]
-                
-                #print 'PhysicalSizeX: ', pix.getAttribute('PhysicalSizeX')
-                try:
-                    self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
-                    self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
-                except:
-                    print('WARNING: Malformed OME XML. Pixel size not defined, using 100nm')
 
-                    self['voxelsize.x'] = .1 #FIXME - Get user to set pixel size if absent
-                    self['voxelsize.x'] = .1
                 try:
-                    self['voxelsize.z'] = float(pix.getAttribute('PhysicalSizeZ'))
+                    x_unit = pix.getAttribute('PhysicalSizeXUnit')
                 except:
-                    self['voxelsize.z'] = 0.2
-                    
+                    logger.error('pixel size x units missing, assuming units are in micrometers')
+                    x_unit = 'um'
+
+                try:
+                    y_unit = pix.getAttribute('PhysicalSizeYUnit')
+                except:
+                    logger.error('pixel size y units missing, assuming units are in' + x_unit)
+                    y_unit = x_unit
+
+                try:
+                    z_unit = pix.getAttribute('PhysicalSizeZUnit')
+                    # occasionally people will write a flat image as having z units of 'pix'
+                    if not z_unit.endswith('m'):
+                        logger.error('found pixel size z units of ' + z_unit + ', writing as micrometers')
+                        z_unit = 'um'
+                except:
+                    logger.error('pixel size z units missing, assuming units are in' + x_unit)
+                    z_unit = x_unit
+
+                try:
+                    x_size = float(pix.getAttribute('PhysicalSizeX'))
+                    y_size = float(pix.getAttribute('PhysicalSizeY'))
+                except:
+                    logger.error('Malformed OME XML. Pixel size not defined, punting')
+                    #FIXME - Get user to set pixel size if absent
+                    x_size, y_size = 0.1, 0.1
+                try:
+                    z_size = float(pix.getAttribute('PhysicalSizeZ'))
+                except:
+                    z_size = 0.2
+
+                vs = VoxelSize(x_size, y_size, z_size, x_unit, y_unit, z_unit)
+                self.copyEntriesFrom(vs.as_metadata_handler('um'))
+
                 try:
                     self['Camera.CycleTime'] = float(pix.getAttribute('TimeIncrement'))
                 except:
