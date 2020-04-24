@@ -25,6 +25,9 @@ class VoxelSize(object):
         self._units_y = units_y
         self._units_z = units_z
 
+    def __getitem__(self, item):
+        return (self.x_um, self.y_um, self.z_um)[item]
+
     def x(self, units='um'):
         """
 
