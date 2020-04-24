@@ -64,7 +64,6 @@ class visualiser:
         glcanvas = glrender.showGLFrame()
         glcanvas.SetCurrent(glcanvas.gl_context)
         glcanvas.initialize()
-        #glcanvas.Refresh()
         
         glcanvas.layer_data={}
 
@@ -74,24 +73,20 @@ class visualiser:
             glcanvas.layer_data[self.image.names[i]] = T
             layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context,
                                         cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6],
-                                        normal_mode='Per face') #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                        #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                        )
             glcanvas.layers.append(layer)
-            #layer.update_from_datasource(T)
-            print(layer.bbox)
             
             layer.engine._outlines=False
             layer.show_lut=False
             
-        #print(glcanvas.bbox, glcanvas.GetSize())
         
         self.canvases.append(glcanvas)
         
-        #def refr():
         glcanvas.displayMode = '3D'
         glcanvas.fit_bbox()
         glcanvas.Refresh()
             
-        #wx.CallAfter(glcanvas.Refresh)
         
 
 

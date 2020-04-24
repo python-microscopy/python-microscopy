@@ -18,7 +18,8 @@ def isosurface(data, isolevel, voxel_size=None, origin=None, remesh=False):
     #MC.set_vertices(vertices, values)
     #T = triangle_mesh.TriangleMesh.from_np_stl(MC.march())
     
-    MC = marching_cubes.RasterMarchingCubes(data, isolevel, voxelsize=voxel_size)
+    #MC = marching_cubes.RasterMarchingCubes(data, isolevel, voxelsize=voxel_size)
+    MC = modified_marching_cubes.RasterMarchingCubes(data, isolevel, voxelsize=voxel_size)
     T = triangle_mesh.TriangleMesh.from_np_stl(MC.march())
     
     if remesh:
