@@ -954,9 +954,17 @@ class ModifiedMarchingCubes(object):
 
         # Classify this voxel
         cube_index = self.cube_index(self.values)
+        mask = ~((cube_index == 0) | (cube_index == 0xFF))
+        
+        verts, vals = self.vertices, self.values
+        
+        if not dual_march:
+            # only crop to index mask if we are not doing a dual march
+            cube_index= cube_index[mask]
+            verts, vals = verts[mask,:, :], vals[mask,:]
 
         # Find the edges we wish the triangles to intersect
-        intersections = self.create_intersection_list(cube_index, self.vertices, self.values)
+        intersections = self.create_intersection_list(cube_index, verts, vals)
 
         # Get this voxel's equivalence class
         cell_class = REGULAR_CELL_CLASS[cube_index]
