@@ -23,6 +23,49 @@ import numpy
 import wx
 import pylab
 
+from PYME.ui.AUIFrame import AUIFrame
+import wx.lib.agw.aui as aui
+
+class MeshViewFrame(AUIFrame):
+    def __init__(self, *args, **kwargs):
+        from PYME.LMVis import gl_render3D_shaders as glrender
+        from PYME.LMVis import layer_panel
+        AUIFrame.__init__(self, *args, **kwargs)
+        
+        self.canvas = glrender.LMGLShaderCanvas(self)
+        self.AddPage(page=self.canvas, caption='View')
+
+        
+        self.panesToMinimise = []
+        self.layerpanel = layer_panel.LayerPane(self, self.canvas, caption=None, add_button=False)
+        self.layerpanel.SetSize(self.layerpanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("layerPanel").Right().Caption('Layers').CloseButton(
+            False).MinimizeButton(True).MinimizeMode(
+            aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.layerpanel, pinfo)
+
+        self.panesToMinimise.append(pinfo)
+
+        # self._mgr.AddPane(self.optionspanel.CreateToolBar(self),
+        #                   aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+        #                   ToolbarPane().Right().GripperTop())
+        
+        for pn in self.panesToMinimise:
+            self._mgr.MinimizePane(pn)
+        
+        self.Layout()
+        
+        
+def new_mesh_viewer(parent=None,*args, **kwargs):
+    kwargs['size'] = kwargs.get('size', (800,800))
+    f = MeshViewFrame(parent, *args, **kwargs)
+    f.Show()
+
+    f.canvas.SetCurrent(f.canvas.gl_context)
+    f.canvas.initialize()
+    return f.canvas
+        
+
 class visualiser:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -61,10 +104,7 @@ class visualiser:
         from PYME.LMVis import gl_render3D_shaders as glrender
         from PYME.LMVis.layers.mesh import TriangleRenderLayer
 
-        glcanvas = glrender.showGLFrame()
-        glcanvas.SetCurrent(glcanvas.gl_context)
-        glcanvas.initialize()
-        
+        glcanvas = new_mesh_viewer()#glrender.showGLFrame()
         glcanvas.layer_data={}
 
         for i in range(self.image.data.shape[3]):

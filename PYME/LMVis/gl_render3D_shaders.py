@@ -72,6 +72,7 @@ else:
 name = 'ball_glut'
 
 from . import views
+import dispatch
 
 
 class SelectionSettings(object):
@@ -160,6 +161,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.view_port_size = (self.Size[0], self.Size[1])
         
         self._old_bbox = None
+
+        self.layer_added = dispatch.Signal()
     
     @property
     def xc(self):
@@ -273,6 +276,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.layers.append(layer)
         if connect:
             layer.on_update.connect(self.refresh)
+            
+        self.layer_added.send(self)
 
     def setOverlayMessage(self, message=''):
         # self.messageOverlay.set_message(message)
