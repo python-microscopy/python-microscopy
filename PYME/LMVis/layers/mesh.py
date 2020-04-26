@@ -142,14 +142,22 @@ class OITEngine(BaseEngine):
         glClearColor(0.0,0.0,0.0,1.0)
         glClearDepth(1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        #Copy depth buffer from opaque stuff rendered previously
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self._fb)
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+        glBlitFramebuffer(0, 0, self._w, self._h,
+                          0, 0, self._w, self._h,
+                          GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
         
         #glDrawBuffer(GL_COLOR_ATTACHMENT0)
         #glClear(GL_COLOR_BUFFER_BIT) #| GL_DEPTH_BUFFER_BIT)
         
-        
-        #glDrawBuffer(GL_COLOR_ATTACHMENT1)
-        #glClearColor(1.0, 0.0, 0.0, 1.0)
-        #glClear(GL_COLOR_BUFFER_BIT)
+        #clear the second colour attachment buffer
+        glDrawBuffers(1, [GL_COLOR_ATTACHMENT1,])
+        glClearColor(1.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
 
         glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
         
