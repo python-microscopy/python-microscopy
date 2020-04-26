@@ -958,7 +958,10 @@ class ModifiedMarchingCubes(object):
         
         verts, vals = self.vertices, self.values
         
-        if not dual_march:
+        if False:#not dual_march:
+            # FIXME - this fails when we extract from an octree and do piecewise-linear interpolation between
+            # vertices as the piecewise linear interpolation function accesses a non-masked depth array.
+            
             # only crop to index mask if we are not doing a dual march
             cube_index= cube_index[mask]
             verts, vals = verts[mask,:, :], vals[mask,:]
