@@ -75,7 +75,7 @@ class visualiser:
                                         cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6],
                                         #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
                                         )
-            glcanvas.layers.append(layer)
+            glcanvas.add_layer(layer)
             
             layer.engine._outlines=False
             layer.show_lut=False

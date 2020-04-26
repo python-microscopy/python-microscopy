@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
@@ -37,8 +37,185 @@ class WireframeEngine(BaseEngine):
                 glColorPointerf(layer.get_colors()*sc[None,:])
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
-                
 
+
+from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
+class OITEngine(BaseEngine):
+    _outlines = False
+    
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
+        self.set_shader_program(OITGouraudShaderProgram)
+        self.composite_shader_program = ShaderProgramFactory.get_program(OITCompositorProgram, self._context)
+        
+        self._w, self._h = None,None
+        
+        print('init_gl')
+        self.init_gl()
+        print('init_gl done')
+        
+    def init_gl(self):
+        self._fb = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+
+        self._accumT = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self._accumT)
+
+        self._revealT = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self._revealT)
+
+        self._db = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        
+    def cleanup(self):
+        glDeleteFramebuffers(1, self._fb)
+        glDeleteTextures(1, self._accumT)
+        glDeleteTextures(1, self._revealT)
+        glDeleteRenderbuffers(1, self._db)
+        
+    def resize_gl(self, w, h):
+        #print('resize_gl')
+        self._w = w
+        self._h = h
+    
+        glViewport(0, 0, w, h)
+        #self._accumdata = np.zeros([4,w,h], 'f')
+
+        #print('bind fb')
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+
+        #print('bind accum texture')
+        glBindTexture(GL_TEXTURE_2D, self._accumT)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, None)
+    
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+
+        #print('framebuffer texture')
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self._accumT, 0)
+
+        #print('bind reveal texture')
+        glBindTexture(GL_TEXTURE_2D, self._revealT)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, None)
+    
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self._revealT, 0)
+    
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+        #print('bind render buffer')
+        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._db)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+    
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        
+        #print('resize_gl done')
+        
+    
+    def render(self, gl_canvas, layer):
+        self._set_shader_clipping(gl_canvas)
+        w, h = gl_canvas.view_port_size
+        if not ((self._w == w) and (self._h == h)):
+            self.resize_gl(w,h)
+            
+        #print('render')
+        
+        # draw to an offscreen framebuffer
+        current_fb = glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING) #keep a reference to the current framebuffer so we can restore after we're done
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb) #bind our offscreen framebuffer
+        
+        
+        #clear the offscreen framebuffer
+
+        #glClearBufferfv(GL_COLOR, 0, (0., 0., 0., 1.))
+        #glClearBufferfv(GL_COLOR, 1, (1., 0., 0., 0.))
+        glClearColor(0.0,0.0,0.0,1.0)
+        glClearDepth(1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+        #glDrawBuffer(GL_COLOR_ATTACHMENT0)
+        #glClear(GL_COLOR_BUFFER_BIT) #| GL_DEPTH_BUFFER_BIT)
+        
+        
+        #glDrawBuffer(GL_COLOR_ATTACHMENT1)
+        #glClearColor(1.0, 0.0, 0.0, 1.0)
+        #glClear(GL_COLOR_BUFFER_BIT)
+
+        glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
+        
+        with self.shader_program:
+            vertices = layer.get_vertices()
+            n_vertices = vertices.shape[0]
+            
+            glVertexPointerf(vertices)
+            glNormalPointerf(layer.get_normals())
+            glColorPointerf(layer.get_colors())
+            
+            glDrawArrays(GL_TRIANGLES, 0, n_vertices)
+            
+            if self._outlines:
+                sc = np.array([0.5, 0.5, 0.5, 1])
+                glColorPointerf(layer.get_colors() * sc[None, :])
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                glDrawArrays(GL_TRIANGLES, 0, n_vertices)
+
+        # set the framebuffer back
+        glBindFramebuffer(GL_FRAMEBUFFER, current_fb)
+        #glDrawBuffer(GL_COLOR_ATTACHMENT0)
+
+        #print('compositing pass')
+        #now do the compositing pass
+        with self.composite_shader_program as c:
+            # bind our pre-rendered textures
+             
+            glActiveTexture(GL_TEXTURE0)
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self._accumT)
+            self._acc_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT)
+            glUniform1i(c.get_uniform_location('accum_t'),0)
+
+            glActiveTexture(GL_TEXTURE1)
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self._revealT)
+            self._reveal_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT)
+            glUniform1i(c.get_uniform_location('reveal_t'), 1)
+            
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+            
+            # Draw triangles to display texture on
+            glColor4f(1., 1., 1., 1.)
+            glBegin(GL_QUADS)
+            glTexCoord2f(0., 0.) # lower left corner of image */
+            glVertex3f(-1, -1, 0.0)
+            glTexCoord2f(1., 0.) # lower right corner of image */
+            glVertex3f(1, -1, 0.0)
+            glTexCoord2f(1.0, 1.0) # upper right corner of image */
+            glVertex3f(1, 1, 0.0)
+            glTexCoord2f(0.0, 1.0) # upper left corner of image */
+            glVertex3f(-1, 1, 0.0)
+            glEnd()
+            
+            #unbind our textures
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D,0)
+            glDisable(GL_TEXTURE_2D)
+
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDisable(GL_TEXTURE_2D)
+            
+        #print('render done')
 
 class FlatFaceEngine(WireframeEngine):
     def __init__(self, context=None):
@@ -49,6 +226,7 @@ class FlatFaceEngine(WireframeEngine):
         WireframeEngine.render(self, gl_canvas, layer)
 
 class ShadedFaceEngine(WireframeEngine):
+    _outlines = False
     def __init__(self, context=None):
         BaseEngine.__init__(self, context=context)
 
@@ -71,6 +249,7 @@ ENGINES = {
     'flat' : FlatFaceEngine,
     'shaded' : ShadedFaceEngine,
     'tessel' : TesselEngine,
+    'shaded_oit' : OITEngine,
 }
 
 

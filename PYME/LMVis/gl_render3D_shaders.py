@@ -268,6 +268,11 @@ class LMGLShaderCanvas(GLCanvas):
 
     def OnMove(self, event):
         self.Refresh()
+        
+    def add_layer(self, layer, connect=True):
+        self.layers.append(layer)
+        if connect:
+            layer.on_update.connect(self.refresh)
 
     def setOverlayMessage(self, message=''):
         # self.messageOverlay.set_message(message)

@@ -36,6 +36,8 @@ class GouraudShaderProgram(GLProgram):
             'light_specular': (0.7, 0.7, 0.7, 0.7),
             'light_position': lights_vector
     }
+    
+    shininess = 8
 
     def __init__(self):
         GLProgram.__init__(self)
@@ -45,7 +47,6 @@ class GouraudShaderProgram(GLProgram):
         shader_program.add_shader("gouraud_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self.set_shader_program(shader_program)
-        self._shininess = 8
         
 
     def __enter__(self):
@@ -54,7 +55,7 @@ class GouraudShaderProgram(GLProgram):
             location = self.get_uniform_location(name)
             glUniform4f(location, *value)
         location = self.get_uniform_location('shininess')
-        glUniform1f(location, self._shininess)
+        glUniform1f(location, self.shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
 
@@ -97,4 +98,70 @@ class GouraudSphereShaderProgram(GouraudShaderProgram):
         shader_program.add_shader("spheres_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self.set_shader_program(shader_program)
-        self._shininess = 8
+
+
+class OITGouraudShaderProgram(GouraudShaderProgram):
+    def __init__(self):
+        GLProgram.__init__(self)
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
+        shader_program = ShaderProgram(shader_path)
+        shader_program.add_shader("gouraud_vs.glsl", GL_VERTEX_SHADER)
+        shader_program.add_shader("gouraud_oit_fs.glsl", GL_FRAGMENT_SHADER)
+        shader_program.link()
+        self.set_shader_program(shader_program)
+    
+    def __enter__(self):
+        self.get_shader_program().use()
+        for name, value in GouraudShaderProgram.LIGHT_PROPS.items():
+            location = self.get_uniform_location(name)
+            glUniform4f(location, *value)
+        
+        location = self.get_uniform_location('shininess')
+        glUniform1f(location, self.shininess)
+        location = self.get_uniform_location('view_vector')
+        glUniform4f(location, *self.view_vector)
+        
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        
+        #glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
+        
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_DEPTH_TEST)
+        glDepthMask(GL_FALSE)
+        glEnable(GL_BLEND)
+        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA)
+        #glEnable(GL_CULL_FACE)
+        #glCullFace(GL_BACK)
+        
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_POINT_SMOOTH)
+
+
+class OITCompositorProgram(GLProgram):
+    def __init__(self):
+        GLProgram.__init__(self)
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
+        shader_program = ShaderProgram(shader_path)
+        shader_program.add_shader("compose_vs.glsl", GL_VERTEX_SHADER)
+        shader_program.add_shader("compose_fs.glsl", GL_FRAGMENT_SHADER)
+        shader_program.link()
+        self.set_shader_program(shader_program)
+    
+    def __enter__(self):
+        self.get_shader_program().use()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
