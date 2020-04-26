@@ -33,7 +33,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-def check_mapexists(mdh, type='dark'):
+def check_mapexists(mdh, type='dark', fill=True):
     import os
     from PYME.IO import clusterIO
     from PYME.IO.FileUtils import nameUtils
@@ -56,31 +56,43 @@ def check_mapexists(mdh, type='dark'):
 
     if clusterIO.exists(cluster_path):
         c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
-        mdh[id] = c_path
+        if fill:
+            mdh[id] = c_path
         return c_path
     elif os.path.exists(local_path):
-        mdh[id] = local_path
+        if fill:
+            mdh[id] = local_path
         return local_path
     else:
         return None
 
 
 class CameraMapMixin(object):
-    def update_flatfield_map(self):
-        """The flatfield map should be constant, we can cache this"""
-        self._prefilled = MetaDataHandler.NestedClassMDHandler()
-        check_mapexists(self._prefilled, type='flatfield')
+    def _map_cache_key(self, mdh, map_type):
+        if map_type == 'flatfield':
+            return (map_type, mdh['Camera.SerialNumber'])
+        else:
+            return (map_type, mdh['Camera.SerialNumber'], mdh['Camera.IntegrationTime'])
         
-    def fill_camera_map_metadata(self, mdh):
-        # populate prefilled info the first time we call the function
-        if not hasattr(self, '_prefilled'):
-            self.update_flatfield_map()
+    def _fill_camera_map_id(self, mdh, mdh_key, map_type):
+        #create cache if not already present
+        if not hasattr(self, '_map_cache'):
+            self._camera_map_cache = {}
             
-        mdh.copyEntriesFrom(self._prefilled)
+        cache_key = self._map_cache_key(mdh, map_type)
+        try:
+            map_fn = self._camera_map_cache[cache_key]
+        except KeyError:
+            map_fn = check_mapexists(mdh, map_type, fill=False)
+            self._camera_map_cache[cache_key] = map_fn
         
-        # do not cache dark and variance maps as these change with integration time (and potentially ROI, although we ignore this currently).
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
+        if not map_fn is None:
+            mdh[mdh_key] = map_fn
+    
+    def fill_camera_map_metadata(self, mdh):
+        self._fill_camera_map_id(mdh, 'Camera.DarkMapID', map_type='dark')
+        self._fill_camera_map_id(mdh, 'Camera.VarianceMapID', map_type='variance')
+        self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
 
 
 class Camera(object):
