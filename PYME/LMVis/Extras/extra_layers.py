@@ -174,6 +174,20 @@ def save_surface(visFr):
         else:
             raise ValueError('Invalid file extension .' + str(ext))
     
+def distance_to_surface(visFr):
+    from PYME.recipes.surface_fitting import DistanceToSurface
+
+    dist_name = visFr.pipeline.new_ds_name('distance')
+    _, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
+    surf_name = 'surf{}'.format(surf_count-1)
+
+    recipe = visFr.pipeline.recipe
+    dts = DistanceToSurface(recipe, input_surface=surf_name, input_points='Localizations', output=dist_name)
+
+    if dts.configure_traits(kind='modal'):
+        recipe.add_module(dts)
+        recipe.execute()
+        visFr.pipeline.selectDataSource(dist_name)
  
 def estimate_density(visFr):
     from PYME.recipes.pointcloud import LocalPointDensity
@@ -289,3 +303,4 @@ def Plug(visFr):
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
+    visFr.AddMenuItem('Mesh>Analysis', 'Distance to surface', lambda e: distance_to_surface(visFr))
