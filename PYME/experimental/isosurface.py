@@ -41,6 +41,12 @@ def clamp(v, lo, hi):
         return hi
     return v
 
+def clamp2(v, lo, hi):
+    out = v
+    out[v < lo] = lo
+    out[hi < v] = hi
+    return out
+
 def fast_3x3_cross(a,b):
     x = a[1]*b[2] - a[2]*b[1]
     y = a[2]*b[0] - a[0]*b[2]
@@ -76,6 +82,28 @@ def triangle_sdf(p, p0, p1, p2):
     
     return sign(dot(pp0,n))*(f**0.5)
 
+def triangle_sdf2(p, pv):
+    p1p0 = pv[:,1] - pv[:,0]
+    p2p1 = pv[:,2] - pv[:,1]
+    p0p2 = pv[:,0] - pv[:,2]
+    pp0 = p - pv[:,0]
+    pp1 = p - pv[:,1]
+    pp2 = p - pv[:,2]
+    n = np.cross(p1p0, p0p2, axis=1)
+
+    s1 = np.sign((np.cross(p1p0,n,axis=1)*pp0).sum(1))
+    s2 = np.sign((np.cross(p2p1,n,axis=1)*pp1).sum(1))
+    s3 = np.sign((np.cross(p0p2,n,axis=1)*pp2).sum(1))
+
+    f = (n*pp0).sum(1)*(n*pp0).sum(1)/(n*n).sum(1)
+    sign_mask = (s1+s2+s3) < 2
+    f[sign_mask] = np.minimum(np.minimum(
+                    ((p1p0*clamp2((p2p1*pp0).sum(1)/(p1p0*p1p0).sum(1),0.0,1.0)[:,None]-pp0)**2).sum(1),
+                    ((p2p1*clamp2((p2p1*pp1).sum(1)/(p2p1*p2p1).sum(1),0.0,1.0)[:,None]-pp1)**2).sum(1)),
+                    ((p0p2*clamp2((p0p2*pp2).sum(1)/(p0p2*p0p2).sum(1),0.0,1.0)[:,None]-pp2)**2).sum(1))[sign_mask]
+
+    return np.sign((pp0*n).sum(1))*np.sqrt(f)
+
 def distance_to_isosurface(points, surf):
     """
     Calculate the distance from points in a tabular dataset 
@@ -110,11 +138,13 @@ def distance_to_isosurface(points, surf):
     # Calculate planar distances from each point to its candidate triangles
     # and choose the minimum absolute value
     for _i in range(v.shape[0]):
-        d_min = 1e15
-        for _j in range(N):
-            d_tmp = triangle_sdf(points[_i], *v[_i,_j])
-            if abs(d_tmp) < abs(d_min):
-                d_min = d_tmp
-        d[_i] = d_min
+        # d_min = 1e15
+        # for _j in range(N):
+        #     d_tmp = triangle_sdf(points[_i], *v[_i,_j])
+        #     if abs(d_tmp) < abs(d_min):
+        #         d_min = d_tmp
+        # d[_i] = d_min
+        d_tmp = triangle_sdf2(points[_i], v[_i,...])
+        d[_i] = d_tmp[np.argmin(np.abs(d_tmp))]
 
     return d
