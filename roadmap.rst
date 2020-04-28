@@ -3,7 +3,8 @@ PYME Roadmap
 ============
 
 This is a combination wishlist and concrete roadmap with the aim of giving some idea as to where PYME might be going in
-the medium term future, along with detailing some of the open questions about the project direction.
+the medium term future, along with detailing some of the open questions about the project direction. This does not attempt
+to be exhaustive.
 
 .. contents:: Table of Contents
 .. section-numbering::
@@ -54,9 +55,20 @@ Better logging / error reporting in UI apps
 Recipe error handling
 '''''''''''''''''''''
 
-
 Cleanup of VisGUI shader related code
 '''''''''''''''''''''''''''''''''''''
+
+Standardised UI components for tabular data and "reports"
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+OpenGL based replacement for dh5view image display
+''''''''''''''''''''''''''''''''''''''''''''''''''
+
+With support for large, tiled, datasets.
+
+
+IO / Analysis
+-------------
 
 
 
@@ -82,8 +94,21 @@ Packaging / Distribution
 Continuous Integration & Testing
 --------------------------------
 
-Conda packages for Py3
-----------------------
+Conda packages & dependencies
+-----------------------------
+
+Py3
+'''
+
+
+Streamlined bioformats installation / packaging
+'''''''''''''''''''''''''''''''''''''''''''''''
+
+Shapely?
+''''''''
+
 
 Pip-installable packages (wheels)
 ---------------------------------
+
+
