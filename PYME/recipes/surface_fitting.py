@@ -221,7 +221,7 @@ class DistanceToSurface(ModuleBase):
         d = distance_to_isosurface(points, surf)
 
         out = tabular.MappingFilter(inp)
-        out.addColumn('distance_to_isosurface', d)
+        out.addColumn('distance_to_{}'.format(self.input_surface), d)
 
         try:
             out.mdh = inp.mdh
