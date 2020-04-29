@@ -72,6 +72,7 @@ except ImportError:
     from collections import MutableMapping as DictMixin
     
 import six
+from collections import namedtuple
 
 import logging
 logger = logging.getLogger(__name__)
@@ -81,6 +82,13 @@ logger = logging.getLogger(__name__)
 #genMetadata(MetaDataHandler)
 provideStartMetadata = []
 provideStopMetadata = []
+
+# Define a voxelsize class
+# NB the default units across PYME (everywhere but the metadata) are nm, with metadata being the exception
+# in that it defaults to um
+# this class exists to make things a bit simpler when accessing the metadata
+VoxelSize = namedtuple('VoxelSize', 'x,y,z')
+VoxelSize.units='nm'
 
 def instanceinlist(cls, list):
     for c in list:
@@ -142,6 +150,22 @@ def get_camera_physical_roi_origin(mdh):
     else:
         return get_camera_roi_origin(mdh)
     
+def get_voxelsize_nm(mdh):
+    '''
+    Helper function to obtain the voxel size, in nm, from the metadata (to replace the many 1e3*mdh['voxelsize.x'] calls)
+    
+    NOTE: supplies a default z voxelsize of 0 if none in metadata.
+    
+    Parameters
+    ----------
+    mdh
+
+    Returns
+    -------
+
+    '''
+    
+    return VoxelSize(1e3*mdh['voxelsize.x'], 1e3*mdh['voxelsize.y'], 1e3*mdh.get('voxelsize.z', 0))
 
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.
@@ -332,6 +356,10 @@ class MDHandlerBase(DictMixin):
         
         return s
     
+    @property
+    def voxelsize_nm(self):
+        return get_voxelsize_nm(self)
+        
     def WriteSimple(self, filename):
         """Dumps metadata to file in simplfied format.
         

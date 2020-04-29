@@ -49,7 +49,9 @@ from six import string_types
 import logging
 logger = logging.getLogger(__name__)
 
-VS = namedtuple('VS', 'x,y,z')
+#VS = namedtuple('VS', 'x,y,z')
+#Alias for backwards compatibility
+VS = MetaDataHandler.VoxelSize
 
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):

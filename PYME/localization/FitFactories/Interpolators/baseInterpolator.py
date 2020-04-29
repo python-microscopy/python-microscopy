@@ -162,16 +162,16 @@ class __interpolator:
 
     def genTheoreticalModel(self, md):
         from PYME.Analysis.PSFGen.ps_app import genWidefieldPSF
+        
+        vs = md.voxelsize_nm
 
-        if not self.dx == md.voxelsize.x*1e3 and not self.dy == md.voxelsize.y*1e3 and not self.dz == md.voxelsize.z*1e3:
+        if not self.dx == vs.x and not self.dy == vs.y and not self.dz == vs.z:
 
-            self.IntXVals = 1e3*md.voxelsize.x*mgrid[-20:20]
-            self.IntYVals = 1e3*md.voxelsize.y*mgrid[-20:20]
-            self.IntZVals = 1e3*md.voxelsize.z*mgrid[-20:20]
+            self.IntXVals = vs.x*mgrid[-20:20]
+            self.IntYVals = vs.y*mgrid[-20:20]
+            self.IntZVals = vs.z*mgrid[-20:20]
 
-            self.dx = md.voxelsize.x*1e3
-            self.dy = md.voxelsize.y*1e3
-            self.dz = md.voxelsize.z*1e3
+            self.dx, self.dy, self.dx = vs
 
             P = arange(0,1.01,.01)
 

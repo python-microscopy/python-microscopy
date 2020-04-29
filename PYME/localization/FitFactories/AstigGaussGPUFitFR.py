@@ -200,21 +200,23 @@ class GaussianFitFactory:
     def get_results(self):
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
+        voxelsize=self.metadata.voxelsize_nm
+        
         dpars = np.reshape(_warpdrive.fit_res, (_warpdrive.n_max_candidates_per_frame, 6))[:_warpdrive.n_candidates, :]
-        dpars[:, 0] *= (1000*self.metadata.voxelsize.y)
-        dpars[:, 1] *= (1000*self.metadata.voxelsize.x)
-        dpars[:, 4] *= (1000*self.metadata.voxelsize.y)
-        dpars[:, 5] *= (1000*self.metadata.voxelsize.x)
+        dpars[:, 0] *= (voxelsize.y)
+        dpars[:, 1] *= (voxelsize.x)
+        dpars[:, 4] *= (voxelsize.y)
+        dpars[:, 5] *= (voxelsize.x)
 
         LLH = None
         if _warpdrive.calculate_crb:
             LLH = _warpdrive.LLH[:_warpdrive.n_candidates]
             CRLB = np.reshape(_warpdrive.CRLB, (_warpdrive.n_max_candidates_per_frame, 6))[:_warpdrive.n_candidates, :]
             # fixme: Should never have negative CRLB, yet Yu reports ocassional instances in Matlab verison, check
-            CRLB[:, 0] = np.sqrt(np.abs(CRLB[:, 0]))*(1000*self.metadata.voxelsize.y)
-            CRLB[:, 1] = np.sqrt(np.abs(CRLB[:, 1]))*(1000*self.metadata.voxelsize.x)
-            CRLB[:, 4] = np.sqrt(np.abs(CRLB[:, 4]))*(1000*self.metadata.voxelsize.y)
-            CRLB[:, 5] = np.sqrt(np.abs(CRLB[:, 5]))*(1000*self.metadata.voxelsize.x)
+            CRLB[:, 0] = np.sqrt(np.abs(CRLB[:, 0]))*(voxelsize.y)
+            CRLB[:, 1] = np.sqrt(np.abs(CRLB[:, 1]))*(voxelsize.x)
+            CRLB[:, 4] = np.sqrt(np.abs(CRLB[:, 4]))*(voxelsize.y)
+            CRLB[:, 5] = np.sqrt(np.abs(CRLB[:, 5]))*(voxelsize.x)
 
         #return self.chan1.dpars # each fit produces column vector of results, append them all horizontally for return
         res_list = np.empty(_warpdrive.n_candidates, FitResultsDType)
@@ -295,8 +297,9 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
+        vs = md.voxelsize_nm
+        X = vs.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
 
         return (astigmatic_gaussian(params, X, Y), X[0], Y[0], 0)
 

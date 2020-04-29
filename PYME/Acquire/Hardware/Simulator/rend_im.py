@@ -96,19 +96,18 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
 
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
+    
+        vs = md.voxelsize_nm
+        IntXVals = vs.x*mgrid[-150:150]
+        IntYVals = vs.y*mgrid[-150:150]
+        IntZVals = vs.z*mgrid[-30:30]
 
-        IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
-        IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
-        IntZVals = 1e3*md.voxelsize.z*mgrid[-30:30]
-
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = arange(0,1.01,.01)
 
         #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
-        im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
+        im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=vs.x, **kwargs)
         
         #print('foo')
         #print((interpModel.strides, interpModel.shape))
@@ -124,19 +123,19 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
                                                                                                               
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
-                                                                                                              
-        IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
-        IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
+    
+        vs = md.voxelsize_nm
+        IntXVals = vs.x*mgrid[-150:150]
+        IntYVals = vs.y*mgrid[-150:150]
         IntZVals = 20*mgrid[-60:60]
                                                                                                               
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
+        dx, dy = vs.x, vs.y
         dz = 20.#md.voxelsize.z*1e3
                                                                                                               
         for i, phase in enumerate(phases):
             print('Simulating 4Pi PSF for channel %d' % i)
             #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).as
-            im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
+            im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=vs.x, **kwargs)
                                                                                                                   
             zm =  int(len(IntZVals)/2)
             norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
@@ -146,6 +145,7 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
 def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
     
+    #FIXME - use load_psf() instead
     mf = open(getFullExistingFilename(modName), 'rb')
     mod, voxelsize = pickle.load(mf)
     mf.close()

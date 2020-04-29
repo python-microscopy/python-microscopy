@@ -174,8 +174,7 @@ def get_shifts(md, data_shape, x, y):
     y = round(y)
 
     # pixel size in nm
-    vx = 1e3 * md.voxelsize.x
-    vy = 1e3 * md.voxelsize.y
+    vx, vy, _ = md.voxelsize_nm
 
     # position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(md)

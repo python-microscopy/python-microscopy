@@ -66,8 +66,7 @@ class FFBase(object):
         roiHalfSize = int(roiHalfSize)
 
         #pixel size in nm
-        vx = 1e3 * self.metadata.voxelsize.x
-        vy = 1e3 * self.metadata.voxelsize.y
+        vx, vy, _ = self.metadata.voxelsize_nm
         
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
@@ -127,8 +126,7 @@ class FFBase(object):
         roiHalfSize = int(roiHalfSize)
         
         #pixel size in nm
-        vx = 1e3*self.metadata.voxelsize.x
-        vy = 1e3*self.metadata.voxelsize.y
+        vx, vy, _ = self.metadata.voxelsize_nm
         
         #position in nm from camera origin
         roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
@@ -234,8 +232,7 @@ class FFBase(object):
         y = round(y)
     
         #pixel size in nm
-        vx = 1e3 * self.metadata.voxelsize.x
-        vy = 1e3 * self.metadata.voxelsize.y
+        vx, vy, _ = self.metadata.voxelsize_nm
     
         #position in nm from camera origin
         roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)

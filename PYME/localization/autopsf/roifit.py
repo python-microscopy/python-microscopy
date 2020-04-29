@@ -20,7 +20,8 @@ from PYME.IO import MetaDataHandler
 
 from collections import namedtuple
 
-VS = namedtuple('VS', ['x', 'y', 'z'])
+#VS = namedtuple('VS', ['x', 'y', 'z'])
+VS = MetaDataHandler.VoxelSize #Alias for backward compatibility
 
 #interpolator = LinearInterpolator.interpolator
 #interpolator = CubicSplineInterpolator.interpolator
@@ -229,11 +230,9 @@ def misfallB(r2, mdh, zCoeffs, interpolatorName, estimatorName, wavelengths=[700
     
     #wavelengths = mdh.getOrDefault('AutoPSF.Wavelengths', [700,700])
     
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
     
     zs = 50. * np.arange(-30., 31)
-    vs_nm = VS(voxelsize.x * 1e3, voxelsize.y * 1e3, 50.)
+    vs_nm = VS(*mdh.voxelsize_nm[:2], 50.)
     #p1 = fourierHNA.GenZernikeDPSF(zs,  zCoeffs, dx=1e3*voxelsize.x, ns=ns)
     
     p1 = GenMultiChanZernikeDPSF(zs, zerns2=zCoeffs, wavelengths=wavelengths, dx=vs_nm.x,
