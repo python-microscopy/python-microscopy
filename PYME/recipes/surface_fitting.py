@@ -203,25 +203,25 @@ class MarchingTetrahedra(ModuleBase):
         
         namespace[self.output] = surf
 
-@register_module('DistanceToSurface')
-class DistanceToSurface(ModuleBase):
-    input_surface = Input('mesh')
+@register_module('DistanceToMesh')
+class DistanceToMesh(ModuleBase):
+    input_mesh = Input('mesh')
     input_points = Input('input')
     output = Output('output')
 
     def execute(self, namespace):
         from PYME.IO import tabular
-        from PYME.experimental.isosurface import distance_to_isosurface
+        from PYME.experimental.isosurface import distance_to_mesh
 
         inp = namespace[self.input_points]
-        surf = namespace[self.input_surface]
+        surf = namespace[self.input_mesh]
 
         points = np.vstack([inp['x'], inp['y'], inp['z']]).T
 
-        d = distance_to_isosurface(points, surf)
+        d = distance_to_mesh(points, surf)
 
         out = tabular.MappingFilter(inp)
-        out.addColumn('distance_to_{}'.format(self.input_surface), d)
+        out.addColumn('distance_to_{}'.format(self.input_mesh), d)
 
         try:
             out.mdh = inp.mdh

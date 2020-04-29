@@ -175,16 +175,16 @@ def save_surface(visFr):
             raise ValueError('Invalid file extension .' + str(ext))
     
 def distance_to_surface(visFr):
-    from PYME.recipes.surface_fitting import DistanceToSurface
+    from PYME.recipes.surface_fitting import DistanceToMesh
     from PYME.experimental._triangle_mesh import TriangleMesh
 
     pipeline = visFr.pipeline
 
     dist_name = visFr.pipeline.new_ds_name('distance')
 
-    surface_names = [k for k, v in pipeline.dataSources.items() if isinstance(v, TriangleMesh)]
+    mesh_names = [k for k, v in pipeline.dataSources.items() if isinstance(v, TriangleMesh)]
     
-    dlg = wx.SingleChoiceDialog(visFr, "Measure distance to which surface?", "Choose a surface", surface_names)
+    dlg = wx.SingleChoiceDialog(visFr, "Measure distance to which mesh?", "Choose a mesh", mesh_names)
 
     if not dlg.ShowModal():
             dlg.Destroy()
@@ -194,7 +194,7 @@ def distance_to_surface(visFr):
         dlg.Destroy()
 
     recipe = visFr.pipeline.recipe
-    dts = DistanceToSurface(recipe, input_surface=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)
+    dts = DistanceToMesh(recipe, input_mesh=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)
 
     recipe.add_module(dts)
     recipe.execute()
@@ -314,4 +314,4 @@ def Plug(visFr):
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
-    visFr.AddMenuItem('Mesh>Analysis', 'Distance to surface', lambda e: distance_to_surface(visFr))
+    visFr.AddMenuItem('Mesh>Analysis', 'Distance to mesh', lambda e: distance_to_surface(visFr))

@@ -50,9 +50,9 @@ def triangle_sdf(p, pv):
 
     return np.sign((pp0*n).sum(1))*np.sqrt(f)
 
-def distance_to_isosurface(points, surf):
+def distance_to_mesh(points, surf):
     """
-    Calculate the distance from points in a tabular dataset 
+    Calculate the distance to a mesh from points in a tabular dataset 
 
     Parameters
     ----------
