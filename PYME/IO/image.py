@@ -926,6 +926,17 @@ class ImageStack(object):
         OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
         self.mdh.copyEntriesFrom(OMEmd)
         print("Bioformats:done")
+        
+        #fix voxelsizes if not specified in OME metadata
+        if self.haveGUI and not (self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0):
+            from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+            dlg = VoxSizeDialog(None)
+            dlg.ShowModal()
+
+            self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+            self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+            self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
                 
         
         print(self.dataSource.shape)

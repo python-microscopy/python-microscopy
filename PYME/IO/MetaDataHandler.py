@@ -699,6 +699,23 @@ class XMLMDHandler(MDHandlerBase):
 
 
 class OMEXMLMDHandler(XMLMDHandler):
+    _OME_UNITS_TO_UM = {'m': 1e6, 'mm': 1e3, 'um': 1.0, 'nm': 1e-3}
+    
+    @classmethod
+    def _get_pixel_size_um(cls, pix, axis, default=0.1):
+        axis = axis.upper()
+        try:
+            ps = float(pix.GetAttribute('PhysicalSize%s' % axis))
+        except:
+            logger.error('No %s pixel size defined, using default' % axis)
+            return default
+        try:
+            ps = ps * cls._OME_UNITS_TO_UM[pix.GetAttribute('PhysicalSize%sUnit' % axis)]
+        except:
+            logger.error('No units defined for axis %s, defaulting to um' % axis)
+            
+            return ps
+        
     def __init__(self, XMLData = None, mdToCopy=None):
         if not XMLData is None:
             #loading an existing file
@@ -712,20 +729,12 @@ class OMEXMLMDHandler(XMLMDHandler):
                 
                 #try to load pixel size etc fro OME metadata
                 pix = self.doc.getElementsByTagName('Pixels')[0]
-                
-                #print 'PhysicalSizeX: ', pix.getAttribute('PhysicalSizeX')
-                try:
-                    self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
-                    self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
-                except:
-                    print('WARNING: Malformed OME XML. Pixel size not defined, using 100nm')
 
-                    self['voxelsize.x'] = .1 #FIXME - Get user to set pixel size if absent
-                    self['voxelsize.x'] = .1
-                try:
-                    self['voxelsize.z'] = float(pix.getAttribute('PhysicalSizeZ'))
-                except:
-                    self['voxelsize.z'] = 0.2
+                #using -ve defaults will trigger a voxelsize prompt in the GUI if pixel size metadata is not present
+                self['voxelsize.x'] = self._get_pixel_size_um(pix, 'X', -.1)
+                self['voxelsize.y'] = self._get_pixel_size_um(pix, 'Y', -.1)
+                self['voxelsize.z'] = self._get_pixel_size_um(pix, 'Z', 0.0)
+                self['voxelsize.units'] = 'um' #this is a courtesy - to define anything else is an error.
                     
                 try:
                     self['Camera.CycleTime'] = float(pix.getAttribute('TimeIncrement'))
