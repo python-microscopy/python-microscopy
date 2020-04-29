@@ -176,18 +176,29 @@ def save_surface(visFr):
     
 def distance_to_surface(visFr):
     from PYME.recipes.surface_fitting import DistanceToSurface
+    from PYME.experimental._triangle_mesh import TriangleMesh
+
+    pipeline = visFr.pipeline
 
     dist_name = visFr.pipeline.new_ds_name('distance')
-    _, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
-    surf_name = 'surf{}'.format(surf_count-1)
+
+    surface_names = [k for k, v in pipeline.dataSources.items() if isinstance(v, TriangleMesh)]
+    
+    dlg = wx.SingleChoiceDialog(visFr, "Measure distance to which surface?", "Choose a surface", surface_names)
+
+    if not dlg.ShowModal():
+            dlg.Destroy()
+            return
+    else:
+        surf_name = dlg.GetStringSelection()
+        dlg.Destroy()
 
     recipe = visFr.pipeline.recipe
-    dts = DistanceToSurface(recipe, input_surface=surf_name, input_points='Localizations', output=dist_name)
+    dts = DistanceToSurface(recipe, input_surface=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)
 
-    if dts.configure_traits(kind='modal'):
-        recipe.add_module(dts)
-        recipe.execute()
-        visFr.pipeline.selectDataSource(dist_name)
+    recipe.add_module(dts)
+    recipe.execute()
+    visFr.pipeline.selectDataSource(dist_name)
  
 def estimate_density(visFr):
     from PYME.recipes.pointcloud import LocalPointDensity
