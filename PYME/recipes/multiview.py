@@ -306,7 +306,7 @@ class CalibrateShifts(ModuleBase):
         clump_id, keep = multiview.pair_molecules(inp['tIndex'][I], x_sort, y_sort, chan_sort,
                                                   self.search_radius_nm * np.ones_like(x_sort),
                                                   appear_in=np.arange(n_chan), n_frame_sep=inp['tIndex'].max(),
-                                                  pix_size_nm=1e3 * inp.mdh['voxelsize.x'])
+                                                  pix_size_nm=inp.mdh.voxelsize_nm.x)
 
         # only look at the clumps which showed up in all channels
         x = x_sort[keep]

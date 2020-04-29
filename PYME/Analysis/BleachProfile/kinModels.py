@@ -76,7 +76,7 @@ def goalfcn(indepvars = ''):
 
 
 def getPhotonNums(colourFilter, metadata):
-    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(metadata.voxelsize_nm.x))**2)
     nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
 
     return nPh

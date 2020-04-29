@@ -68,7 +68,7 @@ def voxelsize_x(image, psft):
     pixels too large looses information whilst making them too small is empty 
     magnification and is incurs extra noise and computational cost. A high NA oil 
     immersion objective is assumed in these calculations"""
-    vsx = image.mdh['voxelsize.x']*1e3
+    vsx = image.voxelsize_nm.x
     merit = (np.abs(vsx - 70.)/20)**2    
     return vsx, merit
 

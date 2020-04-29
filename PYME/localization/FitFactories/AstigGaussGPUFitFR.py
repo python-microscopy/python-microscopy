@@ -164,7 +164,7 @@ class GaussianFitFactory:
         # Account for any changes we need to make to the detector instance
         small_filter_size = self.metadata.getEntry('Analysis.DetectionFilterSize')
         guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
-                                                         600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
+                                                         600 / 2.8 / (self.metadata.voxelsize_nm.x))
 
         if not _warpdrive:  # if we don't have a detector, make one and return
             _warpdrive = warpdrive.detector(small_filter_size, 2 * small_filter_size, guess_psf_sigma_pix)

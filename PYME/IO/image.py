@@ -84,14 +84,15 @@ class ImageBounds:
         x0 = 0
         y0 = 0
 
-        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
-        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
+        vx, vy, _ = mdh.voxelsize_nm
+        x1 = mdh['Camera.ROIWidth'] * vx
+        y1 = mdh['Camera.ROIHeight'] * vx
 
         if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
             if 'Splitter.Channel0ROI' in mdh.getEntryNames():
                 rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
-                x1 = rw * 1e3 * mdh['voxelsize.x']
-                y1 = rh * 1e3 * mdh['voxelsize.x']
+                x1 = rw * vx
+                y1 = rh * vx
             else:
                 y1 = y1 / 2
 
@@ -273,14 +274,24 @@ class ImageStack(object):
         """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
         to be in um"""
         try:
-            return VS(1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z'])
+            return self.voxelsize_nm
         except:
-            return (1,1,1)    
+            return (1,1,1)
+        
+    @property
+    def voxelsize_nm(self):
+        """ alias of self.voxelsize for interface compatibilty with metadatahandler
+        
+        differs from self.voxelsize in that we will propagate any exception generated if, e.g., 'voxelsize.x' is not
+        present in the metadata.
+        
+        """
+        return self.mdh.voxelsize_nm
     
     @property
     def pixelSize(self):
         try:
-            return 1e3*self.mdh['voxelsize.x']
+            self.mdh.voxelsize_nm.x
         except:
             return 1
 
@@ -348,7 +359,7 @@ class ImageStack(object):
         elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
             #has ROI information
             try:
-                voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
+                voxx, voxy, _ = self.mdh.voxelsize_nm
             except AttributeError:
                 voxx = self.pixelSize
                 voxy = voxx

@@ -50,8 +50,7 @@ def get_splitter_rois(md, data_shape):
         return (slice(xg, xg + w, 1), slice(xr, xr + w, 1), slice(yg + hg-h, yg + hg, 1), slice(yr + h, yr - 1, step))
 
 def map_splitter_coords(md, data_shape, x, y):
-    vx = md['voxelsize.x'] * 1e3
-    vy = md['voxelsize.y'] * 1e3
+    vx, vy, _ = md.voxelsize_nm
 
     x0, y0 = get_camera_roi_origin(md)
 
@@ -132,8 +131,7 @@ def remap_splitter_coords_(x, y, xslices, yslices, quadrant = 1, flip=True):
     return xo, yo
 
 def remap_splitter_coords(md, data_shape, x, y):
-    vx = md['voxelsize.x'] * 1e3
-    vy = md['voxelsize.y'] * 1e3
+    vx, vy, _ = md.voxelsize_nm
 
     x0, y0 = get_camera_roi_origin(md)
 

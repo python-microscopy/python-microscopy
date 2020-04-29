@@ -259,8 +259,9 @@ class LoadSpeckles(ModuleBase):
         inp = tabular.RecArraySource(traces)
 
         #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
-        map = tabular.MappingFilter(inp, x ='x_pixels*%3.2f' % (1000 * mdh['voxelsize.x']),
-                                    y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
+        vs = mdh.voxelsize_nm
+        map = tabular.MappingFilter(inp, x ='x_pixels*%3.2f' % vs.x,
+                                    y='y_pixels*%3.2f' % vs.y)
 
         map.mdh = mdh
 

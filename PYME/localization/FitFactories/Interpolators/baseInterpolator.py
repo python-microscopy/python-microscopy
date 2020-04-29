@@ -148,12 +148,10 @@ class __interpolator:
     
     def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
         from PYME.Analysis.PSFGen import fourierHNA
+        from PYME.IO import MetaDataHandler
         zs = arange(-1e3, 1e3, 50)
         
-        voxelsize = dummy()
-        voxelsize.x = 1e3*md['voxelsize.x']
-        voxelsize.y = 1e3*md['voxelsize.x']
-        voxelsize.z = 1e3*.05
+        voxelsize = MetaDataHandler.VoxelSize(*md.voxelsize_nm[:2], 50)
 
         ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
         psc = self.centre2d(ps) #FIXME: why is this needed / useful?
