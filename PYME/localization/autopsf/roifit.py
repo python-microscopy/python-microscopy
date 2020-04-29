@@ -172,8 +172,8 @@ def misfallA(r2, mdh, zCoeffs, ns=1.51, axialShift=None, colourRatio=None, beadS
         mdh['Analysis.AxialShift'] = axialShift
     if not colourRatio == None:
         mdh['Analysis.ColourRatio'] = colourRatio
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
+    voxelsize = mdh.voxelsize_nm
+    voxelsize.z = 50.
     zs = 50. * np.arange(-30., 31)
     p1 = fourierHNA.GenZernikeDPSF(zs, 70, zCoeffs, ns=ns)
     interpolator.setModel('foo', p1, voxelsize)
@@ -277,8 +277,8 @@ def misfallB_MP(task_queue, results_queue, data):
 def fitallA(r2, mdh, zCoeffs, ns=1.51, axialShift=200.):
     mdh = MetaDataHandler.NestedClassMDHandler(mdh)
     mdh['Analysis.AxialShift'] = axialShift
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
+    voxelsize = mdh.voxelsize_nm
+    voxelsize.z = 50.
     zs = 50. * np.arange(-30., 31)
     p1 = fourierHNA.GenZernikeDPSF(zs, 70, zCoeffs, ns=ns)
     interpolator.setModel('foo', p1, voxelsize)
