@@ -28,12 +28,6 @@ def isosurface(data, isolevel, voxel_size=None, origin=None, remesh=False):
     
     return T
 
-def clamp(v, lo, hi):
-    out = v
-    out[v < lo] = lo
-    out[hi < v] = hi
-    return out
-
 def triangle_sdf(p, pv):
     p1p0 = pv[:,1] - pv[:,0]
     p2p1 = pv[:,2] - pv[:,1]
@@ -50,9 +44,9 @@ def triangle_sdf(p, pv):
     f = (n*pp0).sum(1)*(n*pp0).sum(1)/(n*n).sum(1)
     sign_mask = (s1+s2+s3) < 2
     f[sign_mask] = np.minimum(np.minimum(
-                    ((p1p0*clamp((p2p1*pp0).sum(1)/(p1p0*p1p0).sum(1),0.0,1.0)[:,None]-pp0)**2).sum(1),
-                    ((p2p1*clamp((p2p1*pp1).sum(1)/(p2p1*p2p1).sum(1),0.0,1.0)[:,None]-pp1)**2).sum(1)),
-                    ((p0p2*clamp((p0p2*pp2).sum(1)/(p0p2*p0p2).sum(1),0.0,1.0)[:,None]-pp2)**2).sum(1))[sign_mask]
+                    ((p1p0*np.clip((p2p1*pp0).sum(1)/(p1p0*p1p0).sum(1),0.0,1.0)[:,None]-pp0)**2).sum(1),
+                    ((p2p1*np.clip((p2p1*pp1).sum(1)/(p2p1*p2p1).sum(1),0.0,1.0)[:,None]-pp1)**2).sum(1)),
+                    ((p0p2*np.clip((p0p2*pp2).sum(1)/(p0p2*p0p2).sum(1),0.0,1.0)[:,None]-pp2)**2).sum(1))[sign_mask]
 
     return np.sign((pp0*n).sum(1))*np.sqrt(f)
 
