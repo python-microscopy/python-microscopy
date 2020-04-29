@@ -107,7 +107,7 @@ class VoxelSizeDialog(wx.Dialog):
 
 
     def _setVoxelSizeChoices(self):
-        with self.settingsDB as conn:
+        with self.scope.settingsDB as conn:
             voxelsizes = conn.execute("SELECT ID, name, x,y FROM VoxelSizes ORDER BY ID DESC").fetchall()
     
             voxIDs = []
