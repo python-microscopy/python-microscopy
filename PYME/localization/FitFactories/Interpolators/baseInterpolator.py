@@ -151,7 +151,8 @@ class __interpolator:
         from PYME.IO import MetaDataHandler
         zs = arange(-1e3, 1e3, 50)
         
-        voxelsize = MetaDataHandler.VoxelSize(*md.voxelsize_nm[:2], 50)
+        voxelsize = MetaDataHandler.VoxelSize(md.voxelsize_nm)
+        voxelsize.z = 50.
 
         ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
         psc = self.centre2d(ps) #FIXME: why is this needed / useful?

@@ -291,7 +291,7 @@ class ImageStack(object):
     @property
     def pixelSize(self):
         try:
-            self.mdh.voxelsize_nm.x
+            return self.mdh.voxelsize_nm.x
         except:
             return 1
 
