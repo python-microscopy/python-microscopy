@@ -1,5 +1,6 @@
 entry_points:
     - dh5view = PYME.DSView.dsviewer:main
+    - PYMEImage = PYME.DSView.dsviewer:main
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
     - VisGUI = PYME.LMVis.VisGUI:main
     - PYMEBatch = PYME.recipes.batchProcess:main

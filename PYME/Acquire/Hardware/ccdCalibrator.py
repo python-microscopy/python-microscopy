@@ -22,7 +22,6 @@
 ##################
 
 import numpy as np
-#import wx
 import datetime
 import time
 
@@ -34,7 +33,8 @@ def setScope(sc):
     scope = sc
 
 def getCalibratedCCDGain(nomGain, temperature):
-    ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration2 WHERE temperature=? AND serial=? ORDER BY time DESC", (temperature,scope.cam.GetSerialNumber())).fetchone()
+    with scope.settingsDB as conn:
+        ret = conn.execute("SELECT nominalGains, trueGains FROM CCDCalibration2 WHERE temperature=? AND serial=? ORDER BY time DESC", (temperature,scope.cam.GetSerialNumber())).fetchone()
     if ret is None or np.max(nomGain) > ret[0].max():
         return None
     else:
@@ -149,8 +149,9 @@ class ccdCalibrator:
 
 
     def _saveCalibration(self):
-        scope.settingsDB.execute("INSERT INTO CCDCalibration2 VALUES (?, ?, ?, ?, ?)", (datetime.datetime.now(), self.cam.GetCCDTempSetPoint(), self.cam.GetSerialNumber(), self.gains,self.realGains))
-        scope.settingsDB.commit()
+        with scope.settingsDB as conn:
+            conn.execute("INSERT INTO CCDCalibration2 VALUES (?, ?, ?, ?, ?)", (datetime.datetime.now(), self.cam.GetCCDTempSetPoint(), self.cam.GetSerialNumber(), self.gains,self.realGains))
+        
 
 
             

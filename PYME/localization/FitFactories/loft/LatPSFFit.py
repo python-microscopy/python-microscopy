@@ -62,9 +62,10 @@ class PSFFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
+        Z = vs.z*scipy.mgrid[self.slicesUsed[2]]
         P = scipy.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
         #pass
@@ -84,9 +85,10 @@ class PSFFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #generate grid to evaluate function on
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[zslice]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[xslice]
+        Y = vs.y*scipy.mgrid[yslice]
+        Z = vs.z*scipy.mgrid[zslice]
         P = scipy.arange(0,1.01,.01)
 
         #imshow(dataROI[:,:,0])

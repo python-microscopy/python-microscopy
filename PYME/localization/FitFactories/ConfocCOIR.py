@@ -50,9 +50,10 @@ def ConfocCOI(data, metadata, thresh=5, background=None):
     #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
     #generate grid to evaluate function on
+    vs = metadata.voxelsize_nm
     X, Y = numpy.mgrid[:dataROI.shape[0], :dataROI.shape[1]]
-    X = 1e3*metadata.voxelsize.x*X
-    Y = 1e3*metadata.voxelsize.y*Y    
+    X = vs.x*X
+    Y = vs.y*Y
 
 
     if not background is None and len(numpy.shape(background)) > 1 and not ('Analysis.subtractBackground' in metadata.getEntryNames() and metadata.Analysis.subtractBackground == False):

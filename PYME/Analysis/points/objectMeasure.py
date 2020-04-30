@@ -184,7 +184,7 @@ def get_labels_from_image(inp, img):
 
     # account for ROIs
     try:
-        p_ox, p_oy = tuple(np.array(get_camera_roi_origin(inp.mdh)) * inp.mdh['voxelsize.x'] * 1e3)
+        p_ox, p_oy = np.array(get_camera_roi_origin(inp.mdh)) * np.array(inp.mdh.voxelsize_nm[:2])
     except AttributeError:
         raise UserWarning('get_labels_from_image requires metadata')
 

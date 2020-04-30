@@ -243,3 +243,54 @@ class DelaunayCircumcentres(ModuleBase):
             pass
         
         namespace[self.output] = out
+
+
+@register_module('Ripleys')
+class Ripleys(ModuleBase):
+    """ Calculates Ripley's K/L functions for a point set """
+    inputPositions = Input('input')
+    inputMask = Input('')
+    outputName = Output('ripleys')
+    normalization = Enum(['K', 'L'])
+    nbins = Int(50)
+    binSize = Float(50.)
+    sampling = Float(5.)
+    threaded = Bool(False)
+    
+    def execute(self, namespace):
+        from PYME.Analysis.points import ripleys
+        from PYME.IO import MetaDataHandler
+        
+        points_real = namespace[self.inputPositions]
+        mask = namespace.get(self.inputMask, None)
+        
+        three_d = np.count_nonzero(points_real['z']) > 0
+        
+        try:
+            origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
+        except:
+            origin_coords = (0, 0, 0)
+        
+        if three_d:
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+        else:
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+        
+        if self.normalization == 'L':
+            d = 3 if three_d else 2
+            bb, L = ripleys.ripleys_l(bb, K, d)
+            res = tabular.DictSource({'bins': bb, 'vals': L})
+        else:
+            res = tabular.DictSource({'bins': bb, 'vals': K})
+        
+        # propagate metadata, if present
+        try:
+            res.mdh = points_real.mdh
+        except AttributeError:
+            pass
+        
+        namespace[self.outputName] = res

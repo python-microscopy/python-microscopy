@@ -20,7 +20,8 @@ from PYME.IO import MetaDataHandler
 
 from collections import namedtuple
 
-VS = namedtuple('VS', ['x', 'y', 'z'])
+#VS = namedtuple('VS', ['x', 'y', 'z'])
+VS = MetaDataHandler.VoxelSize #Alias for backward compatibility
 
 #interpolator = LinearInterpolator.interpolator
 #interpolator = CubicSplineInterpolator.interpolator
@@ -171,8 +172,8 @@ def misfallA(r2, mdh, zCoeffs, ns=1.51, axialShift=None, colourRatio=None, beadS
         mdh['Analysis.AxialShift'] = axialShift
     if not colourRatio == None:
         mdh['Analysis.ColourRatio'] = colourRatio
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
+    voxelsize = mdh.voxelsize_nm
+    voxelsize.z = 50.
     zs = 50. * np.arange(-30., 31)
     p1 = fourierHNA.GenZernikeDPSF(zs, 70, zCoeffs, ns=ns)
     interpolator.setModel('foo', p1, voxelsize)
@@ -229,11 +230,9 @@ def misfallB(r2, mdh, zCoeffs, interpolatorName, estimatorName, wavelengths=[700
     
     #wavelengths = mdh.getOrDefault('AutoPSF.Wavelengths', [700,700])
     
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
     
     zs = 50. * np.arange(-30., 31)
-    vs_nm = VS(voxelsize.x * 1e3, voxelsize.y * 1e3, 50.)
+    vs_nm = VS(*mdh.voxelsize_nm[:2], 50.)
     #p1 = fourierHNA.GenZernikeDPSF(zs,  zCoeffs, dx=1e3*voxelsize.x, ns=ns)
     
     p1 = GenMultiChanZernikeDPSF(zs, zerns2=zCoeffs, wavelengths=wavelengths, dx=vs_nm.x,
@@ -278,8 +277,8 @@ def misfallB_MP(task_queue, results_queue, data):
 def fitallA(r2, mdh, zCoeffs, ns=1.51, axialShift=200.):
     mdh = MetaDataHandler.NestedClassMDHandler(mdh)
     mdh['Analysis.AxialShift'] = axialShift
-    voxelsize = mdh.voxelsize
-    voxelsize.z = .05
+    voxelsize = mdh.voxelsize_nm
+    voxelsize.z = 50.
     zs = 50. * np.arange(-30., 31)
     p1 = fourierHNA.GenZernikeDPSF(zs, 70, zCoeffs, ns=ns)
     interpolator.setModel('foo', p1, voxelsize)

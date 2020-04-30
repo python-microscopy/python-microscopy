@@ -49,38 +49,11 @@ class FilterTable(ModuleBase):
         except:
             return None
 
-    #@property
-    #def pipeline_view(self):
-        
-    def _pipeline_view(self, show_label=True):
-        import wx
-        if wx.GetApp() is None:
-            return None
-        
-        from traitsui.api import View, Group, Item
+    def _view_items(self, params=None):
+        from traitsui.api import Item
         from PYME.ui.custom_traits_editors import FilterEditor
-
-        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
         
-        if show_label:
-            return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False), label=modname))
-        else:
-            return  View(Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False))
-
-    @property
-    def default_view(self):
-        import wx
-        if wx.GetApp() is None:
-            return None
-        
-        from traitsui.api import View, Group, Item
-        from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
-
-        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False),
-                    Item('_'),
-                    Item('outputName'), buttons=['OK'])
+        return [Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False),]
 
 
 @register_module('FilterTableByIds')
@@ -114,38 +87,12 @@ class FilterTableByIDs(ModuleBase):
         
         return ids
 
-    #@property
-    def _pipeline_view(self, show_label=True):
-        import wx
-        if wx.GetApp() is None:
-            return None
-        
-        from traitsui.api import View, Group, Item, TextEditor, SetEditor
-
-        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
-
-        if show_label:
-            return View(Group(Item('idColumnName'),
-                              Item('ids', editor=SetEditor(values=self._possible_ids)),label=modname))
-        else:
-            return View(Group(Item('idColumnName'),
-                              Item('ids', editor=SetEditor(values=self._possible_ids))))
-
-    @property
-    def default_view(self):
-        import wx
-        if wx.GetApp() is None:
-            return None
-        
-        from traitsui.api import View, Group, Item, TextEditor, SetEditor
-        from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
-
-        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('idColumnName'),
-                    Item('ids', editor=SetEditor(values=self._possible_ids)),
-                    Item('_'),
-                    Item('outputName'), buttons=['OK'])
+    def _view_items(self, params=None):
+        from traitsui.api import Item, TextEditor, SetEditor
+        return [Item('idColumnName'),
+                Item('ids', editor=SetEditor(values=self._possible_ids)),
+                ]
+    
 
 
 @register_module('ConcatenateTables')

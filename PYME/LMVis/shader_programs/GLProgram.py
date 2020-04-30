@@ -22,9 +22,12 @@ import abc
 from OpenGL.GL import *
 import numpy as np
 
+from PYME.LMVis.shader_programs.shader_program import ShaderProgram
+import os
+
 class GLProgram(object):
 
-    def __init__(self):
+    def __init__(self, vs_filename=None, fs_filename=None):
         self._shader_program = None
 
         self.xmin, self.xmax = [-1e6, 1e6]
@@ -32,6 +35,9 @@ class GLProgram(object):
         self.zmin, self.zmax = [-1e6, 1e6]
         self.vmin, self.vmax = [-1e6, 1e6]
         self.v_matrix = np.eye(4, 4, dtype='f')
+        
+        if (vs_filename is not None) and (fs_filename is not None):
+            self.create_and_set_shader_program(vs_filename, fs_filename)
 
     @abc.abstractmethod
     def __enter__(self):
@@ -41,6 +47,14 @@ class GLProgram(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
 
+    def create_and_set_shader_program(self, vs_filename, fs_filename):
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
+        shader_program = ShaderProgram(shader_path)
+        shader_program.add_shader(vs_filename, GL_VERTEX_SHADER)
+        shader_program.add_shader(fs_filename, GL_FRAGMENT_SHADER)
+        shader_program.link()
+        self.set_shader_program(shader_program)
+        
     def set_shader_program(self, shader_program):
         self._shader_program = shader_program
 

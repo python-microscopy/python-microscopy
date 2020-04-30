@@ -520,10 +520,7 @@ class fitTask(taskDef.Task):
         #Create a fit 'factory'
         fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma, roi_offset = self.roi_offset)
         
-        #perform fit for each point that we detected
-        if 'FromPoints' in dir(self.fitMod):
-            self.res = self.fitMod.FromPoints(self.ofd)
-        elif 'FitResultsDType' in dir(self.fitMod): #legacy fit modules
+        if 'FitResultsDType' in dir(self.fitMod):
             self.res = numpy.empty(len(self.ofd), self.fitMod.FitResultsDType)
             if 'Analysis.ROISize' in md.getEntryNames():
                 rs = md.getEntry('Analysis.ROISize')
@@ -535,6 +532,7 @@ class fitTask(taskDef.Task):
                     p = self.ofd[i]
                     self.res[i] = fitFac.FromPoint(p.x, p.y)
         else:
+            #legacy fit modules
             self.res  = [fitFac.FromPoint(p.x, p.y) for p in self.ofd]
 
         #Fit Fiducials NOTE: This is potentially broken        

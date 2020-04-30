@@ -171,8 +171,9 @@ class GaussianFitFactory:
         #only recalculate grid if existing one doesn't match
         if not self.X or not self.X.shape == self.data.shape[:2]:
              X,  Y, C = np.mgrid[0:self.data.shape[0], 0:self.data.shape[1], 0:2]
-             self.X = 1e3*self.metadata.voxelsize.x*X
-             self.Y = 1e3*self.metadata.voxelsize.y*Y
+             vs = self.metadata.voxelsize_nm
+             self.X = vs.x*X
+             self.Y = vs.y*Y
              self.C = C.astype('int')
             
 
@@ -376,8 +377,9 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        vs = md.voxelsize_nm
+        X = vs.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 

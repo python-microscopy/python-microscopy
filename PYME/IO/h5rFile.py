@@ -118,7 +118,7 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                if isinstance(data, six.string_types):
+                if isinstance(data, bytes):
                     table = self._h5file.create_vlarray(self._h5file.root, tablename, tables.VLStringAtom())
                     table.append(data)
                 else:

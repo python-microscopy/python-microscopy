@@ -49,7 +49,9 @@ from six import string_types
 import logging
 logger = logging.getLogger(__name__)
 
-VS = namedtuple('VS', 'x,y,z')
+#VS = namedtuple('VS', 'x,y,z')
+#Alias for backwards compatibility
+VS = MetaDataHandler.VoxelSize
 
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
@@ -82,14 +84,15 @@ class ImageBounds:
         x0 = 0
         y0 = 0
 
-        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
-        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
+        vx, vy, _ = mdh.voxelsize_nm
+        x1 = mdh['Camera.ROIWidth'] * vx
+        y1 = mdh['Camera.ROIHeight'] * vx
 
         if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
             if 'Splitter.Channel0ROI' in mdh.getEntryNames():
                 rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
-                x1 = rw * 1e3 * mdh['voxelsize.x']
-                x1 = rh * 1e3 * mdh['voxelsize.x']
+                x1 = rw * vx
+                y1 = rh * vx
             else:
                 y1 = y1 / 2
 
@@ -271,14 +274,24 @@ class ImageStack(object):
         """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
         to be in um"""
         try:
-            return VS(1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z'])
+            return self.voxelsize_nm
         except:
-            return (1,1,1)    
+            return (1,1,1)
+        
+    @property
+    def voxelsize_nm(self):
+        """ alias of self.voxelsize for interface compatibilty with metadatahandler
+        
+        differs from self.voxelsize in that we will propagate any exception generated if, e.g., 'voxelsize.x' is not
+        present in the metadata.
+        
+        """
+        return self.mdh.voxelsize_nm
     
     @property
     def pixelSize(self):
         try:
-            return 1e3*self.mdh['voxelsize.x']
+            return self.mdh.voxelsize_nm.x
         except:
             return 1
 
@@ -339,43 +352,8 @@ class ImageStack(object):
     def origin(self):
         #the origin, in nm from the camera - used for overlaying with different ROIs
         
-            
-        if 'Origin.x' in self.mdh.getEntryNames():
-            return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
-        
-        elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
-            #has ROI information
-            try:
-                voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
-            except AttributeError:
-                voxx = self.pixelSize
-                voxy = voxx
-            
-            roi_x0, roi_y0 = MetaDataHandler.get_camera_roi_origin(self.mdh)
-            
-            ox = (roi_x0)*voxx
-            oy = (roi_y0)*voxy
-            
-            oz = 0
-            
-            if 'AcquisitionType' in self.mdh.getEntryNames() and self.mdh['AcquisitionType'] == 'Stack':
-                oz = self.mdh['StackSettings.StartPos']*1e3
-            elif 'Positioning.PIFoc' in self.mdh.getEntryNames():
-                oz = self.mdh['Positioning.PIFoc']*1e3
-            
-            return ox, oy, oz
-            
-        elif 'Source.Camera.ROIPosX' in self.mdh.getEntryNames():
-            #a rendered image with information about the source ROI
-            voxx, voxy = 1e3*self.mdh['Source.voxelsize.x'], 1e3*self.mdh['Source.voxelsize.y']
-            
-            ox = (self.mdh['Source.Camera.ROIPosX'] - 1)*voxx
-            oy = (self.mdh['Source.Camera.ROIPosY'] - 1)*voxy
-            
-            return ox, oy, 0
-            
-        else:
-            return 0,0, 0
+        return MetaDataHandler.origin_nm(self, self.pixelSize)
+
             
 
 
@@ -913,6 +891,17 @@ class ImageStack(object):
         OMEmd = MetaDataHandler.OMEXMLMDHandler(OMEXML)
         self.mdh.copyEntriesFrom(OMEmd)
         print("Bioformats:done")
+        
+        #fix voxelsizes if not specified in OME metadata
+        if self.haveGUI and not (self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0):
+            from PYME.DSView.voxSizeDialog import VoxSizeDialog
+
+            dlg = VoxSizeDialog(None)
+            dlg.ShowModal()
+
+            self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
+            self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
+            self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
                 
         
         print(self.dataSource.shape)

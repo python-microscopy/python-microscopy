@@ -92,7 +92,7 @@ def GetCameraList():
     nCams = GetNumCameras()
     
     class UEYE_CAMERA_LIST(ctypes.Structure):
-        _fields_ = [("dwCount", ctypes.wintypes.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
+        _fields_ = [("dwCount", uc480.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
         # _fields_ = [("dwCount", ctypes.wintypes.ULONG ),
         #             ("caminfo", uc480.UEYE_CAMERA_INFO * nCams)]
 
@@ -180,11 +180,11 @@ class uc480Camera(Camera):
             raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested %d bit' % (nbits))
         self.nbits = nbits
 
-        self.boardHandle = wintypes.HANDLE(boardNum)
+        self.boardHandle = uc480.HANDLE(boardNum)
         if isDeviceID:
-            self.boardHandle = wintypes.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
+            self.boardHandle = uc480.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
 
-        ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
+        ret = uc480.CALL('InitCamera', byref(self.boardHandle), uc480.HWND(0))
         print(('I',ret))
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))

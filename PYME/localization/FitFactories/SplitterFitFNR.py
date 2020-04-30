@@ -145,8 +145,7 @@ def genFitImage(fitResults, metadata):
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+    vx, vy, _ = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = FFBase.get_camera_roi_origin(metadata)
@@ -200,9 +199,10 @@ class GaussianFitFactory(FFBase.FFBase):
         #    self.solver = FitModelWeighted
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
-        #generate grid to evaluate function on        
-        Xg = x + 1e3*md.voxelsize.x*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
-        Yg = y + 1e3*md.voxelsize.y*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+        #generate grid to evaluate function on
+        vs = md.voxelsize_nm
+        Xg = x + vs.x*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
+        Yg = y + vs.y*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
 
         #generate a corrected grid for the red channel      
         DeltaX = md.chroma.dx.ev(x, y)
