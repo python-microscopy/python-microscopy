@@ -149,6 +149,53 @@ def get_camera_physical_roi_origin(mdh):
         return mdh['Multiview.ROI0Origin']
     else:
         return get_camera_roi_origin(mdh)
+
+def origin_nm(mdh, default_pixel_size=1.):
+    #the origin, in nm from the camera - used for overlaying with different ROIs
+    # transferred from image.ImageStack.origin so that it can be used for tabular data too.
+    # the default_pixel_size parameter only exists for a niche case in ImageStack
+
+
+    if 'Origin.x' in mdh.getEntryNames():
+        # Used in composite images, cropped images, and renderings. Takes precendence if defined.
+        # Example in PYME.LMVis.renderers.ColourRenderer
+        return mdh['Origin.x'], mdh['Origin.y'], mdh['Origin.z']
+
+    elif ('Camera.ROIPosX' in mdh.getEntryNames()) or ('Camera.ROIOriginX' in mdh.getEntryNames()):
+        #has ROI information
+        try:
+            voxx, voxy = 1e3 * mdh['voxelsize.x'], 1e3 * mdh['voxelsize.y']
+        except AttributeError:
+            voxx = default_pixel_size
+            voxy = voxx
+    
+        roi_x0, roi_y0 = get_camera_roi_origin(mdh)
+    
+        ox = (roi_x0) * voxx
+        oy = (roi_y0) * voxy
+    
+        oz = 0
+    
+        if 'AcquisitionType' in mdh.getEntryNames() and mdh['AcquisitionType'] == 'Stack':
+            oz = mdh['StackSettings.StartPos'] * 1e3
+        elif 'Positioning.z' in mdh.getEntryNames():
+            oz = mdh['Positioning.z'] * 1e3
+        elif 'Positioning.PIFoc' in mdh.getEntryNames():
+            oz = mdh['Positioning.PIFoc'] * 1e3
+    
+        return ox, oy, oz
+
+    elif 'Source.Camera.ROIPosX' in mdh.getEntryNames():
+        #a rendered image with information about the source ROI
+        voxx, voxy = 1e3 * mdh['Source.voxelsize.x'], 1e3 * mdh['Source.voxelsize.y']
+    
+        ox = (mdh['Source.Camera.ROIPosX'] - 1) * voxx
+        oy = (mdh['Source.Camera.ROIPosY'] - 1) * voxy
+    
+        return ox, oy, 0
+
+    else:
+        return 0, 0, 0
     
 def get_voxelsize_nm(mdh):
     '''
