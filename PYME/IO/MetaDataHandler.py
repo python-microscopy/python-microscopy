@@ -164,7 +164,7 @@ def origin_nm(mdh, default_pixel_size=1.):
     elif ('Camera.ROIPosX' in mdh.getEntryNames()) or ('Camera.ROIOriginX' in mdh.getEntryNames()):
         #has ROI information
         try:
-            voxx, voxy = 1e3 * mdh['voxelsize.x'], 1e3 * mdh['voxelsize.y']
+            voxx, voxy, _ = mdh.voxelsize_nm
         except AttributeError:
             voxx = default_pixel_size
             voxy = voxx
