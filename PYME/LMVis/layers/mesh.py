@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
@@ -37,7 +37,7 @@ class WireframeEngine(BaseEngine):
                 glColorPointerf(layer.get_colors()*sc[None,:])
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
-                
+
 
 
 class FlatFaceEngine(WireframeEngine):
@@ -49,12 +49,31 @@ class FlatFaceEngine(WireframeEngine):
         WireframeEngine.render(self, gl_canvas, layer)
 
 class ShadedFaceEngine(WireframeEngine):
+    _outlines = False
     def __init__(self, context=None):
         BaseEngine.__init__(self, context=context)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(GouraudShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
+        
+class OITShadedFaceEngine(WireframeEngine):
+    _outlines = False
+    
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
+        
+    def use_oit(self, layer):
+        return layer.alpha < 0.99
+
+    def render(self, gl_canvas, layer):
+        if self.use_oit(layer):
+            self.set_shader_program(OITGouraudShaderProgram)
+        else:
+            self.set_shader_program(GouraudShaderProgram)
+        WireframeEngine.render(self, gl_canvas, layer)
+        
+    
         
 class TesselEngine(WireframeEngine):
     _outlines = False
@@ -69,8 +88,9 @@ class TesselEngine(WireframeEngine):
 ENGINES = {
     'wireframe' : WireframeEngine,
     'flat' : FlatFaceEngine,
-    'shaded' : ShadedFaceEngine,
+    #'shaded' : ShadedFaceEngine,
     'tessel' : TesselEngine,
+    'shaded' : OITShadedFaceEngine,
 }
 
 
@@ -295,13 +315,13 @@ class TriangleRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices'), visible_when='_datasource_choices')]),
                      Item('method'),
                      Item('normal_mode', visible_when='method=="shaded"'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
                      Group([Item('cmap', label='LUT'),
-                            Item('alpha', visible_when='method in ["flat", "tessel"]')
+                            Item('alpha', visible_when='method in ["flat", "tessel", "shaded"]')
                             ])
                      ], )
         # buttons=['OK', 'Cancel'])

@@ -85,6 +85,7 @@ class ParticleTracker:
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
+        from PYME.LMVis.layers.tracks import TrackRenderLayer
 
         from PYME.recipes import tracking
         recipe = self.visFr.pipeline.recipe
@@ -106,6 +107,8 @@ class ParticleTracker:
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_tracks')
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
+            visFr.add_layer(layer)
         
         #dlg.Destroy()
 

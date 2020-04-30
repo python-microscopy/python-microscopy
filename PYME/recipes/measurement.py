@@ -419,7 +419,6 @@ class PairwiseDistanceHistogram(ModuleBase):
                 pass
         
         namespace[self.outputName] = res
-        
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):

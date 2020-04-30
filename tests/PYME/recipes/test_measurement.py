@@ -5,6 +5,8 @@ from PYME.recipes import measurement, base, tablefilters
 import numpy as np
 from scipy.spatial import KDTree
 
+import pytest
+
 def test_IdentifyOverlappingROIs():
     mdh = NestedClassMDHandler()
     mdh['voxelsize.x'] = 0.115
@@ -48,6 +50,7 @@ def test_TravelingSalesperson():
     # should be not too much more than the rough circumference.
     assert ordered.mdh['TravelingSalesperson.Distance'] < 1.25 * (2 * np.pi * r)
 
+@pytest.mark.xfail(reason='Requires sklearn, which is not installed for testing to ease dependency management')
 def test_ChunkedTravelingSalesman():
     n = 500
     x = np.random.rand(n) * 4e3

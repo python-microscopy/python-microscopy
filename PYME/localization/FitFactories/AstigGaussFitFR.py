@@ -114,8 +114,9 @@ class GaussianFitFactory(FFBase.FitFactory):
         #estimate some start parameters...
         A = data.max() - data.min() #amplitude
 
-        x0 =  1e3*self.metadata.voxelsize.x*x
-        y0 =  1e3*self.metadata.voxelsize.y*y
+        vs = self.metadata.voxelsize_nm
+        x0 =  vs.x*x
+        y0 =  vs.y*y
         
         bgm = np.mean(background)
 

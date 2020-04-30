@@ -40,10 +40,14 @@ class RaggedBase(object):
     def to_hdf(self, filename, tablename, mode='w', metadata=None):
         #TODO - write me / re-evaluate. This should be cluster aware and use h5r file. Ragged array logic belongs in h5rfile
         from PYME.IO import h5rFile
+        import json
         
         with h5rFile.H5RFile(filename, mode) as h5f:
             for item in self:
-                h5f.appendToTable(tablename, self._jsify(item))
+                item_js = self._jsify(item)
+                if not isinstance(item_js, str):
+                    item_js = json.dumps(item_js)
+                h5f.appendToTable(tablename, item_js.encode())
 
             # handle metadata
             if metadata is not None:
@@ -124,7 +128,7 @@ class RaggedVLArray(RaggedBase):
     def __getitem__(self, item):
         import json
         
-        return json.loads(self._data[item])
+        return json.loads(self._data[item].decode())
     
     def __len__(self):
         return len(self._data)

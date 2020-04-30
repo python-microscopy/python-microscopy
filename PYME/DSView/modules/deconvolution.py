@@ -96,9 +96,7 @@ class deconvolver:
             decMDH['Deconvolution.NumIterations'] = nIter
             decMDH['Deconvolution.OriginalFile'] = self.image.filename
 
-            vx = self.image.mdh.getEntry('voxelsize.x')*1e3
-            vy = self.image.mdh.getEntry('voxelsize.y')*1e3
-            vz = self.image.mdh.getEntry('voxelsize.z')*1e3
+            vx, vy, vz = self.image.voxelsize_nm
 
             if beadMode:
                 from PYME.Deconv import beadGen

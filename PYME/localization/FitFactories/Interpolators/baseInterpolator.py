@@ -148,12 +148,11 @@ class __interpolator:
     
     def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
         from PYME.Analysis.PSFGen import fourierHNA
+        from PYME.IO import MetaDataHandler
         zs = arange(-1e3, 1e3, 50)
         
-        voxelsize = dummy()
-        voxelsize.x = 1e3*md['voxelsize.x']
-        voxelsize.y = 1e3*md['voxelsize.x']
-        voxelsize.z = 1e3*.05
+        voxelsize = MetaDataHandler.VoxelSize(md.voxelsize_nm)
+        voxelsize.z = 50.
 
         ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
         psc = self.centre2d(ps) #FIXME: why is this needed / useful?
@@ -162,16 +161,16 @@ class __interpolator:
 
     def genTheoreticalModel(self, md):
         from PYME.Analysis.PSFGen.ps_app import genWidefieldPSF
+        
+        vs = md.voxelsize_nm
 
-        if not self.dx == md.voxelsize.x*1e3 and not self.dy == md.voxelsize.y*1e3 and not self.dz == md.voxelsize.z*1e3:
+        if not self.dx == vs.x and not self.dy == vs.y and not self.dz == vs.z:
 
-            self.IntXVals = 1e3*md.voxelsize.x*mgrid[-20:20]
-            self.IntYVals = 1e3*md.voxelsize.y*mgrid[-20:20]
-            self.IntZVals = 1e3*md.voxelsize.z*mgrid[-20:20]
+            self.IntXVals = vs.x*mgrid[-20:20]
+            self.IntYVals = vs.y*mgrid[-20:20]
+            self.IntZVals = vs.z*mgrid[-20:20]
 
-            self.dx = md.voxelsize.x*1e3
-            self.dy = md.voxelsize.y*1e3
-            self.dz = md.voxelsize.z*1e3
+            self.dx, self.dy, self.dx = vs
 
             P = arange(0,1.01,.01)
 

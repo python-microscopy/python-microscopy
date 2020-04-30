@@ -177,3 +177,88 @@ class CircularTilePanel(TilePanel):
         self.scope.tiler.on_stop.connect(self._on_stop)
         self.scope.tiler.progress.connect(self._update)
         self.scope.tiler.start()
+
+
+class MultiwellTilePanel(TilePanel):
+    def __init__(self, parent, scope):
+        wx.Panel.__init__(self, parent)
+
+        self.scope = scope
+
+        self._gui_proc = None
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
+        self.tDestination = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # self.pProgress = wx.Gauge(self, -1, range=100)
+        # hsizer.Add(self.pProgress, 1, wx.ALL | wx.EXPAND, 2)
+        # vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Well Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
+        hsizer.Add(self.radius_um, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells x:'), 0, wx.ALL, 2)
+        self.n_x = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_x, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'x cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.x_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 3)
+        hsizer.Add(self.x_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells y:'), 0, wx.ALL, 2)
+        self.n_y = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_y, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'y cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.y_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 3)
+        hsizer.Add(self.y_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bGo = wx.Button(self, -1, 'Go')
+        # self.bGo.Disable()
+        self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
+        hsizer.Add(self.bGo, 0, wx.ALL, 2)
+        self.bStop = wx.Button(self, -1, 'Stop')
+        self.bStop.Disable()
+        self.bStop.Bind(wx.EVT_BUTTON, self.OnStop)
+        hsizer.Add(self.bStop, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        self.SetSizerAndFit(vsizer)
+
+
+    def OnGo(self, event=None):
+        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
+
+        self.scope.tiler = tiler.MultiwellCircularTiler(float(self.radius_um.GetValue()),
+            float(self.x_spacing_mm.GetValue()) * 1e3, float(self.y_spacing_mm.GetValue()) * 1e3,
+            int(self.n_x.GetValue()), int(self.n_y.GetValue()), self.scope, self.tDestination.GetValue(),
+            trigger=trigger)
+
+        self.bStop.Enable()
+        self.bGo.Disable()
+
+        # self.scope.tiler.on_stop.connect(self._on_stop)
+        # self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.start()
+
+    def OnStop(self, event=None):
+        self.scope.tiler.stop()

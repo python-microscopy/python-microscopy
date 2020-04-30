@@ -473,7 +473,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         from PYME.Acquire.Hardware import splitter
         frameSizeY /= 2
         nchans = 2
-        unmux = splitter.Unmixer(shiftfield, 1e3 * mdh.getEntry('voxelsize.x'))
+        unmux = splitter.Unmixer(shiftfield, mdh.voxelsize_nm.x)
     else:
         nchans = 1
     
