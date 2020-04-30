@@ -46,6 +46,30 @@ class FFBase(object):
         
         return np.sqrt(read_noise ** 2 + (noise_factor ** 2) * e_per_count * em_gain * (np.maximum(data, 1) + em_gain**2) / n_slices_averaged) / e_per_count
     
+    def _get_roi(self, x, y, z, roiHalfSize, axialHalfSize):
+        """ common code between 2D and 3D  ROI extraction"""
+        x = int(round(x))
+        y = int(round(y))
+        if (z is None): # use position of maximum intensity
+            z = self.data[x, y, :].argmax()
+    
+        roiHalfSize = int(roiHalfSize)
+        axialHalfSize = int(roiHalfSize)
+    
+        xslice = slice(int(max((x - roiHalfSize), 0)), int(min((x + roiHalfSize + 1), self.data.shape[0])))
+        yslice = slice(int(max((y - roiHalfSize), 0)), int(min((y + roiHalfSize + 1), self.data.shape[1])))
+        zslice = slice(int(max((z - axialHalfSize), 0)), int(min((z + axialHalfSize + 1), self.data.shape[2])))
+    
+        data = self.data[xslice, yslice, zslice]
+        sigma = self.noiseSigma[xslice, yslice, zslice] if self.noiseSigma else None
+        if (not self.background is None) and (not np.isscalar(self.background)) and (not self.metadata.get('Analysis.subtractBackground', True)):
+            background = self.background[xslice, yslice, zslice]
+        else:
+            background = 0
+            
+        return xslice, yslice, zslice, data, sigma, background
+        
+
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point.
         
@@ -59,49 +83,55 @@ class FFBase(object):
             yslice - y slice into original data array
             zslice - z slice into original data array
         """
+        xslice, yslice, zslice, dataROI, sigma, bgROI = self._get_roi(x, y, z, roiHalfSize, axialHalfSize)
 
-        x = int(round(x))
-        y = int(round(y))
 
-        roiHalfSize = int(roiHalfSize)
+        #average in z
+        dataMean = dataROI.mean(2)
+        bgMean = bgROI if np.isscalar(bgROI) else bgROI.mean(2)
+        
+        if sigma is None:
+            #estimate errors in data
+            sigma = self._calc_sigma(dataMean, n_slices_averaged=dataROI.shape[2])
 
         #pixel size in nm
         vx, vy, _ = self.metadata.voxelsize_nm
         
-        if (z is None): # use position of maximum intensity
-            z = self.data[x,y,:].argmax()
-
-        xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
-        yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
-        zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
-        
-        dataROI = self.data[xslice, yslice, zslice]
-
-        #average in z
-        dataMean = dataROI.mean(2)
-
-        #generate grid to evaluate function on        
-        X = vx*(np.mgrid[xslice] + self.roi_offset[0])
-        Y = vy*(np.mgrid[yslice] + self.roi_offset[1])
-	
-        #estimate errors in data
-        nSlices = dataROI.shape[2]
-        
-        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        ### Fixed for better Poisson noise approx
-        if self.noiseSigma is None:
-            sigma = self._calc_sigma(dataMean, nSlices)
-        else:
-            sigma = self.noiseSigma[xslice, yslice, zslice]
-
-        if not self.background is None and len(np.shape(self.background)) > 1 and not self.metadata.get('Analysis.subtractBackground', True):
-            bgROI = self.background[xslice, yslice, zslice]
-            #average in z
-            bgMean = bgROI.mean(2)
-        else: 
-            bgMean = 0
+        #generate grid to evaluate function on
+        X = vx * (np.mgrid[xslice] + self.roi_offset[0])
+        Y = vy * (np.mgrid[yslice] + self.roi_offset[1])
             
         return X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice
+
+    def get3DROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
+        """Helper fcn to extract ROI from frame at given x,y, point.
+
+        Returns:
+            X - x coordinates of pixels in ROI in nm
+            Y - y coordinates of pixels in ROI
+            Z - z coordinates of pixels in ROI
+            data - raw pixel data of ROI
+            background - extimated background for ROI
+            sigma - estimated error (std. dev) of pixel values
+            xslice - x slice into original data array used to get ROI
+            yslice - y slice into original data array
+            zslice - z slice into original data array
+        """
+        xslice, yslice, zslice, dataROI, sigma, bgROI = self._get_roi(x, y, z, roiHalfSize, axialHalfSize)
+    
+        if sigma is None:
+            sigma = self._calc_sigma(dataROI)
+
+        #pixel size in nm
+        vx, vy, vz = self.metadata.voxelsize_nm
+
+        #generate grid to evaluate function on
+        X = vx * (np.mgrid[xslice] + self.roi_offset[0])
+        Y = vy * (np.mgrid[yslice] + self.roi_offset[1])
+        Z = vz * (np.mgrid[yslice])
+    
+        return X, Y, Z, dataROI, bgROI, sigma, xslice, yslice, zslice
+
         
     def getSplitROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image.
@@ -328,3 +358,7 @@ class FFBase(object):
         
         
 FitFactory = FFBase
+
+DESCRIPTION = ''  # What type of object does this fitter fit?
+LONG_DESCRIPTION = ''  # A longer description
+USE_FOR = ''  # Type of localization data (e.g. 2D single color)
