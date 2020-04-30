@@ -352,7 +352,7 @@ class ImageStack(object):
     def origin(self):
         #the origin, in nm from the camera - used for overlaying with different ROIs
         
-        return MetaDataHandler.origin_nm(self, self.pixelSize)
+        return MetaDataHandler.origin_nm(self.mdh, self.pixelSize)
 
             
 
