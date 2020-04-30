@@ -76,10 +76,20 @@ def cm(scope):
 #""")
 
 
+# @init_gui('Simulation UI')
+# def sim_controls(MainFrame, scope):
+#     from PYME.Acquire.Hardware.Simulator import dSimControl
+#     dsc = dSimControl.dSimControl(MainFrame, scope)
+#     MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
+#
+#     scope.dsc = dsc
+
+
 @init_gui('Simulation UI')
 def sim_controls(MainFrame, scope):
-    from PYME.Acquire.Hardware.Simulator import dSimControl
-    dsc = dSimControl.dSimControl(MainFrame, scope)
+    from PYME.Acquire.Hardware.Simulator import simcontrol, simui_wx
+    scope.simcontrol = simcontrol.SimController(scope)
+    dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol)
     MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
     
     scope.dsc = dsc

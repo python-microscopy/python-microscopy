@@ -111,6 +111,8 @@ class Spooler:
         #    timeFcn = self.fakeTime
 
         self._last_gui_update = 0
+        self.spoolOn = False
+        self.imNum = 0
         
         self._spooler_uuid = uuid.uuid4()
             
@@ -234,6 +236,10 @@ class Spooler:
 
     def FlushBuffer(self):
         pass
+    
+    def status(self):
+        return {'spooling' : self.spoolOn,
+                'frames_spooled' : self.imNum}
         
         
     def __del__(self):

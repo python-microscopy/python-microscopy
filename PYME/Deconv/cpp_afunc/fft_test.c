@@ -100,7 +100,7 @@ static PyObject * cDec_fw_map(PyObject *self, PyObject *args)
         return NULL;
     } 
     
-    result = (PyArrayObject *)PyArray_FromDims(1, f->dimensions, PyArray_FLOAT); 
+    result = (PyArrayObject *)PyArray_SimpleNew(1, f->dimensions, PyArray_FLOAT); 
     if (result == NULL)    
     {
         Py_DECREF(f);
@@ -197,7 +197,7 @@ static PyObject * cDec_L_func(PyObject *self, PyObject *args)
     f = (PyArrayObject *) PyArray_ContiguousFromObject(input1, PyArray_FLOAT, 1, 1); 
     if (f == NULL) return NULL; 
     
-    result = (PyArrayObject *)PyArray_FromDims(1, f->dimensions, PyArray_FLOAT); 
+    result = (PyArrayObject *)PyArray_SimpleNew(1, f->dimensions, PyArray_FLOAT); 
     if (result == NULL) return NULL; 
     
     for (k = 0; k < f->dimensions[0];k++)

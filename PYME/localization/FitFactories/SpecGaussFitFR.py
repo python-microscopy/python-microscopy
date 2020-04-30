@@ -111,14 +111,15 @@ class GaussianFitFactory:
         #average in z
         dataMean = dataROI.mean(1)
 
-        #generate grid to evaluate function on        
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
+        #generate grid to evaluate function on
+        vx = self.metadata.voxelsize_nm.x
+        X = vx*scipy.mgrid[xslice]
         #Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
 
-        x0 =  1e3*self.metadata.voxelsize.x*x0
+        x0 =  vx*x0
         #y0 =  1e3*self.metadata.voxelsize.y*y0
         
         #x0 =  X.mean()
@@ -157,8 +158,9 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        vs = md.voxelsize_nm
+        X = vs.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return f_gauss2d(params, X, Y)
 

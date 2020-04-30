@@ -32,6 +32,7 @@ from sys import maxsize as maxint
 
 #minimal protocol which does nothing
 class Protocol:
+    filename=None
     def __init__(self):
         pass
 
@@ -201,7 +202,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
 
 
         self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
-        self.startPos = scope.state[self.piezoName + '_target']
+        self.startPos = scope.state[self.piezoName + '_target'] #FIXME - _target positions shouldn't be part of scope state
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)

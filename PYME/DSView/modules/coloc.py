@@ -151,7 +151,7 @@ class colocaliser:
     def OnColoc(self, event=None, restrict_z=False, coloc_vs_z = False):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
         from scipy import interpolate
-        voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
+        voxelsize = self.image.voxelsize_nm
         
         names = self.image.names
             
@@ -330,7 +330,7 @@ class colocaliser:
         
     def OnColocBasic(self, event):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
-        voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
+        voxelsize = self.image.voxelsize_nm
         
         try:
             names = self.image.mdh.getEntry('ChannelNames')

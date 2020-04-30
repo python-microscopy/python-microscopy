@@ -69,7 +69,7 @@ class FFBase(object):
             
         return xslice, yslice, zslice, data, sigma, background
         
-    
+
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point.
         
@@ -84,6 +84,7 @@ class FFBase(object):
             zslice - z slice into original data array
         """
         xslice, yslice, zslice, dataROI, sigma, bgROI = self._get_roi(x, y, z, roiHalfSize, axialHalfSize)
+
 
         #average in z
         dataMean = dataROI.mean(2)
@@ -116,7 +117,6 @@ class FFBase(object):
             yslice - y slice into original data array
             zslice - z slice into original data array
         """
-
         xslice, yslice, zslice, dataROI, sigma, bgROI = self._get_roi(x, y, z, roiHalfSize, axialHalfSize)
     
         if sigma is None:
@@ -131,6 +131,7 @@ class FFBase(object):
         Z = vz * (np.mgrid[yslice])
     
         return X, Y, Z, dataROI, bgROI, sigma, xslice, yslice, zslice
+
         
     def getSplitROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point from a multi-channel image.

@@ -295,20 +295,11 @@ class colourPanel(wx.Panel):
             if key == "":
                 return
 
-            self.pipeline.colour_mapper.species_ratios[key] = val
-
-            ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
-            self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
-            #print val, (255*numpy.array(cm.gist_rainbow(val)))[:3]
-            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
-
-            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
-            #self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
-            #self.pipeline.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % val)
-
-            #self.visFr.UpdatePointColourChoices()
-            #self.visFr.colourFilterPane.UpdateColourFilterChoices()
+            #update dict ex-situ and assign to ensure that trait handlers get triggered and UI updates.
+            ratios = dict(self.pipeline.colour_mapper.species_ratios)
+            ratios[key] = val
+            self.pipeline.colour_mapper.ratios_from_metadata = False
+            self.pipeline.colour_mapper.species_ratios = ratios
             
             self.pipeline.Rebuild()
 
@@ -319,9 +310,13 @@ class colourPanel(wx.Panel):
     def OnSpecDelete(self, event):
         it = self.lFluorSpecies.GetItem(self.currentFilterItem)
         self.lFluorSpecies.DeleteItem(self.currentFilterItem)
-        self.pipeline.fluorSpecies.pop(it.GetText())
+        
+        #update dict ex-situ and assign to ensure that trait handlers get triggered and UI updates.
+        ratios = dict(self.pipeline.colour_mapper.species_ratios)
+        ratios.pop(str(it.GetText()))
+        self.pipeline.colour_mapper.ratios_from_metadata = False
+        self.pipeline.colour_mapper.species_ratios = ratios
 
-        #self.pipeline.mapping.mappings.pop('p_%s' % it.GetText())
         
         self.pipeline.Rebuild()
 
@@ -338,13 +333,11 @@ class colourPanel(wx.Panel):
         col = event.GetColumn()
 
         if col == 1: #frac
-            self.pipeline.fluorSpecies[str(it.GetText())] = val
-            self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
-
-            #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
-            #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (val))
-            #self.pipeline.mapping.setMapping('p_%s' % it.GetText(), '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
-            #self.pipeline.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % val)
+            #update dict ex-situ and assign to ensure that trait handlers get triggered and UI updates.
+            ratios = dict(self.pipeline.colour_mapper.species_ratios)
+            ratios[str(it.GetText())] = val
+            self.pipeline.colour_mapper.ratios_from_metadata = False
+            self.pipeline.colour_mapper.species_ratios = ratios
 
             self.pipeline.Rebuild()
 
@@ -365,19 +358,14 @@ class colourPanel(wx.Panel):
         n = (numpy.diff(numpy.sign(numpy.diff(numpy.histogram(self.pipeline.filter['gFrac'], numpy.linspace(0, 1, 20))[0]))) < 0).sum()
 
         guesses = scipy.cluster.vq.kmeans(self.pipeline.filter['gFrac'], n)[0]
-
+ 
+        ratios = {}
         for g, i in zip(guesses, range(n)):
             key = '%c' % (65 + i)
-            self.pipeline.colour_mapper.species_ratios[key] = float(g)
-            ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
-            self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % g)
-            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
+            ratios[key] = float(g)
 
-            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-            #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (g))
-            #self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
-            #self.pipeline.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % val)
-            
+        self.pipeline.colour_mapper.ratios_from_metadata = False
+        self.pipeline.colour_mapper.species_ratios=ratios
         self.pipeline.Rebuild()
 
         try:
@@ -393,7 +381,11 @@ class colourPanel(wx.Panel):
     def SpecFromMetadata(self, mdh):
         labels = mdh.getEntry('Sample.Labelling')
 
+        self.pipeline.colour_mapper.ratios_from_metadata = False
+        
+        #TODO - do we need the following, or can the ProcessColour module handle this internally?
         structures = []
+        ratios = {}
         for structure, dye in labels:
             if structure in structures: #duplicate structure
                 structure += ' A'
@@ -401,20 +393,16 @@ class colourPanel(wx.Panel):
             ratio = dyeRatios.getRatio(dye, mdh)
 
             if not ratio is None:
-                self.pipeline.colour_mapper.species_ratios[structure] = float(ratio)
-                ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, structure)
-                self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)
-                self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))
+                ratios[structure] = float(ratio)
 
-                #self.visFr.mapping.setMapping('p_%s' % key, 'exp(-(%f*A - fitResults_Ag)**2/(2*fitError_Ag**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ar**2))' % (1- val, val))
-                #self.visFr.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))' % (ratio))
-                #self.pipeline.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
-                #self.pipeline.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
-                
+        self.pipeline.colour_mapper.species_ratios = ratios
         self.pipeline.Rebuild()
 
-        self.visFr.UpdatePointColourChoices()
-        self.visFr.colourFilterPane.UpdateColourFilterChoices()
+        try:
+            self.visFr.UpdatePointColourChoices()
+            self.visFr.colourFilterPane.UpdateColourFilterChoices()
+        except AttributeError:
+            pass
 
         self.refresh()
 
@@ -430,9 +418,16 @@ class colourPanel(wx.Panel):
             return
         
         self.colPlotPan.draw()
+        
+        self.lFluorSpecies.DeleteAllItems()
 
-        for key in self.pipeline.fluorSpecies.keys():
-            ind = self.lFluorSpecies.FindItem(-1,key)
+        for key in self.pipeline.colour_mapper.species_ratios.keys():
+            ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
+
+            ratio = self.pipeline.colour_mapper.species_ratios[key]
+            self.lFluorSpecies.SetStringItem(ind, 1, '%3.3f' % ratio)
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128 * numpy.array(cm.jet_r(ratio)))[:3])))
+            
             num_dyes = sum(self.pipeline.colourFilter._index(key))
 
             self.lFluorSpecies.SetStringItem(ind,2, '%d' % num_dyes)

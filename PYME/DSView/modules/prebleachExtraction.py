@@ -60,7 +60,7 @@ class PrebleachExtractor:
 
         if self.split:
             from PYME.Acquire.Hardware import splitter
-            unmux = splitter.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], 1e3*mdh.getEntry('voxelsize.x'))
+            unmux = splitter.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], mdh.voxelsize_nm.x)
 
             dt = unmux.Unmix(dt, self.mixmatrix, 0, [ROIX1, ROIY1, ROIX2, ROIY2])
 

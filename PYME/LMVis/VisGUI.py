@@ -56,6 +56,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
@@ -473,10 +474,10 @@ def main():
         visFr.RefreshView()
         
 if __name__ == '__main__':
-    #from PYME.util import mProfile
-    #mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
+    from PYME.util import mProfile
+    mProfile.profileOn(['pipeline.py', 'tabular.py'])
     main()
-    #mProfile.report()
+    mProfile.report()
 
 
 def ipython_visgui(filename=None, **kwargs):

@@ -103,8 +103,9 @@ class LinearInterpolator(__interpolator):
     def getCoords(self, metadata, xslice, yslice, zslice):
         """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
-        X = 1e3*metadata.voxelsize.x*mgrid[xslice]
-        Y = 1e3*metadata.voxelsize.y*mgrid[yslice]
+        vs = metadata.voxelsize_nm
+        X = vs.x*mgrid[xslice]
+        Y = vs.y*mgrid[yslice]
         Z = array([0]).astype('f')
         
         

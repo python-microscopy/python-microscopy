@@ -88,7 +88,11 @@ class BaseDataSource(object):
         #print keys
         for i in range(len(keys)):
             if not isinstance(keys[i], slice):
-                keys[i] = slice(keys[i],keys[i] + 1)
+                if keys[i] == -1:
+                    #special case for -1 indexing
+                    keys[i] = slice(-1, None)
+                else:
+                    keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData
         self.oldSlice = keys

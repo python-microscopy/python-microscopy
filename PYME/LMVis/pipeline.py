@@ -1027,6 +1027,43 @@ class Pipeline:
     def dtypes(self):
         return {k: str(self[k, :2].dtype) for k in self.keys()}
     
+    def _repr_html_(self):
+        import jinja2
+        TEMPLATE = """
+        <h3> LMVis.pipeline.Pipeline viewing {{ pipe.filename }} </h3>
+        <br>
+        {{ recipe_svg }}
+        <b> Data Sources: </b> {% for k in  pipe.dataSources.keys() %} {% if k != pipe.selectedDataSourceKey %} {{ k }} - [{{ pipe.dataSources[k]|length }} evts], {% endif %} {% endfor %} <b> {{ pipe.selectedDataSourceKey }} - [{{ pipe.dataSources[pipe.selectedDataSourceKey]|length }} evts]</b>
+        <br>
+        <b> Columns: </b> {{ grouped_keys }}
+        """
+        
+        try:
+            svg = self.recipe.to_svg()
+        except:
+            svg = None
+            
+        fr_keys = []
+        fe_keys = []
+        sl_keys = []
+        st_keys = []
+        
+        for k in self.keys():
+            if k.startswith('fitResults'):
+                fr_keys.append(k)
+            elif k.startswith('fitError'):
+                fe_keys.append(k)
+            elif k.startswith('slicesUsed'):
+                sl_keys.append(k)
+            else:
+                st_keys.append(k)
+                
+        grouped_keys = sorted(st_keys) + sorted(fr_keys) + sorted(fe_keys) + sorted(sl_keys)
+        
+        return jinja2.Template(TEMPLATE).render(pipe=self, recipe_svg = svg, grouped_keys=', '.join(grouped_keys))
+
+        
+    
 
 
 

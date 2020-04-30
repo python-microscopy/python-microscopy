@@ -66,9 +66,10 @@ class GaussFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*np.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*np.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*np.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*np.mgrid[self.slicesUsed[0]]
+        Y = vs.y*np.mgrid[self.slicesUsed[1]]
+        Z = vs.z*np.mgrid[self.slicesUsed[2]]
         P = np.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*np.pi/525, 1.47, 10e3)
         #pass
@@ -126,9 +127,10 @@ class Gauss3dFitFactory:
         #generate grid to evaluate function on
         X, Y, Z = np.mgrid[xslice, yslice, zslice]
 
-        X = 1e3*self.metadata.voxelsize.x*X
-        Y = 1e3*self.metadata.voxelsize.y*Y
-        Z = 1e3*self.metadata.voxelsize.z*Z
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*X
+        Y = vs.y*Y
+        Z = vs.z*Z
         
         #figure()
         #imshow(dataROI.max(2))

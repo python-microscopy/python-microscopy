@@ -34,14 +34,14 @@ def locify(im, pixelSize=1, pointsPerPixel=0.1):
     #which will be accepted/rejected later
     numPoints = int(xmax*ymax*zmax*pointsPerPixel)
 
-    x = xmax*rand(numPoints) - .5
-    y = ymax*rand(numPoints) - .5
-    z = zmax*rand(numPoints) - .5
+    x = xmax*rand(numPoints)
+    y = ymax*rand(numPoints)
+    z = zmax*rand(numPoints)
     
     #print len(x)
 
     #index into array to get probability of acceptance
-    p = im[x.round().astype('i'), y.round().astype('i'), z.round().astype('i')]
+    p = im[np.floor(x).astype('i'), np.floor(y).astype('i'), np.floor(z).astype('i')]
 
     #use monte-carlo to accept points with the given probability
     mcInd = rand(len(x)) < p.ravel()
@@ -49,9 +49,10 @@ def locify(im, pixelSize=1, pointsPerPixel=0.1):
     #print x.shape, mcInd.shape, p.shape, rand(len(x)).shape
 
     #take subset of positions and scale to pixel size
-    x = pixelSize*x[mcInd]
-    y = pixelSize*y[mcInd]
-    z = pixelSize * z[mcInd]
+    #NOTE: we currently return co-ordinates referenced to the top-left corner of the input image, not pixel centres, as returned by fits
+    x = pixelSize*(x[mcInd])
+    y = pixelSize*(y[mcInd])
+    z = pixelSize *(z[mcInd])
 
     return (x,y,z)
     

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PYMEAcquire</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"#}
+{#          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">#}
+    <link rel="stylesheet" href="/static/css/pyme-bootstrap.css">
+    <link rel="stylesheet" href="/static/css/pymeacquire.css">
+</head>
+<body>
+
+<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PYMEAcquire - now with more web</a>
+    <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+            {% if authenticated_as %}
+                <span class="navbar-text">Signed in as {{ authenticated_as }}</span>
+                <a class="nav-link" href="/logout">Sign out</a>
+            {% else %}
+                <a class="nav-link" href="/login">Sign in</a>
+            {% endif %}
+        </li>
+    </ul>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-3 col-lg-3 d-md-block sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading"><span>Display</span></h6>
+
+                <form class="form-inline" action="javascript:void(0);">
+                    <div class="input-group input-group-sm">
+                        <div class="form-control-sm"><span class="">Range&nbsp;</span></div>
+                        <input type="number" id="display_min" value="950" class="form-control form-control-sm" style="width: 50px">
+                        <input type="number" id="display_max" value="1050" class="form-control form-control-sm" style="width: 50px">
+
+                        <div class="input-group-append">
+                            <span class="form-control-sm"><label><input type="checkbox" name="autoscale"
+                                                                         id="display_autoscale" class="form-control form-control-sm"
+                                                                         style="height: 10pt;">&nbsp auto</label></span>
+                        </div>
+                    </div>
+
+                    <div class="input-group input-group-sm mt-1">
+                        <div class="form-control-sm"><span class="">Zoom</span></div>
+                        <select type="number" id="display_zoom" value="100" class="form-control form-control-sm">
+                            <option>25</option>
+                            <option>50</option>
+                            <option selected="selected">100</option>
+                            <option>200</option>
+                            <option>400</option>
+                        </select>
+                        <div class="form-control-sm"><span class="">&percnt;</span></div>
+
+                    </div>
+
+                </form>
+
+                {% raw %}
+                <div id="hw">
+                    <h6 class="sidebar-heading"><span>Camera</span></h6>
+
+                    <form class="form-inline" action="javascript:void(0);">
+                        <div class="input-group input-group-sm">
+                            <label class="form-control-sm">Integration time [ms]:&nbsp;
+                                <input type="number" id="int_time" class="form-control form-control-sm"
+                                       v-model.lazy.number="integration_time_ms"
+                                       v-on:change="update_server_state({'Camera.IntegrationTime': $event.target.value/1000.});">
+                            </label>
+                        </div>
+                    </form>
+
+
+                    <h6 class="sidebar-heading"><span>Lasers</span></h6>
+
+                    <form class="form-inline" action="javascript:void(0);">
+                        <laser-control v-for="lname in laser_names" :name="lname" :key="lname"
+                                       :power="state['Lasers.' + lname + '.Power']"
+                                       :on="state['Lasers.' + lname + '.On']" :max_power="state['Lasers.' + lname + '.MaxPower']"></laser-control>
+                    </form>
+
+                    <h6 class="sidebar-heading"><span>Positioning</span></h6>
+                    <form class="form-inline mt-1" action="javascript:void(0);">
+                        <position-control v-model.number="state['Positioning.x']" axis="x" :delta="1"></position-control>
+                        <position-control v-model.number="state['Positioning.y']" axis="y" :delta="1"></position-control>
+                        <position-control v-model.number="state['Positioning.z']" axis="z" :delta="0.2"></position-control>
+
+                    </form>
+
+                    <h6 class="sidebar-heading"><span>Acquisition</span></h6>
+
+                    <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
+                    <div v-if="spooler.status.spooling" class="mt-1 text-center">
+                        <p>Currently spooling, {{ spooler.status.frames_spooled }} frames spooled</p>
+                        <button class="btn btn-danger" onclick="$.ajax('/spool_controller/stop_spooling');">Stop spooling</button>
+                    </div>
+                    <div v-else class="mt-1 text-center">
+                        <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start spooling</button>
+                    </div>
+
+                </div>
+                {% endraw %}
+
+            </div>
+        </nav>
+
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-9 px-0 mainfh">
+            <div class="mainscroll">
+
+                <canvas id="cam_canvas"></canvas>
+
+
+                <div class="tab-content uitabs" id="myTabContent">
+                    <div class="tab-pane fade uitab" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
+                    <div class="tab-pane fade uitab bg-dark" id="state" role="tabpanel" aria-labelledby="state-tab">
+                        <div id="app" style=" width: 100%; height: 400px;  overflow: scroll;">
+                            <table class="table table-sm table-dark">
+                                {% raw %}
+                                <tr v-for="(val, prop_name) in state" :key="prop_name">
+                                    <td>{{ prop_name }}</td>
+                                    <td>{{ val }}</td>
+                                </tr>
+                                {% endraw %}
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show active uitab bg-dark" id="console" role="tabpanel"
+                         aria-labelledby="console-tab">
+                        <iframe src="http://localhost:8765/" scrolling="no"
+                                style=" width: 100%; height: 400px;  overflow: hidden; border: none"
+                                id="console-frame"></iframe>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="basebar navbar-dark bg-dark">
+                <ul class="nav nav-tabs-bottom" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+                           aria-selected="false">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="state-tab" data-toggle="tab" href="#state" role="tab"
+                           aria-controls="state" aria-selected="false">State</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" id="console-tab" data-toggle="tab" href="#console" role="tab"
+                           aria-controls="contact" aria-selected="false">Console</a>
+                    </li>
+                </ul>
+            </div>
+
+        </main>
+
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+<script src="/static/js/pzf.js"></script>
+<script src="/static/js/pymeacquire.js"></script>
+</body>
+</html>

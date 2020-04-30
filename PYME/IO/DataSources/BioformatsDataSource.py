@@ -72,7 +72,7 @@ class BioformatsFile(bioformats.ImageReader):
         self._md = None
         self._series_count = None
         self._series_names = None
-        super(BioformatsFile, self).__init__(self, *args, **kwargs)
+        super(BioformatsFile, self).__init__(*args, **kwargs)
 
     @property
     def series_count(self):
