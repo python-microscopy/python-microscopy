@@ -1,0 +1,85 @@
+.table-sm {
+    font-size: 10pt;
+}
+
+[role="main"] {
+    padding-top: 48px; /* Space for fixed navbar */
+    padding-left: 0;
+    padding-right: 0;
+    background-color: black;
+}
+
+body {
+    height: 100%;
+    overflow: hidden;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100; /* Behind the navbar */
+  padding: 48px 0 0; /* Height of navbar */
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-sticky {
+  position: relative;
+  top: 0;
+  height: calc(100vh - 48px);
+  /*padding-top: .5rem;*/
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+@supports ((position: -webkit-sticky) or (position: sticky)) {
+  .sidebar-sticky {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}
+
+.basebar {
+    position:relative;
+    bottom: 0;
+    height: 32px;
+    overflow: hidden;
+}
+
+.mainfh {
+    height: calc(100vh );
+    overflow-y: hidden;
+}
+
+.mainscroll {
+    height: calc(100% - 32px);
+    overflow-y: scroll;
+}
+
+.uitabs {
+    position:absolute;
+    bottom: 32px;
+    height:400px;
+    width:100%;
+    overflow: hidden;
+
+}
+
+.uitab {
+    height:100%;
+    width:100%;
+    overflow: hidden;
+
+}
+
+input, textarea{
+    background-color: #202020;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+     margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}

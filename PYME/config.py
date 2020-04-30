@@ -30,7 +30,10 @@ overall template for a configuration directory is as follows: ::
       |     |     |- somemodule.txt
       |     |
       |     |- recipes
-      |           |- anothermodule.txt
+      |     |      |- anothermodule.txt
+      |     |
+      |     |- <plugin-name>.yaml
+      |     |- <another-plugin-name>.yaml
       |
       |- protocols
       |     |- a_protocol.py
@@ -73,16 +76,68 @@ parameter values are supported using standard yaml notation.
     h5f-flush_interval: 1
     PYMEAcquire-extra_init_dir: "C:/pyme-init-scripts"
 
-plugins/visgui/PYME.txt
+
+
+plugins/visgui/<plugin_name>.txt, plugins/dsview/<plugin_name>.txt, plugins/recipes/<plugin_name>.txt
 -----------------------
-If we were to use the plugin architecture to register some of the native plugins (rather than using explicit knowledge
-of their locations), the registration file would look something like this. Each line is a fully qualified module import
-path.
+If we were to use the plugin architecture to register some of the native visgui plugins (rather than using explicit
+knowledge of their locations), the registration file would look something like this. Each line is a fully qualified
+module import path.
 
 ::
 
     PYME.LMVis.Extras.photophysics
     PYME.LMVis.Extras.particleTracking
+
+The same structure holds for dh5view plugins and dsview/<plugin_name>.txt and recipes/<plugin_name>.txt. NOTE - this
+method of plugiin registration is supported for backwards compatibility only - new plugins should drop as single
+<plugin-name>.yaml config file as detailed below.
+
+
+plugins/<plugin-name>.yaml
+--------------------------
+
+A yaml file containing plugin information. This supersedes the previous separate plugin directories outlined above.
+It should be formatted according to the following example. All sections are optional and may be omitted if the plugin
+doesn't supply the features in question:
+
+.. code-block:: yaml
+
+    # a list of fully qualified module import paths for VisGUI plugins
+    visgui:
+        - somepackage.somemodule
+        - somepackage.anothermodule
+        
+    # a list of fully qualified import paths for dh5view plugins
+    dsviewer:
+        - somepackage.somemodule
+        
+    # a list of fully qualified import paths for recipe modules
+    recipes:
+        - somepackage.somemodule
+        
+    # a section detailing templates and filters for jinga2 generated reports
+    reports:
+        # an importable module containing the templates
+        # the module is just used to get the file path (i.e. we do `os.path.join(os.path.dirname(somemodule), template_name)`)
+        # this module will get imported every time anything in PYME runs, so please make it lightweight (i.e. an
+        # empty __init__.py in a dedicated templates folder which only has templates as the other contents)
+        templates: somepackage.somemodule
+        
+        # jinga2 filters. Note that these will need to be pre-fixed by the plugin name when used in templates
+        # to avoid name collisions with builtin filters or those from other plugins ie {{ value | myplugin.myfilter }}
+        filters:
+            somepackage.somemodule:
+                - filter1
+                - filter2
+            somepagage.anothermodule:
+                -filter3
+                
+    config:
+        # any plugin specific config / settings which you want to put here - just a placeholder for now, but an implicit
+        # promise that we won't clobber this key in the future.
+        
+    
 
 In addition to the configuration derived from config.yaml, a few legacy environment variables are recognized. Subpackages
 are also permitted to save configuration files in the ``.PYME`` directory.
@@ -160,6 +215,7 @@ import yaml
 import os
 import shutil
 import sys
+import glob
 
 site_config_directory = '/etc/PYME'
 site_config_file = '/etc/PYME/config.yaml'
@@ -238,6 +294,109 @@ import logging
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
 
+# def get_plugins(application):
+#     """
+#     Get a list of plugins for a given application
+#
+#     Modules are registered by adding fully resolved module paths (one per line) to a text file in the relevant directory.
+#     The code searches **all** files in the relevant directories, and the intention is that there is one registration file
+#     for each standalone package that provides modules and can e.g. be conda or pip-installed which contains a list of all
+#     the plugins that package provides. The registration filename should ideally be the same as the package name, although
+#     further subdivision for large packages is fine. registration filenames should however be unique - e.g. by prefixing
+#     with the package name. By structuring it this way, a package can add this file to the ``anaconda/etc/PYME/plugins/XXX/``
+#     folder through the standard conda packaging tools and it will be automatically discovered without conflicts
+#
+#     Parameters
+#     ----------
+#     application : basestring
+#         One of 'visgui', 'dsviewer', or 'recipes'
+#
+#     Returns
+#     -------
+#     list of fully resolved module paths
+#
+#     """
+#     plugin_paths = []
+#
+#     for config_dir in config_dirs:
+#         plugin_dir = os.path.join(config_dir, 'plugins', application)
+#
+#         try:
+#             reg_files = glob.glob(os.path.join(plugin_dir, '*.txt'))
+#         except OSError:
+#             reg_files = []
+#
+#         for fn in reg_files:
+#             with open(fn, 'r') as f:
+#                 plugin_paths.extend(f.readlines())
+#
+#     logger.debug('plugin paths: ' +  str(plugin_paths))
+#
+#     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
+
+
+report_template_dirs = {}
+report_filters = {}
+plugins = {}
+
+def _parse_plugin_config():
+    import importlib
+    
+    for config_dir in config_dirs:
+        #parse the new style .yaml based config first
+        plugin_yamls = glob.glob(os.path.join(config_dir, 'plugins','*.yaml'))
+        
+        for fn in plugin_yamls:
+            plugin_name = os.path.splitext(os.path.basename(fn))[0]
+            with open(fn, 'r') as f:
+                plugin_conf = yaml.safe_load(f)
+            
+            for app in ['visgui', 'dsviewer', 'recipes']:
+                plugins[app] = plugins.get(app, set()) | set(plugin_conf.get(app, []))
+            
+            try:
+                # TODO - do we actually want to do the import here, or should we defer it to get_plugin_template_dirs()?
+                # doing it here risks putting startup times for anything PYME related at the mercy of a badly written plugin
+                report_template_dirs[plugin_name] = os.path.dirname(importlib.import_module(plugin_conf['reports']['templates']).__file__)
+            except KeyError:
+                pass
+            except ImportError:
+                logger.exception('Error finding templates for plugin %s' % plugin_name)
+                
+                
+            try:
+                report_filters[plugin_name] = plugin_conf['reports']['filters']
+            except KeyError:
+                pass
+            
+        #parse legacy .txt based plugin definitions
+        def _get_app_txt_plugins(application):
+            plugin_paths = []
+
+            try:
+                reg_files = glob.glob(os.path.join(config_dir, 'plugins', application, '*.txt'))
+            except OSError:
+                reg_files = []
+
+            for fn in reg_files:
+                with open(fn, 'r') as f:
+                    plugin_paths.extend(f.readlines())
+
+            return [p.strip() for p in plugin_paths if not p.strip() == '']
+            
+
+        for app in ['visgui', 'dsviewer', 'recipes']:
+            plugins[app] = plugins.get(app, set()) | set(_get_app_txt_plugins(app))
+
+_parse_plugin_config()
+                
+                
+def get_plugin_report_filters():
+    return report_filters.items()
+
+def get_plugin_template_dirs():
+    return report_template_dirs
+            
 def get_plugins(application):
     """
     Get a list of plugins for a given application
@@ -260,25 +419,7 @@ def get_plugins(application):
     list of fully resolved module paths
 
     """
-    import glob
-    plugin_paths = []
-
-    for config_dir in config_dirs:
-        plugin_dir = os.path.join(config_dir, 'plugins', application)
-
-        try:
-            reg_files = glob.glob(os.path.join(plugin_dir, '*.txt'))
-        except OSError:
-            reg_files = []
-
-        for fn in reg_files:
-            with open(fn, 'r') as f:
-                plugin_paths.extend(f.readlines())
-
-    logger.debug('plugin paths: ' +  str(plugin_paths))
-        
-    return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
-
+    return plugins[application]
 
 def get_custom_protocols():
     """

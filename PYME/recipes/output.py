@@ -357,47 +357,6 @@ class HDFOutput(OutputModule):
     #                 [Item(tn) for tn in params] + [Item('_'), ] +
     #                 [Item(tn) for tn in outputs], buttons=['OK', 'Cancel'])
 
-#from jinja2 import Environment, PackageLoader
-import jinja2
-import os
-class UnifiedLoader(jinja2.BaseLoader):
-    def get_source(self, environment, template):
-        from PYME.IO import unifiedIO
-        try:
-            if os.path.exists(os.path.join(os.path.dirname(__file__), template)):
-                source = unifiedIO.read(os.path.join(os.path.dirname(__file__), template)).decode('utf-8')
-            else:
-                source = unifiedIO.read(template).decode('utf-8')
-        except:
-            logger.exception('Error loading template')
-            raise jinja2.TemplateNotFound
-        return source, template, lambda: False
-
-env = jinja2.Environment(loader=UnifiedLoader())
-from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
-import base64
-from PYME.IO import rgb_image
-env.filters['movieplot'] = graphing_filters.movieplot2
-env.filters['plot'] = graphing_filters.plot
-env.filters['b64encode'] = base64.b64encode
-env.filters['base64_image'] = rgb_image.base64_image
-
-def round_sf(num, sf=3):
-    import math
-
-    fmt = '%' + ('.%d' % sf) + 'g'
-    #rnd = float(fmt % f)
-    rnd = round(num, sf - int(math.floor(math.log10(num))) - 1)
-    if rnd > 1e6:
-        return fmt % rnd
-    elif rnd >= 10 ** sf:
-        return '%d' % rnd
-    else:
-        fmt = '%' + ('.%d' % (sf - math.floor(math.log10(rnd)) - 1)) + 'f'
-        return fmt % rnd
-    
-env.filters['roundsf'] = round_sf
-
 
 @register_module('ReportOutput')
 class ReportOutput(OutputModule):
@@ -440,7 +399,8 @@ class ReportOutput(OutputModule):
     template = CStr('templates/report.html')
     
     def generate(self, namespace, recipe_context={}):
-        template = env.get_template(self.template)
+        from PYME import reports
+        template = reports.env.get_template(self.template)
         v = namespace[self.inputName]
         return template.render(data=v, namespace=namespace, recipe_context=recipe_context)
 
@@ -469,7 +429,7 @@ class ReportOutput(OutputModule):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        with open(out_filename, 'w') as f:
+        with open(out_filename, 'wb') as f:
             f.write(self.generate(namespace, recipe_context=context).encode('utf-8'))
 
 

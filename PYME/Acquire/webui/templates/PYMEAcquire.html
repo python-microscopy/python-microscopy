@@ -5,415 +5,169 @@
     <title>PYMEAcquire</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <style>
-        .table-sm {
-            font-size: 10pt;
-        }
-
-        [role="main"] {
-            padding-top: 48px; /* Space for fixed navbar */
-            padding-left: 0;
-            padding-right: 0;
-            background-color: black;
-        }
-
-        body {
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .sidebar {
-          position: fixed;
-          top: 0;
-          bottom: 0;
-          left: 0;
-          z-index: 100; /* Behind the navbar */
-          padding: 48px 0 0; /* Height of navbar */
-          box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-        }
-
-        .sidebar-sticky {
-          position: relative;
-          top: 0;
-          height: calc(100vh - 48px);
-          padding-top: .5rem;
-          overflow-x: hidden;
-          overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-        }
-
-        @supports ((position: -webkit-sticky) or (position: sticky)) {
-          .sidebar-sticky {
-            position: -webkit-sticky;
-            position: sticky;
-          }
-        }
-
-        .basebar {
-            position:relative;
-            bottom: 0;
-            height: 32px;
-            overflow: hidden;
-        }
-
-        .mainfh {
-            height: calc(100vh );
-            overflow-y: hidden;
-        }
-
-        .mainscroll {
-            height: calc(100% - 32px);
-            overflow-y: scroll;
-        }
-
-        .uitabs {
-            position:absolute;
-            bottom: 0;
-            height:400px;
-            width:100%;
-            overflow: hidden;
-
-        }
-
-        .uitab {
-            height:100%;
-            width:100%;
-            overflow: hidden;
-
-        }
-
-    </style>
+{#    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"#}
+{#          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">#}
+    <link rel="stylesheet" href="/static/css/pyme-bootstrap.css">
+    <link rel="stylesheet" href="/static/css/pymeacquire.css">
 </head>
 <body>
 
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-  <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PYMEAcquire - now with more web</a>
-  <ul class="navbar-nav px-3">
-    <li class="nav-item text-nowrap">
-        {% if authenticated_as %}
-            <span class="navbar-text">Signed in as {{ authenticated_as }}</span><a class="nav-link" href="/logout">Sign out</a>
-        {% else %}
-        <a class="nav-link" href="/login">Sign in</a>
-        {% endif %}
-    </li>
-  </ul>
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">PYMEAcquire - now with more web</a>
+    <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+            {% if authenticated_as %}
+                <span class="navbar-text">Signed in as {{ authenticated_as }}</span>
+                <a class="nav-link" href="/logout">Sign out</a>
+            {% else %}
+                <a class="nav-link" href="/login">Sign in</a>
+            {% endif %}
+        </li>
+    </ul>
 </nav>
 
 <div class="container-fluid">
     <div class="row">
-        <nav class="col-md-3 d-none d-md-block bg-light sidebar">
-      <div class="sidebar-sticky">
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-              <span>Display</span>
-          </h6>
+        <nav class="col-md-3 col-lg-3 d-md-block sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading"><span>Display</span></h6>
 
-          <form class="form-inline" action="javascript:void(0);">
-            <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text">Range</span></div>
-                <input type="number" id="display_min" value="950" class="form-control">
-                <input type="number" id="display_max" value="1050" class="form-control">
+                <form class="form-inline" action="javascript:void(0);">
+                    <div class="input-group input-group-sm">
+                        <div class="form-control-sm"><span class="">Range&nbsp;</span></div>
+                        <input type="number" id="display_min" value="950" class="form-control form-control-sm" style="width: 50px">
+                        <input type="number" id="display_max" value="1050" class="form-control form-control-sm" style="width: 50px">
 
-                <div class="input-group-append">
-                    <span class="input-group-text"><label><input type="checkbox" name="autoscale" id="display_autoscale"class="form-control" style="height: 10pt;">&nbsp auto</label></span>
+                        <div class="input-group-append">
+                            <span class="form-control-sm"><label><input type="checkbox" name="autoscale"
+                                                                         id="display_autoscale" class="form-control form-control-sm"
+                                                                         style="height: 10pt;">&nbsp auto</label></span>
+                        </div>
+                    </div>
+
+                    <div class="input-group input-group-sm mt-1">
+                        <div class="form-control-sm"><span class="">Zoom</span></div>
+                        <select type="number" id="display_zoom" value="100" class="form-control form-control-sm">
+                            <option>25</option>
+                            <option>50</option>
+                            <option selected="selected">100</option>
+                            <option>200</option>
+                            <option>400</option>
+                        </select>
+                        <div class="form-control-sm"><span class="">&percnt;</span></div>
+
+                    </div>
+
+                </form>
+
+                {% raw %}
+                <div id="hw">
+                    <h6 class="sidebar-heading"><span>Camera</span></h6>
+
+                    <form class="form-inline" action="javascript:void(0);">
+                        <div class="input-group input-group-sm">
+                            <label class="form-control-sm">Integration time [ms]:&nbsp;
+                                <input type="number" id="int_time" class="form-control form-control-sm"
+                                       v-model.lazy.number="integration_time_ms"
+                                       v-on:change="update_server_state({'Camera.IntegrationTime': $event.target.value/1000.});">
+                            </label>
+                        </div>
+                    </form>
+
+
+                    <h6 class="sidebar-heading"><span>Lasers</span></h6>
+
+                    <form class="form-inline" action="javascript:void(0);">
+                        <laser-control v-for="lname in laser_names" :name="lname" :key="lname"
+                                       :power="state['Lasers.' + lname + '.Power']"
+                                       :on="state['Lasers.' + lname + '.On']" :max_power="state['Lasers.' + lname + '.MaxPower']"></laser-control>
+                    </form>
+
+                    <h6 class="sidebar-heading"><span>Positioning</span></h6>
+                    <form class="form-inline mt-1" action="javascript:void(0);">
+                        <position-control v-model.number="state['Positioning.x']" axis="x" :delta="1"></position-control>
+                        <position-control v-model.number="state['Positioning.y']" axis="y" :delta="1"></position-control>
+                        <position-control v-model.number="state['Positioning.z']" axis="z" :delta="0.2"></position-control>
+
+                    </form>
+
+                    <h6 class="sidebar-heading"><span>Acquisition</span></h6>
+
+                    <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
+                    <div v-if="spooler.status.spooling" class="mt-1 text-center">
+                        <p>Currently spooling, {{ spooler.status.frames_spooled }} frames spooled</p>
+                        <button class="btn btn-danger" onclick="$.ajax('/spool_controller/stop_spooling');">Stop spooling</button>
+                    </div>
+                    <div v-else class="mt-1 text-center">
+                        <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start spooling</button>
+                    </div>
+
                 </div>
-            </div>
-
-              <div class="input-group input-group-sm">
-                <div class="input-group-prepend"><span class="input-group-text">Zoom</span></div>
-                <input type="number" id="display_zoom" value="100" class="form-control">
-                  <div class="input-group-append"><span class="input-group-text">&percnt;</span></div>
+                {% endraw %}
 
             </div>
-
-          </form>
-
-          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-              <span>Camera</span>
-          </h6>
-          <form class="form-inline" action="javascript:void(0);">
-              <div class="input-group input-group-sm">
-              <label class="form-control-sm">Integration time [ms]: <input type="number" id="int_time" value="10.0" class="form-control form-control-sm"></label>
-              </div>
-          </form>
-
-      </div>
-    </nav>
-<main role="main" class="col-md-9 ml-sm-auto col-lg-9 px-0 mainfh">
-    <div class="mainscroll">
-
-    <canvas id="cam_canvas"></canvas>
+        </nav>
 
 
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-9 px-0 mainfh">
+            <div class="mainscroll">
+
+                <canvas id="cam_canvas"></canvas>
 
 
+                <div class="tab-content uitabs" id="myTabContent">
+                    <div class="tab-pane fade uitab" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
+                    <div class="tab-pane fade uitab bg-dark" id="state" role="tabpanel" aria-labelledby="state-tab">
+                        <div id="app" style=" width: 100%; height: 400px;  overflow: scroll;">
+                            <table class="table table-sm table-dark">
+                                {% raw %}
+                                <tr v-for="(val, prop_name) in state" :key="prop_name">
+                                    <td>{{ prop_name }}</td>
+                                    <td>{{ val }}</td>
+                                </tr>
+                                {% endraw %}
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show active uitab bg-dark" id="console" role="tabpanel"
+                         aria-labelledby="console-tab">
+                        <iframe src="http://localhost:8765/" scrolling="no"
+                                style=" width: 100%; height: 400px;  overflow: hidden; border: none"
+                                id="console-frame"></iframe>
+                    </div>
+                </div>
 
-        <div class="tab-content uitabs" id="myTabContent">
-  <div class="tab-pane fade uitab" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
-  <div class="tab-pane fade uitab bg-dark" id="state" role="tabpanel" aria-labelledby="state-tab">
-      <div id="app"  style=" width: 100%; height: 400px;  overflow: scroll;">
-        <table class="table table-sm table-dark">
-            {% raw %}
-            <tr v-for="(val, prop_name) in state" :key="prop_name"><td>{{ prop_name }}</td><td>{{ val }}</td></tr>
-            {% endraw %}
-        </table>
-    </div>
-  </div>
-  <div class="tab-pane fade show active uitab bg-dark" id="console" role="tabpanel" aria-labelledby="console-tab">
-      <iframe src="http://localhost:8765/" scrolling="no" style=" width: 100%; height: 400px;  overflow: hidden; border: none" id="console-frame"></iframe>
-  </div>
-</div>
+            </div>
 
-    </div>
+            <div class="basebar navbar-dark bg-dark">
+                <ul class="nav nav-tabs-bottom" id="myTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
+                           aria-selected="false">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="state-tab" data-toggle="tab" href="#state" role="tab"
+                           aria-controls="state" aria-selected="false">State</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" id="console-tab" data-toggle="tab" href="#console" role="tab"
+                           aria-controls="contact" aria-selected="false">Console</a>
+                    </li>
+                </ul>
+            </div>
 
-    <div class="basebar navbar-dark bg-dark">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-          <li class="nav-item">
-            <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="false">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="state-tab" data-toggle="tab" href="#state" role="tab" aria-controls="state" aria-selected="false">State</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" id="console-tab" data-toggle="tab" href="#console" role="tab" aria-controls="contact" aria-selected="false">Console</a>
-          </li>
-        </ul>
-    </div>
-
-</main>
+        </main>
 
     </div>
 </div>
-
 
 
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-<script>
-    // Long Polling to update image
-    function poll_png(){
-        $.ajax({ url: "/get_frame_png_b64", success: function(data){
-            $("#cam_image").attr("src", "data:image/png;base64,"+data);
-            }, dataType: "text", complete: function(jqXHR, status){
-                if (status == 'success') {poll_png();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-            }, timeout: 30000 });
-    }
-
-    function decode_pzf(buffer){
-        dv = new DataView(buffer);
-        fmt_id = new TextDecoder("utf-8").decode(new Uint8Array(buffer, 0, 2));
-
-        if (fmt_id != "BD"){throw "Invalid PZF format"}
-        //console.log(fmt_id);
-        version = dv.getUint8(2);
-        fmt = dv.getUint8(3); //0 : u1, 1:u2, 2 : f4
-
-        comp = dv.getUint8(4); // 0: raw, 1 : huffcode, 2 : chuncked huffcode
-        quant = dv.getUint8(5); // 0: unquantized, 1: sqrt quantized
-        dim_order = dv.getUint8(6); //'C' or 'F'
-
-        //RESERVED (1 byte)
-        //SequenceID = int64 (offset=8)
-        //FrameNum = int32 (offset =16)
-
-        width = dv.getUint32(20, true);
-        height = dv.getUint32(24, true);
-        depth = dv.getInt32(28, true);
-
-        //FrameTimestamp = uint64, offset= 32
-
-        quant_offset = dv.getFloat32(40, true);
-        quant_scale = dv.getFloat32(44, true);
-
-        if (version >= 3){
-            data_offset = dv.getUint32(48, true);
-        } else {
-            data_offset = 48;
-        }
-
-        data = new Uint8Array(buffer, data_offset);
-        //console.log(data);
-
-        if (comp != 0){
-            console.log(comp);
-            console.log('Data is compressed, decompression not yet implemented, so following will fail');
-            data = huffman_decompress(data);
-        }
-
-        if (quant == 1){
-            //Data is quantized, dequantize
-            data = new Float32Array(data);
-            data = data.map(function(d){
-                d= d*quant_scale;
-                return d*d + quant_offset;
-            });
-
-            switch(fmt){
-                case 0:
-                    //uint8
-                    data = new Uint8Array(data);
-                    break;
-                case 1:
-                    //uint16
-                    data = new Uint16Array(data);
-                    break;
-                case 2:
-                    //float32
-                    break;
-                default:
-                    console.log('Unrecognised data type')
-            }
-        } else {
-            switch(fmt) {
-                case 0:
-                    //uint8
-                    break;
-                case 1:
-                    //uint16
-                    //console.log(data.buffer, data.byteOffset);
-                    data = new Uint16Array(data.buffer, data.byteOffset);
-                    break;
-                case 2:
-                    //float32
-                    data = new Float32Array(data.buffer, data.byteOffset);
-                    break;
-                default:
-                    console.log('Unrecognised data type')
-            }
-        }
-
-        //console.log(data);
-        return {
-            data: data,
-            width: width,
-            height: height,
-            depth: depth
-            // TODO - add more of the metadata
-        }
-    }
-
-    var _min = 0;
-    var _max = 1e9;
-
-    function map_array(data, cmin, cmax){
-        out = new Uint8ClampedArray(data.length*4);
-
-        //record min and max
-        _min = 1e9;
-        _max = 0;
-
-        for (j = 0; j< data.length; j++){
-            k = j*4;
-            v = data[j];
-            _min = Math.min(v, _min);
-            _max = Math.max(v,_max);
-            v = (v - cmin)/(cmax-cmin);
-            //console.log(v)
-            v_ = 255*v; //simple grayscale map - FIXME
-            out[k] = v_;
-            out[k+1] = v_;
-            out[k+2] = v_;
-            out[k+3] = 255; //alpha
-        }
-
-        return out
-    }
-
-    // Long Polling to update image
-    function poll_array(){
-        $.ajax({
-            url: "/get_frame_pzf",
-            success: function(data){
-                //console.log(data);
-                decoded = decode_pzf(data);
-                //console.log(decoded);
-                im = new ImageData(map_array(decoded.data, parseFloat($("#display_min").val()), parseFloat($("#display_max").val())), decoded.width, decoded.height);
-                if ($("#display_autoscale").is(":checked")){
-                    $("#display_min").val(_min);
-                    $("#display_max").val(_max);
-                }
-                var zoom = parseFloat($("#display_zoom").val())/100.;
-                var canvas = document.getElementById("cam_canvas");
-                $("#cam_canvas").attr({width: decoded.width*zoom, height : decoded.height*zoom});
-                var ctx = canvas.getContext('2d');
-                //ctx.scale(zoom, zoom);
-
-                createImageBitmap(im, options={resizeWidth: decoded.width*zoom, resizeHeight:decoded.height*zoom, resizeQuality:'pixelated'}).then(function(bmp){
-                    ctx.drawImage(bmp, 0, 0);
-                });
-                //console.log(im);
-                //ctx.putImageData(im, 0, 0);
-
-                },
-            //dataType: "text",
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_array();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                },
-            timeout: 30000,
-            xhrFields: {responseType: 'arraybuffer'}
-        });
-    }
-
-    poll_array();
-
-    var scope_state;
-
-    var app = new Vue({
-        el: '#app',
-        data: {
-            message: 'Hello Vue!',
-            state: scope_state
-            }
-    });
-
-    function get_state(){
-        $.ajax({
-            url: "/get_scope_state",
-            success: function(data){
-                app.state=data;
-                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            }
-
-        })
-    }
-
-    get_state();
-
-    function poll_state(){
-        $.ajax({
-            url: "/scope_state_longpoll",
-            success: function(data){ console.log(data);
-                app.state=data;
-                $("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            },
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                }
-
-        })
-    }
-
-    poll_state();
-
-    function update_server_state(state){
-        $.ajax({
-            url : "/update_scope_state",
-            data : JSON.stringify(state),
-            processData: false,
-            type: 'POST',
-            error: function(jqXHR, textStatus, errorThrown){
-                console.log("failed to update state");
-                console.log(textStatus);
-                console.log(errorThrown);
-            }
-        })
-    }
-
-    $("#int_time").change(function(){update_server_state({'Camera.IntegrationTime': $("#int_time").val()/1000.})})
-
-    $(window).on('load', function(){$("#home-tab").tab('show');});
-
-
-</script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
+<script src="/static/js/pzf.js"></script>
+<script src="/static/js/pymeacquire.js"></script>
 </body>
 </html>

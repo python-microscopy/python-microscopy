@@ -55,15 +55,14 @@ dz = None
 def genTheoreticalModel(md):
     global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
 
-    if not dx == md.voxelsize.x*1e3 and not dy == md.voxelsize.y*1e3 and not dz == md.voxelsize.z*1e3:
+    vs = md.voxelsize_nm
+    if not dx == vs.x and not dy == vs.y and not dz == vs.z:
 
-        IntXVals = 1e3*md.voxelsize.x*scipy.mgrid[-20:20]
-        IntYVals = 1e3*md.voxelsize.y*scipy.mgrid[-20:20]
-        IntZVals = 1e3*md.voxelsize.z*scipy.mgrid[-20:20]
+        IntXVals = vs.x*scipy.mgrid[-20:20]
+        IntYVals = vs.y*scipy.mgrid[-20:20]
+        IntZVals = vs.z*scipy.mgrid[-20:20]
 
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = scipy.arange(0,1.01,.01)
 
@@ -166,9 +165,10 @@ class PSFFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
+        Z = vs.z*scipy.mgrid[self.slicesUsed[2]]
         P = scipy.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
         #pass
@@ -226,9 +226,10 @@ class BiplaneFitFactory:
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on        
-        Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        vs = self.metadata.voxelsize_nm
+        Xg = vs.x*scipy.mgrid[xslice]
+        Yg = vs.y*scipy.mgrid[yslice]
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly

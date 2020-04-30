@@ -121,7 +121,7 @@ class FitInfoPanel(wx.Panel):
         if not index is None:
             r = self.fitResults[index]['fitResults']
 
-            nPh = (r['A']*2*math.pi*(r['sigma']/(1e3*self.mdh.getEntry('voxelsize.x')))**2)
+            nPh = (r['A']*2*math.pi*(r['sigma']/(self.mdh.voxelsize_nm.x))**2)
             nPh = nPh*self.mdh.getEntry('Camera.ElectronsPerCount')/self.mdh.getEntry('Camera.TrueEMGain')
 
             bPh = r['background']
@@ -131,7 +131,7 @@ class FitInfoPanel(wx.Panel):
 
             s += 'Number of photons: %3.2f' %nPh
 
-            deltaX = (r['sigma']**2 + ((1e3*self.mdh.getEntry('voxelsize.x'))**2)/12)/nPh + 8*math.pi*(r['sigma']**4)*(bPh + ron**2)/(nPh*1e3*self.mdh.getEntry('voxelsize.x'))**2
+            deltaX = (r['sigma']**2 + ((self.mdh.voxelsize_nm.x)**2)/12)/nPh + 8*math.pi*(r['sigma']**4)*(bPh + ron**2)/(nPh*self.mdh.voxelsize_nm.x)**2
 
             s += '\nPredicted accuracy: %3.2f' % math.sqrt(deltaX)
         else:
@@ -158,8 +158,8 @@ class FitInfoPanel(wx.Panel):
     def DrawOverlays(self, vp, dc):
         do = vp.do
         frameResults = self.fitResults[self.fitResults['tIndex'] == do.zp]
-        vx = self.mdh['voxelsize.x']*1e3
-        vy = self.mdh['voxelsize.y']*1e3
+        
+        vx, vy, _ = self.mdh.voxelsize_nm
         
         dc.SetBrush(wx.TRANSPARENT_BRUSH)
         
@@ -268,8 +268,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             if 'NR' in self.mdh['Analysis.FitModule']:
                 #for fits which take chromatic shift into account when selecting ROIs
                 #pixel size in nm
-                vx = 1e3*self.mdh['voxelsize.x']
-                vy = 1e3*self.mdh['voxelsize.y']
+                vx, vy, _ = self.mdh.voxelsize_nm
                 
                 #position in nm from camera origin
                 x_ = ((slux[0] + slux[1])/2. + roi_x0)*vx
@@ -342,9 +341,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             if 'NR' in self.mdh['Analysis.FitModule']:
                 # for fits which take chromatic shift into account when selecting ROIs
                 # pixel size in nm
-                vx = 1e3 * self.mdh['voxelsize.x']
-                vy = 1e3 * self.mdh['voxelsize.y']
-
+                vx, vy, _ = self.mdh.voxelsize_nm
+                
                 # position in nm from camera origin
                 x_ = ((slux[0] + slux[1]) / 2. + roi_x0) * vx
                 y_ = ((sluy[0] + sluy[1]) / 2. + roi_y0) * vy

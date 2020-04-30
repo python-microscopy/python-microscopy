@@ -57,14 +57,15 @@ class GaussianFitResult:
         return self.fitResults[4]
 
     def FWHMnm(self):
-        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize.x*1e3
+        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize_nm.x
 
     def correctedFWHM(self, FWHM_PSF):
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
 
     def renderFit(self):
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
         return f_gauss2d(self.fitResults, X, Y)
         
 def replNoneWith1(n):
@@ -117,9 +118,10 @@ class GaussianFitFactory:
         #average in z
         dataMean = dataROI.mean(2)
 
-        #generate grid to evaluate function on        
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        vs = self.metadata.voxelsize_nm
+        vs.x*scipy.mgrid[xslice]
+        vs.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude

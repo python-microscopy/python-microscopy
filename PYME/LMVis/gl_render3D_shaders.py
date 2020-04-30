@@ -72,6 +72,7 @@ else:
 name = 'ball_glut'
 
 from . import views
+import dispatch
 
 
 class SelectionSettings(object):
@@ -160,6 +161,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.view_port_size = (self.Size[0], self.Size[1])
         
         self._old_bbox = None
+
+        self.layer_added = dispatch.Signal()
     
     @property
     def xc(self):
@@ -268,6 +271,13 @@ class LMGLShaderCanvas(GLCanvas):
 
     def OnMove(self, event):
         self.Refresh()
+        
+    def add_layer(self, layer, connect=True):
+        self.layers.append(layer)
+        if connect:
+            layer.on_update.connect(self.refresh)
+            
+        self.layer_added.send(self)
 
     def setOverlayMessage(self, message=''):
         # self.messageOverlay.set_message(message)
@@ -375,8 +385,18 @@ class LMGLShaderCanvas(GLCanvas):
                 for l in self.underlays:
                     l.render(self)
     
+                
+                oit_layers = [] #layers which support order independent transparency - render these all together
                 for l in self.layers:
-                    l.render(self)
+                    if getattr(l.engine, 'use_oit', lambda l: False)(l) or getattr(l.engine, 'oit', False):
+                        #defer rendering
+                        oit_layers.append(l)
+                    else:
+                        l.render(self)
+                        
+                if len(oit_layers) > 0:
+                    self.render_oit_layers(oit_layers)
+                    
     
                 for o in self.overlays:
                     o.render(self)
@@ -390,6 +410,169 @@ class LMGLShaderCanvas(GLCanvas):
         glFlush()
 
         self.SwapBuffers()
+
+    def init_oit(self):
+        self._fb = glGenFramebuffers(1)
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+    
+        self._accumT = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self._accumT)
+    
+        self._revealT = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self._revealT)
+    
+        self._db = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
+    
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    def cleanup_oit(self):
+        glDeleteFramebuffers(1, self._fb)
+        glDeleteTextures(1, self._accumT)
+        glDeleteTextures(1, self._revealT)
+        glDeleteRenderbuffers(1, self._db)
+    
+    def resize_gl_oit(self, w, h):
+        #print('resize_gl')
+        self._oit_w = w
+        self._oit_h = h
+    
+        glViewport(0, 0, w, h)
+        #self._accumdata = np.zeros([4,w,h], 'f')
+    
+        #print('bind fb')
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+    
+        #print('bind accum texture')
+        glBindTexture(GL_TEXTURE_2D, self._accumT)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, None)
+    
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    
+        #print('framebuffer texture')
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self._accumT, 0)
+    
+        #print('bind reveal texture')
+        glBindTexture(GL_TEXTURE_2D, self._revealT)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, None)
+    
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+    
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self._revealT, 0)
+    
+        glBindTexture(GL_TEXTURE_2D, 0)
+    
+        #print('bind render buffer')
+        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._db)
+        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+    
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    
+    def render_oit_layers(self, layers):
+        # initialise OIT if not already done
+        if not hasattr(self, '_fb'):
+            self.init_oit()
+            
+        # reallocate OIT textures if window has changed size
+        w, h = self.view_port_size
+        if not ((getattr(self, '_oit_w', None) == w) and (getattr(self,'_oit_h', None) == h)):
+            self.resize_gl_oit(w, h)
+    
+    
+        # draw to an offscreen framebuffer
+        current_fb = glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING) #keep a reference to the current framebuffer so we can restore after we're done
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb) #bind our offscreen framebuffer
+    
+        #clear the offscreen framebuffer
+    
+        #glClearBufferfv(GL_COLOR, 0, (0., 0., 0., 1.))
+        #glClearBufferfv(GL_COLOR, 1, (1., 0., 0., 0.))
+        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearDepth(1.0)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    
+        #Copy depth buffer from opaque stuff rendered previously
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self._fb)
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+        glBlitFramebuffer(0, 0, self._oit_w, self._oit_h,
+                          0, 0, self._oit_w, self._oit_h,
+                          GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+    
+        #glDrawBuffer(GL_COLOR_ATTACHMENT0)
+        #glClear(GL_COLOR_BUFFER_BIT) #| GL_DEPTH_BUFFER_BIT)
+    
+        #clear the second colour attachment buffer
+        glDrawBuffers(1, [GL_COLOR_ATTACHMENT1, ])
+        glClearColor(1.0, 0.0, 0.0, 1.0)
+        glClear(GL_COLOR_BUFFER_BIT)
+    
+        glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
+        
+        #draw the OIT layers
+        for l in layers:
+            l.render(self)
+
+        # set the framebuffer back
+        glBindFramebuffer(GL_FRAMEBUFFER, current_fb)
+
+        #now do the compositing pass
+        with self.composite_shader as c:
+            # bind our pre-rendered textures
+
+            glActiveTexture(GL_TEXTURE0)
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self._accumT)
+            self._acc_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT)
+            glUniform1i(c.get_uniform_location('accum_t'), 0)
+
+            glActiveTexture(GL_TEXTURE1)
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, self._revealT)
+            self._reveal_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT)
+            glUniform1i(c.get_uniform_location('reveal_t'), 1)
+
+            glEnable(GL_BLEND)
+            glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+
+            # Draw triangles to display texture on
+            glColor4f(1., 1., 1., 1.)
+            glBegin(GL_QUADS)
+            glTexCoord2f(0., 0.) # lower left corner of image */
+            glVertex3f(-1, -1, 0.0)
+            glTexCoord2f(1., 0.) # lower right corner of image */
+            glVertex3f(1, -1, 0.0)
+            glTexCoord2f(1.0, 1.0) # upper right corner of image */
+            glVertex3f(1, 1, 0.0)
+            glTexCoord2f(0.0, 1.0) # upper left corner of image */
+            glVertex3f(-1, 1, 0.0)
+            glEnd()
+
+            #unbind our textures
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDisable(GL_TEXTURE_2D)
+
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDisable(GL_TEXTURE_2D)
+                
+    @property
+    def composite_shader(self):
+        from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
+        from PYME.LMVis.shader_programs.oit_compositor import OITCompositorProgram
+        if not hasattr(self, '_composite_shader'):
+            self._composite_shader = ShaderProgramFactory.get_program(OITCompositorProgram, self.gl_context)
+            
+        return self._composite_shader
 
     @property
     def object_rotation_matrix(self):
@@ -756,6 +939,16 @@ class LMGLShaderCanvas(GLCanvas):
         centre = 0.5*(bb[:3] + bb[3:])
         
         self.view.translation[0], self.view.translation[1], self.view.translation[2] = centre
+        
+    def fit_bbox(self):
+        bb = self.bbox
+        if bb is None:
+            return
+    
+        sz = (bb[3:] - bb[:3])
+    
+        self.view.scale = 1.5/max(np.abs(sz))
+        self.recenter_bbox()
 
     def set_view(self, view):
         self.view=view
@@ -925,6 +1118,9 @@ class LegacyGLCanvas(LMGLShaderCanvas):
 
 def showGLFrame():
     f = wx.Frame(None, size=(800, 800))
+    #sizer = wx.BoxSizer(wx.VERTICAL)
     c = LMGLShaderCanvas(f)
+    #sizer.Add(c, 1, wx.EXPAND, 0)
+    #f.SetSizer(sizer)
     f.Show()
     return c

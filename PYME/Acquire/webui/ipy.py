@@ -2,7 +2,7 @@
 """
 import tornado.web
 # This demo requires tornado_xstatic and XStatic-term.js
-import tornado_xstatic
+#import tornado_xstatic
 
 from terminado import TermSocket
 

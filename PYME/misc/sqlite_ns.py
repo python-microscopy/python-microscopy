@@ -12,6 +12,19 @@ def make_info(info):
     name, address, port, creation_time, URI = info
     return NSInfo(name, socket.inet_aton(address), port, creation_time, URI)
 
+def is_port_open(ip, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(1)
+    try:
+        s.connect((ip, int(port)))
+        s.shutdown(socket.SHUT_RDWR)
+        return True
+    except:
+        return False
+    finally:
+        s.close()
+
+
 class SQLiteNS(object):
     """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver using a locally held sqlite database
     
@@ -26,6 +39,8 @@ class SQLiteNS(object):
         tableNames = [a[0] for a in self._conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
         if not 'dns' in tableNames:
             self._conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
+            
+        self.remove_inactive_services()
     
     def register(self, name, URI):
         """ This only exists for principally for pyro compatibility - use register_service for non pyro uses
@@ -59,6 +74,13 @@ class SQLiteNS(object):
     
     def list(self, filterby=''):
         return [r[0] for r in self._conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
+    
+    def remove_inactive_services(self):
+        #test to see if we can open the port, if not, remove
+        for name, info in self.get_advertised_services():
+            if not is_port_open(socket.inet_ntoa(info.address), info.port):
+                self.unregister(name)
+            
     
     def __del__(self):
         try:

@@ -7,7 +7,6 @@ Created on Sat May 28 23:55:50 2016
 import wx
 import numpy as np
 import logging
-from PYME.Analysis.points.traveling_salesperson import sort, queue_opt
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +47,14 @@ ACTION_DEFAULTS = ['spoolController.StartSpooling',
 
 SORT_FUNCTIONS = {
     'None': lambda positions, scope_position: positions,
-    'TSP': sort.tsp_sort,
-    'QTSP': queue_opt.TSPQueue
 }
+
+try:
+    from PYME.Analysis.points.traveling_salesperson import sort as tspsort #avoid clobbering sort() builtin
+    from PYME.Analysis.points.traveling_salesperson import queue_opt
+    SORT_FUNCTIONS.update({'TSP': tspsort.tsp_sort, 'QTSP': queue_opt.TSPQueue})
+except ImportError:
+    pass
 
 class ActionPanel(wx.Panel):
     def __init__(self, parent, actionManager, scope):

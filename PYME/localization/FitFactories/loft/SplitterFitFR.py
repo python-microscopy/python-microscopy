@@ -150,9 +150,10 @@ class GaussianFitFactory:
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on        
-        Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        vs = self.metadata.voxelsize_nm
+        Xg = vs.x*scipy.mgrid[xslice]
+        Yg = vs.y*scipy.mgrid[yslice]
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -161,8 +162,8 @@ class GaussianFitFactory:
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
         #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
-        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*1e3*self.metadata.voxelsize.x
-        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*1e3*self.metadata.voxelsize.y
+        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*vs.x
+        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*vs.y
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 

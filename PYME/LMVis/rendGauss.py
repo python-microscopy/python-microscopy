@@ -128,8 +128,8 @@ def rendGaussNestedXYCorr(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=100, c
     
     for r1 in res:
         for r in r1.results:
-            xg = 1e3*r.metadata.voxelsize.x*(r.slicesUsed[0].start + r.slicesUsed[0].stop)/2
-            yg = 1e3*r.metadata.voxelsize.y*(r.slicesUsed[1].start + r.slicesUsed[1].stop)/2
+            xg = r.metadata.voxelsize_nm.x*(r.slicesUsed[0].start + r.slicesUsed[0].stop)/2
+            yg = r.metadata.voxelsize_nm.y*(r.slicesUsed[1].start + r.slicesUsed[1].stop)/2
             
             dx = r.x0() - xg
             dy = r.y0() - yg
