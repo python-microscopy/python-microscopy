@@ -104,14 +104,14 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         self.solver = FitModelWeighted
 
     def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):
-        X, Y, Z, data, background, sigma, xslice, yslice, zslice = self.get3DROIAtPoint(x, y, z, roiHalfSize, axialHalfSize, dim=3)
+        X, Y, Z, data, background, sigma, xslice, yslice, zslice = self.get3DROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
 
         dataMean = data - background
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
 
-        vx, vy, vz = self.pixel_size
+        vx, vy, vz = self.metadata.voxelsize_nm
 
         x0 = vx*x
         y0 = vy*y
@@ -176,9 +176,7 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         zslice = slice(zl,z+axialHalfSize+1)
         X, Y, Z = np.mgrid[xslice, yslice, zslice]
 
-        vx = 1e3*md.voxelsize.x
-        vy = 1e3*md.voxelsize.y
-        vz = 1e3*md.voxelsize.z
+        vx, vy, vz = md.voxelsize_nm
 
         X = vx*X
         Y = vy*Y
