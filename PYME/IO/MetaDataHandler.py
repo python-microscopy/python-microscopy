@@ -149,6 +149,8 @@ def origin_nm(mdh, default_pixel_size=1.):
 
 
     if 'Origin.x' in mdh.getEntryNames():
+        # Used in composite images, cropped images, and renderings. Takes precendence if defined.
+        # Example in PYME.LMVis.renderers.ColourRenderer
         return mdh['Origin.x'], mdh['Origin.y'], mdh['Origin.z']
 
     elif ('Camera.ROIPosX' in mdh.getEntryNames()) or ('Camera.ROIOriginX' in mdh.getEntryNames()):
