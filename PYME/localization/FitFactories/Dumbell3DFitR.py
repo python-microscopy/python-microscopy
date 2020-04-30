@@ -38,8 +38,8 @@ def f_dumbell3d(p, X, Y, Z):
      Note: Assumes sames sigma for both Gaussian (dumbell). """
     A, x0, y0, z0, x1, y1, z1, sxy, sz, b = p
         
-    r0 = A*np.exp(-((X-x0)**2 + (Y-y0)**2)/(2*sxy**2) - ((Z-z0)**2)/(2*sz**2))
-    r1 = A*np.exp(-((X-x1)**2 + (Y-y1)**2)/(2*sxy**2) - ((Z-z1)**2)/(2*sz**2))
+    r0 = A*np.exp(-((X[:,None, None]-x0)**2 + (Y[None,:,None]-y0)**2)/(2*sxy**2) - ((Z[None,None, :]-z0)**2)/(2*sz**2))
+    r1 = A*np.exp(-((X[:,None, None]-x1)**2 + (Y[None,:,None]-y1)**2)/(2*sxy**2) - ((Z[None,None, :]-z1)**2)/(2*sz**2))
     r = r0+r1+b
     return r
 
@@ -174,13 +174,12 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
         xslice = slice(xl,x+roiHalfSize+1)
         yslice = slice(yl,y+roiHalfSize+1)
         zslice = slice(zl,z+axialHalfSize+1)
-        X, Y, Z = np.mgrid[xslice, yslice, zslice]
 
         vx, vy, vz = md.voxelsize_nm
 
-        X = vx*X
-        Y = vy*Y
-        Z = vz*Z
+        X = vx*np.mgrid[xslice]
+        Y = vy*np.mgrid[yslice]
+        Z = vz*np.mgrid[zslice]
 
         return (f_dumbell3d(params, X, Y, Z),vx*xl,vy*yl,vz*zl)
 
