@@ -90,12 +90,26 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
+    slicesUsed = fmtSlicesUsed(slicesUsed)
+
+    res = np.zeros(1, dtype=fresultdtype)
+    
+    n_params = len(fitResults)
+
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('7f4')[:n_params] = fitResults
+
     if fitErr is None:
-        fitErr = -5e3*np.ones(fitResults.shape, 'f')
+        res['fitError'].view('7f4')[:] = -5e3
+    else:
+        res['fitError'].view('7f4')[:n_params] = fitErr
+        
+    res['resultCode'] = resultCode
+    res['slicesUsed'] = slicesUsed
+        
+    return res
 
-    tIndex = metadata.tIndex
-
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
+    # return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
 class Gauss3dFitFactory:
     def __init__(self, data, metadata, background=None, **kwargs):
