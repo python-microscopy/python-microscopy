@@ -40,7 +40,7 @@ ujson
 jinja2
 #dispatch
 #pycairo
-#pymecompress >=0.1.4
+#pymecompress >=0.2
 six
 future
 #pywin32 [win]
