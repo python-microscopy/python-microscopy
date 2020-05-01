@@ -48,7 +48,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], xu, yu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], x, y, n_bins, bin_size)
-            dww = w*d/dw
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
             hist += dww
     else:
@@ -63,11 +63,11 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], z[_i], xu, yu, zu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], z[_i], x, y, z, n_bins, bin_size)
-            dww = w*d/dw
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
             hist += dww
 
-    K = (mask_area / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
+    K = (float(mask_area) / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
 
     # return bins, K-function
     return bb, K
