@@ -41,4 +41,5 @@ PYME/experimental/_triangle_mesh.c
 PYME/IO/buffer_helpers.c
 PYME/Deconv/fftw_wisdom
 PYME/Analysis/points/traveling_salesperson/two_opt_utils.c
-
+pyme-bootstrap/node_modules/*
+*64.pkg
