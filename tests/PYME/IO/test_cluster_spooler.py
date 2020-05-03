@@ -8,7 +8,7 @@ import time
 import sys
 
 import pytest
-pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
+#pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
 
 procs = []
 tmp_root = None

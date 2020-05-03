@@ -240,6 +240,14 @@ class Spooler:
     def status(self):
         return {'spooling' : self.spoolOn,
                 'frames_spooled' : self.imNum}
+    
+    def cleanup(self):
+        """ over-ride to do any cleanup"""
+        pass
+    
+    def finished(self):
+        """ over-ride in derived classes to indicate when buffers flushed"""
+        return True
         
         
     def __del__(self):

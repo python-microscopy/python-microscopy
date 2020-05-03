@@ -128,6 +128,9 @@ class TabularBase(object):
             if metadata is not None:
                 f.updateMetadata(metadata)
                 
+            #wait until data is written
+            f.flush()
+                
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
     
