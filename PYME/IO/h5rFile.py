@@ -253,3 +253,7 @@ class H5RFile(object):
         """
         with self._flush_condition:
             self._flush_condition.wait(timeout=2*self.FLUSH_INTERVAL)
+            
+    def wait_close(self):
+        self.keepAliveTimeout = 0
+        self._pollThread.join(1.5*self.KEEP_ALIVE_TIMEOUT)
