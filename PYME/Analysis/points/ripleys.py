@@ -76,7 +76,8 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
     vx, vy, vz = mask.voxelsize
     x0_m, y0_m, z0_m = mask.origin
     x0_p, y0_p, z0_p = coord_origin
-    stride_x, stride_y, stride_z = [max(1, int(sampling / v)) for v in [vx, vy, vz]]
+    safe_div = lambda x, y: int(x/y) if y > 0 else 0
+    stride_x, stride_y, stride_z = [max(1, safe_div(sampling, v)) for v in [vx, vy, vz]]
     
     if three_d:
         #convert mask to boolean image
