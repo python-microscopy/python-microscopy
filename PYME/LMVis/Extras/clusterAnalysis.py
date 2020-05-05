@@ -402,13 +402,12 @@ class ClusterAnalyser:
         import matplotlib.pyplot as plt
 
         pipeline = self.visFr.pipeline
-        recipe = pipeline.recipe
     
         r = Ripleys(inputPositions='positions',
                     inputMask='mask') #NB - need to set mask input here as otherwise it defaults to an empty string
 
         if r.configure_traits(kind='modal'):
-            result = recipe.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)
+            result = r.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)
     
             fig = plt.figure()
             ax = fig.add_subplot(111)
