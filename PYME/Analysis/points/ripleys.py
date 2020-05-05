@@ -137,17 +137,22 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, threaded=Fal
     else:
         if three_d:
             if not bbox:
-                bbox = [x.min(), y.min(), z.min(), x.max(), y.max(), z.max()]
+                bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
                 
             xu, yu, zu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling, bbox[2]:bbox[5]:sampling]
             mask_area = np.prod((bbox[3:] - bbox[:3]))
         else:
             if not bbox:
-                bbox = [x.min(), y.min(), x.max(), y.max()]
+                bbox = np.array([x.min(), y.min(), x.max(), y.max()])
     
-            xu, yu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling]
+            xu, yu = np.mgrid[bbox[0]:bbox[2]:sampling, bbox[1]:bbox[3]:sampling]
             zu = None
             mask_area = np.prod((bbox[2:] - bbox[:2]))
+
+    xu = xu.ravel()
+    yu = yu.ravel()
+    if zu is not None:
+        zu = zu.ravel()
             
     return ripleys_k_from_mask_points(x=x, y=y, z=z,
                                       xu=xu, yu=yu, zu=zu,
