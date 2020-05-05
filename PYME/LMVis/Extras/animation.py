@@ -57,7 +57,7 @@ class VideoPanel(DockedPanel):
         self.next_view_id = 0
 
     def create_buttons(self, vertical_sizer):
-        grid_sizer = wx.GridSizer(3, 3)
+        grid_sizer = wx.GridSizer(3, 3, 3)
         # generate the buttons
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
         delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
