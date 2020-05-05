@@ -382,7 +382,7 @@ class ClusterAnalyser:
 
         dlg = wx.SingleChoiceDialog(
             None, 'choose the image which contains the mask to use', 'Use Mask',
-            image.openImages.keys(),
+            list(image.openImages.keys()),
             wx.CHOICEDLG_STYLE
         )
 
