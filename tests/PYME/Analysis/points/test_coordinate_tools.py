@@ -31,7 +31,7 @@ def test_find_principal_axes():
     y = np.zeros_like(x)
     z = y
 
-    standard_deviations, principal_axes = coordinate_tools.find_principal_axes(x, y, z, sample_fraction=1.)
+    standard_deviations, principal_axes = coordinate_tools.find_principle_axes(x, y, z, sample_fraction=1.)
 
     np.testing.assert_array_equal([0., 0.], standard_deviations[1:])
     np.testing.assert_almost_equal(np.std(x), standard_deviations[0], decimal=0)

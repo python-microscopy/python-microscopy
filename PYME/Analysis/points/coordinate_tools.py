@@ -43,10 +43,37 @@ def cartesian_to_spherical(x, y, z, azimuth_0=0, zenith_0=0):
     zenith = np.mod(zen - zenith_0, np.pi)
     return azimuth, zenith, r
 
-def find_principal_axes(x, y, z, sample_fraction=0.5):
+def find_principle_axes(x, y, z, sample_fraction=None):
+    """
+
+    Parameters
+    ----------
+    x: list-like
+        x positions
+    y: list-like
+        y positions
+    z: list-like
+        z positions
+    sample_fraction: float
+        [optional] fraction of points to choose randomly and use for principal axes calculations, reducing computation.
+        Default of None uses all points.
+
+    Returns
+    -------
+    standard_deviations: ndarray
+        standard deviations of the input positions along the principle axes
+    eigen_vectors: ndarray
+        principle axes
+
+    """
     n_points = len(x)
-    n_to_sample = int(sample_fraction * n_points)
-    index = np.random.choice(range(n_points), n_to_sample, replace=False)
+
+    if sample_fraction is not None:
+        n_to_sample = int(sample_fraction * n_points)
+        index = np.random.choice(range(n_points), n_to_sample, replace=False)
+    else:  # take all
+        index = slice(None)
+
     # calculate principle axes and the spread along them
     eigen_vals, eigen_vecs = np.linalg.eig(np.cov(np.vstack([x[index], y[index], z[index]])))
     standard_deviations = np.sqrt(eigen_vals)
