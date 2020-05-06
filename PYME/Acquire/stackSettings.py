@@ -59,6 +59,7 @@ class StackSettings(object):
                          
     def GetScanChannel(self):
         return self.ScanChan
+    
     def piezoGoHome(self):
         #self.piezos[self.GetScanChannel()][0].MoveTo(self.piezos[self.GetScanChannel()][1],self.GetPrevPos(),False)
         self.scope.SetPos(**{self.GetScanChannel() : self.GetPrevPos()})

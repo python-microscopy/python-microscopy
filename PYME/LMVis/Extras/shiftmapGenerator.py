@@ -38,7 +38,7 @@ class ShiftmapGenerator:
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]        
+        vs = pipeline.mdh.voxelsize_nm
         x0 = (pipeline.mdh['Camera.ROIPosX']-1)*vs[0]
         y0 = (pipeline.mdh['Camera.ROIPosY']-1)*vs[1]
         
@@ -70,7 +70,7 @@ class ShiftmapGenerator:
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]
+        vs = pipeline.mdh.voxelsize_nm
         
         roi_x0, roi_y0 = get_camera_roi_origin(pipeline.mdh)
         
@@ -104,7 +104,7 @@ class ShiftmapGenerator:
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]    
+        vs = pipeline.mdh.voxelsize_nm
         
         z0 = (pipeline['z']*pipeline['A']).sum()/pipeline['A'].sum()
         

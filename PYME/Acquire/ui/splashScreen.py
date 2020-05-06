@@ -40,7 +40,9 @@ class SplashPanel(wx.Panel):
 
         self.times = {'total':6}
 
-        tims = scope.settingsDB.execute('SELECT * FROM StartupTimes').fetchall()
+        with scope.settingsDB as conn:
+            tims = conn.execute('SELECT * FROM StartupTimes').fetchall()
+            
         for ti in tims:
             self.times[ti[0]] = ti[1]
         
@@ -156,7 +158,8 @@ class SplashScreen(wx.Frame):
         self.panel.Refresh()
         if self.parent.initDone:
             try:
-                self.scope.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', ?)", (time.time() - self.panel.startTime - 0.5, ))
+                with self.scope.settingsDB as conn:
+                    conn.execute("INSERT INTO StartupTimes VALUES ('total', ?)", (time.time() - self.panel.startTime - 0.5, ))
             except:
                 logger.exception('Error writing to settings database - perhaps this is read only')
 

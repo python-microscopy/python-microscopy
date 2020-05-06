@@ -41,6 +41,7 @@ def test_LatGaussFitFR():
     assert errors_over_pred_IQR < 2.5
 
 
+
 def test_InterpFitR_astigmatism():
     """Test the 3D interpolated fit by fitting some randomly generated events. The pass condition here is fairly
     loose, but should be sufficient to detect when the code has been broken"""

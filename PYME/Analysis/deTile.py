@@ -107,7 +107,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     if split:
         frameSizeY /=2
         nchans = 2
-        unmux = splitter.Unmixer(shiftfield, 1e3*mdh.getEntry('voxelsize.x'))
+        unmux = splitter.Unmixer(shiftfield, mdh.voxelsize_nm.x)
     else:
         nchans = 1
 

@@ -279,8 +279,8 @@ class PYMEAcquireServer(event_loop.EventLoop):
     
         return ret
     
-    @webframework.register_endpoint('/update_scope_state')
-    def update_scope_state(self, body='', output_is_json=False):
+    @webframework.register_endpoint('/update_scope_state', output_is_json=False)
+    def update_scope_state(self, body=''):
         import json
         state = json.loads(body)
         
@@ -324,6 +324,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
 
 
 from PYME.Acquire import webui
+from PYME.Acquire import SpoolController
 class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
     def __init__(self, options, port, bind_addr=''):
         PYMEAcquireServer.__init__(self, options)
@@ -332,13 +333,44 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         webframework.APIHTTPServer.__init__(self, server_address)
         self.daemon_threads = True
         
+        self.add_endpoints(SpoolController.SpoolControllerWrapper(self.scope.spoolController), '/spool_controller')
+        self.add_static_handler('static', webframework.StaticFileHandler(os.path.join(os.path.dirname(__file__), 'webui', 'static')))
+        
         self._main_page = webui.load_template('PYMEAcquire.html')
         
+    @webframework.register_endpoint('/do_login')
+    def do_login(self, email, password, on_success='/'):
+        from PYME.util import authenticate
         
-    @webframework.register_endpoint('/', mimetype='text/html')
-    def main_page(self):
+        try:
+            auth = authenticate.get_token(email, password)
+        except:
+            #logger.exception('Error getting auth token')
+            auth = None
+            
+        if auth:
+            return webframework.HTTPRedirectResponse(on_success, headers=[('Set-Cookie', 'auth=%s; path=/; HttpOnly' % auth)])
+        else:
+            return webframework.HTTPRedirectResponse('/login?reason="failure"&on_success="%s"'%on_success, headers=[('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
+     
+    @webframework.register_endpoint('/login', mimetype='text/html')
+    def login(self, reason='', on_success='/'):
+        from jinja2 import Template
+        
+        return Template(webui.load_template('login.html')).render(reason=reason, on_success=on_success)
+
+    @webframework.register_endpoint('/logout')
+    def logout(self, on_success='/'):
+        return webframework.HTTPRedirectResponse(on_success, headers=[
+            ('Set-Cookie', 'auth=; path=/; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT')])
+
+    @webframework.register_endpoint('/', mimetype='text/html', authenticate=True)
+    def main_page(self, authenticated_as=None):
         #return self._main_page
-        return webui.load_template('PYMEAcquire.html')
+        from jinja2 import Template
+        
+        print('authenticated_as=', authenticated_as)
+        return Template(webui.load_template('PYMEAcquire.html')).render(authenticated_as=authenticated_as)
         
     def run(self):
         self._poll_thread = threading.Thread(target=self.main_loop)
@@ -361,6 +393,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     
     from PYME import config
+    from PYME.Acquire.webui import ipy
     
     logger = logging.getLogger(__name__)
     parser = OptionParser()
@@ -384,6 +417,13 @@ def main():
     logger.info('using initialization script %s' % init_file)
     
     server = AcquireHTTPServer(options, 8999)
+    ns = dict(scope=server.scope)
+    print('namespace:', ns)
+    ipy.launch_ipy_server_thread(user_ns=ns)
+    
+    import webbrowser
+    webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up
+    
     server.run()
     
 
@@ -391,11 +431,12 @@ def main():
 if __name__ == '__main__':
     from PYME.util import mProfile, fProfile
     
-    mProfile.profileOn(['acquire_server.py', 'microscope.py', 'frameWrangler.py'])
+    #mProfile.profileOn(['acquire_server.py', 'microscope.py', 'frameWrangler.py'])
     #fp = fProfile.thread_profiler()
     #fp.profileOn()
     try:
         main()
     finally:
         #fp.profileOff()
-        mProfile.report()
+        #mProfile.report()
+        pass

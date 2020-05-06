@@ -136,17 +136,18 @@ class squiggle:
         fr = self.fitResults[pi]
 
         if not len(fr) == 0:
+            vs= self.mdh
             pylab.figure(2)
             pylab.clf()
 
             pylab.subplot(211)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.do.xp*1e3*self.mdh.getEntry('voxelsize.x'), fr['fitError']['x0'], fmt='xb')
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.do.xp*vs.x, fr['fitError']['x0'], fmt='xb')
             pylab.xlim(x.min(), x.max())
             pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
             pylab.ylabel('x offset [nm]')
 
             pylab.subplot(212)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.do.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['y0'], fmt='xg')
+            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['y0'], fmt='xg')
             pylab.xlim(x.min(), x.max())
             pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
             pylab.ylabel('y offset [nm]')
@@ -154,7 +155,7 @@ class squiggle:
             pylab.figure(3)
             pylab.clf()
 
-            pylab.errorbar(fr['fitResults']['x0'] - self.vp.do.xp*1e3*self.mdh.getEntry('voxelsize.x'),fr['fitResults']['y0'] - self.vp.do.yp*1e3*self.mdh.getEntry('voxelsize.y'), fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
+            pylab.errorbar(fr['fitResults']['x0'] - self.vp.do.xp*vs.x,fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
             #pylab.xlim(x.min(), x.max())
             pylab.xlabel('x offset [nm]')
             pylab.ylabel('y offset [nm]')

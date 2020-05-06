@@ -208,8 +208,9 @@ class PSFFitFactory:
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
         #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
-        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*1e3*self.metadata.voxelsize.x
-        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*1e3*self.metadata.voxelsize.y
+        vs = self.metadata.voxelsize_nm
+        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*vs.x
+        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*vs.y
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 

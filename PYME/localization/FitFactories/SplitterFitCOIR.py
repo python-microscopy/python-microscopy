@@ -67,8 +67,9 @@ class COIFitFactory(FFBase.FitFactory):
 
         #generate grid to evaluate function on
         Xg, Yg = scipy.mgrid[xslice, yslice]
-        Xg = 1e3*self.metadata.voxelsize.x*Xg
-        Yg = 1e3*self.metadata.voxelsize.y*Yg
+        vs = self.metadata.voxelsize_nm
+        Xg = vs.x*Xg
+        Yg = vs.y*Yg
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -79,8 +80,8 @@ class COIFitFactory(FFBase.FitFactory):
         #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
         roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
 
-        x_ = Xg.mean() + roi_x0*1e3*self.metadata.voxelsize.x
-        y_ = Yg.mean() + roi_y0*1e3*self.metadata.voxelsize.y
+        x_ = Xg.mean() + roi_x0*vs.x
+        y_ = Yg.mean() + roi_y0*vs.y
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 

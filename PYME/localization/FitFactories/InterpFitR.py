@@ -88,9 +88,8 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
-    
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+
+    vx, vy = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)

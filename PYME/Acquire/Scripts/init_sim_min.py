@@ -135,6 +135,14 @@ def lasers(scope):
     scope.l405.register(scope)
     
 
+lasers.join() #make sure we have everything before starting simulator control
+
+@init_hardware('Simulation control')
+def simcontrol(scope):
+    from PYME.Acquire.Hardware.Simulator import simcontrol
+    scope.simcontrol = simcontrol.SimController(scope)
+    scope.simcontrol.gen_fluors_wormlike()
+
 # @init_gui('Laser controls')
 # def laser_controls(MainFrame, scope):
 #     from PYME.Acquire.ui import lasersliders

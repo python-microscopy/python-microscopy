@@ -425,7 +425,7 @@ def to_svg(dg):
         pass
 
     dwg = svgwrite.Drawing()
-    vb = dwg.viewbox(xmn - .5, ymn -.5, xmx + 2, ymx + 2)
+    vb = dwg.viewbox(xmn - .5, ymn -.5, xmx + 2, ymx + 1)
     #dwg.add(vb)
     cols = {}
     for xv, yv, e in connecting_lines:

@@ -59,7 +59,8 @@ class ClusterOfOne(object):
             self._kill_procs([self._cluster_ui, ])
 
         logger.info('Launching clusterUI')
-        self._cluster_ui = subprocess.Popen('%s %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), shell=True)
+        self._cluster_ui_stderr = open('clusterui.log', 'w')
+        self._cluster_ui = subprocess.Popen('%s %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), stderr=self._cluster_ui_stderr, shell=True)
         
         if gui:
             #launch a web-browser to view clusterUI
@@ -71,6 +72,10 @@ class ClusterOfOne(object):
         logger.info('Shutting down cluster')
         print('Shutting down cluster')
         self._kill_procs([self._node_server, self._rule_server, self._cluster_ui, self._data_server])
+        try:
+            self._cluster_ui_stderr.close()
+        except:
+            pass
 
 
     def launch(self, gui=False):

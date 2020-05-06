@@ -160,8 +160,7 @@ def genFitImage(fitResults, metadata):
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+    vx, vy, _ = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)
@@ -210,8 +209,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         DeltaX = md.chroma.dx.ev(x, y)
         DeltaY = md.chroma.dy.ev(x, y)
 
-        vx = 1e3*md.voxelsize.x
-        vy = 1e3*md.voxelsize.y
+        vx, vy, _ = md.voxelsize_nm
         
         dxp = int(DeltaX/vx)
         dyp = int(DeltaY/vy)
