@@ -253,7 +253,7 @@ class VideoPanel(DockedPanel):
         self.clear_view()
         for snapshot in self.snapshots:
             index = len(self.snapshots)
-            self.view_table.InsertStringItem(index, snapshot.view_id)
+            self.view_table.InsertItem(index, snapshot.view_id)
 
 
 class EditDialog(wx.Dialog):
