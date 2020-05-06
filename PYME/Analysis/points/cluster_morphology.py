@@ -39,25 +39,9 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
     numPerObject: Number of localizations within the label that a given localization belongs to
 
     """
-    from PYME.IO.MetaDataHandler import get_camera_roi_origin
-    
-    im_ox, im_oy, im_oz = label_image.origin
+    from PYME.Analysis.points.coordinate_tools import pixel_index_of_points_in_image
 
-    # account for ROIs
-    try:
-        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
-
-        vs = points.mdh.voxelsize_nm
-        p_ox = roi_x0 * vs.x
-        p_oy = roi_y0 * vs.y
-    except AttributeError:
-        raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
-
-    # Image origin is referenced to top-left corner of pixelated image.
-    # FIXME - localisations are currently referenced to centre of raw pixels
-    pixX = np.floor((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
-    pixY = np.floor((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
-    pixZ = np.floor((points['z'] - im_oz) / label_image.sliceSize).astype('i')
+    pixX, pixY, pixZ = pixel_index_of_points_in_image(label_image, points)
 
     label_data = label_image.data
 

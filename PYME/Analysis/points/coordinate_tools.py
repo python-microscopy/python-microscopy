@@ -192,6 +192,48 @@ def find_points_within_cylinder(x, y, z, x0, y0, z0, radius, length, v0, v1, v2)
     return inside, axial_component[inside]
 
 
+def pixel_index_of_points_in_image(image, points):
+    """
+    Map positions into indices of an image
+
+    Parameters
+    ----------
+    image: PYME.IO.ImageStack
+        image with complete metadata
+    points: PYME.IO.tabular.TabularBase
+
+    Returns
+    -------
+    x_index: ndarray
+        x pixel index in image for each point
+    y_index: ndarray
+        y pixel index in image for each point
+    z_index: ndarray
+        z pixel index in image for each point
+
+    """
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+
+    x0, y0, z0 = image.origin
+
+    # account for point data ROIs
+    try:
+        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
+
+        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
+        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
+    except AttributeError:
+        raise RuntimeError('metadata specifying ROI position and voxelsize are missing')
+
+    # Image origin is referenced to top-left corner of pixelated image.
+    # FIXME - localisations are currently referenced to centre of raw pixels
+    x_index = np.floor((points['x'] + p_ox - x0) / image.pixelSize).astype('i')
+    y_index = np.floor((points['y'] + p_oy - y0) / image.pixelSize).astype('i')
+    z_index = np.floor((points['z'] - z0) / image.sliceSize).astype('i')
+
+    return x_index, y_index, z_index
+
+
 def distance_to_image_mask(mask, points):
     """
 
@@ -208,29 +250,14 @@ def distance_to_image_mask(mask, points):
 
 
     """
-    from PYME.IO.MetaDataHandler import get_camera_roi_origin
     from scipy.ndimage import distance_transform_edt
 
-    x0, y0, z0 = mask.origin
-    voxel_size = [mask.pixelSize, mask.pixelSize, mask.sliceSize]  # [nm]
-
-    # account for point data ROIs
-    try:
-        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
-
-        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
-        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
-    except AttributeError:
-        raise RuntimeError('metadata specifying ROI position and voxelsize are missing')
-
-    # bin points into pixels
-    binned_x = np.round((points['x'] + p_ox - x0) / mask.pixelSize).astype('i')
-    binned_y = np.round((points['y'] + p_oy - y0) / mask.pixelSize).astype('i')
-    binned_z = np.round((points['z'] - z0) / mask.sliceSize).astype('i')
+    binned_x, binned_y, binned_z = pixel_index_of_points_in_image(mask, points)
 
     # FIXME - only works for single color data
     mask_data = np.atleast_3d(mask.data[:,:,:,0].squeeze())
-    distance_to_mask = distance_transform_edt(~mask_data, sampling=voxel_size, return_distances=True)
+
+    distance_to_mask = distance_transform_edt(~mask_data, sampling=mask.voxelsize, return_distances=True)
 
     # now we just sample the distance mask at the indices of the points
     try:
