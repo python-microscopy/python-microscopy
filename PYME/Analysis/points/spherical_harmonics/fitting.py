@@ -5,7 +5,7 @@ Initial fitting/conversions ripped 100% from David Baddeley / scipy
 import numpy as np
 from scipy.special import sph_harm
 from scipy import linalg
-from PYME.Analysis.points import vector_tools
+from PYME.Analysis.points import coordinate_tools
 from scipy import optimize
 import logging
 
@@ -66,7 +66,7 @@ def sphere_expansion(x, y, z, mmax=3):
 
     """
 
-    azimuth, zenith, r = vector_tools.cartesian_to_spherical(x, y, z)
+    azimuth, zenith, r = coordinate_tools.cartesian_to_spherical(x, y, z)
 
     A = []
     modes = []
@@ -110,7 +110,7 @@ def sphere_expansion_clean(x, y, z, mmax=3, nIters=2, tol_init=0.3):
 
     """
 
-    azimuth, zenith, r = vector_tools.cartesian_to_spherical(x, y, z)
+    azimuth, zenith, r = coordinate_tools.cartesian_to_spherical(x, y, z)
 
     A = []
     modes = []
@@ -276,15 +276,15 @@ class ScaledShell(object):
         self._scale_fitting_points()
 
     def _scale_fitting_points(self):
-        self.standard_deviations, self.principal_axes = vector_tools.find_principal_axes(self.x_c, self.y_c, self.z_c,
-                                                                                         sample_fraction=self.sampling_fraction)
+        self.standard_deviations, self.principal_axes = coordinate_tools.find_principal_axes(self.x_c, self.y_c, self.z_c,
+                                                                                             sample_fraction=self.sampling_fraction)
         self.scaling_factors = np.max(self.standard_deviations) / (self.standard_deviations)
-        self.x_cs, self.y_cs, self.z_cs, = vector_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
-                                                                          self.scaling_factors, self.principal_axes)
+        self.x_cs, self.y_cs, self.z_cs, = coordinate_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
+                                                                              self.scaling_factors, self.principal_axes)
 
     def get_fitted_shell(self, azimuth, zenith):
         r_scaled = reconstruct_shell(self.modes, self.coefficients, azimuth, zenith)
-        x_scaled, y_scaled, z_scaled = vector_tools.spherical_to_cartesian(azimuth, zenith, r_scaled)
+        x_scaled, y_scaled, z_scaled = coordinate_tools.spherical_to_cartesian(azimuth, zenith, r_scaled)
         # need to scale things "down" since they were scaled "up" in the fit
         # scaling_factors = 1. / self.scaling_factors
 
@@ -316,10 +316,10 @@ class ScaledShell(object):
         if x is None:
             xcs, ycs, zcs = self.x_cs, self.y_cs, self.z_cs
         else:
-            xcs, ycs, zcs = vector_tools.scaled_projection(x - self.x0, y - self.y0, z - self.z0, self.scaling_factors,
-                                                           self.principal_axes)
+            xcs, ycs, zcs = coordinate_tools.scaled_projection(x - self.x0, y - self.y0, z - self.z0, self.scaling_factors,
+                                                               self.principal_axes)
 
-        azimuth, zenith, rcs = vector_tools.cartesian_to_spherical(xcs, ycs, zcs)
+        azimuth, zenith, rcs = coordinate_tools.cartesian_to_spherical(xcs, ycs, zcs)
         r_cs_shell = reconstruct_shell(self.modes, self.coefficients, azimuth, zenith)
         return rcs < r_cs_shell
 
@@ -431,10 +431,10 @@ class ScaledShell(object):
 
         """
         # scale the query points and convert them to spherical
-        x_qs, y_qs, z_qs = vector_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
-                                                          np.atleast_1d(z - self.z0), self.scaling_factors,
-                                                          self.principal_axes)
-        azimuth, zenith, r = vector_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
+        x_qs, y_qs, z_qs = coordinate_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
+                                                              np.atleast_1d(z - self.z0), self.scaling_factors,
+                                                              self.principal_axes)
+        azimuth, zenith, r = coordinate_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
 
         # get scaled shell radius at +/- points for azimuthal and zenith shifts
         azimuths = np.array([azimuth - d_azimuth, azimuth + d_azimuth, azimuth, azimuth])
@@ -442,7 +442,7 @@ class ScaledShell(object):
         r_scaled = reconstruct_shell(self.modes, self.coefficients, azimuths, zeniths)
 
         # convert shifted points to cartesian and scale back. shape = (4, #points)
-        x_scaled, y_scaled, z_scaled = vector_tools.spherical_to_cartesian(azimuths, zeniths, r_scaled)
+        x_scaled, y_scaled, z_scaled = coordinate_tools.spherical_to_cartesian(azimuths, zeniths, r_scaled)
         # scale things "down" since they were scaled "up" in the fit
         scaled_axes = self.principal_axes / self.scaling_factors[:, None]
         coords = x_scaled.ravel()[:, None] * scaled_axes[0, :] + y_scaled.ravel()[:, None] * scaled_axes[1,
@@ -498,10 +498,10 @@ class ScaledShell(object):
         x, y, z = [parameterized_distance * np.atleast_2d(vector)[:, ind] + np.atleast_2d(starting_point)[:, ind] for
                    ind in range(3)]
         # scale the query points and convert them to spherical
-        x_qs, y_qs, z_qs = vector_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
-                                                          np.atleast_1d(z - self.z0), self.scaling_factors,
-                                                          self.principal_axes)
-        azimuth_qs, zenith_qs, r_qs = vector_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
+        x_qs, y_qs, z_qs = coordinate_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
+                                                              np.atleast_1d(z - self.z0), self.scaling_factors,
+                                                              self.principal_axes)
+        azimuth_qs, zenith_qs, r_qs = coordinate_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
 
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)

@@ -1,7 +1,7 @@
 
 import numpy as np
 from PYME.Analysis.points.spherical_harmonics import fitting
-from PYME.Analysis.points import vector_tools
+from PYME.Analysis.points import coordinate_tools
 from skimage import morphology
 
 # Make a shell
@@ -13,7 +13,7 @@ X = X.astype(float)
 Y = Y.astype(float)
 Z = Z.astype(float)
 X_C, Y_C, Z_C = X - R_SPHERE, Y - R_SPHERE, Z - R_SPHERE
-AZIMUTH, ZENITH, R = vector_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
+AZIMUTH, ZENITH, R = coordinate_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
 R = np.sqrt(X_C**2 + Y_C**2 + Z_C**2)
 FITTER = fitting.ScaledShell()
 FITTER.set_fitting_points(X, Y, Z)

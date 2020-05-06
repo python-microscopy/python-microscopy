@@ -1,5 +1,5 @@
 
-from PYME.Analysis.points import vector_tools
+from PYME.Analysis.points import coordinate_tools
 import numpy as np
 
 # Make a shell for coordinate testing
@@ -12,16 +12,16 @@ X_C, Y_C, Z_C = X - r, Y - r, Z - r
 R = np.sqrt(X_C**2 + Y_C**2 + Z_C**2)
 
 def test_cart2sph():
-    azi, zen, r = vector_tools.cart2sph(X_C, Y_C, Z_C)
+    azi, zen, r = coordinate_tools.cart2sph(X_C, Y_C, Z_C)
     np.testing.assert_almost_equal(r, R)
 
 def test_cartesian_to_spherical():
-    azi, zen, r = vector_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
+    azi, zen, r = coordinate_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
     np.testing.assert_almost_equal(r, R)
 
 def test_spherical_to_cartesian():
-    azi, zen, r = vector_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
-    x, y, z = vector_tools.spherical_to_cartesian(azi, zen, r)
+    azi, zen, r = coordinate_tools.cartesian_to_spherical(X_C, Y_C, Z_C)
+    x, y, z = coordinate_tools.spherical_to_cartesian(azi, zen, r)
     np.testing.assert_array_almost_equal(X_C, x)
     np.testing.assert_array_almost_equal(Y_C, y)
     np.testing.assert_array_almost_equal(Z_C, z)
@@ -31,7 +31,7 @@ def test_find_principal_axes():
     y = np.zeros_like(x)
     z = y
 
-    standard_deviations, principal_axes = vector_tools.find_principal_axes(x, y, z, sample_fraction=1.)
+    standard_deviations, principal_axes = coordinate_tools.find_principal_axes(x, y, z, sample_fraction=1.)
 
     np.testing.assert_array_equal([0., 0.], standard_deviations[1:])
     np.testing.assert_almost_equal(np.std(x), standard_deviations[0], decimal=0)
@@ -43,7 +43,7 @@ def test_unity_scaled_projection():
 
     scaling_axes = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
     scaling_factors = [1., 1., 1.]
-    xs, ys, zs = vector_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
+    xs, ys, zs = coordinate_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
     np.testing.assert_array_equal([x, y, z], [xs, ys, zs])
 
 def test_scalar_projection():
@@ -53,7 +53,7 @@ def test_scalar_projection():
 
     scaling_axes = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
     scaling_factors = [5., 5., 5.]
-    xs, ys, zs = vector_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
+    xs, ys, zs = coordinate_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
     np.testing.assert_array_equal([5*x, y, z], [xs, ys, zs])
 
 def test_rotated_projection():
@@ -63,7 +63,7 @@ def test_rotated_projection():
 
     scaling_axes = np.array([[0., 1., 0.], [1., 0., 0.], [0., 0., 1.]])
     scaling_factors = [5., 5., 5.]
-    xs, ys, zs = vector_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
+    xs, ys, zs = coordinate_tools.scaled_projection(x, y, z, scaling_factors, scaling_axes)
     np.testing.assert_array_equal([y, 5*x, z], [xs, ys, zs])
 
 
@@ -75,14 +75,14 @@ def test_direction_to_n_nearest_points():
     z = 4 * test_n * np.ones_like(x)
     z[:test_n] = x[:test_n]
 
-    az, zen, r, v = vector_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
+    az, zen, r, v = coordinate_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
     np.testing.assert_almost_equal(az, np.pi / 4)
     np.testing.assert_almost_equal(r, np.sqrt(3) * 2)
     np.testing.assert_almost_equal(zen, np.arccos(2./r))
 
     # try shifting
     x0, y0, z0 = 1., 1., 1.
-    az, zen, r, v = vector_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
+    az, zen, r, v = coordinate_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
     np.testing.assert_almost_equal(az, np.pi / 4)
     np.testing.assert_almost_equal(r, np.sqrt(3))
     np.testing.assert_almost_equal(zen, np.arccos(1. / r))
@@ -90,7 +90,7 @@ def test_direction_to_n_nearest_points():
     # try multiple query points
     x0 = np.arange(2.)
     y0, z0 = x0[:], x0[:]
-    az, zen, r, v = vector_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
+    az, zen, r, v = coordinate_tools.direction_to_nearest_n_points(x, y, z, x0, y0, z0, test_n)
     np.testing.assert_array_almost_equal(az, (np.pi / 4) * np.ones_like(x0))
     np.testing.assert_almost_equal(r, np.array([2, 1]) * np.sqrt(3))
     np.testing.assert_almost_equal(zen, np.arccos(np.array([2, 1]) / r))
@@ -105,7 +105,7 @@ def test_find_points_within_cylinder():
     radius = 2.5
     length = 2.
     x0, y0, z0 = 4.5, 4.5, 4.5
-    inside, axial_distance = vector_tools.find_points_within_cylinder(xx.ravel(), yy.ravel(), zz.ravel(), x0, y0, z0, radius, length, v0, v1, v2)
+    inside, axial_distance = coordinate_tools.find_points_within_cylinder(xx.ravel(), yy.ravel(), zz.ravel(), x0, y0, z0, radius, length, v0, v1, v2)
     for pi, point in enumerate(zip(xx.ravel(), yy.ravel(), zz.ravel())):
         if inside[pi]:
             assert (np.sqrt((point[0] - x0) ** 2 + (point[1] - y0) ** 2) <= radius)
@@ -130,7 +130,7 @@ def test_distance_to_image_mask():
     r = np.sqrt((x[:, None, None] - x0) ** 2 + (x[None, :, None] - y0) ** 2 + (x[None, None, :] - z0) ** 2)
     mask = ImageStack(r <= radius)
 
-    distances = vector_tools.distance_to_image_mask(mask, points)
+    distances = coordinate_tools.distance_to_image_mask(mask, points)
     np.testing.assert_almost_equal(np.zeros(2), distances[:2])
     assert(distances[2] == 1)
     assert(distances[-1] == np.sqrt((3 - 2)**2 + (3 - 2)**2 + (3 - 1)**2))
