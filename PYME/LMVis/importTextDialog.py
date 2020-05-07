@@ -295,7 +295,11 @@ class ImportMatlabDialog(ImportDialog):
 
         dataLines = []
         for k in colNames:
-            dataLines.append(mf[k][:10].squeeze())
+            if mf[k].shape[1] > mf[k].shape[0]:
+                # Multicolor
+                dataLines.append(mf[k][0,0][:10].squeeze())
+            else:
+                dataLines.append(mf[k][:10].squeeze())
         dataLines = np.array(dataLines).T.astype(str).tolist()
 
         return colNames, dataLines
