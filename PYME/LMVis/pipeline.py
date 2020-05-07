@@ -674,7 +674,10 @@ class Pipeline:
                 #old style matlab import
                 ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                ds = tabular.MatfileColumnSource(filename, kwargs['FieldNames'])
+                if 'FieldNames' in kwargs.keys():
+                    ds = tabular.MatfileColumnSource(filename, kwargs['FieldNames'])
+                else:
+                    ds = tabular.MatfileColumnSource(filename)
                 
 
         elif os.path.splitext(filename)[1] == '.csv':
