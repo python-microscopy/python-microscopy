@@ -674,7 +674,7 @@ class Pipeline:
                 #old style matlab import
                 ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                ds = tabular.MatfileColumnSource(filename)
+                ds = tabular.MatfileColumnSource(filename, kwargs['FieldNames'])
                 
 
         elif os.path.splitext(filename)[1] == '.csv':

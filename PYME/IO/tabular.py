@@ -535,7 +535,7 @@ class MatfileSource(TabularBase):
 class MatfileColumnSource(TabularBase):
     _name = "Matlab Column Source"
     
-    def __init__(self, filename):
+    def __init__(self, filename, columnnames=None):
         """ Input filter for use with matlab data where the each column is in a separate variable.
         Relies on variables having suitable column names - columns named x, y, z, t, and probe (if multi-colour) should
         be present.
@@ -546,6 +546,13 @@ class MatfileColumnSource(TabularBase):
         self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
         
         self._keys = [k for k in self.res.keys() if not k.startswith('_')]
+
+        if columnnames is not None:
+            tmp_res = {}
+            for i, k in enumerate(self._keys):
+                tmp_res[columnnames[i]] = self.res[k]
+            self.res = tmp_res
+            self._keys = columnnames
     
     def keys(self):
         return self._keys
