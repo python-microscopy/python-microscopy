@@ -153,6 +153,8 @@ class View(object):
                     self.clip_plane_position / scalar
                     )
 
+    __truediv__ = __div__ #div goes away on py3
+
     def normalize_view(self):
         self.vec_up = self.normalize(self.vec_up)
         self.vec_back = self.normalize(self.vec_back)
