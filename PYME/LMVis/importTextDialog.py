@@ -31,9 +31,7 @@ def isnumber(s):
     except:
         return False
     
-
-
-class ImportTextDialog(wx.Dialog):
+class ImportDialog(wx.Dialog):
     requiredVariables = {'x':'x position [nm]',
                         'y':'y position [nm]'}
     recommendedVariables = {'A':'amplitude of Gaussian',
@@ -41,12 +39,25 @@ class ImportTextDialog(wx.Dialog):
                             'sig':'std. deviation of Gaussian [nm]',
                             'error_x':'fit error in x direction [nm]'}
     niceVariables = {'error_y':'fit error in y direction [nm]'}
+    colNames = []
+    dataLines = []
 
-    def __init__(self, parent, textFileName):
-        wx.Dialog.__init__(self, parent, title='Import data from text file')
+    def __init__(self, parent):
+        """
+        This init is convenient for abstraction purposes, but won't work on its 
+        own. To use, call a wx.Dialog init and define self.colNames (variable 
+        names from the imported file) and self.dataLines() before calling this 
+        init.
 
-        self.colNames, self.dataLines = self.TextFileHeaderParse(textFileName)
+        Example
+        -------
+        class MyImporter(ImportDialog):
+            def __init__(self, parent, fileName):
+                wx.Dialog.__init__(self, parent, title='Import data from ___ file')
+                self.colNames, self.dataLines = self.myParsingFunction(fileName)
+                ImportDialog.__init__(self, parent)
 
+        """
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer1.Add(wx.StaticText(self, -1, 'Please assign variable names to each column. Some variable names must be present for the program to function correctly'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -89,43 +100,6 @@ class ImportTextDialog(wx.Dialog):
         self.SetSizer(sizer1)
         sizer1.Fit(self)
 
-    def TextFileHeaderParse(self, filename):
-        n = 0
-        commentLines = []
-        dataLines = []
-
-        fid = open(filename, 'r')
-        
-        if filename.endswith('.csv'):
-            delim = ','
-        else:
-            delim = None #whitespace
-
-        while n < 10:
-            line = fid.readline()
-            if line.startswith('#'): #check for comments
-                commentLines.append(line[1:])
-            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
-                commentLines.append(line)
-            else:
-                dataLines.append(line.split(delim))
-                n += 1
-                
-        self.numCommentLines = len(commentLines)
-
-        numCols = len(dataLines[0])
-        
-        #print commentLines
-        
-        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
-
-        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
-            colNames = commentLines[-1].split(delim)
-        else:
-            colNames = ['column_%d' % i for i in range(numCols)]
-
-        return colNames, dataLines
-
     def CheckColNames(self):
         reqNotDef = [var for var in self.requiredVariables.keys() if not var in self.colNames]
 
@@ -154,8 +128,6 @@ class ImportTextDialog(wx.Dialog):
             self.stRecommendedNotPresent.SetForegroundColour(wx.GREEN)
 
         self.stRecommendedNotPresent.SetLabel(sreq)
-
-        
 
     def GenerateDataGrid(self, sizer):
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Column names and preview:'))
@@ -195,7 +167,6 @@ class ImportTextDialog(wx.Dialog):
 
         self.CheckColNames()
 
-
     def GetFieldNames(self):
         return self.colNames
         
@@ -205,8 +176,55 @@ class ImportTextDialog(wx.Dialog):
     def GetPixelSize(self):
         return float(self.tPixelSize.GetValue())
 
+class ImportTextDialog(ImportDialog):
+    # Text/CSV importer with variable mapping
+    def __init__(self, parent, textFileName):
+        wx.Dialog.__init__(self, parent, title='Import data from text file')
+
+        self.colNames, self.dataLines = self.TextFileHeaderParse(textFileName)
+
+        ImportDialog.__init__(self, parent)
+
+    def TextFileHeaderParse(self, filename):
+        n = 0
+        commentLines = []
+        dataLines = []
+
+        fid = open(filename, 'r')
+        
+        if filename.endswith('.csv'):
+            delim = ','
+        else:
+            delim = None #whitespace
+
+        while n < 10:
+            line = fid.readline()
+            if line.startswith('#'): #check for comments
+                commentLines.append(line[1:])
+            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
+                commentLines.append(line)
+            else:
+                dataLines.append(line.split(delim))
+                n += 1
+                
+        self.numCommentLines = len(commentLines)
+
+        numCols = len(dataLines[0])
+        
+        #print commentLines
+        
+        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
+
+        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
+            colNames = commentLines[-1].split(delim)
+        else:
+            colNames = ['column_%d' % i for i in range(numCols)]
+
+        return colNames, dataLines
+
 
 class ImportMatDialog(wx.Dialog):
+    # Old-style MATLAB importer
     def __init__(self, parent, varnames=['Orte']):
         wx.Dialog.__init__(self, parent, title='Import data from matlab file')
 
@@ -256,3 +274,28 @@ class ImportMatDialog(wx.Dialog):
     def GetVarName(self):
         return self.cbVarNames.GetValue()
         
+class ImportMatlabDialog(ImportDialog):
+    # MATLAB importer with variable mapping
+    def __init__(self, parent, matFileName):
+        wx.Dialog.__init__(self, parent, title='Import data from MATLAB file')
+
+        self.colNames, self.dataLines = self.MatlabHeaderParse(matFileName)
+
+        ImportDialog.__init__(self, parent)
+
+    def MatlabHeaderParse(self, filename):
+        from scipy.io import loadmat
+        import numpy as np
+
+        mf = loadmat(filename)
+
+        self.numCommentLines = 0
+
+        colNames = [k for k in mf.keys() if not k.startswith('_')]
+
+        dataLines = []
+        for k in colNames:
+            dataLines.append(mf[k][:10].squeeze())
+        dataLines = np.array(dataLines).T.astype(str).tolist()
+
+        return colNames, dataLines
