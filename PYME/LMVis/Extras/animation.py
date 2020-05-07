@@ -57,7 +57,7 @@ class VideoPanel(DockedPanel):
         self.next_view_id = 0
 
     def create_buttons(self, vertical_sizer):
-        grid_sizer = wx.GridSizer(3, 3, 3)
+        grid_sizer = wx.GridSizer(rows=3, cols=3, vgap=2, hgap=2)
         # generate the buttons
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
         delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
@@ -253,7 +253,7 @@ class VideoPanel(DockedPanel):
         self.clear_view()
         for snapshot in self.snapshots:
             index = len(self.snapshots)
-            self.view_table.InsertItem(index, snapshot.view_id)
+            self.view_table.InsertStringItem(index, snapshot.view_id)
 
 
 class EditDialog(wx.Dialog):
