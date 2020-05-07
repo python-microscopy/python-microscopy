@@ -153,13 +153,7 @@ class View(object):
                     self.clip_plane_position / scalar
                     )
 
-    def __floordiv__(self, scalar):
-        # Integer division py3
-        return self.__div__(scalar)
-
-    def __truediv__(self, scalar):
-        # Float division py3
-        return self.__div__(int(scalar))
+    __truediv__ = __div__ #div goes away on py3
 
     def normalize_view(self):
         self.vec_up = self.normalize(self.vec_up)
