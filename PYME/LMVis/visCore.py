@@ -672,21 +672,40 @@ class VisGUICore(object):
             from scipy.io import loadmat
         
             mf = loadmat(filename)
-            if not 'x' in mf.keys():
-                #bewersdorf style .mat where each variable is in a separate column
-                dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-                ret = dlg.ShowModal()
+            if ('x' not in mf.keys()) or ('y' not in mf.keys()):
+                # This at least has some weird variable names
+
+                if (len(mf.keys()) < 3):
+                    # Bewersdorf-style .mat where each variable is in a separate column
+                    # and the variables are all stored within another variable (MATLAB struct)
+                    dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+                    ret = dlg.ShowModal()
+                
+                    if not ret == wx.ID_OK:
+                        dlg.Destroy()
+                        return #we cancelled
+                
+                    args['FieldNames'] = dlg.GetFieldNames()
+                    args['VarName'] = dlg.GetVarName()
+                    # args['PixelSize'] = dlg.GetPixelSize()
             
-                if not ret == wx.ID_OK:
+            
                     dlg.Destroy()
-                    return #we cancelled
-            
-                args['FieldNames'] = dlg.GetFieldNames()
-                args['VarName'] = dlg.GetVarName()
-                # args['PixelSize'] = dlg.GetPixelSize()
-        
-        
-                dlg.Destroy()
+                else:
+                    # We have to map the field names
+                    from PYME.LMVis import importTextDialog
+
+                    dlg = importTextDialog.ImportMatlabDialog(self, filename)
+
+                    ret = dlg.ShowModal()
+                
+                    if not ret == wx.ID_OK:
+                        dlg.Destroy()
+                        return #we cancelled
+
+                    args['FieldNames'] = dlg.GetFieldNames()
+                
+                    dlg.Destroy()
     
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
