@@ -535,7 +535,7 @@ class MatfileSource(TabularBase):
 class MatfileColumnSource(TabularBase):
     _name = "Matlab Column Source"
     
-    def __init__(self, filename, columnnames=None):
+    def __init__(self, filename):
         """ Input filter for use with matlab data where the each column is in a separate variable.
         Relies on variables having suitable column names - columns named x, y, z, t, and probe (if multi-colour) should
         be present.
@@ -546,29 +546,6 @@ class MatfileColumnSource(TabularBase):
         self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
         
         self._keys = [k for k in self.res.keys() if not k.startswith('_')]
-
-        # Check for multicolor
-        test_shape = self.res[self._keys[0]].shape
-        n_channels = 1
-        multicolor = test_shape[1] > test_shape[0]
-        if multicolor:
-            n_channels = test_shape[1]
-            if columnnames is None:
-                columnnames = self._keys
-
-        # Mapping for multicolor, channels
-        if columnnames is not None:
-            tmp_res = {}
-            for i, k in enumerate(self._keys):
-                if multicolor:
-                    tmp_res[columnnames[i]] = np.hstack([self.res[k].squeeze()[_i].squeeze() for _i in range(n_channels)])
-                else:
-                    tmp_res[columnnames[i]] = self.res[k]
-            if multicolor:
-                tmp_res['probe'] = np.hstack([np.ones(self.res[self._keys[0]].squeeze()[_i].shape[0])*_i for _i in range(n_channels)])
-                columnnames.append('probe')
-            self.res = tmp_res
-            self._keys = columnnames
     
     def keys(self):
         return self._keys
@@ -582,7 +559,7 @@ class MatfileColumnSource(TabularBase):
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
-    
+
 
 @deprecated_name('recArrayInput')
 class RecArraySource(TabularBase):
