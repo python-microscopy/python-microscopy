@@ -560,6 +560,19 @@ class MatfileColumnSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
+class MatfileMultiColumnSource(MatfileColumnSource):
+    def __init__(self, filename):
+        MatfileColumnSource.__init__(self, filename)
+        
+        # Unwrap multiple channels in self.res
+        tmp_res = {}
+        for k in self._keys:
+            tmp_res[k] = np.vstack(self.res[k][0]).squeeze()
+        n_channels = self.res[self._keys[0]][0].shape[0]
+        tmp_res['probe'] = np.vstack(self.res[self._keys[0]][0]*np.zeros(n_channels)+np.arange(n_channels)).squeeze()
+        self._keys.append('probe')
+
+        self.res = tmp_res
 
 @deprecated_name('recArrayInput')
 class RecArraySource(TabularBase):
