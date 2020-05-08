@@ -31,7 +31,7 @@ def isnumber(s):
     except:
         return False
     
-class ImportDialog(wx.Dialog):
+class ColumnMappingDialog(wx.Dialog):
     requiredVariables = {'x':'x position [nm]',
                         'y':'y position [nm]'}
     recommendedVariables = {'A':'amplitude of Gaussian',
@@ -41,23 +41,17 @@ class ImportDialog(wx.Dialog):
     niceVariables = {'error_y':'fit error in y direction [nm]'}
     colNames = []
     dataLines = []
+    fileType = 'column source'  # string to indicate file type in user dialog box
 
-    def __init__(self, parent):
+    def __init__(self, parent, fileName):
         """
-        This init is convenient for abstraction purposes, but won't work on its 
-        own. To use, call a wx.Dialog init and define self.colNames (variable 
-        names from the imported file) and self.dataLines() before calling this 
-        init.
-
-        Example
-        -------
-        class MyImporter(ImportDialog):
-            def __init__(self, parent, fileName):
-                wx.Dialog.__init__(self, parent, title='Import data from ___ file')
-                self.colNames, self.dataLines = self.myParsingFunction(fileName)
-                ImportDialog.__init__(self, parent)
-
+        Dialog box for importing data source with arbitrary column names.
         """
+
+        wx.Dialog.__init__(self, parent, title='Import data from {} file'.format(self.fileType))
+
+        self._parse_header(fileName)
+
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer1.Add(wx.StaticText(self, -1, 'Please assign variable names to each column. Some variable names must be present for the program to function correctly'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -99,6 +93,9 @@ class ImportDialog(wx.Dialog):
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
+
+    def _parse_header(self, file):
+        raise NotImplementedError('Implemented in a derived class.')
 
     def CheckColNames(self):
         reqNotDef = [var for var in self.requiredVariables.keys() if not var in self.colNames]
@@ -176,23 +173,18 @@ class ImportDialog(wx.Dialog):
     def GetPixelSize(self):
         return float(self.tPixelSize.GetValue())
 
-class ImportTextDialog(ImportDialog):
+class ImportTextDialog(ColumnMappingDialog):
     # Text/CSV importer with variable mapping
-    def __init__(self, parent, textFileName):
-        wx.Dialog.__init__(self, parent, title='Import data from text file')
+    fileType='text'
 
-        self.colNames, self.dataLines = self.TextFileHeaderParse(textFileName)
-
-        ImportDialog.__init__(self, parent)
-
-    def TextFileHeaderParse(self, filename):
+    def _parse_header(self, file):
         n = 0
         commentLines = []
         dataLines = []
 
-        fid = open(filename, 'r')
+        fid = open(file, 'r')
         
-        if filename.endswith('.csv'):
+        if file.endswith('.csv'):
             delim = ','
         else:
             delim = None #whitespace
@@ -220,7 +212,8 @@ class ImportTextDialog(ImportDialog):
         else:
             colNames = ['column_%d' % i for i in range(numCols)]
 
-        return colNames, dataLines
+        self.colNames = colNames
+        self.dataLines = dataLines
 
 
 class ImportMatDialog(wx.Dialog):
@@ -274,20 +267,19 @@ class ImportMatDialog(wx.Dialog):
     def GetVarName(self):
         return self.cbVarNames.GetValue()
         
-class ImportMatlabDialog(ImportDialog):
+class ImportMatlabDialog(ColumnMappingDialog):
     # MATLAB importer with variable mapping
-    def __init__(self, parent, matFileName):
-        wx.Dialog.__init__(self, parent, title='Import data from MATLAB file')
+    fileType = 'MATLAB'
 
-        self.colNames, self.dataLines = self.MatlabHeaderParse(matFileName)
-
-        ImportDialog.__init__(self, parent)
-
-    def MatlabHeaderParse(self, filename):
-        from scipy.io import loadmat
+    def _parse_header(self, file):
         import numpy as np
 
-        mf = loadmat(filename)
+        if isinstance(file, dict):
+            # We've passed the loaded file (scipy.io.loadmat returns a dict)
+            mf = file
+        else:
+            from scipy.io import loadmat
+            mf = loadmat(file)
 
         self.numCommentLines = 0
 
@@ -302,4 +294,5 @@ class ImportMatlabDialog(ImportDialog):
                 dataLines.append(mf[k][:10].squeeze())
         dataLines = np.array(dataLines).T.astype(str).tolist()
 
-        return colNames, dataLines
+        self.colNames = colNames
+        self.dataLines = dataLines
