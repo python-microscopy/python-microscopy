@@ -703,6 +703,7 @@ class VisGUICore(object):
                         return #we cancelled
 
                     args['FieldNames'] = dlg.GetFieldNames()
+                    args['PixelSize'] = dlg.GetPixelSize()
                 
                     dlg.Destroy()
     
