@@ -674,11 +674,12 @@ class Pipeline:
                 #old style matlab import
                 ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                if 'FieldNames' in kwargs.keys():
-                    ds = tabular.MatfileColumnSource(filename, kwargs['FieldNames'])
-                else:
-                    ds = tabular.MatfileColumnSource(filename)
+                ds = tabular.MatfileColumnSource(filename)
                 
+                # check for column name mapping
+                field_names = kwargs.get('FieldNames', None)
+                if field_names:
+                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
