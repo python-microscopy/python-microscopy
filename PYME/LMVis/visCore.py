@@ -673,11 +673,10 @@ class VisGUICore(object):
         
             mf = loadmat(filename)
             if ('x' not in mf.keys()) or ('y' not in mf.keys()):
-                # This at least has some weird variable names
+                # This MATLAB file has some weird variable names
 
-                if (len(mf.keys()) < 3):
-                    # Bewersdorf-style .mat where each variable is in a separate column
-                    # and the variables are all stored within another variable (MATLAB struct)
+                if (len([k for k in mf.keys() if not k.startswith('_')]) < 3):
+                    # All the data is probably packed in a single variable
                     dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
                     ret = dlg.ShowModal()
                 
@@ -695,7 +694,7 @@ class VisGUICore(object):
                     # We have to map the field names
                     from PYME.LMVis import importTextDialog
 
-                    dlg = importTextDialog.ImportMatlabDialog(self, filename)
+                    dlg = importTextDialog.ImportMatlabDialog(self, mf)
 
                     ret = dlg.ShowModal()
                 
