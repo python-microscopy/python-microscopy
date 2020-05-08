@@ -92,10 +92,13 @@ class ParticleTracker:
     
         visFr = self.visFr
         pipeline = visFr.pipeline
+
+        tabular_name = pipeline.new_ds_name('with_tracks')
+        clump_manager_name = pipeline.new_ds_name('tracks')
         
         tracking_module = tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey,
-                                              outputName='with_tracks',
-                                    outputClumps = 'tracks',
+                                              outputName=tabular_name,
+                                    outputClumps = clump_manager_name,
                                     timeWindow=5,
                                     clumpRadiusVariable='1.0',
                                     clumpRadiusScale=250.,
@@ -105,7 +108,7 @@ class ParticleTracker:
             recipe.add_module(tracking_module)
     
             recipe.execute()
-            self.visFr.pipeline.selectDataSource('with_tracks')
+            self.visFr.pipeline.selectDataSource(tabular_name)
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
             layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
             visFr.add_layer(layer)
