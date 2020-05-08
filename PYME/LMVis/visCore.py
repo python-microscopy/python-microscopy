@@ -704,6 +704,7 @@ class VisGUICore(object):
 
                     args['FieldNames'] = dlg.GetFieldNames()
                     args['PixelSize'] = dlg.GetPixelSize()
+                    args['Multichannel'] = dlg.GetMultichannel()
                 
                     dlg.Destroy()
     

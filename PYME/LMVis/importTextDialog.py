@@ -270,6 +270,7 @@ class ImportMatDialog(wx.Dialog):
 class ImportMatlabDialog(ColumnMappingDialog):
     # MATLAB importer with variable mapping
     fileType = 'MATLAB'
+    multichannel = False  # Is out matlab source multichannel?
 
     def _parse_header(self, file):
         import numpy as np
@@ -289,6 +290,7 @@ class ImportMatlabDialog(ColumnMappingDialog):
         for k in colNames:
             if mf[k].shape[1] > mf[k].shape[0]:
                 # Multicolor
+                self.multichannel = True
                 dataLines.append(mf[k][0,0][:10].squeeze())
             else:
                 dataLines.append(mf[k][:10].squeeze())
@@ -296,3 +298,6 @@ class ImportMatlabDialog(ColumnMappingDialog):
 
         self.colNames = colNames
         self.dataLines = dataLines
+
+    def GetMultichannel(self):
+        return self.multichannel
