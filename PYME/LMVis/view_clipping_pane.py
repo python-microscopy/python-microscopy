@@ -72,6 +72,20 @@ class ClippingPanel(wx.Panel):
         
         self.textSize = 10
 
+        # Text controls for upper and lower bounds
+        text_ctrl_width = 90
+        self.ll_ctrl = wx.TextCtrl(self, -1, str(self.view_limits[0]), size=(text_ctrl_width, -1), name='lower_limit')
+        self.ul_ctrl = wx.TextCtrl(self, -1, str(self.view_limits[1]), size=(text_ctrl_width, -1), name='upper_limit')
+        maxy = self.Size[1] - self.ll_ctrl.Size[1] + 2
+        self.ll_ctrl.SetPosition((0,maxy))
+        self.ul_ctrl.SetPosition((self.Size[0]-self.ul_ctrl.Size[0],maxy))
+        self.ll_ctrl.Hide()
+        self.ul_ctrl.Hide()
+        self.ll_ctrl.Bind(wx.EVT_KILL_FOCUS, self.HideTextCtrl)
+        self.ul_ctrl.Bind(wx.EVT_KILL_FOCUS, self.HideTextCtrl)
+        self.ll_ctrl.Bind(wx.EVT_KEY_DOWN, self.OnTextCtrlKeyPress)
+        self.ul_ctrl.Bind(wx.EVT_KEY_DOWN, self.OnTextCtrlKeyPress)
+
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
@@ -144,7 +158,6 @@ class ClippingPanel(wx.Panel):
     
         dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
-        
         
         x0p, wp, x0vp, xmvp, w, x0 = self._get_coords()
             
@@ -231,14 +244,22 @@ class ClippingPanel(wx.Panel):
 
     def OnLeftDown(self, event):
         x = event.GetX()
-        #y = event.GetY()
+        y = event.GetY()
 
         x0p, wp, x0vp, xmvp, w, xo = self._get_coords()
+        maxy = self.Size[1] - self.ll_ctrl.Size[1]/2 + 2
     
         #hit test the limits
-        HITTEST_TOLERANCE = 15
-    
+        # check for clipping update via text control
+        ll, ul = max(x0vp-self.ll_ctrl.Size[0]/2, 0), min(xmvp-self.ul_ctrl.Size[0]/2, self.Size[0]-self.ul_ctrl.Size[0])
+        lu, uu = ll+self.ll_ctrl.Size[0], ul+self.ul_ctrl.Size[0]
+        if (abs(y-maxy) < self.ll_ctrl.Size[1]/2) and (x > ll) and (x < lu):
+            self.ShowTextCtrl(self.ll_ctrl, self.view_limits[0], ll)
+        if (abs(y-maxy) < self.ul_ctrl.Size[1]/2) and (x > ul) and (x < uu):
+            self.ShowTextCtrl(self.ul_ctrl, self.view_limits[1], ul)
 
+        # check for clipping update via dragging
+        HITTEST_TOLERANCE = 15
         if abs(x0vp - x) < HITTEST_TOLERANCE:
             self.dragging = 'lower'
         elif abs(xmvp - x) < HITTEST_TOLERANCE:
@@ -308,6 +329,31 @@ class ClippingPanel(wx.Panel):
     
         event.Skip()
 
+    def ShowTextCtrl(self, text_ctrl, value, xpos):
+        # Update text box position and value
+        ypos = self.Size[1] - text_ctrl.Size[1] + 2
+        text_ctrl.SetPosition((xpos, ypos))
+        text_ctrl.SetValue(str(value))
+
+        # Display
+        text_ctrl.Show()
+        text_ctrl.SetFocus()
+
+    def HideTextCtrl(self, event):
+        event.GetEventObject().Hide()
+
+    def OnTextCtrlKeyPress(self, event):
+        text_ctrl = event.GetEventObject()
+        if text_ctrl.HasFocus() and (event.GetKeyCode() == wx.WXK_RETURN):
+            if text_ctrl.GetId() == self.ll_ctrl.GetId():
+                self.view_limits[0] = float(text_ctrl.GetValue())
+            elif text_ctrl.GetId() == self.ul_ctrl.GetId():
+                self.view_limits[1] = float(text_ctrl.GetValue())
+            text_ctrl.Hide()
+            self.Refresh()
+            self.Update()
+        event.Skip() 
+
 
 class ViewClippingPanel(wx.Panel):
     """A GUI class for determining the settings to use when displaying points
@@ -364,7 +410,10 @@ class ViewClippingPanel(wx.Panel):
 
 
 def GenViewClippingPanel(visgui, pnl, title='View Clipping'):
-    """Generate a ponts pane and insert into the given panel"""
+    """ 
+    Generate a folding pane that lets a user dynamically filter points 
+    spatially by adjusting sliders.
+    """
     item = afp.foldingPane(pnl, -1, caption=title, pinned=False)
     
     pan = ViewClippingPanel(item, visgui.glCanvas)
