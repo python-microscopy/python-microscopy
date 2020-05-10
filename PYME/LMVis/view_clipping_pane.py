@@ -344,7 +344,9 @@ class ClippingPanel(wx.Panel):
 
     def OnTextCtrlKeyPress(self, event):
         text_ctrl = event.GetEventObject()
-        if text_ctrl.HasFocus() and (event.GetKeyCode() == wx.WXK_RETURN):
+        key = event.GetKeyCode()
+        focus = text_ctrl.HasFocus()
+        if focus and (key == wx.WXK_RETURN):
             if text_ctrl.GetId() == self.ll_ctrl.GetId():
                 self.view_limits[0] = float(text_ctrl.GetValue())
             elif text_ctrl.GetId() == self.ul_ctrl.GetId():
@@ -352,22 +354,15 @@ class ClippingPanel(wx.Panel):
             text_ctrl.Hide()
             self.Refresh()
             self.Update()
+        elif focus and (key == wx.WXK_ESCAPE):
+            # We're done
+            text_ctrl.Hide()
         event.Skip() 
 
 
 class ViewClippingPanel(wx.Panel):
-    """A GUI class for determining the settings to use when displaying points
-    in VisGUI.
-
-    Constructed as follows:
-    PointSettingsPanel(parent, pipeline, pointDisplaySettings)
-
-    where:
-      parent is the parent window
-      pipeline is the pipeline object which provides the points,
-      pointDisplaySettings is an instance of PointDisplaySettings
-
-
+    """A GUI class for dynamically filtering points 
+    spatially by adjusting sliders.
     """
     
     def __init__(self, parent, glcanvas):
