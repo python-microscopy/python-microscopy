@@ -354,6 +354,7 @@ class ClippingPanel(wx.Panel):
             text_ctrl.Hide()
             self.Refresh()
             self.Update()
+            self.glcanvas.refresh()
         elif focus and (key == wx.WXK_ESCAPE):
             # We're done
             text_ctrl.Hide()
