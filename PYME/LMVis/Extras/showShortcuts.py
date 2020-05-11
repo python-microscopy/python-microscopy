@@ -62,5 +62,5 @@ def Plug(vis_fr):
 
 def show_shortcuts(vis_fr):
     shortcuts = ShowShortcuts(vis_fr)
-    shortcuts.ShowModal()
-    shortcuts.Destroy()
+    shortcuts.Show()
+    # shortcuts.Destroy()
