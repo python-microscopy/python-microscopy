@@ -42,6 +42,8 @@ class visGuiExtras:
         from PYME.LMVis.layers import image_layer
         img = self.dsviewer.image
         glCanvas = self.dsviewer.glCanvas
+        
+        glCanvas.SetCurrent(glCanvas.gl_context) #make sure that the context we want to add the shaders to is current
 
         for name, i in zip(img.names, xrange(img.data.shape[3])):
             l_i = image_layer.ImageRenderLayer({'im': img}, dsname='im',
@@ -49,9 +51,13 @@ class visGuiExtras:
                                                channel=i,
                                                context=glCanvas.gl_context)
     
-            glCanvas.add_layer(l_i)
+            glCanvas.layers.insert(0, l_i) #prepend layers so they are drawn before points
+            
+        # FIXME - this is gross - just add to glCanvas and have it issue a signal which can be caught higher up
+        glCanvas.GetParent().GetParent().GetParent().layer_added.send(None)
 
         glCanvas.Refresh()
+        
 
 
 
