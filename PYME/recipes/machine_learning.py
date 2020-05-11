@@ -8,6 +8,7 @@ from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  Fi
 #    from PYME.misc.mock_traitsui import *
 
 import numpy as np
+from six.moves import xrange
 from scipy import ndimage
 from PYME.IO.image import ImageStack
 
@@ -70,3 +71,72 @@ class CNNFilter(Filter):
     
     def completeMetadata(self, im):
         im.mdh['CNNFilter.model'] = self.model
+
+class PointFeatureBase(ModuleBase):
+    """
+    common base class for feature extraction routines - implements normalisation and PCA routines
+    """
+    
+    outputColumnName = CStr('features')
+    columnForEachFeature = Bool(False) #if true, outputs a column for each feature - useful for visualising
+    
+    normalise = Bool(True) #subtract mean and divide by std. deviation
+    
+    PCA = Bool(True) # reduce feature dimensionality by performing PCA - TODO - should this be a separate module and be chained instead?
+    PCA_components = Int(0) # 0 = same dimensionality as features
+    
+    def _process_features(self, data, features):
+        from PYME.IO import tabular
+        out = tabular.MappingFilter(data)
+        out.mdh = getattr(data, 'mdh', None)
+        
+        if self.normalise:
+            features = features - features.mean(0)[None, :]
+            features = features/features.std(0)[None,:]
+            
+        if self.PCA:
+            from sklearn.decomposition import PCA
+            
+            pca = PCA(n_components=(self.PCA_components if self.PCA_components > 0 else None)).fit(features)
+            features = pca.transform(features)
+            
+            out.pca = pca #save the pca object just in case we want to look at what the principle components are (this is hacky)
+            
+        out.addColumn(self.outputColumnName, features)
+        
+        if self.columnForEachFeature:
+            for i in range(features.shape[1]):
+                out.addColumn('feat_%d' % i, features[:,i])
+                
+        return out
+    
+        
+@register_module('PointFeaturesPairwiseDist')
+class PointFeaturesPairwiseDist(PointFeatureBase):
+    """
+    Create a feature vector for each point in a point-cloud using a histogram of it's distances to all other points
+    
+    """
+    inputLocalisations = Input('localisations')
+    outputName = Output('features')
+    
+    binWidth = Float(100.) # width of the bins in nm
+    numBins = Int(20) #number of bins (starting at 0)
+    threeD = Bool(True)
+
+    normaliseRelativeDensity = Bool(False) # divide by the sum of all radial bins. If not performed, the first principle component will likely be average density
+    
+    def execute(self, namespace):
+        from PYME.Analysis.points import DistHist
+        points = namespace[self.inputLocalisations]
+        
+        if self.threeD:
+            x, y, z = points['x'], points['y'], points['z']
+            f = np.array([DistHist.distanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numBins, self.binWidth) for i in xrange(len(x))])
+        else:
+            x, y = points['x'], points['y']
+            f = np.array([DistHist.distanceHistogram(x[i], y[i], x, y, self.numBins, self.binWidth) for i in xrange(len(x))])
+            
+        
+        namespace[self.outputName] = self._process_features(points, f)
+    
