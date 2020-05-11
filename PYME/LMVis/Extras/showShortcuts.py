@@ -67,5 +67,4 @@ def show_shortcuts(vis_fr):
     shortcuts = ShowShortcuts(vis_fr)
     dlg = shortcuts.ShowModal()
     if dlg == wx.ID_OK:
-        shortcuts.Destroy()
-        
+        dlg.Destroy()
