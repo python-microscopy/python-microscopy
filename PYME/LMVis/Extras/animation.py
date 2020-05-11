@@ -296,7 +296,7 @@ class EditDialog(wx.Dialog):
 class EditPanel(wx.Panel):
     def __init__(self, parent, id_number, snapshot, size, pos):
         wx.Panel.__init__(self, parent, id_number, size=size, pos=pos, style=wx.BORDER_SUNKEN)
-        grid_sizer = wx.GridSizer(2, 2)
+        grid_sizer = wx.GridSizer(rows=2, cols=2, vgap=1, hgap=1)
 
         # generate row for view_id
         grid_sizer.Add(wx.StaticText(self, label='View Id', style=wx.BU_EXACTFIT))
