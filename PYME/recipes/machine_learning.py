@@ -83,7 +83,7 @@ class PointFeatureBase(ModuleBase):
     normalise = Bool(True) #subtract mean and divide by std. deviation
     
     PCA = Bool(True) # reduce feature dimensionality by performing PCA - TODO - should this be a separate module and be chained instead?
-    PCA_components = Int(0) # 0 = same dimensionality as features
+    PCA_components = Int(3) # 0 = same dimensionality as features
     
     def _process_features(self, data, features):
         from PYME.IO import tabular
