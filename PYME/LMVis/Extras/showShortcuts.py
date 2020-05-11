@@ -53,7 +53,10 @@ class ShowShortcuts(wx.Dialog):
         table.Add(wx.StaticText(self, label=action))
 
     def OnClose(self, e):
-        self.Destroy()
+        if self.IsModal():
+            self.EndModal(e.EventObject.Id)
+        else:
+            self.Destroy()
 
 def Plug(vis_fr):
 
@@ -62,5 +65,7 @@ def Plug(vis_fr):
 
 def show_shortcuts(vis_fr):
     shortcuts = ShowShortcuts(vis_fr)
-    shortcuts.Show()
-    # shortcuts.Destroy()
+    dlg = shortcuts.ShowModal()
+    if dlg == wx.ID_OK:
+        shortcuts.Destroy()
+        
