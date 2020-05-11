@@ -340,12 +340,14 @@ class Pipeline:
     #compatibility redirects
     @property
     def fluorSpecies(self):
-        warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        #warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        raise DeprecationWarning('Use colour_mapper.species_ratios instead')
         return self.colour_mapper.species_ratios
     
     @property
     def fluorSpeciesDyes(self):
-        warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        #warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        raise DeprecationWarning('Use colour_mapper.species_dyes instead')
         return self.colour_mapper.species_dyes
         
 

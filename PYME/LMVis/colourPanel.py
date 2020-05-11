@@ -69,14 +69,14 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
 
             cf = self.pipeline.colourFilter
 
-            for k, v in self.pipeline.fluorSpecies.items():
+            for k, v in self.pipeline.colour_mapper.species_ratios.items():
                 p_dye = self.pipeline.filter['p_%s' % k][::int(max(l_x/1e4, 1))]
 
                 p_other = numpy.zeros(x.shape)
                 #p_tot = numpy.zeros(p_dye.shape)
                 p_tot = cf.t_p_background*self.pipeline.filter['ColourNorm'][::int(max(l_x/1e4, 1))]
 
-                for k2 in self.pipeline.fluorSpecies.keys():
+                for k2 in self.pipeline.colour_mapper.species_ratios.keys():
                     p_tot  += self.pipeline.filter['p_%s' % k2][::int(max(l_x/1e4, 1))]
                     if not k2 ==k:
                         p_other = numpy.maximum(p_other, self.pipeline.filter['p_%s' % k2][::int(max(l_x/1e4, 1))])
@@ -116,7 +116,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             self.subplot1.set_ylim((0, yl))
 
 
-            for k, v in self.pipeline.fluorSpecies.items():
+            for k, v in self.pipeline.colour_mapper.species_ratios.items():
                 self.subplot1.plot([0,xl], [0, ((1-v)/v)*xl], lw=2, c=cm.jet_r(v))
 
             self.canvas.draw()
@@ -176,7 +176,7 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.makeColumnEditable(4)
         self.lFluorSpecies.makeColumnEditable(5)
 
-        for key, value in self.pipeline.fluorSpecies.items():
+        for key, value in self.pipeline.colour_mapper.species_ratios.items():
             ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
