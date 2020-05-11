@@ -255,12 +255,12 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('File>Open Extra', "Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File>Open Extra', "Channel", self.OnOpenChannel)
-            
+
+        self.AddMenuItem('File', itemType='separator')
         self.AddMenuItem('File>Save', 'Filtered Localizations', self.OnSave)
         
         if not subMenu:
-            # self.AddMenuItem('File', itemType='separator')
-            self.AddMenuItem('File>Save', "Save Measurements", self.OnSaveMeasurements)
+            self.AddMenuItem('File>Save', "Measurements", self.OnSaveMeasurements)
 
             self.AddMenuItem('File', itemType='separator')
 
