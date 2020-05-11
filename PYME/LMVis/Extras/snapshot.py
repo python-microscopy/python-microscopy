@@ -63,4 +63,4 @@ def save_snapshot(canvas):
 
 
 def Plug(vis_fr):
-    vis_fr.AddMenuItem('View', 'Save Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))
+    vis_fr.AddMenuItem('File>Save', 'View Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))
