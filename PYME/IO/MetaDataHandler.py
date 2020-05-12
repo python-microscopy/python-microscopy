@@ -746,22 +746,23 @@ class XMLMDHandler(MDHandlerBase):
 
 
 class OMEXMLMDHandler(XMLMDHandler):
-    _OME_UNITS_TO_UM = {'m': 1e6, 'mm': 1e3, 'um': 1.0, 'nm': 1e-3}
+    _OME_UNITS_TO_UM = {'m': 1e6, 'mm': 1e3, 'um': 1.0, ('%sm'%chr(181)): 1.0, 'nm': 1e-3}
     
     @classmethod
     def _get_pixel_size_um(cls, pix, axis, default=0.1):
         axis = axis.upper()
         try:
-            ps = float(pix.GetAttribute('PhysicalSize%s' % axis))
+            ps = float(pix.getAttribute('PhysicalSize%s' % axis))
         except:
             logger.error('No %s pixel size defined, using default' % axis)
             return default
         try:
-            ps = ps * cls._OME_UNITS_TO_UM[pix.GetAttribute('PhysicalSize%sUnit' % axis)]
+            ps = ps * cls._OME_UNITS_TO_UM[pix.getAttribute('PhysicalSize%sUnit' % axis)]
         except:
             logger.error('No units defined for axis %s, defaulting to um' % axis)
-            
             return ps
+            
+        return ps
         
     def __init__(self, XMLData = None, mdToCopy=None):
         if not XMLData is None:
