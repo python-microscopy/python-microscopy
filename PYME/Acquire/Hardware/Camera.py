@@ -72,19 +72,18 @@ class CameraMapMixin(object):
         mdh: PYME.IO.MetaDataHandler
             dict-like metadata
         """
-        from PYME.Analysis.gen_sCMOS_maps import map_filename, MAP_TYPE_TO_MDH_KEY
-        from PYME.IO.FileUtils import nameUtils
+        from PYME.IO.FileUtils.nameUtils import getCalibrationDir, cameramap_filename, MAP_TYPE_TO_MDH_KEY
         from PYME.IO import clusterIO
         import os
 
         for map in self._camera_map_fields:
-            map_fn = map_filename(mdh, map)
+            map_fn = cameramap_filename(mdh, map)
             if map_fn in self._camera_map_cache.keys():
                 map_location = self._camera_map_cache[map_fn]
                 if map_location is not None:  # don't write field if we're just faking it
                     mdh[MAP_TYPE_TO_MDH_KEY[map]] = map_location
             else:
-                local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), map_fn)
+                local_path = os.path.join(getCalibrationDir(mdh['Camera.SerialNumber']), map_fn)
                 cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], map_fn)
                 if clusterIO.exists(cluster_path):
                     c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)

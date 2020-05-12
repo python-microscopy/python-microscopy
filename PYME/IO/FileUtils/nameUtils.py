@@ -249,3 +249,30 @@ def getRelFilename(filename):
         return filename[len(dataDir):]
 
     return filename
+
+MAP_TYPE_TO_MDH_KEY = {
+    'flatfield': 'Camera.FlatfieldMapID',
+    'variance': 'Camera.VarianceMapID',
+    'dark': 'Camera.DarkMapID'
+}
+MDH_KEY_TO_MAP_TYPE = {v:k for k, v in MAP_TYPE_TO_MDH_KEY.items()}
+
+def cameramap_filename(mdh, map_type):
+    """
+    Generate a default filestub to save/search for camera maps
+    Parameters
+    ----------
+    mdh: PYME.IO.MetaDataHandler
+        dict-like metadata
+    map_type: str
+        standards are 'flatfield', 'variance', and 'dark'
+    Returns
+    -------
+    filename: str
+        filename of camera map including integration time, if relevant.
+    """
+    if map_type != 'flatfield':
+        itime = int(1000 * mdh['Camera.IntegrationTime'])
+        return '%s_%dms.tif' % (map_type, itime)
+    else:
+        return '%s.tif' % (map_type)
