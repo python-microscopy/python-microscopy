@@ -69,7 +69,7 @@ class CameraMapMixin(object):
         Store camera map locations in the input metadata. The results (including camera-map does not exist) are cached.
         Parameters
         ----------
-        mdh: PYME.IO.MetaDataHandler
+        mdh: PYME.IO.MetaDataHandler.MDHandlerBase
             dict-like metadata
         """
         from PYME.IO.FileUtils.nameUtils import getCalibrationDir, cameramap_filename, MAP_TYPE_TO_MDH_KEY
@@ -92,7 +92,7 @@ class CameraMapMixin(object):
                 elif os.path.exists(local_path):
                     self._camera_map_cache[map_fn] = local_path
                     mdh[MAP_TYPE_TO_MDH_KEY[map]] = local_path
-                else:  # map doesn't exist, negative cache it so we don't keep checking
+                else:  # map doesn't exist, add entry to the cache anyway so we don't keep checking
                     self._camera_map_cache[map_fn] = None
 
     def clear_cache(self):
