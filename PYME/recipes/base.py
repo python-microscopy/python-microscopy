@@ -184,7 +184,7 @@ class ModuleBase(HasTraits):
 
     @property
     def outputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('output')}
+        return {v for k, v in self.trait_get().items() if k.startswith('output') and not v ==''}
     
     @property
     def file_inputs(self):

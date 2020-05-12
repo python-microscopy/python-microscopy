@@ -174,12 +174,12 @@ class FindClumps(ModuleBase):
     """
     inputName = Input('input')
     outputName = Output('with_clumps')
-    outputClumps = Output('clumps')
+    outputClumps = Output('')
     
     timeWindow = Int(3)
     clumpRadiusScale = Float(2.0)
     clumpRadiusVariable = CStr('error_x')
-    minClumpSize = Int(2)
+    minClumpSize = Int(2) # TODO - check for usages and rename to reflect the fact that this only effects the clumps output. Hide in view if outputClumps==''
     
     
     def execute(self, namespace):
@@ -199,7 +199,8 @@ class FindClumps(ModuleBase):
         
         #clumpInfo, clumps = self.Track(meas, True)
         namespace[self.outputName] = with_clumps
-        namespace[self.outputClumps] = clumps
+        if self.outputClumps:
+            namespace[self.outputClumps] = clumps
         
         
     

@@ -94,24 +94,34 @@ class ParticleTracker:
         recipe = self.visFr.pipeline.recipe
     
         visFr = self.visFr
-        pipeline = visFr.pipeline
+        pipeline = visFr.pipeline # type: PYME.LMVis.pipeline.Pipeline
 
-        tabular_name = pipeline.new_ds_name('with_tracks')
-        clump_manager_name = pipeline.new_ds_name('tracks')
+        if hasattr(self, '_mol_tracking_module') and (self._mol_tracking_module in recipe.modules):
+            # We have already tracked, edit existing tracking module instead
+            wx.MessageBox('This dataset has already been tracked, edit parameters of existing tracking rather than starting again', 'Error', wx.OK|wx.ICON_ERROR, visFr)
+            self._mol_tracking_module.configure_traits(kind='modal')
+            return
+            
+
+        output_name = 'with_tracks'
+        if output_name in recipe.namespace:
+            # this should take care of, e.g. having tracked with feature based tracking or something in the recipe
+            output_name = pipeline.new_ds_name('with_tracks')
+            wx.MessageBox("Another module has already created a 'with_tracks' output, using the nonstandard name '%s' instead" % output_name, 'Warning', wx.OK|wx.ICON_WARNING, visFr)
         
         tracking_module = tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey,
-                                              outputName=tabular_name,
-                                    outputClumps = clump_manager_name,
+                                              outputName=output_name,
                                     timeWindow=5,
                                     clumpRadiusVariable='1.0',
                                     clumpRadiusScale=250.,
                                     minClumpSize=50)
     
         if tracking_module.configure_traits(kind='modal'):
+            self._mol_tracking_module = tracking_module
             recipe.add_module(tracking_module)
     
             recipe.execute()
-            self.visFr.pipeline.selectDataSource(tabular_name)
+            self.visFr.pipeline.selectDataSource(output_name)
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
             layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputName, method='tracks')
             visFr.add_layer(layer)
