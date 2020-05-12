@@ -39,14 +39,28 @@ class TracebackDialog(wx.Dialog):
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        vsizer.Add(wx.StaticText(self, label='%s(%s)' %(exc_type.__name__, exc_val)),0, wx.ALL, 2 )
+        hsizer=wx.BoxSizer(wx.HORIZONTAL)
+        s_b = wx.StaticBitmap(self)
+        s_b.SetIcon(wx.ArtProvider.GetIcon(wx.ART_ERROR, client=wx.ART_MESSAGE_BOX, size=(32,32)))
+        hsizer.Add(s_b, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(self, label='%s(%s)' %(exc_type.__name__, exc_val)),0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 2 )
+        vsizer.Add(hsizer, 0, wx.ALL, 2)
         #print(exc_tb)
         tb = ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
         #print(tb, type(tb))
-        vsizer.Add(wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb), size=(400,300), style=wx.TE_MULTILINE|wx.TE_READONLY), 0, wx.ALL, 2)
-        vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'), 0, wx.ALL, 2)
+        err_text=wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb),
+                               size=(400,300), style=wx.TE_MULTILINE|wx.TE_READONLY)
+        vsizer.Add(err_text, 0, wx.ALL, 15)
+        vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'), 0, wx.ALL, 5)
         
-        vsizer.Add(self.CreateButtonSizer(wx.OK), 0, wx.TOP, 2)
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        
+        btnsizer.Realize()
+        
+        vsizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
         
 def show_traceback_dialog(parent, description, exc_type, exc_val, exc_tb):
