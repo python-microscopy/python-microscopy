@@ -55,6 +55,10 @@ def show_traceback_dialog(parent, description, exc_type, exc_val, exc_tb):
     dlg.Destroy()
 
 class ComputationInProgress(object):
+    """
+    Context manager for wrapping long-running tasks in the GUI - indicates that something is happening and display a
+    dialog showing the error on failure
+    """
     def __init__(self, window, short_description):
         self.window = window # type: wx.Window
         self.description = short_description

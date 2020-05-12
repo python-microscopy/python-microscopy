@@ -22,6 +22,7 @@
 
 import wx
 import numpy as np
+from PYME.ui import progress
 
 class ParticleTracker:
     def __init__(self, visFr):
@@ -57,6 +58,7 @@ class ParticleTracker:
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
+        
 
         visFr = self.visFr
         pipeline = visFr.pipeline
@@ -67,17 +69,18 @@ class ParticleTracker:
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
-            from PYME.recipes import tracking
-            recipe = self.visFr.pipeline.recipe
-    
-            recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
-                                                  timeWindow=dlg.GetClumpTimeWindow(),
-                                                  clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
-                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
-    
-            recipe.execute()
-            self.visFr.pipeline.selectDataSource('with_clumps')
-            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            with progress.ComputationInProgress(visFr, 'finding consecutive appearances'):
+                from PYME.recipes import tracking
+                recipe = self.visFr.pipeline.recipe
+        
+                recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
+                                                      timeWindow=dlg.GetClumpTimeWindow(),
+                                                      clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
+                                                      clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
+        
+                recipe.execute()
+                self.visFr.pipeline.selectDataSource('with_clumps')
+                #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
 
@@ -102,13 +105,14 @@ class ParticleTracker:
                                     minClumpSize=50)
     
         if tracking_module.configure_traits(kind='modal'):
-            recipe.add_module(tracking_module)
-    
-            recipe.execute()
-            self.visFr.pipeline.selectDataSource('with_tracks')
-            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
-            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
-            visFr.add_layer(layer)
+            with progress.ComputationInProgress(visFr, 'tracking molecules'):
+                recipe.add_module(tracking_module)
+        
+                recipe.execute()
+                self.visFr.pipeline.selectDataSource('with_tracks')
+                #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+                layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
+                visFr.add_layer(layer)
         
         #dlg.Destroy()
 
@@ -195,14 +199,15 @@ class ParticleTracker:
         #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
     def OnCoalesce(self, event):
-        from PYME.recipes import localisations
-        recipe = self.visFr.pipeline.recipe
-    
-        recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
-    
-        recipe.execute()
-        self.visFr.pipeline.selectDataSource('coalesced')
-        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        with progress.ComputationInProgress(self.visFr, 'coalescing consecutive appearances'):
+            from PYME.recipes import localisations
+            recipe = self.visFr.pipeline.recipe
+            
+            recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+        
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('coalesced')
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
     def OnCalcWidths(self,event):
         #FIXME - this is probably broken on modern VisGUI
