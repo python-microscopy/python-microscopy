@@ -24,7 +24,7 @@ def get_package_versions():
                                 python_version='.'.join([str(n) for n in sys.version_info[:3]]), platform=sys.platform,
                                 numpy_version=np.version.version, wx_version=wx.version())
 
-error_msg = ''' Error whilst {description}
+error_msg = ''' Error whilst running {description}
 ==============================================
 {pkgversions}
 
@@ -49,7 +49,7 @@ class TracebackDialog(wx.Dialog):
         tb = ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
         #print(tb, type(tb))
         err_text=wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb),
-                               size=(400,300), style=wx.TE_MULTILINE|wx.TE_READONLY)
+                               size=(500,300), style=wx.TE_MULTILINE|wx.TE_READONLY)
         vsizer.Add(err_text, 0, wx.ALL, 15)
         vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'), 0, wx.ALL, 5)
         
@@ -97,4 +97,13 @@ class ComputationInProgress(object):
         else:
             if hasattr(self.window, 'SetStatus'):
                 self.window.SetStatus('%s ... [COMPLETE]' % self.description)
-        
+ 
+ 
+ 
+def managed(fcn, window, description):
+    """ wrap a function in a context manager - used to wrap menu items"""
+    def func(*args, **kwargs):
+        with ComputationInProgress(window, description):
+            return fcn(*args, **kwargs)
+            
+    return func

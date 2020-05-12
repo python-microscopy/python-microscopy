@@ -69,18 +69,18 @@ class ParticleTracker:
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
-            with progress.ComputationInProgress(visFr, 'finding consecutive appearances'):
-                from PYME.recipes import tracking
-                recipe = self.visFr.pipeline.recipe
-        
-                recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
-                                                      timeWindow=dlg.GetClumpTimeWindow(),
-                                                      clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
-                                                      clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
-        
-                recipe.execute()
-                self.visFr.pipeline.selectDataSource('with_clumps')
-                #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            #with progress.ComputationInProgress(visFr, 'finding consecutive appearances'):
+            from PYME.recipes import tracking
+            recipe = self.visFr.pipeline.recipe
+    
+            recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
+                                                  timeWindow=dlg.GetClumpTimeWindow(),
+                                                  clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
+                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_clumps')
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
 
@@ -199,15 +199,15 @@ class ParticleTracker:
         #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
     def OnCoalesce(self, event):
-        with progress.ComputationInProgress(self.visFr, 'coalescing consecutive appearances'):
-            from PYME.recipes import localisations
-            recipe = self.visFr.pipeline.recipe
-            
-            recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+        #with progress.ComputationInProgress(self.visFr, 'coalescing consecutive appearances'):
+        from PYME.recipes import localisations
+        recipe = self.visFr.pipeline.recipe
         
-            recipe.execute()
-            self.visFr.pipeline.selectDataSource('coalesced')
-            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+    
+        recipe.execute()
+        self.visFr.pipeline.selectDataSource('coalesced')
+        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
     def OnCalcWidths(self,event):
         #FIXME - this is probably broken on modern VisGUI

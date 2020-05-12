@@ -166,22 +166,22 @@ class LMGLShaderCanvas(GLCanvas):
     
     @property
     def xc(self):
-        warn('Use view.translation[0] instead', DeprecationWarning)
+        warn('Use view.translation[0] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[0]
     
     @property
     def yc(self):
-        warn('Use view.translation[1] instead', DeprecationWarning)
+        warn('Use view.translation[1] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[1]
 
     @property
     def zc(self):
-        warn('Use view.translation[2] instead', DeprecationWarning)
+        warn('Use view.translation[2] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[2]
 
     @property
     def scale(self):
-        warn('Use view.scale instead', DeprecationWarning)
+        warn('Use view.scale instead', DeprecationWarning, stacklevel=2)
         return self.view.scale
     
     @property
