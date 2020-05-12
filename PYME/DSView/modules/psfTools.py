@@ -301,6 +301,11 @@ class PSFTools(HasTraits):
         from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
+            
         import json
         from PYME.Analysis.PSFEst import extractImages
         import wx

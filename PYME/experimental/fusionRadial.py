@@ -498,6 +498,10 @@ class FusionTrack(trackUtils.Track):
     def fusion_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
 
         plt.ioff()
 

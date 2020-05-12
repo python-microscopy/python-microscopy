@@ -86,7 +86,7 @@ class LUTOverlayLayer(OverlayLayer):
                 # upper left x
                 lb_ul_x = lb_ur_x - lb_width
                 
-                print(lb_ur_x, lb_ur_y, lb_lr_y, lb_ul_x, lb_width, lb_len, view_size_x, view_size_y)
+                #print(lb_ur_x, lb_ur_y, lb_lr_y, lb_ul_x, lb_width, lb_len, view_size_x, view_size_y)
 
                 glBegin(GL_QUAD_STRIP)
     

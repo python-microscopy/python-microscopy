@@ -515,6 +515,10 @@ class CaWave(object):
     def direction_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
         
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
@@ -548,6 +552,10 @@ class CaWave(object):
     def velocity_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
     
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
