@@ -39,7 +39,7 @@ class ViewPanel(DockedPanel):
         self.SetSizerAndFit(vertical_sizer)
 
     def create_buttons(self, vertical_sizer):
-        grid_sizer = wx.GridSizer(6, 1)
+        grid_sizer = wx.GridSizer(rows=6, cols=1, vgap=1, hgap=1)
         x_button = wx.Button(self, -1, label='View in x', style=wx.BU_EXACTFIT)
         y_button = wx.Button(self, -1, label='View in y', style=wx.BU_EXACTFIT)
         z_button = wx.Button(self, -1, label='View in z', style=wx.BU_EXACTFIT)
