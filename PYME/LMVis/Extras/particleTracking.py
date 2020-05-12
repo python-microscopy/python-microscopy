@@ -105,14 +105,13 @@ class ParticleTracker:
                                     minClumpSize=50)
     
         if tracking_module.configure_traits(kind='modal'):
-            with progress.ComputationInProgress(visFr, 'tracking molecules'):
-                recipe.add_module(tracking_module)
-        
-                recipe.execute()
-                self.visFr.pipeline.selectDataSource('with_tracks')
-                #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
-                layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
-                visFr.add_layer(layer)
+            recipe.add_module(tracking_module)
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_tracks')
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputClumps, method='tracks')
+            visFr.add_layer(layer)
         
         #dlg.Destroy()
 
