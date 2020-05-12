@@ -56,7 +56,7 @@ class ShowShortcuts(wx.Dialog):
         if self.IsModal():
             self.EndModal(e.EventObject.Id)
         else:
-            self.Close()
+            self.Destroy()
 
 def Plug(vis_fr):
 
@@ -65,6 +65,5 @@ def Plug(vis_fr):
 
 def show_shortcuts(vis_fr):
     shortcuts = ShowShortcuts(vis_fr)
-    dlg = shortcuts.ShowModal()
-    if dlg == wx.ID_OK:
-        dlg.Destroy()
+    shortcuts.ShowModal()
+    shortcuts.Destroy()
