@@ -709,7 +709,7 @@ class ModuleCollection(HasTraits):
     def fromYAML(cls, data):
         import yaml
 
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
         return cls._from_module_list(l)
     
     def update_from_yaml(self, data):
@@ -733,7 +733,8 @@ class ModuleCollection(HasTraits):
             with open(data) as f:
                 data = f.read()
     
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
+
         return self._update_from_module_list(l)
 
     @classmethod
