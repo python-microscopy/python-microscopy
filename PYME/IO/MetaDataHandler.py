@@ -746,7 +746,7 @@ class XMLMDHandler(MDHandlerBase):
 
 
 class OMEXMLMDHandler(XMLMDHandler):
-    _OME_UNITS_TO_UM = {'m': 1e6, 'mm': 1e3, 'um': 1.0, ('%sm'%chr(181)): 1.0, 'nm': 1e-3}
+    _OME_UNITS_TO_UM = {'m': 1e6, 'mm': 1e3, 'um': 1.0, u'\u00B5m': 1.0, 'nm': 1e-3}
     
     @classmethod
     def _get_pixel_size_um(cls, pix, axis, default=0.1):
