@@ -11,7 +11,7 @@
 #define MAX_DIMS 4
 static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    int outDimensions[1];
+    npy_intp outDimensions[1];
     int nPts=0;
     int nViews = 0;
     int nCalPts = 0;
@@ -54,14 +54,14 @@ static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
     outDimensions[0] = nPts;
 
     // Allocate output arrays
-    out_z = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_INT);
+    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_INT);
     if (out_z == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
       goto fail;
     }
 
-    out_err = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_FLOAT);
+    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_FLOAT);
     if (out_err == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
@@ -125,7 +125,7 @@ fail:
 #define N_VIEWS 4
 static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    int outDimensions[1];
+    npy_intp outDimensions[1];
     int nPts=0;
     int nViews = 0;
     int nCalPts = 0;
@@ -168,14 +168,14 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
     outDimensions[0] = nPts;
 
     // Allocate output arrays
-    out_z = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_INT);
+    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_INT);
     if (out_z == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
       goto fail;
     }
 
-    out_err = (PyArrayObject*) PyArray_FromDims(1,outDimensions,PyArray_FLOAT);
+    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_FLOAT);
     if (out_err == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");

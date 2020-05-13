@@ -53,7 +53,10 @@ class ShowShortcuts(wx.Dialog):
         table.Add(wx.StaticText(self, label=action))
 
     def OnClose(self, e):
-        self.Destroy()
+        if self.IsModal():
+            self.EndModal(e.EventObject.Id)
+        else:
+            self.Destroy()
 
 def Plug(vis_fr):
 

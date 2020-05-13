@@ -65,15 +65,14 @@ dz = None
 def genTheoreticalModel(md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelF, interpModelFA, dx, dy, dz, kx, ky, kz
 
-    if not dx == md.voxelsize.x*1e3 and not dy == md.voxelsize.y*1e3 and not dz == md.voxelsize.z*1e3:
+    vs = md.voxelsize_nm
+    if not dx == vs.x and not dy == vs.y and not dz == vs.z:
 
-        IntXVals = 1e3*md.voxelsize.x*scipy.mgrid[-20:20]
-        IntYVals = 1e3*md.voxelsize.y*scipy.mgrid[-20:20]
-        IntZVals = 1e3*md.voxelsize.z*scipy.mgrid[-20:20]
+        IntXVals = vs.x*scipy.mgrid[-20:20]
+        IntYVals = vs.y*scipy.mgrid[-20:20]
+        IntZVals = vs.z*scipy.mgrid[-20:20]
 
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = scipy.arange(0,1.01,.01)
 

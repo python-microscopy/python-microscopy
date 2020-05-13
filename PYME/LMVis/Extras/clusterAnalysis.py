@@ -22,7 +22,7 @@
 
 import numpy as np
 import sys
-
+import wx
 
 class ClusterAnalyser:
     """
@@ -46,9 +46,10 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Analysis>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
+        visFr.AddMenuItem('Analysis>Clustering', "Ripley's K/L", self.OnRipleys, helpText='')
+        visFr.AddMenuItem('Analysis>Clustering', "Ripley's K/L (Masked)", self.OnRipleysMasked, helpText='')
         visFr.AddMenuItem('Analysis>Clustering', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
-
         visFr.AddMenuItem('Analysis>Clustering', 'Test Ring Probability', self.OnRingTest,
                           helpText='')
 
@@ -93,6 +94,8 @@ class ClusterAnalyser:
             recipe.execute()
 
             pipeline.selectDataSource(clumper.outputName)
+
+    
 
     def OnNearestNeighbor(self, event=None):
         """
@@ -258,6 +261,8 @@ class ClusterAnalyser:
         from PYME.recipes import tablefilters, localisations, measurement
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
+        import wx
+        import os
 
         # build a recipe programatically
         distogram = ModuleCollection()
@@ -288,7 +293,17 @@ class ClusterAnalyser:
         plt.bar(self.pairwiseDistances[selectedChans]['bins'] - 0.5*binsz,
                 self.pairwiseDistances[selectedChans]['counts'], width=binsz)
 
-
+        hist_dlg = wx.FileDialog(None, message="Save histogram as csv...",
+                                #  defaultDir=os.getcwd(),
+                                 defaultFile='disthist_{}.csv'.format(os.path.basename(self.pipeline.filename)), 
+                                 wildcard='CSV (*.csv)|*.csv', 
+                                 style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    
+        if hist_dlg.ShowModal() == wx.ID_OK:
+            histfn = hist_dlg.GetPath()
+            np.savetxt(histfn, np.vstack([self.pairwiseDistances[selectedChans]['bins']- 0.5*binsz,
+                                          self.pairwiseDistances[selectedChans]['counts']]).T, 
+                                          delimiter=',', header='Bins [nm],Counts')
 
     def OnClustersInTime(self, event=None):
         #FIXME - this would probably be better in an addon module outside of the core project
@@ -359,6 +374,57 @@ class ClusterAnalyser:
         #self.visFr.glCanvas.setPoints3D(meas['x'], meas['y'], meas['z'], np.zeros_like(meas['x']))
 
 
+    def OnRipleysMasked(self, event=None):
+        """
+        Run's  masked Ripley's K or L on the current dataset.
+        """
+        from PYME.IO import image
+
+        dlg = wx.SingleChoiceDialog(
+            None, 'choose the image which contains the mask to use', 'Use Mask',
+            list(image.openImages.keys()),
+            wx.CHOICEDLG_STYLE
+        )
+
+        if dlg.ShowModal() == wx.ID_OK:
+            img_name = dlg.GetStringSelection()
+            mask = image.openImages[img_name]
+
+            self.OnRipleys(mask=mask)
+
+        dlg.Destroy()
+
+    def OnRipleys(self, event=None, mask=None):
+        """
+        Run's  masked Ripley's K or L on the current dataset.
+        """
+        from PYME.recipes.pointcloud import Ripleys
+        import matplotlib.pyplot as plt
+
+        pipeline = self.visFr.pipeline
+    
+        r = Ripleys(inputPositions='positions',
+                    inputMask='mask') #NB - need to set mask input here as otherwise it defaults to an empty string
+
+        if r.configure_traits(kind='modal'):
+            result = r.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)[r.outputName]
+    
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            if r.normalization == 'L':
+                ax.axhline(y=0, c='k', linestyle='--')
+                ax.set_ylabel('L')
+            else:
+                if np.count_nonzero(pipeline['z']) == 0:
+                    ax.plot(result['bins'], np.pi * (result['bins'] + r.binSize) ** 2, c='k', linestyle='--')
+                else:
+                    ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
+                            c='k', linestyle='--')
+                ax.set_ylabel('K')
+            ax.scatter(result['bins'], result['vals'], s=0.1, c='r')
+            ax.set_xlabel('Distance (nm)')
+
+            
 
 def Plug(visFr):
     """Plugs this module into the gui"""

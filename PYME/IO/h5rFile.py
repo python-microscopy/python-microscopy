@@ -61,6 +61,7 @@ class H5RFile(object):
 
         #logging.debug('H5RFile - starting poll thread')
         self._lastFlushTime = 0
+        self._flush_condition = threading.Condition()
         self._pollThread = threading.Thread(target=self._pollQueues)
         self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
         self._pollThread.start()
@@ -118,7 +119,7 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                if isinstance(data, six.string_types):
+                if isinstance(data, bytes):
                     table = self._h5file.create_vlarray(self._h5file.root, tablename, tables.VLStringAtom())
                     table.append(data)
                 else:
@@ -200,6 +201,8 @@ class H5RFile(object):
                     with tablesLock:
                         self._h5file.flush()
                     self._lastFlushTime = curTime
+                    with self._flush_condition:
+                        self._flush_condition.notify_all()
 
                 time.sleep(0.1)
 
@@ -241,3 +244,16 @@ class H5RFile(object):
 
         if len(fitResult.driftResults) > 0:
             self.appendToTable('DriftResults', fitResult.driftResults)
+            
+    def flush(self):
+        """
+        Wait until our IO loop has flushed. Currently only used in testing to make sure our data has hit the disk before
+        we try and read it back in. Times out after twice our flush interval.
+
+        """
+        with self._flush_condition:
+            self._flush_condition.wait(timeout=2*self.FLUSH_INTERVAL)
+            
+    def wait_close(self):
+        self.keepAliveTimeout = 0
+        self._pollThread.join(1.5*self.KEEP_ALIVE_TIMEOUT)

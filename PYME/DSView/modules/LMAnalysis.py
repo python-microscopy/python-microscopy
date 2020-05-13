@@ -569,8 +569,8 @@ class LMAnalyser2(object):
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
         mdh = self.analysisController.analysisMDH
-        voxx = 1e3*mdh.getEntry('voxelsize.x')
-        voxy = 1e3*mdh.getEntry('voxelsize.y')
+        voxx, voxy, _ = mdh.voxelsize_nm
+        
         self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
@@ -591,9 +591,10 @@ class LMAnalyser2(object):
         dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
         
         cand = dist.argmin()
-        
-        self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
-        self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
+
+        vs = self.image.voxelsize_nm
+        self.dsviewer.do.xp = xp/(vs.x)
+        self.dsviewer.do.yp = yp/(vs.y)
         self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
@@ -896,8 +897,8 @@ class LMAnalyser2(object):
                 
                 
                     
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
+                vx, vy, _ = self.image.voxelsize_nm
+                
                 plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
                 
                 if 'startParams' in res.results.dtype.names:
@@ -937,8 +938,8 @@ class LMAnalyser2(object):
                 plt.xlim(0, d.shape[1])
                 plt.ylim(d.shape[0], 0)
                 
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
+                vx, vy, _ = self.image.voxelsize_nm
+                
                 plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
 

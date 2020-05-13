@@ -751,10 +751,8 @@ class compositor:
             ds = []
             shiftFiles = {}
             X, Y, Z = np.mgrid[0:self.image.data.shape[0], 0:self.image.data.shape[1], 0:self.image.data.shape[2]]
-            vx = self.image.mdh['voxelsize.x']*1e3
-            vy = self.image.mdh['voxelsize.y']*1e3
-            vz = self.image.mdh['voxelsize.z']*1e3
             
+            vx, vy, vz = self.image.voxelsize_nm
             
             roi_x0, roi_y0 = get_camera_roi_origin(self.image.mdh)
             

@@ -47,7 +47,7 @@ def allmodules():
     return am
 
 
-basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling', 'recipes']
+basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling', 'recipes', 'vis3D']
 liteModules = ['filtering', 'cropping','composite', 'profilePlotting', 'splitter', 'synchronise']
 
 modeModules = {

@@ -4,7 +4,7 @@ numpy==1.14.*
 scipy
 matplotlib
 #wxpython
-tables <=3.4.2
+tables #<=3.4.2
 #pyopengl
 traits
 traitsui
@@ -40,7 +40,7 @@ ujson
 jinja2
 #dispatch
 #pycairo
-#pymecompress >=0.1.4
+#pymecompress >=0.2
 six
 future
 #pywin32 [win]

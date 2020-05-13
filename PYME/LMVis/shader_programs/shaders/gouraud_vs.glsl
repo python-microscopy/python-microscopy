@@ -10,6 +10,7 @@ uniform vec4 view_vector;
 varying vec4 vertexColor;
 
 varying float vis;
+varying float depth;
 
 uniform float x_min;
 uniform float x_max;
@@ -43,6 +44,7 @@ void main(void){
         specular = specLight * spec;
     }
     vertexColor = ambient + diffuse + specular;
+    vertexColor.a = inputColor.a;
 
     visible = gl_Vertex.x > x_min && gl_Vertex.x < x_max;
     visible = visible && gl_Vertex.y > y_min && gl_Vertex.y < y_max;
@@ -50,6 +52,11 @@ void main(void){
 
     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
+    vec4 eye_frame = gl_ModelViewMatrix*gl_Vertex; //just do model view part for OIT calcs
+
     visible = visible && gl_Position.z > v_min && gl_Position.z < v_max;
     vis = (float(visible));
+
+    // depth n eye/camera space coordinates
+    depth = (eye_frame.z);
 }

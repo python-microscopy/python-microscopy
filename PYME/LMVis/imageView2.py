@@ -175,11 +175,11 @@ class ImageViewPanel(wx.Panel):
         
 
     def OnKeyPress(self, event):
-        if event.GetKeyCode() == wx.WXK_PRIOR:
+        if event.GetKeyCode() == wx.WXK_PAGEUP:
             self.do.zp =max(self.do.zp - 1, 0)
             self.Refresh()
             self.Update()
-        elif event.GetKeyCode() == wx.WXK_NEXT:
+        elif event.GetKeyCode() == wx.WXK_PAGEDOWN:
             self.do.zp = min(self.do.zp + 1, self.image.data.shape[self.zdim] - 1)
             self.Refresh()
             self.Update()

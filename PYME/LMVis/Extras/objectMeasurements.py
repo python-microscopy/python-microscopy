@@ -29,6 +29,7 @@ class ObjectMeasurer:
 
         visFr.AddMenuItem('Analysis', "Get segmented IDs from image", self.OnGetIDs)
         visFr.AddMenuItem('Analysis', "Measure objects", self.OnMeasure)
+        visFr.AddMenuItem('Analysis', 'Pairwise distance point features', self.gen_pairwise_distance_features)
 
 
     def OnGetIDs(self, event):
@@ -108,6 +109,33 @@ class ObjectMeasurer:
                 pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
             
             pipeline.colourFilter.setColour(curChan)
+            
+    
+    def gen_pairwise_distance_features(self, event=None):
+        from PYME.recipes import machine_learning
+        from PYME.ui import progress
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+
+        with progress.ComputationInProgress(visFr, 'calculating pairwise distance point features'):
+            m = machine_learning.PointFeaturesPairwiseDist(pipeline.recipe, inputLocalisations=pipeline.selectedDataSourceKey, outputName=pipeline.new_ds_name('features'))
+            m.edit_no_invalidate()
+       
+            pipeline.recipe.add_module(m)
+            pipeline.selectDataSource(m.outputName)
+            
+            if m.PCA:
+                # we did PCA - display the principle component vectors
+                import matplotlib.pyplot as plt
+                
+                plt.figure()
+                plt.plot(m.binWidth * np.arange(m.numBins), pipeline.selectedDataSource.pca.components_.T)
+                plt.legend(['pc%d' % i for i in range(pipeline.selectedDataSource.pca.components_.shape[0])])
+                plt.grid()
+                plt.xlabel('Distance [nm]')
+                plt.ylabel('Excess density [a.u.]')
+            
+            
 
 
 

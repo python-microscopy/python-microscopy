@@ -65,6 +65,10 @@ class Plot(object):
 
         """
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
         
         with plotting_context('SVG') as p:
             f = self.plot()

@@ -328,8 +328,8 @@ class Histogram3DRenderer(HistogramRenderer):
 
     def genIm(self, settings, imb, mdh):
         mdh['Origin.z'] = settings['zBounds'][0]
-        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
-
+        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zSliceThickness'])
+        
 class DensityFitRenderer(HistogramRenderer):
     """3D histogram rendering"""
 
