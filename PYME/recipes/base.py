@@ -564,7 +564,25 @@ class ModuleCollection(HasTraits):
         #solve the dependency tree        
         return toposort.toposort_flatten(dg, sort=False)
         
-    def execute(self, **kwargs):
+    def execute(self, progress_callback=None, **kwargs):
+        """
+        Execute the recipe. Recipe execution is lazy / incremental in that modules will only be executed if their outputs
+        are no longer in the namespace or their inputs have changed.
+        
+        Parameters
+        ----------
+        progress_callback : a function, progress_callback(recipe, module)
+                This function is called after the successful execution of each module in the recipe. To abort the recipe,
+                an exception may be raised in progress_callback.
+        kwargs : any values to set in the recipe namespace prior to executing.
+
+        Returns
+        -------
+        
+        output : the value of the 'output' variable in the namespace if present, otherwise none. output is only used in
+            dh5view and ignored in recipe batch processing. It might well disappear completely in the future.
+
+        """
         #remove anything which is downstream from changed inputs
         #print self.namespace.keys()
         for k, v in kwargs.items():
@@ -583,12 +601,28 @@ class ModuleCollection(HasTraits):
         
         exec_order = self.resolveDependencies()
 
+        #mark all modules which should execute as not having executed
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
+                m._success = False
+        
+        for m in exec_order:
+            if not m._success:
                 try:
                     m.execute(self.namespace)
+                    m._last_error = None
+                    m._success = True
+                    if progress_callback:
+                        progress_callback(self, m)
                 except:
+                    import traceback
                     logger.exception("Error in recipe module: %s" % m)
+                    
+                    #record our error so that we can associate it with a module
+                    m._last_error = traceback.format_exc()
+                    
+                    # make sure we didn't leave any partial results
+                    self.prune_dependencies_from_namespace(m.outputs)
                     raise
         
         self.recipe_executed.send_robust(self)
