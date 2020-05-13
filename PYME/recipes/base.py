@@ -90,7 +90,12 @@ class ModuleBase(HasTraits):
         self._check_outputs()
 
     @on_trait_change('anytrait')
-    def invalidate_parent(self):
+    def invalidate_parent(self, name='', new=None):
+        #print('invalidate_parent', name, new)
+        if (name == 'trait_added') or name.startswith('_'):
+            # don't trigger on private variables
+            return
+        
         if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
             #print('invalidating')
             self._parent.prune_dependencies_from_namespace(self.outputs)
