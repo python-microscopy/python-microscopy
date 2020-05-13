@@ -106,7 +106,19 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     fc = [.8, 1, .8]
                 else:
                     fc = [.8,.8, 1]
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=fc, picker=True)
+                    
+                if getattr(k, '_last_error', None):
+                    ec = 'r'
+                    lw = 3
+                else:
+                    lw = 1
+                    if getattr(k, '_success', False):
+                        ec = 'g'
+                    else:
+                        ec = 'k'
+                    
+                    
+                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec=ec, lw=lw, fc=fc, picker=True)
                 
                 rect._data = k
                 self.ax.add_patch(rect)

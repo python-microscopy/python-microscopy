@@ -607,7 +607,7 @@ class ModuleCollection(HasTraits):
                 m._success = False
         
         for m in exec_order:
-            if not m._success:
+            if isinstance(m, ModuleBase) and not m._success:
                 try:
                     m.execute(self.namespace)
                     m._last_error = None
