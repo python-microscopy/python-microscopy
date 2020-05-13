@@ -166,22 +166,22 @@ class LMGLShaderCanvas(GLCanvas):
     
     @property
     def xc(self):
-        warn('Use view.translation[0] instead', DeprecationWarning)
+        warn('Use view.translation[0] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[0]
     
     @property
     def yc(self):
-        warn('Use view.translation[1] instead', DeprecationWarning)
+        warn('Use view.translation[1] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[1]
 
     @property
     def zc(self):
-        warn('Use view.translation[2] instead', DeprecationWarning)
+        warn('Use view.translation[2] instead', DeprecationWarning, stacklevel=2)
         return self.view.translation[2]
 
     @property
     def scale(self):
-        warn('Use view.scale instead', DeprecationWarning)
+        warn('Use view.scale instead', DeprecationWarning, stacklevel=2)
         return self.view.scale
     
     @property
@@ -362,18 +362,21 @@ class LMGLShaderCanvas(GLCanvas):
             glLoadIdentity()
 
             if self.displayMode == '3DPersp':
-                glFrustum(-1 + eye, 1 + eye, -ys, ys, 8.5, 11.5)
+                # our object will be be scaled to fit a 2x2x2 box at z=10 - see translate and scale calls below
+                glFrustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
             else:
                 glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
             glMatrixMode(GL_MODELVIEW)
             glTranslatef(eye, 0.0, 0.0)
 
+            # move our object to be centred at -10
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)
 
+            # scale object to fit a 2x2x2 box
             glScalef(self.view.scale, self.view.scale, self.view.scale)
 
             try:
@@ -405,6 +408,14 @@ class LMGLShaderCanvas(GLCanvas):
 
             self.ScaleBarOverlayLayer.render(self)
             if self.LUTDraw:
+                # set us up to draw in pixel coordinates
+                glMatrixMode(GL_PROJECTION)
+                glLoadIdentity()
+                glOrtho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
+
+                glMatrixMode(GL_MODELVIEW)
+                glLoadIdentity()
+                
                 self.LUTOverlayLayer.render(self)
 
         glFlush()

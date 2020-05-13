@@ -39,13 +39,25 @@ class visGuiExtras:
         dsviewer.AddMenuItem("View", "Set as visualisation &background", self.OnViewBackground)
 
     def OnViewBackground(self, event):
-        ivp = self.dsviewer.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
+        from PYME.LMVis.layers import image_layer
+        img = self.dsviewer.image
+        glCanvas = self.dsviewer.glCanvas
+        
+        glCanvas.SetCurrent(glCanvas.gl_context) #make sure that the context we want to add the shaders to is current
 
-        if 'image' in dir(ivp): #is a single channel
-            img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
-            self.dsviewer.glCanvas.setBackgroundImage(img, (ivp.image.imgBounds.x0, ivp.image.imgBounds.y0), pixelSize=ivp.image.pixelSize)
+        for name, i in zip(img.names, xrange(img.data.shape[3])):
+            l_i = image_layer.ImageRenderLayer({'im': img}, dsname='im',
+                                               display_opts=self.dsviewer.do, #slave the display scaling to the image viewer scaling
+                                               channel=i,
+                                               context=glCanvas.gl_context)
+    
+            glCanvas.layers.insert(0, l_i) #prepend layers so they are drawn before points
+            
+        # FIXME - this is gross - just add to glCanvas and have it issue a signal which can be caught higher up
+        glCanvas.GetParent().GetParent().GetParent().layer_added.send(None)
 
-        self.dsviewer.glCanvas.Refresh()
+        glCanvas.Refresh()
+        
 
 
 

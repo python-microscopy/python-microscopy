@@ -106,7 +106,19 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     fc = [.8, 1, .8]
                 else:
                     fc = [.8,.8, 1]
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=fc, picker=True)
+                    
+                if getattr(k, '_last_error', None):
+                    ec = 'r'
+                    lw = 3
+                else:
+                    lw = 1
+                    if getattr(k, '_success', False):
+                        ec = 'g'
+                    else:
+                        ec = 'k'
+                    
+                    
+                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec=ec, lw=lw, fc=fc, picker=True)
                 
                 rect._data = k
                 self.ax.add_patch(rect)
@@ -610,6 +622,28 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         if (out_dir == '') or not os.path.exists(out_dir):
             wx.MessageBox('Ouput directory does not exist', 'Error', wx.OK|wx.ICON_ERROR)
             return
+
+        
+        #old_style_output = any([('output' in m.outputs) for m in self.rm.activeRecipe.modules])
+            
+        if not any([isinstance(m, modules.base.OutputModule) for m in self.rm.activeRecipe.modules]):
+            # no output module defined
+    
+            # if old_style_output:
+            #     #old style output, warn and give option to continue
+            #     if not wx.MessageBox(
+            #         "Relying on old-style magic 'output' variable, consider using output modules instead. Continue?",
+            #         'Warning', wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
+            #         return
+            # else:
+                
+            wx.MessageBox('No outputs defined - add an output module', 'Error', wx.OK | wx.ICON_ERROR)
+            return
+        
+        # elif old_style_output:
+        #     wx.MessageBox("Both new and old style outputs defined, choose another name for the 'output' variable", 'Error', wx.OK | wx.ICON_ERROR)
+        #     return
+            
         
         if not len(self.inputFiles) == len(self.inputFiles2):            
             batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)

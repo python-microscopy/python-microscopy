@@ -382,7 +382,7 @@ class ClusterAnalyser:
 
         dlg = wx.SingleChoiceDialog(
             None, 'choose the image which contains the mask to use', 'Use Mask',
-            image.openImages.keys(),
+            list(image.openImages.keys()),
             wx.CHOICEDLG_STYLE
         )
 
@@ -402,13 +402,12 @@ class ClusterAnalyser:
         import matplotlib.pyplot as plt
 
         pipeline = self.visFr.pipeline
-        recipe = pipeline.recipe
     
         r = Ripleys(inputPositions='positions',
                     inputMask='mask') #NB - need to set mask input here as otherwise it defaults to an empty string
 
         if r.configure_traits(kind='modal'):
-            result = recipe.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)
+            result = r.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)[r.outputName]
     
             fig = plt.figure()
             ax = fig.add_subplot(111)

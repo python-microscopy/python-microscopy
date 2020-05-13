@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, File
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -515,6 +515,10 @@ class CaWave(object):
     def direction_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
         
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
@@ -548,6 +552,10 @@ class CaWave(object):
     def velocity_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
     
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
@@ -1043,19 +1051,53 @@ class ProjectOnVector(ModuleBase):
         namespace[self.outputNameS] = im
         
 
+class PSFFile(File):
+    '''Custom trait that verifies that the file can be loaded as a PSF'''
+    
+    info_text = 'a file name for a pyme PSF (.tif or .psf)'
+    
+    def validate(self, object, name, value):
+        import six
+        
+        # Traitsui hangs up if a file doesn't validate correctly and doesn't allow selecting a replacement - disable validation for now :(
+        # FIXME
+        return value
+        
+        #value = File.validate(self,object, name, value)
+        
+        if isinstance(value, six.string_types):
+            if value == '':
+                return value
+            
+            try:
+                assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
+                
+                # try loading as a PSF
+                object.GetPSF((70., 70., 200.), psfFilename=value)
+                return value
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            
+        self.error(object, name, value)
+        
+        
+
 @register_module('Deconvolve')         
 class Deconvolve(Filter):
     offset = Float(0)
     method = Enum('Richardson-Lucy', 'ICTM') 
     iterations = Int(10)
     psfType = Enum('file', 'bead', 'Lorentzian', 'Gaussian')
-    psfFilename = CStr('') #only used for psfType == 'file'
+    psfFilename = PSFFile('', exists=True) #only used for psfType == 'file'
     lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     gaussianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     beadDiameter = Float(200.) #only used for psfType == 'bead'
     regularisationLambda = Float(0.1) #Regularisation - ICTM only
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
     zPadding = Int(0) # padding along the z axis
+    
+    processFramesIndividually = False # Make deconvolution 3D by default
     
     _psfCache = {}
     _decCache = {}
@@ -1066,7 +1108,7 @@ class Deconvolve(Filter):
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item(name='outputName'),
-                    Item(name='processFramesIndividually'),
+                    Item(name='processFramesIndividually', label='2D'),
                     Group(Item(name='method'),
                           Item(name='iterations'),
                           Item(name='offset'),
@@ -1085,14 +1127,23 @@ class Deconvolve(Filter):
                 
 
     
-    def GetPSF(self, vshint):
+    def GetPSF(self, vshint, psfFilename=None):
         from PYME.IO.load_psf import load_psf
-        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint)
+        
+        if psfFilename is None:
+            psfFilename = self.psfFilename
+        
+        psfKey = (self.psfType, psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint, self.processFramesIndividually)
         
         if not psfKey in self._psfCache.keys():
             if self.psfType == 'file':
-                psf, vs = load_psf(self.psfFilename)
+                psf, vs = load_psf(psfFilename)
                 psf = np.atleast_3d(psf)
+
+                if self.processFramesIndividually and psf.shape[2] > 1:
+                    raise RuntimeError('Selected 2D deconvolution but PSF is 3D')
+                elif (not self.processFramesIndividually) and (psf.shape[2] == 1):
+                    raise RuntimeError('Selected 3D deconvolution but PSF is 2D')
                 
                 vsa = np.array([vs.x, vs.y, vs.z])
                 
@@ -1102,6 +1153,10 @@ class Deconvolve(Filter):
                 self._psfCache[psfKey] = (psf, vs)        
             elif (self.psfType == 'Lorentzian'):
                 from scipy import stats
+                
+                if not self.processFramesIndividually:
+                    raise RuntimeError('Lorentzian PSF only supported for 2D deconvolution')
+                
                 sc = self.lorentzianFWHM/2.0
                 X, Y = np.mgrid[-30.:31., -30.:31.]
                 R = np.sqrt(X*X + Y*Y)
@@ -1119,6 +1174,10 @@ class Deconvolve(Filter):
                 
             elif (self.psfType == 'Gaussian'):
                 from scipy import stats
+                
+                if not self.processFramesIndividually:
+                    raise RuntimeError('Gaussian PSF only supported for 2D deconvolution')
+                
                 sc = self.gaussianFWHM/2.35
                 X, Y = np.mgrid[-30.:31., -30.:31.]
                 R = np.sqrt(X*X + Y*Y)
@@ -1136,6 +1195,10 @@ class Deconvolve(Filter):
             elif (self.psfType == 'bead'):
                 from PYME.Deconv import beadGen
                 psf = beadGen.genBeadImage(self.beadDiameter/2, vshint)
+                
+                if self.processFramesIndividually:
+                    # project our PSF if we are doing a 2D deconvolution.
+                    psf=np.atleast_3d(psf.sum(2))
                 
                 vs = type('vs', (object,), dict(x=vshint[0]/1e3, y=vshint[1]/1e3))
                 

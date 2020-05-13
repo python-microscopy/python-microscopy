@@ -30,7 +30,7 @@ def runRec(args):
     except:
         traceback.print_exc()
     
-def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
+def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=None, success_callback=None, error_callback=None):
     """Run a given recipe over using multiple proceses.
     
     Arguments:
@@ -67,11 +67,27 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
 
     if num_procs == 1:
         # map(runRec, taskParams)  # map now returns iterator, which means this never runs unless we convert to list
-        [runRec(task) for task in taskParams]  # skip the map and just make the list we need anyway
+        #[runRec(task) for task in taskParams]  # skip the map and just make the list we need anyway
+        for task in taskParams:
+            in_d = task[1]
+            if start_callback:
+                start_callback(in_d)
+            try:
+                runRec(task)
+                if success_callback:
+                    success_callback(in_d)
+            except:
+                if error_callback:
+                    error_callback(in_d)
+                raise
+                
     else:
         pool = multiprocessing.Pool(num_procs)
     
-        pool.map(runRec, taskParams)
+        r = pool.map_async(runRec, taskParams)
+        
+        r.wait()
+        pool.close()
 
 def bake_recipe(recipe_filename, inputGlobs, output_dir, *args, **kwargs):
     with open(recipe_filename) as f:

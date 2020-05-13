@@ -2,6 +2,7 @@ import wx
 import wx.lib.agw.aui as aui
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
+from PYME.ui import progress
 
 class AUIFrame(wx.Frame):
     """A class which encapsulated the common frame layout code used by
@@ -128,7 +129,8 @@ class AUIFrame(wx.Frame):
         self.Update()
         self._mgr.Update()
 
-    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY):   
+    def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY,
+                    error_context_manager=True, short_description=None):
         """
         Add a menu item to dh5view, VisGUI, or PYMEAcquire.
 
@@ -181,6 +183,10 @@ class AUIFrame(wx.Frame):
                     self._menus[mn] = menu
         else:
             menu = self._menus[menuName]
+            
+        if error_context_manager:
+            desc = short_description if short_description else (menuName + '>' + itemName)
+            itemCallback = progress.managed(itemCallback, self, desc)
         
         if itemType == 'normal':        
             mItem = menu.Append(id, itemName, helpText, wx.ITEM_NORMAL)
