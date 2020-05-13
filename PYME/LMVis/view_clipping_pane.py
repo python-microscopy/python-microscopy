@@ -57,7 +57,8 @@ class ClippingPanel(wx.Panel):
         self.glcanvas = glcanvas
         self.axis = axis
         
-        self.dragging = None
+        self.dragging = None   # are we updating view_limits with a mouse drag?
+        self.editing = None  # are we updating view_limits with a text box?
 
         
         #self.data_limits = data_limits
@@ -74,8 +75,16 @@ class ClippingPanel(wx.Panel):
 
         # Text controls for upper and lower bounds
         text_ctrl_width = 90
-        self.ll_ctrl = wx.TextCtrl(self, -1, str(self.view_limits[0]), size=(text_ctrl_width, -1), name='lower_limit')
-        self.ul_ctrl = wx.TextCtrl(self, -1, str(self.view_limits[1]), size=(text_ctrl_width, -1), name='upper_limit')
+        self.ll_ctrl = wx.TextCtrl(self, -1, 
+                                   str(self.view_limits[0]), 
+                                   size=(text_ctrl_width, -1), 
+                                   name='lower_limit', 
+                                   style=wx.TE_PROCESS_ENTER)
+        self.ul_ctrl = wx.TextCtrl(self, -1, 
+                                   str(self.view_limits[1]), 
+                                   size=(text_ctrl_width, -1), 
+                                   name='upper_limit', 
+                                   style=wx.TE_PROCESS_ENTER)
         maxy = self.Size[1] - self.ll_ctrl.Size[1] + 2
         self.ll_ctrl.SetPosition((0,maxy))
         self.ul_ctrl.SetPosition((self.Size[0]-self.ul_ctrl.Size[0],maxy))
@@ -83,8 +92,8 @@ class ClippingPanel(wx.Panel):
         self.ul_ctrl.Hide()
         self.ll_ctrl.Bind(wx.EVT_KILL_FOCUS, self.HideTextCtrl)
         self.ul_ctrl.Bind(wx.EVT_KILL_FOCUS, self.HideTextCtrl)
-        self.ll_ctrl.Bind(wx.EVT_KEY_DOWN, self.OnTextCtrlKeyPress)
-        self.ul_ctrl.Bind(wx.EVT_KEY_DOWN, self.OnTextCtrlKeyPress)
+        self.ll_ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextCtrlEnter)
+        self.ul_ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnTextCtrlEnter)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -251,12 +260,14 @@ class ClippingPanel(wx.Panel):
     
         #hit test the limits
         # check for clipping update via text control
+        # Look for positioning near the upper or lower limit markers, but below
+        # the draggable bar, with a hittest tolerance the size of the text control box
         ll, ul = max(x0vp-self.ll_ctrl.Size[0]/2, 0), min(xmvp-self.ul_ctrl.Size[0]/2, self.Size[0]-self.ul_ctrl.Size[0])
         lu, uu = ll+self.ll_ctrl.Size[0], ul+self.ul_ctrl.Size[0]
         if (abs(y-maxy) < self.ll_ctrl.Size[1]/2) and (x > ll) and (x < lu):
-            self.ShowTextCtrl(self.ll_ctrl, self.view_limits[0], ll)
+            self.editing = 'lower'
         if (abs(y-maxy) < self.ul_ctrl.Size[1]/2) and (x > ul) and (x < uu):
-            self.ShowTextCtrl(self.ul_ctrl, self.view_limits[1], ul)
+            self.editing = 'upper'
 
         # check for clipping update via dragging
         HITTEST_TOLERANCE = 15
@@ -273,14 +284,23 @@ class ClippingPanel(wx.Panel):
         #x = event.GetX()
         #y = event.GetY()
     
-        if not self.dragging is None:
+        if not self.editing is None:
+            x0p, wp, x0vp, xmvp, w, xo = self._get_coords()
+            if self.editing == 'lower':
+                ll = max(x0vp-self.ll_ctrl.Size[0]/2, 0)
+                self.ShowTextCtrl(self.ll_ctrl, self.view_limits[0], ll)
+            elif self.editing == 'upper':
+                ul = min(xmvp-self.ul_ctrl.Size[0]/2, self.Size[0]-self.ul_ctrl.Size[0])
+                self.ShowTextCtrl(self.ul_ctrl, self.view_limits[1], ul)
+        elif not self.dragging is None:
             evt = LimitChangeEvent(self.GetId(), upper=self.view_limits[1], lower=self.view_limits[0])
             #evt.ShouldPropagate()
             #wx.PostEvent(self, evt)
             self.ProcessEvent(evt)
             self.glcanvas.refresh()
-    
+                
         self.dragging = None
+        self.editing = None
         
         self.Refresh()
         self.Update()
@@ -341,24 +361,20 @@ class ClippingPanel(wx.Panel):
 
     def HideTextCtrl(self, event):
         event.GetEventObject().Hide()
+        event.Skip()
 
-    def OnTextCtrlKeyPress(self, event):
+    def OnTextCtrlEnter(self, event):
         text_ctrl = event.GetEventObject()
-        key = event.GetKeyCode()
-        focus = text_ctrl.HasFocus()
-        if focus and (key == wx.WXK_RETURN):
-            if text_ctrl.GetId() == self.ll_ctrl.GetId():
-                self.view_limits[0] = float(text_ctrl.GetValue())
-            elif text_ctrl.GetId() == self.ul_ctrl.GetId():
-                self.view_limits[1] = float(text_ctrl.GetValue())
-            text_ctrl.Hide()
-            self.Refresh()
-            self.Update()
-            self.glcanvas.refresh()
-        elif focus and (key == wx.WXK_ESCAPE):
-            # We're done
-            text_ctrl.Hide()
-        event.Skip() 
+        if text_ctrl.GetId() == self.ll_ctrl.GetId():
+            self.view_limits[0] = float(text_ctrl.GetValue())
+        elif text_ctrl.GetId() == self.ul_ctrl.GetId():
+            self.view_limits[1] = float(text_ctrl.GetValue())
+        text_ctrl.Hide()
+        self.Refresh()
+        self.Update()
+        self.glcanvas.refresh()
+
+        # event.Skip()  # purposefully commented out to prevent conflict with wx.EVT_KILL_FOCUS
 
 
 class ViewClippingPanel(wx.Panel):
