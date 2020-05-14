@@ -196,6 +196,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     self.pipeline.recipe.update_from_yaml(recipe)
                     #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
+
+                self._recipe_editor.update_recipe_text()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False

@@ -65,6 +65,9 @@ def register_legacy_module(moduleName, py_module=None):
 
     return c_decorate
 
+class MissingInputError(Exception):
+    pass
+
 class ModuleBase(HasTraits):
     """
     Recipe modules represent a "functional" processing block, the effects of which depend solely on its
@@ -113,6 +116,26 @@ class ModuleBase(HasTraits):
         """
         if len(self.outputs) == 0:
             raise RuntimeError('Module should define at least one output.')
+        
+    def check_inputs(self, namespace):
+        """
+        Checks that module inputs are present in namespace, raising an exception if they are missing. Existing to simplify
+        debugging, this function is called in ModuleCollection.execute prior to executing the module so that an
+        informative error message is generated if the inputs are missing (rather than the somewhat cryptic KeyError
+        you would get when a module tries to access a missing input.
+        
+        
+        Parameters
+        ----------
+        namespace
+
+        """
+        keys = list(namespace.keys())
+        
+        for input in self.inputs:
+            if not input in keys:
+                raise MissingInputError('Input "%s" is missing from namespace' % input)
+        
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -185,11 +208,11 @@ class ModuleBase(HasTraits):
 
     @property
     def inputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('input') and not v == ""}
+        return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
     @property
     def outputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('output') and not v ==''}
+        return {v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
     
     @property
     def file_inputs(self):
@@ -614,6 +637,7 @@ class ModuleCollection(HasTraits):
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m._success:
                 try:
+                    m.check_inputs(self.namespace)
                     m.execute(self.namespace)
                     m._last_error = None
                     m._success = True
