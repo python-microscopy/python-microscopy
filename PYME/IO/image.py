@@ -124,6 +124,10 @@ openImages = weakref.WeakValueDictionary()
 #stub. If a stub hasn't been used yet, the index defaults to zero.
 nUntitled = _DefaultDict()
 
+class FileSelectionError(Exception):
+    """Custom error type to raise when we cancel file selection"""
+    pass
+
 class ImageStack(object):
     """ An Image Stack. This is the core PYME image type and wraps around the various different supported file formats.
 
@@ -1000,7 +1004,7 @@ class ImageStack(object):
                                         default_path = lastdir)            
             
             if filename is None or filename == '':
-                raise RuntimeError('No file selected')
+                raise FileSelectionError('No file selected')
                 pass
             else:
                 lastdir = os.path.split(filename)[0]

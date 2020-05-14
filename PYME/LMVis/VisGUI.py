@@ -396,8 +396,13 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.OpenChannel(filename)
 
     def OnOpenRaw(self, event):
-        from PYME.DSView import ViewIm3D, ImageStack
-        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        from PYME.IO import image
+        from PYME.DSView import ViewIm3D
+        try:
+            ViewIm3D(image.ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        except image.FileSelectionError:
+            # the user canceled the open dialog
+            pass
         
     def AddExtrasMenuItem(self,label, callback):
         """Add an item to the VisGUI extras menu.
