@@ -103,7 +103,7 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
         zu = None
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
         xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
-        mask_area = bool_mask.sum() * vx * vy * vz
+        mask_area = bool_mask.sum() * vx * vy
         
     return xu, yu, zu, mask_area
     

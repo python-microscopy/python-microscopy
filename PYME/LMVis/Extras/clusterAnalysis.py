@@ -421,7 +421,7 @@ class ClusterAnalyser:
                     ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
                             c='k', linestyle='--')
                 ax.set_ylabel('K')
-            ax.scatter(result['bins'], result['vals'], s=0.1, c='r')
+            ax.plot(result['bins'], result['vals'], c='r')
             ax.set_xlabel('Distance (nm)')
 
             
