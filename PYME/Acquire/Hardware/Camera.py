@@ -76,7 +76,7 @@ class CameraMapMixin(object):
         
     def _fill_camera_map_id(self, mdh, mdh_key, map_type):
         #create cache if not already present
-        if not hasattr(self, '_map_cache'):
+        if not hasattr(self, '_camera_map_cache'):
             self._camera_map_cache = {}
             
         cache_key = self._map_cache_key(mdh, map_type)
