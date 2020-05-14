@@ -20,8 +20,9 @@ def r_sph_harm(m, n, azimuth, zenith):
     Parameters
     ----------
     m : int
-
+        order of the spherical harmonic, |m| <= n
     n : int
+        degree of the spherical harmonic, n >= 0
 
     azimuth : ndarray
         the azimuth angle in [0, 2pi]
@@ -40,7 +41,7 @@ def r_sph_harm(m, n, azimuth, zenith):
         return (1. / np.sqrt(2) * (-1) ** m) * sph_harm(m, n, azimuth, zenith).imag
 
 
-def sphere_expansion(x, y, z, mmax=3):
+def sphere_expansion(x, y, z, n_max=3):
     """
     Project coordinates onto spherical harmonics
 
@@ -52,7 +53,7 @@ def sphere_expansion(x, y, z, mmax=3):
         y coordinates
     z : ndarray
         z coordinates
-    mmax : int
+    n_max : int
         Maximum order to calculate to
 
     Returns
@@ -70,9 +71,9 @@ def sphere_expansion(x, y, z, mmax=3):
 
     A = []
     modes = []
-    for m in range(mmax + 1):
-        for n in range(-m, m + 1):
-            sp_mode = r_sph_harm(n, m, azimuth, zenith)
+    for n in range(n_max + 1):
+        for m in range(-n, n + 1):
+            sp_mode = r_sph_harm(m, n, azimuth, zenith)
             A.append(sp_mode)
 
             modes.append((m, n))
@@ -84,7 +85,7 @@ def sphere_expansion(x, y, z, mmax=3):
     return modes, c
 
 
-def sphere_expansion_clean(x, y, z, mmax=3, nIters=2, tol_init=0.3):
+def sphere_expansion_clean(x, y, z, n_max=3, max_iters=2, tol_init=0.3):
     """
     Project coordinates onto spherical harmonics
 
@@ -96,8 +97,12 @@ def sphere_expansion_clean(x, y, z, mmax=3, nIters=2, tol_init=0.3):
         y coordinates
     z : ndarray
         z coordinates
-    mmax : int
+    n_max : int
         Maximum order to calculate to
+    max_iters: int
+        number of fit iterations
+    tol_init: float
+        relative outlier tolerance. Used to ignore outliers in subsequent iterations
 
     Returns
     -------
@@ -114,9 +119,9 @@ def sphere_expansion_clean(x, y, z, mmax=3, nIters=2, tol_init=0.3):
 
     A = []
     modes = []
-    for m in range(mmax + 1):
-        for n in range(-m, m + 1):
-            sp_mode = r_sph_harm(n, m, azimuth, zenith)
+    for n in range(n_max + 1):
+        for m in range(-n, n + 1):
+            sp_mode = r_sph_harm(m, n, azimuth, zenith)
             A.append(sp_mode)
 
             modes.append((m, n))
@@ -128,7 +133,7 @@ def sphere_expansion_clean(x, y, z, mmax=3, nIters=2, tol_init=0.3):
     c = linalg.lstsq(A, r)[0]
 
     # recompute, discarding outliers
-    for i in range(nIters):
+    for i in range(max_iters):
         pred = np.dot(A, c)
         error = abs(r - pred) / r
         mask = error < tol
@@ -146,7 +151,7 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
     for (m, n), c in zip(modes, coeffs):
-        r += c * (r_sph_harm(n, m, azimuth, zenith))
+        r += c * (r_sph_harm(m, n, azimuth, zenith))
 
     return r
 
@@ -290,10 +295,9 @@ class ScaledShell(object):
         return x.reshape(x_scaled.shape) + self.x0, y.reshape(y_scaled.shape) + self.y0, z.reshape(
             z_scaled.shape) + self.z0
 
-    def fit_shell(self, max_m_mode=3, n_iterations=2, tol_init=0.3):
-        modes, coefficients, summed_residuals = sphere_expansion_clean(self.x_cs, self.y_cs, self.z_cs, max_m_mode,
-                                                                       n_iterations,
-                                                                       tol_init)
+    def fit_shell(self, max_n_mode=3, max_iterations=2, tol_init=0.3):
+        modes, coefficients, summed_residuals = sphere_expansion_clean(self.x_cs, self.y_cs, self.z_cs, max_n_mode,
+                                                                       max_iterations, tol_init)
         self._set_coefficients(modes, coefficients)
         self._summed_residuals = summed_residuals
 
@@ -339,15 +343,14 @@ class ScaledShell(object):
     #                     scaling_axes=self.principal_axes)
     #     mlab.points3d(self.x_c, self.y_c, self.z_c, mode='point')
 
-    def distance_to_shell(self, query_points, d_zenith=0.1,
-                          return_inside_bool=False):  # FIXME - is return inside bool OK to remove now?
+    def distance_to_shell(self, query_points, d_angles=0.1):
         """
 
         Parameters
         ----------
         query_points : list-like of ndarrays
             Arrays of positions to query (in cartesian coordinates), i.e. [np.array(x), np.array(y), np.array(z)]
-        d_zenith : float
+        d_angles : float
             Sets the step size in radians of zenith and azimuth arrays used in reconstructing the spherical harmonic shell
 
         Returns
@@ -361,7 +364,7 @@ class ScaledShell(object):
         x, y, z = query_points
         x, y, z = np.atleast_1d(x), np.atleast_1d(y), np.atleast_1d(z)
         n_points = len(x)
-        zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith, 0:(2 * np.pi + d_zenith):d_zenith]
+        zenith, azimuth = np.mgrid[0:(np.pi + d_angles):d_angles, 0:(2 * np.pi + d_angles):d_angles]
 
         x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
         # calculate the distance between all our points and the shell
@@ -430,10 +433,9 @@ class ScaledShell(object):
         x_scaled, y_scaled, z_scaled = coordinate_tools.spherical_to_cartesian(azimuths, zeniths, r_scaled)
         # scale things "down" since they were scaled "up" in the fit
         scaled_axes = self.principal_axes / self.scaling_factors[:, None]
-        coords = x_scaled.ravel()[:, None] * scaled_axes[0, :] + y_scaled.ravel()[:, None] * scaled_axes[1,
-                                                                                             :] + z_scaled.ravel()[:,
-                                                                                                  None] * scaled_axes[2,
-                                                                                                          :]
+        coords = x_scaled.ravel()[:, None] * scaled_axes[0, :] + \
+                 y_scaled.ravel()[:, None] * scaled_axes[1, :] + \
+                 z_scaled.ravel()[:, None] * scaled_axes[2, :]
         x_p, y_p, z_p = coords.T
         # skip adding x0, y0, z0 back on, since we'll subtract it off in a second
         x_p, y_p, z_p = x_p.reshape(x_scaled.shape), y_p.reshape(y_scaled.shape), z_p.reshape(z_scaled.shape)
@@ -441,6 +443,8 @@ class ScaledShell(object):
         # make two vectors in the plane centered at the query point
         v0 = np.array([x_p[1] - x_p[0], y_p[1] - y_p[0], z_p[1] - z_p[0]])
         v1 = np.array([x_p[3] - x_p[2], y_p[3] - y_p[2], z_p[3] - z_p[2]])
+        if not np.any(v0) or not np.any(v1):
+            raise RuntimeWarning('failed to generate two vectors in the plane - likely precision error in sph -> cart')
         # cross them to get a normal vector NOTE - direction could be negative of true normal
         normal = np.cross(v0, v1, axis=0)
         # return as unit vector(s) along each row
