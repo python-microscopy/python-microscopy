@@ -1,36 +1,34 @@
-import PYME.Analysis.points.spherical_harmonics as spharm
-from PYME.recipes.localisations import SphericalHarmonicShell, AddShellMappedCoordinates
-from PYME.recipes.base import ModuleCollection
 
 import logging
 
 logger=logging.getLogger(__name__)
 
 
-class ShellManager(object):
+class SphericalHarmonicShellManager(object):
     def __init__(self, vis_frame):
         self.vis_frame = vis_frame
         self.pipeline = vis_frame.pipeline
 
         self._shells = []
+        self.d_angle = 0.1
 
         logging.debug('Adding menu items for spherical harmonic (shell) fitting')
 
-        vis_frame.AddMenuItem('Analysis>Spherical Harmonic Fitting', itemType='separator')
+        vis_frame.AddMenuItem('Analysis>Surface Fitting>Spherical Harmonic Fitting', itemType='separator')
 
-        vis_frame.AddMenuItem('Analysis>Spherical Harmonic Fitting', 'Fit Spherical Harmonic Shell',
+        vis_frame.AddMenuItem('Analysis>Surface Fitting>Spherical Harmonic Fitting', 'Fit Spherical Harmonic Shell',
                               self.OnCalcHarmonicRepresentation)
+        vis_frame.AddMenuItem('Analysis>Surface Fitting>Spherical Harmonic Fitting', 'Load Spherical Harmonic Shell',
+                              self.OnLoadHarmonicRepresentation)
 
     def OnCalcHarmonicRepresentation(self, wx_event):
+        from PYME.recipes import surface_fitting
         recipe = self.pipeline.recipe
         recipe.trait_set(execute_on_invalidation=False)
 
-        shell_fitter = SphericalHarmonicShell(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                              output_name='harmonic_shell')
-        distance_mapper = AddShellMappedCoordinates(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                                    inputSphericalHarmonics='harmonic_shell', outputName='shell_mapped')
-        recipe.add_module(shell_fitter)
-        recipe.add_module(distance_mapper)
+        shell_maker = surface_fitting.SphericalHarmonicShell(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                                             output_name='harmonic_shell')
+        recipe.add_module(shell_maker)
 
         if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
             return
@@ -40,26 +38,47 @@ class ShellManager(object):
         finally:  # make sure we leave things as we found them
             recipe.trait_set(execute_on_invalidation=True)
         shell = recipe.namespace['harmonic_shell']
+
         shell_mapped = recipe.namespace['shell_mapped']
         self._shells.append(shell)
-
-        center = shell.mdh['Processing.SphericalHarmonicShell.Centre']
-        z_scale = shell.mdh['Processing.SphericalHarmonicShell.ZScale']
-        spharm.visualize_reconstruction(shell['modes'], shell['coefficients'], zscale=1. / z_scale)
-        
-        try:
-            from mayavi import mlab
-            mlab.points3d(self.pipeline['x'] - center[0], self.pipeline['y'] - center[1],
-                      self.pipeline['z'] - center[2] / z_scale, mode='point')
-        except ImportError:
-            logger.exception('Could not import Mayavi, 3D shell display disabled')
 
         self.pipeline.addDataSource('shell_mapped', shell_mapped)
         self.pipeline.selectDataSource('shell_mapped')
 
+        self.vis_frame.RefreshView()
+
+    def OnLoadHarmonicRepresentation(self, wx_event):
+        import wx
+        from PYME.IO import tabular, FileUtils
+        from PYME.Analysis.points.spherical_harmonics import scaled_shell_from_hdf
+        fdialog = wx.FileDialog(None, 'Load Spherical Harmonic Representation', wildcard='Harmonic shell (*.hdf)|*.hdf',
+                                style=wx.OPEN, defaultDir=FileUtils.nameUtils.genShiftFieldDirectoryPath())
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            path = fdialog.GetPath()
+            fdialog.Destroy()
+        else:
+            fdialog.Destroy()
+            return
+
+        shell = scaled_shell_from_hdf(path)
+
+        points = tabular.MappingFilter(self.pipeline.selectedDataSource)
+        separations, closest_points = shell.distance_to_shell((points['x'], points['y'], points['z']),
+                                                              d_angles=self.d_angle)
+
+        self._shells.append(shell)
+        shell_number = len(self._shells)
+        points.addColumn('distance_to_loaded_shell%d' % shell_number, separations)
+        points.addColumn('inside_shell%d' % shell_number, shell.check_inside(points['x'], points['y'], points['z']))
+
+        self.pipeline.addDataSource('shell%d_mapped' % shell_number, points)
+        self.pipeline.selectDataSource('shell%d_mapped' % shell_number)
 
         self.vis_frame.RefreshView()
-        #self.vis_frame.CreateFoldPanel()
+        # self.vis_frame.CreateFoldPanel()
+
+        shell._visualize_shell(self.d_angle, (points['x'], points['y'], points['z']))
 
 def Plug(vis_frame):
-    vis_frame.shell_manager= ShellManager(vis_frame)
+    vis_frame.shell_manager= SphericalHarmonicShellManager(vis_frame)
