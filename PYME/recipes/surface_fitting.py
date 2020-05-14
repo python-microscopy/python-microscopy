@@ -240,43 +240,60 @@ class SphericalHarmonicShell(ModuleBase):
 
     Parameters
     ----------
+    input_name: PYME.IO.tabular.TabularBase
+        input localizations to fit a shell to
+    max_n_mode: Int
+        maximum order of spherical harmonics to use in fit
+    max_iterations: Int
+        number of fit iterations
+    init_tolerance: Float
+        relative outlier tolerance. Used to ignore outliers in subsequent iterations
+    d_angles: Float
+        Sets the step size in radians of zenith and azimuth arrays used in reconstructing the spherical harmonic shell.
+        Only relevant for distance_to_shell column of mapped output.
 
-        FIXME
 
-    Inputs
+    Returns
     ------
-        FIXME
-
+    output_name: PYME.Analysis.points.spherical_harmonics.ScaledShell
+        The shell instance, with to_hdf method for use with PYME.recipes.outputs.HDFOutput
+    output_name_mapped: PYME.IO.tabular.TabularBase
+        localizations used to fit the shell, with two additional columns corresponding to whether than point is inside
+        the shell, and it's approximate distance to the shell (the latter being subject to the precision of a gridded
+        reconstruction subject to `d_angles` input).
+    name_inside_shell: CStr
+        name of column in `output_name_mapped` indicating whether each point is inside of the shell or not
+    name_distance_to_shell: CStr
+        name of column in `output_name_mapped` containing the approximate distance to the shell, in the same units as
+        the input localizations [nm]
 
     """
     input_name = Input('input')
 
-    max_m_mode = Int(3)
-    n_iterations = Int(2)
+    max_n_mode = Int(3)
+    max_iterations = Int(2)
     init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
 
     name_inside_shell = CStr('inside_shell')
     name_distance_to_shell = CStr('distance_to_shell')
-    d_zenith = Float(0.1)
+    d_angles = Float(0.1)
 
     output_name = Output('harmonic_shell')
     output_name_mapped = Output('shell_mapped')
 
 
     def execute(self, namespace):
-        from PYME.Analysis.points.spherical_harmonics import fitting
+        from PYME.Analysis.points import spherical_harmonics
 
         points = tabular.MappingFilter(namespace[self.input_name])
 
-        shell = fitting.ScaledShell()
+        shell = spherical_harmonics.ScaledShell()
         shell.set_fitting_points(points['x'], points['y'], points['z'])
-        shell.fit_shell(max_m_mode=self.max_m_mode, n_iterations=self.n_iterations, tol_init=self.init_tolerance)
+        shell.fit_shell(max_iterations=self.max_iterations, tol_init=self.init_tolerance)
 
         separations, closest_points = shell.distance_to_shell((points['x'], points['y'], points['z']),
-                                                              d_zenith=self.d_zenith)
+                                                              d_angles=self.d_angles)
 
-        # TODO - CALCULATE DISPLACEMENT VECTOR FOR EACH POINT?
-        # TODO CALCULATE R_NORM AND USE IT TO ONLY CALCULATE DISPLACEMENT VECTOR USING POINTS INSIDE NUCLEUS
         points.addColumn(self.name_distance_to_shell, separations)
         points.addColumn(self.name_inside_shell, shell.check_inside())
 
