@@ -73,9 +73,6 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
     return bb, K
 
 def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
-    if three_d and mask.data.shape[2] < 2:
-        raise RuntimeError('Need to use a 3D mask for a 3D point cloud.')
-
     vx, vy, vz = mask.voxelsize
     x0_m, y0_m, z0_m = mask.origin
     x0_p, y0_p, z0_p = coord_origin
