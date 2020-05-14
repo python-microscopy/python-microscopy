@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 def spherical_to_cartesian(az, el, r):
     """
-    Convert sperical coordinates into cartesian
+    Convert spherical coordinates into cartesian
 
     Parameters
     ----------
