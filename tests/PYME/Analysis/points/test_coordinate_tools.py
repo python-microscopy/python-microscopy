@@ -115,22 +115,17 @@ def test_find_points_within_cylinder():
             outside_axially = (point[2] > z0 + length or point[2] < z0)
             assert (outside_radially or outside_axially)
 
-def test_distance_to_image_mask():
+def test_simple_distance_to_image_mask():
     from PYME.IO import tabular
     from PYME.IO.image import ImageStack
     from PYME.IO.MetaDataHandler import CachingMDHandler
-    x_p = np.arange(4)
-    radius = 3
-    x = np.arange(10)
-    x0, y0, z0 = np.array([0, 0, 0])  # np.array([4.5, 4.5, 4.5])
-    points = tabular.DictSource({'x': x_p + x0, 'y': x_p + y0, 'z': x_p + z0})
-    points.mdh = CachingMDHandler({'voxelsize.x': 1, 'voxelsize.y': 1})
-    # xx, yy, zz = np.meshgrid(x, y, z)
+    size = 10
+    x, y, z = np.mgrid[:size, :size, :size]
 
-    r = np.sqrt((x[:, None, None] - x0) ** 2 + (x[None, :, None] - y0) ** 2 + (x[None, None, :] - z0) ** 2)
-    mask = ImageStack(r <= radius)
+    points = tabular.DictSource({'x': np.arange(size), 'y': np.zeros(size), 'z': np.zeros(size)})
+    points.mdh = CachingMDHandler({'voxelsize.x': 1, 'voxelsize.y': 1})
+
+    mask = ImageStack(x < 0.5 * size)
 
     distances = coordinate_tools.distance_to_image_mask(mask, points)
-    np.testing.assert_almost_equal(np.zeros(2), distances[:2])
-    assert(distances[2] == 1)
-    assert(distances[-1] == np.sqrt((3 - 2)**2 + (3 - 2)**2 + (3 - 1)**2))
+    np.testing.assert_array_equal(distances, np.arange(size) - 0.5 * size)

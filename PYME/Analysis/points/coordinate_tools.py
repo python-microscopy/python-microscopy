@@ -236,39 +236,47 @@ def pixel_index_of_points_in_image(image, points):
 
 def distance_to_image_mask(mask, points):
     """
+    Calculate the distance from point positions to the edge of an image mask.
 
     Parameters
     ----------
     mask : PYME.IO.ImageStack
-        Binary mask - object label numbers are ignored
+        Binary mask where True denotes inside of the mask. Can be integers too, e.g. from an image of labels where 0
+        denotes unlabeled, but this will be compressed into a single mask of inside object(s) and outside. Edge of the
+        mask is considered the first pixel which is False.
     points : PYME.IO.tabular.TabularBase
         points to query distance with respect to mask
 
     Returns
     -------
     distance : ndarray
+        Distance from each point to the edge of the mask in units of nanometers. Negative values denote being inside
+        of the mask.
 
 
     """
-    from scipy.ndimage import distance_transform_edt
+    from scipy.ndimage import distance_transform_edt, binary_dilation
 
     binned_x, binned_y, binned_z = pixel_index_of_points_in_image(mask, points)
 
     # FIXME - only works for single color data
     mask_data = np.atleast_3d(mask.data[:,:,:,0].squeeze())
 
-    distance_to_mask = distance_transform_edt(~mask_data, sampling=mask.voxelsize, return_distances=True)
-
-    # now we just sample the distance mask at the indices of the points
-    try:
-        distances = distance_to_mask[binned_x, binned_y, binned_z]
-    except IndexError:
+    # calculate (and negate) distances from inside the mask (True) to edge of mask (where it turns False)
+    distance_to_mask = - distance_transform_edt(mask_data, sampling=mask.voxelsize_nm, return_distances=True)
+    # add distances going outward from the mask edge
+    distance_to_mask = distance_to_mask + distance_transform_edt(1 - binary_dilation(mask_data),
+                                                                 sampling=mask.voxelsize_nm, return_distances=True)
+    # clip the pixel assignment (there might not be a pixel for each point depending on how mask was generated)
+    if np.any(np.stack((binned_x, binned_y, binned_z)) < 0):
         logger.error('Not all points queried are within image bounds of mask, clipping to image bounds')
-        # clip the pixel assignment (there might not be a pixel for each point depending on how mask was generated)
         x_clip = np.clip(binned_x, 0, distance_to_mask.shape[0] - 1)
         y_clip = np.clip(binned_y, 0, distance_to_mask.shape[1] - 1)
         z_clip = np.clip(binned_z, 0, distance_to_mask.shape[2] - 1)
         distances = distance_to_mask[x_clip, y_clip, z_clip]
+    else:
+        # now we just sample the distance mask at the indices of the points
+        distances = distance_to_mask[binned_x, binned_y, binned_z]
 
     return distances
 
