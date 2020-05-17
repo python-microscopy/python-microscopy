@@ -396,7 +396,7 @@ class ClusterAnalyser:
 
     def OnRipleys(self, event=None, mask=None):
         """
-        Run's  masked Ripley's K or L on the current dataset.
+        Run's  masked Ripley's K, L or H on the current dataset.
         """
         from PYME.recipes.pointcloud import Ripleys
         import matplotlib.pyplot as plt
@@ -411,16 +411,15 @@ class ClusterAnalyser:
     
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            if r.normalization == 'L':
+            if r.normalization == 'L' or r.normalization == 'H':
                 ax.axhline(y=0, c='k', linestyle='--')
-                ax.set_ylabel('L')
             else:
                 if np.count_nonzero(pipeline['z']) == 0:
                     ax.plot(result['bins'], np.pi * (result['bins'] + r.binSize) ** 2, c='k', linestyle='--')
                 else:
                     ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
                             c='k', linestyle='--')
-                ax.set_ylabel('K')
+            ax.set_ylabel(r.normalization)
             ax.plot(result['bins'], result['vals'], c='r')
             ax.set_xlabel('Distance (nm)')
 
