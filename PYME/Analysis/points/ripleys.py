@@ -75,7 +75,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
 def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
     vx, vy, vz = mask.voxelsize
     x0_m, y0_m, z0_m = mask.origin
-    x0_p, y0_p, z0_p = coord_origin
+    # x0_p, y0_p, z0_p = coord_origin
 
     if (vz < 1e-12) and not three_d:
         vz = 1 #dummy value to prevent div by zero when calculating strides we don't use
@@ -90,8 +90,8 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
         # generate uniformly sampled coordinates on mask
         xu, yu, zu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y,
                      0:bool_mask.shape[2]:stride_z]
-        xu, yu, zu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p, vz * zu[
-            bool_mask] + z0_m - z0_p
+        xu, yu, zu = vx * xu[bool_mask] + x0_m, vy * yu[bool_mask] + y0_m, vz * zu[
+            bool_mask] + z0_m
         
         mask_area = bool_mask.sum() * vx * vy * vz
     else:
@@ -102,7 +102,7 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
         
         zu = None
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
-        xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
+        xu, yu = vx * xu[bool_mask] + x0_m, vy * yu[bool_mask] + y0_m
         mask_area = bool_mask.sum() * vx * vy
         
     return xu, yu, zu, mask_area
