@@ -49,6 +49,8 @@ def mz_stage(scope):
 @init_hardware('Z Piezo')
 def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
+    from PYME.Acquire import stage_leveling
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
     scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
@@ -57,8 +59,8 @@ def pz(scope):
     scope.piFoc = opr.generate_offset_piezo_server(opr.TargetOwningOffsetPiezo)(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
-    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
     scope.focus_lock = RLPIDFocusLockClient()
+    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
 
 
 @init_hardware('HamamatsuORCA')
