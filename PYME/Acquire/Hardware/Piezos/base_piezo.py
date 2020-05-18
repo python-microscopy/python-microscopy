@@ -1,5 +1,17 @@
 class PiezoBase(object):
-    """ Base class for piezos"""
+    """
+    Base class for all stages
+
+    Parameters
+    ----------
+    units_um: float
+        multiplier to get from piezo units to micrometers. For a stage internally using millimeters, this would be
+        1000, while a stage internally using nanometers would use 0.001, etc..
+    gui_description: str
+        [optional/deprecated] abbreviated description of stage axis, e.g. 'x-piezo'. This is typically handled
+        downstream in PYME.Acquire.microscope.register_piezo
+
+    """
     gui_description = '%s-piezo'
     units_um = 1
     
