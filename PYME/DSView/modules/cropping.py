@@ -40,12 +40,9 @@ class cropper:
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        #if dlg.ShowModal() == wx.ID_OK:
-            #sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
+        if not (self.do.selectionMode == self.do.SELECTION_RECTANGLE):
+            wx.MessageBox('Cropping only supported for rectangular selections\n For non-rectangular masking see the `manualSegment` module', 'Error', wx.OK|wx.ICON_ERROR)
+            return
 
         x0, x1, y0, y1, z0, z1 = self.do.sorted_selection
         
