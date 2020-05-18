@@ -4,6 +4,14 @@ import numpy as np
 class StageLeveler(object):
     def __init__(self, scope, offset_piezo):
         """
+        Allows semi-automated mapping of coverslip positions are various lateral positions using a focus lock/offset
+        piezo to determine the offset.
+
+        Usage after initialization
+        --------------------------
+        1 Manually, e.g. with joystick, move the stage to various positions and call the `add_position` method at each.
+        2 Run `measure_offsets` to automatically visit each of these positions and log the offset.
+        3 Call `plot` to have a look at the map and get a feel for any adjustments you need to make on the hardware
 
         Parameters
         ----------
