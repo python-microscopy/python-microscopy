@@ -1,5 +1,5 @@
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  File
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -14,7 +14,7 @@ from PYME.IO.image import ImageStack
 
 @register_module('SVMSegment')
 class svmSegment(Filter):
-    classifier = File('')
+    classifier = FileOrURI('')
     
     def _loadClassifier(self):
         from PYME.Analysis import svmSegment
@@ -43,7 +43,7 @@ class CNNFilter(Filter):
     dependency of python-microscopy as the conda-installable versions don't have GPU support.
     
     """
-    model = File('')
+    model = FileOrURI('')
     step_size = Int(14)
     
     def _load_model(self):

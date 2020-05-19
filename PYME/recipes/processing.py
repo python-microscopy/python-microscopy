@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, File
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1051,33 +1051,30 @@ class ProjectOnVector(ModuleBase):
         namespace[self.outputNameS] = im
         
 
-class PSFFile(File):
+class PSFFile(FileOrURI):
     '''Custom trait that verifies that the file can be loaded as a PSF'''
     
     info_text = 'a file name for a pyme PSF (.tif or .psf)'
     
     def validate(self, object, name, value):
-        import six
+        value = FileOrURI.validate(self, object, name, value)
         
         # Traitsui hangs up if a file doesn't validate correctly and doesn't allow selecting a replacement - disable validation for now :(
         # FIXME
         return value
         
-        #value = File.validate(self,object, name, value)
+        if value == '':
+            return value
         
-        if isinstance(value, six.string_types):
-            if value == '':
-                return value
+        try:
+            assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
             
-            try:
-                assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
-                
-                # try loading as a PSF
-                object.GetPSF((70., 70., 200.), psfFilename=value)
-                return value
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
+            # try loading as a PSF
+            object.GetPSF((70., 70., 200.), psfFilename=value)
+            return value
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             
         self.error(object, name, value)
         
