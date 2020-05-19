@@ -9,6 +9,7 @@ from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  Fi
 
 import numpy as np
 from six.moves import xrange
+from PYME.IO import unifiedIO
 from scipy import ndimage
 from PYME.IO.image import ImageStack
 
@@ -18,8 +19,10 @@ class svmSegment(Filter):
     
     def _loadClassifier(self):
         from PYME.Analysis import svmSegment
-        if not '_cf' in dir(self):
-            self._cf = svmSegment.svmClassifier(filename=self.classifier)
+        if not (('_cf' in dir(self)) and (self._classifier == self.classifier)):
+            self._classifier = self.classifier
+            with unifiedIO.local_or_temp_filename(self.classifier) as fn:
+                self._cf = svmSegment.svmClassifier(filename=fn)
     
     def applyFilter(self, data, chanNum, frNum, im):
         self._loadClassifier()
@@ -50,7 +53,8 @@ class CNNFilter(Filter):
         from keras.models import load_model
         if not getattr(self, '_model_name', None) == self.model:
             self._model_name = self.model
-            self._model = load_model(self._model_name) #TODO - make cluster-aware
+            with unifiedIO.local_or_temp_filename(self._model_name) as fn:
+                self._model = load_model(fn)
     
     def applyFilter(self, data, chanNum, frNum, im):
         self._load_model()
