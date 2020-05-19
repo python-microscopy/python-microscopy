@@ -1163,7 +1163,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
                     
@@ -1184,7 +1184,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.norm.pdf(vx*R, scale=sc))
                     
@@ -1197,7 +1197,7 @@ class Deconvolve(Filter):
                     # project our PSF if we are doing a 2D deconvolution.
                     psf=np.atleast_3d(psf.sum(2))
                 
-                vs = type('vs', (object,), dict(x=vshint[0]/1e3, y=vshint[1]/1e3))
+                vs = type('vs', (object,), dict(x=vshint[0], y=vshint[1]))
                 
                 self._psfCache[psfKey] = (psf/psf.sum(), vs)
                 
