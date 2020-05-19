@@ -48,6 +48,7 @@ from six import string_types
 
 import logging
 logger = logging.getLogger(__name__)
+import warnings
 
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility
@@ -277,6 +278,7 @@ class ImageStack(object):
     def voxelsize(self):
         """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
         to be in um"""
+        warnings.warn(DeprecationWarning('Use voxelsize_nm  property instead'))
         try:
             return self.voxelsize_nm
         except:
