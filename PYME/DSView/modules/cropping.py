@@ -41,7 +41,7 @@ class cropper:
         from PYME.DSView import ViewIm3D
 
         if not (self.do.selectionMode == self.do.SELECTION_RECTANGLE):
-            wx.MessageBox('Cropping only supported for rectangular selections\n For non-rectangular masking see the `manualSegment` module', 'Error', wx.OK|wx.ICON_ERROR)
+            wx.MessageBox('Cropping only supported for rectangular selections\n For non-rectangular masking see the `annotation` module', 'Error', wx.OK|wx.ICON_ERROR)
             return
 
         x0, x1, y0, y1, z0, z1 = self.do.sorted_selection
