@@ -67,6 +67,13 @@ class ClusterOfOne(object):
             time.sleep(5)
             webbrowser.open_new_tab('http://127.0.0.1:9999/')
             
+    def _launch_ruleserver_ui(self):
+        from PYME.misc import sqlite_ns
+        from . import distribution
+        ns = sqlite_ns.getNS('_pyme-taskdist')
+        ruleservers = distribution.getDistributorInfo(ns)
+        webbrowser.open_new_tab(ruleservers.values()[0])
+            
             
     def shutdown(self):
         logger.info('Shutting down cluster')
@@ -78,14 +85,18 @@ class ClusterOfOne(object):
             pass
 
 
-    def launch(self, gui=False):
+    def launch(self, gui=False, clusterUI=True):
         self._launch_data_server()
         self._launch_rule_server()
         
         #wait for the rule server to come up before launching the node server
         time.sleep(5)
         self._launch_node_server()
-        self._launch_cluster_ui(gui=gui)
+        if clusterUI:
+            self._launch_cluster_ui(gui=gui)
+        elif gui:
+            self._launch_ruleserver_ui()
+            
         
         
     def run(self):
