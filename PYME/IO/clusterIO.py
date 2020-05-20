@@ -1088,7 +1088,8 @@ if USE_RAW_SOCKETS:
         files : list of tuple
             a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
             
-        serverfilter
+        serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
         Returns
         -------
@@ -1219,7 +1220,8 @@ else:
         files : list of tuple
             a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
             
-        serverfilter
+        serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
         Returns
         -------
@@ -1258,15 +1260,47 @@ def get_status(serverfilter=local_serverfilter):
     
     Parameters
     ----------
-    serverfilter
+    serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
     Returns
     -------
-    
-    a list of status dictionaries
+    status_list: list
+        a status dictionary for each node. See PYME.cluster.HTTPDataServer.updateStatus
+            Disk: dict
+                total: int
+                    storage on the node [bytes]
+                used: int
+                    used storage on the node [bytes]
+                free: int
+                    available storage on the node [bytes]
+            CPUUsage: float
+                cpu usage as a percentile
+            MemUsage: dict
+                total: int
+                    total RAM [bytes]
+                available: int
+                    free RAM [bytes]
+                percent: float
+                    percent usage
+                used: int
+                    used RAM [bytes], calculated differently depending on platform
+                free: int
+                    RAM which is zero'd and ready to go [bytes]
+                [other]:
+                    more platform-specific fields
+            Network: dict
+                send: int
+                    bytes sent per second since the last status update
+                recv: int
+                    bytes received per second since the last status update
+            GPUUsage: list of float
+                [optional] returned for NVIDIA GPUs only. Should be compute usage per gpu as percent?
+            GPUMem: list of float
+                [optional] returned for NVIDIA GPUs only. Should be memory usage per gpu as percent?
+
 
     """
-    import json
     global _cached_status, _cached_status_expiry
 
     serverfilter = (serverfilter)
