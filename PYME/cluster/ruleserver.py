@@ -422,6 +422,9 @@ class RuleServer(object):
         
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
+        
+        with open(os.path.splitext(__file__)[0] + '.html', 'r') as f:
+            self._status_page = f.read()
     
     
     def _poll(self):
@@ -686,6 +689,22 @@ class RuleServer(object):
                 self._cached_info_expiry = time.time() + self._cached_info_timeout
                 
         return self._cached_info
+    
+    @webframework.register_endpoint('/queue_info_longpoll')
+    def get_queue_info(self):
+        """
+        a throttled version of queue info
+        
+        Returns
+        -------
+
+        """
+        time.sleep(0.5)
+        return self.get_queues()
+    
+    @webframework.register_endpoint('/', mimetype='text/html')
+    def status(self):
+        return self._status_page
 
 
 # class CPRuleServer(RuleServer):
