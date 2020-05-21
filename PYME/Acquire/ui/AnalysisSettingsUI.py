@@ -28,20 +28,25 @@ class AnalysisSettingsPanel(wx.Panel):
         self.fitFactories = PYME.localization.FitFactories.resFitFactories
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.cbLocalizeInRealTime = wx.CheckBox(self, -1, 'Localize in real time')
+        self.cbLocalizeInRealTime.SetValue(False)
+        self.cbLocalizeInRealTime.Bind(wx.EVT_CHECKBOX, lambda e: self.analysisSettings.SetPropagate(e.IsChecked()))
+        hsizer.Add(self.cbLocalizeInRealTime, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND | wx.ALL, 4)
 
+        # todo - uncomment once we've got pymevisualize opening / get_h5r_part with slice
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # self.cbVisualizeLive = wx.CheckBox(self, -1, 'PYMEVisualize live view')
+        # self.cbVisualizeLive.SetValue(False)
+        # hsizer.Add(self.cbVisualizeLive, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        # vsizer.Add(hsizer, 0, wx.EXPAND | wx.ALL, 4)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.cFitType = wx.Choice(self, -1, choices = ['{:<35} - {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
-        #self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
         self.cFitType.Bind(wx.EVT_CHOICE, self.OnFitModuleChanged)
         
         hsizer.Add(self.cFitType, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALL, 4)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.cbLogSettings = wx.CheckBox(self, -1, 'Save analysis settings to metadata')
-        self.cbLogSettings.SetValue(False)
-        self.cbLogSettings.Bind(wx.EVT_CHECKBOX, lambda e : self.analysisSettings.SetPropagate(e.IsChecked()))
-        hsizer.Add(self.cbLogSettings, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALL, 4)
         
         self.SetSizerAndFit(vsizer)
