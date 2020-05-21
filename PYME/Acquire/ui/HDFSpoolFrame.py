@@ -259,11 +259,11 @@ class PanSpool(afp.foldingPane):
     
         hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
-        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Open Series', style=wx.BU_EXACTFIT)
-        self.bAnalyse.Enable(False)
-        self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
+        self.open_button = wx.Button(self.spoolProgPan, -1, 'Open', style=wx.BU_EXACTFIT)
+        self.open_button.Enable(False)
+        self.open_button.Bind(wx.EVT_BUTTON, lambda e: self.spoolController.open_current_series())
     
-        hsizer.Add(self.bAnalyse, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.open_button, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
         spoolProgSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
     
@@ -483,7 +483,9 @@ class PanSpool(afp.foldingPane):
             
     def OnSpoolingStarted(self, **kwargs):
         if self.spoolController.spoolType in ['Queue', 'Cluster']:
-            self.bAnalyse.Enable()
+            self.open_button.Enable()
+        else:
+            self.open_button.Disable()
 
         self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
@@ -504,6 +506,8 @@ class PanSpool(afp.foldingPane):
         """GUI callback to stop spooling."""
         self.spoolController.StopSpooling()
         #self.OnSpoolingStopped()
+        if self.spoolController.spoolType == 'File':
+            self.open_button.Enable()
         
     def OnSpoolingStopped(self, **kwargs):
         self.bStartSpool.Enable(True)
@@ -516,8 +520,9 @@ class PanSpool(afp.foldingPane):
         self.UpdateFreeSpace()
 
     def OnBAnalyse(self, event):
+        import warnings
+        warnings.warn('OnBAnalyse is deprecated, use scope.spoolController.open_current_series() instead')
         self.spoolController.LaunchAnalysis()
-        
     
     def _tick(self, **kwargs):
         wx.CallAfter(self.Tick)

@@ -346,7 +346,9 @@ class SpoolController(object):
         self.spooler.StartSpool()
         
         self.onSpoolStart.send(self)
-        
+
+        if self.autostart_analysis:
+            self.LaunchAnalysis()
         #return a function which can be called to indicate if we are done
         return lambda : not self.spooler.spoolOn
 
@@ -376,27 +378,20 @@ class SpoolController(object):
         """Launch analysis
         """
         from PYME.Acquire import QueueSpooler, HTTPSpooler
-        
-        dh5view_cmd = 'dh5view'
-        if sys.platform == 'win32':
-            dh5view_cmd = 'dh5view.exe'
-            
-        if self.autostart_analysis:
-            dh5view_cmd += ' -g'
-        
-        if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
+
+        if isinstance(self.spooler, QueueSpooler.Spooler):
+            dh5view_cmd = 'dh5view -g'
+            if sys.platform == 'win32':
+                dh5view_cmd = 'dh5view.exe -g'
             subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
-        elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
-            if self.autostart_analysis:
-                # launch analysis in a separate thread
-                t = threading.Thread(target=self.launch_cluster_analysis)
-                t.start()
-                # keep track of a couple launching threads to make sure they have ample time to finish before joining
-                if self._analysis_launchers.full():
-                    self._analysis_launchers.get().join()
-                self._analysis_launchers.put(t)
-            else:
-                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+        elif isinstance(self.spooler, HTTPSpooler.Spooler):
+            # launch analysis in a separate thread
+            t = threading.Thread(target=self.launch_cluster_analysis)
+            t.start()
+            # keep track of a couple launching threads to make sure they have ample time to finish before joining
+            if self._analysis_launchers.full():
+                self._analysis_launchers.get().join()
+            self._analysis_launchers.put(t)
      
     def launch_cluster_analysis(self):
         from PYME.cluster import HTTPRulePusher
@@ -440,6 +435,28 @@ class SpoolController(object):
         """
         self.spoolType = method
         self._update_series_counter()
+
+    def open_current_series(self):
+        """
+        Open the current series in dh5view
+        """
+        from PYME.Acquire import QueueSpooler, HTTPSpooler
+
+        dh5view_cmd = 'dh5view'
+        if sys.platform == 'win32':
+            dh5view_cmd = 'dh5view.exe'
+
+        if isinstance(self.spooler, QueueSpooler.Spooler):  # queue or not
+            subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
+        elif isinstance(self.spooler, HTTPSpooler.Spooler):  # queue or not
+            subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+        else:  # HDFSpooler
+            if not self.spooler.spoolOn:  # risky business opening if we aren't done writing
+                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.filename), shell=True)
+            else:
+                import warnings
+                warnings.warn('Opening series during spooling is not supported when spooling to file; open after spool')
+                pass
 
     def __del__(self):
         # make sure our analysis launchers have a chance to finish their job before exiting
