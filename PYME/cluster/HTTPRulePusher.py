@@ -83,50 +83,66 @@ def verify_cluster_results_filename(resultsFilename):
 
     return resultsFilename
 
-def launch_localize(analysisMDH, seriesName):
+def setup_localization_result_files(series_uri, analysis_metadata, server_filter=''):
     """
-    Pushes an analysis task for a given series to the distributor
 
     Parameters
     ----------
-    analysisMDH : dictionary-like
-        MetaDataHandler describing the analysis tasks to launch
-    seriesName : str
+    series_uri: str
         cluster path, e.g. pyme-cluster:///example_folder/series
+    analysis_metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+         describes the analysis rule to create
+    server_filter: str
+        cluster name used when finding servers - used to facilitate the operation for multiple clusters on the one
+        network segment.
+
     Returns
     -------
+    results_uri: str
+        cluster path of the localization results file
+    results_md_uri: str
+        cluster path of the localization results metadata, which will be used to define the localization rule/tasks.
 
     """
-    #import logging
     import json
-    #from PYME.ParallelTasks import HTTPTaskPusher
     from PYME.IO import MetaDataHandler
     from PYME.Analysis import MetaData
     from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
     from PYME.IO import unifiedIO
 
-    unifiedIO.assert_uri_ok(seriesName)
-    seriesName = seriesName
+    unifiedIO.assert_uri_ok(series_uri)
 
-    resultsFilename = verify_cluster_results_filename(genClusterResultFileName(seriesName))
-    logger.info('Results file: ' + resultsFilename)
+    results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
+    logger.info('Results file: ' + results_filename)
 
-    resultsMdh = MetaDataHandler.NestedClassMDHandler()
+    results_mdh = MetaDataHandler.NestedClassMDHandler()
     # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
-    resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
-    resultsMdh.update(analysisMDH)
+    results_mdh.update(json.loads(unifiedIO.read(series_uri + '/metadata.json')))
+    results_mdh.update(analysis_metadata)
 
-    resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo',
-                                                                    resultsMdh.getOrDefault('Analysis.StartAt', 0))
-    MetaData.fixEMGain(resultsMdh)
-    # resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+    results_mdh['EstimatedLaserOnFrameNo'] = results_mdh.getOrDefault('EstimatedLaserOnFrameNo',
+                                                                    results_mdh.getOrDefault('Analysis.StartAt', 0))
+    MetaData.fixEMGain(results_mdh)
 
-    # TODO - do we need to keep track of the pushers in some way (we currently rely on the fact that the pushing thread
-    # will hold a reference
-    pusher = HTTPRulePusher(dataSourceID=seriesName,
-                                           metadata=resultsMdh, resultsFilename=resultsFilename)
+    if '~' in series_uri or '~' in results_filename:
+        raise RuntimeError('filenames on the cluster must NOT contain ~')
 
-    logging.debug('Queue created')
+    # create results file, and metadata table
+    results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % results_filename, server_filter)
+    logging.debug('results URI: ' + results_uri)
+    clusterResults.fileResults(results_uri + '/MetaData', analysis_metadata)
+
+    # create metadata file which will be used in the rule/task definition
+    results_md_filename = results_filename + '.json'
+    results_md_uri = 'PYME-CLUSTER://%s/%s' % (server_filter, results_md_filename)
+    clusterIO.put_file(results_md_filename, results_mdh.to_JSON().encode(), serverfilter=server_filter)
+
+    return results_filename, results_uri, results_md_uri
+
+def save_events_to_localization_results(series_uri, results_uri):
+    DataSource = DataSources.getDataSourceForFilename(series_uri)
+    data_source = DataSource(series_uri)
+    clusterResults.fileResults(results_uri + '/Events', data_source.getEvents())
 
 
 class HTTPRulePusher(object):
@@ -304,36 +320,4 @@ class RecipePusher(object):
             
 
         return task
-
-
-
-    def fileTasksForInputs(self, **kwargs):
-        from PYME.IO import clusterIO
-        input_names = kwargs.keys()
-        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterIO.cglob(kwargs[k], include_scheme=True) for k in input_names}
-
-        numTotalFrames = len(list(inputs.values())[0])
-        self.currentFrameNum = 0
-
-        logger.debug('numTotalFrames = %d' % numTotalFrames)
-        logger.debug('inputs = %s' % inputs)
-        
-        inputs_by_task = {frameNum: {k : inputs[k][frameNum] for k in inputs.keys()} for frameNum in range(numTotalFrames)}
-
-        rule = {'template': self._taskTemplate, 'inputsByTask' : inputs_by_task}
-
-        s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames), data=json.dumps(rule),
-                        headers = {'Content-Type': 'application/json'})
-
-        if r.status_code == 200:
-            resp = r.json()
-            self._ruleID = resp['ruleID']
-            logging.debug('Successfully created rule')
-        else:
-            logging.error('Failed creating rule with status code: %d' % r.status_code)
-
-        
-
-
 
