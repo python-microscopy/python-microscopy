@@ -230,9 +230,10 @@ class SpoolController(object):
 
         """
         if self.spoolType == 'Cluster':
-            #logger.warn('Cluster free space calculation not yet implemented, using fake value')
-            # FIXME - make free space calculations work on cluster (warning above commented out for Andrew's sanity)
-            return float('nan')
+            from PYME.IO import clusterIO
+            nodes = clusterIO.get_status()
+            free_storage = sum([n['Disk']['free'] for n in nodes])
+            return free_storage / 1e9
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
             return get_free_space(self.dirname)/1e9
