@@ -139,11 +139,6 @@ def setup_localization_result_files(series_uri, analysis_metadata, server_filter
 
     return results_filename, results_uri, results_md_uri
 
-def save_events_to_localization_results(series_uri, results_uri):
-    DataSource = DataSources.getDataSourceForFilename(series_uri)
-    data_source = DataSource(series_uri)
-    clusterResults.fileResults(results_uri + '/Events', data_source.getEvents())
-
 
 class HTTPRulePusher(object):
     def __init__(self, series_uri, metadata, queue_name=None, server_filter=clusterIO.local_serverfilter):
@@ -155,7 +150,8 @@ class HTTPRulePusher(object):
         series_uri : str
             The URI of the data source - e.g. PYME-CLUSTER://serverfilter/path/to/data
         metadata : PYME.IO.MetaDataHandler.MDHandlerBase
-            The acquisition and analysis metadata
+            analysis metadata, note that for the localization reuslts, anything passed in analysis MDH will wipe out
+            corresponding entries in the series metadata
         queue_name : str
             [optional] a name to give the queue. The results filename is used if no name is given.
         server_filter : str
@@ -172,6 +168,9 @@ class HTTPRulePusher(object):
         self.taskQueueURI = _getTaskQueueURI()
         self.mdh = metadata
         self.current_frame_number = metadata.getOrDefault('Analysis.StartAt', 0)
+
+        DataSource = DataSources.getDataSourceForFilename(series_uri)
+        self.data_source = DataSource(series_uri)
 
         self._task_template = None
         self._ruleID = None
@@ -190,8 +189,8 @@ class HTTPRulePusher(object):
                       'type':'localization',
                       'taskdef': {'frameIndex': '{{taskID}}', 'metadata':self.results_md_uri},
                       'inputs' : {'frames': self.dataSourceID},
-                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
-                                   'driftResults':self.resultsURI+'/DriftResults'}
+                      'outputs' : {'fitResults': self.results_uri+'/FitResults',
+                                   'driftResults':self.results_uri+'/DriftResults'}
                       }
             self._task_template = json.dumps(tt)
 
@@ -200,8 +199,8 @@ class HTTPRulePusher(object):
     def post_rule(self):
         rule = {'template' : self._taskTemplate}
 
-        if self.ds.isComplete():
-            queueSize = self.ds.getNumSlices()
+        if self.data_source.isComplete():
+            queueSize = self.data_source.getNumSlices()
         else:
             queueSize = 1e6
         
@@ -218,7 +217,7 @@ class HTTPRulePusher(object):
 
 
     def fileTasksForFrames(self):
-        numTotalFrames = self.ds.getNumSlices()
+        numTotalFrames = self.data_source.getNumSlices()
         logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.current_frame_number))
         numFramesOutstanding = 0
         while  numTotalFrames > (self.current_frame_number + 1):
@@ -256,11 +255,11 @@ class HTTPRulePusher(object):
         
         while (self.doPoll == True):
             framesOutstanding = self.fileTasksForFrames()
-            if self.ds.isComplete() and not (framesOutstanding > 0):
+            if self.data_source.isComplete() and not (framesOutstanding > 0):
                 logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
                 # save events
-                save_events_to_localization_results(self.resultsURI, self.dataSourceID)
+                clusterResults.fileResults(self.results_uri + '/Events', self.data_source.getEvents())
             else:
                 time.sleep(1)
         
