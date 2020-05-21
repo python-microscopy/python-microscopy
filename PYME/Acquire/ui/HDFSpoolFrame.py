@@ -131,7 +131,7 @@ class PanSpool(afp.foldingPane):
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
     
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.stSpoolDirName = wx.StaticText(pan, -1, 'Save images in: Blah Blah', size=wx.Size(136, -1))
+        self.stSpoolDirName = wx.StaticText(pan, -1, 'Save images in:', size=wx.Size(136, -1))
         hsizer.Add(self.stSpoolDirName, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
     
         self.bSetSpoolDir = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
@@ -259,7 +259,7 @@ class PanSpool(afp.foldingPane):
     
         hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
-        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse', style=wx.BU_EXACTFIT)
+        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Open Series', style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
         self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
     
