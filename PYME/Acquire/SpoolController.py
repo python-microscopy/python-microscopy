@@ -289,7 +289,7 @@ class SpoolController(object):
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
-            raise IOError('Output file already exists')
+            raise IOError('A series with the same name already exists')
 
         if stack:
             protocol = self.protocolZ

@@ -635,7 +635,7 @@ class ModuleCollection(HasTraits):
                 m._success = False
         
         for m in exec_order:
-            if isinstance(m, ModuleBase) and not m._success:
+            if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                 try:
                     m.check_inputs(self.namespace)
                     m.execute(self.namespace)

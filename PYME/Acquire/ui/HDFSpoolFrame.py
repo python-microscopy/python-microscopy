@@ -471,9 +471,9 @@ class PanSpool(afp.foldingPane):
                                                #pzf_compression_settings=self.get_compression_settings(),
                                                #cluster_h5=self.cbClusterh5.GetValue()
                                                )
-        except IOError:
+        except IOError as e:
             logger.exception('IO error whilst spooling')
-            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
+            ans = wx.MessageBox(e.message, 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             
     def update_ui(self):
