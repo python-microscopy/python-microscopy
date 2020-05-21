@@ -144,10 +144,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
     
         for seriesName in seriesToLaunch:
             try:
-                if USE_RULES:
-                    HTTPRulePusher.launch_localize(analysisMDH, seriesName)
-                else:
-                    HTTPTaskPusher.launch_localize(analysisMDH, seriesName)
+                HTTPRulePusher.HTTPRulePusher(seriesName, analysisMDH)
             except:
                 logger.exception('Error launching analysis for %s' % seriesName)
                 

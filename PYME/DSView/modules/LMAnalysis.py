@@ -311,22 +311,13 @@ class AnalysisController(object):
 
     def pushImagesCluster(self, image):
         from PYME.cluster import HTTPRulePusher
-        #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
-        logging.debug('Results file: ' + resultsFilename)
-
-        #debugPrint('Results file = %s' % resultsFilename)
 
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
-                                                    metadata=self.resultsMdh, resultsFilename=resultsFilename)
+        self.pusher = HTTPRulePusher.HTTPRulePusher(image.seriesName, self.resultsMdh)
 
-        self.queueName = self.pusher.queueID
-        self.results_filename = resultsFilename
-
-        debugPrint('Queue created')
+        debugPrint('Localization rule-pusher created')
 
         #self.onImagesPushed.send(self)
             

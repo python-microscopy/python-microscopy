@@ -83,7 +83,6 @@ def verify_cluster_results_filename(resultsFilename):
 
     return resultsFilename
 
-
 def launch_localize(analysisMDH, seriesName):
     """
     Pushes an analysis task for a given series to the distributor
@@ -131,75 +130,39 @@ def launch_localize(analysisMDH, seriesName):
 
 
 class HTTPRulePusher(object):
-    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
+    def __init__(self, series_uri, metadata, queue_name=None, server_filter=clusterIO.local_serverfilter):
         """
         Create a pusher and push tasks for each frame in a series. For use with the new cluster distribution architecture
 
         Parameters
         ----------
-        dataSourceID : str
+        series_uri : str
             The URI of the data source - e.g. PYME-CLUSTER://serverfilter/path/to/data
-        metadata : PYME.IO.MetaDataHandler object
+        metadata : PYME.IO.MetaDataHandler.MDHandlerBase
             The acquisition and analysis metadata
-        resultsFilename : str
-            The cluster relative path to the results file. e.g. "<username>/analysis/<date>/seriesname.h5r"
-        queueName : str
-            a name to give the queue. The results filename is used if no name is given.
-        startAt : int
-            which frame to start at. TODO - read from metadata instead of taking as a parameter.
-        dataSourceModule : str [optional]
-            The name of the module to use for reading the raw data. If not given, it will be inferred from the dataSourceID
-        serverfilter : str
+        queue_name : str
+            [optional] a name to give the queue. The results filename is used if no name is given.
+        server_filter : str
             A cluster filter, for use when multiple PYME clusters are visible on the same network segment.
         """
-        if queueName is None:
-            queueName = resultsFilename
+        self.results_filename, self.results_uri, self.results_md_uri = setup_localization_result_files(series_uri,
+                                                                                                       metadata,
+                                                                                                       server_filter)
+        if queue_name is None:
+            queue_name = self.results_filename
 
-        self.queueID = queueName
-        self.dataSourceID = dataSourceID
-        if '~' in self.dataSourceID or '~' in self.queueID or '~' in resultsFilename:
-            raise RuntimeError('File, queue or results name must NOT contain ~')
-
-        #self.resultsURI = 'PYME-CLUSTER://%s/__aggregate_h5r/%s' % (serverfilter, resultsFilename)
-        self.resultsURI = clusterResults.pickResultsServer('__aggregate_h5r/%s' % resultsFilename, serverfilter)
-
-        resultsMDFilename = resultsFilename + '.json'
-        self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsMDFilename)
-        #self.results_md_uri = self.resultsURI.replace('__aggregate_h5r/', '') + '.json'
-
+        self.queueID = queue_name
+        self.dataSourceID = series_uri
         self.taskQueueURI = _getTaskQueueURI()
-
         self.mdh = metadata
-
-        #load data source
-        if dataSourceModule is None:
-            DataSource = DataSources.getDataSourceForFilename(dataSourceID)
-        else:
-            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
-        self.ds = DataSource(self.dataSourceID)
-        
-        #set up results file:
-        logging.debug('resultsURI: ' + self.resultsURI)
-        clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
-        clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
-
-        # set up metadata file which is used for deciding how to launch the analysis
-        clusterIO.put_file(resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=serverfilter)
-        
-        #wait until clusterIO caches clear to avoid replicating the results file.
-        #time.sleep(1.5) #moved inside polling thread so launches will run quicker
-
-        self.currentFrameNum = startAt
+        self.current_frame_number = metadata.getOrDefault('Analysis.StartAt', 0)
 
         self._task_template = None
-        
         self._ruleID = None
-        
         self.doPoll = True
         
         #post our rule
         self.post_rule()
-        
         self.pollT = threading.Thread(target=self._updatePoll)
         self.pollT.start()
 
@@ -240,31 +203,31 @@ class HTTPRulePusher(object):
 
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
-        logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
+        logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.current_frame_number))
         numFramesOutstanding = 0
-        while  numTotalFrames > (self.currentFrameNum + 1):
+        while  numTotalFrames > (self.current_frame_number + 1):
             logging.debug('we have unpublished frames - push them')
 
             #turn our metadata to a string once (outside the loop)
             #mdstring = self.mdh.to_JSON() #TODO - use a URI instead
             
-            newFrameNum = min(self.currentFrameNum + 100000, numTotalFrames-1)
+            newFrameNum = min(self.current_frame_number + 100000, numTotalFrames - 1)
 
             #create task definitions for each frame
 
             s = clusterIO._getSession(self.taskQueueURI)
-            r = s.get('%s/release_rule_tasks?ruleID=%s&release_start=%d&release_end=%d' % (self.taskQueueURI, self._ruleID, self.currentFrameNum, newFrameNum),
-                       data='',
-                       headers={'Content-Type': 'application/json'})
+            r = s.get('%s/release_rule_tasks?ruleID=%s&release_start=%d&release_end=%d' % (self.taskQueueURI, self._ruleID, self.current_frame_number, newFrameNum),
+                      data='',
+                      headers={'Content-Type': 'application/json'})
 
             if r.status_code == 200 and r.json()['ok']:
                 logging.debug('Successfully posted tasks')
             else:
                 logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
-            self.currentFrameNum = newFrameNum
+            self.current_frame_number = newFrameNum
 
-            numFramesOutstanding = numTotalFrames  - 1 - self.currentFrameNum
+            numFramesOutstanding = numTotalFrames  - 1 - self.current_frame_number
 
         return  numFramesOutstanding
 
@@ -280,6 +243,8 @@ class HTTPRulePusher(object):
             if self.ds.isComplete() and not (framesOutstanding > 0):
                 logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
+                # save events
+                save_events_to_localization_results(self.resultsURI, self.dataSourceID)
             else:
                 time.sleep(1)
         
