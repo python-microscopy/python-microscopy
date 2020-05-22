@@ -240,12 +240,10 @@ class ColourRenderer(CurrentRenderer):
         imb = self._get_image_bounds(pixelSize, sliceThickness, *settings.get('zBounds', [None, None]))
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
-        ox, oy = MetaDataHandler.origin_nm(mdh)
-        if imb.z0 == 0:
+        ox, oy, oz = MetaDataHandler.origin_nm(mdh)
+        if not imb.z0 == 0:
             # single plane in z stack
             # FIXME - what is z for 3D fitting at a single focal plane? Check for pipeline['focus']==0 instead?
-            oz = mdh.get('Source.Positioning.PIFoc', 0)
-        else:
             oz = 0
 
         mdh['Origin.x'] = ox + imb.x0
