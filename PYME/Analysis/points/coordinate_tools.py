@@ -198,7 +198,7 @@ def pixel_index_of_points_in_image(image, points):
 
     Parameters
     ----------
-    image: PYME.IO.ImageStack
+    image: PYME.IO.image.ImageStack
         image with complete metadata
     points: PYME.IO.tabular.TabularBase
 
@@ -220,16 +220,16 @@ def pixel_index_of_points_in_image(image, points):
     try:
         roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
 
-        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
-        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
+        p_ox = roi_x0 * points.mdh.voxelsize_nm.x
+        p_oy = roi_y0 * points.mdh.voxelsize_nm.y
     except AttributeError:
         raise RuntimeError('metadata specifying ROI position and voxelsize are missing')
 
     # Image origin is referenced to top-left corner of pixelated image.
     # FIXME - localisations are currently referenced to centre of raw pixels
-    x_index = np.floor((points['x'] + p_ox - x0) / image.pixelSize).astype('i')
-    y_index = np.floor((points['y'] + p_oy - y0) / image.pixelSize).astype('i')
-    z_index = np.floor((points['z'] - z0) / image.sliceSize).astype('i')
+    x_index = np.floor((points['x'] + p_ox - x0) / image.voxelsize_nm.x).astype('i')
+    y_index = np.floor((points['y'] + p_oy - y0) / image.voxelsize_nm.y).astype('i')
+    z_index = np.floor((points['z'] - z0) / image.voxelsize_nm.z).astype('i')
 
     return x_index, y_index, z_index
 

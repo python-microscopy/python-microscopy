@@ -123,9 +123,11 @@ def test_simple_distance_to_image_mask():
     x, y, z = np.mgrid[:size, :size, :size]
 
     points = tabular.DictSource({'x': np.arange(size), 'y': np.zeros(size), 'z': np.zeros(size)})
-    points.mdh = CachingMDHandler({'voxelsize.x': 1, 'voxelsize.y': 1})
+    # mdh voxelsize units are in um currently, while the voxelsize_nm attributes are used in distance_to_image_mask
+    points.mdh = CachingMDHandler({'voxelsize.x': 0.001, 'voxelsize.y': 0.001, 'voxelsize.z':0.001,
+                                   'voxelsize.units': 'um'})
 
-    mask = ImageStack(x < 0.5 * size)
+    mask = ImageStack(x < 0.5 * size, mdh=points.mdh)
 
     distances = coordinate_tools.distance_to_image_mask(mask, points)
     np.testing.assert_array_equal(distances, np.arange(size) - 0.5 * size)
