@@ -737,6 +737,9 @@ class ModuleCollection(HasTraits):
         -------
 
         """
+        # delete all outputs from the previous set of recipe modules
+        self.prune_dependencies_from_namespace(self.module_outputs)
+        
         mc = []
     
         if l is None:
@@ -753,7 +756,7 @@ class ModuleCollection(HasTraits):
         
             mod.set(**md)
             mc.append(mod)
-    
+        
         self.modules = mc
         
         self.recipe_changed.send_robust(self)
