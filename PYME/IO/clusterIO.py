@@ -905,7 +905,7 @@ def mirror_file(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def put_file(filename, data, serverfilter=local_serverfilter):
+def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
     """
     Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
     designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
@@ -926,6 +926,10 @@ def put_file(filename, data, serverfilter=local_serverfilter):
         the data to put
     serverfilter : string
         the cluster name (optional)
+    timeout: float
+        timeout in seconds for http operations. **Warning:** alter from the default setting of 1s only with extreme care.
+        If operations are timing out it is usually an indication that something else is going wrong and you should usually
+        fix this first. The serverless and lockless architecture depends on having low latency.
 
     Returns
     -------
@@ -953,7 +957,7 @@ def put_file(filename, data, serverfilter=local_serverfilter):
         url = url.encode()
         try:
             s = _getSession(url)
-            r = s.put(url, data=data, timeout=1)
+            r = s.put(url, data=data, timeout=timeout)
             dt = time.time() - t
             #print r.status_code
             if not r.status_code == 200:

@@ -226,7 +226,9 @@ class Spooler(sp.Spooler):
         logger.debug('Starting spooling: %s' %self.seriesName)
         
         if self._aggregate_h5:
-            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
+            #NOTE: allow a longer timeout than normal here as __aggregate with metadata waits for a lock on the server side before
+            # actually adding (and is therefore susceptible to longer latencies than most operations). FIXME - remove server side lock.
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter, timeout=3)
         else:
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
