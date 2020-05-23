@@ -343,8 +343,12 @@ class SpoolController(object):
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
             
-        self.spooler.onSpoolStop.connect(self.SpoolStopped)
-        self.spooler.StartSpool()
+        try:
+            self.spooler.onSpoolStop.connect(self.SpoolStopped)
+            self.spooler.StartSpool()
+        except:
+            self.spooler.abort()
+            raise
         
         self.onSpoolStart.send(self)
         
