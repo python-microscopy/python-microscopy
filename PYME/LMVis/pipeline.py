@@ -696,6 +696,37 @@ class Pipeline:
 
         return ds
 
+    def _ds_from_cluster(self, uri):
+        from PYME.IO import clusterIO
+        from PYME.IO.tabular import DictSource
+        s = clusterIO._getSession(uri)
+
+        ext = '.h5r' if '.h5r' in uri else '.hdf'
+        try:
+            table_name = uri.split(ext)[1]
+        except IndexError:
+            table_name = 'FitResults'
+
+        server_filter = uri.split('://')[1].split('/')[0]
+        filename = uri.split('://%s/' % server_filter)[1].strip('/' + table_name)
+
+        loc = clusterIO.locate_file(filename, server_filter, return_first_hit=True)[0][0]
+
+        r = s.get(loc + '/' + table_name)
+        # if r.status_code == 200:
+        print(r.json().keys())
+        resp = r.json()
+        ds = DictSource({k: np.asarray(v) for k, v in resp.items()})
+        try:
+            r = s.get(loc + '/' + 'Metadata')
+            print(r.json())
+            self.mdh.update(r.json())
+        except:
+            import traceback
+            traceback.format_exc()
+
+        return ds
+
     def OpenFile(self, filename= '', ds = None, **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
@@ -728,7 +759,12 @@ class Pipeline:
         
         if ds is None:
             #load from file
-            ds = self._ds_from_file(filename, **kwargs)
+            print(filename)
+            type(filename)
+            if (filename.upper()).startswith('PYME-CLUSTER'):
+                ds = self._ds_from_cluster(filename)
+            else:
+                ds = self._ds_from_file(filename, **kwargs)
 
             
         #wrap the data source with a mapping so we can fiddle with things
