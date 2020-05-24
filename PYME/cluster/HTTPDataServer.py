@@ -567,6 +567,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
+        elif '.h5r' in self.path or '.hdf' in self.path:
+            return self.get_tabular_part(path)
 
         ctype = self.guess_type(path)
         try:
@@ -679,6 +681,44 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except IOError:
             self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
+
+    def get_tabular_part(self, path):
+        from PYME.IO.tabular import NestedRecArraySource
+        from PYME.IO import h5rFile
+        ext = '.h5r' if '.h5r' in path else '.hdf'
+        try:
+            filename, part = path.split(ext)
+            ctype = self.guess_type(filename + ext)
+            part = part.lstrip('/').lstrip('\\')
+
+            if part == 'Events':
+                raise NotImplementedError
+            elif part == 'Metadata':
+                raise NotImplementedError
+
+            if 'slice' in part:
+                # 'testing' + str(slice(None, 10, 2))
+                part, return_slice = part.strip(')').split('slice(')
+                return_slice = slice(*(None if s=='None' else int(s) for s in return_slice.split(',')))
+            else:
+                return_slice = slice(None)
+
+            with h5rFile.openH5R(filename + ext) as h5f:
+                table = h5f.getTableData(part, return_slice)
+                print(table.dtype)
+                table = NestedRecArraySource(table)
+                print(table.to_json())
+                f, length = self._string_to_file(table.to_json())
+
+                self.send_response(200)
+                self.send_header("Content-type", ctype)
+                self.send_header("Content-Length", length)
+                #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+                self.end_headers()
+                return f
+
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
         
         
 
