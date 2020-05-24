@@ -691,31 +691,32 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             ctype = self.guess_type(filename + ext)
             part = part.lstrip('/').lstrip('\\')
 
-            if part == 'Events':
-                raise NotImplementedError
-            elif part == 'Metadata':
-                raise NotImplementedError
-
-            if 'slice' in part:
-                # 'testing' + str(slice(None, 10, 2))
-                part, return_slice = part.strip(')').split('slice(')
-                return_slice = slice(*(None if s=='None' else int(s) for s in return_slice.split(',')))
-            else:
-                return_slice = slice(None)
-
             with h5rFile.openH5R(filename + ext) as h5f:
-                table = h5f.getTableData(part, return_slice)
-                print(table.dtype)
-                table = NestedRecArraySource(table)
-                print(table.to_json())
-                f, length = self._string_to_file(table.to_json())
+                if part == 'Metadata':
+                    mdh = h5f.mdh.to_JSON()
+                    f, length = self._string_to_file(mdh)
+                elif part == 'Events':
+                    events = h5f.events
+                    raise RuntimeError('fixme / make events class with to_JSON method')
+                else:
+                    if 'slice' in part:
+                        # 'testing' + str(slice(None, 10, 2))
+                        part, return_slice = part.strip(')').split('slice(')
+                        return_slice = slice(*(None if s == 'None' else int(s) for s in return_slice.split(',')))
+                    else:
+                        return_slice = slice(None)
+                        if part == '':
+                            part = 'FitResults'
+                    table = h5f.getTableData(part, return_slice)
+                    table = NestedRecArraySource(table, translate_pipeline_keys=True)
+                    f, length = self._string_to_file(table.to_json())
 
-                self.send_response(200)
-                self.send_header("Content-type", ctype)
-                self.send_header("Content-Length", length)
-                #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
-                self.end_headers()
-                return f
+            self.send_response(200)
+            self.send_header("Content-type", ctype)
+            self.send_header("Content-Length", length)
+            #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            return f
 
         except IOError:
             self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
