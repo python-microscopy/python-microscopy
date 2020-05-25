@@ -165,6 +165,7 @@ class IntegerIDRule(Rule):
         
         self._rule_timeout = rule_timeout
         self._cached_advert = None
+        self._active = True # making this rule inactive will cause it not to generate adverts (this is the closest we  get to aborting)
         
         self.nTotal = 0
         self.nAssigned = 0
@@ -297,6 +298,9 @@ class IntegerIDRule(Rule):
         
         "inputsByTask" is only provided for some recipe tasks.
         """
+        if not self._active:
+            return None
+        
         with self._advert_lock:
             if not self._cached_advert:
                 availableTasks = np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()
@@ -341,6 +345,12 @@ class IntegerIDRule(Rule):
     def finished(self):
         """ Whether the rule has finished (completed the maximum number of tasks that could be assigned)"""
         return self.nCompleted >= self._n_max
+    
+    def inactivate(self):
+        """
+        Mark rule as inactive (generates no adverts) to facilitate aborting / pausing long-running rules.
+        """
+        self._active = False
     
     def info(self):
         """
@@ -634,6 +644,12 @@ class RuleServer(object):
         rule.make_range_available(int(release_start), int(release_end))
     
     
+        return json.dumps({'ok': 'True'})
+    
+    @webframework.endpoint('/inactivate_rule')
+    def inactivate_rule(self, ruleID):
+        self._rules[ruleID].inactivate()
+
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/handin')
