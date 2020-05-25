@@ -161,7 +161,7 @@ class Spooler:
             pass
         
         self.spoolOn = False
-        
+        self.guiUpdateCallback()
         self.onSpoolStop.send(self)
         
     def abort(self):

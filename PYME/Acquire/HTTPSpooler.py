@@ -129,6 +129,7 @@ class Spooler(sp.Spooler):
         
         self._postQueue = Queue.Queue(QUEUE_MAX_SIZE)
         self._dPoll = True
+        self._stopping = False
         self._lock = threading.Lock()
         
         self._last_thread_exception = None
@@ -205,6 +206,8 @@ class Spooler(sp.Spooler):
                 time.sleep(.01)
                 #print 't', len(data)
             except Queue.Empty:
+                if self._stopping:
+                    self._dPoll = False
                 time.sleep(.01)
                 
     def finished(self):
@@ -233,8 +236,10 @@ class Spooler(sp.Spooler):
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
     def StopSpool(self):
-        self._dPoll = False
         sp.Spooler.StopSpool(self)
+
+        # wait until our input queue is empty rather than immediately stopping saving.
+        self._stopping=True
         
         logger.debug('Stopping spooling %s' % self.seriesName)
         
