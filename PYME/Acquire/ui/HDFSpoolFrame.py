@@ -293,7 +293,7 @@ class PanSpool(afp.foldingPane):
         self.AddNewElement(clp)
 
         #analysis settings
-        clp = afp.collapsingPane(self, caption='Real time analysis ...')
+        clp = afp.collapsingPane(self, caption='Automatic analysis ...')
 
         self.scope.analysisSettings = AnalysisSettingsUI.AnalysisSettings() #Move me???
 

@@ -28,7 +28,7 @@ class AnalysisSettingsPanel(wx.Panel):
         self.fitFactories = PYME.localization.FitFactories.resFitFactories
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.cbLocalizeInRealTime = wx.CheckBox(self, -1, 'Localize in real time')
+        self.cbLocalizeInRealTime = wx.CheckBox(self, -1, 'Auto-start localization')
         self.cbLocalizeInRealTime.SetValue(False)
         self.cbLocalizeInRealTime.Bind(wx.EVT_CHECKBOX, lambda e: self.analysisSettings.SetPropagate(e.IsChecked()))
         hsizer.Add(self.cbLocalizeInRealTime, 1, wx.ALIGN_CENTER_VERTICAL, 0)
