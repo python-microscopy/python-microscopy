@@ -5,6 +5,11 @@
     <title>PYMERuleServer</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
           integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+        .active {
+            color: #495057;
+        }
+    </style>
 </head>
 <body>
 
@@ -18,11 +23,12 @@
     <h3>Active analysis queues</h3>
 
     <table class="table table-striped">
-        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
+        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th><th></th></tr>
 
-        <tr v-for="queueStats, queueName)  in queues">
+        <tr v-for="queueStats, queueName)  in queues" v-bind:class="{active : active}">
             <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
-                <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td>
+                <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td><td>
+            <button v-if="queueStats.active" v-on:click="inactivate_rule(queueName );">Abort</button></td>
         </tr>
 
     </table>
@@ -41,7 +47,12 @@
         el: '#status',
         data: {
             queues: queues
+            },
+        methods:{
+            inactivate_rule: function (ruleID) {
+                $.post('/inactivate_rule?ruleID=' + ruleID);
             }
+        }
     });
     function poll_state(){
         $.ajax({

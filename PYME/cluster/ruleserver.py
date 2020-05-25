@@ -236,6 +236,9 @@ class IntegerIDRule(Rule):
             ``{"ruleID" : ruleID, "taskIDs": [list of int], "template" : "<rule template>"}``
         
         """
+        if not self._active:
+            # don't accept any bids
+            return {'ruleID': bid['ruleID'], 'taskIDs':[], 'template' : ''}
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         costs = np.array(bid['costs'], 'f4')
@@ -369,6 +372,7 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
+                  'active' : self._active
                 }
     
     def poll_timeouts(self):
@@ -646,7 +650,7 @@ class RuleServer(object):
     
         return json.dumps({'ok': 'True'})
     
-    @webframework.endpoint('/inactivate_rule')
+    @webframework.register_endpoint('/inactivate_rule')
     def inactivate_rule(self, ruleID):
         self._rules[ruleID].inactivate()
 
