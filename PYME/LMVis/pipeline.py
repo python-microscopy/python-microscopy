@@ -758,9 +758,7 @@ class Pipeline:
         self.filename = filename
         
         if ds is None:
-            #load from file
-            print(filename)
-            type(filename)
+            # load from file or cluster
             if (filename.upper()).startswith('PYME-CLUSTER'):
                 ds = self._ds_from_cluster(filename)
             else:
