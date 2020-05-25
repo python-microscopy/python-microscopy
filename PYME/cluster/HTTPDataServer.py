@@ -102,6 +102,7 @@ import socket
 import threading
 import datetime
 import time
+from PYME.IO import h5File
 
 #GPU status functions
 try:
