@@ -572,6 +572,9 @@ class MatfileColumnSource(TabularBase):
 
 @deprecated_name('recArrayInput')
 class RecArraySource(TabularBase):
+    """
+    Source for flat recarrays. To create a recarray with nested elements see NestedRecArraySource
+    """
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
@@ -593,9 +596,14 @@ class RecArraySource(TabularBase):
 
 
 class NestedRecArraySource(TabularBase):
+    """
+    Source for nested structured arrays as one would get if they slice a FitResults table. Mimics the nesting/unnesting
+    keys used in FitResultsSource
+    """
     _name = 'NestedRecArraySource'
     def __init__(self, array, translate_pipeline_keys=False):
-        self._array = array[:]  # if array is tables.table.Table instead of numpy array, slice it to convert
+        # table Tables need to be sliced to convert to array
+        self._array = array[:] if type(array) is tables.table.Table else array
         self._keys = unNestDtype(self._array.dtype.descr)
 
         self.transkeys = {}

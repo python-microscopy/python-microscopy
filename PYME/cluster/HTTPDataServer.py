@@ -683,6 +683,23 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return None
 
     def get_tabular_part(self, path):
+        """
+
+        Parameters
+        ----------
+        path: str
+            path to an hdf or h5r file on the dataserver computer. Specific parts of the file can be accessed by
+            appending, e.g. /Metadata, for a resulting `path` of something like folder/test.h5r/Metadata. The 'part' of
+            the file returned defaults to FitResults if unspecified, and can additionally include a slice to take before
+            returning. In other words, a `path` of 'folder/test.h5r/FitResultsslice(0,100,None)' will return the first
+            hundred elements of the FitResults table in test.h5r.
+
+        Returns
+        -------
+        f: BytesIO
+            Requested part of the file encoded as bytes
+
+        """
         from PYME.IO.tabular import NestedRecArraySource
         from PYME.IO import h5rFile
         ext = '.h5r' if '.h5r' in path else '.hdf'
@@ -696,11 +713,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     mdh = h5f.mdh.to_JSON()
                     f, length = self._string_to_file(mdh)
                 elif part == 'Events':
-                    events = h5f.events
-                    raise RuntimeError('fixme / make events class with to_JSON method')
+                    # events = h5f.events
+                    #  fixme / make events class with to_JSON method
+                    self.send_error(400, 'serving events from tabular files not yet supported')
+                    return
                 else:
                     if 'slice' in part:
-                        # 'testing' + str(slice(None, 10, 2))
+                        # convert the slice back from str, avoiding eval for security
                         part, return_slice = part.strip(')').split('slice(')
                         return_slice = slice(*(None if s == 'None' else int(s) for s in return_slice.split(',')))
                     else:

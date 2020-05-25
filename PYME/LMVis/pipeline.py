@@ -713,17 +713,17 @@ class Pipeline:
         loc = clusterIO.locate_file(filename, server_filter, return_first_hit=True)[0][0]
 
         r = s.get(loc + '/' + table_name)
-        # if r.status_code == 200:
-        print(r.json().keys())
+        if r.status_code != 200:
+            raise IOError('Error retrieving %s from %s' % (uri, loc))
         resp = r.json()
         ds = DictSource({k: np.asarray(v) for k, v in resp.items()})
         try:
             r = s.get(loc + '/' + 'Metadata')
-            print(r.json())
             self.mdh.update(r.json())
         except:
-            import traceback
-            traceback.format_exc()
+            logger.warning('No metadata found for %s' % uri)
+
+        # todo - get events
 
         return ds
 
