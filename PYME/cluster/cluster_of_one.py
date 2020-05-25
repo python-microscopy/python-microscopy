@@ -126,6 +126,8 @@ def main():
     op.add_option('-r', '--root', dest='root',
                   help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % default_root,
                   default=default_root)
+    op.add_option('--ui', dest='ui', help='launch web based ui', default=True)
+    op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', default=False)
 
     options, args = op.parse_args()
     
@@ -173,7 +175,7 @@ def main():
     #frame.Show()
     
     try:
-        cluster.launch(True)
+        cluster.launch(gui=options.ui, clusterUI=options.clusterui)
         app.MainLoop()
     finally:
         cluster.shutdown()
