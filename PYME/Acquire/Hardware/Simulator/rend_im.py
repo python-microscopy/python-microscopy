@@ -141,29 +141,33 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
             norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
             interpModel_by_chan[i] = np.maximum(im/norm, 0) #normalise to 1 and clip
 
+def get_psf():
+    from PYME.IO.image import ImageStack
+    from PYME.IO.MetaDataHandler import NestedClassMDHandler
+    
+    mdh = NestedClassMDHandler()
+    mdh['ImageType'] = 'PSF'
+    mdh['voxelsize.x'] = dx/1e3
+    mdh['voxelsize.y'] = dy/1e3
+    mdh['voxelsize.z'] = dz/1e3
+    
+    im = ImageStack(data=[c for c in interpModel_by_chan if not c is None], mdh=mdh, titleStub='Simulated PSF')
+    
+    return im
+
 
 def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
+    from PYME.IO import load_psf
     
-    #FIXME - use load_psf() instead
-    mf = open(getFullExistingFilename(modName), 'rb')
-    mod, voxelsize = pickle.load(mf)
-    mf.close()
-    
+    mod, vs_nm = load_psf.load_psf(modName)
     mod = resizePSF(mod, interpModel().shape)
 
-    #if not voxelsize.x == md.voxelsize.x:
-    #    raise RuntimeError("PSF and Image voxel sizes don't match")
+    IntXVals = vs_nm.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+    IntYVals = vs_nm.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+    IntZVals = vs_nm.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
-    IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-    IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-    IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
-
-    dx = voxelsize.x*1e3
-    dy = voxelsize.y*1e3
-    dz = voxelsize.z*1e3
-
-    #interpModel = mod
+    dx, dy, dz = vs_nm
 
     #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
     interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
