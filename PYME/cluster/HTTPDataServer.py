@@ -567,7 +567,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
-        elif '.h5r' in self.path or '.hdf' in self.path:
+        elif '.h5r/' in self.path or '.hdf/' in self.path:
             return self.get_tabular_part(path)
 
         ctype = self.guess_type(path)
