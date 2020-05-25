@@ -47,6 +47,7 @@ from PYME.IO import PZFFormat
 
 import numpy as np
 import random
+from PYME import config
 
 import json
 
@@ -208,7 +209,8 @@ class Spooler(sp.Spooler):
             except Queue.Empty:
                 if self._stopping:
                     self._dPoll = False
-                time.sleep(.01)
+                else:
+                    time.sleep(.01)
                 
     def finished(self):
         if not self._last_thread_exception is None:
@@ -240,8 +242,19 @@ class Spooler(sp.Spooler):
 
         # wait until our input queue is empty rather than immediately stopping saving.
         self._stopping=True
-        
         logger.debug('Stopping spooling %s' % self.seriesName)
+        
+        
+        #join our polling threads
+        if config.get('httpspooler-jointhreads', True):
+            # Allow this to be switched off in a config option for maximum performance on High Throughput system.
+            # Joining threads is the recommended and safest behaviour, but forces spooling of current series to complete
+            # before next series starts, so could have negative performance implications.
+            # The alternative - letting spooling continue during the acquisition of the next series - has the potential
+            # to result in runaway memory and thread usage when things go pear shaped (i.e. spooling is not fast enough)
+            # TODO - is there actually a performance impact that justifies this config option, or is it purely theoretical
+            for pt in self._pollThreads:
+                pt.join()
         
         if self._aggregate_h5:
             clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(),
