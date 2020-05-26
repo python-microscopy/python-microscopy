@@ -747,7 +747,8 @@ class LMAnalyser2(object):
         except ImportError:
             import pickle
             
-        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
+        queueInfo = requests.get(self.analysisController.pusher.taskQueueURI + '/distributor/queues').json()['result']
+        newNumAnalysed = int(queueInfo[self.queueName]['tasksCompleted'])
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
             newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
