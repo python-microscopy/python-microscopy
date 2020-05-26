@@ -741,11 +741,16 @@ class LMAnalyser2(object):
 
     def _refresh_analysis_cluster(self):
         import requests
-        import cPickle
+        try:
+            # import cPickle on py2
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
         newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
-            newResults = cPickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)))
+            newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
             self._add_new_results(newResults)
         
 
