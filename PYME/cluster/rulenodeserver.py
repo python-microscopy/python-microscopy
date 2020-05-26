@@ -14,6 +14,7 @@ import sys
 from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
+import os
 
 from PYME.util import webframework
 
@@ -78,15 +79,23 @@ class Rater(object):
         
         cost = 1.0
         if task['type'] == 'localization':
-            filename, serverfilter = clusterIO.parseURL(task['inputs']['frames'])
-            filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
-        
-            if clusterIO.is_local(filename, serverfilter):
-                cost = .01
+            series_name = task['inputs']['frames']
+            if os.path.exists(series_name):
+                # cluster of one special case
+                cost = 0.01
+            else:
+                filename, serverfilter = clusterIO.parseURL(series_name)
+                filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
+            
+                if clusterIO.is_local(filename, serverfilter):
+                    cost = .01
     
         elif task['type'] == 'recipe':
             for URL in task['inputs'].values():
-                if clusterIO.is_local(*clusterIO.parseURL(URL)):
+                if os.path.exists(URL):
+                    #cluster of one special case
+                    cost *= .2
+                elif clusterIO.is_local(*clusterIO.parseURL(URL)):
                     cost *= .2
                     
         return taskID, cost
