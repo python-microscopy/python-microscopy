@@ -214,7 +214,7 @@ class NodeServer(object):
                         
                 if n_tasks < n_tasks_to_request:
                     #logger.debug('Found %d local tasks' % n_tasks)
-                    #logger.debug('Could not find enough local tasks, bidding on non-local')
+                    logger.debug('Could not find enough local tasks, bidding on non-local')
                     #bid for non-local tasks
                     for rater in raters:
                         taskIDs = []
@@ -233,7 +233,8 @@ class NodeServer(object):
                         if n_tasks >= n_tasks_to_request:
                             break
                         
-                #print task_requests
+                    #print task_requests
+                    logger.debug('task_requests: %s' % task_requests)
                 
                 #place bids and get results
                 url = self.distributor_url +'bid_on_tasks'

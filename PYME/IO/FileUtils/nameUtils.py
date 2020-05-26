@@ -132,9 +132,9 @@ def genClusterResultFileName(dataFileName, create=True):
         rel_name = fn.split('://%s/' % clusterfilter)[1]
     else:
         # special case for cluster of one uses where we didn't open file using a cluster URI
-        if not fn.startswith('/'):
-            # filename is relative to PYMEDATATDIR
-            fn = getFullFilename(fn)
+        # if not fn.startswith('/'):
+        #     # filename is relative to PYMEDATATDIR
+        #     fn = getFullFilename(fn)
             
         rel_name = getRelFilename(fn, config.get('dataserver-root'))
 

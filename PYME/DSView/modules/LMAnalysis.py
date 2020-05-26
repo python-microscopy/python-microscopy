@@ -326,16 +326,15 @@ class AnalysisController(object):
 
     def pushImagesCluster(self, image):
         from PYME.cluster import HTTPRulePusher
-        #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
+
+        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.filename))
         logging.debug('Results file: ' + resultsFilename)
 
-        #debugPrint('Results file = %s' % resultsFilename)
 
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
+        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.filename,
                                                     metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
@@ -764,7 +763,7 @@ class LMAnalyser2(object):
             import pickle
             
         queueInfo = requests.get(self.analysisController.pusher.taskQueueURI + '/distributor/queues').json()['result']
-        newNumAnalysed = int(queueInfo[self.queueName]['tasksCompleted'])
+        newNumAnalysed = int(queueInfo[self.analysisController.queueName]['tasksCompleted'])
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
             newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
