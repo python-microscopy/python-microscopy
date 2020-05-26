@@ -103,7 +103,7 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
         zu = None
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
         xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
-        mask_area = bool_mask.sum() * vx * vy * vz
+        mask_area = bool_mask.sum() * vx * vy
         
     return xu, yu, zu, mask_area
     
@@ -167,8 +167,7 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, threaded=Fal
 
 def ripleys_l(bb, K, d=2):
     """
-    Normalizes Ripley's K-function to an L-function such that L > 0 indicates
-    clustering and L < 0 indicates dispersion.
+    Normalizes Ripley's K-function to an L-function.
 
     Parameters
     ----------
@@ -180,7 +179,6 @@ def ripleys_l(bb, K, d=2):
         d : int
             Dimension of the input data to calculate K (2 or 3).
     """
-    bin_size = np.diff(bb)[0]
     if d == 2:
         # Normalize 2D
         L = np.sqrt(K/np.pi)
@@ -190,6 +188,26 @@ def ripleys_l(bb, K, d=2):
     else:
         raise ValueError('Please enter a valid dimension.')
 
-    L -= bb+bin_size
-
     return bb, L
+
+def ripleys_h(bb, K, d=2):
+    """
+    Normalizes Ripley's K-function to an H-function such that  > 0 indicates
+    clustering and H < 0 indicates dispersion.
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, L = ripleys_l(bb, K, d)
+
+    bin_size = np.diff(bb)[0]
+    H = L - bb+bin_size
+
+    return bb, H

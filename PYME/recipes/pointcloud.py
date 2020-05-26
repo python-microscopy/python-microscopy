@@ -251,11 +251,12 @@ class Ripleys(ModuleBase):
     inputPositions = Input('input')
     inputMask = Input('')
     outputName = Output('ripleys')
-    normalization = Enum(['K', 'L'])
+    normalization = Enum(['K', 'L', 'H'])
     nbins = Int(50)
     binSize = Float(50.)
     sampling = Float(5.)
     threaded = Bool(False)
+    dimension = Enum(['2D', '3D'])
     
     def execute(self, namespace):
         from PYME.Analysis.points import ripleys
@@ -263,8 +264,18 @@ class Ripleys(ModuleBase):
         
         points_real = namespace[self.inputPositions]
         mask = namespace.get(self.inputMask, None)
-        
-        three_d = np.count_nonzero(points_real['z']) > 0
+
+        # three_d = np.count_nonzero(points_real['z']) > 0
+        if self.dimension == '3D':
+            if np.count_nonzero(points_real['z']) == 0:
+                raise RuntimeError('Need a 3D dataset')
+            if mask.data.shape[2] < 2:
+                raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
+            three_d = True
+        else:
+            if mask.data.shape[2] > 1:
+                raise RuntimeError('Need a 2D mask.')
+            three_d = False
         
         try:
             origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
@@ -284,6 +295,10 @@ class Ripleys(ModuleBase):
             d = 3 if three_d else 2
             bb, L = ripleys.ripleys_l(bb, K, d)
             res = tabular.DictSource({'bins': bb, 'vals': L})
+        elif self.normalization == 'H':
+            d = 3 if three_d else 2
+            bb, H = ripleys.ripleys_h(bb, K, d)
+            res = tabular.DictSource({'bins': bb, 'vals': H})
         else:
             res = tabular.DictSource({'bins': bb, 'vals': K})
         
