@@ -272,7 +272,7 @@ class Ripleys(ModuleBase):
             if mask.data.shape[2] < 2:
                 raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
             three_d = True
-        if self.dimension == '2D':
+        else:
             if mask.data.shape[2] > 1:
                 raise RuntimeError('Need a 2D mask.')
             three_d = False
