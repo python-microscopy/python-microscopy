@@ -39,19 +39,27 @@ from PYME.LMVis import progGraph as progGraph
 from PYME.localization import MetaDataEdit as mde
 from PYME.localization import remFitBuf
 from PYME.ui.mytimer import mytimer
-
-try:
-    from PYME.cluster import HTTPTaskPusher
-
-    #test for a running task distributor
-    distribURI = HTTPTaskPusher._getTaskQueueURI(0)
-    NEW_STYLE_DISTRIBUTION=True
-except:
-    NEW_STYLE_DISTRIBUTION=False
+import sys
 
 import logging
-
 logger = logging.getLogger(__name__)
+
+if sys.version_info.major >= 3:
+    # always use new style on py3
+    NEW_STYLE_DISTRIBUTION = True
+else:
+    # use new style on py2 if we detect a running ruleserver
+    # TODO - distinguish between local and remote ruleservers
+    try:
+        from PYME.cluster import distribution
+        
+        #test for a running task distributor
+        distribURIs = distribution.getDistributorInfo()
+        assert(distribURIs) # fail if we have an empty dictionary
+        NEW_STYLE_DISTRIBUTION = True
+    except:
+        logger.exception('Did not find ruleserver, falling back to Pyro task queue')
+        NEW_STYLE_DISTRIBUTION = False
 
 debug = True
 
@@ -295,6 +303,13 @@ class AnalysisController(object):
         self.onMetaDataChange = dispatch.Signal()
 
         self.tq = tq
+        
+        if self.tq is None:
+            #try and find a task queue
+            try:
+                self._checkTQ()
+            except:
+                pass
 
 
     def pushImages(self, image):
@@ -634,7 +649,8 @@ class LMAnalyser2(object):
         
     @property
     def use_cluster(self):
-        return self.newStyleTaskDistribution and self.image.filename.upper().startswith('PYME-CLUSTER')
+        logger.debug('use_cluster: newStyle=%s, tq=%s' % (self.newStyleTaskDistribution, self.analysisController.tq))
+        return self.newStyleTaskDistribution and (self.image.filename.upper().startswith('PYME-CLUSTER') or (self.analysisController.tq is None))
 
     def OnGo(self, event=None):
         self._checkmap('DarkMapID')
