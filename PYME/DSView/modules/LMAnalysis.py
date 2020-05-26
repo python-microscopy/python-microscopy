@@ -328,7 +328,7 @@ class AnalysisController(object):
 
         debugPrint('Queue created')
 
-        #self.onImagesPushed.send(self)
+        self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):
@@ -631,12 +631,16 @@ class LMAnalyser2(object):
         self.resultsMdh = self.analysisController.analysisMDH       
         
         self.SetFitInfo()
+        
+    @property
+    def use_cluster(self):
+        return self.newStyleTaskDistribution and self.image.filename.upper().startswith('PYME-CLUSTER')
 
     def OnGo(self, event=None):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution and self.image.filename.upper().startswith('PYME-CLUSTER'):
+        if self.use_cluster:
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
@@ -652,7 +656,7 @@ class LMAnalyser2(object):
         self.queueName = self.analysisController.queueName
         self.resultsMdh = self.analysisController.resultsMdh
 
-        self.timer.WantNotification.append(self.analRefresh)
+        self.timer.WantNotification.append(self.refresh_analysis)
         self.analysisSettingsView.bGo.Enable(False)
         
         self.analysisSettingsView.foldAnalPanes = True
@@ -687,50 +691,63 @@ class LMAnalyser2(object):
         #for backwards compatibility
         return self.analysisController.tq
 
-    def analRefresh(self):
-        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
-        if newNumAnalysed > self.numAnalysed:
-            self.numAnalysed = newNumAnalysed
-            newResults = self.tq.getQueueData(self.queueName, 'FitResults', len(self.fitResults))
-            if len(newResults) > 0:
-                if len(self.fitResults) == 0:
-                    self.fitResults = newResults
-                    self.ds = tabular.FitResultsSource(self.fitResults)
-                    self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
-                    self.dsviewer.pipeline.mdh = self.resultsMdh
-                    try:
-                        self.dsviewer.LMDisplay.SetFit()
-                    except:
-                        pass
-                else:
-                    self.fitResults = np.concatenate((self.fitResults, newResults))
-                    self.ds.setResults(self.fitResults)
-                    #self.dsviewer.pipeline.Rebuild()
-                    self.dsviewer.pipeline.recipe.prune_dependencies_from_namespace(['Localizations',], True)
-                    #logger.debug('Namespace keys (should just be Localizations): %s' % self.dsviewer.pipeline.recipe.namespace.keys())
-                    self.dsviewer.pipeline.recipe.invalidate_data()
-                    #self.dsviewer.pipeline.Rebuild()
-                    
-                
-                self.progPan.fitResults = self.fitResults
-
-                self.view.points = np.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
-
-                self.numEvents = len(self.fitResults)
-                
-                try:
-                    self.dsviewer.LMDisplay.RefreshView()
-                except:
-                    pass
-
-        if (self.tq.getNumberOpenTasks(self.queueName) + self.tq.getNumberTasksInProgress(self.queueName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
-            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
-            self.dsviewer.statusbar.Refresh()
+    def refresh_analysis(self):
+        if self.use_cluster:
+            self._refresh_analysis_cluster()
+        else:
+            self._refresh_analysis_queue()
 
         self.progPan.draw()
         self.progPan.Refresh()
         self.dsviewer.Refresh()
         self.dsviewer.update()
+            
+    def _add_new_results(self, newResults):
+        if len(newResults) > 0:
+            if len(self.fitResults) == 0:
+                self.fitResults = newResults
+                self.ds = tabular.FitResultsSource(self.fitResults)
+                self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
+                self.dsviewer.pipeline.mdh = self.resultsMdh
+                try:
+                    self.dsviewer.LMDisplay.SetFit()
+                except:
+                    pass
+            else:
+                self.fitResults = np.concatenate((self.fitResults, newResults))
+                self.ds.setResults(self.fitResults)
+                self.dsviewer.pipeline.recipe.prune_dependencies_from_namespace(['Localizations', ], True)
+                self.dsviewer.pipeline.recipe.invalidate_data()
+        
+            self.progPan.fitResults = self.fitResults
+            self.view.points = np.vstack(
+                (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            self.numEvents = len(self.fitResults)
+        
+            try:
+                self.dsviewer.LMDisplay.RefreshView()
+            except:
+                pass
+    
+    def _refresh_analysis_queue(self):
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            self._add_new_results(self.tq.getQueueData(self.queueName, 'FitResults', len(self.fitResults)))
+
+        if (self.tq.getNumberOpenTasks(self.queueName) + self.tq.getNumberTasksInProgress(self.queueName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
+            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
+            self.dsviewer.statusbar.Refresh()
+
+    def _refresh_analysis_cluster(self):
+        import requests
+        import cPickle
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            newResults = cPickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)))
+            self._add_new_results(newResults)
+        
 
     def analysis_refresh_bruteforce(self):
         """Refresh points display from cluster-based analysis. This works in the crudest possible way by simply repeatedly
@@ -739,7 +756,7 @@ class LMAnalyser2(object):
         WARNING: This has potential performance implications as there wll be significant IO overhead to doing it this way!!!
                  Files should be closed when spooling is complete.
         
-        TODO: - Allow incremental update (as is done in analRefresh above). Will probably need modification of PYMEDataServer.
+        TODO: - Allow incremental update (as is done in refresh_analysis above). Will probably need modification of PYMEDataServer.
               - Stop updates when spooling is complete (HOW? Check file size?)
               - What is the effect of the caches in clusterIO? Do we actually get the updated file?
               - Make sure this only gets called at a reasonable rate.
