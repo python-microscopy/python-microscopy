@@ -251,7 +251,7 @@ class Ripleys(ModuleBase):
     inputPositions = Input('input')
     inputMask = Input('')
     outputName = Output('ripleys')
-    normalization = Enum(['K', 'L', 'H'])
+    normalization = Enum(['K', 'L', 'H', 'dL', 'dH'])
     nbins = Int(50)
     binSize = Float(50.)
     sampling = Float(5.)
@@ -291,16 +291,18 @@ class Ripleys(ModuleBase):
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
                                       sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
         
+        d = 3 if three_d else 2  # needed for all normalizations besides K
         if self.normalization == 'L':
-            d = 3 if three_d else 2
-            bb, L = ripleys.ripleys_l(bb, K, d)
-            res = tabular.DictSource({'bins': bb, 'vals': L})
+            bb, K = ripleys.ripleys_l(bb, K, d)
+        elif self.normalization == 'dL':
+            bb, K = ripleys.ripleys_dl(bb, K, d)
         elif self.normalization == 'H':
-            d = 3 if three_d else 2
-            bb, H = ripleys.ripleys_h(bb, K, d)
-            res = tabular.DictSource({'bins': bb, 'vals': H})
-        else:
-            res = tabular.DictSource({'bins': bb, 'vals': K})
+            bb, K = ripleys.ripleys_h(bb, K, d)
+        elif self.normalization == 'dH':
+            # Results will be of length 2 less than other results
+            bb, K = ripleys.ripleys_dh(bb, K, d)
+        
+        res = tabular.DictSource({'bins': bb, 'vals': K})
         
         # propagate metadata, if present
         try:

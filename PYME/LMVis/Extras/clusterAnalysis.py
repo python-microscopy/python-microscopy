@@ -415,8 +415,14 @@ class ClusterAnalyser:
             # Ripley's K/L/H
             if r.normalization == 'H':
                 ax.axhline(y=0, c='k', linestyle='--')
+            elif r.normalization == 'dH':
+                # The point of intersection with -1 divided by 2
+                # indicates domain size
+                ax.axhline(y=-1, c='k', linestyle='--')
             elif r.normalization == 'L':
                 ax.plot(result['bins'], result['bins'], c='k', linestyle='--')
+            elif r.normalization == 'dL':
+                ax.axhline(y=1, c='k', linestyle='--')
             else:
                 if np.count_nonzero(pipeline['z']) == 0:
                     ax.plot(result['bins'], np.pi * (result['bins'] + r.binSize) ** 2, c='k', linestyle='--')
