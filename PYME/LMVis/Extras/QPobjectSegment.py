@@ -54,7 +54,7 @@ class QPObjectSegmenter:
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
-                dsviewer.openViewers.keys(),
+                list(dsviewer.openViewers.keys()),
                 wx.CHOICEDLG_STYLE
                 )
 
