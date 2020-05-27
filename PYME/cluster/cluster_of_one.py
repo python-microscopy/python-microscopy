@@ -74,7 +74,7 @@ class ClusterOfOne(object):
         from . import distribution
         ns = sqlite_ns.getNS('_pyme-taskdist')
         ruleservers = distribution.getDistributorInfo(ns)
-        webbrowser.open_new_tab(ruleservers.values()[0])
+        webbrowser.open_new_tab(list(ruleservers.values())[0])
             
             
     def shutdown(self):
