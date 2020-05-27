@@ -700,8 +700,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             Requested part of the file encoded as bytes
 
         """
-        from PYME.IO.tabular import NestedRecArraySource
-        from PYME.IO import h5rFile
+        from PYME.IO import h5rFile, clusterResults
+
+        # parse path
         ext = '.h5r' if '.h5r' in path else '.hdf'
         filename, details = path.split(ext + '/')
         filename = filename + ext  # path to file on dataserver disk
@@ -714,34 +715,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
         try:
-            filename, part = path.split(ext)
-            ctype = self.guess_type(filename + ext)
-            part = part.lstrip('/').lstrip('\\')
-
-            with h5rFile.openH5R(filename + ext) as h5f:
+            with h5rFile.openH5R(filename) as h5f:
                 if part == 'Metadata':
-                    mdh = h5f.mdh.to_JSON()
-                    f, length = self._string_to_file(mdh)
-                elif part == 'Events':
-                    # events = h5f.events
-                    #  fixme / make events class with to_JSON method
-                    self.send_error(400, 'serving events from tabular files not yet supported')
-                    return
+                    wire_data, output_format = clusterResults.format_results(h5f.mdh, return_type)
                 else:
-                    if 'slice' in part:
-                        # convert the slice back from str, avoiding eval for security
-                        part, return_slice = part.strip(')').split('slice(')
-                        return_slice = slice(*(None if s == 'None' else int(s) for s in return_slice.split(',')))
-                    else:
+                    # figure out if we have any slicing to do
+                    query = urlparse.parse_qs(query)
+                    try:
+                        return_slice = slice(int(query['from'][0]), int(query['to'][0]))
+                    except KeyError:  # no slicing
                         return_slice = slice(None)
-                        if part == '':
-                            part = 'FitResults'
-                    table = h5f.getTableData(part, return_slice)
-                    table = NestedRecArraySource(table, translate_pipeline_keys=True)
-                    f, length = self._string_to_file(table.to_json())
+                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, return_slice),
+                                                                             '.' + return_type)
 
+            f, length = self._string_to_file(wire_data)
             self.send_response(200)
-            self.send_header("Content-type", ctype)
+            self.send_header("Content-type", output_format)
             self.send_header("Content-Length", length)
             #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()
