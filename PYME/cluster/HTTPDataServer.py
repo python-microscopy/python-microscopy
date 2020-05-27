@@ -689,11 +689,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         Parameters
         ----------
         path: str
-            path to an hdf or h5r file on the dataserver computer. Specific parts of the file can be accessed by
-            appending, e.g. /Metadata, for a resulting `path` of something like folder/test.h5r/Metadata. The 'part' of
-            the file returned defaults to FitResults if unspecified, and can additionally include a slice to take before
-            returning. In other words, a `path` of 'folder/test.h5r/FitResultsslice(0,100,None)' will return the first
-            hundred elements of the FitResults table in test.h5r.
+            path to an hdf or h5r file on the dataserver computer. Append the part of the file to read after the file
+            extension, e.g. .h5r/Events. Return format (for arrays) can additionally be specified, as can slices
+            using the following syntax: test.h5r/FitResults.json?from=0&to=100. Supported array formats include json and
+            npy.
 
         Returns
         -------
@@ -704,6 +703,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.IO.tabular import NestedRecArraySource
         from PYME.IO import h5rFile
         ext = '.h5r' if '.h5r' in path else '.hdf'
+        filename, details = path.split(ext + '/')
+        filename = filename + ext  # path to file on dataserver disk
+        query = urlparse.urlparse(details).query
+        details = details.strip('?' + query)
+        if '.' in details:
+            part, return_type = details.split('.')
+        else:
+            part, return_type = details, ''
+
+
         try:
             filename, part = path.split(ext)
             ctype = self.guess_type(filename + ext)
