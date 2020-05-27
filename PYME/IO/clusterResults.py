@@ -126,12 +126,14 @@ def format_results(data_raw, URI=''):
             df = pd.DataFrame(data_raw)
             data = df.to_csv()
     
-    elif URI.endswith('.json'):
+    elif URI.endswith('.json') or isinstance(data_raw, MetaDataHandler.MDHandlerBase):  # todo - do we need to keep this metadatahandler special case?
         output_format = 'text/json'
         if isinstance(data_raw, bytes):
             data = data_raw
         elif isinstance(data_raw, str):
             data = data_raw.encode()
+        elif hasattr(data_raw, 'to_JSON'):
+            data = data_raw.to_JSON().encode()
         else:
             import pandas as pd
             df = pd.DataFrame(data_raw)
@@ -154,10 +156,6 @@ def format_results(data_raw, URI=''):
     elif isinstance(data_raw, np.ndarray):
         #very reluctantly use pickle to serialize numpy arrays rather than the better .npy format as reading .npy is really slow.
         data = data_raw.dumps()
-    
-    elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
-        output_format = 'text/json'
-        data = data_raw.to_JSON().encode()
     
     else:
         logging.warning('No handler for data type found, using pickle')
