@@ -92,6 +92,7 @@ def main():
         
     else:
         nodeserver_log_dir = os.path.join(os.curdir, 'LOGS', GetComputerName())
+        nodeserverLog = logger
 
 
     proc = rulenodeserver.ServerThread(distributors[0], serverPort, externalAddr=externalAddr, profile=False)
@@ -105,7 +106,7 @@ def main():
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, serverPort)
 
     time.sleep(2)
-    logger.debug('Launching worker processors')
+    nodeserverLog.debug('Launching worker processors')
     numWorkers = conf.get('nodeserver-num_workers', cpu_count())
 
     workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -s %d' % serverPort, shell=True, stdin=subprocess.PIPE)

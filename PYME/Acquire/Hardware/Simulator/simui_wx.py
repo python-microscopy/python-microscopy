@@ -85,6 +85,10 @@ class dSimControl(afp.foldPanel):
         self.bSetPSF = wx.Button(pane, -1, 'Set Experimental')
         self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
         hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bViewPSF = wx.Button(pane, -1, 'View')
+        self.bViewPSF.Bind(wx.EVT_BUTTON, self.OnBViewPSF)
+        hsizer.Add(self.bViewPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
         
         sbsizer.Add(hsizer, 0, wx.ALL, 2)
         
@@ -470,7 +474,17 @@ class dSimControl(afp.foldPanel):
         if fn == '':
             return
         else:
-            self.st_psf.SetLabelText(self.sim_controller.from_file(fn))
+            self.st_psf.SetLabelText(self.sim_controller.set_psf_from_file(fn))
+
+    def OnBViewPSF(self, event):
+        from PYME.DSView import ViewIm3D
+    
+        #fn = wx.SaveFileSelector('Save PSF to file', '.tif')
+        #if fn is None:
+        #    print('No file selected')
+        #    return
+    
+        ViewIm3D(self.sim_controller.get_psf(), mode='psf')
     
     def OnBGenFloursButton(self, event):
         if (len(self.sim_controller.points) == 0):
