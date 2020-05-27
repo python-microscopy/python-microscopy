@@ -130,7 +130,7 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
-
+                
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
     
@@ -157,7 +157,7 @@ class TabularBase(object):
         for k in keys:
             d[k] = self[(k, return_slice)].tolist()
         return json.dumps(d)
-    
+
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
 ###########################################################################
@@ -224,9 +224,9 @@ class FitResultsSource(TabularBase):
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
         #or shorter aliases
-        self.transkeys = {'A': 'fitResults_A', 'x': 'fitResults_x0',
-                          'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
-                          'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 't': 'tIndex'}
+        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
+                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
+                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 'error_z' : 'fitError_z0','t':'tIndex'}
 
         for k in list(self.transkeys.keys()):
             if not self.transkeys[k] in self._keys:
@@ -256,6 +256,7 @@ class FitResultsSource(TabularBase):
             return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
             raise KeyError("Don't know about deeper nesting yet")
+
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
@@ -571,9 +572,6 @@ class MatfileColumnSource(TabularBase):
 
 @deprecated_name('recArrayInput')
 class RecArraySource(TabularBase):
-    """
-    Source for flat recarrays. To create a recarray with nested elements see NestedRecArraySource
-    """
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
