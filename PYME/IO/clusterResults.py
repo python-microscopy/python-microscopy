@@ -110,7 +110,7 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
 
 
 
-def format_results(URI, data_raw):
+def format_results(data_raw, URI=''):
     # translate data into wire format
     output_format = None
     
@@ -167,7 +167,7 @@ def format_results(URI, data_raw):
     return data, output_format
 
 def fileResults(URI, data_raw):
-    data, output_format = format_results(URI, data_raw)
+    data, output_format = format_results(data_raw, URI)
 
     #now do URI translation
     if '__aggregate' in URI and URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):
