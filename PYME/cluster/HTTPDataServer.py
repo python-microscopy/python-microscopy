@@ -721,11 +721,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 else:
                     # figure out if we have any slicing to do
                     query = urlparse.parse_qs(query)
-                    try:
-                        return_slice = slice(int(query['from'][0]), int(query['to'][0]))
-                    except KeyError:  # no slicing
-                        return_slice = slice(None)
-                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, return_slice),
+                    start = int(query.get('from', [0])[0])
+                    end = None if 'to' not in query.keys() else int(query['to'][0])
+                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, slice(start, end)),
                                                                              '.' + return_type)
 
             f, length = self._string_to_file(wire_data)
