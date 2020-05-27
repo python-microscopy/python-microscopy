@@ -130,7 +130,7 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
-                
+
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
     
@@ -148,6 +148,15 @@ class TabularBase(object):
         
     def __dir__(self):
         return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
+
+    def to_JSON(self, keys=None, return_slice=slice(None)):
+        import json
+
+        d= {}
+        keys = keys if keys != None else self.keys()
+        for k in keys:
+            d[k] = self[(k, return_slice)].tolist()
+        return json.dumps(d)
     
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
@@ -199,26 +208,6 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-def get_unnested(fit_results, unnested_key, sl=slice(None)):
-    k = unnested_key.split('_')
-
-    if len(k) == 1:  # TODO: evaluate why these are cast as floats
-        return fit_results[k[0]][sl]
-    elif len(k) == 2:
-        return fit_results[k[0]][k[1]][sl]
-    elif len(k) == 3:
-        return fit_results[k[0]][k[1]][k[2]][sl]
-    else:
-        raise KeyError("Don't know about deeper nesting yet")
-
-PIPELINE_TRANSKEYS = {
-    'A': 'fitResults_A', 'x': 'fitResults_x0', 'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
-    'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 't': 'tIndex'
-}
-def get_pipeline_transkeys():
-    return PIPELINE_TRANSKEYS.copy()
-
-
 @deprecated_name('fitResultsSource')
 class FitResultsSource(TabularBase):
     _name = "recarrayfi Source"
@@ -235,7 +224,9 @@ class FitResultsSource(TabularBase):
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
         #or shorter aliases
-        self.transkeys = get_pipeline_transkeys()
+        self.transkeys = {'A': 'fitResults_A', 'x': 'fitResults_x0',
+                          'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
+                          'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 't': 'tIndex'}
 
         for k in list(self.transkeys.keys()):
             if not self.transkeys[k] in self._keys:
@@ -255,8 +246,16 @@ class FitResultsSource(TabularBase):
         if not key in self._keys:
             raise KeyError('Key  (%s) not found' % key)
 
-        return get_unnested(self.fitResults, key, sl)
+        k = key.split('_')
 
+        if len(k) == 1:  # TODO: evaluate why these are cast as floats
+            return self.fitResults[k[0]][sl]
+        elif len(k) == 2:
+            return self.fitResults[k[0]][k[1]][sl]
+        elif len(k) == 3:
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
+        else:
+            raise KeyError("Don't know about deeper nesting yet")
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
@@ -593,50 +592,6 @@ class RecArraySource(TabularBase):
 
     def getInfo(self):
         return 'Record Array Source\n\n %d points' % len(self.recArray['x'])
-
-
-class NestedRecArraySource(TabularBase):
-    """
-    Source for nested structured arrays as one would get if they slice a FitResults table. Mimics the nesting/unnesting
-    keys used in FitResultsSource
-    """
-    _name = 'NestedRecArraySource'
-    def __init__(self, array, translate_pipeline_keys=False):
-        # table Tables need to be sliced to convert to array
-        self._array = array[:] if type(array) is tables.table.Table else array
-        self._keys = unNestDtype(self._array.dtype.descr)
-
-        self.transkeys = {}
-        if translate_pipeline_keys:
-            self.transkeys = get_pipeline_transkeys()
-            for k in list(self.transkeys.keys()):
-                if not self.transkeys[k] in self._keys:
-                    self.transkeys.pop(k)
-
-    def keys(self):
-        return self._keys + list(self.transkeys.keys())
-
-    def __getitem__(self, key):
-        key, sl = self._getKeySlice(key)
-
-        # if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
-
-        if not key in self._keys:
-            raise KeyError('Key (%s) not found' % key)
-
-        return get_unnested(self._array, key, sl)
-
-    def to_json(self, keys=None, return_slice=slice(None)):
-        import json
-
-        d= {}
-        keys = keys if keys != None else self.keys()
-        for k in keys:
-            d[k] = self[(k, return_slice)].tolist()
-        print(d.keys())
-        return json.dumps(d)
 
 
 class DictSource(TabularBase):
