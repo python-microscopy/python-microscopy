@@ -766,7 +766,7 @@ class LMAnalyser2(object):
         newNumAnalysed = int(queueInfo[self.analysisController.pusher._ruleID]['tasksCompleted'])
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
-            newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
+            newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content)
             self._add_new_results(newResults)
         
 
