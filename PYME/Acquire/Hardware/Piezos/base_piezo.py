@@ -2,7 +2,7 @@ class PiezoBase(object):
     """
     Base class for all stages
 
-    Parameters
+    Attributes
     ----------
     units_um: float
         multiplier to get from piezo units to micrometers. For a stage internally using millimeters, this would be
