@@ -57,7 +57,7 @@ class VideoPanel(DockedPanel):
         self.next_view_id = 0
 
     def create_buttons(self, vertical_sizer):
-        grid_sizer = wx.GridSizer(3, 3)
+        grid_sizer = wx.GridSizer(rows=3, cols=3, vgap=2, hgap=2)
         # generate the buttons
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
         delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
@@ -156,16 +156,16 @@ class VideoPanel(DockedPanel):
         fps = 30.0
         file_name = None
         
-        if save:
-            try:
-                import cv2
-            except ImportError:
-                msg_text = 'OpenCV 2 is needed to save videos. Please install: \"conda install -c menpo opencv\"'
-                msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
-                msg.ShowModal()
-                msg.Destroy()
-                #return
-                save=False
+        # if save:
+        #     try:
+        #         import cv2
+        #     except ImportError:
+        #         msg_text = 'OpenCV 2 is needed to save videos. Please install: \"conda install -c menpo opencv\"'
+        #         msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
+        #         msg.ShowModal()
+        #         msg.Destroy()
+        #         #return
+        #         save=False
 
         #dir_name = None
         if save:
@@ -179,9 +179,9 @@ class VideoPanel(DockedPanel):
             
         video = None
         if True:
-            if save:
-                pass
-                #video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+            # if save:
+            #     pass
+            #     #video = cv2.VideoWriter(file_name, -1, fps, (width, height))
             
             f_no = 0
                 
@@ -296,7 +296,7 @@ class EditDialog(wx.Dialog):
 class EditPanel(wx.Panel):
     def __init__(self, parent, id_number, snapshot, size, pos):
         wx.Panel.__init__(self, parent, id_number, size=size, pos=pos, style=wx.BORDER_SUNKEN)
-        grid_sizer = wx.GridSizer(2, 2)
+        grid_sizer = wx.GridSizer(rows=2, cols=2, vgap=1, hgap=1)
 
         # generate row for view_id
         grid_sizer.Add(wx.StaticText(self, label='View Id', style=wx.BU_EXACTFIT))

@@ -48,6 +48,7 @@ from six import string_types
 
 import logging
 logger = logging.getLogger(__name__)
+import warnings
 
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility
@@ -123,6 +124,10 @@ openImages = weakref.WeakValueDictionary()
 #by an incrementing index - this dictionary stores the current index for each 
 #stub. If a stub hasn't been used yet, the index defaults to zero.
 nUntitled = _DefaultDict()
+
+class FileSelectionError(Exception):
+    """Custom error type to raise when we cancel file selection"""
+    pass
 
 class ImageStack(object):
     """ An Image Stack. This is the core PYME image type and wraps around the various different supported file formats.
@@ -273,6 +278,7 @@ class ImageStack(object):
     def voxelsize(self):
         """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
         to be in um"""
+        warnings.warn(DeprecationWarning('Use voxelsize_nm  property instead'))
         try:
             return self.voxelsize_nm
         except:
@@ -1000,7 +1006,7 @@ class ImageStack(object):
                                         default_path = lastdir)            
             
             if filename is None or filename == '':
-                raise RuntimeError('No file selected')
+                raise FileSelectionError('No file selected')
                 pass
             else:
                 lastdir = os.path.split(filename)[0]

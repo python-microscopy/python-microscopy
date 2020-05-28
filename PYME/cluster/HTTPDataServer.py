@@ -53,23 +53,23 @@ def makedirs_safe(dir):
 import logging
 import logging.handlers
 dataserver_root = config.get('dataserver-root')
-if dataserver_root:
-    log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
-    #if not os.path.exists(log_dir):
-    #    os.makedirs(log_dir)
-    makedirs_safe(log_dir)
-
-    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
-        
-    #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
-    #logger = logging.getLogger('')
-    logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
-    logger.addHandler(fh)
-else:
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger('')
+# if dataserver_root:
+#     log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
+#     #if not os.path.exists(log_dir):
+#     #    os.makedirs(log_dir)
+#     makedirs_safe(log_dir)
+#
+#     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
+#
+#     #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+#     #logger = logging.getLogger('')
+#     logger = logging.getLogger('')
+#     logger.setLevel(logging.DEBUG)
+#     fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+#     logger.addHandler(fh)
+# else:
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('')
     
 #now do all the normal imports
     
@@ -102,6 +102,7 @@ import socket
 import threading
 import datetime
 import time
+from PYME.IO import h5File
 
 #GPU status functions
 try:
@@ -819,6 +820,14 @@ def main(protocol="HTTP/1.0"):
         mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
+
+    # setup logging to file
+    log_dir = '%s/LOGS/%s' % (options.root, compName)
+    makedirs_safe(log_dir)
+
+    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (options.root, compName)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+    logger.addHandler(fh)
 
     
     logger.info('========================================\nPYMEDataServer, running on python %s\n' % sys.version)

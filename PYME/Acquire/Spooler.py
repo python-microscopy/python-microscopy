@@ -161,8 +161,35 @@ class Spooler:
             pass
         
         self.spoolOn = False
-        
+        if not self.guiUpdateCallback is None:
+            self.guiUpdateCallback()
+            
         self.onSpoolStop.send(self)
+        
+    def abort(self):
+        """
+        Tidy up if something goes horribly wrong. Disconnects frame source and event logger  and then calls cleanup()
+
+        """
+        #there is a race condition on disconnect - ignore any additional frames
+        self.watchingFrames = False
+        
+        try:
+            logger.debug('Disconnecting from frame source')
+            self.frameSource.disconnect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+            logger.debug('Frame source should be disconnected')
+        except:
+            logger.exception('Error disconnecting frame source')
+
+
+        try:
+            eventLog.WantEventNotification.remove(self.evtLogger)
+        except ValueError:
+            pass
+
+        self.spoolOn = False
+        self.onSpoolStop.send(self)
+        
 
     def OnFrame(self, **kwargs):
         """Callback which should be called on every frame"""
@@ -240,6 +267,14 @@ class Spooler:
     def status(self):
         return {'spooling' : self.spoolOn,
                 'frames_spooled' : self.imNum}
+    
+    def cleanup(self):
+        """ over-ride to do any cleanup"""
+        pass
+    
+    def finished(self):
+        """ over-ride in derived classes to indicate when buffers flushed"""
+        return True
         
         
     def __del__(self):

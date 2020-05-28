@@ -1,0 +1,76 @@
+// Your variable overrides
+//copied so we can use it for body background etc ...
+
+$white:    #fff !default;
+$gray-100: #f8f9fa !default;
+$gray-200: #e9ecef !default;
+$gray-300: #dee2e6 !default;
+$gray-400: #ced4da !default;
+$gray-500: #adb5bd !default;
+$gray-600: #6c757d !default;
+$gray-700: #495057 !default;
+$gray-800: #343a40 !default;
+$gray-900: #212529 !default;
+$black:    #000 !default;
+
+
+$body-bg:     $gray-800;
+$body-color:  $gray-200;
+
+$input-bg:                              $gray-700;
+$input-disabled-bg:                     $body-bg;
+
+$input-color:                           $gray-200;
+$input-border-color:                    $gray-600;
+
+$nav-tabs-link-active-color: $gray-600;
+$nav-tabs-link-active-border-color: $gray-600;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+.sidebar-heading{
+  @extend .d-flex;
+  @extend .justify-content-between;
+  @extend .align-items-center;
+  @extend .px-2;
+  @extend .mt-4;
+  @extend .mb-1;
+  //@extend .text-muted;
+}
+
+.nav-tabs-bottom {
+  //border-top: $nav-tabs-border-width solid $nav-tabs-border-color;
+
+  .nav-item {
+    margin-top: -$nav-tabs-border-width;
+  }
+
+  .nav-link {
+    border: $nav-tabs-border-width solid transparent;
+    @include border-bottom-radius($nav-tabs-border-radius);
+
+    @include hover-focus() {
+      border-color: $nav-tabs-link-hover-border-color;
+    }
+
+    &.disabled {
+      color: $nav-link-disabled-color;
+      background-color: transparent;
+      border-color: transparent;
+    }
+  }
+
+  .nav-link.active,
+  .nav-item.show .nav-link {
+    color: $nav-tabs-link-active-color;
+    background-color: $nav-tabs-link-active-bg;
+    border-color: $nav-tabs-link-active-border-color;
+  }
+
+  .dropdown-menu {
+    // Make dropdown border overlap tab border
+    margin-top: -$nav-tabs-border-width;
+    // Remove the top rounded corners here since there is a hard edge above the menu
+    @include border-bottom-radius(0);
+  }
+}

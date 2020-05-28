@@ -315,7 +315,7 @@ class PsfExtractor(object):
             mdh['ImageType']='PSF'
 
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -350,7 +350,7 @@ class PsfExtractor(object):
             mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data=psfs, mdh=mdh, titleStub='Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
@@ -521,7 +521,7 @@ class PsfExtractor(object):
             mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def write_metadata(self, mdh, mode, axialshift=None):

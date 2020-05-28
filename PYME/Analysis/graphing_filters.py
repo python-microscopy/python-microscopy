@@ -15,6 +15,10 @@ class offline_plotting(object):
 def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabel=None, title=None, figsize=(7,5), **kwargs):
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     #print type
     
@@ -57,6 +61,11 @@ def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabe
 def hist(data, bins=20, type='line', xlabel=None, ylabel=None, title=None, figsize=(7, 5)):
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
+        
     import numpy as np
     
     #print type
@@ -99,6 +108,10 @@ def movieplot(clump, image):
     
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     with offline_plotting():
         nRows = int(np.ceil(clump.nEvents / 10.))
@@ -187,6 +200,10 @@ def movieplot2(clump, image):
     import matplotlib.pyplot as plt
     #from PIL import Image
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     #plt.ioff()
     with offline_plotting():

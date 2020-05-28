@@ -65,6 +65,9 @@ def register_legacy_module(moduleName, py_module=None):
 
     return c_decorate
 
+class MissingInputError(Exception):
+    pass
+
 class ModuleBase(HasTraits):
     """
     Recipe modules represent a "functional" processing block, the effects of which depend solely on its
@@ -90,7 +93,12 @@ class ModuleBase(HasTraits):
         self._check_outputs()
 
     @on_trait_change('anytrait')
-    def invalidate_parent(self):
+    def invalidate_parent(self, name='', new=None):
+        #print('invalidate_parent', name, new)
+        if (name == 'trait_added') or name.startswith('_'):
+            # don't trigger on private variables
+            return
+        
         if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
             #print('invalidating')
             self._parent.prune_dependencies_from_namespace(self.outputs)
@@ -108,6 +116,26 @@ class ModuleBase(HasTraits):
         """
         if len(self.outputs) == 0:
             raise RuntimeError('Module should define at least one output.')
+        
+    def check_inputs(self, namespace):
+        """
+        Checks that module inputs are present in namespace, raising an exception if they are missing. Existing to simplify
+        debugging, this function is called in ModuleCollection.execute prior to executing the module so that an
+        informative error message is generated if the inputs are missing (rather than the somewhat cryptic KeyError
+        you would get when a module tries to access a missing input.
+        
+        
+        Parameters
+        ----------
+        namespace
+
+        """
+        keys = list(namespace.keys())
+        
+        for input in self.inputs:
+            if not input in keys:
+                raise MissingInputError('Input "%s" is missing from namespace' % input)
+        
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -180,11 +208,11 @@ class ModuleBase(HasTraits):
 
     @property
     def inputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('input') and not v == ""}
+        return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
     @property
     def outputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('output')}
+        return {v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
     
     @property
     def file_inputs(self):
@@ -564,7 +592,25 @@ class ModuleCollection(HasTraits):
         #solve the dependency tree        
         return toposort.toposort_flatten(dg, sort=False)
         
-    def execute(self, **kwargs):
+    def execute(self, progress_callback=None, **kwargs):
+        """
+        Execute the recipe. Recipe execution is lazy / incremental in that modules will only be executed if their outputs
+        are no longer in the namespace or their inputs have changed.
+        
+        Parameters
+        ----------
+        progress_callback : a function, progress_callback(recipe, module)
+                This function is called after the successful execution of each module in the recipe. To abort the recipe,
+                an exception may be raised in progress_callback.
+        kwargs : any values to set in the recipe namespace prior to executing.
+
+        Returns
+        -------
+        
+        output : the value of the 'output' variable in the namespace if present, otherwise none. output is only used in
+            dh5view and ignored in recipe batch processing. It might well disappear completely in the future.
+
+        """
         #remove anything which is downstream from changed inputs
         #print self.namespace.keys()
         for k, v in kwargs.items():
@@ -583,12 +629,29 @@ class ModuleCollection(HasTraits):
         
         exec_order = self.resolveDependencies()
 
+        #mark all modules which should execute as not having executed
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
+                m._success = False
+        
+        for m in exec_order:
+            if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                 try:
+                    m.check_inputs(self.namespace)
                     m.execute(self.namespace)
+                    m._last_error = None
+                    m._success = True
+                    if progress_callback:
+                        progress_callback(self, m)
                 except:
+                    import traceback
                     logger.exception("Error in recipe module: %s" % m)
+                    
+                    #record our error so that we can associate it with a module
+                    m._last_error = traceback.format_exc()
+                    
+                    # make sure we didn't leave any partial results
+                    self.prune_dependencies_from_namespace(m.outputs)
                     raise
         
         self.recipe_executed.send_robust(self)
@@ -674,6 +737,9 @@ class ModuleCollection(HasTraits):
         -------
 
         """
+        # delete all outputs from the previous set of recipe modules
+        self.prune_dependencies_from_namespace(self.module_outputs)
+        
         mc = []
     
         if l is None:
@@ -690,7 +756,7 @@ class ModuleCollection(HasTraits):
         
             mod.set(**md)
             mc.append(mod)
-    
+        
         self.modules = mc
         
         self.recipe_changed.send_robust(self)
@@ -709,7 +775,7 @@ class ModuleCollection(HasTraits):
     def fromYAML(cls, data):
         import yaml
 
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
         return cls._from_module_list(l)
     
     def update_from_yaml(self, data):
@@ -733,7 +799,8 @@ class ModuleCollection(HasTraits):
             with open(data) as f:
                 data = f.read()
     
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
+
         return self._update_from_module_list(l)
 
     @classmethod

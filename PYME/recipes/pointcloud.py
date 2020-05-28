@@ -251,11 +251,12 @@ class Ripleys(ModuleBase):
     inputPositions = Input('input')
     inputMask = Input('')
     outputName = Output('ripleys')
-    normalization = Enum(['K', 'L'])
+    normalization = Enum(['K', 'L', 'H', 'dL', 'dH'])
     nbins = Int(50)
     binSize = Float(50.)
     sampling = Float(5.)
     threaded = Bool(False)
+    three_d = Bool(False)
     
     def execute(self, namespace):
         from PYME.Analysis.points import ripleys
@@ -263,15 +264,23 @@ class Ripleys(ModuleBase):
         
         points_real = namespace[self.inputPositions]
         mask = namespace.get(self.inputMask, None)
-        
-        three_d = np.count_nonzero(points_real['z']) > 0
+
+        # three_d = np.count_nonzero(points_real['z']) > 0
+        if self.three_d:
+            if np.count_nonzero(points_real['z']) == 0:
+                raise RuntimeError('Need a 3D dataset')
+            if mask.data.shape[2] < 2:
+                raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
+        else:
+            if mask.data.shape[2] > 1:
+                raise RuntimeError('Need a 2D mask.')
         
         try:
             origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
         except:
             origin_coords = (0, 0, 0)
         
-        if three_d:
+        if self.three_d:
             bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
                                       sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
@@ -280,12 +289,18 @@ class Ripleys(ModuleBase):
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
                                       sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
         
+        d = 3 if self.three_d else 2  # needed for all normalizations besides K
         if self.normalization == 'L':
-            d = 3 if three_d else 2
-            bb, L = ripleys.ripleys_l(bb, K, d)
-            res = tabular.DictSource({'bins': bb, 'vals': L})
-        else:
-            res = tabular.DictSource({'bins': bb, 'vals': K})
+            bb, K = ripleys.ripleys_l(bb, K, d)
+        elif self.normalization == 'dL':
+            bb, K = ripleys.ripleys_dl(bb, K, d)
+        elif self.normalization == 'H':
+            bb, K = ripleys.ripleys_h(bb, K, d)
+        elif self.normalization == 'dH':
+            # Results will be of length 2 less than other results
+            bb, K = ripleys.ripleys_dh(bb, K, d)
+        
+        res = tabular.DictSource({'bins': bb, 'vals': K})
         
         # propagate metadata, if present
         try:

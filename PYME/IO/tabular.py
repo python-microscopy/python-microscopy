@@ -128,6 +128,9 @@ class TabularBase(object):
             if metadata is not None:
                 f.updateMetadata(metadata)
                 
+            #wait until data is written
+            f.flush()
+                
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
     
@@ -214,7 +217,7 @@ class FitResultsSource(TabularBase):
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0','t':'tIndex'}
+                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 'error_z' : 'fitError_z0','t':'tIndex'}
 
         for k in list(self.transkeys.keys()):
             if not self.transkeys[k] in self._keys:

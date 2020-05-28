@@ -48,7 +48,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], xu, yu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], x, y, n_bins, bin_size)
-            dww = w*d/dw
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
             hist += dww
     else:
@@ -63,11 +63,11 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], z[_i], xu, yu, zu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], z[_i], x, y, z, n_bins, bin_size)
-            dww = w*d/dw
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
             hist += dww
 
-    K = (mask_area / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
+    K = (float(mask_area) / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
 
     # return bins, K-function
     return bb, K
@@ -76,7 +76,12 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
     vx, vy, vz = mask.voxelsize
     x0_m, y0_m, z0_m = mask.origin
     x0_p, y0_p, z0_p = coord_origin
-    stride_x, stride_y, stride_z = [max(1, int(sampling / v)) for v in [vx, vy, vz]]
+
+    if (vz < 1e-12) and not three_d:
+        vz = 1 #dummy value to prevent div by zero when calculating strides we don't use
+
+    assert ((vx>0) and (vy>0) and (vz > 0))
+    stride_x, stride_y, stride_z = [max(1, sampling/v) for v in [vx, vy, vz]]
     
     if three_d:
         #convert mask to boolean image
@@ -98,7 +103,7 @@ def points_from_mask(mask, sampling, three_d = True, coord_origin=(0,0,0)):
         zu = None
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
         xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
-        mask_area = bool_mask.sum() * vx * vy * vz
+        mask_area = bool_mask.sum() * vx * vy
         
     return xu, yu, zu, mask_area
     
@@ -137,17 +142,22 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, threaded=Fal
     else:
         if three_d:
             if not bbox:
-                bbox = [x.min(), y.min(), z.min(), x.max(), y.max(), z.max()]
+                bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
                 
             xu, yu, zu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling, bbox[2]:bbox[5]:sampling]
             mask_area = np.prod((bbox[3:] - bbox[:3]))
         else:
             if not bbox:
-                bbox = [x.min(), y.min(), x.max(), y.max()]
+                bbox = np.array([x.min(), y.min(), x.max(), y.max()])
     
-            xu, yu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling]
+            xu, yu = np.mgrid[bbox[0]:bbox[2]:sampling, bbox[1]:bbox[3]:sampling]
             zu = None
             mask_area = np.prod((bbox[2:] - bbox[:2]))
+
+    xu = xu.ravel()
+    yu = yu.ravel()
+    if zu is not None:
+        zu = zu.ravel()
             
     return ripleys_k_from_mask_points(x=x, y=y, z=z,
                                       xu=xu, yu=yu, zu=zu,
@@ -157,8 +167,7 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, threaded=Fal
 
 def ripleys_l(bb, K, d=2):
     """
-    Normalizes Ripley's K-function to an L-function such that L > 0 indicates
-    clustering and L < 0 indicates dispersion.
+    Normalizes Ripley's K-function to an L-function.
 
     Parameters
     ----------
@@ -170,7 +179,6 @@ def ripleys_l(bb, K, d=2):
         d : int
             Dimension of the input data to calculate K (2 or 3).
     """
-    bin_size = np.diff(bb)[0]
     if d == 2:
         # Normalize 2D
         L = np.sqrt(K/np.pi)
@@ -180,6 +188,71 @@ def ripleys_l(bb, K, d=2):
     else:
         raise ValueError('Please enter a valid dimension.')
 
-    L -= bb+bin_size
-
     return bb, L
+
+def ripleys_h(bb, K, d=2):
+    """
+    Normalizes Ripley's K-function to an H-function such that  > 0 indicates
+    clustering and H < 0 indicates dispersion.
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, L = ripleys_l(bb, K, d)
+
+    bin_size = np.diff(bb)[0]
+    H = L - bb+bin_size
+
+    return bb, H
+
+def ripleys_dl(bb, K, d=2):
+    """
+    Derivative of the H-function. 
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, L = ripleys_l(bb, K, d)
+    bin_size = np.diff(bb)[0]
+
+    # central difference
+    dL = (L[2:]-L[:-2])/(2*bin_size)
+
+    return bb[1:-1], dL
+
+
+def ripleys_dh(bb, K, d=2):
+    """
+    Derivative of the H-function. 
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, H = ripleys_h(bb, K, d)
+    bin_size = np.diff(bb)[0]
+
+    # central difference
+    dH = (H[2:]-H[:-2])/(2*bin_size)
+
+    return bb[1:-1], dH

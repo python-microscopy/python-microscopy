@@ -382,7 +382,7 @@ class ClusterAnalyser:
 
         dlg = wx.SingleChoiceDialog(
             None, 'choose the image which contains the mask to use', 'Use Mask',
-            image.openImages.keys(),
+            list(image.openImages.keys()),
             wx.CHOICEDLG_STYLE
         )
 
@@ -396,33 +396,42 @@ class ClusterAnalyser:
 
     def OnRipleys(self, event=None, mask=None):
         """
-        Run's  masked Ripley's K or L on the current dataset.
+        Run's  masked Ripley's K, L or H on the current dataset.
         """
         from PYME.recipes.pointcloud import Ripleys
         import matplotlib.pyplot as plt
 
         pipeline = self.visFr.pipeline
-        recipe = pipeline.recipe
     
         r = Ripleys(inputPositions='positions',
                     inputMask='mask') #NB - need to set mask input here as otherwise it defaults to an empty string
 
         if r.configure_traits(kind='modal'):
-            result = recipe.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)
+            result = r.apply(inputPositions=pipeline.selectedDataSource, inputMask=mask)[r.outputName]
     
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            if r.normalization == 'L':
+            # Plot the expected line for a uniform random distribution under 
+            # Ripley's K/L/H
+            if r.normalization == 'H':
                 ax.axhline(y=0, c='k', linestyle='--')
-                ax.set_ylabel('L')
+            elif r.normalization == 'dH':
+                # The point of intersection with -1 divided by 2
+                # indicates domain size
+                ax.axhline(y=-1, c='k', linestyle='--')
+            elif r.normalization == 'L':
+                ax.plot(result['bins'], result['bins'], c='k', linestyle='--')
+            elif r.normalization == 'dL':
+                ax.axhline(y=1, c='k', linestyle='--')
             else:
                 if np.count_nonzero(pipeline['z']) == 0:
                     ax.plot(result['bins'], np.pi * (result['bins'] + r.binSize) ** 2, c='k', linestyle='--')
                 else:
                     ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
                             c='k', linestyle='--')
-                ax.set_ylabel('K')
-            ax.scatter(result['bins'], result['vals'], s=0.1, c='r')
+            ax.set_ylabel(r.normalization)
+            # Plot Ripley's K/L/H
+            ax.plot(result['bins'], result['vals'], c='r')
             ax.set_xlabel('Distance (nm)')
 
             

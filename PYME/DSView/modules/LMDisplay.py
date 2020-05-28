@@ -241,7 +241,7 @@ class LMDisplay(visCore.VisGUICore):
 #    def OnProgDispColourChange(self, event):
 #        #print 'foo'
 #        self.analDispMode = self.chProgDispColour.GetStringSelection()
-#        self.analRefresh()
+#        self.refresh_analysis()
 #
 #    def OnProgDispCMapChange(self, event):
 #        #print 'foo'
@@ -249,7 +249,7 @@ class LMDisplay(visCore.VisGUICore):
 
    
 
-#    def analRefresh(self):
+#    def refresh_analysis(self):
 #        newNumAnalysed = self.tq.getNumberTasksCompleted(self.image.seriesName)
 #        if newNumAnalysed > self.numAnalysed:
 #            self.numAnalysed = newNumAnalysed

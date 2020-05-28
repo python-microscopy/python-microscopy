@@ -149,7 +149,12 @@ class ZeroConfNS(object):
     #     return self.listener.advertised_services
     
     def get_advertised_services(self):
-        return self.listener.get_advertised_services()
+        from PYME.misc.sqlite_ns import is_port_open
+        svcs = self.listener.get_advertised_services()
+
+        svcs = [(name, info) for name, info in svcs if is_port_open(socket.inet_ntoa(info.address), info.port)]
+        
+        return svcs
         
     def register_service(self, name, address, port, desc={}):
         if name in self.listener.advertised_services.keys():
@@ -177,6 +182,13 @@ class ZeroConfNS(object):
         
     def list(self, filterby = ''):
         return self.listener.list(filterby)
+    
+    def remove_inactive_services(self):
+        #test to see if we can open the port, if not, remove
+        from PYME.misc.sqlite_ns import is_port_open
+        for name, info in self.get_advertised_services():
+            if not is_port_open(socket.inet_ntoa(info.address), info.port):
+                self.unregister(name)
         
             
     def __del__(self):
