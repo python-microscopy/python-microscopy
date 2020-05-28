@@ -569,7 +569,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 return self.get_h5_part(path)
         elif '.h5r/' in self.path or '.hdf/' in self.path:
-            return self.get_tabular_part(path)
+            # throw the query back on to our fully resolved path
+            return self.get_tabular_part(path + '?' + urlparse.urlparse(self.path).query)
 
         ctype = self.guess_type(path)
         try:
