@@ -111,7 +111,9 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
 
 
 def format_results(data_raw, URI=''):
-    # translate data into wire format
+    """
+    translate data into wire format
+    """
     output_format = None
     
     if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
@@ -134,6 +136,9 @@ def format_results(data_raw, URI=''):
             data = data_raw.encode()
         elif hasattr(data_raw, 'to_JSON'):
             data = data_raw.to_JSON().encode()
+        elif isinstance(data_raw, np.ndarray):
+            from PYME.IO.tabular import unnest_recarray_to_json
+            data = unnest_recarray_to_json(data_raw).encode()
         else:
             import pandas as pd
             df = pd.DataFrame(data_raw)
