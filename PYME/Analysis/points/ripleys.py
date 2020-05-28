@@ -211,3 +211,48 @@ def ripleys_h(bb, K, d=2):
     H = L - bb+bin_size
 
     return bb, H
+
+def ripleys_dl(bb, K, d=2):
+    """
+    Derivative of the H-function. 
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, L = ripleys_l(bb, K, d)
+    bin_size = np.diff(bb)[0]
+
+    # central difference
+    dL = (L[2:]-L[:-2])/(2*bin_size)
+
+    return bb[1:-1], dL
+
+
+def ripleys_dh(bb, K, d=2):
+    """
+    Derivative of the H-function. 
+
+    Parameters
+    ----------
+        bb : np.array
+            Histogram bins associated with K.
+        K : np.array
+            Ripley's K-function, calculated from 
+            PYME.Analysis.points.spatial_descriptive.ripleys_k
+        d : int
+            Dimension of the input data to calculate K (2 or 3).
+    """
+    bb, H = ripleys_h(bb, K, d)
+    bin_size = np.diff(bb)[0]
+
+    # central difference
+    dH = (H[2:]-H[:-2])/(2*bin_size)
+
+    return bb[1:-1], dH
