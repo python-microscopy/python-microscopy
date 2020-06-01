@@ -247,7 +247,41 @@ class DelaunayCircumcentres(ModuleBase):
 
 @register_module('Ripleys')
 class Ripleys(ModuleBase):
-    """ Calculates Ripley's K/L functions for a point set """
+    """
+    Ripley's K-function, and alternate normalizations, for examining clustering 
+    and dispersion of points within aregion R, where R is defined by a mask (2D 
+    or 3D) of the data.
+    
+        inputPositions : traits.Input
+            Localization data source to analyze as PYME.IO.tabular types
+        inputMask : traits.Input
+            PYME.IO.image.ImageStack mask defining the localization bounding region
+        outputName : traits.Output
+            Name of resulting PYME.IO.tabular.DictSource data ource
+        normalization : traits.Enum
+            Ripley's normalization type. See M. A. Kiskowski, J. F. Hancock, 
+            and A. K. Kenworthy, "On the use of Ripley’s K-function and its 
+            derivatives to analyze domain size," Biophys. J., vol. 97, no. 4, 
+            pp. 1095–1103, 2009.
+        nbins : traits.Int
+            Number of bins over which to analyze K-function
+        binSize : traits.Float
+            K-function bin size in nm
+        sampling : traits.Float
+            spacing (in nm) of samples from mask / region.
+        statistics : traits.Bool
+            Monte-Carlo sampling of the structure to determine clustering/
+            dispersion probability.
+        nsim : int
+            Number of Monte-Carlo simulations to run. More simulations = 
+            more statistical power. Used if statistics == True.
+        threaded : bool
+            Calculate pairwise distances using multithreading (faster)
+        three_d : bool
+            Analyze localizations in 2D or 3D. Requires correct dimensionality
+            of input localizations and mask.
+
+    """
     inputPositions = Input('input')
     inputMask = Input('')
     outputName = Output('ripleys')
@@ -255,6 +289,8 @@ class Ripleys(ModuleBase):
     nbins = Int(50)
     binSize = Float(50.)
     sampling = Float(5.)
+    statistics = Bool(False)
+    nsim = Int(100)
     threaded = Bool(False)
     three_d = Bool(False)
     
@@ -281,26 +317,51 @@ class Ripleys(ModuleBase):
             origin_coords = (0, 0, 0)
         
         if self.three_d:
-            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
+            K_packed = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+                                      sampling=self.sampling, threaded=self.threaded, mc=self.statistics,
+                                      n_sim=self.nsim, coord_origin=origin_coords)
         else:
-            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
+            K_packed = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+                                      sampling=self.sampling, threaded=self.threaded, mc=self.statistics,
+                                      n_sim=self.nsim, coord_origin=origin_coords)
+
+        # Unpack
+        if self.statistics:
+            bb, K, K_min, K_max, p_clustered = K_packed
+        else:
+            bb, K = K_packed
         
-        d = 3 if self.three_d else 2  # needed for all normalizations besides K
+        # Check for alternate Ripley's normalization
+        norm_func = None
         if self.normalization == 'L':
-            bb, K = ripleys.ripleys_l(bb, K, d)
+            norm_func = ripleys.ripleys_l
         elif self.normalization == 'dL':
-            bb, K = ripleys.ripleys_dl(bb, K, d)
+            # Results will be of length 2 less than other results
+            norm_func = ripleys.ripleys_dl
         elif self.normalization == 'H':
-            bb, K = ripleys.ripleys_h(bb, K, d)
+            norm_func = ripleys.ripleys_h
         elif self.normalization == 'dH':
             # Results will be of length 2 less than other results
-            bb, K = ripleys.ripleys_dh(bb, K, d)
+            norm_func = ripleys.ripleys_dh
         
-        res = tabular.DictSource({'bins': bb, 'vals': K})
+        # Apply normalization if present
+        if norm_func is not None:
+            d = 3 if self.three_d else 2
+            bb0, K = norm_func(bb, K, d)  # bb0 in case we use dL/dH
+            if self.statistics:
+                _, K_min = norm_func(bb, K_min, d)
+                _, K_max = norm_func(bb, K_max, d)
+                if self.normalization == 'dL' or self.normalization == 'dH':
+                    # Truncate p_clustered for dL and dH to match size
+                    p_clustered = p_clustered[1:-1]
+            bb = bb0
+
+        if self.statistics:
+            res = tabular.DictSource({'bins': bb, 'vals': K, 'min': K_min, 'max': K_max, 'p': p_clustered})
+        else:
+            res = tabular.DictSource({'bins': bb, 'vals': K})
         
         # propagate metadata, if present
         try:
