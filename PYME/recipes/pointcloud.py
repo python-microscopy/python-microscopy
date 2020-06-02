@@ -327,7 +327,7 @@ class Ripleys(ModuleBase):
 
         # Run MC simulations
         if self.statistics:
-            K_min, K_max, p_clustered = ripleys.mc_sampling_statistics(K, mask=mask,
+            K_min, K_max, p_clustered, p_dispersed = ripleys.mc_sampling_statistics(K, mask=mask,
                                                                         n_points=len(points_real['x']), n_bins=self.nbins, 
                                                                         three_d=self.three_d, bin_size=self.binSize, 
                                                                         n_sim=self.nsim, sampling=self.sampling, 
@@ -356,10 +356,11 @@ class Ripleys(ModuleBase):
                 if self.normalization == 'dL' or self.normalization == 'dH':
                     # Truncate p_clustered for dL and dH to match size
                     p_clustered = p_clustered[1:-1]
+                    p_dispersed = p_dispersed[1:-1]
             bb = bb0
 
         if self.statistics:
-            res = tabular.DictSource({'bins': bb, 'vals': K, 'min': K_min, 'max': K_max, 'p': p_clustered})
+            res = tabular.DictSource({'bins': bb, 'vals': K, 'min': K_min, 'max': K_max, 'pc': p_clustered, 'pd': p_dispersed})
         else:
             res = tabular.DictSource({'bins': bb, 'vals': K})
         

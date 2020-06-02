@@ -239,7 +239,8 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     # K-values given that we expect no relationship between the simulated
     # and real distributions (null hypothesis)
     p_clustered = ((K_arr>=K).sum(0) + 1)/(n_sim + 1)
-    return K_min, K_max, p_clustered
+    p_dispersed = ((K_arr<=K).sum(0) + 1)/(n_sim + 1)
+    return K_min, K_max, p_clustered, p_dispersed
 
 def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None, 
                 threaded=False, sampling=5.0, coord_origin=(0,0,0)):
