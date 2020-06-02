@@ -26,15 +26,20 @@ import numpy as np
 def times_to_frames(t, events, mdh):
     """
     Use events and metadata to convert time-stamps to frame numbers
-    :param t: ndarray
+
+    Parameters
+    ----------
+    t: ndarray
         times [seconds since the epoch] to map to frame numbers
-    :param events: ndarray
+    events: ndarray
         TODO - if events-related type fixing goes through, use events helpers to accept list here as well
-    :param mdh: PYME.IO.MetaDataHandler
+    mdh: PYME.IO.MetaDataHandler
         Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
-    :return:
-        fr: ndarray
-            array of frame numbers corresponding to `t` input
+
+    Returns
+    -------
+    fr: ndarray
+        array of frame numbers corresponding to `t` input
     """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
@@ -86,15 +91,20 @@ def times_to_frames(t, events, mdh):
 def frames_to_times(fr, events, mdh):
     """
     Use events and metadata to convert frame numbers to seconds
-    :param fr: ndarray
+
+    Parameters
+    ----------
+    fr: ndarray
         frame numbers to map to time (in seconds since the epoch), e.g. localization data_souce['t']
-    :param events: ndarray
+    events: ndarray
         TODO - if events-related type fixing goes through, use events helpers to accept list here as well
-    :param mdh: PYME.IO.MetaDataHandler
+    mdh: PYME.IO.MetaDataHandler
         Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
-    :return:
-        t: ndarray
-            times [seconds since the epoch] to map to frame numbers
+
+    Returns
+    -------
+    t: ndarray
+        times [seconds since the epoch] to map to frame numbers
     """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
@@ -178,15 +188,19 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
 
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1):
     """
-
-    :param events:
-    :param metadata:
-    :param x0: why?
-    :param y0:
-    :param eventName:
-    :param dataPos: int
+    Parameters
+    ----------
+    events:
+    metadata:
+    x0: why?
+    y0:
+    eventName:
+    dataPos: int
         position in comma-separated event['EventDesc'] str of the float which makes 'y' for this mapping
-    :return:
+
+    Returns
+    -------
+    map: piecewiseMap
     """
     x = []
     y = []
@@ -223,9 +237,9 @@ def bool_map_between_events(events, metadata, trigger_high, trigger_low, default
         metadata with 'Camera.CycleTime' and 'StartTime' entries
     trigger_high: bytes
         name of event to set output mapping high
-    :param trigger_low: bytes
+    trigger_low: bytes
         name of event to set output mapping low
-    :param default: bool
+    default: bool
         start mapping low (False) or high (True) at t=0
 
     Returns
