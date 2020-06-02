@@ -1270,6 +1270,7 @@ class DeconvolveMotionCompensating(Deconvolve):
         #Get appropriate deconvolution object
         rmv = self.GetDec(d, im.voxelsize)
 
+        #from PYME.Analysis import optic_flow
         #mFr = min(frNum + 2, im.data.shape[2] -1)
         #if frNum < mFr:
         #    dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze().astype('f'), im.data[:,:,mFr, chanNum].squeeze().astype('f'),
