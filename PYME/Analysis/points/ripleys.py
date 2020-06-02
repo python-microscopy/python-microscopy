@@ -236,8 +236,8 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     # 
     # Definition of one-tailed p-value: we check the probability that our 
     # simulation K-values are greater than or equal to the real data 
-    # K-values given that we expect no relationship between the simulated
-    # and real distributions (null hypothesis)
+    # K-values given that we expect no the simulated and real values
+    # to be drawn from the same distributions (null hypothesis)
     p_clustered = ((K_arr>=K).sum(0) + 1)/(n_sim + 1)
     p_dispersed = ((K_arr<=K).sum(0) + 1)/(n_sim + 1)
     return K_min, K_max, p_clustered, p_dispersed
