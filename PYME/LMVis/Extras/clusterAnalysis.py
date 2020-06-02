@@ -442,16 +442,16 @@ class ClusterAnalyser:
                 # Create a new plot for the pc-values
                 fig_pc = plt.figure()
                 ax_pc = fig_pc.add_subplot(111)
-                ax_pc.plot(result['bins'], -np.log(result['pc']), c='k')
+                ax_pc.plot(result['bins'], -np.log2(result['pc']), c='k')
                 ax_pc.set_xlabel('Distance (nm)')
                 ax_pc.set_ylabel('Clustering significance (-log(p))')
-                p_sig = -np.log(1.0/r.nsim)
+                p_sig = -np.log2(1.0/r.nsim)
                 ax_pc.axhline(y=p_sig, c='r', linestyle='--')  # Above this is clustered
 
                 # Create a new plot for the pd-values
                 fig_pd = plt.figure()
                 ax_pd = fig_pd.add_subplot(111)
-                ax_pd.plot(result['bins'], -np.log(result['pd']), c='k')
+                ax_pd.plot(result['bins'], -np.log2(result['pd']), c='k')
                 ax_pd.set_xlabel('Distance (nm)')
                 ax_pd.set_ylabel('Dispersion significance (-log(p))')
                 ax_pd.axhline(y=p_sig, c='r', linestyle='--')  # Above this is dispersed
