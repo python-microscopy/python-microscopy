@@ -317,21 +317,21 @@ class Ripleys(ModuleBase):
             origin_coords = (0, 0, 0)
         
         if self.three_d:
-            K_packed = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded, mc=self.statistics,
-                                      n_sim=self.nsim, coord_origin=origin_coords)
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
         else:
-            K_packed = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
-                                      sampling=self.sampling, threaded=self.threaded, mc=self.statistics,
-                                      n_sim=self.nsim, coord_origin=origin_coords)
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
 
-        # Unpack
+        # Run MC simulations
         if self.statistics:
-            bb, K, K_min, K_max, p_clustered = K_packed
-        else:
-            bb, K = K_packed
+            K_min, K_max, p_clustered = ripleys.mc_sampling_statistics(K, mask=mask,
+                                                                        n_points=len(points_real['x']), n_bins=self.nbins, 
+                                                                        three_d=self.three_d, bin_size=self.binSize, 
+                                                                        n_sim=self.nsim, sampling=self.sampling, 
+                                                                        threaded=self.threaded, coord_origin=origin_coords)
         
         # Check for alternate Ripley's normalization
         norm_func = None
