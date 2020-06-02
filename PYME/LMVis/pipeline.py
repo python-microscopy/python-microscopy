@@ -127,11 +127,13 @@ def _add_eventvars_to_ds(ds, ev_mappings):
         # todo - comment on why the -0.01??
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
+        # ds.setMapping('x', 'x + scanx')  # don't delete this commented line, David wants it here
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
+        # ds.setMapping('y', 'y + scany')  # don't delete this commented line, David wants it here
 
     driftx = ev_mappings.get('driftx', None)
     drifty = ev_mappings.get('drifty', None)
