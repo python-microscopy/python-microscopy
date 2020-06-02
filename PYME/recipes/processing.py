@@ -257,6 +257,7 @@ class OpticalFlow(ModuleBase):
         return flow_x, flow_y
         
     def execute(self, namespace):
+        import multiprocessing
         image = namespace[self.inputName]
         flow_x = []
         flow_y = []
@@ -396,7 +397,7 @@ class WavefrontVelocity(ModuleBase):
                 velocities[xp, yp, i] = vels[:,None]
                 
         
-        
+        # from skimage.measure import profile_line
         # for i in range(waves.shape[2]):
         #     print(i)
         #     if waves[:,:,i].max() > 0:
