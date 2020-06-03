@@ -61,7 +61,9 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_p
             # in the mask divided by the total circumference
             # 1/(dw/w)
             dww = w*d.astype('f')/dw
-            dww[dw==0] = 0  # d[w==0]
+            # If there are no points in the mask, at this radius,
+            # don't include these distances
+            dww[dw==0] = 0
             # The histogram is a weighted count of d
             hist += dww
     else:
@@ -77,7 +79,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_p
             dw = dh_func(x[_i], y[_i], z[_i], xu, yu, zu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], z[_i], x, y, z, n_bins, bin_size)
             dww = w*d.astype('f')/dw
-            dww[dw==0] = 0  # d[w==0]
+            dww[dw==0] = 0 
             hist += dww
 
     K = (float(mask_area) / (lx ** 2)) * np.cumsum(hist)  # Ripley's K-function
@@ -168,9 +170,9 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         # after the Monte-Carlo rejection step
         n_sim = int((np.prod(bool_mask.shape)/mask_area + eps)*n_points)
         
-        # generate randomly sampled coordinates on mask
+        # generate randomly sampled coordinates on a 3D space
         xu, yu, zu = (np.random.rand(n_sim,3)*[bool_mask.shape[0]-1,bool_mask.shape[1]-1,bool_mask.shape[2]-1]).T
-        # Find corresponding (xu, yu, zu) in the mesj
+        # Find corresponding (xu, yu, zu) in the mask
         point_mask = bool_mask[np.round(xu).astype(int), np.round(yu).astype(int), np.round(zu).astype(int)]
         # Monte-Carlo reject points outside of the mask and shift points inside to coordinate position
         xu, yu, zu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[
@@ -189,9 +191,10 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         point_mask = bool_mask[np.round(xu).astype(int), np.round(yu).astype(int)]
         xu, yu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[point_mask] + y0_m - y0_p
 
-    # Truncate
-    if (len(xu) < n_points) or (len(yu) < n_points) or (len(zu) < n_points):
+    if (len(xu) < n_points) or (len(yu) < n_points) or ((zu is not None) and (len(zu) < n_points)):
+        # This one's for the developers
         raise RuntimeError('Not enough points were generated in the Monte-Carlo simulations. Revisit calculation of n_sim.')
+    # Truncate
     xu, yu, zu = xu[:n_points], yu[:n_points], zu[:n_points] if zu is not None else None
 
     return xu, yu, zu
