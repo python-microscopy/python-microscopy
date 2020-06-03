@@ -729,7 +729,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             f, length = self._string_to_file(wire_data)
             self.send_response(200)
-            self.send_header("Content-type", output_format if output_format else 'application/octet-stream')
+            self.send_header("Content-Type", output_format if output_format else 'application/octet-stream')
             self.send_header("Content-Length", length)
             #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
             self.end_headers()

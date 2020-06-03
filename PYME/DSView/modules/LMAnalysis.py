@@ -767,8 +767,14 @@ class LMAnalyser2(object):
         newNumAnalysed = int(queueInfo[self.analysisController.pusher._ruleID]['tasksCompleted'])
         if newNumAnalysed > self.numAnalysed:
             self.numAnalysed = newNumAnalysed
+            
+            # load from server as pickle (try this instead of numpy loading to get around np.load slowness if performance is an issue)
+            #newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
+            
+            # load from server as .npy
             cont = requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content
             newResults = np.load(BytesIO(cont))
+            
             self._add_new_results(newResults)
         
 
