@@ -2,7 +2,7 @@ import numpy as np
 
 from PYME.Analysis.points import DistHist
 
-def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None, zu=None, threaded=False):
+def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_per_mask_point, z=None, zu=None, threaded=False):
     """
     Ripley's K-function for examining clustering and dispersion of points within a
     region R, where R is defined by a mask (2D or 3D) of the data.
@@ -23,6 +23,8 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
             Width of spatial bins (nm)
         mask_area : float
             Area of region R (sum of the mask)
+        area_per_mask_point : float
+            Scaling factor for weight calculations
         z : np.array
             z-position of raw data
         zu : np.array
@@ -32,7 +34,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
     """
     from PYME.Analysis.points import DistHist
 
-    bb = np.arange(0, n_bins*bin_size, bin_size)  # bins
+    bb = np.arange(bin_size, n_bins*bin_size+1, bin_size)  # bins
     hist = np.zeros(n_bins)  # counts
     lx = len(x)
 
@@ -42,13 +44,13 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
             dh_func = DistHist.distanceHistogramThreaded
         else:
             dh_func = DistHist.distanceHistogram
-        w = np.pi*((bb+bin_size)**2-bb**2)  # we have an annulus, not a circumference
+        w = np.pi*(bb**2-(bb-bin_size)**2)  # we have an annulus, not a circumference
 
         # Calculate weighted pairwise distance histogram
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], xu, yu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], x, y, n_bins, bin_size)
-            dww = w*d.astype('f')/dw
+            dww = d.astype('f')/(dw*area_per_mask_point/w)
             dww[dw==0] = 0  # d[w==0]
             hist += dww
     else:
@@ -57,13 +59,13 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, z=None
             dh_func = DistHist.distanceHistogram3DThreaded
         else:
             dh_func = DistHist.distanceHistogram3D
-        w = (4.0/3.0)*np.pi*((bb+bin_size)**3-bb**3)
+        w = (4.0/3.0)*np.pi*(bb**3-(bb-bin_size)**3)
         
         # Calculate weighted pairwise distance histogram
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], z[_i], xu, yu, zu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], z[_i], x, y, z, n_bins, bin_size)
-            dww = w*d.astype('f')/dw
+            dww = d.astype('f')/(dw*area_per_mask_point/w)
             dww[dw==0] = 0  # d[w==0]
             hist += dww
 
@@ -109,6 +111,7 @@ def points_from_mask(mask, sampling, three_d=True, coord_origin=(0,0,0)):
             bool_mask] + z0_m - z0_p
         
         mask_area = bool_mask.sum() * vx * vy * vz
+        area_per_point = vx * vy * vz * stride_x * stride_y * stride_z
     else:
         #convert mask to boolean image
         bool_mask = mask.data[:, :, :, 0].squeeze() > 0.5
@@ -119,8 +122,9 @@ def points_from_mask(mask, sampling, three_d=True, coord_origin=(0,0,0)):
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
         xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
         mask_area = bool_mask.sum() * vx * vy
+        area_per_point = vx * vy * stride_x * stride_y
         
-    return xu, yu, zu, mask_area
+    return xu, yu, zu, mask_area, area_per_point
 
 def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
     """
@@ -154,14 +158,13 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         n_sim = int((np.prod(bool_mask.shape)/mask_area + eps)*n_points)
         
         # generate randomly sampled coordinates on mask
-        xu, yu, zu = (np.random.rand(n_sim,3)*[bool_mask.shape[0],bool_mask.shape[1],bool_mask.shape[2]]).T
+        xu, yu, zu = (np.random.rand(n_sim,3)*[bool_mask.shape[0]-1,bool_mask.shape[1]-1,bool_mask.shape[2]-1]).T
         # Find corresponding (xu, yu, zu) in the mesj
-        point_mask = bool_mask[xu.astype(int), yu.astype(int), zu.astype(int)]
+        point_mask = bool_mask[np.round(xu).astype(int), np.round(yu).astype(int), np.round(zu).astype(int)]
         # Monte-Carlo reject points outside of the mask and shift points inside to coordinate position
         xu, yu, zu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[
             point_mask] + y0_m - y0_p, vz * zu[point_mask] + z0_m - z0_p
         
-        mask_area *= vx * vy * vz
     else:
         bool_mask = mask.data[:, :, :, 0].squeeze() > 0.5
         if bool_mask.ndim > 2:
@@ -171,18 +174,17 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         n_sim = int((np.prod(bool_mask.shape)/mask_area + eps)*n_points)
         
         zu = None
-        xu, yu = (np.random.rand(n_sim,2)*[bool_mask.shape[0],bool_mask.shape[1]]).T
-        point_mask = bool_mask[xu.astype(int), yu.astype(int)]
+        xu, yu = (np.random.rand(n_sim,2)*[bool_mask.shape[0]-1,bool_mask.shape[1]-1]).T
+        point_mask = bool_mask[np.round(xu).astype(int), np.round(yu).astype(int)]
         xu, yu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[point_mask] + y0_m - y0_p
-        mask_area *= vx * vy
 
     # Truncate
     xu, yu, zu = xu[:n_points], yu[:n_points], zu[:n_points] if zu is not None else None
 
-    return xu, yu, zu, mask_area
+    return xu, yu, zu
 
 def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d, 
-                            n_sim=100, threaded=False, sampling=5.0, 
+                            significance=0.05, n_sim=20, threaded=False, sampling=5.0, 
                             coord_origin=(0,0,0)):
     """
     Calculates simulation envelope and significance of clustering on a mask
@@ -215,7 +217,7 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
             Offset in nm of the x, y, and z coordinates w.r.t. the camera 
             origin (used to make sure mask aligns)
     """
-    xu, yu, zu, mask_area = points_from_mask(mask, sampling, three_d, coord_origin)
+    xu, yu, zu, mask_area, area_per_mask_point = points_from_mask(mask, sampling, three_d, coord_origin)
     xu = xu.ravel()
     yu = yu.ravel()
     if zu is not None:
@@ -224,13 +226,15 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     # Monte-Carlo simulations on the mask
     K_arr = np.zeros((n_sim,len(K)))
     for _i in range(n_sim):
-        xm, ym, zm, _ = mc_points_from_mask(mask, n_points, three_d, coord_origin)
+        print('Simulation {} ...'.format(_i))
+        xm, ym, zm = mc_points_from_mask(mask, n_points, three_d, coord_origin)
         _, K_arr[_i,:] = ripleys_k_from_mask_points(x=xm, y=ym, z=zm,
                                     xu=xu, yu=yu, zu=zu,
-                                    n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, threaded=threaded)
+                                    n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, 
+                                    area_per_mask_point=area_per_mask_point, threaded=threaded)
     # Envelope
-    K_min = np.min(K_arr, axis=0)
-    K_max = np.max(K_arr, axis=0)
+    K_min = np.percentile(K_arr, significance*100, axis=0)
+    K_max = np.percentile(K_arr, 100*(1.0-significance), axis=0)
     # Probability our original data is clustered (< 1/(n_sim+1) 
     # implies significance)
     # 
@@ -275,7 +279,7 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None,
     three_d = z is not None
     
     if mask:
-        xu, yu, zu, mask_area = points_from_mask(mask, sampling, three_d, coord_origin)
+        xu, yu, zu, mask_area, area_per_mask_point = points_from_mask(mask, sampling, three_d, coord_origin)
     else:
         if three_d:
             if not bbox:
@@ -298,7 +302,8 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None,
 
     return ripleys_k_from_mask_points(x=x, y=y, z=z,
                                       xu=xu, yu=yu, zu=zu,
-                                      n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, threaded=threaded)
+                                      n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, 
+                                      area_per_mask_point=area_per_mask_point, threaded=threaded)
         
         
 
@@ -344,8 +349,7 @@ def ripleys_h(bb, K, d=2):
     """
     bb, L = ripleys_l(bb, K, d)
 
-    bin_size = np.diff(bb)[0]
-    H = L - bb+bin_size
+    H = L - bb
 
     return bb, H
 

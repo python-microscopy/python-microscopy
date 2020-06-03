@@ -275,6 +275,8 @@ class Ripleys(ModuleBase):
         nsim : int
             Number of Monte-Carlo simulations to run. More simulations = 
             more statistical power. Used if statistics == True.
+        significance : float
+            Desired significance of 
         threaded : bool
             Calculate pairwise distances using multithreading (faster)
         three_d : bool
@@ -290,7 +292,8 @@ class Ripleys(ModuleBase):
     binSize = Float(50.)
     sampling = Float(5.)
     statistics = Bool(False)
-    nsim = Int(100)
+    nsim = Int(20)
+    significance = Float(0.05)
     threaded = Bool(False)
     three_d = Bool(False)
     
@@ -310,6 +313,12 @@ class Ripleys(ModuleBase):
         else:
             if mask.data.shape[2] > 1:
                 raise RuntimeError('Need a 2D mask.')
+
+        if self.statistics and mask is None:
+            raise RuntimeError('Mask is needed to calculate statistics.')
+
+        if self.statistics and 1.0/self.nsim > self.significance:
+            raise RuntimeError('Need at least {} simulations to achieve a significance of {}'.format(int(np.ceil(1.0/self.significance)),self.significance))
         
         try:
             origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
@@ -329,7 +338,8 @@ class Ripleys(ModuleBase):
         if self.statistics:
             K_min, K_max, p_clustered, p_dispersed = ripleys.mc_sampling_statistics(K, mask=mask,
                                                                         n_points=len(points_real['x']), n_bins=self.nbins, 
-                                                                        three_d=self.three_d, bin_size=self.binSize, 
+                                                                        three_d=self.three_d, bin_size=self.binSize,
+                                                                        significance=self.significance, 
                                                                         n_sim=self.nsim, sampling=self.sampling, 
                                                                         threaded=self.threaded, coord_origin=origin_coords)
         

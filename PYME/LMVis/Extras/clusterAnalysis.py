@@ -436,8 +436,7 @@ class ClusterAnalyser:
             ax.set_xlabel('Distance (nm)')
             if r.statistics:
                 # Plot envelope
-                ax.plot(result['bins'], result['min'], c='k', linestyle=':')
-                ax.plot(result['bins'], result['max'], c='k', linestyle=':')
+                ax.fill_between(result['bins'], result['min'], result['max'], color='k', alpha=0.25)
 
                 # Create a new plot for the pc-values
                 fig_pc = plt.figure()
@@ -445,8 +444,7 @@ class ClusterAnalyser:
                 ax_pc.plot(result['bins'], -np.log2(result['pc']), c='k')
                 ax_pc.set_xlabel('Distance (nm)')
                 ax_pc.set_ylabel('Clustering significance (-log(p))')
-                p_sig = -np.log2(1.0/r.nsim)
-                ax_pc.axhline(y=p_sig, c='r', linestyle='--')  # Above this is clustered
+                ax_pc.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is clustered
 
                 # Create a new plot for the pd-values
                 fig_pd = plt.figure()
@@ -454,7 +452,7 @@ class ClusterAnalyser:
                 ax_pd.plot(result['bins'], -np.log2(result['pd']), c='k')
                 ax_pd.set_xlabel('Distance (nm)')
                 ax_pd.set_ylabel('Dispersion significance (-log(p))')
-                ax_pd.axhline(y=p_sig, c='r', linestyle='--')  # Above this is dispersed
+                ax_pd.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is dispersed
             
 
 def Plug(visFr):
