@@ -90,7 +90,7 @@ def points_from_mask(mask, sampling, three_d=True, coord_origin=(0,0,0)):
             Offset in nm of the x, y, and z coordinates w.r.t. the camera 
             origin (used to make sure mask aligns)
     """
-    vx, vy, vz = mask.voxelsize
+    vx, vy, vz = mask.voxelsize_nm
     x0_m, y0_m, z0_m = mask.origin
     x0_p, y0_p, z0_p = coord_origin
 
@@ -142,11 +142,11 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
             Offset in nm of the x, y, and z coordinates w.r.t. the camera 
             origin (used to make sure mask aligns)
     """
-    vx, vy, vz = mask.voxelsize
+    vx, vy, vz = mask.voxelsize_nm
     x0_m, y0_m, z0_m = mask.origin
     x0_p, y0_p, z0_p = coord_origin
 
-    eps = 0.1  # scaling fudge factor
+    eps = 0.2  # scaling fudge factor
 
     if three_d:
         #convert mask to boolean image
@@ -228,6 +228,7 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     for _i in range(n_sim):
         print('Simulation {} ...'.format(_i))
         xm, ym, zm = mc_points_from_mask(mask, n_points, three_d, coord_origin)
+        print(xm.shape)
         _, K_arr[_i,:] = ripleys_k_from_mask_points(x=xm, y=ym, z=zm,
                                     xu=xu, yu=yu, zu=zu,
                                     n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, 
