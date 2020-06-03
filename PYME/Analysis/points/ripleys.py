@@ -44,14 +44,25 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_p
             dh_func = DistHist.distanceHistogramThreaded
         else:
             dh_func = DistHist.distanceHistogram
-        w = np.pi*(bb**2-(bb-bin_size)**2)  # we have an annulus, not a circumference
+        # Count the number of points we expect in a filled annulus
+        # for comparison to the actual count.
+        w = np.pi*(bb**2-(bb-bin_size)**2)/area_per_mask_point
 
         # Calculate weighted pairwise distance histogram
         for _i in range(lx):
+            # Count the number of points within the mask at a distance r
+            # from point _i
             dw = dh_func(x[_i], y[_i], xu, yu, n_bins, bin_size)
+            # Count the number of points in the original data set at a 
+            # distance r from point _i
             d = dh_func(x[_i], y[_i], x, y, n_bins, bin_size)
-            dww = d.astype('f')/(dw*area_per_mask_point/w)
+            # This is used a rough approximation of the Ripley's 
+            # correction: 1/the fraction of the circumference
+            # in the mask divided by the total circumference
+            # 1/(dw/w)
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
+            # The histogram is a weighted count of d
             hist += dww
     else:
         # 3D case
@@ -59,13 +70,13 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_p
             dh_func = DistHist.distanceHistogram3DThreaded
         else:
             dh_func = DistHist.distanceHistogram3D
-        w = (4.0/3.0)*np.pi*(bb**3-(bb-bin_size)**3)
+        w = (4.0/3.0)*np.pi*(bb**3-(bb-bin_size)**3)/area_per_mask_point
         
         # Calculate weighted pairwise distance histogram
         for _i in range(lx):
             dw = dh_func(x[_i], y[_i], z[_i], xu, yu, zu, n_bins, bin_size)
             d = dh_func(x[_i], y[_i], z[_i], x, y, z, n_bins, bin_size)
-            dww = d.astype('f')/(dw*area_per_mask_point/w)
+            dww = w*d.astype('f')/dw
             dww[dw==0] = 0  # d[w==0]
             hist += dww
 
@@ -179,6 +190,8 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         xu, yu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[point_mask] + y0_m - y0_p
 
     # Truncate
+    if (len(xu) < n_points) or (len(yu) < n_points) or (len(zu) < n_points):
+        raise RuntimeError('Not enough points were generated in the Monte-Carlo simulations. Revisit calculation of n_sim.')
     xu, yu, zu = xu[:n_points], yu[:n_points], zu[:n_points] if zu is not None else None
 
     return xu, yu, zu
@@ -228,7 +241,6 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     for _i in range(n_sim):
         print('Simulation {} ...'.format(_i))
         xm, ym, zm = mc_points_from_mask(mask, n_points, three_d, coord_origin)
-        print(xm.shape)
         _, K_arr[_i,:] = ripleys_k_from_mask_points(x=xm, y=ym, z=zm,
                                     xu=xu, yu=yu, zu=zu,
                                     n_bins=n_bins, bin_size=bin_size, mask_area=mask_area, 
