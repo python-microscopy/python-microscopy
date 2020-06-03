@@ -22,7 +22,7 @@ python functions defining that method (linked from the table above). The server 
 command (see :mod:`PYME.cluster.PYMERuleServer`) which loads this in a separate thread and takes care of logging and zeroconf
 registration, rather than by directly running this file.
 """
-import cherrypy
+#import cherrypy
 import threading
 import requests
 import queue as Queue
@@ -409,7 +409,7 @@ class RuleServer(object):
     def __init__(self):
         self._rules = collections.OrderedDict()
         
-        cherrypy.engine.subscribe('stop', self.stop)
+        #cherrypy.engine.subscribe('stop', self.stop)
         
         self._do_poll = True
         

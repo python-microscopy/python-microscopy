@@ -1,4 +1,4 @@
-import cherrypy
+#import cherrypy
 import threading
 import requests
 
@@ -23,7 +23,7 @@ import ujson as json
 WORKER_GET_TIMEOUT = config.get('nodeserver-worker-get-timeout', 60)
 
 #disable socket timeout to prevent us from generating 408 errors
-cherrypy.server.socket_timeout = 0
+#cherrypy.server.socket_timeout = 0
 
 import requests
 import multiprocessing
@@ -144,7 +144,7 @@ class NodeServer(object):
         #self._lastAnnounceTime = 0
         #self._anounce_url = self.distributor_url + 'distributor/announce?nodeID=%s&ip=%s&port=%d' % (self.nodeID, self.ip_address, self.port)
 
-        cherrypy.engine.subscribe('stop', self.stop)
+        #cherrypy.engine.subscribe('stop', self.stop)
 
         self._do_poll = True
         self._update_tasks_lock = threading.Lock()

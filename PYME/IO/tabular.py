@@ -268,6 +268,15 @@ class FitResultsSource(TabularBase):
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
         
+    def _set_transkeys(self):
+        self.transkeys = {'A': 'fitResults_A', 'x': 'fitResults_x0',
+                          'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
+                          'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 'error_z': 'fitError_z0', 't': 'tIndex'}
+    
+        for k in list(self.transkeys.keys()):
+            if not self.transkeys[k] in self._keys:
+                self.transkeys.pop(k)
+        
     def setResults(self, fitResults, sort=True):
         self.fitResults = fitResults
 
@@ -277,14 +286,10 @@ class FitResultsSource(TabularBase):
 
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
+        
         #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 'error_z' : 'fitError_z0','t':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        self._set_transkeys()
+        
 
 
     def keys(self):
@@ -414,14 +419,9 @@ class H5RSource(BaseHDFSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         BaseHDFSource.__init__(self, h5fFile, tablename)
-        #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        
+        # set up column aliases
+        self._set_transkeys()
 
         #sort by time
         if 'tIndex' in self._keys:
