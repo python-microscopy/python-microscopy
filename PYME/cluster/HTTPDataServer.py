@@ -568,6 +568,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
+        elif '.h5r/' in self.path or '.hdf/' in self.path:
+            # throw the query back on to our fully resolved path
+            return self.get_tabular_part(path + '?' + urlparse.urlparse(self.path).query)
 
         ctype = self.guess_type(path)
         try:
@@ -680,6 +683,60 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except IOError:
             self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
+
+    def get_tabular_part(self, path):
+        """
+
+        Parameters
+        ----------
+        path: str
+            path to an hdf or h5r file on the dataserver computer. Append the part of the file to read after the file
+            extension, e.g. .h5r/Events. Return format (for arrays) can additionally be specified, as can slices
+            using the following syntax: test.h5r/FitResults.json?from=0&to=100. Supported array formats include json and
+            npy.
+
+        Returns
+        -------
+        f: BytesIO
+            Requested part of the file encoded as bytes
+
+        """
+        from PYME.IO import h5rFile, clusterResults
+
+        # parse path
+        ext = '.h5r' if '.h5r' in path else '.hdf'
+        filename, details = path.split(ext + '/')
+        filename = filename + ext  # path to file on dataserver disk
+        query = urlparse.urlparse(details).query
+        details = details.strip('?' + query)
+        if '.' in details:
+            part, return_type = details.split('.')
+        else:
+            part, return_type = details, ''
+
+
+        try:
+            with h5rFile.openH5R(filename) as h5f:
+                if part == 'Metadata':
+                    wire_data, output_format = clusterResults.format_results(h5f.mdh, return_type)
+                else:
+                    # figure out if we have any slicing to do
+                    query = urlparse.parse_qs(query)
+                    start = int(query.get('from', [0])[0])
+                    end = None if 'to' not in query.keys() else int(query['to'][0])
+                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, slice(start, end)),
+                                                                             '.' + return_type)
+
+            f, length = self._string_to_file(wire_data)
+            self.send_response(200)
+            self.send_header("Content-Type", output_format if output_format else 'application/octet-stream')
+            self.send_header("Content-Length", length)
+            #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            return f
+
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
         
         
 
