@@ -111,17 +111,19 @@ def points_from_mask(mask, sampling, three_d=True, coord_origin=(0,0,0)):
         vz = 1 #dummy value to prevent div by zero when calculating strides we don't use
 
     assert ((vx>0) and (vy>0) and (vz > 0))
-    stride_x, stride_y, stride_z = [max(1, sampling/v) for v in [vx, vy, vz]]
+    stride_x, stride_y, stride_z = [max(1, int(sampling/v)) for v in [vx, vy, vz]]
     
     if three_d:
         #convert mask to boolean image
         bool_mask = np.atleast_3d(mask.data[:, :, :, 0].squeeze()) > 0.5
         
         # generate uniformly sampled coordinates on mask
-        xu, yu, zu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y,
-                     0:bool_mask.shape[2]:stride_z]
-        xu, yu, zu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p, vz * zu[
-            bool_mask] + z0_m - z0_p
+        xu, yu, zu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y,0:bool_mask.shape[2]:stride_z]
+        xu, yu, zu = xu.ravel(), yu.ravel(), zu.ravel()
+        
+        #TODO - use ndimage.map_coordinates instead?
+        mask_v = bool_mask[xu, yu, zu]
+        xu, yu, zu = vx * xu[mask_v] + x0_m - x0_p, vy * yu[mask_v] + y0_m - y0_p, vz * zu[mask_v] + z0_m - z0_p
         
         mask_area = bool_mask.sum() * vx * vy * vz
         area_per_point = vx * vy * vz * stride_x * stride_y * stride_z
@@ -133,7 +135,12 @@ def points_from_mask(mask, sampling, three_d=True, coord_origin=(0,0,0)):
         
         zu = None
         xu, yu = np.mgrid[0:bool_mask.shape[0]:stride_x, 0:bool_mask.shape[1]:stride_y]
-        xu, yu = vx * xu[bool_mask] + x0_m - x0_p, vy * yu[bool_mask] + y0_m - y0_p
+        xu, yu = xu.ravel(), yu.ravel()
+
+        #TODO - use ndimage.map_coordinates instead?
+        mask_v = bool_mask[xu, yu]
+        xu, yu = vx * xu[mask_v] + x0_m - x0_p, vy * yu[mask_v] + y0_m - y0_p
+        
         mask_area = bool_mask.sum() * vx * vy
         area_per_point = vx * vy * stride_x * stride_y
         
@@ -298,14 +305,14 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None,
         xu, yu, zu, mask_area, area_per_mask_point = points_from_mask(mask, sampling, three_d, coord_origin)
     else:
         if three_d:
-            if not bbox:
+            if bbox is None:
                 bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
                 
             xu, yu, zu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling, bbox[2]:bbox[5]:sampling]
             mask_area = np.prod((bbox[3:] - bbox[:3]))
             area_per_mask_point = float(sampling)**3
         else:
-            if not bbox:
+            if bbox is None:
                 bbox = np.array([x.min(), y.min(), x.max(), y.max()])
     
             xu, yu = np.mgrid[bbox[0]:bbox[2]:sampling, bbox[1]:bbox[3]:sampling]
