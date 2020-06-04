@@ -100,9 +100,8 @@ class GaussianFitFactory:
             self.solver = FitModelWeightedJac
         else: 
             self.solver = FitModelWeighted
-            
-        vx = 1e3*self.metadata.voxelsize.x
-        vy = 1e3*self.metadata.voxelsize.y
+
+        vx, vy, _ = self.metadata.voxelsize_nm
         
         #only recalculate grid if existing one doesn't match
         if not self.X or not self.X.shape == self.data.shape[:2]:
@@ -134,9 +133,10 @@ class GaussianFitFactory:
 #        
 #        return ret
         
-    def _gFilter2(self, x, y, vals):        
-        x = (x/(1e3*self.metadata.voxelsize.x)).astype('i')
-        y = (y/(1e3*self.metadata.voxelsize.y)).astype('i')
+    def _gFilter2(self, x, y, vals):
+        vs = self.metadata.voxelsize_nm
+        x = (x/(vs.x)).astype('i')
+        y = (y/(vs.y)).astype('i')
         
             
         return NRFilter(x, y, vals, self.gLUT2)
@@ -335,8 +335,9 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        vs = md.voxelsize_nm
+        X = vs.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 

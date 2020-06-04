@@ -126,8 +126,7 @@ class LMDisplay(visCore.VisGUICore):
    
 
     def GenResultsView(self):
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        voxx, voxy = self.image.voxelsize_nm
         
         self.SetFitInfo()
 
@@ -138,8 +137,8 @@ class LMDisplay(visCore.VisGUICore):
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+        xsc = self.image.data.shape[0]*voxx/self.glCanvas.Size[0]
+        ysc = self.image.data.shape[1]*voxy/ self.glCanvas.Size[1]
 
         if xsc > ysc:
             self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
@@ -154,8 +153,8 @@ class LMDisplay(visCore.VisGUICore):
         
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        voxx, voxy = self.image.voxelsize_nm
+        
         self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
@@ -177,8 +176,9 @@ class LMDisplay(visCore.VisGUICore):
         
         cand = dist.argmin()
         
-        self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
-        self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
+        vx, vy, _ = self.image.voxelsize_nm
+        self.dsviewer.do.xp = xp/vx
+        self.dsviewer.do.yp = yp/vy
         self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
@@ -241,7 +241,7 @@ class LMDisplay(visCore.VisGUICore):
 #    def OnProgDispColourChange(self, event):
 #        #print 'foo'
 #        self.analDispMode = self.chProgDispColour.GetStringSelection()
-#        self.analRefresh()
+#        self.refresh_analysis()
 #
 #    def OnProgDispCMapChange(self, event):
 #        #print 'foo'
@@ -249,7 +249,7 @@ class LMDisplay(visCore.VisGUICore):
 
    
 
-#    def analRefresh(self):
+#    def refresh_analysis(self):
 #        newNumAnalysed = self.tq.getNumberTasksCompleted(self.image.seriesName)
 #        if newNumAnalysed > self.numAnalysed:
 #            self.numAnalysed = newNumAnalysed

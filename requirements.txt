@@ -5,7 +5,7 @@ numpy==1.14.*
 scipy
 matplotlib
 wxpython
-tables <=3.4.2
+tables #<=3.4.2
 pyopengl
 traits
 traitsui
@@ -39,13 +39,14 @@ psutil
 #sphinx
 ujson
 jinja2
+django==1.11.28
 
 #dispatch
 git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
 
 #pycairo
 
-#pymecompress >=0.1.4
+#pymecompress >=0.2
 git+https://github.com/python-microscopy/pymecompress.git@master#egg=pymecompress
 
 six

@@ -21,13 +21,15 @@ except:
 #import win32api
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
-#from PYME.IO.FileUtils.freeSpace import get_free_space
+from PYME.IO import unifiedIO
 
 
 #import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
 from PYME.Acquire.ui import preflight
 from PYME import config
+
+from PYME.misc import hybrid_ns
 
 import os
 import sys
@@ -46,6 +48,8 @@ import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
+from PYME.util import webframework
+
 class SpoolController(object):
     def __init__(self, scope, defDir=genHDFDataFilepath(), defSeries='%(day)d_%(month)d_series'):
         """Initialise the spooling controller.
@@ -62,7 +66,13 @@ class SpoolController(object):
             
         """
         self.scope = scope
-        self.spoolType = 'Queue'
+        
+        if int(sys.version[0]) < 3:
+            #default to Queue for Py2
+            self.spoolType = 'Queue'
+        else:
+            #else default to file
+            self.spoolType = 'File'
         
         #dtn = datetime.datetime.now()
         
@@ -85,7 +95,69 @@ class SpoolController(object):
 
         self._analysis_launchers = queue.Queue(3)
         
-        self.compressionSettings=HTTPSpooler.defaultCompSettings
+        self._status_changed_condition = threading.Condition()
+        
+        #settings which were managed by GUI
+        self.hdf_compression_level = 2 # zlib compression level that pytables should use (spool to file and queue)
+        self.z_stepped = False  # z-step during acquisition
+        self.z_dwell = 100 # time to spend at each z level (if z_stepped == True)
+        self.cluster_h5 = False # spool to h5 on cluster (cluster of one)
+        self.pzf_compression_settings=HTTPSpooler.defaultCompSettings # only for cluster spooling
+
+        #check to see if we have a cluster
+        self._N_data_servers = len(hybrid_ns.getNS('_pyme-http').get_advertised_services())
+        if self._N_data_servers > 0:
+            # switch to cluster as spool method if available.
+            self.SetSpoolMethod('Cluster')
+            
+        if self._N_data_servers  == 1:
+            self.cluster_h5 = True # we have a cluster of one
+            
+    @property
+    def available_spool_methods(self):
+        if int(sys.version[0]) < 3:
+            return ['File', 'Queue', 'Cluster']
+        else:
+            return ['File', 'Cluster']
+        
+    def get_info(self):
+        info =  {'settings' : {'method' : self.spoolType,
+                                'hdf_compression_level': self.hdf_compression_level,
+                                'z_stepped' : self.z_stepped,
+                                'z_dwell' : self.z_dwell,
+                                'cluster_h5' : self.cluster_h5,
+                                'pzf_compression_settings' : self.pzf_compression_settings,
+                                'protocol_name' : self.protocol.filename,
+                                'series_name' : self.seriesName
+                              },
+                 'available_spool_methods' : self.available_spool_methods
+                }
+        
+        try:
+            info['status'] = self.spooler.status()
+        except AttributeError:
+            info['status'] = {'spooling':False}
+        
+        return info
+    
+    def update_settings(self, settings):
+        method = settings.pop('method', None)
+        if method:
+            self.SetSpoolMethod(method)
+        
+        protocol_name = settings.pop('protocol_name', None)
+        if protocol_name:
+            self.SetProtocol(protocol_name)
+            
+        pzf_settings = settings.pop('pzf_compression_settings', None)
+        if pzf_settings:
+            self.pzf_compression_settings = dict(pzf_settings)
+            
+        for k, v in settings.items():
+            setattr(self, k, v)
+        
+            
+            
         
     @property
     def _sep(self):
@@ -96,13 +168,18 @@ class SpoolController(object):
         
     @property
     def dirname(self):
-        if not self._user_dir is None:
-            return self._user_dir
-        
         if self.spoolType == 'Cluster':
-            return '/'.join(self._subdir)
+            dir = self.get_cluster_dirname(self._user_dir) if self._user_dir is not None else '/'.join(self._subdir)
         else:
-            return os.sep.join([self._base_dir, ] + self._subdir)
+            dir = self._user_dir if self._user_dir is not None else os.sep.join([self._base_dir, ] + self._subdir)
+        return dir
+
+    def get_cluster_dirname(self, dirname):
+        # Typically we'll be below the base directory, which we want to remove
+        dir = dirname.replace(self._base_dir + os.sep, '')
+        # if we weren't below PYMEData dir, which probably isn't great, at least drop any windows nonsense
+        dir = dir.split(':')[-1]
+        return unifiedIO.fix_name(dir.replace(os.sep, '/'))
         
     @property
     def seriesName(self):
@@ -153,9 +230,10 @@ class SpoolController(object):
 
         """
         if self.spoolType == 'Cluster':
-            #logger.warn('Cluster free space calculation not yet implemented, using fake value')
-            # FIXME - make free space calculations work on cluster (warning above commented out for Andrew's sanity)
-            return float('nan')
+            from PYME.IO import clusterIO
+            nodes = clusterIO.get_status()
+            free_storage = sum([n['Disk']['free'] for n in nodes])
+            return free_storage / 1e9
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
             return get_free_space(self.dirname)/1e9
@@ -168,11 +246,14 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        self._dirname = dirname + os.sep
+        self._user_dir = dirname + os.sep
         #if we've had to quit for whatever reason start where we left off
         self._update_series_counter()
             
     def _ProgressUpate(self, **kwargs):
+        with self._status_changed_condition:
+            self._status_changed_condition.notify_all()
+            
         self.onSpoolProgress.send(self)
         
     def _get_queue_name(self, fn, pcs=False):
@@ -185,15 +266,18 @@ class SpoolController(object):
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      compressionSettings=None, cluster_h5 = False):
+                      pzf_compression_settings=None, cluster_h5 = None):
         """Start spooling
         """
         
-        if compressionSettings is None:
-            compressionSettings = self.compressionSettings
-
-        if fn in ['', None]:
-            fn = self.seriesName
+        # these settings were managed by the GUI, but are now managed by the controller, still allow them to be passed in,
+        # but default to using our internal values
+        compLevel = self.hdf_compression_level if compLevel is None else compLevel
+        pzf_compression_settings = self.pzf_compression_settings if pzf_compression_settings is None else pzf_compression_settings
+        stack = self.z_stepped if stack is None else stack
+        cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
+        fn = self.seriesName if fn in ['', None] else fn
+        zDwellTime = self.z_dwell if zDwellTime is None else zDwellTime
         
         #make directories as needed
         if not (self.spoolType == 'Cluster'):
@@ -205,7 +289,7 @@ class SpoolController(object):
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
-            raise IOError('Output file already exists')
+            raise IOError('A series with the same name already exists')
 
         if stack:
             protocol = self.protocolZ
@@ -237,11 +321,11 @@ class SpoolController(object):
         elif self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
-            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
-                                               frameShape = frameShape, protocol=protocol, 
-                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
+            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
+                                               frameShape = frameShape, protocol=protocol,
+                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel,
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=compressionSettings, aggregate_h5=cluster_h5)
+                                               compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5)
            
         else:
             from PYME.Acquire import HDFSpooler
@@ -259,8 +343,12 @@ class SpoolController(object):
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
             
-        self.spooler.onSpoolStop.connect(self.SpoolStopped)
-        self.spooler.StartSpool()
+        try:
+            self.spooler.onSpoolStop.connect(self.SpoolStopped)
+            self.spooler.StartSpool()
+        except:
+            self.spooler.abort()
+            raise
         
         self.onSpoolStart.send(self)
         
@@ -362,4 +450,45 @@ class SpoolController(object):
         # make sure our analysis launchers have a chance to finish their job before exiting
         while not self._analysis_launchers.empty():
             self._analysis_launchers.get().join()
+            
+
+
+class SpoolControllerWrapper(object):
+    def __init__(self, spool_controller):
+        self.spool_controller = spool_controller # type: SpoolController
+
+    @webframework.register_endpoint('/info', output_is_json=False)
+    def info(self):
+        return self.spool_controller.get_info()
+
+    @webframework.register_endpoint('/info_longpoll', output_is_json=False)
+    def info_longpoll(self):
+        with self.spool_controller._status_changed_condition:
+            return self.spool_controller.get_info()
+
+    @webframework.register_endpoint('/settings', output_is_json=False)
+    def settings(self, body):
+        import json
+        try:
+            self.spool_controller.update_settings(json.loads(body))
+            return 'OK'
+        except:
+            logger.exception('Error setting spool controller settings')
+            return 'Failure'
+
+    @webframework.register_endpoint('/stop_spooling', output_is_json=False)
+    def stop_spooling(self):
+        self.spool_controller.StopSpooling()
+        return 'OK'
+
+    @webframework.register_endpoint('/start_spooling', output_is_json=False)
+    def start_spooling(self, filename=None, max_frames=sys.maxsize):
+        self.spool_controller.StartSpooling(fn=filename, maxFrames=max_frames)
+        return 'OK'
+        
+    
+        
+    
+    
+    
 

@@ -405,6 +405,7 @@ class MyApp(wx.App):
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
         op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
+        op.add_option( '--test3d', dest='test3d', help="Show a 3d test image", action="store_true", default=False)
         op.add_option('-d', '--metadata', dest='metadata', help="Load image with specified metadata file", default=None)
         op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
         op.add_option('-r', '--recipe', dest='recipe_filename', help='Recipe to load', default=None)
@@ -419,6 +420,10 @@ class MyApp(wx.App):
             if options.test:
                 import pylab
                 im = ImageStack(pylab.randn(100,100))
+            elif options.test3d:
+                import numpy as np
+                from scipy import ndimage
+                im = ImageStack(ndimage.gaussian_filter(np.random.rand(100,100,100, 2), [20, 20, 20, 0]))
             elif len (args) > 0:
                 im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
             else:

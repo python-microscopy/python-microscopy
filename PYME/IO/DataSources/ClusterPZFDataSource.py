@@ -111,7 +111,8 @@ class DataSource(BaseDataSource):
     def getMetadata(self):
         return self.mdh
 
-    def isComplete(self):
+    @property
+    def is_complete(self):
         #TODO - add check to see if we have an updated number of frames
         return clusterIO.exists(self.eventFileName, self.clusterfilter)
  

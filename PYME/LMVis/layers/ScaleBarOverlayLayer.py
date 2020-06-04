@@ -66,9 +66,9 @@ class ScaleBarOverlayLayer(OverlayLayer):
                 view_size_x = gl_canvas.xmax - gl_canvas.xmin
                 view_size_y = gl_canvas.ymax - gl_canvas.ymin
 
-                sb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0]
+                sb_ur_x = -gl_canvas.view.translation[0] + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0]
                 #sb_ur_y = - gl_canvas.yc + gl_canvas.ymax - self.get_offset()[1] * view_size_y / gl_canvas.Size[1]
-                sb_ur_y = -gl_canvas.yc + gl_canvas.ymin + self.get_offset()[1] * view_size_y / gl_canvas.Size[1]
+                sb_ur_y = -gl_canvas.view.translation[1] + gl_canvas.ymin + self.get_offset()[1] * view_size_y / gl_canvas.Size[1]
                 sb_depth = self._scale_bar_depth * view_size_y / gl_canvas.Size[1]
 
                 glDisable(GL_LIGHTING)

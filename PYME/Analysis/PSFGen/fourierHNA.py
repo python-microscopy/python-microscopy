@@ -21,9 +21,9 @@
 ##################
 """generate a phase ramp psf unp.sing fourier optics"""
 #from pylab import *
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
-from pylab import ifftshift, ifftn, fftn, fftshift
+from scipy.fftpack import ifftshift, ifftn, fftn, fftshift
 import warnings
 
 import PYME.misc.fftw_compat as fftw3f

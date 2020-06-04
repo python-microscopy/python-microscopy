@@ -920,7 +920,7 @@ class Measurements(wx.Panel):
         slx, sly, slz = o
         
         X, Y, Z = np.ogrid[slx, sly, slz]
-        vs = (1e3*self.image.mdh['voxelsize.x'], 1e3*self.image.mdh['voxelsize.y'],1e3*self.image.mdh['voxelsize.z'])
+        vs = self.image.voxelsize
         
         #return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.data[slx, sly, slz, j].min(), 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]

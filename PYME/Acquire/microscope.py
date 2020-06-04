@@ -22,12 +22,12 @@
 ##################
 
 #imports for timing
-import requests
-import tables
-import numpy as np
-import yaml
+#import requests
+#import tables
+#import numpy as np
+#import yaml
 
-import wx
+#import wx
 #from PYME.Acquire import previewaquisator as previewaquisator
 from PYME.Acquire.frameWrangler import FrameWrangler
 
@@ -54,6 +54,8 @@ import re
 
 import logging
 logger = logging.getLogger(__name__)
+
+from contextlib import contextmanager
 
 #class DummyJoystick(object):
 #    def enable(*args, **kwargs):
@@ -400,29 +402,34 @@ class microscope(object):
                 res[k] = (p.GetMax(c)*m,p.GetMin(c)*m)
 
         return res
+    
+    @property
+    @contextmanager
+    def settingsDB(self):
+        fstub = os.path.split(__file__)[0]
+        dbfname = os.path.join(fstub, 'PYMESettings.db')
+    
+        settingsDB = sqlite3.connect(dbfname, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        #self.settingsDB.isolation_level = None
+        yield(settingsDB)
+
+        settingsDB.commit()
+        settingsDB.close()
         
 
     def _OpenSettingsDB(self):
-        #create =  not os.path.exists('PYMESettings.db')
-        fstub = os.path.split(__file__)[0]
-        dbfname = os.path.join(fstub, 'PYMESettings.db')
-
-        self.settingsDB = sqlite3.connect(dbfname, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
-        self.settingsDB.isolation_level = None
-
-        tableNames = [a[0] for a in self.settingsDB.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
-
-        if not 'CCDCalibration2' in tableNames:
-            self.settingsDB.execute("CREATE TABLE CCDCalibration2 (time timestamp, temperature integer, serial integer, nominalGains ndarray, trueGains ndarray)")
-        if not 'VoxelSizes' in tableNames:
-            self.settingsDB.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
-        if not 'VoxelSizeHistory2' in tableNames:
-            self.settingsDB.execute("CREATE TABLE VoxelSizeHistory2 (time timestamp, sizeID INTEGER, camSerial INTEGER)")
-        if not 'StartupTimes' in tableNames:
-            self.settingsDB.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
-            self.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
-            
-        self.settingsDB.commit()
+        with self.settingsDB as conn:
+            tableNames = [a[0] for a in conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
+    
+            if not 'CCDCalibration2' in tableNames:
+                conn.execute("CREATE TABLE CCDCalibration2 (time timestamp, temperature integer, serial integer, nominalGains ndarray, trueGains ndarray)")
+            if not 'VoxelSizes' in tableNames:
+                conn.execute("CREATE TABLE VoxelSizes (ID INTEGER PRIMARY KEY, x REAL, y REAL, name TEXT)")
+            if not 'VoxelSizeHistory2' in tableNames:
+                conn.execute("CREATE TABLE VoxelSizeHistory2 (time timestamp, sizeID INTEGER, camSerial INTEGER)")
+            if not 'StartupTimes' in tableNames:
+                conn.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
+                conn.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
 
     def GetPixelSize(self):
         """Get the (sample space) pixel size for the current camera
@@ -433,11 +440,19 @@ class microscope(object):
         pixelsize : tuple
             the pixel size in the x and y axes, in um
         """
-        currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
-        if not currVoxelSizeID is None:
-            voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
-            
-            return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
+        with self.settingsDB as conn:
+            currVoxelSizeID = conn.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
+            if not currVoxelSizeID is None:
+                voxx, voxy = conn.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+                
+                return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
+            elif self.cam.__class__.__name__ == 'FakeCamera':
+                # read voxel size from directly from our simulated camera
+                logger.info('Reading voxel size directly from simulated camera')
+                vx_um = (self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
+                vy_um = (self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
+                return vy_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
+                    
 
     def GenStartMetadata(self, mdh):
         """Collects the metadata we want to record at the start of a sequence
@@ -454,6 +469,7 @@ class microscope(object):
             mdh.setEntry('voxelsize.y', voxy)
             mdh.setEntry('voxelsize.units', 'um')
         except TypeError:
+            logger.error('No pixel size setting available for current camera - please configure the pixel size')
             pass
 
         for p in self.piezos:
@@ -492,8 +508,9 @@ class microscope(object):
         y : float
             the pixelsize along the y axis in um
         """
-        self.settingsDB.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
-        self.settingsDB.commit()
+        with self.settingsDB as conn:
+            conn.execute("INSERT INTO VoxelSizes (name, x, y) VALUES (?, ?, ?)", (name, x, y))
+        
         
 
     def SetVoxelSize(self, voxelsizename, camName=None):
@@ -513,10 +530,11 @@ class microscope(object):
             cam = self.cam
         else:
             cam = self.cameras[camName]
-            
-        voxelSizeID = self.settingsDB.execute("SELECT ID FROM VoxelSizes WHERE name=?", (voxelsizename,)).fetchone()[0]
-        self.settingsDB.execute("INSERT INTO VoxelSizeHistory2 VALUES (?, ?, ?)", (datetime.datetime.now(), voxelSizeID, cam.GetSerialNumber()))
-        self.settingsDB.commit()
+
+        with self.settingsDB as conn:
+            voxelSizeID = conn.execute("SELECT ID FROM VoxelSizes WHERE name=?", (voxelsizename,)).fetchone()[0]
+            conn.execute("INSERT INTO VoxelSizeHistory2 VALUES (?, ?, ?)", (datetime.datetime.now(), voxelSizeID, cam.GetSerialNumber()))
+     
 
 
     def satCheck(self, source, **kwargs): # check for saturation
@@ -525,6 +543,8 @@ class microscope(object):
         
         TODO: could use a rewrite / new inspection.        
         """
+        import wx
+        
         if not 'shutterOpen' in dir(self.cam):
             return
         im = source.currentFrame
@@ -620,7 +640,7 @@ class microscope(object):
         warnings.warn(".pa is deprecated, please use .frameWrangler instead", DeprecationWarning)
         return self.frameWrangler
     
-    def startFrameWrangler(self):
+    def startFrameWrangler(self, event_loop=None):
         """Start the frame wrangler. Gets called during post-init phase of aquiremainframe.
         
         """
@@ -630,7 +650,7 @@ class microscope(object):
         except AttributeError:
             pass
         
-        self.frameWrangler = FrameWrangler(self.cam)
+        self.frameWrangler = FrameWrangler(self.cam, event_loop=event_loop)
         self.frameWrangler.HardwareChecks.extend(self.hardwareChecks)
         self.frameWrangler.Prepare()
 
@@ -893,7 +913,7 @@ class microscope(object):
                                     lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
         self.state.registerHandler('Positioning.%s_target' % axis_name,
-                                       lambda: units_um*multiplier*piezo.GetTargetPos(channel))
+                                       lambda: units_um*multiplier*piezo.GetTargetPos(channel)) #FIXME - target position does not belong in state ---
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """
@@ -957,4 +977,5 @@ class microscope(object):
         return roi_offset_x, roi_offset_y
 
     def __del__(self):
-        self.settingsDB.close()
+        pass
+        #self.settingsDB.close()

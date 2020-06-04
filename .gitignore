@@ -5,6 +5,7 @@ syntax: glob
 *.db
 *~
 */build/*
+*/*/build/*
 build\*
 build/*
 */_build/*
@@ -40,3 +41,11 @@ PYME/experimental/_treap.c
 PYME/experimental/_triangle_mesh.c
 PYME/IO/buffer_helpers.c
 PYME/Deconv/fftw_wisdom
+PYME/Analysis/points/traveling_salesperson/two_opt_utils.c
+pyme-bootstrap/node_modules/*
+*64.pkg
+tests/assets/*
+tests/cov_html/*
+tests/*.html
+fftw_wisdom.pkl
+*.css.map

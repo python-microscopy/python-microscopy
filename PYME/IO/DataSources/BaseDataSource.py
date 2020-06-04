@@ -53,6 +53,22 @@ class BaseDataSource(object):
         """The 4D shape of the datasource"""
         #if self.type == 'DataSource':
         return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
+    
+    @property
+    def is_complete(self):
+        """
+        For datasources which may be opened before spooling is finished.
+        
+        Over-ridden in derived classes (currently only ClusterPZFDataSource)
+        
+        Returns
+        -------
+        
+        is_complete : bool
+            has spooling of this series finished
+
+        """
+        return True
         
     def getSlice(self, ind):
         """Return the nth 2D slice of the DataSource where the higher dimensions
@@ -88,7 +104,11 @@ class BaseDataSource(object):
         #print keys
         for i in range(len(keys)):
             if not isinstance(keys[i], slice):
-                keys[i] = slice(keys[i],keys[i] + 1)
+                if keys[i] == -1:
+                    #special case for -1 indexing
+                    keys[i] = slice(-1, None)
+                else:
+                    keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData
         self.oldSlice = keys

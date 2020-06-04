@@ -161,7 +161,9 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
 
-    # FIXME - do we need the half pixel offset
+    # Gauss2D expects coordinates for pixel centres
+    # FIXME - do we need the half pixel offset (this would be correct if localizations were referenced to top-left of
+    # raw image, but they aren't - they are referenced to the pixel centres).
     X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize) + 0.5*pixelSize
     Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize) + 0.5*pixelSize
     

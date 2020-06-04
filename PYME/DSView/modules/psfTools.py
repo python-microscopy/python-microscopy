@@ -170,7 +170,7 @@ class CRBViewPanel(wx.Panel):
             d = self.image.data[:,:,:,0].squeeze()
             I = d[:,:,int(d.shape[2]/2)].sum()
 
-            vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+            vs = self.image.voxelsize_nm
 
             #print 'fi'
             FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
@@ -178,10 +178,10 @@ class CRBViewPanel(wx.Panel):
             self.crb = cramerRao.CalcCramerReoZ(FI)
             #print 'crbd'
 
-            z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+            z_ = np.arange(d.shape[2])*vs.z
             self.z_ = z_ - z_.mean()
 
-            ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs[0], strength=2)
+            ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs.x, strength=2)
             I = ps_as[:,:,int(ps_as.shape[2]/2)].sum()
             self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
 
@@ -266,14 +266,16 @@ class PSFTools(HasTraits):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        z_ = np.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
+        
+        vs = self.image.voxelsize_nm
+        z_ = np.arange(self.image.data.shape[2])*vs.z
         z_ -= z_.mean()  
         
         self.configure_traits(kind='modal')
         
         #pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
 
-        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, vs.x, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
                 
         
         pylab.figure()
@@ -299,6 +301,11 @@ class PSFTools(HasTraits):
         from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
+            
         import json
         from PYME.Analysis.PSFEst import extractImages
         import wx
@@ -461,7 +468,7 @@ class PSFTools(HasTraits):
         d = self.image.data[:,:,:]
         I = d[:,:,d.shape[2]/2].sum()
         
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        vs = np.array(self.image.voxelsize_nm)
         
         #print 'fi'        
         FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
@@ -470,7 +477,7 @@ class PSFTools(HasTraits):
         #print 'crbd'
         
         import pylab
-        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+        z_ = np.arange(d.shape[2])*vs[2]
         z_ = z_ - z_.mean()
         
         print('p')
@@ -499,7 +506,7 @@ class PSFTools(HasTraits):
         import numpy as np
         
         
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        vs = np.array(self.image.voxelsize_nm)
         
         zf = self.image.data.shape[2]/2
         dz = 500/vs[2]

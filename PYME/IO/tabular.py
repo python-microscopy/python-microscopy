@@ -128,6 +128,9 @@ class TabularBase(object):
             if metadata is not None:
                 f.updateMetadata(metadata)
                 
+            #wait until data is written
+            f.flush()
+                
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
     
@@ -202,6 +205,15 @@ class FitResultsSource(TabularBase):
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
         
+    def _set_transkeys(self):
+        self.transkeys = {'A': 'fitResults_A', 'x': 'fitResults_x0',
+                          'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
+                          'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 'error_z': 'fitError_z0', 't': 'tIndex'}
+    
+        for k in list(self.transkeys.keys()):
+            if not self.transkeys[k] in self._keys:
+                self.transkeys.pop(k)
+        
     def setResults(self, fitResults, sort=True):
         self.fitResults = fitResults
 
@@ -211,14 +223,10 @@ class FitResultsSource(TabularBase):
 
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
+        
         #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0','t':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        self._set_transkeys()
+        
 
 
     def keys(self):
@@ -304,13 +312,17 @@ class BaseHDFSource(FitResultsSource):
         
         if isinstance(h5fFile, tables.file.File):
             try:
-                self.fitResults = getattr(h5fFile.root, tablename)[:]
+                fr = getattr(h5fFile.root, tablename)
+                self.fitResults = fr[:]
+                
+                #allow access using unnested original names
+                self._keys = unNestNames(fr.description._v_nested_names)
+
             except (AttributeError, tables.NoSuchNodeError):
                 logger.exception('Was expecting to find a "%s" table' % tablename)
                 raise
     
-            #allow access using unnested original names
-            self._keys = unNestNames(getattr(h5fFile.root, tablename).description._v_nested_names)
+            
         
         else:
             if isinstance(h5fFile, h5rFile.H5RFile):
@@ -341,18 +353,15 @@ class H5RSource(BaseHDFSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         BaseHDFSource.__init__(self, h5fFile, tablename)
-        #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        
+        # set up column aliases
+        self._set_transkeys()
 
         #sort by time
         if 'tIndex' in self._keys:
-            self.fitResults.sort(order='tIndex')
+            I = self.fitResults['tIndex'].argsort()
+            self.fitResults = self.fitResults[I]
+            #self.fitResults.sort(order='tIndex')
         
 
     def getInfo(self):
@@ -382,7 +391,8 @@ class HDFSource(H5RSource):
 
         #sort by time
         if 'tIndex' in self._keys:
-            self.fitResults.sort(order='tIndex')
+            I = self.fitResults['tIndex'].argsort()
+            self.fitResults = self.fitResults[I]
 
     def keys(self):
         return self._keys #+ self.transkeys.keys()

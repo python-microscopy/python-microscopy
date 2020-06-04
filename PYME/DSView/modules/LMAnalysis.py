@@ -39,19 +39,27 @@ from PYME.LMVis import progGraph as progGraph
 from PYME.localization import MetaDataEdit as mde
 from PYME.localization import remFitBuf
 from PYME.ui.mytimer import mytimer
-
-try:
-    from PYME.cluster import HTTPTaskPusher
-
-    #test for a running task distributor
-    distribURI = HTTPTaskPusher._getTaskQueueURI(0)
-    NEW_STYLE_DISTRIBUTION=True
-except:
-    NEW_STYLE_DISTRIBUTION=False
+import sys
 
 import logging
-
 logger = logging.getLogger(__name__)
+
+if sys.version_info.major >= 3:
+    # always use new style on py3
+    NEW_STYLE_DISTRIBUTION = True
+else:
+    # use new style on py2 if we detect a running ruleserver
+    # TODO - distinguish between local and remote ruleservers
+    try:
+        from PYME.cluster import distribution
+        
+        #test for a running task distributor
+        distribURIs = distribution.getDistributorInfo()
+        assert(distribURIs) # fail if we have an empty dictionary
+        NEW_STYLE_DISTRIBUTION = True
+    except:
+        logger.exception('Did not find ruleserver, falling back to Pyro task queue')
+        NEW_STYLE_DISTRIBUTION = False
 
 debug = True
 
@@ -92,7 +100,7 @@ def _verifyClusterResultsFilename(resultsFilename):
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, fdialog.GetValue().encode())
+            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 
@@ -295,6 +303,13 @@ class AnalysisController(object):
         self.onMetaDataChange = dispatch.Signal()
 
         self.tq = tq
+        
+        if self.tq is None:
+            #try and find a task queue
+            try:
+                self._checkTQ()
+            except:
+                pass
 
 
     def pushImages(self, image):
@@ -311,16 +326,15 @@ class AnalysisController(object):
 
     def pushImagesCluster(self, image):
         from PYME.cluster import HTTPRulePusher
-        #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
+
+        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.filename))
         logging.debug('Results file: ' + resultsFilename)
 
-        #debugPrint('Results file = %s' % resultsFilename)
 
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
+        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.filename,
                                                     metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
@@ -328,7 +342,7 @@ class AnalysisController(object):
 
         debugPrint('Queue created')
 
-        #self.onImagesPushed.send(self)
+        self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):
@@ -569,8 +583,8 @@ class LMAnalyser2(object):
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
         mdh = self.analysisController.analysisMDH
-        voxx = 1e3*mdh.getEntry('voxelsize.x')
-        voxy = 1e3*mdh.getEntry('voxelsize.y')
+        voxx, voxy, _ = mdh.voxelsize_nm
+        
         self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
@@ -591,9 +605,10 @@ class LMAnalyser2(object):
         dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
         
         cand = dist.argmin()
-        
-        self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
-        self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
+
+        vs = self.image.voxelsize_nm
+        self.dsviewer.do.xp = xp/(vs.x)
+        self.dsviewer.do.yp = yp/(vs.y)
         self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
@@ -630,12 +645,17 @@ class LMAnalyser2(object):
         self.resultsMdh = self.analysisController.analysisMDH       
         
         self.SetFitInfo()
+        
+    @property
+    def use_cluster(self):
+        logger.debug('use_cluster: newStyle=%s, tq=%s' % (self.newStyleTaskDistribution, self.analysisController.tq))
+        return self.newStyleTaskDistribution and (self.image.filename.upper().startswith('PYME-CLUSTER') or (self.analysisController.tq is None))
 
     def OnGo(self, event=None):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
+        if self.use_cluster:
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
@@ -651,7 +671,7 @@ class LMAnalyser2(object):
         self.queueName = self.analysisController.queueName
         self.resultsMdh = self.analysisController.resultsMdh
 
-        self.timer.WantNotification.append(self.analRefresh)
+        self.timer.WantNotification.append(self.refresh_analysis)
         self.analysisSettingsView.bGo.Enable(False)
         
         self.analysisSettingsView.foldAnalPanes = True
@@ -686,50 +706,69 @@ class LMAnalyser2(object):
         #for backwards compatibility
         return self.analysisController.tq
 
-    def analRefresh(self):
-        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
-        if newNumAnalysed > self.numAnalysed:
-            self.numAnalysed = newNumAnalysed
-            newResults = self.tq.getQueueData(self.queueName, 'FitResults', len(self.fitResults))
-            if len(newResults) > 0:
-                if len(self.fitResults) == 0:
-                    self.fitResults = newResults
-                    self.ds = tabular.FitResultsSource(self.fitResults)
-                    self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
-                    self.dsviewer.pipeline.mdh = self.resultsMdh
-                    try:
-                        self.dsviewer.LMDisplay.SetFit()
-                    except:
-                        pass
-                else:
-                    self.fitResults = np.concatenate((self.fitResults, newResults))
-                    self.ds.setResults(self.fitResults)
-                    #self.dsviewer.pipeline.Rebuild()
-                    self.dsviewer.pipeline.recipe.prune_dependencies_from_namespace(['Localizations',], True)
-                    #logger.debug('Namespace keys (should just be Localizations): %s' % self.dsviewer.pipeline.recipe.namespace.keys())
-                    self.dsviewer.pipeline.recipe.invalidate_data()
-                    #self.dsviewer.pipeline.Rebuild()
-                    
-                
-                self.progPan.fitResults = self.fitResults
-
-                self.view.points = np.vstack((self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
-
-                self.numEvents = len(self.fitResults)
-                
-                try:
-                    self.dsviewer.LMDisplay.RefreshView()
-                except:
-                    pass
-
-        if (self.tq.getNumberOpenTasks(self.queueName) + self.tq.getNumberTasksInProgress(self.queueName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
-            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
-            self.dsviewer.statusbar.Refresh()
+    def refresh_analysis(self):
+        if self.use_cluster:
+            self._refresh_analysis_cluster()
+        else:
+            self._refresh_analysis_queue()
 
         self.progPan.draw()
         self.progPan.Refresh()
         self.dsviewer.Refresh()
         self.dsviewer.update()
+            
+    def _add_new_results(self, newResults):
+        if len(newResults) > 0:
+            if len(self.fitResults) == 0:
+                self.fitResults = newResults
+                self.ds = tabular.FitResultsSource(self.fitResults)
+                self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
+                self.dsviewer.pipeline.mdh = self.resultsMdh
+                try:
+                    self.dsviewer.LMDisplay.SetFit()
+                except:
+                    pass
+            else:
+                self.fitResults = np.concatenate((self.fitResults, newResults))
+                self.ds.setResults(self.fitResults)
+                self.dsviewer.pipeline.recipe.prune_dependencies_from_namespace(['Localizations', ], True)
+                self.dsviewer.pipeline.recipe.invalidate_data()
+        
+            self.progPan.fitResults = self.fitResults
+            self.view.points = np.vstack(
+                (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            self.numEvents = len(self.fitResults)
+        
+            try:
+                self.dsviewer.LMDisplay.RefreshView()
+            except:
+                pass
+    
+    def _refresh_analysis_queue(self):
+        newNumAnalysed = self.tq.getNumberTasksCompleted(self.queueName)
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            self._add_new_results(self.tq.getQueueData(self.queueName, 'FitResults', len(self.fitResults)))
+
+        if (self.tq.getNumberOpenTasks(self.queueName) + self.tq.getNumberTasksInProgress(self.queueName)) == 0 and 'SpoolingFinished' in self.image.mdh.getEntryNames():
+            self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
+            self.dsviewer.statusbar.Refresh()
+
+    def _refresh_analysis_cluster(self):
+        import requests
+        try:
+            # import cPickle on py2
+            import cPickle as pickle
+        except ImportError:
+            import pickle
+            
+        queueInfo = requests.get(self.analysisController.pusher.taskQueueURI + '/distributor/queues').json()['result']
+        newNumAnalysed = int(queueInfo[self.analysisController.pusher._ruleID]['tasksCompleted'])
+        if newNumAnalysed > self.numAnalysed:
+            self.numAnalysed = newNumAnalysed
+            newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
+            self._add_new_results(newResults)
+        
 
     def analysis_refresh_bruteforce(self):
         """Refresh points display from cluster-based analysis. This works in the crudest possible way by simply repeatedly
@@ -738,7 +777,7 @@ class LMAnalyser2(object):
         WARNING: This has potential performance implications as there wll be significant IO overhead to doing it this way!!!
                  Files should be closed when spooling is complete.
         
-        TODO: - Allow incremental update (as is done in analRefresh above). Will probably need modification of PYMEDataServer.
+        TODO: - Allow incremental update (as is done in refresh_analysis above). Will probably need modification of PYMEDataServer.
               - Stop updates when spooling is complete (HOW? Check file size?)
               - What is the effect of the caches in clusterIO? Do we actually get the updated file?
               - Make sure this only gets called at a reasonable rate.
@@ -896,8 +935,8 @@ class LMAnalyser2(object):
                 
                 
                     
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
+                vx, vy, _ = self.image.voxelsize_nm
+                
                 plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
                 
                 if 'startParams' in res.results.dtype.names:
@@ -937,8 +976,8 @@ class LMAnalyser2(object):
                 plt.xlim(0, d.shape[1])
                 plt.ylim(d.shape[0], 0)
                 
-                vx = 1e3*self.image.mdh['voxelsize.x']
-                vy = 1e3*self.image.mdh['voxelsize.y']
+                vx, vy, _ = self.image.voxelsize_nm
+                
                 plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
 

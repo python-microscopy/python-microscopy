@@ -240,24 +240,15 @@ class ColourRenderer(CurrentRenderer):
         imb = self._get_image_bounds(pixelSize, sliceThickness, *settings.get('zBounds', [None, None]))
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
-        if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
-            #a rendered image with information about the source ROI
-            voxx, voxy = 1e3 * mdh['Source.voxelsize.x'], 1e3 * mdh['Source.voxelsize.y']
+        ox, oy, oz = MetaDataHandler.origin_nm(mdh)
+        if not imb.z0 == 0:
+            # single plane in z stack
+            # FIXME - what is z for 3D fitting at a single focal plane? Check for pipeline['focus']==0 instead?
+            oz = 0
 
-            ox = (mdh['Source.Camera.ROIPosX'] - 1) * voxx + imb.x0
-            oy = (mdh['Source.Camera.ROIPosY'] - 1) * voxy + imb.y0
-            if 'Source.Positioning.PIFoc' in mdh.getEntryNames():
-                oz = mdh['Source.Positioning.PIFoc'] * 1e3
-            else:
-                oz = imb.z0
-        else:
-            ox = imb.x0
-            oy = imb.y0
-            oz = imb.z0
-
-        mdh['Origin.x'] = ox
-        mdh['Origin.y'] = oy
-        mdh['Origin.z'] = oz
+        mdh['Origin.x'] = ox + imb.x0
+        mdh['Origin.y'] = oy + imb.y0
+        mdh['Origin.z'] = oz + imb.z0
 
         colours = settings['colours']
         oldC = self.colourFilter.currentColour
@@ -328,8 +319,8 @@ class Histogram3DRenderer(HistogramRenderer):
 
     def genIm(self, settings, imb, mdh):
         mdh['Origin.z'] = settings['zBounds'][0]
-        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
-
+        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zSliceThickness'])
+        
 class DensityFitRenderer(HistogramRenderer):
     """3D histogram rendering"""
 

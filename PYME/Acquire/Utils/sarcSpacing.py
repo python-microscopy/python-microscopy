@@ -51,9 +51,11 @@ class SarcomereChecker:
         im = self.scope.frameWrangler.currentFrame
         F = (abs(pylab.fftshift(pylab.fftn(im - im.mean()))) + 1e-2).squeeze()
 
-        currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
-        if not currVoxelSizeID is None:
-            voxx, voxy = self.scope.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+        #currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
+        #if not currVoxelSizeID is None:
+        #    voxx, voxy = self.scope.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            
+        voxx, voxy = self.scope.getPixelSize()
 
         pylab.figure(2)
         pylab.clf()

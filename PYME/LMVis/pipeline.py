@@ -294,8 +294,6 @@ class Pipeline:
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
-        self.colour_mapper = None
-
         self.blobSettings = BlobSettings()
         self.objects = None
 
@@ -362,12 +360,14 @@ class Pipeline:
     #compatibility redirects
     @property
     def fluorSpecies(self):
-        warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        #warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        raise DeprecationWarning('Use colour_mapper.species_ratios instead')
         return self.colour_mapper.species_ratios
     
     @property
     def fluorSpeciesDyes(self):
-        warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        #warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        raise DeprecationWarning('Use colour_mapper.species_dyes instead')
         return self.colour_mapper.species_dyes
         
 
@@ -803,15 +803,30 @@ class Pipeline:
         from PYME.recipes.localisations import ProcessColour
         from PYME.recipes.tablefilters import FilterTable
         
-        self.colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
         #we keep a copy of this so that the colour panel can find it.
-        self.recipe.add_module(self.colour_mapper)
+        self.recipe.add_module(colour_mapper)
         self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
+        
+    @property
+    def colour_mapper(self):
+        """ Search for a colour mapper rather than use a hard coded reference - allows loading of saved pipelines with colour mapping"""
+        from PYME.recipes.localisations import ProcessColour
+        
+        # find ProcessColour instance(s) in the pipeline
+        mappers = [m for m in self.recipe.modules if isinstance(m, ProcessColour)]
+        
+        if len(mappers) > 0:
+            #return the first mapper we find
+            return mappers[0]
+        
+        else:
+            return None
 
     def OpenChannel(self, filename='', ds=None, channel_name='', **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
@@ -1033,6 +1048,43 @@ class Pipeline:
     @property
     def dtypes(self):
         return {k: str(self[k, :2].dtype) for k in self.keys()}
+    
+    def _repr_html_(self):
+        import jinja2
+        TEMPLATE = """
+        <h3> LMVis.pipeline.Pipeline viewing {{ pipe.filename }} </h3>
+        <br>
+        {{ recipe_svg }}
+        <b> Data Sources: </b> {% for k in  pipe.dataSources.keys() %} {% if k != pipe.selectedDataSourceKey %} {{ k }} - [{{ pipe.dataSources[k]|length }} evts], {% endif %} {% endfor %} <b> {{ pipe.selectedDataSourceKey }} - [{{ pipe.dataSources[pipe.selectedDataSourceKey]|length }} evts]</b>
+        <br>
+        <b> Columns: </b> {{ grouped_keys }}
+        """
+        
+        try:
+            svg = self.recipe.to_svg()
+        except:
+            svg = None
+            
+        fr_keys = []
+        fe_keys = []
+        sl_keys = []
+        st_keys = []
+        
+        for k in self.keys():
+            if k.startswith('fitResults'):
+                fr_keys.append(k)
+            elif k.startswith('fitError'):
+                fe_keys.append(k)
+            elif k.startswith('slicesUsed'):
+                sl_keys.append(k)
+            else:
+                st_keys.append(k)
+                
+        grouped_keys = sorted(st_keys) + sorted(fr_keys) + sorted(fe_keys) + sorted(sl_keys)
+        
+        return jinja2.Template(TEMPLATE).render(pipe=self, recipe_svg = svg, grouped_keys=', '.join(grouped_keys))
+
+        
     
 
 

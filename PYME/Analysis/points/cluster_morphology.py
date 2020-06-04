@@ -47,14 +47,17 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
     try:
         roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
 
-        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
-        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
+        vs = points.mdh.voxelsize_nm
+        p_ox = roi_x0 * vs.x
+        p_oy = roi_y0 * vs.y
     except AttributeError:
         raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 
-    pixX = np.round((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
-    pixY = np.round((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
-    pixZ = np.round((points['z'] - im_oz) / label_image.sliceSize).astype('i')
+    # Image origin is referenced to top-left corner of pixelated image.
+    # FIXME - localisations are currently referenced to centre of raw pixels
+    pixX = np.floor((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
+    pixY = np.floor((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
+    pixZ = np.floor((points['z'] - im_oz) / label_image.sliceSize).astype('i')
 
     label_data = label_image.data
 
@@ -175,7 +178,6 @@ def measure_3d(x, y, z, output=None):
     output['sigma_z'] = np.sqrt(zz_c.sum() / (N - 1))
     
     #radius of gyration
-    # TODO - can we kill the camelCase here?
     output['gyrationRadius'] = np.sqrt(np.mean(xx_c + yy_c + zz_c))
 
     #principle axes
