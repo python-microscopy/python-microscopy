@@ -727,7 +727,8 @@ class Pipeline:
         self.filename = filename
         
         if ds is None:
-            from PYME.IO import unifiedIO
+            from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
+            
             # load from file(/cluster, downloading a copy of the file if needed)
             with unifiedIO.local_or_temp_filename(filename) as fn:
                 # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the

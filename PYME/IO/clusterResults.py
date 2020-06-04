@@ -136,11 +136,12 @@ def format_results(data_raw, URI=''):
             data = data_raw.encode()
         elif hasattr(data_raw, 'to_JSON'):
             data = data_raw.to_JSON().encode()
-        elif isinstance(data_raw, np.ndarray):
-            from PYME.IO.tabular import unnest_recarray_to_json
-            data = unnest_recarray_to_json(data_raw).encode()
         else:
             import pandas as pd
+            if isinstance(data_raw, np.ndarray):
+                from PYME.IO.tabular import unnest_dtype
+                data_raw = data_raw.view(unnest_dtype(data_raw.dtype))
+            
             df = pd.DataFrame(data_raw)
             data = df.to_json().encode()
     

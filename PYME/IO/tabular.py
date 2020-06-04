@@ -54,53 +54,6 @@ def deprecated_name(name):
     
     return _dec
 
-def get_unnested(fit_results, unnested_key, sl=slice(None)):
-    k = unnested_key.split('_')
-
-    if len(k) == 1:  # TODO: evaluate why these are cast as floats
-        return fit_results[k[0]][sl]
-    elif len(k) == 2:
-        return fit_results[k[0]][k[1]][sl]
-    elif len(k) == 3:
-        return fit_results[k[0]][k[1]][k[2]][sl]
-    else:
-        raise KeyError("Don't know about deeper nesting yet")
-
-def unnest_recarray(array, return_slice=slice(None)):
-    """
-    Flatten a FitResults-type structured array, such that we can easily convert to json, etc
-    Parameters
-    ----------
-    array: tables.table.Table or numpy.ndarray
-        array of whatever structure, keys will be unnested splitting on underscores, and all columns must be the same
-        length.
-    return_slice: slice
-        slice object to only return part of a datasource, if desired.
-
-    Returns
-    -------
-    a: numpy.ndarray
-        flattened numpy array with original data types for each column and names unnested with underscores.
-
-    """
-    a = array[:] if type(array) == tables.table.Table else array
-    keys, types = unNestDtype(a.dtype.descr), unnest_dtype(a.dtype.descr)
-    unnested = np.empty(len(a), dtype=list(zip(keys, types)))
-    for k in keys:
-        unnested[k] = get_unnested(a, k, return_slice)
-    return unnested
-
-def unnest_recarray_to_json(array, keys=None, return_slice=slice(None)):
-    import json
-    keys = keys if keys != None else unNestDtype(array.dtype.descr)
-    print(keys)
-    d = {}
-    for k in keys:
-        d[k] = get_unnested(array, k, return_slice).tolist()
-    return json.dumps(d)
-    
-
-
 class TabularBase(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
@@ -195,6 +148,8 @@ class TabularBase(object):
         return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
 
     def to_JSON(self, keys=None, return_slice=slice(None)):
+        # TODO - do we actually use the slice argument? Should the signature better match to_hdf, to_recarray, toDataFrame?
+        # TODO - is this redundant when compared to .toDataFrame().to_json()
         import json
 
         d= {}
@@ -253,14 +208,24 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-def unnest_dtype(descr):
+def unnest_dtype(dtype, parent=''):
+    if isinstance(dtype, np.dtype):
+        descr = dtype.descr
+    else:
+        descr = dtype
+        
     dt = []
     for node in descr:
-        if isinstance(node, tuple) and len(node) == 2 and isinstance(node[1], str):
-            dt.append(node[1])
+        if isinstance(node, tuple) and len(node) == 2:
+            name, t = node
+            if isinstance(t, str):
+                dt.append((parent + name, t))
+            else:
+                dt += unnest_dtype(node[1], parent=parent + name + '_')
         else:
-            dt += unnest_dtype(node[1])
-    return dt
+            raise RuntimeError('unexpected dtype descr: %s' % descr)
+        
+    return np.dtype(dt)
 
 @deprecated_name('fitResultsSource')
 class FitResultsSource(TabularBase):
@@ -319,12 +284,12 @@ class FitResultsSource(TabularBase):
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
-    def to_JSON(self, keys=None, return_slice=slice(None)):
-        return unnest_fitresults_recarray_to_json(self.fitResults, keys, return_slice)
-
 
 
 class _BaseHDFSource(FitResultsSource):
+    ''' Copy of the original BaseHDFSource which used pytables directly rather than h5rFile
+        Currently unused, but kept for historical reasons.
+    '''
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
