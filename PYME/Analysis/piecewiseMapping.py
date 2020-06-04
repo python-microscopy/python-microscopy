@@ -21,12 +21,26 @@
 #
 ##################
 
-from numpy import *
 import numpy as np
-import sys
-import six
 
-def timeToFrames(t, events, mdh):
+def times_to_frames(t, events, mdh):
+    """
+    Use events and metadata to convert time-stamps to frame numbers
+
+    Parameters
+    ----------
+    t: ndarray
+        times [seconds since the epoch] to map to frame numbers
+    events: ndarray
+        TODO - if events-related type fixing goes through, use events helpers to accept list here as well
+    mdh: PYME.IO.MetaDataHandler
+        Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
+
+    Returns
+    -------
+    fr: ndarray
+        array of frame numbers corresponding to `t` input
+    """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
@@ -39,15 +53,15 @@ def timeToFrames(t, events, mdh):
     #sf = array([('%d' % iinfo(int32).max, 'end', startTime + 60*60*24*7)], dtype=events.dtype)
     sf = np.empty(1, dtype=events.dtype)
     sf['EventName'] = 'end'
-    sf['EventDescr'] = '%d' % iinfo(int32).max
+    sf['EventDescr'] = '%d' % np.iinfo(np.int32).max
     sf['Time'] = startTime + 60*60*24*7
 
     #get events corresponding to aquisition starts
-    startEvents = hstack((se, events[events['EventName'] == b'StartAq'], sf))
+    startEvents = np.hstack((se, events[events['EventName'] == b'StartAq'], sf))
 
     #print startEvents
 
-    sfr = array([int(e['EventDescr'].decode('ascii')) for e in startEvents])
+    sfr = np.array([int(e['EventDescr'].decode('ascii')) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
     
@@ -67,14 +81,31 @@ def timeToFrames(t, events, mdh):
     
     if np.isscalar(fr):
         if si < len(sfr):
-            return minimum(fr, sfr[si])
+            return np.minimum(fr, sfr[si])
     else:
         M = (si < len(sfr))
-        fr[M] = minimum(fr[M], sfr[si[M]]) 
+        fr[M] = np.minimum(fr[M], sfr[si[M]])
 
         return fr
 
-def framesToTime(fr, events, mdh):
+def frames_to_times(fr, events, mdh):
+    """
+    Use events and metadata to convert frame numbers to seconds
+
+    Parameters
+    ----------
+    fr: ndarray
+        frame numbers to map to time (in seconds since the epoch), e.g. localization data_souce['t']
+    events: ndarray
+        TODO - if events-related type fixing goes through, use events helpers to accept list here as well
+    mdh: PYME.IO.MetaDataHandler
+        Metadata handler with 'Camera.CycleTime' and 'StartTime' entries
+
+    Returns
+    -------
+    t: ndarray
+        times [seconds since the epoch] to map to frame numbers
+    """
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
@@ -85,11 +116,11 @@ def framesToTime(fr, events, mdh):
     se['Time'] = startTime
 
     #get events corresponding to aquisition starts
-    startEvents = hstack((se, events[events['EventName'] == b'StartAq']))
+    startEvents = np.hstack((se, events[events['EventName'] == b'StartAq']))
     #print(events)
     #print(startEvents)
 
-    sfr = array([int(e['EventDescr'].decode()) for e in startEvents])
+    sfr = np.array([int(e['EventDescr'].decode()) for e in startEvents])
 
     si = sfr.searchsorted(fr, side = 'right')
     return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
@@ -126,7 +157,7 @@ class piecewiseMap:
 #        yp += y0 * (xp >= x0) * (xp < x)
 
         inds = self.xvals.searchsorted(xp, side='right')
-        yp  = self.yvals[maximum(inds-1, 0)]
+        yp  = self.yvals[np.maximum(inds-1, 0)]
         yp[inds == 0] = self.y0
 
         return yp
@@ -144,18 +175,33 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
             x.append(e['Time'])
             y.append(float(ed[dataPos]))
             
-    x = array(x)
-    y = array(y)
+    x = np.array(x)
+    y = np.array(y)
     
     I = np.argsort(x)
     
     x = x[I]
     y = y[I]
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 
 def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1):
+    """
+    Parameters
+    ----------
+    events:
+    metadata:
+    x0: why?
+    y0:
+    eventName:
+    dataPos: int
+        position in comma-separated event['EventDesc'] str of the float which makes 'y' for this mapping
+
+    Returns
+    -------
+    map: piecewiseMap
+    """
     x = []
     y = []
 
@@ -167,8 +213,8 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
         x.append(e['Time'])
         y.append(float(e['EventDescr'].decode('ascii').split(', ')[dataPos]))
         
-    x = array(x)
-    y = array(y)
+    x = np.array(x)
+    y = np.array(y)
         
     I = np.argsort(x)
     
@@ -177,7 +223,47 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
 
     #print array(x) - metadata.getEntry('StartTime'), timeToFrames(array(x), events, metadata)
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+
+def bool_map_between_events(events, metadata, trigger_high, trigger_low, default=False):
+    """
+    generate a TTL output mapping [input time in units of frames] using events to trigger high/low
+
+    Parameters
+    ----------
+    events: list or structured ndarray
+        acquisition events
+    metadata: PYME.IO.MetaDataHandler.MDHandlerBase
+        metadata with 'Camera.CycleTime' and 'StartTime' entries
+    trigger_high: bytes
+        name of event to set output mapping high
+    trigger_low: bytes
+        name of event to set output mapping low
+    default: bool
+        start mapping low (False) or high (True) at t=0
+
+    Returns
+    -------
+    bool_map: piecewiseMap
+        callable mapping object
+    """
+    t, y = [], []
+
+    fps = metadata.getEntry('Camera.CycleTime')
+
+    for event in events:
+        if event['EventName'] == trigger_high:
+            t.append(event['Time'])
+            y.append(True)
+        elif event['EventName'] == trigger_low:
+            t.append(event['Time'])
+            y.append(False)
+
+    t = np.asarray(t)
+    y = np.asarray(y)
+    I = np.argsort(t)
+
+    return piecewiseMap(default, times_to_frames(t[I], events, metadata), y[I], fps, xIsSecs=False)
 
 def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0):
     x = []
@@ -190,10 +276,10 @@ def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'Pr
         x.append(e['Time'])
         y.append(float(e['EventDescr'].decode('ascii').split(', ')[dataPos]))
 
-    x = array(x)
-    y = array(y)
+    x = np.array(x)
+    y = np.array(y)
 
-    dy = diff(hstack(([y0], y)))
+    dy = np.diff(np.hstack(([y0], y)))
 
     for i in range(1, len(dy)):
         if dy[i] == 0:
@@ -202,5 +288,5 @@ def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'Pr
     y += backlash*(dy < 0)
 
 
-    return piecewiseMap(y0, timeToFrames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
