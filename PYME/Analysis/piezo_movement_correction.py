@@ -1,6 +1,9 @@
 import numpy as np
 from PYME.Analysis import piecewiseMapping as piecewise_mapping
 
+# TODO - this module has a lot of small functions which do very little - are they needed?
+# TODO - rename to something sensible and move (this is about event parsing, not analysis). Probably best refactored
+# at some point in the future along with some of the other event handling stuff. Maybe to PYME.IO.events??
 
 def flag_piezo_movement(frames, events, metadata):
     """
@@ -23,6 +26,7 @@ def flag_piezo_movement(frames, events, metadata):
 
     """
 
+    # FIXME - is this actually used anywhere?
     piezo_moving = map_piezo_moving(events, metadata)
     return piezo_moving(frames)
 
@@ -43,6 +47,7 @@ def map_piezo_moving(events, metadata):
         callable object returning True for input frame numbers where the piezo is not settled.
 
     """
+    # FIXME - is this actually used anywhere?
     return piecewise_mapping.bool_map_between_events(events, metadata, b'ProtocolFocus', b'PiezoOnTarget',
                                                      default=False)
 
@@ -64,7 +69,8 @@ def map_corrected_focus(events, metadata):
         callable function to return focus positions for each input frame number
 
     """
-    normalized_events = normalize_ontarget_events(events, metadata)
+    # FIXME - this is only used below in correct_target_positions - is it needed?
+    normalized_events = spoof_focus_events_from_ontarget(events, metadata)
     return piecewise_mapping.GeneratePMFromEventList(normalized_events, metadata, metadata['StartTime'],
                                                               metadata.getOrDefault('Protocol.PiezoStartPos', 0.))
 def correct_target_positions(frames, events, metadata):
@@ -90,7 +96,7 @@ def correct_target_positions(frames, events, metadata):
     focus_mapping = map_corrected_focus(events, metadata)
     return focus_mapping(frames)
 
-def normalize_ontarget_events(events, metadata):
+def spoof_focus_events_from_ontarget(events, metadata):
     """
     Generates a acquisition event array where events from (offset) piezo's with on-target events are spoofed to
     look like standard ProtocolFocus events.
@@ -113,7 +119,6 @@ def normalize_ontarget_events(events, metadata):
     there are PiezoOffsetUpdate events available to do so.
 
     """
-    # fixme - remove bytes junk from event dtype
     ontarget_times, ontarget_positions = [], []
     for event in events:
         if event['EventName'] == b'PiezoOnTarget':

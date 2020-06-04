@@ -336,6 +336,7 @@ class WavefrontVelocity(ModuleBase):
         
     
     def execute(self, namespace):
+        from skimage.measure import profile_line
         print('Calculating wavefront velocities')
         wavefronts = namespace[self.inputWavefronts]
         
@@ -397,7 +398,7 @@ class WavefrontVelocity(ModuleBase):
                 velocities[xp, yp, i] = vels[:,None]
                 
         
-        # from skimage.measure import profile_line
+        
         # for i in range(waves.shape[2]):
         #     print(i)
         #     if waves[:,:,i].max() > 0:
@@ -1311,6 +1312,7 @@ class DeconvolveMotionCompensating(Deconvolve):
         return self._decCache[decKey]
     
     def applyFilter(self, data, chanNum, frNum, im):
+        from PYME.Analysis import optic_flow
         d = np.atleast_3d(data.astype('f') - self.offset)
     
         #Pad the data (if desired)
@@ -1330,7 +1332,6 @@ class DeconvolveMotionCompensating(Deconvolve):
         #Get appropriate deconvolution object
         rmv = self.GetDec(d, im.voxelsize)
 
-        #from PYME.Analysis import optic_flow
         #mFr = min(frNum + 2, im.data.shape[2] -1)
         #if frNum < mFr:
         #    dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze().astype('f'), im.data[:,:,mFr, chanNum].squeeze().astype('f'),
@@ -1833,7 +1834,6 @@ class ResampleZ(ModuleBase):
         sorted_z_vals = z_vals[I]
         regular = []
         for ci in range(stack.data.shape[3]):
-            # fixme - simplify this once BaseDataSource indexing works better
             interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 

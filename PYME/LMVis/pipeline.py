@@ -113,27 +113,27 @@ def _add_eventvars_to_ds(ds, ev_mappings):
         z_focus = 1.e3 * zm(ds['t'])
         ds.addColumn('focus', z_focus)
 
-        # handle additional focus related events, if present
-        corrected_focus_mapping = ev_mappings.get('corrected_focus')
-        if corrected_focus_mapping:
-            ds.addColumn('ontarget_focus_correction', (1e3 * corrected_focus_mapping(ds['t'])) - ds['focus'])
-
         piezo_moving = ev_mappings.get('piezo_moving')
         if piezo_moving:
-            ds.addColumn('piezo_moving', piezo_moving(ds['t']))
+            ds.addColumn('piezoMoving', piezo_moving(ds['t']))
 
     xm = ev_mappings.get('xm', None)
     if xm:
         # todo - comment on why the -0.01??
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
-        # ds.setMapping('x', 'x + scanx')  # don't delete this commented line, David wants it here
+        
+        # scanned acquisition re-mapping temporarily disabled because we abuse the scanner for taking shift-fields (where
+        # we don't want re-mapping to occur) TODO - either detect shift-fields here, or implement remapping later.
+        #ds.setMapping('x', 'x + scanx')
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
-        # ds.setMapping('y', 'y + scany')  # don't delete this commented line, David wants it here
+        
+        # temporarily disabled - see scanx
+        #ds.setMapping('y', 'y + scany')
 
     driftx = ev_mappings.get('driftx', None)
     drifty = ev_mappings.get('drifty', None)
@@ -179,24 +179,20 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     # set up correction for foreshortening and z focus stepping
     if not 'foreShort' in dir(mapped_ds):
         mapped_ds.addVariable('foreShort', 1.)
-    if 'ontarget_focus_correction' not in mapped_ds.keys():
-        mapped_ds.addVariable('ontarget_focus_correction', 0)
+        
     if not 'focus' in mapped_ds.keys():
         # set up a dummy focus variable if not already present
         mapped_ds.setMapping('focus', '0*x')
 
-    if not 'corrected_focus' in mapped_ds.keys():
-        mapped_ds.setMapping('corrected_focus', 'foreShort * (focus + ontarget_focus_correction)')
-
     if not 'z' in mapped_ds.keys():
         if 'fitResults_z0' in mapped_ds.keys():
-            mapped_ds.setMapping('z', 'fitResults_z0 + corrected_focus')
+            mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
         elif 'astigmatic_z' in mapped_ds.keys():
-            mapped_ds.setMapping('z', 'astigmatic_z + corrected_focus')
+            mapped_ds.setMapping('z', 'astigmatic_z + foreShort*focus')
         elif 'astigZ' in mapped_ds.keys():  # legacy handling
-            mapped_ds.setMapping('z', 'astigZ + corrected_focus')
+            mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
         else:
-            mapped_ds.setMapping('z', 'corrected_focus')
+            mapped_ds.setMapping('z', 'foreShort*focus')
 
     if not 'A' in mapped_ds.keys() and 'fitResults_photons' in mapped_ds.keys():
         mapped_ds.setMapping('A', 'fitResults_photons')
@@ -216,17 +212,23 @@ def _processEvents(ds, events, mdh):
             evKeyNames.add(e['EventName'])
 
         if b'ProtocolFocus' in evKeyNames:
-            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
+            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
+            ev_mappings['z_command'] = zm
+            
+
+            if b'PiezoOnTarget' in evKeyNames:
+                # Sometimes we also emit PiezoOnTarget events with the actual piezo position, rather than where we
+                # told it to go, use these preferentially
+                from PYME.Analysis import piezo_movement_correction
+                spoofed_evts =  piezo_movement_correction.spoof_focus_events_from_ontarget(events, mdh)
+                zm = piecewiseMapping.GeneratePMFromEventList(spoofed_evts, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
+                ev_mappings['z_ontarget'] = zm
+                ev_mappings['piezo_moving'] = piecewiseMapping.bool_map_between_events(events, mdh, b'ProtocolFocus', b'PiezoOnTarget',default=False)
+                
+            # the z position we use for localizations gets the ontarget info if present
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
-
-        if b'PiezoOnTarget' in evKeyNames:
-            from PYME.Analysis.piezo_movement_correction import map_piezo_moving, map_corrected_focus
-            corrected_focus_mapping = map_corrected_focus(events, mdh)
-            piezo_unstable_mapping = map_piezo_moving(events, mdh)
-            ev_mappings['corrected_focus'] = corrected_focus_mapping
-            ev_mappings['piezo_moving'] = piezo_unstable_mapping
-
+            
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
@@ -272,7 +274,7 @@ def _processEvents(ds, events, mdh):
 
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-            ev_mappings['zm'] = zm
+            ev_mappings['z_command'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         except:
