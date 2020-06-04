@@ -18,9 +18,9 @@ def test_ripleys_k_2d():
     A = 100**2
         
     bb, K = ripleys_k_from_mask_points(xu, yu, xu, yu, NBINS, BIN_SIZE, A,
-                      z=np.zeros_like(xu), zu=None, threaded=False)
+                      z=np.zeros_like(xu), area_per_mask_point=1, zu=None, threaded=False)
 
-    assert (np.sum((np.pi*(bb+BIN_SIZE)**2-K)**2) < 1e-4)
+    assert (np.sum((np.pi*bb**2-K)**2) < 1e-4)
 
 def test_ripleys_k_3d():
     from PYME.Analysis.points.ripleys import ripleys_k_from_mask_points
@@ -37,6 +37,6 @@ def test_ripleys_k_3d():
     A = 10**3
         
     bb, K = ripleys_k_from_mask_points(xu, yu, xu, yu, NBINS, BIN_SIZE, A,
-                      z=zu, zu=zu, threaded=False)
+                      area_per_mask_point=1, z=zu, zu=zu, threaded=False)
 
-    assert (np.sum(((4.0/3.0)*np.pi*(bb+BIN_SIZE)**3-K)**2) < 1e-4)
+    assert (np.sum(((4.0/3.0)*np.pi*bb**3-K)**2) < 1e-4)
