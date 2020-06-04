@@ -34,7 +34,7 @@ def ripleys_k_from_mask_points(x, y, xu, yu, n_bins, bin_size, mask_area, area_p
     """
     from PYME.Analysis.points import DistHist
 
-    bb = np.arange(bin_size, n_bins*bin_size+1, bin_size)  # bins
+    bb = float(bin_size)*np.arange(1, n_bins+1)  # bins
     hist = np.zeros(n_bins)  # counts
     lx = len(x)
 
@@ -303,6 +303,7 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None,
                 
             xu, yu, zu = np.mgrid[bbox[0]:bbox[3]:sampling, bbox[1]:bbox[4]:sampling, bbox[2]:bbox[5]:sampling]
             mask_area = np.prod((bbox[3:] - bbox[:3]))
+            area_per_mask_point = float(sampling)**3
         else:
             if not bbox:
                 bbox = np.array([x.min(), y.min(), x.max(), y.max()])
@@ -310,6 +311,7 @@ def ripleys_k(x, y, n_bins, bin_size, mask=None, bbox=None, z=None,
             xu, yu = np.mgrid[bbox[0]:bbox[2]:sampling, bbox[1]:bbox[3]:sampling]
             zu = None
             mask_area = np.prod((bbox[2:] - bbox[:2]))
+            area_per_mask_point = float(sampling) ** 2
 
     xu = xu.ravel()
     yu = yu.ravel()
