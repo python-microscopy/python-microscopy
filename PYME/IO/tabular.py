@@ -250,6 +250,8 @@ class FitResultsSource(TabularBase):
             self.fitResults.sort(order='tIndex')
 
         #allow access using unnested original names
+        # TODO - replace with unnest_dtype(self.fitResults.dtype).names
+        # TODO???? - replace key translation with a np.view call?
         self._keys = unNestDtype(self.fitResults.dtype.descr)
         
         #or shorter aliases
