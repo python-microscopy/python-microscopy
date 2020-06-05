@@ -24,7 +24,8 @@
 import numpy
 
 import wx
-import scipy.misc
+# import scipy.misc
+from PIL import Image
 
 from PYME.DSView.displayOptions import DisplayOpts
 
@@ -347,7 +348,11 @@ class ColourImageViewPanel(ImageViewPanel):
             else:
                 im = (self.image.data[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.do.zp, chanNum].squeeze().astype('f').T)
 
-            im = self._map_image(scipy.misc.imresize(im, sc), chanNum)
+            # im = self._map_image(scipy.misc.imresize(im, sc), chanNum)
+            # scipy.misc.imresize was deprecated in scipy 1.0 and removed in 1.3
+            # replaced with PIL per https://docs.scipy.org/doc/scipy-1.2.1/reference/generated/scipy.misc.imresize.html
+            sz = tuple(int(sc*x) for x in im.shape)
+            im = self._map_image(numpy.array(Image.fromarray(im).resize(size=sz)),chanNum)
         
             dx = int(round((-self.centreX + x0 + width/2)/pixelsize))
             dy = int(round((self.centreY - y1 + height/2)/pixelsize))
