@@ -351,7 +351,7 @@ class ColourImageViewPanel(ImageViewPanel):
             # im = self._map_image(scipy.misc.imresize(im, sc), chanNum)
             # scipy.misc.imresize was deprecated in scipy 1.0 and removed in 1.3
             # replaced with PIL per https://docs.scipy.org/doc/scipy-1.2.1/reference/generated/scipy.misc.imresize.html
-            sz = tuple(int(sc*x) for x in im.shape)
+            sz = tuple(int(sc*x) for x in im.shape[::-1])
             im = self._map_image(numpy.array(Image.fromarray(im).resize(size=sz)),chanNum)
         
             dx = int(round((-self.centreX + x0 + width/2)/pixelsize))
@@ -367,5 +367,6 @@ class ColourImageViewPanel(ImageViewPanel):
 
         dc.Clear()
         dc.DrawBitmap(wx.BitmapFromImage(imw), 0,0)
+        
         
         
