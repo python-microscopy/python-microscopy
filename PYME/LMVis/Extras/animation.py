@@ -159,11 +159,11 @@ class VideoPanel(DockedPanel):
             dlg = wx.MessageDialog(None, 'Need views to generate animation! Please create some by pressing `Add` in the animation pane.', 'No animation views')
             dlg.ShowModal()
             return
-        width = self.get_canvas().Size[0]
-        height = self.get_canvas().Size[1]
+        # width = self.get_canvas().Size[0]
+        # height = self.get_canvas().Size[1]
         self.get_canvas().displayMode = '3D'
         fps = 30.0
-        file_name = None
+        # file_name = None
         
         # if save:
         #     try:
@@ -186,7 +186,7 @@ class VideoPanel(DockedPanel):
                 return
             
             
-        video = None
+        # video = None
         if True:
             # if save:
             #     pass
