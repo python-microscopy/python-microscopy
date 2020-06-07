@@ -152,6 +152,11 @@ class VideoPanel(DockedPanel):
         self.play(False)
 
     def play(self, save):
+        # Fail gracefully if there are no snapshots
+        if len(self.snapshots) == 0:
+            dlg = wx.MessageDialog(None, 'Need views to generate animation! Please create some by pressing `Add` in the animation pane.', 'No animation views')
+            dlg.ShowModal()
+            return
         width = self.get_canvas().Size[0]
         height = self.get_canvas().Size[1]
         self.get_canvas().displayMode = '3D'
@@ -255,6 +260,7 @@ class VideoPanel(DockedPanel):
         self.clear_view()
         for index, snapshot in enumerate(self.snapshots):
             # index = len(self.snapshots)
+            # NOTE: InsertStringItem and SetStringItem are deprecated in favor of InsertItem and SetItem
             self.view_table.InsertStringItem(index, snapshot.view_id)
             self.view_table.SetStringItem(index, 1, "{:.9f}".format(snapshot.duration))
 
