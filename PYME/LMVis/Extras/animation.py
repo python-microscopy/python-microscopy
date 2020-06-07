@@ -19,18 +19,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import json
 from time import sleep
 
 import wx
 import wx.lib.agw.aui as aui
 
+from PIL import Image
+
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
-
-from PIL import Image
-import os
-
 
 # noinspection PyUnusedLocal
 class VideoPanel(DockedPanel):
@@ -209,7 +208,12 @@ class VideoPanel(DockedPanel):
                         if save:
                             snap = self.get_canvas().getIm()#.astype('uint8')
                             #print snap.shape, snap.dtype, snap.min(), snap.max()
-                            snap = (255*snap).astype('uint8').transpose(1, 0, 2)
+                            if snap.dtype == 'uint8':
+                                # PYME.LMVis.gl_render3D_shaders already returns 
+                                # a snapshot as an 8-bit array
+                                snap = snap.transpose(1,0,2)
+                            else:
+                                snap = (255*snap).astype('uint8').transpose(1, 0, 2)
                             
                             #if snap.ndim == 3:
                             #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
