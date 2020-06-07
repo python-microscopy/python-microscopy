@@ -45,11 +45,13 @@ class VideoPanel(DockedPanel):
         self.view_table = wx.ListCtrl(self, -1,
                                       style=wx.BU_EXACTFIT | wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER)
 
-        self.view_table.InsertColumn(0, 'id')
-        self.view_table.InsertColumn(1, 'duration')
+        self.view_table.InsertColumn(0, '#')
+        self.view_table.InsertColumn(1, 'Name')
+        self.view_table.InsertColumn(2, 'Duration')
 
-        self.view_table.SetColumnWidth(0, 50)
-        self.view_table.SetColumnWidth(1, 75)
+        self.view_table.SetColumnWidth(0, 30)
+        self.view_table.SetColumnWidth(1, 60)
+        self.view_table.SetColumnWidth(2, 60)
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
 
         self.create_buttons(vertical_sizer)
@@ -261,8 +263,9 @@ class VideoPanel(DockedPanel):
         for index, snapshot in enumerate(self.snapshots):
             # index = len(self.snapshots)
             # NOTE: InsertStringItem and SetStringItem are deprecated in favor of InsertItem and SetItem
-            self.view_table.InsertStringItem(index, snapshot.view_id)
-            self.view_table.SetStringItem(index, 1, "{:.9f}".format(snapshot.duration))
+            self.view_table.InsertStringItem(index, str(index))
+            self.view_table.SetStringItem(index, 1, snapshot.view_id)
+            self.view_table.SetStringItem(index, 2, "{:.9f}".format(snapshot.duration))
 
 
 class EditDialog(wx.Dialog):
