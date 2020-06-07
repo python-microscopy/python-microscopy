@@ -46,8 +46,10 @@ class VideoPanel(DockedPanel):
                                       style=wx.BU_EXACTFIT | wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER)
 
         self.view_table.InsertColumn(0, 'id')
+        self.view_table.InsertColumn(1, 'duration')
 
         self.view_table.SetColumnWidth(0, 50)
+        self.view_table.SetColumnWidth(1, 75)
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
 
         self.create_buttons(vertical_sizer)
@@ -65,15 +67,15 @@ class VideoPanel(DockedPanel):
         load_button = wx.Button(self, -1, label='Load', style=wx.BU_EXACTFIT)
         save_button = wx.Button(self, -1, label='Save', style=wx.BU_EXACTFIT)
         clear_button = wx.Button(self, -1, label='Clear', style=wx.BU_EXACTFIT)
-        run_button = wx.Button(self, -1, label='Run', style=wx.BU_EXACTFIT)
-        make_button = wx.Button(self, -1, label='Make', style=wx.BU_EXACTFIT)
+        run_button = wx.Button(self, -1, label=u'\u25B7', style=wx.BU_EXACTFIT)
+        make_button = wx.Button(self, -1, label='Capture', style=wx.BU_EXACTFIT)
 
         # bind the buttons and its handlers
         self.Bind(wx.EVT_BUTTON, self.add_snapshot, add_button)
         self.Bind(wx.EVT_BUTTON, self.delete_snapshot, delete_button)
         self.Bind(wx.EVT_BUTTON, self.clear, clear_button)
         self.Bind(wx.EVT_BUTTON, self.load, load_button)
-        self.Bind(wx.EVT_BUTTON, self.save, save_button)
+        self.Bind(wx.EVT_BUTTON, self.save, save_button) 
         self.Bind(wx.EVT_BUTTON, self.run, run_button)
         self.Bind(wx.EVT_BUTTON, self.make, make_button)
 
@@ -251,9 +253,10 @@ class VideoPanel(DockedPanel):
 
     def refill(self):
         self.clear_view()
-        for snapshot in self.snapshots:
-            index = len(self.snapshots)
+        for index, snapshot in enumerate(self.snapshots):
+            # index = len(self.snapshots)
             self.view_table.InsertStringItem(index, snapshot.view_id)
+            self.view_table.SetStringItem(index, 1, "{:.9f}".format(snapshot.duration))
 
 
 class EditDialog(wx.Dialog):
