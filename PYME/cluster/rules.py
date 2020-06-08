@@ -78,59 +78,6 @@ def verify_cluster_results_filename(resultsFilename):
 
     return resultsFilename
 
-def setup_localization_result_files(series_uri, analysis_metadata, server_filter=''):
-    """
-    Parameters
-    ----------
-    series_uri: str
-        cluster path, e.g. pyme-cluster:///example_folder/series
-    analysis_metadata: PYME.IO.MetaDataHandler.MDHandlerBase
-         describes the analysis rule to create
-    server_filter: str
-        cluster name used when finding servers - used to facilitate the operation for multiple clusters on the one
-        network segment.
-    Returns
-    -------
-    results_uri: str
-        cluster path of the localization results file
-    results_md_uri: str
-        cluster path of the localization results metadata, which will be used to define the localization rule/tasks.
-    """
-    import json
-    from PYME.IO import MetaDataHandler
-    from PYME.Analysis import MetaData
-    from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-    from PYME.IO import unifiedIO
-
-    unifiedIO.assert_uri_ok(series_uri)
-
-    results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
-    logger.info('Results file: ' + results_filename)
-
-    results_mdh = MetaDataHandler.NestedClassMDHandler()
-    # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
-    results_mdh.update(json.loads(unifiedIO.read(series_uri + '/metadata.json')))
-    results_mdh.update(analysis_metadata)
-
-    results_mdh['EstimatedLaserOnFrameNo'] = results_mdh.getOrDefault('EstimatedLaserOnFrameNo',
-                                                                    results_mdh.getOrDefault('Analysis.StartAt', 0))
-    MetaData.fixEMGain(results_mdh)
-
-    if '~' in series_uri or '~' in results_filename:
-        raise RuntimeError('filenames on the cluster must NOT contain ~')
-
-    # create results file, and metadata table
-    results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % results_filename, server_filter)
-    logging.debug('results URI: ' + results_uri)
-    clusterResults.fileResults(results_uri + '/MetaData', analysis_metadata)
-
-    # create metadata file which will be used in the rule/task definition
-    results_md_filename = results_filename + '.json'
-    results_md_uri = 'PYME-CLUSTER://%s/%s' % (server_filter, results_md_filename)
-    clusterIO.put_file(results_md_filename, results_mdh.to_JSON().encode(), serverfilter=server_filter)
-
-    return results_filename, results_uri, results_md_uri
-
 
 class Rule(object):
     def __init__(self):
@@ -145,34 +92,32 @@ class Rule(object):
 
     def chain_rule(self, chained_rule):
         """
-        replace uri's in chained rule inputs with output uri's from current rule
+        Link two rules, hardcoding the output URIs from the first as inputs to the second
 
         Parameters
         ----------
         chained_rule: Rule
 
         """
-        chained_rule.update_inputs(self.outputs)  # fixme - does outputs get us all outputs for e.g. recipe with many tasks?
-        # fixme - need to make sure that update_inputs(outputs) works for localizations (tasks produce single output) and recipes (each task can produce set of outputs)
+        chained_rule.chain_inputs(self.outputs)
         self._template['on_completion'] = {
             'template': chained_rule.template
         }
 
     @property
     def outputs(self):
-        try:
-            return self.template['outputs']
-        except KeyError:
-            return {}
+        """
+        Return task outputs in list with a dictionary mapping output names to URIs.
 
-    @property
-    def inputs(self):
-        try:
-            return self._template['inputs']
-        except KeyError:
-            return {}
+        Returns
+        -------
+        outputs: list
+            returns list of dictionaries mapping output names to URIs. One dict per task specified by this rule.
 
-    def update_inputs(self, inputs):
+        """
+        raise NotImplementedError
+
+    def chain_inputs(self, inputs):
         """
 
         Parameters
@@ -207,8 +152,8 @@ class LocalizationRule(Rule):
         from PYME.IO import unifiedIO
 
         unifiedIO.assert_uri_ok(series_uri)
-        results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
-        logger.info('Results file: ' + results_filename)
+        self.results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
+        logger.info('Results file: ' + self.results_filename)
         results_mdh = MetaDataHandler.NestedClassMDHandler()
         # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
         results_mdh.update(json.loads(unifiedIO.read(series_uri + '/metadata.json')))
@@ -219,16 +164,16 @@ class LocalizationRule(Rule):
                                                                                                    0))
         MetaData.fixEMGain(results_mdh)
 
-        if '~' in series_uri or '~' in results_filename:
+        if '~' in series_uri or '~' in self.results_filename:
             raise RuntimeError('filenames on the cluster must NOT contain ~')
 
         # create results file, and metadata table
-        results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % results_filename, server_filter)
+        results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % self.results_filename, server_filter)
         logging.debug('results URI: ' + results_uri)
         clusterResults.fileResults(results_uri + '/MetaData', analysis_metadata)
 
         # create metadata file which will be used in the rule/task definition
-        results_md_filename = results_filename + '.json'
+        results_md_filename = self.results_filename + '.json'
         clusterIO.put_file(results_md_filename, results_mdh.to_JSON().encode(), serverfilter=server_filter)
 
         Rule.__init__(self)
@@ -315,9 +260,22 @@ class LocalizationRule(Rule):
             else:
                 time.sleep(1)
 
+    @property
+    def outputs(self):
+        return [{
+            'fitResults': self.results_filename + '/FitResults',
+            'driftResults': self.results_filename + '/DriftResults'
+        }]
+
+    def chain_inputs(self, inputs):
+        if isinstance(inputs, list) and len(inputs) == 1 and 'frames' in inputs.keys():
+            self._template['inputs'] = inputs
+        else:
+            raise RuntimeError('Malformed input; LocalizationRule does not support multiple/fancy input chaining')
+
 
 class RecipeRule(Rule):
-    def __init__(self, recipe, inputs, output_dir=None):
+    def __init__(self, recipe, inputs=None, output_dir=None):
         """
 
         Parameters
@@ -327,8 +285,7 @@ class RecipeRule(Rule):
         inputs: list
             list of dictionaries mapping recipe inputs to file URIs. Each input dictionary will create a separate task,
             however a chained rule/follow-on rule will only be called after all tasks for the preceding rule are
-            finished, making this a potential control-flow for running a recipe on a batch of intermediate recipe
-            outputs.
+            finished.
         output_dir: str
         """
         Rule.__init__(self)
@@ -346,22 +303,18 @@ class RecipeRule(Rule):
             self._template['output_dir'] = output_dir
 
         self._task_inputs = inputs
-        self._n_tasks = len(self._task_inputs)
-        self._inputs_by_task = {t_ind: task for t_ind, task in enumerate(inputs)}
-
-
 
     def post(self):
         ruleserver_uri = _get_ruleserver_uri()
-
-        logger.debug('inputs = %s' % self._inputs_by_task)
-
-        rule = {'template': self.template, 'inputsByTask': self.inputs_by_task}
+        rule, n_tasks = {'template': self.template}, 1
+        if self._task_inputs:
+            rule['inputsByTask'] = {t_ind: task for t_ind, task in enumerate(self._task_inputs)}
+            n_tasks = len(self._task_inputs)
+            logger.debug('inputs by task: %s' % rule['inputsByTask'])
 
         s = clusterIO._getSession(ruleserver_uri)
-        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri,
-                                                                                            self._n_tasks, 0,
-                                                                                            self._n_tasks),
+        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri, n_tasks, 0,
+                                                                                            n_tasks),
                    data=json.dumps(rule), headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
@@ -373,7 +326,60 @@ class RecipeRule(Rule):
 
     @property
     def outputs(self):
-        raise
+        from PYME.recipes.modules import ModuleCollection
+        from PYME.recipes.base import OutputModule
+
+        if 'taskdef' in self.template.keys():
+            recipe = ModuleCollection.fromYAML(self.template['taskdef']['recipe'])
+        else:
+            recipe = ModuleCollection.fromYAML(clusterIO.unifiedIO.read(self.template['taskdefRef']))
+
+        # find outputs
+        outputs = {}
+        for mod in recipe.modules:
+            if isinstance(mod, OutputModule) and mod.scheme.upper() == 'PYME-CLUSTER://':
+                for _in in mod.inputs:
+                    # we might override location for things being saved multiple times, but we have no way of
+                    # prioritizing locations and shouldn't really care anyway.
+                    outputs[_in] = mod.filePattern
+
+        # get input file stub(s) and convert output patterns to URIs
+        if self._task_inputs:
+            file_stub_key = 'input' if 'input' in self._task_inputs[0].keys() else self._task_inputs[0].keys()[0]
+            file_stubs = [task_input[file_stub_key] for task_input in self._task_inputs]
+        else:
+            file_stubs = [self.template['inputs']]
+        output_list = []
+        for ind in range(len(file_stubs)):
+            file_stub = file_stubs[ind]
+            out = {}
+            for k in outputs.keys():
+                out[k] = outputs[k].format(output_dir=self.template['output_dir'], file_stub=file_stub)
+                output_list.append(out)
+        return output_list
+
+    def chain_inputs(self, inputs):
+        """
+        Currently, there is no support for taskInputs in chained recipes, meaning you can only chain a recipe for a
+        single task. See PYME.cluster.ruleserver.RuleServer._poll_rules
+
+        Parameters
+        ----------
+        inputs
+
+        Returns
+        -------
+
+        """
+        if isinstance(inputs, list):
+            # at the moment we don't support taskInputs, meaning we can only handle a single inputs dictionary
+            if not isinstance(inputs[0], dict) or len(inputs > 1):
+                raise TypeError('rule chaining recipes do not yet support taskInput style task generation')
+            inputs = inputs[0]
+
+        self._template['inputs'] = inputs
+        self._task_inputs = None
+
 
 
 class RuleChain(list):
