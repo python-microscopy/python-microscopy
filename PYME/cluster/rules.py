@@ -1,23 +1,12 @@
+
 import time
-import numpy as np
 import threading
-import requests
-from PYME.IO import DataSources
-from PYME.IO import clusterResults
-from PYME.IO import clusterIO
+from PYME.IO import DataSources, clusterIO, unifiedIO, clusterResults
 import json
 import socket
 import random
-
-import hashlib
-
-from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
-from six import string_types
-
-compName = GetComputerName()
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,57 +16,31 @@ def _get_ruleserver_uri(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
     ns = hybrid_ns.getNS('_pyme-taskdist')
 
-    queueURLs = {}
+    servers = {}
 
     def _search():
         for name, info in ns.get_advertised_services():
             if name.startswith('PYMERuleServer'):
                 print(info, info.address)
-                queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+                servers[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
 
     _search()
-    while not queueURLs and (n_retries > 0):
+    while not servers and (n_retries > 0):
         logging.info('could not find a rule server, waiting 5s and trying again')
         time.sleep(5)
         n_retries -= 1
         _search()
 
+    # if we only have one option, go with it
+    server_uris = list(servers.values())
+    if len(server_uris) == 1:
+        return server_uris[0]
+    # otherwise, prefer a local server if available
     try:
-        # try to grab the distributor on the local computer
-        return queueURLs[compName]
+        return servers[GetComputerName()]
     except KeyError:
-        # if there is no local distributor, choose one at random
-        logging.info('no local rule server, choosing one at random')
-        return random.choice(list(queueURLs.values()))
-
-
-def verify_cluster_results_filename(resultsFilename):
-    """
-    Checks whether a results file already exists on the cluster, and returns an available version of the results
-    filename. Should be called before writing a new results file.
-    Parameters
-    ----------
-    resultsFilename : str
-        cluster path, e.g. pyme-cluster:///example_folder/name.h5r
-    Returns
-    -------
-    resultsFilename : str
-        cluster path which may have _# appended to it if the input resultsFileName is already in use, e.g.
-        pyme-cluster:///example_folder/name_1.h5r
-    """
-    from PYME.IO import clusterIO
-    import os
-    if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
-        i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
-            i += 1
-
-        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
-
-    return resultsFilename
-
+        logging.info('no local rule server; found %d, choosing one at random' % len(server_uris))
+        return random.choice(server_uris)
 
 class Rule(object):
     def __init__(self):
@@ -149,10 +112,9 @@ class LocalizationRule(Rule):
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-        from PYME.IO import unifiedIO
 
         unifiedIO.assert_uri_ok(series_uri)
-        self.results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
+        self.results_filename = clusterResults.verify_cluster_results_filename(genClusterResultFileName(series_uri))
         logger.info('Results file: ' + self.results_filename)
         results_mdh = MetaDataHandler.NestedClassMDHandler()
         # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
@@ -332,7 +294,7 @@ class RecipeRule(Rule):
         if 'taskdef' in self.template.keys():
             recipe = ModuleCollection.fromYAML(self.template['taskdef']['recipe'])
         else:
-            recipe = ModuleCollection.fromYAML(clusterIO.unifiedIO.read(self.template['taskdefRef']))
+            recipe = ModuleCollection.fromYAML(unifiedIO.read(self.template['taskdefRef']))
 
         # find outputs
         outputs = {}
