@@ -207,14 +207,14 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, settings, imb, mdh):
-        import matplotlib.pyplot as plt
-        oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(plt.cm.gray)
+        # import matplotlib.pyplot as plt
+        # oldcmap = self.visFr.glCanvas.cmap
+        # self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
-        self.visFr.glCanvas.setCMap(oldcmap)
+        # self.visFr.glCanvas.setCMap(oldcmap)
 
-        return np.atleast_3D(im)
+        return np.atleast_3d(im)
 
 class ColourRenderer(CurrentRenderer):
     """Base class for all other renderers which know about the colour filter"""
