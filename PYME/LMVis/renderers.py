@@ -207,14 +207,14 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, settings, imb, mdh):
-        import matplotlib.pyplot as plt
-        oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(plt.cm.gray)
+        # import matplotlib.pyplot as plt
+        # oldcmap = self.visFr.glCanvas.cmap
+        # self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
-        self.visFr.glCanvas.setCMap(oldcmap)
+        # self.visFr.glCanvas.setCMap(oldcmap)
 
-        return np.atleast_3D(im)
+        return np.atleast_3d(im)
 
 class ColourRenderer(CurrentRenderer):
     """Base class for all other renderers which know about the colour filter"""
@@ -520,8 +520,7 @@ class QuadTreeRenderer(ColourRenderer):
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
 
-RENDERER_GROUPS = ((CurrentRenderer,),
-                   (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
+RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}
