@@ -94,32 +94,43 @@ class Rule(object):
         self._template['inputs'] = inputs
 
 class LocalizationRule(Rule):
-    def __init__(self, series_uri, analysis_metadata, server_filter=''):
+    def __init__(self, analysis_metadata, series_uri=None, server_filter=''):
         """
 
         Parameters
         ----------
-        series_uri: str
-            cluster path, e.g. pyme-cluster:///example_folder/series
         analysis_metadata: PYME.IO.MetaDataHandler.MDHandlerBase
              describes the analysis rule to create
+        series_uri: str
+            cluster path, e.g. pyme-cluster:///example_folder/series
         server_filter: str
             [optional] cluster name used when finding servers for analysis - used to facilitate the operation for
             multiple clusters on one network segment. NB - server filter for data series location should be included in
             its uri, this parameter only affects which cluster performs the localization
         """
+        Rule.__init__(self)
+        Rule._template['type'] = 'localization'
+        self.analysis_metadata = analysis_metadata
+        self.server_filter = server_filter
+
+        self._results_prepared = False
+        if series_uri:
+            self.prepare_results_files(series_uri)
+            self._results_prepared = True
+
+    def prepare_results_files(self, series_uri):
         import json
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-
         unifiedIO.assert_uri_ok(series_uri)
         self.results_filename = clusterResults.verify_cluster_results_filename(genClusterResultFileName(series_uri))
+        logger.info('Results file: ' + self.results_filename)
         logger.info('Results file: ' + self.results_filename)
         results_mdh = MetaDataHandler.NestedClassMDHandler()
         # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
         results_mdh.update(json.loads(unifiedIO.read(series_uri + '/metadata.json')))
-        results_mdh.update(analysis_metadata)
+        results_mdh.update(self.analysis_metadata)
 
         results_mdh['EstimatedLaserOnFrameNo'] = results_mdh.getOrDefault('EstimatedLaserOnFrameNo',
                                                                           results_mdh.getOrDefault('Analysis.StartAt',
@@ -130,23 +141,21 @@ class LocalizationRule(Rule):
             raise RuntimeError('filenames on the cluster must NOT contain ~')
 
         # create results file, and metadata table
-        results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % self.results_filename, server_filter)
+        results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % self.results_filename, self.server_filter)
         logging.debug('results URI: ' + results_uri)
-        clusterResults.fileResults(results_uri + '/MetaData', analysis_metadata)
+        clusterResults.fileResults(results_uri + '/MetaData', self.analysis_metadata)
 
         # create metadata file which will be used in the rule/task definition
         results_md_filename = self.results_filename + '.json'
-        clusterIO.put_file(results_md_filename, results_mdh.to_JSON().encode(), serverfilter=server_filter)
+        clusterIO.put_file(results_md_filename, results_mdh.to_JSON().encode(), serverfilter=self.server_filter)
 
-        Rule.__init__(self)
         self._template.update({
-            'type': 'localization',
             'inputs': {
                 'frames': series_uri
             },
             'taskdef': {
                 'frameIndex': '{{taskID}}',
-                'metadata': 'PYME-CLUSTER://%s/%s' % (server_filter, results_md_filename),
+                'metadata': 'PYME-CLUSTER://%s/%s' % (self.server_filter, results_md_filename),
             },
             'outputs': {
                 'fitResults': results_uri + '/FitResults',
@@ -158,6 +167,8 @@ class LocalizationRule(Rule):
         self._posting_poll = False
 
     def post(self):
+        if not self._results_prepared:
+            raise RuntimeError('results files not initiated, call prepare_results_files first')
         self.ruleserver_uri = _get_ruleserver_uri()
         self.datasource = DataSources.getDataSourceForFilename(self.template['inputs']['frames'])
 
@@ -232,6 +243,7 @@ class LocalizationRule(Rule):
     def chain_inputs(self, inputs):
         if isinstance(inputs, list) and len(inputs) == 1 and 'frames' in inputs.keys():
             self._template['inputs'] = inputs
+            self.prepare_results_files(inputs['frames'])
         else:
             raise RuntimeError('Malformed input; LocalizationRule does not support multiple/fancy input chaining')
 
@@ -249,6 +261,7 @@ class RecipeRule(Rule):
             however a chained rule/follow-on rule will only be called after all tasks for the preceding rule are
             finished.
         output_dir: str
+            [optional] dataserver-relative path to recipe output directory
         """
         Rule.__init__(self)
         self._template.update({
@@ -327,10 +340,8 @@ class RecipeRule(Rule):
 
         Parameters
         ----------
-        inputs
-
-        Returns
-        -------
+        inputs: dict, list
+            dictionary mapping recipe input names to URIs, or length-1 list of a single dict doing the same.
 
         """
         if isinstance(inputs, list):
@@ -351,3 +362,5 @@ class RuleChain(list):
             if ri != len(self):
                 self[ri].chain_rule(self[ri + 1])
 
+    def set_chain_input(self, inputs):
+        self[0].chain_inputs(inputs)
