@@ -191,7 +191,7 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
             raise RuntimeError('Trying to calculate 2D Ripleys with 3D mask')
         mask_area = bool_mask.sum()
 
-        n_sim = int((np.prod(bool_mask.shape)/mask_area + eps)*n_points)
+        n_sim = int((np.prod(bool_mask.shape)/mask_area + eps)*(n_points + 3*np.sqrt(n_points+1) + 3))
         
         zu = None
         xu, yu = (np.random.rand(n_sim,2)*[bool_mask.shape[0]-1,bool_mask.shape[1]-1]).T
@@ -199,6 +199,7 @@ def mc_points_from_mask(mask, n_points, three_d=True, coord_origin=(0,0,0)):
         xu, yu = vx * xu[point_mask] + x0_m - x0_p, vy * yu[point_mask] + y0_m - y0_p
 
     if (len(xu) < n_points) or (len(yu) < n_points) or ((zu is not None) and (len(zu) < n_points)):
+        print('n_points, n_sim, len(xu):', n_points, n_sim, len(xu)) #debug
         # This one's for the developers
         raise RuntimeError('Not enough points were generated in the Monte-Carlo simulations. Revisit calculation of n_sim.')
     # Truncate
@@ -246,6 +247,8 @@ def mc_sampling_statistics(K, n_points, n_bins, bin_size, mask, three_d,
     if zu is not None:
         zu = zu.ravel()
 
+    print('mask_area:', mask_area) #debug
+    
     # Monte-Carlo simulations on the mask
     K_arr = np.zeros((n_sim,len(K)))
     for _i in range(n_sim):
