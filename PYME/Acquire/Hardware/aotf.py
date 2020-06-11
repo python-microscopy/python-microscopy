@@ -68,7 +68,7 @@ class AOTFControlledLaser(Laser):
         power: float
             Laser power in units dictated by the laser implementation in PYME, typically [mW], sometimes [W]. Note that
             the AOTFControlledLaser will not function correctly if the calibration units are different that the units
-            used in self.laser.SerPower()
+            used in self.laser.SetPower()
 
         Returns
         -------
