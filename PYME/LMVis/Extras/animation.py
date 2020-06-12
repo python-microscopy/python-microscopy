@@ -36,12 +36,18 @@ class VideoPanel(DockedPanel):
     JSON_LIST_NAME = 'views'
 
     def __init__(self, parent_panel, **kwargs):
-        kwargs['style'] = wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent_panel, **kwargs)
+        DockedPanel.__init__(self, parent_panel, **kwargs)
+
         self.snapshots = list()
         self.parent_panel = parent_panel
+        self.next_view_id = 0
+
+        self.AddNewElement(self._anim_pan(),foldable=False)
+
+    def _anim_pan(self):
+        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
         vertical_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.view_table = wx.ListCtrl(self, -1,
+        self.view_table = wx.ListCtrl(pan, -1,
                                       style=wx.BU_EXACTFIT | wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER)
 
         self.view_table.InsertColumn(0, '#')
@@ -52,19 +58,19 @@ class VideoPanel(DockedPanel):
         self.view_table.SetColumnWidth(1, 60)
         self.view_table.SetColumnWidth(2, 60)
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
+        vertical_sizer.AddSpacer(10)
 
         self.create_buttons(vertical_sizer)
 
-        self.SetSizerAndFit(vertical_sizer)
-        
-        self.next_view_id = 0
+        pan.SetSizerAndFit(vertical_sizer)
+
+        return pan
 
     def create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(rows=3, cols=3, vgap=2, hgap=2)
         # generate the buttons
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
         delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
-        skip = wx.StaticText(self, -1, '')
         load_button = wx.Button(self, -1, label='Load', style=wx.BU_EXACTFIT)
         save_button = wx.Button(self, -1, label='Save', style=wx.BU_EXACTFIT)
         clear_button = wx.Button(self, -1, label='Clear', style=wx.BU_EXACTFIT)
@@ -86,7 +92,7 @@ class VideoPanel(DockedPanel):
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
         grid_sizer.Add(delete_button, flag=wx.EXPAND)
-        grid_sizer.Add(skip)
+        grid_sizer.AddSpacer(1)
         grid_sizer.Add(load_button, flag=wx.EXPAND)
         grid_sizer.Add(save_button, flag=wx.EXPAND)
         grid_sizer.Add(clear_button, flag=wx.EXPAND)
