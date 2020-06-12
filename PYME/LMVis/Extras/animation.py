@@ -31,6 +31,9 @@ from PIL import Image
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
+# See PYME.LMVis.Extras.dockedPanel for a history of mfp import name
+import PYME.ui.manualFoldPanel as mfp
+
 # noinspection PyUnusedLocal
 class VideoPanel(DockedPanel):
     JSON_LIST_NAME = 'views'
@@ -43,6 +46,10 @@ class VideoPanel(DockedPanel):
         self.next_view_id = 0
 
         self.AddNewElement(self._anim_pan(),foldable=False)
+
+        clp = mfp.collapsingPane(self, caption='Animation Settings')
+        clp.AddNewElement(self._settings_pan(clp))
+        self.AddNewElement(clp)
 
     def _anim_pan(self):
         pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
@@ -60,13 +67,23 @@ class VideoPanel(DockedPanel):
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
         vertical_sizer.AddSpacer(10)
 
-        self.create_buttons(vertical_sizer)
+        self._create_buttons(vertical_sizer)
 
         pan.SetSizerAndFit(vertical_sizer)
 
         return pan
+    
+    def _settings_pan(self, clp):
+        pan = wx.Panel(clp, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.cb = wx.CheckBox(pan, -1, 'Interpolate')
+        hsizer.Add(self.cb, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+        pan.SetSizerAndFit(vsizer)
+        return pan
 
-    def create_buttons(self, vertical_sizer):
+    def _create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(rows=3, cols=3, vgap=2, hgap=2)
         # generate the buttons
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
@@ -92,7 +109,7 @@ class VideoPanel(DockedPanel):
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
         grid_sizer.Add(delete_button, flag=wx.EXPAND)
-        grid_sizer.AddSpacer(1)
+        grid_sizer.AddSpacer(0)
         grid_sizer.Add(load_button, flag=wx.EXPAND)
         grid_sizer.Add(save_button, flag=wx.EXPAND)
         grid_sizer.Add(clear_button, flag=wx.EXPAND)

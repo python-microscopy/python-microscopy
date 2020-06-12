@@ -33,7 +33,8 @@ import PYME.ui.manualFoldPanel as mfp
 class DockedPanel(mfp.foldingPane):
 
     def __init__(self, parent_panel, **kwargs):
-        mfp.foldingPane.__init__(self, parent_panel, style=wx.TAB_TRAVERSAL)
+        kwargs['style'] = wx.TAB_TRAVERSAL
+        mfp.foldingPane.__init__(self, parent_panel, **kwargs)
 
         self.parent_panel = parent_panel
 
