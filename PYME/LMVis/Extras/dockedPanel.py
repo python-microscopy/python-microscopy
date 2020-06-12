@@ -22,6 +22,12 @@
 import wx
 import wx.lib.agw.aui as aui
 
+# This is legacy-imported as afp since much of the code was written using
+# PYME.ui.autoFoldPanel and when we switched to manual fold panel it was 
+# easiest to change import PYME.ui.autoFoldPanel as afp to 
+# import PYME.ui.manualFoldPanel as afp. This is the first time we get an
+# opportunity to write a new section of code importing manualFoldPanel,
+# and so we choose to call it its acronym mfp
 import PYME.ui.manualFoldPanel as mfp
 
 class DockedPanel(mfp.foldingPane):
