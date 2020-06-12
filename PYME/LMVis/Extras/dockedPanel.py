@@ -20,15 +20,14 @@
 #
 
 import wx
-
 import wx.lib.agw.aui as aui
 
+import PYME.ui.manualFoldPanel as mfp
 
-class DockedPanel(wx.Panel):
+class DockedPanel(mfp.foldingPane):
 
     def __init__(self, parent_panel, **kwargs):
-        kwargs['style'] = wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent_panel, **kwargs)
+        mfp.foldingPane.__init__(self, parent_panel, style=wx.TAB_TRAVERSAL)
 
         self.parent_panel = parent_panel
 
