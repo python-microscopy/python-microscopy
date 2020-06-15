@@ -173,15 +173,38 @@ class ChainedRulePanel(wx.Panel):
         elif mode == 2:  # series stop
             self._spool_controller.onSpoolStop.connect(self.post_rules)
 
-    def post_rules(self):
+    def post_rules(self, **kwargs):
+        """
+        pipe input series name into rule chain and post them all
+
+        Parameters
+        ----------
+        kwargs: dict
+            present here to allow us to call this method through a dispatch.Signal.send
+
+        """
         # pipe the input series name into the rule list
-        series_uri = self._spool_controller._get_queue_name
-        self._rule_chain.set_chain_input({'input': series_uri})
+        series_uri = self._spool_controller.spooler.getURL()
+        self._rule_chain.set_chain_input([{'input': series_uri}])
         self._rule_chain.post_all()
 
+    @staticmethod
+    def plug(main_frame, scope):
+        from PYME.recipes.recipeGui import RecipeView, RecipeManager
+        from PYME.cluster.rules import RuleChain
 
-class LocalizationRuleChainingPanel(manualFoldPanel.foldingPane):
-    def __init__(self, wx_parent, rule_list_ctrl, localization_settings):
+        scope._recipe_manager = RecipeManager()
+        main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
+        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Chained Recipe')
+
+        scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
+        chained_analysis = ChainedRulePanel(main_frame, scope._rule_chain, scope._recipe_manager, scope.spoolController)
+
+        main_frame.anPanels.append((chained_analysis, 'Chained Analysis', True))
+
+
+class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
+    def __init__(self, wx_parent, rule_chain, recipe_manager, localization_settings, spool_controller):
         """
 
         Parameters
@@ -192,8 +215,6 @@ class LocalizationRuleChainingPanel(manualFoldPanel.foldingPane):
         """
         from PYME.ui.autoFoldPanel import collapsingPane
         from PYME.Acquire.ui import AnalysisSettingsUI
-
-        self._rule_list_ctrl = rule_list_ctrl
 
         manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
 
@@ -219,6 +240,10 @@ class LocalizationRuleChainingPanel(manualFoldPanel.foldingPane):
         self._localization_settings = localization_settings
         self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
 
+        rule_panel = ChainedRulePanel(self, rule_chain, recipe_manager, spool_controller)
+        self.AddNewElement(rule_panel)
+        self._rule_list_ctrl = rule_panel._rule_list
+
     def OnTogglePropagate(self, wx_events=None):
         # for now, assume max of one localization rule per chain, and assume it's controlled by this panel
         if self.checkbox_propagate.GetValue():
@@ -231,6 +256,23 @@ class LocalizationRuleChainingPanel(manualFoldPanel.foldingPane):
     def update_localization_rule(self):
         # NB - panel will only modify first localization rule in the chain
         if self.checkbox_propagate.GetValue():
-            print('heeeere')
             rule = LocalizationRule(self._localization_settings.analysisMDH)
             self._rule_list_ctrl.replace_rule(rule, self._rule_list_ctrl.localization_rule_indices[0])
+
+    @staticmethod
+    def plug(main_frame, scope):
+        from PYME.recipes.recipeGui import RecipeView, RecipeManager
+        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
+        from PYME.cluster.rules import RuleChain
+
+        scope._recipe_manager = RecipeManager()
+        main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
+        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Chained Recipe')
+
+        scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
+
+        scope._localization_settings = AnalysisSettings()
+
+        chained_analysis = SMLMChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager,
+                                                    scope._localization_settings, scope.spoolController)
+        main_frame.anPanels.append((chained_analysis, 'Chained Analysis', True))
