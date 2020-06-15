@@ -376,7 +376,7 @@ class RecipeRule(Rule):
         """
         if isinstance(inputs, list):
             # at the moment we don't support taskInputs, meaning we can only handle a single inputs dictionary
-            if not isinstance(inputs[0], dict) or len(inputs > 1):
+            if not isinstance(inputs[0], dict) or len(inputs) > 1:
                 raise TypeError('rule chaining recipes do not yet support taskInput style task generation')
             inputs = inputs[0]
 

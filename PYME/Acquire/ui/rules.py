@@ -154,7 +154,7 @@ class ChainedRulePanel(wx.Panel):
 
     def OnAddFromRecipePanel(self, wx_event=None):
         from PYME.cluster.rules import RecipeRule
-        if len(self._recipe_manager.activeRecipe) > 0:
+        if len(self._recipe_manager.activeRecipe.modules) > 0:
             rule = RecipeRule(self._recipe_manager.activeRecipe.toYAML())
             self._rule_list.add_rule(rule)
 
