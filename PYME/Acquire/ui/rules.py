@@ -1,8 +1,17 @@
 
 import wx
+from  PYME.ui import manualFoldPanel
+from PYME.cluster.rules import LocalizationRule
 
 class RuleChainListCtrl(wx.ListCtrl):
     def __init__(self, rule_chain, wx_parent):
+        """
+
+        Parameters
+        ----------
+        rule_chain: PYME.cluster.rules.RuleChain
+        wx_parent
+        """
 
         wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
         self._rule_chain = rule_chain
@@ -11,13 +20,10 @@ class RuleChainListCtrl(wx.ListCtrl):
         self.InsertColumn(1, 'ID', width=100)
 
     @property
-    def first_is_localization(self):
-        try:
-            return self._rule_chain[0].template['type'] == 'localization'
-        except IndexError:
-            return False
+    def localization_rule_indices(self):
+        return [ind for ind, rule in enumerate(self._rule_chain) if rule.template['type'] == 'localization']
 
-    def add_rule(self, rule):
+    def add_rule(self, rule, index=None):
         """
 
         Parameters
@@ -28,8 +34,15 @@ class RuleChainListCtrl(wx.ListCtrl):
         -------
 
         """
-        self._rule_chain.append(rule)
+        if index is None:
+            self._rule_chain.append(rule)
+        else:
+            self._rule_chain.insert(rule, index)
+
         self.update_list()
+
+    def replace_rule(self, rule, index):
+        self._rule_chain[index] = rule
 
     def OnGetItemText(self, item, col):
         """
@@ -46,11 +59,13 @@ class RuleChainListCtrl(wx.ListCtrl):
         str : Returns string of column 'col' for item 'item'
 
         """
-
-        if col == 0:
-            return self._rule_chain[item].template['type']
-        if col == 1:
-            return str(item)
+        try:
+            if col == 0:
+                return self._rule_chain[item].template['type']
+            if col == 1:
+                return str(item)
+        except:
+            return ''
         else:
             return ''
 
@@ -59,10 +74,10 @@ class RuleChainListCtrl(wx.ListCtrl):
         self.Update()
         self.Refresh()
 
-    def delete_rules(self):
-        selected_indices = self.get_selected_items()
+    def delete_rules(self, indices=None):
+        selected_indices = self.get_selected_items() if indices is None else indices
 
-        for ind in selected_indices:
+        for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
             self._rule_chain.pop(ind)
             self.DeleteItem(ind)
 
@@ -82,21 +97,13 @@ class RuleChainListCtrl(wx.ListCtrl):
     def get_next_selected(self, current):
         return self.GetNextItem(current, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
 
-    def prepend_localization_rule(self, rule):
-        if self.first_is_localization:  # simply replace the rule
-            self._rule_chain[0] = rule
-        else:
-            self.add_rule(rule)
-
-    def clear_localization_rule(self):
-        if self.first_is_localization:
-            self._rule_chain.pop(0)
-            self.update_list()
+    def clear_localization_rules(self):
+        self.delete_rules(self.localization_rule_indices)
 
 
 
 class ChainedRulePanel(wx.Panel):
-    _RULE_LAUNCH_MODES = ['off', 'series start', 'series stop']
+    _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
     def __init__(self, parent, rule_chain, recipe_manager, spool_controller):
         """
 
@@ -154,13 +161,6 @@ class ChainedRulePanel(wx.Panel):
     def OnRemove(self, wx_event=None):
         self._rule_list.delete_rules()
 
-    # def update_localization_rule(self, sender=None, **kwargs):
-    #     from PYME.cluster.rules import LocalizationRule
-    #     if self._localization_settings.propagateToAcquisisitonMetadata:
-    #         self._rule_list.prepend_localization_rule(LocalizationRule(self._localization_settings.analysisMDH))
-    #     else:
-    #         self._rule_list.clear_localization_rule()
-
     def OnToggleAuto(self, wx_event=None):
         mode = self.choice_launch.GetSelection()
 
@@ -178,3 +178,59 @@ class ChainedRulePanel(wx.Panel):
         series_uri = self._spool_controller._get_queue_name
         self._rule_chain.set_chain_input({'input': series_uri})
         self._rule_chain.post_all()
+
+
+class LocalizationRuleChainingPanel(manualFoldPanel.foldingPane):
+    def __init__(self, wx_parent, rule_list_ctrl, localization_settings):
+        """
+
+        Parameters
+        ----------
+        wx_parent
+        localization_settings: PYME.ui.AnalysisSettingsUI.AnalysisSettings
+        rule_list_ctrl: RuleChainListCtrl
+        """
+        from PYME.ui.autoFoldPanel import collapsingPane
+        from PYME.Acquire.ui import AnalysisSettingsUI
+
+        self._rule_list_ctrl = rule_list_ctrl
+
+        manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
+
+        # add checkbox to propagate rule to rule chain
+        add_rule_panel = wx.Panel(self, -1)
+        v_sizer = wx.BoxSizer(wx.VERTICAL)
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.checkbox_propagate = wx.CheckBox(add_rule_panel, -1, 'Chain Localization Rule')
+        self.checkbox_propagate.SetValue(False)
+        self.checkbox_propagate.Bind(wx.EVT_CHECKBOX, self.OnTogglePropagate)
+        h_sizer.Add(self.checkbox_propagate, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        v_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 2)
+        add_rule_panel.SetSizer(v_sizer)
+        self.AddNewElement(add_rule_panel)
+
+        clp = collapsingPane(self, caption='settings ...')
+        clp.AddNewElement(AnalysisSettingsUI.AnalysisSettingsPanel(clp, localization_settings,
+                                                                   localization_settings.onMetadataChanged))
+        clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, localization_settings,
+                                                                  localization_settings.onMetadataChanged))
+        self.AddNewElement(clp)
+
+        self._localization_settings = localization_settings
+        self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
+
+    def OnTogglePropagate(self, wx_events=None):
+        # for now, assume max of one localization rule per chain, and assume it's controlled by this panel
+        if self.checkbox_propagate.GetValue():
+            loc_rule_indices = self._rule_list_ctrl.localization_rule_indices
+            if len(loc_rule_indices) < 1:
+                self._rule_list_ctrl.add_rule(LocalizationRule(self._localization_settings.analysisMDH))
+        else:
+            self._rule_list_ctrl.clear_localization_rules()
+
+    def update_localization_rule(self):
+        # NB - panel will only modify first localization rule in the chain
+        if self.checkbox_propagate.GetValue():
+            print('heeeere')
+            rule = LocalizationRule(self._localization_settings.analysisMDH)
+            self._rule_list_ctrl.replace_rule(rule, self._rule_list_ctrl.localization_rule_indices[0])
