@@ -191,7 +191,8 @@ class LocalizationRule(Rule):
 
         s = clusterIO._getSession(self.ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self._max_frames),
-                   data=json.dumps({'template': self.template}), headers={'Content-Type': 'application/json'})
+                   data=json.dumps({'template': json.dumps(self.template)}),  # todo - change rulenodeserver so we don't have to dumps template first
+                   headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
             resp = r.json()
@@ -310,7 +311,7 @@ class RecipeRule(Rule):
 
     def post(self, thread_queue=None):
         ruleserver_uri = _get_ruleserver_uri()
-        rule, n_tasks = {'template': self.template}, 1
+        rule, n_tasks = {'template': json.dumps(self.template)}, 1  # todo - change rulenodeserver so we don't have to dumps template first
         if self._task_inputs:
             rule['inputsByTask'] = {t_ind: task for t_ind, task in enumerate(self._task_inputs)}
             n_tasks = len(self._task_inputs)
