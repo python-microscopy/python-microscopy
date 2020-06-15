@@ -252,7 +252,7 @@ class LocalizationRule(Rule):
             inp['frames'] = inp['input']
 
         self._template['inputs'] = inp
-        self.prepare_results_files(inputs['frames'])
+        self.prepare_results_files(inp['frames'])
 
 
 
