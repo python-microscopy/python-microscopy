@@ -257,10 +257,12 @@ class LocalizationRule(Rule):
 
     @property
     def outputs(self):
-        return [{
-            'fitResults': self.results_filename + '/FitResults',
-            'driftResults': self.results_filename + '/DriftResults'
-        }]
+        cluster_resolved_filename = 'PYME-CLUSTER://%s/' % self.server_filter + self.results_filename
+        # return [{  # fixme - recipe loading currently doesn't support get_tabular_part as separate inputs
+        #     'fitResults':  cluster_resolved_filename + '/FitResults',
+        #     'driftResults': cluster_resolved_filename + '/DriftResults'
+        # }]
+        return [{'input': cluster_resolved_filename}]
 
     def chain_inputs(self, inputs):
         # currently only support single input/output per LocalizationRule
