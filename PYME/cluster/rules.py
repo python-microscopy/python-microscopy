@@ -241,11 +241,19 @@ class LocalizationRule(Rule):
         }]
 
     def chain_inputs(self, inputs):
-        if isinstance(inputs, list) and len(inputs) == 1 and 'frames' in inputs.keys():
-            self._template['inputs'] = inputs
-            self.prepare_results_files(inputs['frames'])
-        else:
-            raise RuntimeError('Malformed input; LocalizationRule does not support multiple/fancy input chaining')
+        # currently only support single input/output per LocalizationRule
+        if len(inputs) > 1 or ('frames' not in inputs[0].keys() and 'input' not in inputs[0].keys()):
+            raise RuntimeError('Malformed input; LocalizationRule does not yet support multiple/fancy input chaining')
+
+        inp = inputs[0]
+        try:
+            inp['frames']
+        except KeyError:
+            inp['frames'] = inp['input']
+
+        self._template['inputs'] = inp
+        self.prepare_results_files(inputs['frames'])
+
 
 
 class RecipeRule(Rule):
@@ -363,4 +371,6 @@ class RuleChain(list):
                 self[ri].chain_rule(self[ri + 1])
 
     def set_chain_input(self, inputs):
+        if isinstance(inputs, dict):
+            inputs = [inputs]
         self[0].chain_inputs(inputs)
