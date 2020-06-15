@@ -366,7 +366,7 @@ class RecipeRule(Rule):
 class RuleChain(list):
     def post_all(self):
         for ri in range(len(self)):
-            self[ri].post_rule()
+            self[ri].post()
             if ri != len(self):
                 self[ri].chain_rule(self[ri + 1])
 
