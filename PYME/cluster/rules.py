@@ -50,7 +50,19 @@ class Rule(object):
     def template(self):
         return self._template
 
-    def post(self):
+    def post(self, thread_queue=None):
+        """
+
+        Parameters
+        ----------
+        thread_queue: queue.Queue
+            queue to keep track of any threads used in task posting so they aren't prematurely garbage collected after
+            the rule is posted and this method exits
+
+        Returns
+        -------
+
+        """
         raise NotImplementedError
 
     def chain_rule(self, chained_rule):
@@ -168,7 +180,7 @@ class LocalizationRule(Rule):
     def __del__(self):
         self._posting_poll = False
 
-    def post(self):
+    def post(self, thread_queue=None):
         if not self._results_prepared:
             raise RuntimeError('results files not initiated, call prepare_results_files first')
         self.ruleserver_uri = _get_ruleserver_uri()
@@ -193,7 +205,13 @@ class LocalizationRule(Rule):
         self._current_frame = 0
 
         # release task for each frame
-        threading.Thread(target=self._poll)
+        self._thread = threading.Thread(target=self._poll)
+        self._thread.start()
+        if thread_queue is not None:
+            # keep track of number of launching threads to make sure they have time to finish before joining
+            if thread_queue.full():
+                thread_queue.get().join()
+            thread_queue.put(self._thread)
 
     def _release_frame_tasks_for_bidding(self):
         n_frames = self.datasource.getNumSlices()
@@ -290,7 +308,7 @@ class RecipeRule(Rule):
 
         self._task_inputs = inputs
 
-    def post(self):
+    def post(self, thread_queue=None):
         ruleserver_uri = _get_ruleserver_uri()
         rule, n_tasks = {'template': self.template}, 1
         if self._task_inputs:
@@ -367,9 +385,13 @@ class RecipeRule(Rule):
 
 
 class RuleChain(list):
+    def __init__(self, thread_queue=None):
+        list.__init__(self)
+        self.thread_queue = thread_queue
+
     def post_all(self):
         for ri in range(len(self)):
-            self[ri].post()
+            self[ri].post(self.thread_queue)
             if ri != len(self) - 1:
                 self[ri].chain_rule(self[ri + 1])
 
