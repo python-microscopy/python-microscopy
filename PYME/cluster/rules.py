@@ -163,6 +163,8 @@ class LocalizationRule(Rule):
             }
         })
 
+        self._results_prepared = True
+
     def __del__(self):
         self._posting_poll = False
 
@@ -171,8 +173,9 @@ class LocalizationRule(Rule):
             raise RuntimeError('results files not initiated, call prepare_results_files first')
         self.ruleserver_uri = _get_ruleserver_uri()
         self.datasource = DataSources.getDataSourceForFilename(self.template['inputs']['frames'])
+        self.datasource = self.datasource(self.template['inputs']['frames'])
 
-        self._max_frames = max(self._max_frames, self.datasource.getNumSlices())
+        self._max_frames = self.datasource.getNumSlices() if self.datasource.is_complete else 1e6
 
         s = clusterIO._getSession(self.ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self._max_frames),
@@ -367,7 +370,7 @@ class RuleChain(list):
     def post_all(self):
         for ri in range(len(self)):
             self[ri].post()
-            if ri != len(self):
+            if ri != len(self) - 1:
                 self[ri].chain_rule(self[ri + 1])
 
     def set_chain_input(self, inputs):
