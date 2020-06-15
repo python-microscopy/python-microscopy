@@ -109,7 +109,7 @@ class LocalizationRule(Rule):
             its uri, this parameter only affects which cluster performs the localization
         """
         Rule.__init__(self)
-        Rule._template['type'] = 'localization'
+        self._template['type'] = 'localization'
         self.analysis_metadata = analysis_metadata
         self.server_filter = server_filter
 
