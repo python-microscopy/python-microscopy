@@ -505,19 +505,18 @@ class QuadTreeRenderer(ColourRenderer):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
-        if not np.mod(np.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
-                self.visFr.QTGoalPixelSize = pixelSize
-                self.visFr.Quads = None
+        if not np.mod(np.log2(pixelSize/self.pipeline.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+                self.pipeline.QTGoalPixelSize = pixelSize
+                self.pipeline.Quads = None
 
-        self.visFr.GenQuads()
+        self.pipeline.GenQuads()
 
-        qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
-        qtWidthPixels = np.ceil(qtWidth/pixelSize)
+        qtWidth = self.pipeline.Quads.x1 - self.pipeline.Quads.x0
+        qtWidthPixels = int(np.ceil(qtWidth/pixelSize))
 
         im = np.zeros((qtWidthPixels, qtWidthPixels))
-        QTrend.rendQTa(im, self.visFr.Quads)
-
-        return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
+        QTrend.rendQTa(im, self.pipeline.Quads)
+        return im[int(imb.x0/pixelSize):int(imb.x1/pixelSize),int(imb.y0/pixelSize):int(imb.y1/pixelSize)]
 
 
 RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
