@@ -42,7 +42,6 @@ class VideoPanel(DockedPanel):
         DockedPanel.__init__(self, parent_panel, **kwargs)
 
         self.snapshots = list()
-        self.parent_panel = parent_panel
         self.next_view_id = 0
 
         self.AddNewElement(self._anim_pan(),foldable=False)
@@ -65,6 +64,7 @@ class VideoPanel(DockedPanel):
         self.view_table.SetColumnWidth(1, 60)
         self.view_table.SetColumnWidth(2, 60)
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
+
         vertical_sizer.AddSpacer(10)
 
         self._create_buttons(vertical_sizer)
