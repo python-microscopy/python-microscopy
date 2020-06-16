@@ -67,14 +67,14 @@ class Rule(object):
 
     def chain_rule(self, chained_rule):
         """
-        Link two rules, hardcoding the output URIs from the first as inputs to the second
+        Link two rules, note that this does not take care of input/output URI hardcoding
 
         Parameters
         ----------
         chained_rule: Rule
 
         """
-        chained_rule.chain_inputs(self.outputs)
+        # chained_rule.chain_inputs(self.outputs)
         self._template['on_completion'] = {
             'template': chained_rule.template
         }
@@ -388,17 +388,40 @@ class RecipeRule(Rule):
 
 
 class RuleChain(list):
+    """
+    List of rules to be posted with inputs/outputs chained. Execution will be serial, and subsequent rules will only be
+    posted/made available after all tasks for the preceding rule are completed.
+    """
     def __init__(self, thread_queue=None):
         list.__init__(self)
         self.thread_queue = thread_queue
 
     def post_all(self):
-        for ri in range(len(self)):
-            self[ri].post(self.thread_queue)
-            if ri != len(self) - 1:
-                self[ri].chain_rule(self[ri + 1])
+        """
+        Chains all rules such that the inputs/outputs are connected, and then nests rules such that they will all be
+        in the 'on_completion' part of the first rule, which is then posted
+        """
+
+        # chain rules in opposite order so we nest the on_completions
+        for ri in reversed(range(len(self) - 1)):
+            self[ri].chain_rule(self[ri + 1])
+
+        self[ri].post(self.thread_queue)
 
     def set_chain_input(self, inputs):
+        """
+        Set the first input of the chain, and propagate the input/output chaining through the list. Note that for
+        LocalizationRule, chaining the input will create a results file on the cluster.
+
+        Parameters
+        ----------
+        inputs: list
+            inputs to be chained to the first rule in the list
+
+        """
         if isinstance(inputs, dict):
             inputs = [inputs]
         self[0].chain_inputs(inputs)
+
+        for ri in range(0, len(self) - 1):
+            self[ri + 1].chain_inputs(self[ri].outputs)
