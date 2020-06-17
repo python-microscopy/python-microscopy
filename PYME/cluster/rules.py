@@ -88,9 +88,7 @@ class Rule(object):
         chained_rule: Rule
 
         """
-        self._on_completion = {
-            'template': chained_rule.template
-        }
+        self._on_completion = chained_rule.rule_str
 
     @property
     def outputs(self):
@@ -440,7 +438,7 @@ class RecipeRule(Rule):
             inputs = inputs[0]
 
         self._template['inputs'] = inputs
-        self._task_inputs = None
+        self._task_inputs = []
 
 
 
