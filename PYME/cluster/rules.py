@@ -46,6 +46,9 @@ class Rule(object):
     def __init__(self):
         self._template = {'id': '{{ruleID}}~{{taskID}}'}
         self._on_completion = None
+        self.ruleserver_uri = None
+        self._rule_id = None
+        self._max_tasks = 1
 
     @property
     def template(self):
@@ -60,6 +63,9 @@ class Rule(object):
 
     def post(self, thread_queue=None):
         """
+        Post rule to ruleserver. 
+        
+        Should additionally update self.ruleserver_uri and self._rule_id in the process
 
         Parameters
         ----------
@@ -111,6 +117,36 @@ class Rule(object):
 
         """
         self._template['inputs'] = inputs
+    
+    @property
+    def max_tasks(self):
+        return self._max_tasks
+    
+    @max_tasks.setter
+    def max_tasks(self, n_max):
+        """
+        Updates the number of tasks which can be created from this rule, updating the entry on the ruleserver
+        as well if the rule has already been posted. Important to call for rules initialially created with 
+        an arbitrary max-tasks defined (e.g. for a LocalizationRule created while the series is still spooling).
+
+        Parameters
+        ----------
+        n_max : int
+            Number of tasks which can be created from this rule.
+        """
+        self._max_tasks = n_max
+
+        if self.ruleserver_uri and self._rule_id:  # rule has been posted, update on ruleserver
+            s = clusterIO._getSession(self.ruleserver_uri)
+            r = s.post('%s/update_max_tasks?rule_id=%s&n_max=%d' % (self.ruleserver_uri, self._rule_id, n_max),
+                    data='', headers={'Content-Type': 'application/json'})
+
+            if r.status_code == 200:
+                logger.debug('Successfully updated rule max_tasks')
+            else:
+                logger.error('Failed to update rule max_tasks with status code: %d' % r.status_code)
+
+
 
 class LocalizationRule(Rule):
     def __init__(self, analysis_metadata, series_uri=None, server_filter=''):
@@ -194,10 +230,10 @@ class LocalizationRule(Rule):
         self.datasource = DataSources.getDataSourceForFilename(self.template['inputs']['frames'])
         self.datasource = self.datasource(self.template['inputs']['frames'])
 
-        self._max_frames = self.datasource.getNumSlices() if self.datasource.is_complete else 1e6
+        self.max_tasks = self.datasource.getNumSlices() if self.datasource.is_complete else 1e6
 
         s = clusterIO._getSession(self.ruleserver_uri)
-        r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self._max_frames),
+        r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self.max_tasks),
                    data=self.rule_str,
                    headers={'Content-Type': 'application/json'})
 
@@ -257,8 +293,11 @@ class LocalizationRule(Rule):
         while self._posting_poll:
             frames_outstanding = self._release_frame_tasks_for_bidding()
             if self.datasource.is_complete and frames_outstanding < 1:
+                # update max_tasks on ruleserver so the rule can eventually be marked as finished
+                self.max_tasks = self.datasource.getNumSlices()
                 logging.debug('all tasks generated, ending loop')
                 self._posting_poll = False
+                
             else:
                 time.sleep(1)
 
@@ -335,11 +374,11 @@ class RecipeRule(Rule):
     def post(self, thread_queue=None):
         ruleserver_uri = _get_ruleserver_uri()
 
-        n_tasks = max(len(self._task_inputs), 1)
+        self.max_tasks = max(len(self._task_inputs), 1)
 
         s = clusterIO._getSession(ruleserver_uri)
-        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri, n_tasks, 0,
-                                                                                            n_tasks),
+        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri, self.max_tasks, 0,
+                                                                                            self.max_tasks),
                    data=self.rule_str, headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:

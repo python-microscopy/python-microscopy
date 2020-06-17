@@ -457,6 +457,7 @@ class RuleServer(object):
                         
                     follow_on = r.on_completion
                     if follow_on is not None:
+                        logger.debug('adding chained rule')
                         # if a follow on rule is defined, add it
                         template = follow_on['template']
                         n_tasks = follow_on.get('max_tasks', 1)
@@ -464,7 +465,8 @@ class RuleServer(object):
                         ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
     
                         rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
-                                             rule_timeout=float(timeout), on_completion=follow_on.get('on_completion', None))
+                                             rule_timeout=float(timeout),
+                                             on_completion=follow_on.get('on_completion', None))
     
                         rule.make_range_available(0, int(n_tasks))
     
@@ -648,6 +650,28 @@ class RuleServer(object):
         rule.make_range_available(int(release_start), int(release_end))
     
     
+        return json.dumps({'ok': 'True'})
+    
+    @webframework.register_endpoint('/update_max_tasks')
+    def update_max_tasks(self, rule_id, n_max):
+        """
+        
+        HTTP Endpoint (POST) to update the number of max tasks which can be
+        created from a given rule.
+        
+        Parameters
+        ----------
+        rule_id : str
+            ID of the rule to update
+        n_max : int
+            max tasks which should be created from the rule
+
+        Returns
+        -------
+        success : str
+            ``{"ok" : "True"}`` if successful.
+        """
+        self._rules[rule_id]._n_max = int(n_max)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/inactivate_rule')
