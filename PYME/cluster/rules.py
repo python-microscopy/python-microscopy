@@ -53,13 +53,13 @@ class Rule(object):
     @property
     def template(self):
         return self._template
-
+    
     @property
-    def rule_str(self):
+    def rule(self):
         rule = {'template': json.dumps(self.template)}  # todo - change rulenodeserver so we don't have to dumps template first
         if self._on_completion:
             rule['on_completion'] = self._on_completion
-        return json.dumps(rule)
+        return rule
 
     def post(self, thread_queue=None):
         """
@@ -88,7 +88,7 @@ class Rule(object):
         chained_rule: Rule
 
         """
-        self._on_completion = chained_rule.rule_str
+        self._on_completion = chained_rule.rule
 
     @property
     def outputs(self):
@@ -232,7 +232,7 @@ class LocalizationRule(Rule):
 
         s = clusterIO._getSession(self.ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self.max_tasks),
-                   data=self.rule_str,
+                   data=json.dumps(self.rule),
                    headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
@@ -356,18 +356,14 @@ class RecipeRule(Rule):
         self._task_inputs = inputs
 
     @property
-    def rule_str(self):
-        rule = {'template': json.dumps(
-            self.template)}  # todo - change rulenodeserver so we don't have to dumps template first
-
-        if self._on_completion:
-            rule['on_completion'] = self._on_completion
+    def rule(self):
+        rule = super(RecipeRule, self).rule
 
         if len(self._task_inputs) > 0:
             rule['inputsByTask'] = {t_ind: task for t_ind, task in enumerate(self._task_inputs)}
             logger.debug('inputs by task: %s' % rule['inputsByTask'])
 
-        return json.dumps(rule)
+        return rule
 
     def post(self, thread_queue=None):
         ruleserver_uri = _get_ruleserver_uri()
@@ -377,7 +373,7 @@ class RecipeRule(Rule):
         s = clusterIO._getSession(ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri, self.max_tasks, 0,
                                                                                             self.max_tasks),
-                   data=self.rule_str, headers={'Content-Type': 'application/json'})
+                   data=json.dumps(self.rule), headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
             resp = r.json()
