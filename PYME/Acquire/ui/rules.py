@@ -120,10 +120,6 @@ class ChainedRulePanel(wx.Panel):
         self._recipe_manager = recipe_manager
         self._spool_controller = spool_controller
 
-        # self._localization_settings = localization_settings
-        # if self._localization_settings is not None:
-        #     self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
-
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
