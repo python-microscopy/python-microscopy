@@ -22,12 +22,10 @@ python functions defining that method (linked from the table above). The server 
 command (see :mod:`PYME.cluster.PYMERuleServer`) which loads this in a separate thread and takes care of logging and zeroconf
 registration, rather than by directly running this file.
 """
-#import cherrypy
 import threading
 import requests
 import queue as Queue
 from six.moves import xrange
-
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('ruleserver')
@@ -36,17 +34,12 @@ logger.setLevel(logging.DEBUG)
 import time
 import sys
 import ujson as json
-#import json
 import os
-
 from PYME.misc import computerName
 from PYME import config
-#from PYME.IO import clusterIO
 from PYME.util import webframework
 import collections
-
 import uuid
-
 import numpy as np
 
 class Rule(object):
