@@ -47,6 +47,6 @@ class SurfaceFitter(object):
         
         self.vis_frame.Refresh()
 
-def Plug(vis_frame):
+def Plug(visFr):
     '''Plugs this module into the gui'''
-    SurfaceFitter(vis_frame)
+    SurfaceFitter(visFr)
