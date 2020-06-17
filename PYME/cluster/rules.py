@@ -45,10 +45,18 @@ def _get_ruleserver_uri(n_retries=2):
 class Rule(object):
     def __init__(self):
         self._template = {'id': '{{ruleID}}~{{taskID}}'}
+        self._on_completion = None
 
     @property
     def template(self):
         return self._template
+
+    @property
+    def rule_str(self):
+        rule = {'template': json.dumps(self.template)}  # todo - change rulenodeserver so we don't have to dumps template first
+        if self._on_completion:
+            rule['on_completion'] = self._on_completion
+        return json.dumps(rule)
 
     def post(self, thread_queue=None):
         """
@@ -74,8 +82,7 @@ class Rule(object):
         chained_rule: Rule
 
         """
-        # chained_rule.chain_inputs(self.outputs)
-        self._template['on_completion'] = {
+        self._on_completion = {
             'template': chained_rule.template
         }
 
@@ -191,13 +198,13 @@ class LocalizationRule(Rule):
 
         s = clusterIO._getSession(self.ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.ruleserver_uri, self._max_frames),
-                   data=json.dumps({'template': json.dumps(self.template)}),  # todo - change rulenodeserver so we don't have to dumps template first
+                   data=self.rule_str,
                    headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
             resp = r.json()
             self._rule_id = resp['ruleID']
-            logging.debug('Successfully created rule')
+            logging.debug('Successfully created localization rule')
         else:
             logging.error('Failed creating rule with status code: %d' % r.status_code)
 
@@ -281,7 +288,7 @@ class LocalizationRule(Rule):
 
 
 class RecipeRule(Rule):
-    def __init__(self, recipe, inputs=None, output_dir=None):
+    def __init__(self, recipe, inputs=(), output_dir=None):
         """
 
         Parameters
@@ -311,23 +318,34 @@ class RecipeRule(Rule):
 
         self._task_inputs = inputs
 
+    @property
+    def rule_str(self):
+        rule = {'template': json.dumps(
+            self.template)}  # todo - change rulenodeserver so we don't have to dumps template first
+
+        if self._on_completion:
+            rule['on_completion'] = self._on_completion
+
+        if len(self._task_inputs) > 0:
+            rule['inputsByTask'] = {t_ind: task for t_ind, task in enumerate(self._task_inputs)}
+            logger.debug('inputs by task: %s' % rule['inputsByTask'])
+
+        return json.dumps(rule)
+
     def post(self, thread_queue=None):
         ruleserver_uri = _get_ruleserver_uri()
-        rule, n_tasks = {'template': json.dumps(self.template)}, 1  # todo - change rulenodeserver so we don't have to dumps template first
-        if self._task_inputs:
-            rule['inputsByTask'] = {t_ind: task for t_ind, task in enumerate(self._task_inputs)}
-            n_tasks = len(self._task_inputs)
-            logger.debug('inputs by task: %s' % rule['inputsByTask'])
+
+        n_tasks = max(len(self._task_inputs), 1)
 
         s = clusterIO._getSession(ruleserver_uri)
         r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (ruleserver_uri, n_tasks, 0,
                                                                                             n_tasks),
-                   data=json.dumps(rule), headers={'Content-Type': 'application/json'})
+                   data=self.rule_str, headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
             resp = r.json()
             self._rule_id = resp['ruleID']
-            logging.debug('Successfully created rule')
+            logging.debug('Successfully created recipe rule')
         else:
             logging.error('Failed creating rule with status code: %d' % r.status_code)
 
