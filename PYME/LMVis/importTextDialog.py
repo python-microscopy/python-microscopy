@@ -120,7 +120,7 @@ class ImportTextDialog(wx.Dialog):
         #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
 
         if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
-            colNames = commentLines[-1].split(delim)
+            colNames = [s.strip() for s in commentLines[-1].split(delim)]
         else:
             colNames = ['column_%d' % i for i in range(numCols)]
 

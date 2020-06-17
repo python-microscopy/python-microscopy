@@ -29,21 +29,27 @@ import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
-class profiler:
+class ProfilePlotter:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
 
         #self.view = dsviewer.view
-        self.do = dsviewer.do
+        self.do = dsviewer.do # type: PYME.DSView.displayOptions.DisplayOpts
         self.image = dsviewer.image
         
-        dsviewer.AddMenuItem('Processing', "Plot &Profile\tCtrl-K", self.OnPlotProfile)
+        dsviewer.AddMenuItem('Processing', "Plot &Profile\tCtrl-K", self.OnProfile)
         dsviewer.AddMenuItem('Processing', "Plot Axial Profile\tCtrl-Shift-K", self.OnPlotAxialProfile)
+        #dsviewer.AddMenuItem('Processing', "Plot freehand profile", self.OnPlotWavyProfile)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
         
     
+    def OnProfile(self, event=None):
+        if (self.do.selectionMode == self.do.SELECTION_SQUIGGLE):
+            self.OnPlotWavyProfile(event)
+        else:
+            self.OnPlotProfile(event)
 
     def OnPlotProfile(self, event=None):
         from PYME.Analysis.profile_extraction import extract_profile
@@ -285,14 +291,59 @@ class profiler:
 
         ViewIm3D(im, mode='graph')
 
+    def OnPlotWavyProfile(self, event=None):
+        #lx, ly, hx, hy = self.do.GetSliceSelection()
+        pts = np.array(self.do.selection_trace)
 
+        w = int(np.floor(0.5 * self.do.selectionWidth))
 
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
 
+        try:
+            voxx = self.image.mdh.getEntry('voxelsize.x')
+        except:
+            voxx = 1
 
+        plots = []
+        t = np.arange(np.ceil(len(pts)))
 
+        for chanNum in range(self.image.data.shape[3]):
+            p = ndimage.map_coordinates(self.image.data[:, :, self.do.zp, chanNum].squeeze(), pts.T)
+    
+            plots.append(p.reshape(-1, 1, 1))
 
+        #pylab.legend(names)
 
-        #dsviewer.paneHooks.append(self.GenProfilePanel)
+        im = ImageStack(plots, titleStub='New Profile')
+        im.xvals = t * voxx
+
+        if not voxx == 1:
+            im.xlabel = 'Distance [um]'
+        else:
+            im.xlabel = 'Distance [pixels]'
+
+        im.ylabel = 'Intensity'
+        im.defaultExt = '.txt'
+
+        im.mdh['voxelsize.x'] = voxx
+        im.mdh['ChannelNames'] = names
+        im.mdh['Profile.XValues'] = im.xvals
+        im.mdh['Profile.XLabel'] = im.xlabel
+        im.mdh['Profile.YLabel'] = im.ylabel
+        #im.mdh['Profile.StartX'] = lx
+        #im.mdh['Profile.StartY'] = ly
+        #im.mdh['Profile.EndX'] = hx
+        #im.mdh['Profile.EndY'] = hy
+        #im.mdh['Profile.Width'] = 2*w + 1
+
+        im.mdh['OriginalImage'] = self.image.filename
+
+        ViewIm3D(im, mode='graph')
+    
+            #dsviewer.paneHooks.append(self.GenProfilePanel)
 
 #    def GenProfilePanel(self, _pnl):
 #        item = afp.foldingPane(_pnl, -1, caption="Intensity Profile", pinned = True)
@@ -351,5 +402,5 @@ class profiler:
 
 
 def Plug(dsviewer):
-    dsviewer.profilePlotter = profiler(dsviewer)
+    dsviewer.profilePlotter = ProfilePlotter(dsviewer)
     

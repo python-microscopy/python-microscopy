@@ -133,8 +133,10 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
 
 
 
-def format_results(URI, data_raw):
-    # translate data into wire format
+def format_results(data_raw, URI=''):
+    """
+    translate data into wire format
+    """
     output_format = None
     
     if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
@@ -155,8 +157,14 @@ def format_results(URI, data_raw):
             data = data_raw
         elif isinstance(data_raw, str):
             data = data_raw.encode()
+        elif hasattr(data_raw, 'to_JSON'):
+            data = data_raw.to_JSON().encode()
         else:
             import pandas as pd
+            if isinstance(data_raw, np.ndarray):
+                from PYME.IO.tabular import unnest_dtype
+                data_raw = data_raw.view(unnest_dtype(data_raw.dtype))
+            
             df = pd.DataFrame(data_raw)
             data = df.to_json().encode()
     
@@ -179,6 +187,8 @@ def format_results(URI, data_raw):
         data = data_raw.dumps()
     
     elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
+        # NB - this may be redundant as we usually request metadata.json which will get caught and handled by the .endswith('json') cas above
+        # keeping for now in case we want to change default metadata handling and/or also support .xml or .md formats
         output_format = 'text/json'
         data = data_raw.to_JSON().encode()
     
@@ -190,7 +200,7 @@ def format_results(URI, data_raw):
     return data, output_format
 
 def fileResults(URI, data_raw):
-    data, output_format = format_results(URI, data_raw)
+    data, output_format = format_results(data_raw, URI)
 
     #now do URI translation
     if '__aggregate' in URI and URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):

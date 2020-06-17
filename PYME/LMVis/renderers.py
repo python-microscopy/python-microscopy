@@ -207,14 +207,14 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, settings, imb, mdh):
-        import matplotlib.pyplot as plt
-        oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(plt.cm.gray)
+        # import matplotlib.pyplot as plt
+        # oldcmap = self.visFr.glCanvas.cmap
+        # self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
-        self.visFr.glCanvas.setCMap(oldcmap)
+        # self.visFr.glCanvas.setCMap(oldcmap)
 
-        return np.atleast_3D(im)
+        return np.atleast_3d(im)
 
 class ColourRenderer(CurrentRenderer):
     """Base class for all other renderers which know about the colour filter"""
@@ -505,23 +505,21 @@ class QuadTreeRenderer(ColourRenderer):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
-        if not np.mod(np.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
-                self.visFr.QTGoalPixelSize = pixelSize
-                self.visFr.Quads = None
+        if not np.mod(np.log2(pixelSize/self.pipeline.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+                self.pipeline.QTGoalPixelSize = pixelSize
+                self.pipeline.Quads = None
 
-        self.visFr.GenQuads()
+        self.pipeline.GenQuads()
 
-        qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
-        qtWidthPixels = np.ceil(qtWidth/pixelSize)
+        qtWidth = self.pipeline.Quads.x1 - self.pipeline.Quads.x0
+        qtWidthPixels = int(np.ceil(qtWidth/pixelSize))
 
         im = np.zeros((qtWidthPixels, qtWidthPixels))
-        QTrend.rendQTa(im, self.visFr.Quads)
+        QTrend.rendQTa(im, self.pipeline.Quads)
+        return im[int(imb.x0/pixelSize):int(imb.x1/pixelSize),int(imb.y0/pixelSize):int(imb.y1/pixelSize)]
 
-        return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
 
-
-RENDERER_GROUPS = ((CurrentRenderer,),
-                   (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
+RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}

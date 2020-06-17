@@ -224,6 +224,7 @@ class DSViewFrame(AUIFrame):
             self.moduleMenuIDByName[mn] = id
             if mn in self.installedModules:
                 self.mModules.Check(id, True)
+                self.mModules.Enable(id, False)
 
             self.Bind(wx.EVT_MENU, self.OnToggleModule, id=id)
 
@@ -248,6 +249,7 @@ class DSViewFrame(AUIFrame):
         if moduleName in self.installedModules:
             id = self.moduleMenuIDByName[moduleName]
             self.mModules.Check(id, True)
+            self.mModules.Enable(id, False)
 
         self.CreateFoldPanel()
         self._mgr.Update()

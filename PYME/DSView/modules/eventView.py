@@ -29,7 +29,7 @@ def Update(dsviewer):
         if 'EndTime' in image.mdh.getEntryNames():
             et = image.mdh.getEntry('EndTime')
         else:
-            et = piecewiseMapping.framesToTime(image.data.getNumSlices(), image.events, image.mdh)
+            et = piecewiseMapping.frames_to_times(image.data.getNumSlices(), image.events, image.mdh)
             
         dsviewer.elv.SetRange([0, et - st])
         #dsviewer.elv.SetRange([st, et])
@@ -41,7 +41,7 @@ def Plug(dsviewer):
         if 'EndTime' in image.mdh.getEntryNames():
             et = image.mdh.getEntry('EndTime')
         else:
-            et = piecewiseMapping.framesToTime(image.data.getNumSlices(), image.events, image.mdh)
+            et = piecewiseMapping.frames_to_times(image.data.getNumSlices(), image.events, image.mdh)
         dsviewer.elv = eventLogViewer.eventLogTPanel(dsviewer, image.events, image.mdh, [0, et-st]);
         dsviewer.AddPage(dsviewer.elv, False, 'Events')
 

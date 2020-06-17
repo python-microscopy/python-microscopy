@@ -963,4 +963,3 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
             pass
 
         namespace[self.outputName] = mapped
-

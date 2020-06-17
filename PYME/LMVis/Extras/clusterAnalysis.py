@@ -429,11 +429,30 @@ class ClusterAnalyser:
                 else:
                     ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
                             c='k', linestyle='--')
+
             ax.set_ylabel(r.normalization)
             # Plot Ripley's K/L/H
             ax.plot(result['bins'], result['vals'], c='r')
             ax.set_xlabel('Distance (nm)')
+            if r.statistics:
+                # Plot envelope
+                ax.fill_between(result['bins'], result['min'], result['max'], color='k', alpha=0.25)
 
+                # Create a new plot for the pc-values
+                fig_pc = plt.figure()
+                ax_pc = fig_pc.add_subplot(111)
+                ax_pc.plot(result['bins'], -np.log2(result['pc']), c='k')
+                ax_pc.set_xlabel('Distance (nm)')
+                ax_pc.set_ylabel('Clustering significance (-log(p))')
+                ax_pc.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is clustered
+
+                # Create a new plot for the pd-values
+                fig_pd = plt.figure()
+                ax_pd = fig_pd.add_subplot(111)
+                ax_pd.plot(result['bins'], -np.log2(result['pd']), c='k')
+                ax_pd.set_xlabel('Distance (nm)')
+                ax_pd.set_ylabel('Dispersion significance (-log(p))')
+                ax_pd.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is dispersed
             
 
 def Plug(visFr):

@@ -154,6 +154,21 @@ class H5RFile(object):
             self.appendQueues[tablename].append(data)
 
     def getTableData(self, tablename, _slice):
+        """
+        Retrieves a tables.table.Table from the file and returns it as a structured numpy array
+
+        Parameters
+        ----------
+        tablename: str
+            name of table to return
+        _slice: slice
+            slice object to index the table
+
+        Returns
+        -------
+        table_part: numpy.ndarray
+
+        """
         with tablesLock:
             try:
                 table = getattr(self._h5file.root, tablename)
