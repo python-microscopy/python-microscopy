@@ -260,9 +260,9 @@ class LocalizationRule(Rule):
         logging.debug('datasource frames: %d, tasks filed: %d' % (n_frames, self._current_frame))
         n_outstanding = 0
 
-        while n_frames > self._current_frame + 1:
-
-            new_current_frame = min(self._current_frame + 100000, n_frames - 1)
+        while n_frames > self._current_frame:
+            # release in batches of 10,000
+            new_current_frame = min(self._current_frame + 100000, n_frames)
 
             # release frames, creating tasks for each
             s = clusterIO._getSession(self.ruleserver_uri)
@@ -278,9 +278,8 @@ class LocalizationRule(Rule):
                 logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
             self._current_frame = new_current_frame
-
-            n_outstanding = n_frames - 1 - self._current_frame
-
+            n_outstanding = n_frames - self._current_frame
+        logging.debug('datasource frames: %d, unfiled tasks: %d' % (n_frames, n_outstanding))
         return n_outstanding
 
 
@@ -289,13 +288,14 @@ class LocalizationRule(Rule):
         time.sleep(1.5)  # wait until clusterIO caches clear to avoid replicating the results file.
 
         while self._posting_poll:
+            done = self.datasource.is_complete
             frames_outstanding = self._release_frame_tasks_for_bidding()
-            if self.datasource.is_complete and frames_outstanding < 1:
+            if done and frames_outstanding < 1:
                 # update max_tasks on ruleserver so the rule can eventually be marked as finished
                 self.max_tasks = self.datasource.getNumSlices()
                 logging.debug('all tasks generated, ending loop')
                 self._posting_poll = False
-                
+                self._rule_id = None  # disconnect this rule from the ruleserver copy
             else:
                 time.sleep(1)
 
@@ -381,6 +381,8 @@ class RecipeRule(Rule):
             logging.debug('Successfully created recipe rule')
         else:
             logging.error('Failed creating rule with status code: %d' % r.status_code)
+        
+        self._rule_id = None  # disconnect this rule from the ruleserver copy
 
     @property
     def outputs(self):
@@ -457,7 +459,7 @@ class RuleChain(list):
         for ri in reversed(range(len(self) - 1)):
             self[ri].chain_rule(self[ri + 1])
 
-        self[ri].post(self.thread_queue)
+        self[0].post(self.thread_queue)
 
     def set_chain_input(self, inputs):
         """
