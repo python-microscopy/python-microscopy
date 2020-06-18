@@ -401,6 +401,9 @@ class fitTask(taskDef.Task):
         md.tIndex = self.index
         md.taskQueue = taskQueue
         md.dataSourceID = self.dataSourceID
+
+        if 'Analysis.StartAt' in md.keys() and self.index < md['Analysis.StartAt']:
+            return fitResult(self, [], [])
         
         self.roi_offset = [0,0]
 
