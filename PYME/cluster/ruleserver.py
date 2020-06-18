@@ -168,6 +168,7 @@ class IntegerIDRule(Rule):
         
         self._n_max = max_task_ID
         
+        logger.debug('on completion present: %s' % (on_completion != None))
         self.on_completion = on_completion
         
         self.avCost = 0
@@ -191,10 +192,25 @@ class IntegerIDRule(Rule):
         self.avCost = av_cost
         
     def make_range_available(self, start, end):
-        '''Make a range of tasks available (to be called once the underlying data is available)'''
+        """
+        Make a range of tasks available (to be called once the underlying data is available)
+        [start, end)
+
+        Parameters
+        ----------
+        start : int
+            first task number to release (inclusive)
+        end : int
+            last task number to release (exclusive)
+
+        Raises
+        ------
+        RuntimeError
+            if asked to release a range which is invalid for the max tasks we can create from this rule
+        """
         
         if start < 0 or start > self._task_info.size or end < 0 or end > self._task_info.size:
-            raise RuntimeError('Range (%d, %d) invalid with maxTasks=%d' % (start, end, self._task_info.size))
+            raise RuntimeError('Range (%d, %d) invalid with max task info=%d' % (start, end, self._task_info.size))
         
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
         with self._info_lock:
@@ -442,9 +458,12 @@ class RuleServer(object):
         while self._do_poll:
             for qn in list(self._rules.keys()):
                 self._rules[qn].poll_timeouts()
+                logger.debug('%s, n_max: %d, n_completed: %d, n_assigned: %d, n_failed: %d' % (self._rules[qn].ruleID, self._rules[qn]._n_max,
+                self._rules[qn].nCompleted, self._rules[qn].nAssigned, self._rules[qn].nFailed))
                 
                 # look for rules that have processed all tasks
                 if self._rules[qn].finished:
+                    logger.debug('rule finished, ID %s' % self._rules[qn].ruleID)
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
@@ -456,6 +475,7 @@ class RuleServer(object):
                         n_tasks = follow_on.get('max_tasks', 1)
                         timeout = follow_on.get('rule_timeout', 3600.)
                         ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+                        logger.debug('chained rule ID %s' % ruleID)
     
                         rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
                                              rule_timeout=float(timeout),
@@ -467,10 +487,10 @@ class RuleServer(object):
                             self._rules[ruleID] = rule
     
                         self._rule_n += 1
-                    
                 
                 #remore queue if expired (no activity for an hour) to free up memory
-                if self._rules[qn].expired:
+                elif self._rules[qn].expired:
+                    logger.debug('removing expired rule: %s' % self._rules[qn].ruleID)
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
@@ -594,21 +614,19 @@ class RuleServer(object):
             ``{"ok" : "True", 'ruleID' : str}``
 
         """
-        rule_info = json.loads(body)
+        with self._rule_lock:  # lock ~entire call so we don't hit KeyErrors if clients immediately try to interact with the server after post call
+            rule_info = json.loads(body)
+            
+            if ruleID is None:
+                ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+            
+            rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
+                                inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
+            
+            if not release_start is None:
+                rule.make_range_available(int(release_start), int(release_end))
         
-        if ruleID is None:
-            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
-        
-        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
-                             inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
-        
-        #print rule._inputs_by_task
-        if not release_start is None:
-            rule.make_range_available(int(release_start), int(release_end))
-        
-        with self._rule_lock:
             self._rules[ruleID] = rule
-        
         self._rule_n += 1
         
         return json.dumps({'ok': 'True', 'ruleID' : ruleID})
@@ -664,7 +682,8 @@ class RuleServer(object):
         success : str
             ``{"ok" : "True"}`` if successful.
         """
-        self._rules[rule_id]._n_max = int(n_max)
+        with self._rule_lock:  # if this is called by client shortly after post we may still be making the rule
+            self._rules[rule_id]._n_max = int(n_max)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/inactivate_rule')
@@ -694,13 +713,13 @@ class RuleServer(object):
 
         """
         
-        #logger.debug('Handing in tasks...')
-        for handin in json.loads(body):
-            ruleID = handin['ruleID']
-            
-            rule = self._rules[ruleID]
-            
-            rule.mark_complete(handin)
+        try:
+            for handin in json.loads(body):
+                ruleID = handin['ruleID']
+                rule = self._rules[ruleID]
+                rule.mark_complete(handin)
+        except KeyError as e:
+            return json.dumps({'ok': False, 'error': str(e)})
             
         return json.dumps({'ok': True})
     
