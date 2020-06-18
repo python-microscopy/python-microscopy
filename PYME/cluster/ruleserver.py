@@ -458,8 +458,8 @@ class RuleServer(object):
         while self._do_poll:
             for qn in list(self._rules.keys()):
                 self._rules[qn].poll_timeouts()
-                logger.debug('%s, n_max: %d, n_completed: %d, n_assigned: %d, n_failed: %d' % (self._rules[qn].ruleID, self._rules[qn]._n_max,
-                self._rules[qn].nCompleted, self._rules[qn].nAssigned, self._rules[qn].nFailed))
+                # logger.debug('%s, n_max: %d, n_completed: %d, n_assigned: %d, n_failed: %d' % (self._rules[qn].ruleID, self._rules[qn]._n_max,
+                # self._rules[qn].nCompleted, self._rules[qn].nAssigned, self._rules[qn].nFailed))
                 
                 # look for rules that have processed all tasks
                 if self._rules[qn].finished:
