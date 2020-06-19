@@ -733,7 +733,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True):
     """
     Get a file from the cluster.
     
@@ -751,6 +751,9 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
         when we get over 100 entries. Under our working assumption that data on the cluster is immutable, this is generally
         safe, with the exception of log files and files streamed using the _aggregate functionality. We can optionally
         request a non-cached version of the file.
+    local_short_circuit: bool
+        if file exists locally, load/read/return contents directly in this thread unless this flag is False in which case
+        we will get the contents through the dataserver over the network.
 
     Returns
     -------
@@ -766,7 +769,7 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
             pass
 
     #look for the file in the local server folder (short-circuit the server)
-    localpath = get_local_path(filename, serverfilter)
+    localpath = get_local_path(filename, serverfilter) if local_short_circuit else None
     if localpath:
         with open(localpath, 'rb') as f:
             return f.read()
@@ -916,7 +919,7 @@ def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
         filename collisions cannot occur. In practice this is reasonably easy to achieve when machine generated filenames
         are used, but implies that interfaces which allow the user to specify arbitrary filenames should run through a
         single user interface with external locking (e.g. clusterUI), particularly if there is any chance that multiple
-        users will be creating files simultaeneously.
+        users will be creating files simultaneously.
     
     Parameters
     ----------
