@@ -134,7 +134,7 @@ class ModuleBase(HasTraits):
         
         for input in self.inputs:
             if not input in keys:
-                raise MissingInputError('Input "%s" is missing from namespace' % input)
+                raise MissingInputError('Input "%s" is missing from namespace; keys: %s' % (input, keys))
         
 
     def outputs_in_namespace(self, namespace):
@@ -878,62 +878,82 @@ class ModuleCollection(HasTraits):
                     
         return outputs
 
-    def loadInput(self, filename, key='input'):
-        """Load input data from a file and inject into namespace
-
-        Currently only handles images (anything you can open in dh5view). TODO -
-        extend to other types.
+    def _populate_namespace_from_hdf5(self, key, h5f, filename, extension):
         """
-        #modify this to allow for different file types - currently only supports images
-        from PYME.IO import unifiedIO
+        Search through hdf5 file nodes and add them to the recipe namespace
+
+        Parameters
+        ----------
+        key : str
+            base key name for loaded file components, if key is not the default 'input', each file node will be loaded into
+            recipe namespace with `key`_`node_name`.
+        h5f : file
+            open hdf5 file
+        filename : str
+            full filename
+        extension : str
+            file extension, used here mainly to toggle which PYME.IO.tabular source is used for table nodes.
+        """
+        import tables
+        from PYME.IO import MetaDataHandler, tabular
+
+        key_prefix = '' if key == 'input' else key + '_'
+
+        try:
+            mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+        except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+            logger.warning('No metadata found, proceeding with empty metadata')
+            mdh = MetaDataHandler.NestedClassMDHandler()
+        
+        for t in h5f.list_nodes('/'):
+            # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+            # PZF formatted image data, Image data which is not in an EArray, etc ...)
+            # Note that EArray is only used for streaming data!
+            # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+            # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+            # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+            # > 3D data?
+            
+            if isinstance(t, tables.VLArray):
+                from PYME.IO.ragged import RaggedVLArray
+                
+                rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
+                rag.mdh = mdh
+
+                self.namespace[key_prefix + t.name] = rag
+
+            elif isinstance(t, tables.table.Table):
+                #  pipe our table into h5r or hdf source depending on the extension
+                tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
+                tab.mdh = mdh
+
+                self.namespace[key_prefix + t.name] = tab
+
+            elif isinstance(t, tables.EArray):
+                # load using ImageStack._loadh5, which finds metdata
+                im = ImageStack(filename=filename, haveGUI=False)
+                # assume image is the main table in the file and give it the named key
+                self.namespace[key] = im
+
+    def loadInput(self, filename, key='input'):
+        """
+        Load input data from a file and inject into namespace
+        """
+        from PYME.IO import unifiedIO, clusterIO
         import os
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']:
             import tables
-            from PYME.IO import MetaDataHandler
-            from PYME.IO import tabular
-
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                with tables.open_file(fn, mode='r') as h5f:
-                    #make sure our hdf file gets closed
-                    
-                    key_prefix = '' if key == 'input' else key + '_'
-    
-                    try:
-                        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-                    except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
-                        logger.warning('No metadata found, proceeding with empty metadata')
-                        mdh = MetaDataHandler.NestedClassMDHandler()
-                    
-                    for t in h5f.list_nodes('/'):
-                        # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
-                        # PZF formatted image data, Image data which is not in an EArray, etc ...)
-                        # Note that EArray is only used for streaming data!
-                        # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
-                        # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
-                        # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
-                        # > 3D data?
-                        
-                        if isinstance(t, tables.VLArray):
-                            from PYME.IO.ragged import RaggedVLArray
-                            
-                            rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                            rag.mdh = mdh
-    
-                            self.namespace[key_prefix + t.name] = rag
-    
-                        elif isinstance(t, tables.table.Table):
-                            #  pipe our table into h5r or hdf source depending on the extension
-                            tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                            tab.mdh = mdh
-    
-                            self.namespace[key_prefix + t.name] = tab
-    
-                        elif isinstance(t, tables.EArray):
-                            # load using ImageStack._loadh5, which finds metdata
-                            im = ImageStack(filename=filename, haveGUI=False)
-                            # assume image is the main table in the file and give it the named key
-                            self.namespace[key] = im
+            from PYME.IO import h5rFile
+            try:
+                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
+                        self._populate_namespace_from_hdf5(key, h5f, fn, extension)
+            except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
+                # try again, this time forcing access through the dataserver
+                relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
+                file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
+                with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes, driver_core_backing_store=0) as h5f:
+                    self._populate_namespace_from_hdf5(key, h5f, filename, extension)
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
