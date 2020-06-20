@@ -15,7 +15,7 @@ import json
 
 
 class HTTPFitResultsSource(FitResultsSource):
-    def __init__(self, filename, server_filter='', update_interval=3, keep_alive_time=60):
+    def __init__(self, filename, server_filter='', update_interval=2, keep_alive_time=60):
         self.filename = filename
         self.update_interval = update_interval
         self.keep_alive_time = keep_alive_time
@@ -29,7 +29,7 @@ class HTTPFitResultsSource(FitResultsSource):
             try:
                 logging.debug('trying to locate results file')
                 self.uri = clusterIO.locate_file(self.filename, server_filter, return_first_hit=True)[0][0]
-                print(self.uri)
+                logging.debug('series uri: %s' % self.uri)
                 break
             except IndexError:
                 time.sleep(1)
@@ -44,12 +44,11 @@ class HTTPFitResultsSource(FitResultsSource):
     def _add_results(self, new_results):
         if len(new_results) > 0:
             if len(self.fitResults) == 0:
-                logging.debug('setting fit results')
+                logging.debug('setting localization results (n: %d)' % len(new_results))
                 self.setResults(new_results)
-                # print(json.load(BytesIO(requests.get(self.uri + '/Metadata.json').content)))
                 self.mdh.update(json.load(BytesIO(requests.get(self.uri + '/MetaData.json').content)))
-                print(self.mdh)
             else:
+                logging.debug('adding %d new localization results' % len(new_results))
                 self.fitResults = np.concatenate((self.fitResults, new_results))
             self.last_update_time = time.time()
             self.updated.send(self)
@@ -58,9 +57,10 @@ class HTTPFitResultsSource(FitResultsSource):
         while self.updating:
             if time.time() - self.last_update_time > self.keep_alive_time:
                 self.updating = False
+                logging.debug('ending update loop')
                 break
             
-            # FIXME - not sure what actually happens if there are no new -? zero len array or None?
+            # note, will receive np.array(0, dtype=fit_results_dtype) if there are no new results
             self._add_results(np.load(BytesIO(requests.get(self.uri + '/FitResults.npy?from=%d' % len(self.fitResults)).content)))
             # TODO - update events too
             
