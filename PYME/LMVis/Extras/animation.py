@@ -44,7 +44,7 @@ class VideoPanel(DockedPanel):
         self.snapshots = list()
         self.next_view_id = 0
 
-        self.AddNewElement(self._anim_pan(),foldable=False)
+        self.AddNewElement(self._anim_pan())
 
         clp = mfp.collapsingPane(self, caption='Animation Settings')
         clp.AddNewElement(self._settings_pan(clp))
@@ -67,7 +67,7 @@ class VideoPanel(DockedPanel):
 
         vertical_sizer.AddSpacer(10)
 
-        self._create_buttons(vertical_sizer)
+        self._create_buttons(pan, vertical_sizer)
 
         pan.SetSizerAndFit(vertical_sizer)
 
@@ -83,16 +83,16 @@ class VideoPanel(DockedPanel):
         pan.SetSizerAndFit(vsizer)
         return pan
 
-    def _create_buttons(self, vertical_sizer):
+    def _create_buttons(self, pan, vertical_sizer):
         grid_sizer = wx.GridSizer(rows=3, cols=3, vgap=2, hgap=2)
         # generate the buttons
-        add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
-        delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
-        load_button = wx.Button(self, -1, label='Load', style=wx.BU_EXACTFIT)
-        save_button = wx.Button(self, -1, label='Save', style=wx.BU_EXACTFIT)
-        clear_button = wx.Button(self, -1, label='Clear', style=wx.BU_EXACTFIT)
-        run_button = wx.Button(self, -1, label=u'\u25B7', style=wx.BU_EXACTFIT)
-        make_button = wx.Button(self, -1, label='Capture', style=wx.BU_EXACTFIT)
+        add_button = wx.Button(pan, -1, label='Add', style=wx.BU_EXACTFIT)
+        delete_button = wx.Button(pan, -1, label='Delete', style=wx.BU_EXACTFIT)
+        load_button = wx.Button(pan, -1, label='Load', style=wx.BU_EXACTFIT)
+        save_button = wx.Button(pan, -1, label='Save', style=wx.BU_EXACTFIT)
+        clear_button = wx.Button(pan, -1, label='Clear', style=wx.BU_EXACTFIT)
+        run_button = wx.Button(pan, -1, label=u'\u25B7', style=wx.BU_EXACTFIT)
+        make_button = wx.Button(pan, -1, label='Capture', style=wx.BU_EXACTFIT)
 
         # bind the buttons and its handlers
         self.Bind(wx.EVT_BUTTON, self.add_snapshot, add_button)

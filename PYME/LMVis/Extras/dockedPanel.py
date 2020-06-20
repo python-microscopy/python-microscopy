@@ -34,6 +34,7 @@ class DockedPanel(mfp.foldingPane):
 
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
+        kwargs['folded'] = False
         mfp.foldingPane.__init__(self, parent_panel, **kwargs)
 
         self.parent_panel = parent_panel
@@ -45,7 +46,8 @@ class DockedPanel(mfp.foldingPane):
         p_info = aui.AuiPaneInfo().Name(p_info_name).Right().Caption(caption).CloseButton(True).MinimizeButton(
             True).DestroyOnClose(True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
         frame_manager.AddPane(panel, p_info)
-        frame_manager.ShowPane(panel, True)
+        # frame_manager.ShowPane(panel, True)
+        frame_manager.Update()
 
     @staticmethod
     def add_menu_item(vis_fr, menu_name, panel_class, p_info_name, caption=None):
