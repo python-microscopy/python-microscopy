@@ -34,6 +34,9 @@ from PYME.LMVis.views import VideoView
 # See PYME.LMVis.Extras.dockedPanel for a history of mfp import name
 import PYME.ui.manualFoldPanel as mfp
 
+# Export file types
+EXPORT_FILE_TYPES = ['JPG', 'PNG', 'TIFF']
+
 # noinspection PyUnusedLocal
 class VideoPanel(DockedPanel):
     JSON_LIST_NAME = 'views'
@@ -74,14 +77,21 @@ class VideoPanel(DockedPanel):
         return pan
     
     def _settings_pan(self, clp):
-        # File type: JPEG, PNG, TIFF
         # dpi
         # pixel_size
         pan = wx.Panel(clp, -1)
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.cb = wx.CheckBox(pan, -1, 'Interpolate')
-        hsizer.Add(self.cb, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.file_type = wx.ComboBox(pan, -1, choices=EXPORT_FILE_TYPES, style=wx.CB_DROPDOWN)
+        hsizer.Add(wx.StaticText(pan, -1, 'Export file type:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.file_type, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.dpi = wx.TextCtrl(pan, -1, size=(60, -1), value='72')
+        # self.pixel_size = wx.TextCtrl(pan, -1, size=(60, -1), value='5.0')
+        hsizer.Add(wx.StaticText(pan, -1, 'DPI:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.dpi, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        # hsizer.Add(self.pixel_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
         pan.SetSizerAndFit(vsizer)
         return pan
@@ -232,7 +242,7 @@ class VideoPanel(DockedPanel):
                         new_view = current_view + difference_view * step
                         self.get_canvas().set_view(new_view.normalize_view())
                         if save:
-                            snap = self.get_canvas().getIm()#.astype('uint8')
+                            snap = self.get_canvas().getIm() #pixel_size=float(self.pixel_size.GetValue()))#.astype('uint8')
                             #print snap.shape, snap.dtype, snap.min(), snap.max()
                             if snap.dtype == 'uint8':
                                 # PYME.LMVis.gl_render3D_shaders already returns 
@@ -245,7 +255,10 @@ class VideoPanel(DockedPanel):
                             #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
                             #else:
                             #    video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
-                            im = Image.fromarray(snap).save(os.path.join(dir_name, 'frame%04d.jpg' % f_no))
+                            dpi = int(float(self.dpi.GetValue()))
+                            im = Image.fromarray(snap).transpose(Image.FLIP_TOP_BOTTOM).save(os.path.join(dir_name, 
+                                                            'frame{:04d}.{}'.format(f_no,self.file_type.GetValue().lower())),
+                                                            dpi=(dpi,dpi))
                             f_no += 1
                         else:
                             # sleep(2.0/steps)
