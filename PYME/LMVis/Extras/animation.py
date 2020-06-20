@@ -46,7 +46,7 @@ class VideoPanel(DockedPanel):
 
         self.AddNewElement(self._anim_pan())
 
-        clp = mfp.collapsingPane(self, caption='Animation Settings')
+        clp = mfp.collapsingPane(self, caption='Settings ...')
         clp.AddNewElement(self._settings_pan(clp))
         self.AddNewElement(clp)
 
@@ -74,6 +74,9 @@ class VideoPanel(DockedPanel):
         return pan
     
     def _settings_pan(self, clp):
+        # File type: JPEG, PNG, TIFF
+        # dpi
+        # pixel_size
         pan = wx.Panel(clp, -1)
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -245,7 +248,8 @@ class VideoPanel(DockedPanel):
                             im = Image.fromarray(snap).save(os.path.join(dir_name, 'frame%04d.jpg' % f_no))
                             f_no += 1
                         else:
-                            sleep(2.0/steps)
+                            # sleep(2.0/steps)
+                            sleep(view.duration/steps)
                             self.get_canvas().OnDraw()
                     current_view = view
             if save:
