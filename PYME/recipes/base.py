@@ -483,7 +483,7 @@ class ModuleCollection(HasTraits):
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
         
-    def invalidate_data(self):
+    def invalidate_data(self, **kwargs):
         if self.execute_on_invalidation:
             self.execute()
             

@@ -215,16 +215,25 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
 
         # add checkbox to propagate rule to rule chain
-        add_rule_panel = wx.Panel(self, -1)
+        localization_checkbox_panel = wx.Panel(self, -1)
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.checkbox_propagate = wx.CheckBox(add_rule_panel, -1, 'Chain Localization Rule')
+        self.checkbox_propagate = wx.CheckBox(localization_checkbox_panel, -1, 'Chain Localization Rule')
         self.checkbox_propagate.SetValue(False)
         self.checkbox_propagate.Bind(wx.EVT_CHECKBOX, self.OnTogglePropagate)
         h_sizer.Add(self.checkbox_propagate, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
         v_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 2)
-        add_rule_panel.SetSizer(v_sizer)
-        self.AddNewElement(add_rule_panel)
+
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.checkbox_view_live = wx.CheckBox(localization_checkbox_panel, -1, 'Open (Live) View')
+        self.checkbox_view_live.SetValue(False)
+        if not self.checkbox_propagate.GetValue():
+            self.checkbox_view_live.Disable()
+        self.checkbox_view_live.Bind(wx.EVT_CHECKBOX, self.OnToggleLiveView)
+        v_sizer.Add(self.checkbox_view_live)
+
+        localization_checkbox_panel.SetSizer(v_sizer)
+        self.AddNewElement(localization_checkbox_panel)
 
         clp = collapsingPane(self, caption='settings ...')
         clp.AddNewElement(AnalysisSettingsUI.AnalysisSettingsPanel(clp, localization_settings,
@@ -240,20 +249,47 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         self.AddNewElement(rule_panel)
         self._rule_list_ctrl = rule_panel._rule_list
 
-    def OnTogglePropagate(self, wx_events=None):
+    def OnTogglePropagate(self, wx_event=None):
         # for now, assume max of one localization rule per chain, and assume it's controlled by this panel
         if self.checkbox_propagate.GetValue():
             loc_rule_indices = self._rule_list_ctrl.localization_rule_indices
             if len(loc_rule_indices) < 1:
                 self._rule_list_ctrl.add_rule(LocalizationRule(self._localization_settings.analysisMDH))
+            self.checkbox_view_live.Enable()
         else:
             self._rule_list_ctrl.clear_localization_rules()
+            self.checkbox_view_live.Disable()
+            self.checkbox_view_live.SetValue(False)
+    
+    def OnToggleLiveView(self, wx_event=None):
+        if self.checkbox_view_live.GetValue() and 0 in self._rule_list_ctrl.localization_rule_indices:
+            self._rule_list_ctrl._rule_chain.posted.connect(self._open_live_view)
+        else:
+            self._rule_list_ctrl._rule_chain.posted.disconnect(self._open_live_view)
 
     def update_localization_rule(self):
         # NB - panel will only modify first localization rule in the chain
         if self.checkbox_propagate.GetValue():
             rule = LocalizationRule(self._localization_settings.analysisMDH)
             self._rule_list_ctrl.replace_rule(rule, self._rule_list_ctrl.localization_rule_indices[0])
+    
+    def _open_live_view(self, **kwargs):
+        """
+        Open PYMEVisualize on a freshly spooled series which is being localized
+
+        Parameters
+        ----------
+        kwargs: dict
+            present here to allow us to call this method through a dispatch.Signal.send
+
+        """
+        import subprocess
+        # get the URL
+        uri = self._rule_list_ctrl._rule_chain[self._rule_list_ctrl.localization_rule_indices[0]].outputs[0]['input'] + '/live'
+        print(uri)
+        subprocess.Popen('visgui %s' % uri, shell=True)
+
+
 
     @staticmethod
     def plug(main_frame, scope):

@@ -7,6 +7,7 @@ import socket
 import random
 from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
+import dispatch
 import logging
 
 logger = logging.getLogger(__name__)
@@ -448,6 +449,7 @@ class RuleChain(list):
     def __init__(self, thread_queue=None):
         list.__init__(self)
         self.thread_queue = thread_queue
+        self.posted = dispatch.Signal()
 
     def post_all(self):
         """
@@ -460,6 +462,7 @@ class RuleChain(list):
             self[ri].chain_rule(self[ri + 1])
 
         self[0].post(self.thread_queue)
+        self.posted.send(self)
 
     def set_chain_input(self, inputs):
         """
