@@ -179,25 +179,23 @@ class LocalizationRule(Rule):
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
         unifiedIO.assert_uri_ok(series_uri)
         self.results_filename = clusterResults.verify_cluster_results_filename(genClusterResultFileName(series_uri))
+        if '~' in series_uri or '~' in self.results_filename:
+            raise RuntimeError('filenames on the cluster must NOT contain ~')
         logger.info('Results file: ' + self.results_filename)
-        logger.info('Results file: ' + self.results_filename)
+
         results_mdh = MetaDataHandler.NestedClassMDHandler()
         # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
         results_mdh.update(json.loads(unifiedIO.read(series_uri + '/metadata.json')))
         results_mdh.update(self.analysis_metadata)
-
         results_mdh['EstimatedLaserOnFrameNo'] = results_mdh.getOrDefault('EstimatedLaserOnFrameNo',
                                                                           results_mdh.getOrDefault('Analysis.StartAt',
                                                                                                    0))
         MetaData.fixEMGain(results_mdh)
 
-        if '~' in series_uri or '~' in self.results_filename:
-            raise RuntimeError('filenames on the cluster must NOT contain ~')
-
         # create results file, and metadata table
-        results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % self.results_filename, self.server_filter)
-        logging.debug('results URI: ' + results_uri)
-        clusterResults.fileResults(results_uri + '/MetaData', self.analysis_metadata)
+        self.results_uri = clusterResults.pickResultsServer('__aggregate_h5r/%s' % self.results_filename, self.server_filter)
+        logging.debug('results URI: ' + self.results_uri)
+        clusterResults.fileResults(self.results_uri + '/MetaData', results_mdh)
 
         # create metadata file which will be used in the rule/task definition
         results_md_filename = self.results_filename + '.json'
@@ -212,8 +210,8 @@ class LocalizationRule(Rule):
                 'metadata': 'PYME-CLUSTER://%s/%s' % (self.server_filter, results_md_filename),
             },
             'outputs': {
-                'fitResults': results_uri + '/FitResults',
-                'driftResults': results_uri + '/DriftResults'
+                'fitResults': self.results_uri + '/FitResults',
+                'driftResults': self.results_uri + '/DriftResults'
             }
         })
 
@@ -294,6 +292,8 @@ class LocalizationRule(Rule):
             if done and frames_outstanding < 1:
                 # update max_tasks on ruleserver so the rule can eventually be marked as finished
                 self.max_tasks = self.datasource.getNumSlices()
+                #set up results file:
+                clusterResults.fileResults(self.results_uri + '/Events', self.datasource.getEvents())
                 logging.debug('all tasks generated, ending loop')
                 self._posting_poll = False
                 self._rule_id = None  # disconnect this rule from the ruleserver copy
