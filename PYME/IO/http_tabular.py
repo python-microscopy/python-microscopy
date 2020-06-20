@@ -47,7 +47,7 @@ class HTTPFitResultsSource(FitResultsSource):
                 logging.debug('setting fit results')
                 self.setResults(new_results)
                 # print(json.load(BytesIO(requests.get(self.uri + '/Metadata.json').content)))
-                self.mdh.update(json.load(BytesIO(requests.get(self.uri + '/Metadata.json').content)))
+                self.mdh.update(json.load(BytesIO(requests.get(self.uri + '/MetaData.json').content)))
                 print(self.mdh)
             else:
                 self.fitResults = np.concatenate((self.fitResults, new_results))
