@@ -28,9 +28,11 @@ import wx.lib.agw.aui as aui
 # import PYME.ui.manualFoldPanel as afp. This is the first time we get an
 # opportunity to write a new section of code importing manualFoldPanel,
 # and so we choose to call it its acronym mfp
-import PYME.ui.manualFoldPanel as mfp
+import PYME.ui.manualFoldPanel as afp
 
-class DockedPanel(mfp.foldingPane):
+
+class DockedPanel(afp.foldingPane):
+
 
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
