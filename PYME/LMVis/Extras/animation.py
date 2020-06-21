@@ -306,7 +306,8 @@ class VideoPanel(DockedPanel):
         self.clear_view()
         for index, snapshot in enumerate(self.snapshots):
             # index = len(self.snapshots)
-            # NOTE: InsertStringItem and SetStringItem are deprecated in favor of InsertItem and SetItem
+            # NOTE: InsertStringItem and SetStringItem are deprecated in wx > 4.0 favour of InsertItem and SetItem. Using old methods for wx=3.x compatibility.
+
             self.view_table.InsertStringItem(index, str(index))
             self.view_table.SetStringItem(index, 1, snapshot.view_id)
             self.view_table.SetStringItem(index, 2, "{:.9f}".format(snapshot.duration))
