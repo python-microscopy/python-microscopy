@@ -31,8 +31,8 @@ from PIL import Image
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
-# See PYME.LMVis.Extras.dockedPanel for a history of mfp import name
-import PYME.ui.manualFoldPanel as mfp
+# See PYME.LMVis.Extras.dockedPanel for a history of afp import name
+import PYME.ui.manualFoldPanel as afp
 
 # Export file types
 EXPORT_FILE_TYPES = ['JPG', 'PNG', 'TIFF']
@@ -49,7 +49,7 @@ class VideoPanel(DockedPanel):
 
         self.AddNewElement(self._anim_pan())
 
-        clp = mfp.collapsingPane(self, caption='Settings ...')
+        clp = afp.collapsingPane(self, caption='Settings ...')
         clp.AddNewElement(self._settings_pan(clp))
         self.AddNewElement(clp)
 
