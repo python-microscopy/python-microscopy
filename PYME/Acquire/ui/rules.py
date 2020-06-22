@@ -47,6 +47,7 @@ class RuleChainListCtrl(wx.ListCtrl):
     def OnGetItemText(self, item, col):
         """
         Note that this is overriding the wxListCtrl method as required for wxLC_VIRTUAL style
+        
         Parameters
         ----------
         item : long
@@ -160,7 +161,6 @@ class ChainedAnalysisPanel(wx.Panel):
     def OnToggleAuto(self, wx_event=None):
         mode = self.choice_launch.GetSelection()
 
-        # todo - do we need to try/except these?
         self._spool_controller.onSpoolStart.disconnect(self.post_rules)
         self._spool_controller.onSpoolStop.disconnect(self.post_rules)
 
@@ -186,17 +186,27 @@ class ChainedAnalysisPanel(wx.Panel):
 
     @staticmethod
     def plug(main_frame, scope):
+        """
+        Adds a ChainedAnalysisPanel to a microscope gui during start-up
+
+        Parameters
+        ----------
+        main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
+            microscope gui application
+        scope : PYME.Acquire.microscope.microscope
+            the microscope itself
+        """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
         from PYME.cluster.rules import RuleChain
 
         scope._recipe_manager = RecipeManager()
         main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
-        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Chained Recipe')
+        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
 
         scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
         chained_analysis = ChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager, scope.spoolController)
 
-        main_frame.anPanels.append((chained_analysis, 'Chained Analysis', True))
+        main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))
 
 
 class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
@@ -218,14 +228,14 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         localization_checkbox_panel = wx.Panel(self, -1)
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.checkbox_propagate = wx.CheckBox(localization_checkbox_panel, -1, 'Chain Localization Rule')
+        self.checkbox_propagate = wx.CheckBox(localization_checkbox_panel, -1, 'Localize automatically')
         self.checkbox_propagate.SetValue(False)
         self.checkbox_propagate.Bind(wx.EVT_CHECKBOX, self.OnTogglePropagate)
         h_sizer.Add(self.checkbox_propagate, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
         v_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 2)
 
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.checkbox_view_live = wx.CheckBox(localization_checkbox_panel, -1, 'Open (Live) View')
+        self.checkbox_view_live = wx.CheckBox(localization_checkbox_panel, -1, 'Open (live) view')
         self.checkbox_view_live.SetValue(False)
         if not self.checkbox_propagate.GetValue():
             self.checkbox_view_live.Disable()
@@ -293,13 +303,23 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
 
     @staticmethod
     def plug(main_frame, scope):
+        """
+        Adds a SMLMChainedAnalysisPanel to a microscope gui during start-up
+
+        Parameters
+        ----------
+        main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
+            microscope gui application
+        scope : PYME.Acquire.microscope.microscope
+            the microscope itself
+        """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
         from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
         from PYME.cluster.rules import RuleChain
 
         scope._recipe_manager = RecipeManager()
         main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
-        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Chained Recipe')
+        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
 
         scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
 
@@ -307,4 +327,4 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
 
         chained_analysis = SMLMChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager,
                                                     scope._localization_settings, scope.spoolController)
-        main_frame.anPanels.append((chained_analysis, 'Chained Analysis', True))
+        main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))
