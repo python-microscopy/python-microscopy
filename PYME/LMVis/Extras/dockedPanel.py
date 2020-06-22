@@ -37,7 +37,7 @@ class DockedPanel(afp.foldingPane):
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         kwargs['pinned'] = True
-        mfp.foldingPane.__init__(self, parent_panel, **kwargs)
+        afp.foldingPane.__init__(self, parent_panel, **kwargs)
 
         self.parent_panel = parent_panel
 

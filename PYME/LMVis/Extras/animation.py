@@ -77,8 +77,6 @@ class VideoPanel(DockedPanel):
         return pan
     
     def _settings_pan(self, clp):
-        # dpi
-        # pixel_size
         pan = wx.Panel(clp, -1)
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -87,10 +85,8 @@ class VideoPanel(DockedPanel):
         hsizer.Add(self.file_type, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.dpi = wx.TextCtrl(pan, -1, size=(60, -1), value='72')
         # self.pixel_size = wx.TextCtrl(pan, -1, size=(60, -1), value='5.0')
-        hsizer.Add(wx.StaticText(pan, -1, 'DPI:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-        hsizer.Add(self.dpi, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        # hsizer.Add(wx.StaticText(pan, -1, 'Pixel size:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         # hsizer.Add(self.pixel_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
         pan.SetSizerAndFit(vsizer)
@@ -254,10 +250,8 @@ class VideoPanel(DockedPanel):
                             #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
                             #else:
                             #    video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
-                            dpi = int(float(self.dpi.GetValue()))
                             im = Image.fromarray(snap).transpose(Image.FLIP_TOP_BOTTOM).save(os.path.join(dir_name, 
-                                                            'frame{:04d}.{}'.format(f_no,self.file_type.GetValue().lower())),
-                                                            dpi=(dpi,dpi))
+                                                            'frame{:04d}.{}'.format(f_no,self.file_type.GetValue().lower())))
                             f_no += 1
                         else:
                             # sleep(2.0/steps)
