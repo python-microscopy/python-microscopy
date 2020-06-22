@@ -160,6 +160,11 @@ class Pipelineify(ModuleBase):
 
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+            
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.addColumn('nPhotonsr', getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
 
         mapped_ds.mdh = mdh
 
