@@ -191,8 +191,7 @@ class VideoPanel(DockedPanel):
     def play(self, save):
         # Fail gracefully if there are no snapshots
         if len(self.snapshots) == 0:
-            dlg = wx.MessageDialog(None, 'Need views to generate animation! Please create some by pressing `Add` in the animation pane.', 'No animation views')
-            dlg.ShowModal()
+            wx.MessageBox('Need views to generate animation! Please create some by pressing `Add` in the animation pane.', 'No animation views', wx.OK | wx.ICON_WARNING)
             return
         # width = self.get_canvas().Size[0]
         # height = self.get_canvas().Size[1]
