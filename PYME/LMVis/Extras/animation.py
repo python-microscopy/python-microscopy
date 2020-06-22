@@ -31,8 +31,8 @@ from PIL import Image
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
-# See PYME.LMVis.Extras.dockedPanel for a history of mfp import name
-import PYME.ui.manualFoldPanel as mfp
+# See PYME.LMVis.Extras.dockedPanel for a history of afp import name
+import PYME.ui.manualFoldPanel as afp
 
 # Export file types
 EXPORT_FILE_TYPES = ['JPG', 'PNG', 'TIFF']
@@ -49,7 +49,7 @@ class VideoPanel(DockedPanel):
 
         self.AddNewElement(self._anim_pan())
 
-        clp = mfp.collapsingPane(self, caption='Settings ...')
+        clp = afp.collapsingPane(self, caption='Settings ...')
         clp.AddNewElement(self._settings_pan(clp))
         self.AddNewElement(clp)
 
@@ -305,7 +305,8 @@ class VideoPanel(DockedPanel):
         self.clear_view()
         for index, snapshot in enumerate(self.snapshots):
             # index = len(self.snapshots)
-            # NOTE: InsertStringItem and SetStringItem are deprecated in favor of InsertItem and SetItem
+            # NOTE: InsertStringItem and SetStringItem are deprecated in wx > 4.0 favour of InsertItem and SetItem. Using old methods for wx=3.x compatibility.
+
             self.view_table.InsertStringItem(index, str(index))
             self.view_table.SetStringItem(index, 1, snapshot.view_id)
             self.view_table.SetStringItem(index, 2, "{:.9f}".format(snapshot.duration))
