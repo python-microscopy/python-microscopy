@@ -470,6 +470,7 @@ import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
+    execution_lock = None
     
     def __init__(self, *args, **kwargs):
         HasTraits.__init__(self, *args, **kwargs)
@@ -482,10 +483,25 @@ class ModuleCollection(HasTraits):
         
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
+
+        if 'execution_lock' in kwargs.keys():
+            self.execution_lock = kwargs['execution_lock']
         
     def invalidate_data(self, **kwargs):
+        """
+        Marks data as invalid, executing the recipe if self.execute_on_invalidation.
+
+        Parameters
+        ----------
+        kwargs: dict
+            present only to allow dispatch.send to call this method.
+        """
         if self.execute_on_invalidation:
-            self.execute()
+            if self.execution_lock is not None:
+                with self.execution_lock:
+                    self.execute()
+            else:
+                self.execute()
             
     def clear(self):
         self.namespace.clear()
