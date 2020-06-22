@@ -278,7 +278,7 @@ class LocalizationRule(Rule):
 
             self._current_frame = new_current_frame
             n_outstanding = n_frames - self._current_frame
-        logging.debug('datasource frames: %d, unfiled tasks: %d' % (n_frames, n_outstanding))
+        
         return n_outstanding
 
 

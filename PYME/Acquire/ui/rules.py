@@ -102,7 +102,7 @@ class RuleChainListCtrl(wx.ListCtrl):
 
 
 
-class ChainedRulePanel(wx.Panel):
+class ChainedAnalysisPanel(wx.Panel):
     _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
     def __init__(self, parent, rule_chain, recipe_manager, spool_controller):
         """
@@ -194,7 +194,7 @@ class ChainedRulePanel(wx.Panel):
         main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Chained Recipe')
 
         scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
-        chained_analysis = ChainedRulePanel(main_frame, scope._rule_chain, scope._recipe_manager, scope.spoolController)
+        chained_analysis = ChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager, scope.spoolController)
 
         main_frame.anPanels.append((chained_analysis, 'Chained Analysis', True))
 
@@ -245,7 +245,7 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         self._localization_settings = localization_settings
         self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
 
-        rule_panel = ChainedRulePanel(self, rule_chain, recipe_manager, spool_controller)
+        rule_panel = ChainedAnalysisPanel(self, rule_chain, recipe_manager, spool_controller)
         self.AddNewElement(rule_panel)
         self._rule_list_ctrl = rule_panel._rule_list
 
