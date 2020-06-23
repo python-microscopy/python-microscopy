@@ -15,6 +15,10 @@ except ImportError:
 import time
 import dispatch
 import weakref
+import threading
+from PYME.util import webframework
+import logging
+logger = logging.getLogger(__name__)
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -121,5 +125,75 @@ class ActionManager(object):
                 self.isLastTaskDone = fcn(**args)
                 
 
+class ActionManagerWebWrapper(object):
+    def __init__(self, action_manager):
+        """[summary]
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            action manager instance to expose through
+        """
+        self.action_manager = action_manager
+    
+    @webframework.register_endpoint('/queue_action', output_is_json=False)
+    def queue_action(self, function_name, args=None, nice=10, timeout=1e6):
+        """
+        adds an action to the queue
+
+        Parameters
+        ----------
+        function_name : str
+            The name of a function relative to the microscope object.
+            e.g. to `call scope.spoolController.StartSpooling()`, you would use
+            a functionName of 'spoolController.StartSpooling'.
+            
+            The function should either return `None` if the operation has already
+            completed, or function which evaluates to True once the operation
+            has completed. See `scope.spoolController.StartSpooling()` for an
+            example.
+        args : dict, optional
+            a dictionary of arguments to pass to `function_name`
+        nice : int, optional
+            priority with which to execute the function, by default 10. Functions with a
+            lower nice value execute first.
+        timeout : float, optional
+            A timeout in seconds from the current time at which the action
+            becomes irrelevant and should be ignored., by default 1e6
+        """
+        if args == None:
+            args = {}
+        self.action_manager.queue_action(function_name, args, nice, timeout)
+
+
+class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
+    def __init__(self, action_manager, port, bind_address=''):
+        """
+        Server process to expose queue_action functionality to everything on the
+        cluster network.
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            already initialized
+        port : [type]
+            [description]
+        bind_address : str, optional
+            [description], by default ''
+        """
+        webframework.APIHTTPServer.__init__(self, (bind_address, port))
+        ActionManagerWebWrapper.__init__(self, action_manager)
         
-                
+        self.daemon_threads = True
+        self._server_thread = threading.Thread(target=self._serve)
+        self._server_thread.daemon_threads = True
+        self._server_thread.start()
+
+    def _serve(self):
+        try:
+            logger.info('Starting ActionManager server on %s' % self.server_address)
+            self.serve_forever()
+        finally:
+            logger.info('Shutting down ActionManager server ...')
+            self.shutdown()
+            self.server_close()
