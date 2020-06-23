@@ -127,12 +127,12 @@ class ActionManager(object):
 
 class ActionManagerWebWrapper(object):
     def __init__(self, action_manager):
-        """[summary]
+        """ Wraps an action manager instance with server endpoints
 
         Parameters
         ----------
         action_manager : ActionManager
-            action manager instance to expose through
+            action manager instance to wrap
         """
         self.action_manager = action_manager
     
@@ -163,7 +163,7 @@ class ActionManagerWebWrapper(object):
         """
         if args == None:
             args = {}
-        self.action_manager.queue_action(function_name, args, nice, timeout)
+        self.action_manager.QueueAction(function_name, args, nice, timeout)
 
 
 class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
@@ -176,10 +176,10 @@ class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
         ----------
         action_manager : ActionManager
             already initialized
-        port : [type]
-            [description]
+        port : int
+            port to listen on
         bind_address : str, optional
-            [description], by default ''
+            specifies ip address to listen on, by default '' will bind to local host.
         """
         webframework.APIHTTPServer.__init__(self, (bind_address, port))
         ActionManagerWebWrapper.__init__(self, action_manager)
@@ -191,7 +191,7 @@ class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
 
     def _serve(self):
         try:
-            logger.info('Starting ActionManager server on %s' % self.server_address)
+            logger.info('Starting ActionManager server on %s:%s' % (self.server_address[0], self.server_address[1]))
             self.serve_forever()
         finally:
             logger.info('Shutting down ActionManager server ...')
