@@ -156,9 +156,9 @@ class PSFFitFactory:
         #print scipy.sqrt(diag(cov_x))
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
         if (misfit1 < misfit2):
-            return PSFFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(numpy.diag(cov_x1)))
+            return PSFFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(scipy.diag(cov_x1)))
         else:
-            return PSFFitResultR(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(numpy.diag(cov_x2)))
+            return PSFFitResultR(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(scipy.diag(cov_x2)))
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
         if (z is None): # use position of maximum intensity
