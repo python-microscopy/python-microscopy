@@ -25,7 +25,8 @@
 """
 from scipy import linalg, ndimage
 import numpy as np
-import pylab as pl
+# import pylab as pl
+import matplotlib.pyplot as pl
 
 
 def genCoords(FILT_SIZE):    
@@ -202,7 +203,7 @@ def angHist(theta):
     #pl.figure()
     for i in range(len(n)):
         #print i, e[i], nn[i], n[i], w
-        pl.bar(e[i], nn[i], w, color=pl.cm.hsv((e[i] +  w/2)/180))
+        pl.bar(e[i], nn[i], w, color=plt.hsv((e[i] +  w/2)/180))
         
     pl.xlabel('Angle [degrees]')
     pl.ylabel('Normalised frequency')
@@ -235,8 +236,8 @@ def procSkelFile(filename, disp=True):
     im = (255 - tifffile.TIFFfile(filename).asarray().astype('f'))
     imt = angle_filter(im)
     
-    imc = (im[:,:,None]*pl.cm.hsv(imt/np.pi)[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
-    imc2 = (im[:,:,None]*pl.cm.hsv(fold(imt)/(np.pi))[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
+    imc = (im[:,:,None]*plt.hsv(imt/np.pi)[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
+    imc2 = (im[:,:,None]*plt.hsv(fold(imt)/(np.pi))[:,:,:3] + (255 - im)[:,:,None]).astype('uint8')
     
     theta = imt[im > 0]
     
