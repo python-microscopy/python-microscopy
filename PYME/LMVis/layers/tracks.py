@@ -214,7 +214,7 @@ class TrackRenderLayer(EngineLayer):
             self.clumpSizes = [len(cl_i) for cl_i in clist]
 
             #reorder x, y, z, c in clump order  
-            I = np.hstack([np.array(cl) for cl in clist])
+            I = np.hstack([np.array(cl) for cl in clist]).astype(np.int)
 
             x = x[I]
             y = y[I]
