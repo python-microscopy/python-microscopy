@@ -57,7 +57,7 @@ def times_to_frames(t, events, mdh):
     sf['Time'] = startTime + 60*60*24*7
 
     #get events corresponding to aquisition starts
-    startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
+    startEvents = np.hstack((se, events[events['EventName'] == 'StartAq'], sf))
 
     #print startEvents
 
@@ -116,7 +116,7 @@ def frames_to_times(fr, events, mdh):
     se['Time'] = startTime
 
     #get events corresponding to aquisition starts
-    startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
+    startEvents = np.hstack((se, events[events['EventName'] == 'StartAq']))
     #print(events)
     #print(startEvents)
 
