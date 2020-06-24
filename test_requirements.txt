@@ -21,8 +21,8 @@ pyfftw #; python_version > '3.0'
 
 #mpld3
 cherrypy
-#scikit-image
-#scikit-learn
+scikit-image
+scikit-learn
 
 #FIXME for py3k
 #shapely [osx and py2k]
