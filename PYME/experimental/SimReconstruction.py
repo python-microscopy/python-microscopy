@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from pylab import fftn, ifftn, fftshift, ifftshift
-
+# from pylab import fftn, ifftn, fftshift, ifftshift
+from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 
 def gMatrix(thetas):
     return np.array([[1, np.cos(th), np.sin(th)] for th in thetas]).T
