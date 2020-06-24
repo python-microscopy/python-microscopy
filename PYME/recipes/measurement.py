@@ -718,20 +718,21 @@ class Plot(ModuleBase):
             ms.append(namespace[self.input3])
             labs.append(self.input3)
 
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         
-        pylab.figure()
+        plt.figure()
         for meas in ms:
             if self.type == 'bar':
                 xv = meas[self.xkey]
-                pylab.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
+                plt.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
             else:
-                pylab.plot(meas[self.xkey], meas[self.ykey])
+                plt.plot(meas[self.xkey], meas[self.ykey])
         
-        pylab.grid()
-        pylab.legend(labs)
-        pylab.xlabel(self.xkey)
-        pylab.ylabel(self.ykey)
+        plt.grid()
+        plt.legend(labs)
+        plt.xlabel(self.xkey)
+        plt.ylabel(self.ykey)
         #namespace[self.outputName] = out
 
 @register_module('AddMetadataToMeasurements')         
