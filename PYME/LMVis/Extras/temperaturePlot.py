@@ -30,18 +30,19 @@ class TempPlotter:
 
     def OnPlotTemperature(self, event):
         from PYME.misc import tempDB
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         
         pipeline = self.visFr.pipeline
 
         t, tm = tempDB.getEntries(pipeline.mdh.getEntry('StartTime'), pipeline.mdh.getEntry('EndTime'))
         t_, tm_ = tempDB.getEntries(pipeline.mdh.getEntry('StartTime') - 3600, pipeline.mdh.getEntry('EndTime'))
 
-        pylab.figure()
-        pylab.plot((t_ - pipeline.mdh.getEntry('StartTime'))/60, tm_)
-        pylab.plot((t - pipeline.mdh.getEntry('StartTime'))/60, tm, lw=2)
-        pylab.xlabel('Time [mins]')
-        pylab.ylabel('Temperature [C]')
+        plt.figure()
+        plt.plot((t_ - pipeline.mdh.getEntry('StartTime'))/60, tm_)
+        plt.plot((t - pipeline.mdh.getEntry('StartTime'))/60, tm, lw=2)
+        plt.xlabel('Time [mins]')
+        plt.ylabel('Temperature [C]')
 
 
 
