@@ -39,7 +39,7 @@ import sys
 
 import matplotlib
 matplotlib.use('wxagg')
-import pylab
+# import pylab
 
 from PYME import config
 from PYME.misc import extraCMaps
@@ -240,7 +240,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         while len(self.pipeline.filesToClose) > 0:
             self.pipeline.filesToClose.pop().close()
 
-        pylab.close('all')
+        # pylab.close('all')
+        matplotlib.pyplot.close('all')
         self._cleanup()
 
 
