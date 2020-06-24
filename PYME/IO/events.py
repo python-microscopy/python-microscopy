@@ -33,6 +33,11 @@ def event_array_from_table(table):
     -------
     event_array : numpy.ndarry
         structured array of events
+    
+    Notes
+    -----
+    Historically we have saved events in h5 and h5r files in different dtype orders
+    so it is important that this load loop through to load in `EVENT_ORDER`.
     """
     events = np.empty(len(table), dtype=EVENT_DTYPE)
     for field in EVENT_ORDER:
@@ -57,3 +62,30 @@ def event_array_from_list(event_list):
     for j, ev in event_list:
         events_array['EventName'][j], events_array['EventDescr'][j], events_array['Time'][j] = ev
     return events_array
+
+def as_array(events):
+    """
+    Get events as an `EVENT_DTYPE` numpy.ndarray
+
+    Parameters
+    ----------
+    events : list, numpy.ndarray, tables.file.File, or tables.table.Table
+        input events
+
+    Returns
+    -------
+    event_array: numpy.ndarry
+        structured array of events
+    """
+    # if we call np.asarray(events, dtype=EVENT_DTYPE) will we get things in the right order?
+    if isinstance(events, np.ndarray):
+        return events.astype(EVENT_DTYPE)
+    if isinstance(events, list):
+        return event_array_from_list(events)
+    else:
+        import tables
+        if isinstance(events, tables.file.File):
+            return event_array_from_hdf5(events)
+        else:
+            return event_array_from_table(events)
+    raise TypeError('PYME.IO.events.asarray supports list, array, and open hdf5 files(/table nodes)')
