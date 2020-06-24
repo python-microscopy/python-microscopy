@@ -39,6 +39,7 @@ import numpy
 import scipy
 # import pylab
 import matplotlib.pyplot as plt
+import matplotlib.cm
 
 import dispatch
 
@@ -117,7 +118,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.selectHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in plt.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
+        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in matplotlib.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect is None:
 #            if scipy.isscalar(aspect):

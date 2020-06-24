@@ -220,6 +220,7 @@ def emwg(data, sigs, nIters=10, width=5, nPerClass=10, updateSigs=False):
 def plotRes(data, errors, r):
     # import pylab
     import matplotlib.pyplot as plt
+    import matplotlib.cm
     plt.figure()
 
     nObs = len(data)
@@ -236,14 +237,14 @@ def plotRes(data, errors, r):
 
     for i in range(means.size):
         #print i
-        c = plt.hsv(float(i)/means.size)
+        c = matplotlib.cm.hsv(float(i)/means.size)
         n, bin_s, patches = plt.hist(data[inds == i], bins, alpha=0.3, facecolor=c)
     
     ys = np.zeros_like(x)
 
     i = 0
     for m, s, p in zip(means, sigs, pis):
-        c = plt.hsv(float(i)/means.size)
+        c = matplotlib.cm.hsv(float(i)/means.size)
         y = nObs*p*binSize*np.exp(-(x-m)**2/(2*s**2))/np.sqrt(2*np.pi*s**2)
         ys += y
 
@@ -262,7 +263,7 @@ def plotRes(data, errors, r):
     cil = 0
 
     for i in range(means.size):
-        c = plt.hsv(float(i)/means.size)
+        c = matplotlib.cm.hsv(float(i)/means.size)
 
         print(c)
 
