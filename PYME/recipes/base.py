@@ -24,7 +24,7 @@ from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, F
 
 from PYME.IO.image import ImageStack
 import numpy as np
-
+import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,6 @@ def register_module(moduleName):
         
     return c_decorate
 
-
 def register_legacy_module(moduleName, py_module=None):
     """Permits a module to be accessed by an old name"""
     
@@ -65,8 +64,10 @@ def register_legacy_module(moduleName, py_module=None):
 
     return c_decorate
 
+
 class MissingInputError(Exception):
     pass
+
 
 class ModuleBase(HasTraits):
     """
@@ -135,8 +136,7 @@ class ModuleBase(HasTraits):
         for input in self.inputs:
             if not input in keys:
                 raise MissingInputError('Input "%s" is missing from namespace' % input)
-        
-
+    
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
         return np.all([op in keys for op in self.outputs])
@@ -188,7 +188,7 @@ class ModuleBase(HasTraits):
     
     def apply_simple(self, *args, **kwargs):
         """
-        See documentaion for apply above - this allows single output modules to be used as though they were functions.
+        See documentaion for `self.apply` above - this allows single output modules to be used as though they were functions.
         
         
         Parameters
@@ -204,14 +204,29 @@ class ModuleBase(HasTraits):
             raise RuntimeError('Module has multiple outputs - use apply instead')
         
         return self.apply(*args, **kwargs)[next(iter(self.outputs))]
-            
 
     @property
     def inputs(self):
+        """
+        Get module inputs
+
+        Returns
+        -------
+        input_dict : dict
+            input names (keys) and modules (values)
+        """
         return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
     @property
     def outputs(self):
+        """
+        Get module outputs
+
+        Returns
+        -------
+        output_dict : dict
+            output names (keys) and modules (values)
+        """
         return {v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
     
     @property
@@ -224,14 +239,20 @@ class ModuleBase(HasTraits):
         
         Returns
         -------
-        
-        any inputs which should be substituted
+        inputs: list
+            keys for any inputs which should be substituted
 
         """
-        #print(self.get().items())
         return [v.lstrip('{').rstrip('}') for k, v in self.trait_get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
     
     def get_name(self):
+        """
+
+        Returns
+        -------
+        registered_name : str
+            returns the name of this recipe module as it is registered and will be displayed in e.g. 'Add Module' menus.
+        """
         return module_names[self.__class__]
 
     def trait_view(self, name=None, view_element=None):
@@ -264,7 +285,6 @@ class ModuleBase(HasTraits):
                 self.invalidate_parent()
         finally:
             self._invalidate_parent = inv_mode
-        
 
     @property
     def hide_in_overview(self):
@@ -305,8 +325,8 @@ class ModuleBase(HasTraits):
           
         Returns
         -------
-        
-        a list of traitsui view Items
+        view_list: list
+            a list of traitsui.View Items
         
         See Also
         --------
@@ -355,7 +375,6 @@ class ModuleBase(HasTraits):
         """ See docs for pipeline_view - this is the same, but lacks the module header"""
         return self._pipeline_view(False)
 
-
     @property
     def _namespace_keys(self):
         try:
@@ -379,8 +398,8 @@ class ModuleBase(HasTraits):
         
         Returns
         -------
-        
-        A traitsui `View` object, see `https://docs.enthought.com/traitsui/traitsui_user_manual/view.html`_
+        view : traitsui.View
+            A traitsui `View` object, see `https://docs.enthought.com/traitsui/traitsui_user_manual/view.html`_
         
         See Also
         --------
@@ -403,8 +422,6 @@ class ModuleBase(HasTraits):
                     self._view_items(params) +
                     [Item('_'),] +
                     [Item(tn) for tn in outputs], buttons=['OK', 'Cancel']) #TODO - should we have cancel? Traits update whilst being edited and cancel doesn't roll back
-
-
 
     def default_traits_view( self ):
         """ This is the traits stock method to specify the default view"""
@@ -450,7 +467,12 @@ class OutputModule(ModuleBase):
         
         Parameters
         ----------
-        namespace
+        namespace : dict
+            The recipe namespace
+        recipe_context : dict
+            Information about the source file(s) to allow pattern substitution and generate the output name. 
+            At least 'basedir' (which is the fully resolved directory name in which the input file resides) 
+            and 'filestub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -458,15 +480,42 @@ class OutputModule(ModuleBase):
         """
         return None
 
-
     def execute(self, namespace):
         """
         Output modules be definition do nothing when executed - they act as a sink and implement a save method instead.
 
+        Parameters
+        ----------
+        namespace : dict
+            The recipe namespace
+        
+        Returns
+        -------
+        None
+
         """
         pass
 
-import dispatch
+    def save(self, namespace, context={}):
+        """
+        Save recipes output(s)
+
+        Parameters
+        ----------
+        namespace : dict
+            The recipe namespace
+        context : dict
+            Information about the source file(s) to allow pattern substitution and generate the output name. At least
+            'basedir' (which is the fully resolved directory name in which the input file resides) and
+            'filestub' (which is the filename without any extension) should be resolved.
+
+        Returns
+        -------
+        None
+        """
+        raise NotImplementedError
+
+
 class ModuleCollection(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
@@ -497,7 +546,6 @@ class ModuleCollection(HasTraits):
             return stub
         else:
             return '%s_%d' % (stub, count)
-        
         
     def dependancyGraph(self):
         dg = {}
@@ -561,7 +609,6 @@ class ModuleCollection(HasTraits):
         
         return downstream
         
-        
     def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
         rdg = self.reverseDependancyGraph()
         
@@ -581,7 +628,6 @@ class ModuleCollection(HasTraits):
             except AttributeError:
                 #we might not have our namespace defined yet
                 pass
-        
         
     def resolveDependencies(self):
         import toposort
@@ -706,7 +752,6 @@ class ModuleCollection(HasTraits):
 
         return l
 
-
     def toYAML(self):
         import yaml
         class MyDumper(yaml.SafeDumper):
@@ -807,7 +852,6 @@ class ModuleCollection(HasTraits):
     def fromJSON(cls, data):
         import json
         return cls._from_module_list(json.loads(data))
-
 
     def add_module(self, module):
         self.modules.append(module)
@@ -944,7 +988,6 @@ class ModuleCollection(HasTraits):
         else:
             self.namespace[key] = ImageStack(filename=filename, haveGUI=False)
 
-
     @property
     def pipeline_view(self):
         import wx
@@ -967,7 +1010,6 @@ class ModuleCollection(HasTraits):
     def _repr_svg_(self):
         """ Make us look pretty in Jupyter"""
         return self.to_svg()
-        
 
         
 class Filter(ModuleBase):
@@ -1032,7 +1074,20 @@ class Filter(ModuleBase):
 
     
 class ArithmaticFilter(ModuleBase):
-    """Module with two image inputs and one image output"""
+    """
+    Module with two image inputs and one image output
+    
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+    inputName1: PYME.IO.image.ImageStack
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. single-frame vs stack operations, or single-color vs multi-color
+        operations.
+    """
     inputName0 = Input('input')
     inputName1 = Input('input')
     outputName = Output('filtered_image')
@@ -1070,6 +1125,7 @@ class ArithmaticFilter(ModuleBase):
     def completeMetadata(self, im):
         pass  
 
+
 @register_module('ExtractChannel')    
 class ExtractChannel(ModuleBase):
     """Extract one channel from an image"""
@@ -1094,7 +1150,8 @@ class ExtractChannel(ModuleBase):
     
     def execute(self, namespace):
         namespace[self.outputName] = self._pickChannel(namespace[self.inputName])
-        
+
+
 @register_module('JoinChannels')    
 class JoinChannels(ModuleBase):
     """Join multiple channels to form a composite image"""
@@ -1134,39 +1191,93 @@ class JoinChannels(ModuleBase):
     
     def execute(self, namespace):
         namespace[self.outputName] = self._joinChannels(namespace)
-        
+
+
 @register_module('Add')    
 class Add(ArithmaticFilter):
-    """Add two images"""
+    """
+    Add two images
     
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+    inputName1: PYME.IO.image.ImageStack
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. adding a single frame to each frame in a stack.
+    """
+
     def applyFilter(self, data0, data1, chanNum, i, image0):
-        
         return data0 + data1
-        
+
+
 @register_module('Subtract')    
 class Subtract(ArithmaticFilter):
-    """Subtract two images"""
-    
+    """
+    Subtract two images. inputName1 is subtracted from inputName0.
+
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+        image to be subtracted from
+    inputName1: PYME.IO.image.ImageStack
+        image being subtracted
+    outputName: PYME.IO.image.ImageStack
+        difference image
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. subtracting a single frame from each frame in a stack.
+    """
+
     def applyFilter(self, data0, data1, chanNum, i, image0):
-        
         return data0 - data1
-        
+
+
 @register_module('Multiply')    
 class Multiply(ArithmaticFilter):
-    """Multiply two images"""
+    """
+    Multiply two images
+
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+    inputName1: PYME.IO.image.ImageStack
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. multiplying a single frame by each frame in the other stack.
+    """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
-        
-        return data0*data1
-    
+        return data0 * data1
+
+
 @register_module('Divide')    
 class Divide(ArithmaticFilter):
-    """Divide two images"""
+    """
+    Divide two images. inputName0 is divided by inputName1.
+
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+        numerator
+    inputName1: PYME.IO.image.ImageStack
+        denominator
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. dividing each frame in one stack by a single frame.
+    """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
-        
-        return data0/data1
-    
+        return data0 / data1
+
+
 @register_module('Pow')
 class Pow(Filter):
     "Raise an image to a given power (can be fractional for sqrt)"
@@ -1174,7 +1285,8 @@ class Pow(Filter):
     
     def applyFilter(self, data, chanNum, i, image0):
         return np.power(data, self.power)
-        
+
+
 @register_module('Scale')    
 class Scale(Filter):
     """Scale an image intensities by a constant"""
@@ -1182,9 +1294,9 @@ class Scale(Filter):
     scale = Float(1)
     
     def applyFilter(self, data, chanNum, i, image0):
-        
-        return self.scale*data
-        
+        return self.scale * data
+
+
 @register_module('Normalize')    
 class Normalize(Filter):
     """Normalize an image so that the maximum is 1"""
@@ -1192,9 +1304,9 @@ class Normalize(Filter):
     #scale = Float(1)
     
     def applyFilter(self, data, chanNum, i, image0):
-        
-        return data/float(data.max())
-        
+        return data / float(data.max())
+
+
 @register_module('NormalizeMean')    
 class NormalizeMean(Filter):
     """Normalize an image so that the mean is 1"""
@@ -1202,10 +1314,8 @@ class NormalizeMean(Filter):
     offset = Float(0)
     
     def applyFilter(self, data, chanNum, i, image0):
-        
         data = data - self.offset
-        
-        return data/float(data.mean())
+        return data / float(data.mean())
         
         
 @register_module('Invert')    
@@ -1219,13 +1329,24 @@ class Invert(Filter):
     #scale = Float(1)
     
     def applyFilter(self, data, chanNum, i, image0):
-        
         return 1 - data
-        
+
+
 @register_module('BinaryOr')    
 class BinaryOr(ArithmaticFilter):
-    """Perform a bitwise OR on images
+    """
+    Perform a bitwise OR on images
 
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+    inputName1: PYME.IO.image.ImageStack
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. comparing a single frame with each frame in the other stack.
+    
     Notes
     -----
 
@@ -1233,13 +1354,24 @@ class BinaryOr(ArithmaticFilter):
     """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
-        
         return (data0 + data1) > .5
 
 
 @register_module('LogicalAnd')
 class LogicalAnd(ArithmaticFilter):
-    """Perform a logical AND on images"""
+    """
+    Perform a logical AND on images
+
+    Parameters
+    ----------
+    inputName0: PYME.IO.image.ImageStack
+    inputName1: PYME.IO.image.ImageStack
+    outputName: PYME.IO.image.ImageStack
+    processFramesIndividually: Bool
+        `True` will force the operation to be frame by frame, in which case the input images
+        must have the same number of slices. `False` can also do frame-by-frame, but allows
+        broadcasting for e.g. comparing a single frame with each frame in the other stack.
+    """
 
     def applyFilter(self, data0, data1, chanNum, i, image0):
         return np.logical_and(data0, data1)
