@@ -26,7 +26,8 @@ from PYME.ui import editList
 #from PYME.misc import facsPlot
 import numpy
 import wx
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import sys
 from . import dyeRatios
 
