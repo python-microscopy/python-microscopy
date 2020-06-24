@@ -26,7 +26,7 @@ from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter
 
 # from pylab import ifftshift, ifftn, fftn, fftshift
-from numpy.fft import ifftshift, ifftn, fftn, fftshift
+from scipy.fftpack import ifftshift, ifftn, fftn, fftshift
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def findRectangularROIs(mask):
