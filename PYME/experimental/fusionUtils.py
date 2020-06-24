@@ -6,7 +6,8 @@ Created on Thu Jul  9 00:55:38 2015
 """
 
 import numpy as np
-import pylab as pl
+# import pylab as pl
+import matplotlib.pyplot as pl
 from PYME.IO import image
 import PYME.Analysis.Tracking.trackUtils as trackUtils
 import json
