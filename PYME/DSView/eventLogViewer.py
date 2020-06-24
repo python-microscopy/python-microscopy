@@ -347,7 +347,7 @@ class eventLogPanel(wx.Panel):
         self.eventSource = eventSource
         self.evKeyNames = set()
         for e in self.eventSource:
-            self.evKeyNames.add(bytes(e['EventName']))
+            self.evKeyNames.add(e['EventName'])
 
         colours = 0.9*pylab.cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 

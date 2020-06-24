@@ -361,9 +361,9 @@ class DSViewFrame(AUIFrame):
         self.elv.SetEventSource(self.image.dataSource.getEvents())
         self.elv.SetRange([0, self.image.dataSource.getNumSlices()])
         
-        if b'ProtocolFocus' in self.elv.evKeyNames:
+        if 'ProtocolFocus' in self.elv.evKeyNames:
             self.zm = piecewiseMapping.GeneratePMFromEventList(self.elv.eventSource, self.mdh.getEntry('Camera.CycleTime'), self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-            self.elv.SetCharts([('Focus [um]', self.zm, b'ProtocolFocus'),])
+            self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])
 
         self.update()
 

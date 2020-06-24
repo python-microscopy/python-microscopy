@@ -458,8 +458,8 @@ def get_position_from_events(events, mdh):
     x0 = mdh.getOrDefault('Positioning.x', 0)
     y0 = mdh.getOrDefault('Positioning.y', 0)
     
-    xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
-    ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], y0, b'ScannerYPos', 0)
+    xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
+    ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], y0, 'ScannerYPos', 0)
     
     return xm, ym
 

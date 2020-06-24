@@ -57,11 +57,11 @@ def times_to_frames(t, events, mdh):
     sf['Time'] = startTime + 60*60*24*7
 
     #get events corresponding to aquisition starts
-    startEvents = np.hstack((se, events[events['EventName'] == b'StartAq'], sf))
+    startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
 
     #print startEvents
 
-    sfr = np.array([int(e['EventDescr'].decode('ascii')) for e in startEvents])
+    sfr = np.array([int(e['EventDescr']) for e in startEvents])
 
     si = startEvents['Time'].searchsorted(t, side='right')
     
@@ -116,11 +116,11 @@ def frames_to_times(fr, events, mdh):
     se['Time'] = startTime
 
     #get events corresponding to aquisition starts
-    startEvents = np.hstack((se, events[events['EventName'] == b'StartAq']))
+    startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
     #print(events)
     #print(startEvents)
 
-    sfr = np.array([int(e['EventDescr'].decode()) for e in startEvents])
+    sfr = np.array([int(e['EventDescr']) for e in startEvents])
 
     si = sfr.searchsorted(fr, side = 'right')
     return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
@@ -168,9 +168,9 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
 
     secsPerFrame = metadata.getEntry('Camera.CycleTime')
 
-    for e in events[events['EventName'] == b'ProtocolTask']:
+    for e in events[events['EventName'] == 'ProtocolTask']:
         #if e['EventName'] == eventName:
-        ed = e['EventDescr'].decode('ascii').split(', ')
+        ed = e['EventDescr'].split(', ')
         if ed[idPos] == id:
             x.append(e['Time'])
             y.append(float(ed[dataPos]))
@@ -186,7 +186,7 @@ def GeneratePMFromProtocolEvents(events, metadata, x0, y0, id='setPos', idPos = 
     return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
 
 
-def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1):
+def GeneratePMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1):
     """
     Parameters
     ----------
@@ -211,7 +211,7 @@ def GeneratePMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus'
         #if e['EventName'] == eventName:
         #print(e)
         x.append(e['Time'])
-        y.append(float(e['EventDescr'].decode('ascii').split(', ')[dataPos]))
+        y.append(float(e['EventDescr'].split(', ')[dataPos]))
         
     x = np.array(x)
     y = np.array(y)
@@ -265,7 +265,7 @@ def bool_map_between_events(events, metadata, trigger_high, trigger_low, default
 
     return piecewiseMap(default, times_to_frames(t[I], events, metadata), y[I], fps, xIsSecs=False)
 
-def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0):
+def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName='ProtocolFocus', dataPos=1, backlash=0):
     x = []
     y = []
 
@@ -274,7 +274,7 @@ def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'Pr
     for e in events[events['EventName'] == eventName]:
         #if e['EventName'] == eventName:
         x.append(e['Time'])
-        y.append(float(e['EventDescr'].decode('ascii').split(', ')[dataPos]))
+        y.append(float(e['EventDescr'].split(', ')[dataPos]))
 
     x = np.array(x)
     y = np.array(y)
