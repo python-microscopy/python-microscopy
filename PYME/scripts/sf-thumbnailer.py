@@ -35,7 +35,8 @@ from six.moves import cPickle
 import matplotlib
 matplotlib.use('Agg')
 
-from pylab import *
+# from pylab import *
+import numpy as np
 
 dpi = 100.
 
@@ -53,16 +54,16 @@ fid = open(inputFile)
 spx, spy = cPickle.load(fid)
 fid.close()
 
-f = figure(figsize=(thumbSize/dpi, 0.5*thumbSize/dpi))
+f = matplotlib.pyplot.figure(figsize=(thumbSize/dpi, 0.5*thumbSize/dpi))
 
-axes([0, 0, 1, 1])
-xin, yin = meshgrid(arange(0, 512*70, 4000), arange(0, 256*70, 4000))
+matplotlib.pyplot.axes([0, 0, 1, 1])
+xin, yin = np.meshgrid(np.arange(0, 512*70, 4000), np.arange(0, 256*70, 4000))
 xin = xin.ravel()
 yin = yin.ravel()
-quiver(xin, yin, spx.ev(xin, yin), spy.ev(xin, yin), scale=2e3)
-xticks([])
-yticks([])
-axis('image')
+matplotlib.pyplot.quiver(xin, yin, spx.ev(xin, yin), spy.ev(xin, yin), scale=2e3)
+matplotlib.pyplot.xticks([])
+matplotlib.pyplot.yticks([])
+matplotlib.pyplot.axis('image')
 
 f.savefig(outputFile, dpi=dpi, format='png')
 
