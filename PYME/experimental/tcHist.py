@@ -24,7 +24,8 @@
 #from pylab import *
 
 import numpy as np
-import pylab
+# import pylab
+import matplotlib.cm
 
 
 def doTCHist(xvals, yvals, xbins, ybins, sat=1):
@@ -34,7 +35,7 @@ def doTCHist(xvals, yvals, xbins, ybins, sat=1):
 
     X,Y = np.meshgrid(xbins[:-1], ybins[:-1])
 
-    c = pylab.cm.RdYlGn(np.minimum(np.maximum(X/(X + Y), 0),1))
+    c = matplotlib.cm.RdYlGn(np.minimum(np.maximum(X/(X + Y), 0),1))
 
     #print c.shape
 
@@ -54,7 +55,7 @@ def doInvTCHist(xvals, yvals, xbins, ybins, sat=1):
 
     X,Y = np.meshgrid(xbins[:-1], ybins[:-1])
 
-    c = 1 - pylab.cm.RdYlGn(np.minimum(np.maximum(X/(X + Y), 0),1))
+    c = 1 - matplotlib.cm.RdYlGn(np.minimum(np.maximum(X/(X + Y), 0),1))
 
     #print c.shape
 
