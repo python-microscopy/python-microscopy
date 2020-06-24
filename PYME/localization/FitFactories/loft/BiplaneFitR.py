@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 # try:
 #     # noinspection PyCompatibility
 #     import copy_reg
@@ -245,7 +245,7 @@ class BiplaneFitFactory:
         Xr = Xg
         Yr = Yg
 
-        Z = array([0, self.metadata.Splitter.zOffset]).astype('f')
+        Z = np.array([0, self.metadata.Splitter.zOffset]).astype('f')
         P = scipy.arange(0,1.01,.01)
 
         #print DeltaX
