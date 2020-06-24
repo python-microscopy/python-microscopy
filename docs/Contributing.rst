@@ -1,5 +1,18 @@
-Contributing changes back to PYME
-*********************************
+Contributing to PYME
+********************
+
+We welcome contributions of bug reports, new features, bug fixes, and especially documentation. The process is similar to contributing
+to other open source projects - in general your patch is likely to face robust criticism, comments, and requests for change
+or justification. None of this should be taken personally and this does not mean that your contribution is not valued.
+Patches may take some time to be reviewed, as this takes place during the gaps in a busy academic schedule. In general I
+aim to provide some feedback within a week of a PR or issue being submitted, but this will not always happen, particularly
+around grant submission deadlines etc ... It's entirely possible that a PR might get lost in noise - if you haven't heard
+**anything** in a couple of weeks, don't be afraid to comment on the PR to bump it back into my attention.
+
+When considering adding a feature, or re-working parts of the code please reach out in advance,
+either by email, or by raising a feature request or proposal issue in our issue tracker. This will both serve to head off
+potential points for friction (see below), and should also allow us to provide additional information which may be helpful
+when dealing with some of the hairier and less well documented bits of the codebase.
 
 Roadmap / Future directions
 ===========================
@@ -14,32 +27,9 @@ either `dh5view` or `VisGUI` be implemented in the form of 'recipe' modules usin
 Python 3 Migration
 ==================
 
-It is our intent to migrate at least the core functionality to Python3. It is however unlikely that all the 3rd party
-dependencies we use will ever be supported. For this reason we will also continue to support Python 2.7. As several
-compatibility features have been added to python3 since the initial version we will require at least python 3.6 and wil
-not support earlier versions of python 3.
-
-An up to date account of migration progress can be found at https://bitbucket.org/david_baddeley/python-microscopy/issues/69/python-3-compatibility
-
-A slightly out of date list of tasks is given below:
-
-- find (or create) a reliable anaconda package for wxpython on python3 and add it to our channel. *NEW: An early wx build for python 3 suitable for testing
-  is available by running `conda install -c newville wxpython-phoenix`*
-- resolve backwards incompatibility issues in wxpython
-- write more unit tests (current coverage is really bad)
-- **write all new code so that it is compatible with both python 2.7 and python >= 3.6** using `six`, `future` and other
-  compatibility modules as needed. This means using the functional form of `print`, using new style exception handling,
-  as well as some care around strings. There are quite a few documents online about how to write compatible code. I'd
-  also recommend setting up your editor to check for both python 2 and python 3 syntax.
-- Go through and check string / byte string usage, and fix to make compatible with both python 2 and 3. I've already
-  invested some time in this, but know that there are remaining issues.
-- Port our Pyro code to a newer version of Pyro (the version we currently use does not support Python3 and the new
-  version has backwards incompatible changes)
-- Check for and correct relative module imports
-- Build a conda module for dispatch on python3
-- Fix all c coded modules to use new init methods
-
-We will probably discover more as we progress.
+Python 3 migration is now mostly complete, although there are still a few corners of the code base and a couple of dependencies
+which might have issues. For that reason we will continue to support python 2.7 until at least the end of 2020. As a result,
+contributions should be written to be compatible with both python 2.7 and python 3.6, using modules such as six where appropriate.
 
 Coding style
 ============
@@ -65,6 +55,16 @@ changes however is high in order not to break existing code. Such changes:
 - Should be in a separate PR which only deals with re-naming
 - Must consider how the code might be used (e.g. several people use bits of PYME from ipython notebooks) and provide
   backwards compatible fallbacks (along with deprecation warnings) where appropriate
+
+
+Licensing
+=========
+
+PYME is licenced as GPLv3. By submitting a PR you acknowledge that you are happy (and have approval if necessary) for
+your submitted code to be released under that license. We additionally want to keep the option of releasing parts of PYME
+under a more permissive BSD license in the future. If you are not willing for your submitted code to be re-licensed as BSD
+you must indicate this in your PR, and in comments in your code.
+
 
 Pull requests
 =============
