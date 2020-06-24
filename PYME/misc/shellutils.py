@@ -1,5 +1,5 @@
 from PYME.Analysis.piecewise import piecewiseLinear
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 
@@ -308,7 +308,9 @@ def binSum(binVar, indepVar, bins):
 def frc(image):
     from PYME.Analysis import binAvg        
     import numpy as np
-    import pylab
+    # import pylab
+    import matplotlib.pyplot as plt
+    from scipy.fftpack import fft2, fftshift
 
     voxelsize = image.voxelsize
 
@@ -327,23 +329,23 @@ def frc(image):
     Y = Y - .5
     R = np.sqrt(X**2 + Y**2)
     
-    H1 = pylab.fft2(imA)
-    H2 = pylab.fft2(imB)
+    H1 = fft2(imA)
+    H2 = fft2(imB)
     
     ringwidth  = 1 # in pixels
     rB = np.linspace(0,0.5,0.5*imA.shape[0]/ringwidth)
     
-    bn, bm, bs = binSum(R, pylab.fftshift(H1*H2.conjugate()), rB)
+    bn, bm, bs = binSum(R, fftshift(H1*H2.conjugate()), rB)
     
-    bn1, bm1, bs1 = binSum(R, pylab.fftshift(abs(H1*H1.conjugate())), rB)
-    bn2, bm2, bs2 = binSum(R, pylab.fftshift(abs(H2*H2.conjugate())), rB)
+    bn1, bm1, bs1 = binSum(R, fftshift(abs(H1*H1.conjugate())), rB)
+    bn2, bm2, bs2 = binSum(R, fftshift(abs(H2*H2.conjugate())), rB)
     
     bmr = np.real(bm)
     
     
-    pylab.figure()
+    plt.figure()
     
-    ax = pylab.gca()
+    ax = plt.gca()
 
     freqpnm = rB/voxelsize[0]
     ax.plot(freqpnm[:-1], bmr/np.sqrt(bm1*bm2))
@@ -354,15 +356,15 @@ def frc(image):
     xt = np.array([10., 15, 20, 30, 50, 80, 100, 150])
     rt = 1.0/xt
     
-    pylab.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]])
+    plt.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]])
 
-    pylab.show()
+    plt.show()
 
     return H1, H2, R, bmr/np.sqrt(bm1*bm2), bn, bm, bm1, bm2, rB
 
 def abscorrel(a,b):
-    from scipy.fftpack import fftn, ifftn
-    from pylab import fftshift, ifftshift
+    from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
+    # from pylab import fftshift, ifftshift
     import numpy as np
 
     F0 = fftn(a)
