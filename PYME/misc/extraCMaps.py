@@ -112,8 +112,8 @@ def labeled(data):
 @register_cmap('flow_gray')
 def flow_gray(data):
     v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*cm.gray(data)
-    v += (data == 0).reshape(list(data.shape) + [1]) * pylab.array([0, 1., 0, 0]).reshape(list(pylab.ones(data.ndim) + [3]))
-    v += (data == 1).reshape(list(data.shape) + [1]) * pylab.array([1., 0, 1., 0]).reshape(list(pylab.ones(data.ndim) + [3]))
+    v += (data == 0).reshape(list(data.shape) + [1]) * np.array([0, 1., 0, 0]).reshape(list(np.ones(data.ndim) + [3]))
+    v += (data == 1).reshape(list(data.shape) + [1]) * np.array([1., 0, 1., 0]).reshape(list(np.ones(data.ndim) + [3]))
     return v
 
 
