@@ -218,12 +218,13 @@ def emwg(data, sigs, nIters=10, width=5, nPerClass=10, updateSigs=False):
 
 
 def plotRes(data, errors, r):
-    import pylab
-    pylab.figure()
+    # import pylab
+    import matplotlib.pyplot as plt
+    plt.figure()
 
     nObs = len(data)
 
-    n, bins, patches = pylab.hist(data, 2*np.sqrt(nObs), fc=[.7,.7,.7])
+    n, bins, patches = plt.hist(data, 2*np.sqrt(nObs), fc=[.7,.7,.7])
 
     binSize = bins[1] - bins[0]
     x = np.arange(bins[0], bins[-1])
@@ -235,24 +236,24 @@ def plotRes(data, errors, r):
 
     for i in range(means.size):
         #print i
-        c = pylab.cm.hsv(float(i)/means.size)
-        n, bin_s, patches = pylab.hist(data[inds == i], bins, alpha=0.3, facecolor=c)
+        c = plt.hsv(float(i)/means.size)
+        n, bin_s, patches = plt.hist(data[inds == i], bins, alpha=0.3, facecolor=c)
     
     ys = np.zeros_like(x)
 
     i = 0
     for m, s, p in zip(means, sigs, pis):
-        c = pylab.cm.hsv(float(i)/means.size)
+        c = plt.hsv(float(i)/means.size)
         y = nObs*p*binSize*np.exp(-(x-m)**2/(2*s**2))/np.sqrt(2*np.pi*s**2)
         ys += y
 
         i+= 1
 
-        pylab.plot(x,y, lw=2, color=c)
+        plt.plot(x,y, lw=2, color=c)
 
-    #pylab.plot(x, ys, lw=3)
+    #plt.plot(x, ys, lw=3)
 
-    pylab.figure()
+    plt.figure()
 
     ci = (r[4]*np.arange(r[0].size)[None,:]).sum(1)
 
@@ -261,20 +262,20 @@ def plotRes(data, errors, r):
     cil = 0
 
     for i in range(means.size):
-        c = pylab.cm.hsv(float(i)/means.size)
+        c = plt.hsv(float(i)/means.size)
 
         print(c)
 
-        pylab.axvline(means[i], color=c)
-        pylab.axvspan(means[i] - sigs[i], means[i] + sigs[i], alpha=0.5, facecolor=c)
+        plt.axvline(means[i], color=c)
+        plt.axvspan(means[i] - sigs[i], means[i] + sigs[i], alpha=0.5, facecolor=c)
 
         cin = cis.searchsorted(i+0.5)
 
-        pylab.axhspan(cil, cin, alpha=0.3, facecolor=c)
+        plt.axhspan(cil, cin, alpha=0.3, facecolor=c)
 
         cil = cin
 
-    pylab.errorbar(data[I], np.arange(data.size), xerr=errors[I], fmt='.')
+    plt.errorbar(data[I], np.arange(data.size), xerr=errors[I], fmt='.')
 
 
 
