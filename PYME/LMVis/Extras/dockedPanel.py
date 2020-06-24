@@ -20,15 +20,24 @@
 #
 
 import wx
-
 import wx.lib.agw.aui as aui
 
+# This is legacy-imported as afp since much of the code was written using
+# PYME.ui.autoFoldPanel and when we switched to manual fold panel it was 
+# easiest to change import PYME.ui.autoFoldPanel as afp to 
+# import PYME.ui.manualFoldPanel as afp. Maintaining this convention here
+# to make it easier to swap out the fold panel code again in the future 
+# for something which is better behaved.
+import PYME.ui.manualFoldPanel as afp
 
-class DockedPanel(wx.Panel):
+
+class DockedPanel(afp.foldingPane):
+
 
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent_panel, **kwargs)
+        kwargs['pinned'] = True
+        afp.foldingPane.__init__(self, parent_panel, **kwargs)
 
         self.parent_panel = parent_panel
 
@@ -39,7 +48,8 @@ class DockedPanel(wx.Panel):
         p_info = aui.AuiPaneInfo().Name(p_info_name).Right().Caption(caption).CloseButton(True).MinimizeButton(
             True).DestroyOnClose(True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
         frame_manager.AddPane(panel, p_info)
-        frame_manager.ShowPane(panel, True)
+        # frame_manager.ShowPane(panel, True)
+        frame_manager.Update()
 
     @staticmethod
     def add_menu_item(vis_fr, menu_name, panel_class, p_info_name, caption=None):
