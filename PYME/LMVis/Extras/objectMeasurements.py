@@ -122,6 +122,8 @@ class ObjectMeasurer:
             m.edit_no_invalidate()
        
             pipeline.recipe.add_module(m)
+            pipeline.recipe.execute()
+            
             pipeline.selectDataSource(m.outputName)
             
             if m.PCA:

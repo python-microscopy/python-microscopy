@@ -21,5 +21,5 @@
 #
 ##################
 
-from pointQT import * 
-from QTrend import * 
+from .pointQT import * 
+from .QTrend import * 

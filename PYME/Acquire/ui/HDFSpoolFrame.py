@@ -242,12 +242,11 @@ class PanSpool(afp.foldingPane):
         spoolProgSizer = wx.StaticBoxSizer(self.sbSpoolProgress, wx.VERTICAL)
     
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
-        self.stSpoolingTo.Enable(False)
-    
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
         self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
-        self.stNImages.Enable(False)
+        self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
+        self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     
         spoolProgSizer.Add(self.stNImages, 0, wx.ALL, 0)
     
@@ -471,9 +470,9 @@ class PanSpool(afp.foldingPane):
                                                #pzf_compression_settings=self.get_compression_settings(),
                                                #cluster_h5=self.cbClusterh5.GetValue()
                                                )
-        except IOError:
+        except IOError as e:
             logger.exception('IO error whilst spooling')
-            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
+            ans = wx.MessageBox(str(e.message), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             
     def update_ui(self):
@@ -488,8 +487,10 @@ class PanSpool(afp.foldingPane):
         self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
         self.bStopSpooling.Enable(True)
-        self.stSpoolingTo.Enable(True)
-        self.stNImages.Enable(True)
+        #self.stSpoolingTo.Enable(True)
+        #self.stNImages.Enable(True)
+        self.stSpoolingTo.SetForegroundColour(None)
+        self.stNImages.SetForegroundColour(None)
         self.stSpoolingTo.SetLabel('Spooling to ' + self.spoolController.seriesName)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
         
@@ -509,8 +510,10 @@ class PanSpool(afp.foldingPane):
         self.bStartSpool.Enable(True)
         #self.bStartStack.Enable(True)
         self.bStopSpooling.Enable(False)
-        self.stSpoolingTo.Enable(False)
-        self.stNImages.Enable(False)
+        #self.stSpoolingTo.Enable(False)
+        #self.stNImages.Enable(False)
+        self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
+        self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
 
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()

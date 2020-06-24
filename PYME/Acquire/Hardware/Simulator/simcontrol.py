@@ -180,6 +180,12 @@ class SimController(object):
         rend_im.setModel(filename, rend_im.mdh)
         return 'PSF: Experimental [%s]' % filename
     
+    def get_psf(self):
+        return rend_im.get_psf()
+    
+    def save_psf(self, filename):
+        self.get_psf().Save(filename)
+    
     def generate_fluorophores_theoretical(self):
         if (len(self.points) == 0):
             raise RuntimeError('No points defined')

@@ -682,13 +682,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == 73: #I
-            self.do.yp += 1
+            self.do.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 75: #L
-            self.do.yp -= 1
+        elif event.GetKeyCode() == 75: #K
+            self.do.yp += 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:

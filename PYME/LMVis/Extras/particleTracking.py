@@ -91,6 +91,8 @@ class ParticleTracker:
         from PYME.LMVis.layers.tracks import TrackRenderLayer
 
         from PYME.recipes import tracking
+        from PYME.recipes.tablefilters import FilterTable
+
         recipe = self.visFr.pipeline.recipe
     
         visFr = self.visFr
@@ -119,11 +121,15 @@ class ParticleTracker:
         if tracking_module.configure_traits(kind='modal'):
             self._mol_tracking_module = tracking_module
             recipe.add_module(tracking_module)
-    
+            # Add dynamic filtering on track length, etc.
+            recipe.add_module(FilterTable(recipe, 
+                                          inputName=tracking_module.outputName, 
+                                          outputName='filtered_{}'.format(tracking_module.outputName), 
+                                          filters={'clumpSize':[tracking_module.minClumpSize, 1e6]}))
             recipe.execute()
-            self.visFr.pipeline.selectDataSource(output_name)
+            self.visFr.pipeline.selectDataSource('filtered_{}'.format(tracking_module.outputName))
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
-            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputName, method='tracks')
+            layer = TrackRenderLayer(pipeline, dsname='filtered_{}'.format(tracking_module.outputName), method='tracks')
             visFr.add_layer(layer)
         
         #dlg.Destroy()

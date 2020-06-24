@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PYMERuleServer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+        .inactive {
+            color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+  <a class="navbar-brand" href="#">PYMERuleServer</a>
+</nav>
+
+<div class="container mt-4">
+
+<div id="status">
+    <h3>Active analysis queues</h3>
+
+    <table class="table table-striped">
+        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th><th></th></tr>
+
+        <tr v-for="(queueStats, queueName)  in queues" :class="queueStats.active ? 'active' : 'inactive'">
+            <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
+                <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td><td>
+            <button v-if="queueStats.active" v-on:click="inactivate_rule(queueName );">Abort</button></td>
+        </tr>
+
+    </table>
+
+</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+<script>
+    var queues = {};
+
+
+    var app = new Vue({
+        el: '#status',
+        data: {
+            queues: queues
+            },
+        methods:{
+            inactivate_rule: function (ruleID) {
+                $.post('/inactivate_rule?ruleID=' + ruleID);
+            }
+        }
+    });
+    function poll_state(){
+        $.ajax({
+            url: "/queue_info_longpoll",
+            success: function(data){
+                //console.log(data);
+                app.queues=data.result;
+                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+            },
+            complete: function(jqXHR, status){
+                    if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
+                }
+
+        })
+    }
+
+    poll_state();
+</script>
+</body>
+</html>

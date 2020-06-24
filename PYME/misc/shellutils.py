@@ -999,7 +999,7 @@ def getdriftxyzFromEvts(pipeline, tframes=None, coordpos=0):
         ts = np.array(ts)
         cs = np.array(cs)
     # convert time to frame numbers
-    tfr = piecewiseMapping.timeToFrames(ts, pipeline.events, pipeline.mdh)
+    tfr = piecewiseMapping.times_to_frames(ts, pipeline.events, pipeline.mdh)
     # interpolate to desired frame set
     if tframes is not None:
         # finter = interp1d(tfr,cs,fill_value = 'extrapolate') # we need to check that we get no errors from this step

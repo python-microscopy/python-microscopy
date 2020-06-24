@@ -71,7 +71,7 @@ class CSInterpolator(__interpolator):
         
         #print self.interpModel.shape
         #print self.dx
-        print(self.PSF2Offset)
+        #print(self.PSF2Offset)
 
 
         r = cInterp.InterpolateCS(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)

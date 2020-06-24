@@ -27,6 +27,8 @@ def setup_module():
     
     time.sleep(3) #give time for the server to spin up
     
+    logging.info('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
+    
     
 def teardown_module():
     global proc, tmp_root

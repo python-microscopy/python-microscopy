@@ -186,6 +186,7 @@ def origin_nm(mdh, default_pixel_size=1.):
         return ox, oy, oz
 
     elif 'Source.Camera.ROIPosX' in mdh.getEntryNames():
+        # TODO - can we somehow defer this and next case to get_camera_roi_corigin()
         #a rendered image with information about the source ROI
         voxx, voxy = 1e3 * mdh['Source.voxelsize.x'], 1e3 * mdh['Source.voxelsize.y']
     
@@ -193,7 +194,14 @@ def origin_nm(mdh, default_pixel_size=1.):
         oy = (mdh['Source.Camera.ROIPosY'] - 1) * voxy
     
         return ox, oy, 0
-
+    elif 'Source.Camera.ROIOriginX' in mdh.getEntryNames():
+        #a rendered image with information about the source ROI
+        voxx, voxy = 1e3 * mdh['Source.voxelsize.x'], 1e3 * mdh['Source.voxelsize.y']
+    
+        ox = (mdh['Source.Camera.ROIOriginX']) * voxx
+        oy = (mdh['Source.Camera.ROIOriginY']) * voxy
+    
+        return ox, oy, 0
     else:
         return 0, 0, 0
     

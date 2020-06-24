@@ -53,8 +53,6 @@ def deprecated_name(name):
         return cls
     
     return _dec
-    
-
 
 class TabularBase(object):
     def toDataFrame(self, keys=None):
@@ -148,7 +146,18 @@ class TabularBase(object):
         
     def __dir__(self):
         return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
-    
+
+    def to_JSON(self, keys=None, return_slice=slice(None)):
+        # TODO - do we actually use the slice argument? Should the signature better match to_hdf, to_recarray, toDataFrame?
+        # TODO - is this redundant when compared to .toDataFrame().to_json()
+        import json
+
+        d= {}
+        keys = keys if keys != None else self.keys()
+        for k in keys:
+            d[k] = self[(k, return_slice)].tolist()
+        return json.dumps(d)
+
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
 ###########################################################################
@@ -199,11 +208,39 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
+def unnest_dtype(dtype, parent=''):
+    if isinstance(dtype, np.dtype):
+        descr = dtype.descr
+    else:
+        descr = dtype
+        
+    dt = []
+    for node in descr:
+        if isinstance(node, tuple) and len(node) == 2:
+            name, t = node
+            if isinstance(t, str):
+                dt.append((parent + name, t))
+            else:
+                dt += unnest_dtype(node[1], parent=parent + name + '_')
+        else:
+            raise RuntimeError('unexpected dtype descr: %s' % descr)
+        
+    return np.dtype(dt)
+
 @deprecated_name('fitResultsSource')
 class FitResultsSource(TabularBase):
     _name = "recarrayfi Source"
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
+        
+    def _set_transkeys(self):
+        self.transkeys = {'A': 'fitResults_A', 'x': 'fitResults_x0',
+                          'y': 'fitResults_y0', 'sig': 'fitResults_sigma',
+                          'error_x': 'fitError_x0', 'error_y': 'fitError_y0', 'error_z': 'fitError_z0', 't': 'tIndex'}
+    
+        for k in list(self.transkeys.keys()):
+            if not self.transkeys[k] in self._keys:
+                self.transkeys.pop(k)
         
     def setResults(self, fitResults, sort=True):
         self.fitResults = fitResults
@@ -213,15 +250,13 @@ class FitResultsSource(TabularBase):
             self.fitResults.sort(order='tIndex')
 
         #allow access using unnested original names
+        # TODO - replace with unnest_dtype(self.fitResults.dtype).names
+        # TODO???? - replace key translation with a np.view call?
         self._keys = unNestDtype(self.fitResults.dtype.descr)
+        
         #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0','t':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        self._set_transkeys()
+        
 
 
     def keys(self):
@@ -248,12 +283,15 @@ class FitResultsSource(TabularBase):
         else:
             raise KeyError("Don't know about deeper nesting yet")
 
-
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
+
 class _BaseHDFSource(FitResultsSource):
+    ''' Copy of the original BaseHDFSource which used pytables directly rather than h5rFile
+        Currently unused, but kept for historical reasons.
+    '''
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -348,14 +386,9 @@ class H5RSource(BaseHDFSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         BaseHDFSource.__init__(self, h5fFile, tablename)
-        #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
-
-        for k in list(self.transkeys.keys()):
-            if not self.transkeys[k] in self._keys:
-                self.transkeys.pop(k)
+        
+        # set up column aliases
+        self._set_transkeys()
 
         #sort by time
         if 'tIndex' in self._keys:

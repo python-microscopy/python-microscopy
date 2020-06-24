@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, File
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1051,33 +1051,30 @@ class ProjectOnVector(ModuleBase):
         namespace[self.outputNameS] = im
         
 
-class PSFFile(File):
+class PSFFile(FileOrURI):
     '''Custom trait that verifies that the file can be loaded as a PSF'''
     
     info_text = 'a file name for a pyme PSF (.tif or .psf)'
     
     def validate(self, object, name, value):
-        import six
+        value = FileOrURI.validate(self, object, name, value)
         
         # Traitsui hangs up if a file doesn't validate correctly and doesn't allow selecting a replacement - disable validation for now :(
         # FIXME
         return value
         
-        #value = File.validate(self,object, name, value)
+        if value == '':
+            return value
         
-        if isinstance(value, six.string_types):
-            if value == '':
-                return value
+        try:
+            assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
             
-            try:
-                assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
-                
-                # try loading as a PSF
-                object.GetPSF((70., 70., 200.), psfFilename=value)
-                return value
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
+            # try loading as a PSF
+            object.GetPSF((70., 70., 200.), psfFilename=value)
+            return value
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             
         self.error(object, name, value)
         
@@ -1103,7 +1100,7 @@ class Deconvolve(Filter):
     _decCache = {}
 
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
@@ -1166,7 +1163,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
                     
@@ -1187,7 +1184,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.norm.pdf(vx*R, scale=sc))
                     
@@ -1200,7 +1197,7 @@ class Deconvolve(Filter):
                     # project our PSF if we are doing a 2D deconvolution.
                     psf=np.atleast_3d(psf.sum(2))
                 
-                vs = type('vs', (object,), dict(x=vshint[0]/1e3, y=vshint[1]/1e3))
+                vs = type('vs', (object,), dict(x=vshint[0], y=vshint[1]))
                 
                 self._psfCache[psfKey] = (psf/psf.sum(), vs)
                 
@@ -1361,7 +1358,7 @@ class DeconvolveMotionCompensating(Deconvolve):
         return res
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
@@ -1736,21 +1733,17 @@ class AverageFramesByZStep(ModuleBase):
     output = Output('averaged_by_frame')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis import piezo_movement_correction
         from scipy.stats import mode
         import time
 
         image_stack = namespace[self.input_image]
 
         if self.input_zvals == '':
-            # z from events if we can
+            # z from events
             frames = np.arange(image_stack.data.shape[2], dtype=int)
-            
-            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
-            z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
-                                                          image_stack.mdh['StartTime'],
-                                                          image_stack.mdh['Protocol.PiezoStartPos'])
-            z_vals = z_mapping(frames)
+
+            z_vals = piezo_movement_correction.correct_target_positions(frames, image_stack.events, image_stack.mdh)
         else:
             #z values are provided as input
             z_vals = namespace[self.input_zvals][self.z_column_name]
@@ -1817,7 +1810,7 @@ class ResampleZ(ModuleBase):
     output = Output('regular_stack')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis import piezo_movement_correction
         from scipy.interpolate import RegularGridInterpolator
 
         stack = namespace[self.input]
@@ -1825,11 +1818,7 @@ class ResampleZ(ModuleBase):
         # grab z from events if we can
         frames = np.arange(stack.data.shape[2], dtype=int)
 
-        # GeneratePMFromEventList internally handles converting time stamps to frame numbers
-        z_mapping = piecewiseMapping.GeneratePMFromEventList(stack.events, stack.mdh,
-                                                             stack.mdh['StartTime'],
-                                                             stack.mdh['Protocol.PiezoStartPos'])
-        z_vals = z_mapping(frames)
+        z_vals = piezo_movement_correction.correct_target_positions(frames, stack.events, stack.mdh)
 
         x = np.arange(0, stack.mdh['voxelsize.x'] * stack.data.shape[0], stack.mdh['voxelsize.x'])
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
@@ -1837,10 +1826,15 @@ class ResampleZ(ModuleBase):
         # generate grid for sampling
         xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
                                  indexing='ij')
-
+        # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
+        uni, counts = np.unique(z_vals, return_counts=True)
+        if np.any(counts > 1):
+            raise RuntimeError('Resampling requires one frame per z-step. Please run AverageFramesByZStep first')
+        I = np.argsort(z_vals)
+        sorted_z_vals = z_vals[I]
         regular = []
         for ci in range(stack.data.shape[3]):
-            interp = RegularGridInterpolator((x, y, z_vals), stack.data[:, :, :, ci], method='linear')
+            interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
         regular_stack = ImageStack(regular, mdh=stack.mdh)

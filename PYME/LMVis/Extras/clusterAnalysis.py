@@ -396,7 +396,7 @@ class ClusterAnalyser:
 
     def OnRipleys(self, event=None, mask=None):
         """
-        Run's  masked Ripley's K or L on the current dataset.
+        Run's  masked Ripley's K, L or H on the current dataset.
         """
         from PYME.recipes.pointcloud import Ripleys
         import matplotlib.pyplot as plt
@@ -411,19 +411,48 @@ class ClusterAnalyser:
     
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            if r.normalization == 'L':
+            # Plot the expected line for a uniform random distribution under 
+            # Ripley's K/L/H
+            if r.normalization == 'H':
                 ax.axhline(y=0, c='k', linestyle='--')
-                ax.set_ylabel('L')
+            elif r.normalization == 'dH':
+                # The point of intersection with -1 divided by 2
+                # indicates domain size
+                ax.axhline(y=-1, c='k', linestyle='--')
+            elif r.normalization == 'L':
+                ax.plot(result['bins'], result['bins'], c='k', linestyle='--')
+            elif r.normalization == 'dL':
+                ax.axhline(y=1, c='k', linestyle='--')
             else:
                 if np.count_nonzero(pipeline['z']) == 0:
                     ax.plot(result['bins'], np.pi * (result['bins'] + r.binSize) ** 2, c='k', linestyle='--')
                 else:
                     ax.plot(result['bins'], np.pi * (4.0 / 3.0) * np.pi * (result['bins'] + r.binSize) ** 3,
                             c='k', linestyle='--')
-                ax.set_ylabel('K')
-            ax.scatter(result['bins'], result['vals'], s=0.1, c='r')
-            ax.set_xlabel('Distance (nm)')
 
+            ax.set_ylabel(r.normalization)
+            # Plot Ripley's K/L/H
+            ax.plot(result['bins'], result['vals'], c='r')
+            ax.set_xlabel('Distance (nm)')
+            if r.statistics:
+                # Plot envelope
+                ax.fill_between(result['bins'], result['min'], result['max'], color='k', alpha=0.25)
+
+                # Create a new plot for the pc-values
+                fig_pc = plt.figure()
+                ax_pc = fig_pc.add_subplot(111)
+                ax_pc.plot(result['bins'], -np.log2(result['pc']), c='k')
+                ax_pc.set_xlabel('Distance (nm)')
+                ax_pc.set_ylabel('Clustering significance (-log(p))')
+                ax_pc.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is clustered
+
+                # Create a new plot for the pd-values
+                fig_pd = plt.figure()
+                ax_pd = fig_pd.add_subplot(111)
+                ax_pd.plot(result['bins'], -np.log2(result['pd']), c='k')
+                ax_pd.set_xlabel('Distance (nm)')
+                ax_pd.set_ylabel('Dispersion significance (-log(p))')
+                ax_pd.axhline(y=-np.log2(r.significance), c='r', linestyle='--')  # Above this is dispersed
             
 
 def Plug(visFr):

@@ -824,3 +824,4 @@ class AutocorrelationDriftCorrection(ModuleBase):
             pass
         
         namespace[self.outputName] = out
+
