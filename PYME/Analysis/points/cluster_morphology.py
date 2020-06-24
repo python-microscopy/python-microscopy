@@ -24,7 +24,9 @@ import numpy as np
 
 def get_labels_from_image(label_image, points, minimum_localizations=1):
     """
-    Function to extract labels from a segmented image (2D or 3D) at given locations. 
+    Function to extract labels from a segmented image (2D or 3D) at given locations.
+    
+    TODO - Move this somewhere more sensible and drop minimum_localizations in favour of post-filtering.
 
     Parameters
     ----------
