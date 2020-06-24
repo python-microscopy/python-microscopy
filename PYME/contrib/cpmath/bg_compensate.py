@@ -374,11 +374,12 @@ def bg_compensate(img, sigma, splinepoints, scale):
     """Reads file, subtracts background. Returns [compensated image, background]."""
     
     from PIL import Image
-    from pylab import ceil,imshow,show
-    import numpy,pylab
+    # from pylab import ceil,imshow,show
+    import matplotlib.pyplot as plt
+    import numpy #,pylab
     from matplotlib.image import pil_to_array
     from filter import canny
-    import matplotlib
+    from matplotlib import cm
     import cProfile
 
     img = Image.open(img)
@@ -404,8 +405,8 @@ def bg_compensate(img, sigma, splinepoints, scale):
     else:
         img = pil_to_array(img)
     
-    pylab.subplot(1,3,1).imshow(img, cmap=matplotlib.cm.Greys_r)
-    pylab.show()
+    plt.subplot(1,3,1).imshow(img, cmap=cm.Greys_r)
+    plt.show()
     
     if len(img.shape)>2:
         raise ValueError('Image must be grayscale')
@@ -426,23 +427,24 @@ def bg_compensate(img, sigma, splinepoints, scale):
     print(("Executed in %f sec" % (time.clock() - t0)))
     bg[~mask] = img[~mask]
 
-    pylab.subplot(1,3,2).imshow(img - bg, cmap=matplotlib.cm.Greys_r)
-    pylab.subplot(1,3,3).imshow(bg, cmap=matplotlib.cm.Greys_r)
-    pylab.show()
+    plt.subplot(1,3,2).imshow(img - bg, cmap=cm.Greys_r)
+    plt.subplot(1,3,3).imshow(bg, cmap=cm.Greys_r)
+    plt.show()
 
 if __name__=="__main__":
-    import pylab
+    # import pylab
+    import matplotlib.pyplot as plt
     import sys
     import threading
     import wx
     
     class App(wx.App):
         def OnInit(self):
-            pylab.figure()
+            plt.figure()
             self.Bind(wx.EVT_IDLE, self.on_idle)
             return True
         def on_idle(self, event):
-            pylab.draw()
+            plt.draw()
             
     app = App(False)
     def run(filename=sys.argv[1], sigma=float(sys.argv[2]), 
