@@ -5,7 +5,8 @@ from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 import dispatch
 
