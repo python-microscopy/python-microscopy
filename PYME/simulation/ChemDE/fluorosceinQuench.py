@@ -124,7 +124,7 @@ def plotInitialDecay():
         lw = 2
         if n == 'S0':
             lw = 3
-        plot((t/1e6), res[n], label=n, lw=lw)
+        plt.plot((t/1e6), res[n], label=n, lw=lw)
 
     plt.ylim(0, 1.1*s.initialConditions['S0'])
 
@@ -190,7 +190,7 @@ def stateLifetimes(spec, concs):
     plt.loglog(concs, tXs, label='X', lw=2)
     plt.loglog(concs, tRs, label='R', lw=2)
 
-    plt.plot([nConc, nConc], ylim(), 'k--')
+    plt.plot([nConc, nConc], plt.ylim(), 'k--')
 
     plt.ylabel('Time constant [s]')
     plt.xlabel('[%s]' % spec)
@@ -235,7 +235,7 @@ def stateLifetimes2(spec, concs, r, labelAddition = '',  constants={'q':10e-3, '
     plt.loglog(concs, 1e-6/(-rates['X']/initConc), c = 'b', label='X' + labelAddition, **lineSpec)
     plt.loglog(concs, 1e-6/(-rates['R']/initConc), c = 'g', label='R' + labelAddition, **lineSpec)
 
-    plt.plot([nConc, nConc], ylim(), 'k--')
+    plt.plot([nConc, nConc], plt.ylim(), 'k--')
 
     plt.ylabel('Dark state lifetime [s]')
     plt.xlabel('[%s]' % spec)
