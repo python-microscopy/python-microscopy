@@ -6,20 +6,32 @@ EVENT_DTYPE = np.dtype([('EventDescr', 'U256'), ('EventName', 'U32'), ('Time', '
 
 def event_array_from_hdf5(hdf5):
     """
+    Create an events array from an hdf5 file containing an Events table node.
 
-    :param hdf5: tables.file.File
+    Parameters
+    ----------
+    hdf5 : tables.file.File
         open hdf5 file
-    :return: ndarray
+
+    Returns
+    -------
+    event_array : numpy.ndarry
         structured array of events
     """
     return event_array_from_table(hdf5.root.Events)
 
 def event_array_from_table(table):
     """
+    Create an events array from an hdf5 Events table
 
-    :param table: tables.table.Table
+    Parameters
+    ----------
+    table : tables.table.Table
         Events table of an hdf5 file
-    :return: ndarray
+    
+    Returns
+    -------
+    event_array : numpy.ndarry
         structured array of events
     """
     events = np.empty(len(table), dtype=EVENT_DTYPE)
@@ -29,10 +41,16 @@ def event_array_from_table(table):
 
 def event_array_from_list(event_list):
     """
+    Create an events array from a list of events
 
-    :param event_list: list
+    Parameters
+    ----------
+    event_list: list
         Each element is an event in `EVENT_ORDER` order
-    :return: ndarry
+    
+    Returns
+    -------
+    event_array: numpy.ndarry
         structured array of events
     """
     events_array = np.empty(len(event_list), dtype=EVENT_DTYPE)
