@@ -878,7 +878,7 @@ class ModuleCollection(HasTraits):
                     
         return outputs
 
-    def _populate_namespace_from_hdf5(self, key, h5f, filename, extension):
+    def _inject_tables_from_hdf5(self, key, h5f, filename, extension):
         """
         Search through hdf5 file nodes and add them to the recipe namespace
 
@@ -939,7 +939,7 @@ class ModuleCollection(HasTraits):
         """
         Load input data from a file and inject into namespace
         """
-        from PYME.IO import unifiedIO, clusterIO
+        from PYME.IO import unifiedIO
         import os
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']:
@@ -947,13 +947,26 @@ class ModuleCollection(HasTraits):
             from PYME.IO import h5rFile
             try:
                 with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
-                        self._populate_namespace_from_hdf5(key, h5f, fn, extension)
+                        self._inject_tables_from_hdf5(key, h5f, fn, extension)
             except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
-                # try again, this time forcing access through the dataserver
-                relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
-                file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
-                with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes, driver_core_backing_store=0) as h5f:
-                    self._populate_namespace_from_hdf5(key, h5f, filename, extension)
+                if unifiedIO.is_cluster_uri(filename):
+                    # try again, this time forcing access through the dataserver
+                    # NOTE: this is a bit gross - it is unclear why this should work when local_or_temp_filename() doesn't
+                    # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
+                    # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
+                    # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
+                    # scenario would match what has been observed with old style spooling analysis where copying a file
+                    # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
+                    # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
+                    # TODO - consider whether h5r_part might be a better choice.
+                    from PYME.IO import clusterIO
+                    relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
+                    file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
+                    with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes, driver_core_backing_store=0) as h5f:
+                        self._inject_tables_from_hdf5(key, h5f, filename, extension)
+                else:
+                    #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
+                    raise
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
