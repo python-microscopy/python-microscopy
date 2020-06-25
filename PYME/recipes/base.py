@@ -951,7 +951,7 @@ class ModuleCollection(HasTraits):
             except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
                 if unifiedIO.is_cluster_uri(filename):
                     # try again, this time forcing access through the dataserver
-                    # NOTE: this is a bit gross - it is unclear why this should work when local_or_temp_filename() doesn't
+                    # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
                     # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
                     # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
                     # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
@@ -959,6 +959,9 @@ class ModuleCollection(HasTraits):
                     # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
                     # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
                     # TODO - consider whether h5r_part might be a better choice.
+                    # FIXME: (DB) I'm not comfortable with having this kind of special case retry logic here, and would
+                    # much prefer if we could find an alternative workaround, refactor into something like h5rFile.open_robust(),
+                    # or just let this fail). Leaving it for the meantime to get chained recipes working, but we should revisit.
                     from PYME.IO import clusterIO
                     relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
                     file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
