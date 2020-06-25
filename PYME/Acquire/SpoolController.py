@@ -265,7 +265,7 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, fn=None, stack=None, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
+    def StartSpooling(self, fn=None, stack=None, compLevel=None, zDwellTime=None, doPreflightCheck=True, maxFrames=sys.maxsize,
                       pzf_compression_settings=None, cluster_h5 = None):
         """Start spooling
         """
