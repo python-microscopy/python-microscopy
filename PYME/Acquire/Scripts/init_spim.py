@@ -34,14 +34,42 @@ import sys
 fakeShutters = fakeShutters
 
 
-@init_hardware('ThorlabsCamera')
-def thor_cam(scope):
-    from PYME.Acquire.Hardware import thorlabs_cam
-    cam = thorlabs_cam.ThorlabsCamera()
-    
-    scope.register_camera(cam, 'sCMOS')
-
-
+# @init_hardware('ThorlabsCamera')
+# def thor_cam(scope):
+    # from PYME.Acquire.Hardware import thorlabs_cam
+    # cam = thorlabs_cam.ThorlabsCamera()
+    # 
+    # scope.register_camera(cam, 'sCMOS')
+# 
+# @init_hardware('Fake Piezos')
+# def pz(scope):
+    # from PYME.Acquire.Hardware.Simulator import fakePiezo
+    # scope.fakePiezo = fakePiezo.FakePiezo(100)
+    # scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+    # 
+    # scope.fakeXPiezo = fakePiezo.FakePiezo(100)
+    # scope.register_piezo(scope.fakeXPiezo, 'x')
+    # 
+    # scope.fakeYPiezo = fakePiezo.FakePiezo(100)
+    # scope.register_piezo(scope.fakeYPiezo, 'y')
+# """ """  """ """
+# pz.join() #piezo must be there before we start camera
+# """ """  """ """
+# 
+# @init_hardware('Fake Camera')
+# def cm(scope):
+    # import numpy as np
+    # from PYME.Acquire.Hardware.Simulator import fakeCam
+    # cam = fakeCam.FakeCamera(256, #70*np.arange(0.0, 4*256.0),
+                                            #  256, #70*np.arange(0.0, 256.0),
+                                            #  fakeCam.NoiseMaker(),
+                                            #  scope.fakePiezo, xpiezo = scope.fakeXPiezo,
+                                            #  ypiezo = scope.fakeYPiezo,
+                                            #  pixel_size_nm=70.,
+                                            #  )
+    # cam.SetEMGain(150)
+    # scope.register_camera(cam,'Fake Camera')
+# 
 
 # @init_gui('sCMOS Camera controls')
 # def thor_cam_controls(MainFrame, scope):
@@ -51,7 +79,14 @@ def thor_cam(scope):
 #     # As it stands, we just use the default gain and readout settings.
 #     scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
 #     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
-    
+
+@init_hardware('Camera')
+def cam(scope):
+    from PYME.Acquire.Hardware.uc480 import uCam480
+    uCam480.init(cameratype='ueye')
+    cam = uCam480.uc480Camera(0)
+    scope.register_camera(cam, 'ueye')
+
 
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
