@@ -789,9 +789,12 @@ class Pipeline:
         #self._get_dye_ratios_from_metadata()
 
         # Retrieve or estimate image bounds
-        # if False:  # 'imgBounds' in kwargs.keys():
-        #     self.imageBounds = kwargs['imgBounds']
-        if ('scanx' not in ds.keys() or 'scany' not in ds.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        if False:  # 'imgBounds' in kwargs.keys(): 
+            # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
+            # during real-time localization, to force image bounds to match raw data, but also potentially useful
+            # for other scenarios where metadata is not fully present.
+             self.imageBounds = kwargs['imgBounds']
+        elif ('scanx' not in ds.keys() or 'scany' not in ds.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
             self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
         else:
             self.imageBounds = ImageBounds.estimateFromSource(ds)
@@ -1081,7 +1084,6 @@ class Pipeline:
 
         
     
-
 
 
 
