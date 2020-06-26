@@ -631,11 +631,12 @@ class Pipeline:
 
         Returns
         -------
-
-        ds : the dataset
+        ds : tabular.TabularBase
+            the datasource, complete with metadatahandler and events if found.
 
         """
-
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        events = None
         if os.path.splitext(filename)[1] == '.h5r':
             import tables
             h5f = tables.open_file(filename)
@@ -664,10 +665,10 @@ class Pipeline:
 
             #catch really old files which don't have any metadata
             if 'MetaData' in h5f.root:
-                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
-
+                mdh = MetaDataHandler.HDFMDHandler(h5f)
+            
             if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = h5f.root.Events[:]
+                events = h5f.root.Events[:]
 
         elif filename.endswith('.hdf'):
             #recipe output - handles generically formatted .h5
@@ -680,11 +681,11 @@ class Pipeline:
                     tab = tabular.HDFSource(h5f, t.name)
                     self.addDataSource(t.name, tab)
                         
-                    if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
-                        self.events = t[:]  # this does not handle multiple events tables per hdf file
+                    if 'EventName' in t.description._v_names:
+                        events = t[:]  # this does not handle multiple events tables per hdf file
 
             if 'MetaData' in h5f.root:
-                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+                mdh = MetaDataHandler.HDFMDHandler(h5f)
 
             for dsname, ds_ in self.dataSources.items():
                 #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
@@ -713,9 +714,9 @@ class Pipeline:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
-
-
-
+        
+        ds.mdh = mdh
+        ds.events = events
         return ds
 
     def OpenFile(self, filename= '', ds = None, **kwargs):
@@ -761,9 +762,10 @@ class Pipeline:
                 # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
                 # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
                 ds = self._ds_from_file(fn, **kwargs)
+                self.events = ds.events
+                self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
-        ds.mdh, ds.events = self.mdh, self.events
         self.dataSources['results_source'] = ds
 
         add_pipeline_variables = Pipelineify(self.recipe, 
@@ -847,6 +849,8 @@ class Pipeline:
         if ds is None:
             #load from file
             ds = self._ds_from_file(filename, **kwargs)
+            self.mdh.copyEntriesFrom(ds.mdh)
+            self.events = ds.events
     
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus
