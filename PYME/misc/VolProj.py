@@ -19,7 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import pylab
+# import pylab
+import numpy as np
+import matplotlib.cm
 try:
     from enthought.mayavi import mlab
 except ImportError:
@@ -39,7 +41,7 @@ def GrabImage(figure):
 
     im = Image.open(tfname)
 
-    ima = pylab.array(im.getdata()).reshape((im.size[1], im.size[0], 3))
+    ima = np.array(im.getdata()).reshape((im.size[1], im.size[0], 3))
 
     #im = read3DTiff(tfname).squeeze()
 
@@ -58,7 +60,7 @@ class Isosurf:
         self.projs = []
 
         for im, th, i in zip(channels, thresholds, range(len(channels))):
-            c = mlab.contour3d(im, contours=[th], color = pylab.cm.gist_rainbow(float(i)/len(channels))[:3])
+            c = mlab.contour3d(im, contours=[th], color = matplotlib.cm.gist_rainbow(float(i)/len(channels))[:3])
             c.mlab_source.dataset.spacing = pixelsize
             self.isos.append(c)
 
@@ -68,13 +70,13 @@ class Isosurf:
             pr = im.mean(2)
             #f = im.max()/pr.max()
             #pr *= im.max()/pr.max()
-            ps.append(self.drawProjection((255*pylab.minimum(pr/(1.*thf), 1)).astype('uint8'), 'z', c))
+            ps.append(self.drawProjection((255*np.minimum(pr/(1.*thf), 1)).astype('uint8'), 'z', c))
             pr = im.mean(0)
             #pr *= im.max()/pr.max()
-            ps.append(self.drawProjection((255*pylab.minimum(pr/(.6*thf), 1)).astype('uint8'), 'x', c))
+            ps.append(self.drawProjection((255*np.minimum(pr/(.6*thf), 1)).astype('uint8'), 'x', c))
             pr = im.mean(1)
             #pr *= im.max()/pr.max()
-            ps.append(self.drawProjection((255*pylab.minimum(pr/(.8*thf), 1)).astype('uint8'), 'y', c))
+            ps.append(self.drawProjection((255*np.minimum(pr/(.8*thf), 1)).astype('uint8'), 'y', c))
 
             self.projs.append(ps)
 

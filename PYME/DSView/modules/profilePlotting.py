@@ -23,7 +23,8 @@
 import wx
 
 #from PYME.Acquire.mytimer import mytimer
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 from scipy import ndimage
 import numpy as np
 
@@ -78,7 +79,7 @@ class ProfilePlotter:
         
             plots.append(p.reshape(-1, 1, 1))
     
-        #pylab.legend(names)
+        #plt.legend(names)
 
         t = np.arange(p.size)
     
@@ -141,7 +142,7 @@ class ProfilePlotter:
 
         #print lx, hx, ly, hy
 
-        #pylab.figure()
+        #plt.figure()
         plots = []
         t = np.arange(np.ceil(l))
 
@@ -179,7 +180,7 @@ class ProfilePlotter:
 
             plots.append(p.reshape(-1, 1,1))
 
-        #pylab.legend(names)
+        #plt.legend(names)
 
         im = ImageStack(plots, titleStub='New Profile')
         im.xvals = t*voxx
@@ -248,7 +249,7 @@ class ProfilePlotter:
         dlg.Destroy()
                 
 
-        #pylab.legend(names)
+        #plt.legend(names)
 
         #TODO: Is this really sensible???
         # fix so that we can even plot stacks of depth 1 (i.e. data that is not really a stack)
@@ -315,7 +316,7 @@ class ProfilePlotter:
     
             plots.append(p.reshape(-1, 1, 1))
 
-        #pylab.legend(names)
+        #plt.legend(names)
 
         im = ImageStack(plots, titleStub='New Profile')
         im.xvals = t * voxx
@@ -361,44 +362,44 @@ class ProfilePlotter:
     def OnZPlotProfile(self, event):
         x,p,d, pi = self.vp.GetProfile(50, background=[7,7])
 
-        pylab.figure(1)
-        pylab.clf()
-        pylab.step(x,p)
-        pylab.step(x, 10*d - 30)
-        pylab.ylim(-35,pylab.ylim()[1])
+        plt.figure(1)
+        plt.clf()
+        plt.step(x,p)
+        plt.step(x, 10*d - 30)
+        plt.ylim(-35,plt.ylim()[1])
 
-        pylab.xlim(x.min(), x.max())
+        plt.xlim(x.min(), x.max())
 
-        pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
-        pylab.ylabel('Intensity [counts]')
+        plt.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+        plt.ylabel('Intensity [counts]')
 
         fr = self.fitResults[pi]
 
         if not len(fr) == 0:
-            pylab.figure(2)
-            pylab.clf()
+            plt.figure(2)
+            plt.clf()
             
             vs = self.mdh.voxelsize_nm
 
-            pylab.subplot(211)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.do.xp*vs.x, fr['fitError']['x0'], fmt='xb')
-            pylab.xlim(x.min(), x.max())
-            pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
-            pylab.ylabel('x offset [nm]')
+            plt.subplot(211)
+            plt.errorbar(fr['tIndex'], fr['fitResults']['x0'] - self.vp.do.xp*vs.x, fr['fitError']['x0'], fmt='xb')
+            plt.xlim(x.min(), x.max())
+            plt.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+            plt.ylabel('x offset [nm]')
 
-            pylab.subplot(212)
-            pylab.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['y0'], fmt='xg')
-            pylab.xlim(x.min(), x.max())
-            pylab.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
-            pylab.ylabel('y offset [nm]')
+            plt.subplot(212)
+            plt.errorbar(fr['tIndex'], fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['y0'], fmt='xg')
+            plt.xlim(x.min(), x.max())
+            plt.xlabel('Time [%3.2f ms frames]' % (1e3*self.mdh.getEntry('Camera.CycleTime')))
+            plt.ylabel('y offset [nm]')
 
-            pylab.figure(3)
-            pylab.clf()
+            plt.figure(3)
+            plt.clf()
 
-            pylab.errorbar(fr['fitResults']['x0'] - self.vp.do.xp*vs.x,fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
-            #pylab.xlim(x.min(), x.max())
-            pylab.xlabel('x offset [nm]')
-            pylab.ylabel('y offset [nm]')
+            plt.errorbar(fr['fitResults']['x0'] - self.vp.do.xp*vs.x,fr['fitResults']['y0'] - self.vp.do.yp*vs.y, fr['fitError']['x0'], fr['fitError']['y0'], fmt='xb')
+            #plt.xlim(x.min(), x.max())
+            plt.xlabel('x offset [nm]')
+            plt.ylabel('y offset [nm]')
 
 
 def Plug(dsviewer):

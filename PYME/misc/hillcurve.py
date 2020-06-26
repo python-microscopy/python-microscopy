@@ -22,7 +22,9 @@
 ################
 # -*- coding: utf-8 -*-
 
-from pylab import *
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
 from PYME.Analysis._fithelpers import *
 
 def hill(p, ratio):
@@ -40,8 +42,8 @@ def hill(p, ratio):
 
 
 #load control data
-ratio_control, stress_control = loadtxt('control.csv').T
-plot(ratio_control, stress_control, 'x', label='control')
+ratio_control, stress_control = np.loadtxt('control.csv').T
+plt.plot(ratio_control, stress_control, 'x', label='control')
 
 #do fit
 fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_control)
@@ -57,13 +59,13 @@ Fmin = %3.2f
 
 """ % p_control))
 
-ratio = linspace(1.5, 4)
-plot(ratio, hill(p_control, ratio))
+ratio = np.linspace(1.5, 4)
+plt.plot(ratio, hill(p_control, ratio))
 
 
 #load cptome data
-ratio_cptome, stress_cptome = loadtxt('cptome.csv').T
-plot(ratio_cptome, stress_cptome, 'x', label='CPTOME')
+ratio_cptome, stress_cptome = np.loadtxt('cptome.csv').T
+plt.plot(ratio_cptome, stress_cptome, 'x', label='CPTOME')
 
 #do fit
 fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_cptome)
@@ -79,8 +81,8 @@ Fmin = %3.2f
 
 """ % p_cptome))
 
-plot(ratio, hill(p_cptome, ratio))
+plt.plot(ratio, hill(p_cptome, ratio))
 
-xlabel('Ratio - 340/380')
-ylabel('Stress')
-legend()
+plt.xlabel('Ratio - 340/380')
+plt.ylabel('Stress')
+plt.legend()

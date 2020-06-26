@@ -623,22 +623,24 @@ class fitTask(taskDef.Task):
         #    self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)  
             
     def _displayFoundObjects(self):
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
+        import matplotlib.cm
         #cm = pylab.cm
-        pylab.clf()
-        pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot)
+        plt.clf()
+        plt.imshow(self.ofd.filteredData.T, cmap=matplotlib.cm.hot)
         xc = np.array([p.x for p in self.ofd])
         yc = np.array([p.y for p in self.ofd])
-        pylab.plot(xc, yc, 'o', mew=2, mec='g', mfc='none', ms=9)
+        plt.plot(xc, yc, 'o', mew=2, mec='g', mfc='none', ms=9)
 
         if self.is_splitter_fit:
             xn, yn = self.__remapSplitterCoords(xc, yc)
-            pylab.plot(xn, yn, 'o', mew=2, mec='r', mfc='none', ms=9)
+            plt.plot(xn, yn, 'o', mew=2, mec='r', mfc='none', ms=9)
 
 
         if self.driftEst:
-            pylab.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+            plt.plot([p.x for p in self.ofdDr], [p.y for p in self.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
         #axis('image')
         #gca().set_ylim([255,0])
-        pylab.colorbar()
-        pylab.show()
+        plt.colorbar()
+        plt.show()
