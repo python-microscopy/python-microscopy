@@ -25,7 +25,6 @@ from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
-from PYME.LMVis import renderers
 from PYME.LMVis.triBlobs import BlobSettings
 
 from PYME.Analysis import piecewiseMapping
@@ -114,16 +113,26 @@ def _add_eventvars_to_ds(ds, ev_mappings):
         z_focus = 1.e3 * zm(ds['t'])
         ds.addColumn('focus', z_focus)
 
+        piezo_moving = ev_mappings.get('piezo_moving')
+        if piezo_moving:
+            ds.addColumn('piezoMoving', piezo_moving(ds['t']))
+
     xm = ev_mappings.get('xm', None)
     if xm:
+        # todo - comment on why the -0.01??
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
+        
+        # scanned acquisition re-mapping temporarily disabled because we abuse the scanner for taking shift-fields (where
+        # we don't want re-mapping to occur) TODO - either detect shift-fields here, or implement remapping later.
         #ds.setMapping('x', 'x + scanx')
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
+        
+        # temporarily disabled - see scanx
         #ds.setMapping('y', 'y + scany')
 
     driftx = ev_mappings.get('driftx', None)
@@ -167,12 +176,12 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     if not 'y' in mapped_ds.keys():
         mapped_ds.setMapping('y', '10*t')
 
-    #set up correction for foreshortening and z focus stepping
+    # set up correction for foreshortening and z focus stepping
     if not 'foreShort' in dir(mapped_ds):
         mapped_ds.addVariable('foreShort', 1.)
-
+        
     if not 'focus' in mapped_ds.keys():
-        #set up a dummy focus variable if not already present
+        # set up a dummy focus variable if not already present
         mapped_ds.setMapping('focus', '0*x')
 
     if not 'z' in mapped_ds.keys():
@@ -203,10 +212,23 @@ def _processEvents(ds, events, mdh):
             evKeyNames.add(e['EventName'])
 
         if b'ProtocolFocus' in evKeyNames:
-            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
+            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
+            ev_mappings['z_command'] = zm
+            
+
+            if b'PiezoOnTarget' in evKeyNames:
+                # Sometimes we also emit PiezoOnTarget events with the actual piezo position, rather than where we
+                # told it to go, use these preferentially
+                from PYME.Analysis import piezo_movement_correction
+                spoofed_evts =  piezo_movement_correction.spoof_focus_events_from_ontarget(events, mdh)
+                zm = piecewiseMapping.GeneratePMFromEventList(spoofed_evts, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
+                ev_mappings['z_ontarget'] = zm
+                ev_mappings['piezo_moving'] = piecewiseMapping.bool_map_between_events(events, mdh, b'ProtocolFocus', b'PiezoOnTarget',default=False)
+                
+            # the z position we use for localizations gets the ontarget info if present
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
-
+            
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
@@ -252,7 +274,7 @@ def _processEvents(ds, events, mdh):
 
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-            ev_mappings['zm'] = zm
+            ev_mappings['z_command'] = zm
             eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         except:
@@ -727,8 +749,15 @@ class Pipeline:
         self.filename = filename
         
         if ds is None:
-            #load from file
-            ds = self._ds_from_file(filename, **kwargs)
+            from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
+            
+            # load from file(/cluster, downloading a copy of the file if needed)
+            with unifiedIO.local_or_temp_filename(filename) as fn:
+                # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
+                # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
+                # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
+                # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
+                ds = self._ds_from_file(fn, **kwargs)
 
             
         #wrap the data source with a mapping so we can fiddle with things
