@@ -24,7 +24,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 # from pylab import ifftshift, ifftn, fftn, fftshift
-from scipy.fftpack import ifftshift, ifftn, fftn, fftshift
+from numpy.fft import ifftshift, ifftn, fftn, fftshift
 import warnings
 
 import PYME.misc.fftw_compat as fftw3f
@@ -969,7 +969,6 @@ def GenStripePRIPSF(zs, **kwargs):
     F = F * np.exp(-1j*np.sign(np.sin(X))*.005*Y)
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
    
-
 
 
 

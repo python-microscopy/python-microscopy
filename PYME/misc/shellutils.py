@@ -310,7 +310,7 @@ def frc(image):
     import numpy as np
     # import pylab
     import matplotlib.pyplot as plt
-    from scipy.fftpack import fft2, fftshift
+    from numpy.fft import fft2, fftshift
 
     voxelsize = image.voxelsize
 
@@ -363,7 +363,7 @@ def frc(image):
     return H1, H2, R, bmr/np.sqrt(bm1*bm2), bn, bm, bm1, bm2, rB
 
 def abscorrel(a,b):
-    from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
+    from numpy.fft import fftn, ifftn, fftshift, ifftshift
     # from pylab import fftshift, ifftshift
     import numpy as np
 
