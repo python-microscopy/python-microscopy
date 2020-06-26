@@ -154,6 +154,7 @@ class DSViewFrame(AUIFrame):
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_EXIT)  # Needed to run through self.OnCloseWindow on a command+Q call
         
 
 		
@@ -355,7 +356,12 @@ class DSViewFrame(AUIFrame):
     def _cleanup(self):
         self.timer.Stop()
         del(self.image)
-        
+
+        # In case garbage collection didn't work, kill the Java VM so it can't
+        # hold the program open.
+        import javabridge
+        javabridge.kill_vm()
+
         AUIFrame._cleanup(self)
 
     def dsRefresh(self):
