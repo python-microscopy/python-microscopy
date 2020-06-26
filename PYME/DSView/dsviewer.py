@@ -137,7 +137,7 @@ class DSViewFrame(AUIFrame):
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
         tmp_menu.AppendSeparator()
-        tmp_menu.Append(wx.ID_CLOSE, "&Close", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
 
         self.view_menu = wx.Menu()
