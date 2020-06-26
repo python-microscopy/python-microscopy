@@ -13,7 +13,8 @@
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
+import matplotlib.pyplot as plt
 
 from _fithelpers import *
 
@@ -83,15 +84,15 @@ class SMIAxialFitResult:
         return f_SMIAxial(self.fitResults, self.ind3, self.ysmooth[self.ind3], self.background)
 
     def renderFit(self):
-        clf()
-        plot(self.profile, 'x-')
-        plot(self.ysmooth)
+        plt.clf()
+        plt.plot(self.profile, 'x-')
+        plt.plot(self.ysmooth)
 
-        plot((self.peakPoss['i'],self.peakPoss['i']), (0, self.profile.max()))
-        plot((self.peakPoss['i2'],self.peakPoss['i2']), (0, self.profile.max()))
-        plot((self.peakPoss['i3'],self.peakPoss['i3']), (0, self.profile.max()))
+        plt.plot((self.peakPoss['i'],self.peakPoss['i']), (0, self.profile.max()))
+        plt.plot((self.peakPoss['i2'],self.peakPoss['i2']), (0, self.profile.max()))
+        plt.plot((self.peakPoss['i3'],self.peakPoss['i3']), (0, self.profile.max()))
         
-        plot(self.ind3, self.evalFit(), lw=2)
+        plt.plot(self.ind3, self.evalFit(), lw=2)
 
 
 class SMIAxialFitFactory:
@@ -102,19 +103,19 @@ class SMIAxialFitFactory:
         self.backRoi = backgroundHalfSize
 
     def __FindFitRegion(self, ysmooth, ysmooth2):
-        ind3 = find((ysmooth.__gt__(ysmooth2)) * (ysmooth > ysmooth.max()/3))
+        ind3 = scipy.where((ysmooth.__gt__(ysmooth2)) * (ysmooth > ysmooth.max()/3))[0]
         
         #print ind3
         #Take only the longest peak
         idiff = ind3[2:] - ind3[1:-1]
         idiff[-1] = 1
         
-        i4 = (array(idiff) - 1).cumsum()
+        i4 = (scipy.array(idiff) - 1).cumsum()
         max_i = 0
         nm = 0
 
         for i in range(i4.max() + 1):# which is longest
-            ni = len(find(i4 == i))
+            ni = len(scipy.where(i4 == i)[0])
             if (ni > nm):
                 max_i = i
                 nm = ni
@@ -146,7 +147,7 @@ class SMIAxialFitFactory:
             #and the next max, so we can guestimate some initial parameters for our fit
             lb = round(10*.100/self.metadata.voxelsize.z)
             i3_ = ti[(i_ + lb):(i_+round(10*0.300/self.metadata.voxelsize.z))].argmax()
-            i3_ = i3_ + i_ +lb;
+            i3_ = i3_ + i_ +lb
             
     
             #the next minimum

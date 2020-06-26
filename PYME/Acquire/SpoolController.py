@@ -230,9 +230,10 @@ class SpoolController(object):
 
         """
         if self.spoolType == 'Cluster':
-            #logger.warn('Cluster free space calculation not yet implemented, using fake value')
-            # FIXME - make free space calculations work on cluster (warning above commented out for Andrew's sanity)
-            return float('nan')
+            from PYME.IO import clusterIO
+            nodes = clusterIO.get_status()
+            free_storage = sum([n['Disk']['free'] for n in nodes])
+            return free_storage / 1e9
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
             return get_free_space(self.dirname)/1e9
@@ -264,7 +265,7 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
+    def StartSpooling(self, fn=None, stack=None, compLevel=None, zDwellTime=None, doPreflightCheck=True, maxFrames=sys.maxsize,
                       pzf_compression_settings=None, cluster_h5 = None):
         """Start spooling
         """
@@ -288,7 +289,7 @@ class SpoolController(object):
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
-            raise IOError('Output file already exists')
+            raise IOError('A series with the same name already exists')
 
         if stack:
             protocol = self.protocolZ
@@ -342,8 +343,12 @@ class SpoolController(object):
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
             
-        self.spooler.onSpoolStop.connect(self.SpoolStopped)
-        self.spooler.StartSpool()
+        try:
+            self.spooler.onSpoolStop.connect(self.SpoolStopped)
+            self.spooler.StartSpool()
+        except:
+            self.spooler.abort()
+            raise
         
         self.onSpoolStart.send(self)
         

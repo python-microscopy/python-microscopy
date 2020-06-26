@@ -446,6 +446,13 @@ class microscope(object):
                 voxx, voxy = conn.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
                 
                 return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
+            elif self.cam.__class__.__name__ == 'FakeCamera':
+                # read voxel size from directly from our simulated camera
+                logger.info('Reading voxel size directly from simulated camera')
+                vx_um = (self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
+                vy_um = (self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
+                return vy_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
+                    
 
     def GenStartMetadata(self, mdh):
         """Collects the metadata we want to record at the start of a sequence
@@ -462,6 +469,7 @@ class microscope(object):
             mdh.setEntry('voxelsize.y', voxy)
             mdh.setEntry('voxelsize.units', 'um')
         except TypeError:
+            logger.error('No pixel size setting available for current camera - please configure the pixel size')
             pass
 
         for p in self.piezos:

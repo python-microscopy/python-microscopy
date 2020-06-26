@@ -22,7 +22,7 @@ python functions defining that method (linked from the table above). The server 
 command (see :mod:`PYME.cluster.PYMERuleServer`) which loads this in a separate thread and takes care of logging and zeroconf
 registration, rather than by directly running this file.
 """
-import cherrypy
+#import cherrypy
 import threading
 import requests
 import queue as Queue
@@ -165,6 +165,7 @@ class IntegerIDRule(Rule):
         
         self._rule_timeout = rule_timeout
         self._cached_advert = None
+        self._active = True # making this rule inactive will cause it not to generate adverts (this is the closest we  get to aborting)
         
         self.nTotal = 0
         self.nAssigned = 0
@@ -235,6 +236,9 @@ class IntegerIDRule(Rule):
             ``{"ruleID" : ruleID, "taskIDs": [list of int], "template" : "<rule template>"}``
         
         """
+        if not self._active:
+            # don't accept any bids
+            return {'ruleID': bid['ruleID'], 'taskIDs':[], 'template' : ''}
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         costs = np.array(bid['costs'], 'f4')
@@ -297,6 +301,9 @@ class IntegerIDRule(Rule):
         
         "inputsByTask" is only provided for some recipe tasks.
         """
+        if not self._active:
+            return None
+        
         with self._advert_lock:
             if not self._cached_advert:
                 availableTasks = np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()
@@ -342,6 +349,12 @@ class IntegerIDRule(Rule):
         """ Whether the rule has finished (completed the maximum number of tasks that could be assigned)"""
         return self.nCompleted >= self._n_max
     
+    def inactivate(self):
+        """
+        Mark rule as inactive (generates no adverts) to facilitate aborting / pausing long-running rules.
+        """
+        self._active = False
+    
     def info(self):
         """
         Get information / status about this rule
@@ -359,6 +372,7 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
+                  'active' : self._active
                 }
     
     def poll_timeouts(self):
@@ -395,7 +409,7 @@ class RuleServer(object):
     def __init__(self):
         self._rules = collections.OrderedDict()
         
-        cherrypy.engine.subscribe('stop', self.stop)
+        #cherrypy.engine.subscribe('stop', self.stop)
         
         self._do_poll = True
         
@@ -422,6 +436,9 @@ class RuleServer(object):
         
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
+        
+        with open(os.path.splitext(__file__)[0] + '.html', 'r') as f:
+            self._status_page = f.read()
     
     
     def _poll(self):
@@ -633,6 +650,12 @@ class RuleServer(object):
     
         return json.dumps({'ok': 'True'})
     
+    @webframework.register_endpoint('/inactivate_rule')
+    def inactivate_rule(self, ruleID):
+        self._rules[ruleID].inactivate()
+
+        return json.dumps({'ok': 'True'})
+    
     @webframework.register_endpoint('/handin')
     def handin(self, body):
         """
@@ -686,6 +709,22 @@ class RuleServer(object):
                 self._cached_info_expiry = time.time() + self._cached_info_timeout
                 
         return self._cached_info
+    
+    @webframework.register_endpoint('/queue_info_longpoll')
+    def get_queue_info(self):
+        """
+        a throttled version of queue info
+        
+        Returns
+        -------
+
+        """
+        time.sleep(0.5)
+        return self.get_queues()
+    
+    @webframework.register_endpoint('/', mimetype='text/html')
+    def status(self):
+        return self._status_page
 
 
 # class CPRuleServer(RuleServer):

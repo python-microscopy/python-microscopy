@@ -29,8 +29,11 @@ import wx.lib.agw.aui as aui
 import matplotlib
 matplotlib.use('WxAgg')
 
-import pylab
-pylab.ion()
+# import pylab
+# pylab.ion()
+import matplotlib.pyplot as plt
+plt.ion()
+import numpy as np
 from . import modules
 
 from PYME.DSView import splashScreen
@@ -195,7 +198,7 @@ class DSViewFrame(AUIFrame):
         self.Layout()
 
         if 'view' in dir(self):
-            sc = pylab.floor(pylab.log2(1.0*self.view.Size[0]/self.do.ds.shape[0]))
+            sc = np.floor(np.log2(1.0*self.view.Size[0]/self.do.ds.shape[0]))
             #print self.view.Size[0], self.do.ds.shape[0], sc
             self.do.SetScale(sc)
             self.view.Refresh()
@@ -224,6 +227,7 @@ class DSViewFrame(AUIFrame):
             self.moduleMenuIDByName[mn] = id
             if mn in self.installedModules:
                 self.mModules.Check(id, True)
+                self.mModules.Enable(id, False)
 
             self.Bind(wx.EVT_MENU, self.OnToggleModule, id=id)
 
@@ -248,6 +252,7 @@ class DSViewFrame(AUIFrame):
         if moduleName in self.installedModules:
             id = self.moduleMenuIDByName[moduleName]
             self.mModules.Check(id, True)
+            self.mModules.Enable(id, False)
 
         self.CreateFoldPanel()
         self._mgr.Update()
@@ -330,7 +335,7 @@ class DSViewFrame(AUIFrame):
         #View3D(self.image.data[])
 
     def OnCloseWindow(self, event):
-        pylab.close('all')
+        plt.close('all')
         if (not self.image.saved):
             dialog = wx.MessageDialog(self, "Save data stack?", "PYME", wx.YES_NO|wx.CANCEL)
             ans = dialog.ShowModal()
@@ -418,10 +423,10 @@ class MyApp(wx.App):
             #    md = options.metadata
             print('Loading data')
             if options.test:
-                import pylab
-                im = ImageStack(pylab.randn(100,100))
+                # import pylab
+                im = ImageStack(np.random.randn(100,100))
             elif options.test3d:
-                import numpy as np
+                # import numpy as np
                 from scipy import ndimage
                 im = ImageStack(ndimage.gaussian_filter(np.random.rand(100,100,100, 2), [20, 20, 20, 0]))
             elif len (args) > 0:

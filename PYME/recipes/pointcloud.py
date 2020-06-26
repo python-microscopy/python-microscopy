@@ -247,15 +247,55 @@ class DelaunayCircumcentres(ModuleBase):
 
 @register_module('Ripleys')
 class Ripleys(ModuleBase):
-    """ Calculates Ripley's K/L functions for a point set """
+    """
+    Ripley's K-function, and alternate normalizations, for examining clustering 
+    and dispersion of points within aregion R, where R is defined by a mask (2D 
+    or 3D) of the data.
+    
+        inputPositions : traits.Input
+            Localization data source to analyze as PYME.IO.tabular types
+        inputMask : traits.Input
+            PYME.IO.image.ImageStack mask defining the localization bounding region
+        outputName : traits.Output
+            Name of resulting PYME.IO.tabular.DictSource data ource
+        normalization : traits.Enum
+            Ripley's normalization type. See M. A. Kiskowski, J. F. Hancock, 
+            and A. K. Kenworthy, "On the use of Ripley’s K-function and its 
+            derivatives to analyze domain size," Biophys. J., vol. 97, no. 4, 
+            pp. 1095–1103, 2009.
+        nbins : traits.Int
+            Number of bins over which to analyze K-function
+        binSize : traits.Float
+            K-function bin size in nm
+        sampling : traits.Float
+            spacing (in nm) of samples from mask / region.
+        statistics : traits.Bool
+            Monte-Carlo sampling of the structure to determine clustering/
+            dispersion probability.
+        nsim : int
+            Number of Monte-Carlo simulations to run. More simulations = 
+            more statistical power. Used if statistics == True.
+        significance : float
+            Desired significance of 
+        threaded : bool
+            Calculate pairwise distances using multithreading (faster)
+        three_d : bool
+            Analyze localizations in 2D or 3D. Requires correct dimensionality
+            of input localizations and mask.
+
+    """
     inputPositions = Input('input')
     inputMask = Input('')
     outputName = Output('ripleys')
-    normalization = Enum(['K', 'L'])
+    normalization = Enum(['K', 'L', 'H', 'dL', 'dH'])
     nbins = Int(50)
     binSize = Float(50.)
     sampling = Float(5.)
+    statistics = Bool(False)
+    nsim = Int(20)
+    significance = Float(0.05)
     threaded = Bool(False)
+    three_d = Bool(False)
     
     def execute(self, namespace):
         from PYME.Analysis.points import ripleys
@@ -263,15 +303,29 @@ class Ripleys(ModuleBase):
         
         points_real = namespace[self.inputPositions]
         mask = namespace.get(self.inputMask, None)
-        
-        three_d = np.count_nonzero(points_real['z']) > 0
+
+        # three_d = np.count_nonzero(points_real['z']) > 0
+        if self.three_d:
+            if np.count_nonzero(points_real['z']) == 0:
+                raise RuntimeError('Need a 3D dataset')
+            if mask.data.shape[2] < 2:
+                raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
+        else:
+            if mask.data.shape[2] > 1:
+                raise RuntimeError('Need a 2D mask.')
+
+        if self.statistics and mask is None:
+            raise RuntimeError('Mask is needed to calculate statistics.')
+
+        if self.statistics and 1.0/self.nsim > self.significance:
+            raise RuntimeError('Need at least {} simulations to achieve a significance of {}'.format(int(np.ceil(1.0/self.significance)),self.significance))
         
         try:
             origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
         except:
             origin_coords = (0, 0, 0)
         
-        if three_d:
+        if self.three_d:
             bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
                                       sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
@@ -279,11 +333,44 @@ class Ripleys(ModuleBase):
             bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
                                       mask=mask, n_bins=self.nbins, bin_size=self.binSize,
                                       sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+
+        # Run MC simulations
+        if self.statistics:
+            K_min, K_max, p_clustered, p_dispersed = ripleys.mc_sampling_statistics(K, mask=mask,
+                                                                        n_points=len(points_real['x']), n_bins=self.nbins, 
+                                                                        three_d=self.three_d, bin_size=self.binSize,
+                                                                        significance=self.significance, 
+                                                                        n_sim=self.nsim, sampling=self.sampling, 
+                                                                        threaded=self.threaded, coord_origin=origin_coords)
         
+        # Check for alternate Ripley's normalization
+        norm_func = None
         if self.normalization == 'L':
-            d = 3 if three_d else 2
-            bb, L = ripleys.ripleys_l(bb, K, d)
-            res = tabular.DictSource({'bins': bb, 'vals': L})
+            norm_func = ripleys.ripleys_l
+        elif self.normalization == 'dL':
+            # Results will be of length 2 less than other results
+            norm_func = ripleys.ripleys_dl
+        elif self.normalization == 'H':
+            norm_func = ripleys.ripleys_h
+        elif self.normalization == 'dH':
+            # Results will be of length 2 less than other results
+            norm_func = ripleys.ripleys_dh
+        
+        # Apply normalization if present
+        if norm_func is not None:
+            d = 3 if self.three_d else 2
+            bb0, K = norm_func(bb, K, d)  # bb0 in case we use dL/dH
+            if self.statistics:
+                _, K_min = norm_func(bb, K_min, d)
+                _, K_max = norm_func(bb, K_max, d)
+                if self.normalization == 'dL' or self.normalization == 'dH':
+                    # Truncate p_clustered for dL and dH to match size
+                    p_clustered = p_clustered[1:-1]
+                    p_dispersed = p_dispersed[1:-1]
+            bb = bb0
+
+        if self.statistics:
+            res = tabular.DictSource({'bins': bb, 'vals': K, 'min': K_min, 'max': K_max, 'pc': p_clustered, 'pd': p_dispersed})
         else:
             res = tabular.DictSource({'bins': bb, 'vals': K})
         

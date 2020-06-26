@@ -37,7 +37,9 @@ from PYME.DSView.LUT import applyLUT
 
 import numpy
 import scipy
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
+import matplotlib.cm
 
 import dispatch
 
@@ -116,7 +118,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.selectHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in pylab.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
+        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in matplotlib.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect is None:
 #            if scipy.isscalar(aspect):
@@ -682,13 +684,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == 73: #I
-            self.do.yp += 1
+            self.do.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 75: #L
-            self.do.yp -= 1
+        elif event.GetKeyCode() == 75: #K
+            self.do.yp += 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:

@@ -197,22 +197,23 @@ class Generator(HasTraits):
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         
         #wc = wormlike2.wormlikeChain(100)
         
         pipeline = self.visFr.pipeline
         pipeline.filename='Simulation'
 
-        pylab.figure()
-        pylab.plot(self.xp, self.yp, 'x') #, lw=2)
+        plt.figure()
+        plt.plot(self.xp, self.yp, 'x') #, lw=2)
         if isinstance(self.source, WormlikeSource):
-            pylab.plot(self.xp, self.yp, lw=2)
+            plt.plot(self.xp, self.yp, lw=2)
 
         res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity,
                               self.meanEventNumber, self.scaleFactor, self.meanTime, z=self.zp)
         
-        pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
+        plt.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.MappingFilter(tabular.FitResultsSource(res))
         

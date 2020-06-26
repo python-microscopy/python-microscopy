@@ -126,11 +126,16 @@ class Annotater(object):
         self.selected_annotations = []
 
         self.penColsA = [wx.Colour(*plt.cm.hsv(v, alpha=0.5, bytes=True)) for v in np.linspace(0, 1, 16)]
+        self.brushColsA = [wx.Colour(*plt.cm.hsv(v, alpha=0.2, bytes=True)) for v in np.linspace(0, 1, 16)]
         #self.trackPens = [wx.Pen(c, 4) for c in self.penColsA]
 
         dsviewer.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
         dsviewer.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
-
+        dsviewer.AddMenuItem('Annotation', "Draw filled polygon\tCtrl-F", self.add_filled_polygon)
+        dsviewer.AddMenuItem('Annotation', itemType='separator')
+        dsviewer.AddMenuItem('Annotation', 'Generate label image', self.get_label_image)
+        dsviewer.AddMenuItem('Annotation', 'Generate mask', lambda e : self.get_label_image(mask=True))
+        dsviewer.AddMenuItem('Annotation', 'Apply mask to image', self.apply_mask)
         dsviewer.AddMenuItem('Annotation', itemType='separator')
         dsviewer.AddMenuItem('Annotation', "Train SVM Classifier", self.train_svm)
         dsviewer.AddMenuItem('Annotation', "Train Naive Bayes Classifier", self.train_naive_bayes)
@@ -163,6 +168,28 @@ class Annotater(object):
                                       'labelID' : self.cur_label_index, 'z':self.do.zp,
                                       'width' : self.line_width})
             
+        self.dsviewer.Refresh()
+        self.dsviewer.Update()
+
+    def add_filled_polygon(self, event=None):
+        if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+            l = self.do.selection_trace
+            if isinstance(l, np.ndarray):
+                l = l.tolist()
+            self._annotations.append({'type': 'polygon', 'points': l,
+                                      'labelID': self.cur_label_index, 'z': self.do.zp,
+                                      'width': 1
+                                      })
+            self.do.selection_trace = []
+    
+        elif self.do.selectionMode == self.do.SELECTION_RECTANGLE:
+            x0, y0, x1, y1 = self.do.GetSliceSelection()
+            # TODO - make this a polygon instead?
+            self._annotations.append({'type': 'rectangle', 'points': [(x0, y0), (x1, y1)],
+                                      'labelID': self.cur_label_index, 'z': self.do.zp,
+                                      'width':1
+                                      })
+    
         self.dsviewer.Refresh()
         self.dsviewer.Update()
         
@@ -228,7 +255,13 @@ class Annotater(object):
                 pFoc = np.vstack(view._PixelToScreenCoordinates3D(x, y, z)).T
             
                 dc.SetPen(wx.Pen(self.penColsA[c['labelID'] % 16], max(2, c['width']*2.0**(self.do.scale))))
-                dc.DrawLines(pFoc)
+                
+                if (c['type'] == 'polygon'):
+                    dc.SetBrush(wx.TheBrushList.FindOrCreateBrush(self.brushColsA[c['labelID'] % 16], wx.BRUSHSTYLE_CROSS_HATCH))
+                    dc.DrawPolygon(pFoc)
+                    dc.SetBrush(wx.TRANSPARENT_BRUSH)
+                else:
+                    dc.DrawLines(pFoc)
             
     
 
@@ -304,15 +337,54 @@ class Annotater(object):
                 pts = a['points']
                 
                 label = int(a['labelID'])
-                
-                
-                for i in range(1, len(pts)):
-                    sp = pts[i-1]
-                    ep = pts[i]
-                    
-                    self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
+
+                if a['type'] in ['curve', 'line']:
+                    for i in range(1, len(pts)):
+                        sp = pts[i-1]
+                        ep = pts[i]
+                        
+                        self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
+                elif a['type'] == 'polygon':
+                    from skimage import draw
+                    rr, cc = draw.polygon(*np.array(pts).T)
+                    output[rr, cc] = label
                     
         return output
+    
+    def get_label_image(self, event=None, mask=False):
+        from PYME.IO.image import ImageStack
+        from PYME.DSView import ViewIm3D
+        lab = np.concatenate([np.atleast_3d(self.rasterize(z)) for z in range(self.do.ds.shape[2])], 2)
+        if mask:
+            im = ImageStack(lab > 0.5, titleStub='Mask')
+        else:
+            im = ImageStack(lab, titleStub='Labels')
+            
+        im.mdh.copyEntriesFrom(self.dsviewer.image.mdh)
+
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        self.lv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+        
+    def apply_mask(self, event=None):
+        from PYME.IO.image import ImageStack
+        from PYME.DSView import ViewIm3D
+        
+        masked = np.concatenate([np.atleast_3d((self.rasterize(z)>0)*self.do.ds[:,:,z]) for z in range(self.do.ds.shape[2])], 2)
+        im = ImageStack(masked, titleStub='Masked')
+
+        im.mdh.copyEntriesFrom(self.dsviewer.image.mdh)
+
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        self.lv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
     
     def train_svm(self, event=None):
         from PYME.Analysis import svmSegment
@@ -320,8 +392,8 @@ class Annotater(object):
         #from PYME.IO.image import ImageStack
         #from PYME.DSView import ViewIm3D
     
-        if not 'cf' in dir(self):
-            self.cf = svmSegment.svmClassifier()
+        #if not 'cf' in dir(self):
+        self.cf = svmSegment.svmClassifier()
             
     
         self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
@@ -348,7 +420,8 @@ class Annotater(object):
     def svm_segment(self):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
-        import pylab
+        # import pylab
+        import matplotlib.cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
         lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
@@ -372,7 +445,7 @@ class Annotater(object):
         #set scaling to (0,10)
         for i in range(im.data.shape[3]):
             self.dv.do.Gains[i] = .1
-            self.dv.do.cmaps[i] = pylab.cm.labeled
+            self.dv.do.cmaps[i] = matplotlib.cm.labeled
     
         self.dv.Refresh()
         self.dv.Update()

@@ -18,7 +18,7 @@ from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
 #import sys
 
-import pylab
+# import pylab
 
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps

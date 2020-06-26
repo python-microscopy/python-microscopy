@@ -65,6 +65,9 @@ def register_legacy_module(moduleName, py_module=None):
 
     return c_decorate
 
+class MissingInputError(Exception):
+    pass
+
 class ModuleBase(HasTraits):
     """
     Recipe modules represent a "functional" processing block, the effects of which depend solely on its
@@ -90,7 +93,12 @@ class ModuleBase(HasTraits):
         self._check_outputs()
 
     @on_trait_change('anytrait')
-    def invalidate_parent(self):
+    def invalidate_parent(self, name='', new=None):
+        #print('invalidate_parent', name, new)
+        if (name == 'trait_added') or name.startswith('_'):
+            # don't trigger on private variables
+            return
+        
         if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
             #print('invalidating')
             self._parent.prune_dependencies_from_namespace(self.outputs)
@@ -108,6 +116,26 @@ class ModuleBase(HasTraits):
         """
         if len(self.outputs) == 0:
             raise RuntimeError('Module should define at least one output.')
+        
+    def check_inputs(self, namespace):
+        """
+        Checks that module inputs are present in namespace, raising an exception if they are missing. Existing to simplify
+        debugging, this function is called in ModuleCollection.execute prior to executing the module so that an
+        informative error message is generated if the inputs are missing (rather than the somewhat cryptic KeyError
+        you would get when a module tries to access a missing input.
+        
+        
+        Parameters
+        ----------
+        namespace
+
+        """
+        keys = list(namespace.keys())
+        
+        for input in self.inputs:
+            if not input in keys:
+                raise MissingInputError('Input "%s" is missing from namespace; keys: %s' % (input, keys))
+        
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -180,11 +208,11 @@ class ModuleBase(HasTraits):
 
     @property
     def inputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('input') and not v == ""}
+        return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
     @property
     def outputs(self):
-        return {v for k, v in self.trait_get().items() if k.startswith('output')}
+        return {v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
     
     @property
     def file_inputs(self):
@@ -564,7 +592,25 @@ class ModuleCollection(HasTraits):
         #solve the dependency tree        
         return toposort.toposort_flatten(dg, sort=False)
         
-    def execute(self, **kwargs):
+    def execute(self, progress_callback=None, **kwargs):
+        """
+        Execute the recipe. Recipe execution is lazy / incremental in that modules will only be executed if their outputs
+        are no longer in the namespace or their inputs have changed.
+        
+        Parameters
+        ----------
+        progress_callback : a function, progress_callback(recipe, module)
+                This function is called after the successful execution of each module in the recipe. To abort the recipe,
+                an exception may be raised in progress_callback.
+        kwargs : any values to set in the recipe namespace prior to executing.
+
+        Returns
+        -------
+        
+        output : the value of the 'output' variable in the namespace if present, otherwise none. output is only used in
+            dh5view and ignored in recipe batch processing. It might well disappear completely in the future.
+
+        """
         #remove anything which is downstream from changed inputs
         #print self.namespace.keys()
         for k, v in kwargs.items():
@@ -583,12 +629,29 @@ class ModuleCollection(HasTraits):
         
         exec_order = self.resolveDependencies()
 
+        #mark all modules which should execute as not having executed
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
+                m._success = False
+        
+        for m in exec_order:
+            if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                 try:
+                    m.check_inputs(self.namespace)
                     m.execute(self.namespace)
+                    m._last_error = None
+                    m._success = True
+                    if progress_callback:
+                        progress_callback(self, m)
                 except:
+                    import traceback
                     logger.exception("Error in recipe module: %s" % m)
+                    
+                    #record our error so that we can associate it with a module
+                    m._last_error = traceback.format_exc()
+                    
+                    # make sure we didn't leave any partial results
+                    self.prune_dependencies_from_namespace(m.outputs)
                     raise
         
         self.recipe_executed.send_robust(self)
@@ -674,6 +737,9 @@ class ModuleCollection(HasTraits):
         -------
 
         """
+        # delete all outputs from the previous set of recipe modules
+        self.prune_dependencies_from_namespace(self.module_outputs)
+        
         mc = []
     
         if l is None:
@@ -690,7 +756,7 @@ class ModuleCollection(HasTraits):
         
             mod.set(**md)
             mc.append(mod)
-    
+        
         self.modules = mc
         
         self.recipe_changed.send_robust(self)
@@ -709,7 +775,7 @@ class ModuleCollection(HasTraits):
     def fromYAML(cls, data):
         import yaml
 
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
         return cls._from_module_list(l)
     
     def update_from_yaml(self, data):
@@ -733,7 +799,8 @@ class ModuleCollection(HasTraits):
             with open(data) as f:
                 data = f.read()
     
-        l = yaml.load(data)
+        l = yaml.safe_load(data)
+
         return self._update_from_module_list(l)
 
     @classmethod
@@ -811,62 +878,98 @@ class ModuleCollection(HasTraits):
                     
         return outputs
 
-    def loadInput(self, filename, key='input'):
-        """Load input data from a file and inject into namespace
-
-        Currently only handles images (anything you can open in dh5view). TODO -
-        extend to other types.
+    def _inject_tables_from_hdf5(self, key, h5f, filename, extension):
         """
-        #modify this to allow for different file types - currently only supports images
+        Search through hdf5 file nodes and add them to the recipe namespace
+
+        Parameters
+        ----------
+        key : str
+            base key name for loaded file components, if key is not the default 'input', each file node will be loaded into
+            recipe namespace with `key`_`node_name`.
+        h5f : file
+            open hdf5 file
+        filename : str
+            full filename
+        extension : str
+            file extension, used here mainly to toggle which PYME.IO.tabular source is used for table nodes.
+        """
+        import tables
+        from PYME.IO import MetaDataHandler, tabular
+
+        key_prefix = '' if key == 'input' else key + '_'
+
+        try:
+            mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+        except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+            logger.warning('No metadata found, proceeding with empty metadata')
+            mdh = MetaDataHandler.NestedClassMDHandler()
+        
+        for t in h5f.list_nodes('/'):
+            # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+            # PZF formatted image data, Image data which is not in an EArray, etc ...)
+            # Note that EArray is only used for streaming data!
+            # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+            # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+            # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+            # > 3D data?
+            
+            if isinstance(t, tables.VLArray):
+                from PYME.IO.ragged import RaggedVLArray
+                
+                rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
+                rag.mdh = mdh
+
+                self.namespace[key_prefix + t.name] = rag
+
+            elif isinstance(t, tables.table.Table):
+                #  pipe our table into h5r or hdf source depending on the extension
+                tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
+                tab.mdh = mdh
+
+                self.namespace[key_prefix + t.name] = tab
+
+            elif isinstance(t, tables.EArray):
+                # load using ImageStack._loadh5, which finds metdata
+                im = ImageStack(filename=filename, haveGUI=False)
+                # assume image is the main table in the file and give it the named key
+                self.namespace[key] = im
+
+    def loadInput(self, filename, key='input'):
+        """
+        Load input data from a file and inject into namespace
+        """
         from PYME.IO import unifiedIO
         import os
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']:
             import tables
-            from PYME.IO import MetaDataHandler
-            from PYME.IO import tabular
-
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                with tables.open_file(fn, mode='r') as h5f:
-                    #make sure our hdf file gets closed
-                    
-                    key_prefix = '' if key == 'input' else key + '_'
-    
-                    try:
-                        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-                    except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
-                        logger.warning('No metadata found, proceeding with empty metadata')
-                        mdh = MetaDataHandler.NestedClassMDHandler()
-                    
-                    for t in h5f.list_nodes('/'):
-                        # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
-                        # PZF formatted image data, Image data which is not in an EArray, etc ...)
-                        # Note that EArray is only used for streaming data!
-                        # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
-                        # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
-                        # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
-                        # > 3D data?
-                        
-                        if isinstance(t, tables.VLArray):
-                            from PYME.IO.ragged import RaggedVLArray
-                            
-                            rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                            rag.mdh = mdh
-    
-                            self.namespace[key_prefix + t.name] = rag
-    
-                        elif isinstance(t, tables.table.Table):
-                            #  pipe our table into h5r or hdf source depending on the extension
-                            tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                            tab.mdh = mdh
-    
-                            self.namespace[key_prefix + t.name] = tab
-    
-                        elif isinstance(t, tables.EArray):
-                            # load using ImageStack._loadh5, which finds metdata
-                            im = ImageStack(filename=filename, haveGUI=False)
-                            # assume image is the main table in the file and give it the named key
-                            self.namespace[key] = im
+            from PYME.IO import h5rFile
+            try:
+                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
+                        self._inject_tables_from_hdf5(key, h5f, fn, extension)
+            except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
+                if unifiedIO.is_cluster_uri(filename):
+                    # try again, this time forcing access through the dataserver
+                    # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
+                    # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
+                    # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
+                    # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
+                    # scenario would match what has been observed with old style spooling analysis where copying a file
+                    # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
+                    # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
+                    # TODO - consider whether h5r_part might be a better choice.
+                    # FIXME: (DB) I'm not comfortable with having this kind of special case retry logic here, and would
+                    # much prefer if we could find an alternative workaround, refactor into something like h5rFile.open_robust(),
+                    # or just let this fail). Leaving it for the meantime to get chained recipes working, but we should revisit.
+                    from PYME.IO import clusterIO
+                    relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
+                    file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
+                    with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes, driver_core_backing_store=0) as h5f:
+                        self._inject_tables_from_hdf5(key, h5f, filename, extension)
+                else:
+                    #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
+                    raise
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')

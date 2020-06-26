@@ -1,4 +1,4 @@
-import cherrypy
+#import cherrypy
 import threading
 import requests
 
@@ -14,6 +14,7 @@ import sys
 from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
+import os
 
 from PYME.util import webframework
 
@@ -22,7 +23,7 @@ import ujson as json
 WORKER_GET_TIMEOUT = config.get('nodeserver-worker-get-timeout', 60)
 
 #disable socket timeout to prevent us from generating 408 errors
-cherrypy.server.socket_timeout = 0
+#cherrypy.server.socket_timeout = 0
 
 import requests
 import multiprocessing
@@ -78,15 +79,23 @@ class Rater(object):
         
         cost = 1.0
         if task['type'] == 'localization':
-            filename, serverfilter = clusterIO.parseURL(task['inputs']['frames'])
-            filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
-        
-            if clusterIO.is_local(filename, serverfilter):
-                cost = .01
+            series_name = task['inputs']['frames']
+            if os.path.exists(series_name):
+                # cluster of one special case
+                cost = 0.01
+            else:
+                filename, serverfilter = clusterIO.parseURL(series_name)
+                filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
+            
+                if clusterIO.is_local(filename, serverfilter):
+                    cost = .01
     
         elif task['type'] == 'recipe':
             for URL in task['inputs'].values():
-                if clusterIO.is_local(*clusterIO.parseURL(URL)):
+                if os.path.exists(URL):
+                    #cluster of one special case
+                    cost *= .2
+                elif clusterIO.is_local(*clusterIO.parseURL(URL)):
                     cost *= .2
                     
         return taskID, cost
@@ -135,7 +144,7 @@ class NodeServer(object):
         #self._lastAnnounceTime = 0
         #self._anounce_url = self.distributor_url + 'distributor/announce?nodeID=%s&ip=%s&port=%d' % (self.nodeID, self.ip_address, self.port)
 
-        cherrypy.engine.subscribe('stop', self.stop)
+        #cherrypy.engine.subscribe('stop', self.stop)
 
         self._do_poll = True
         self._update_tasks_lock = threading.Lock()
@@ -213,8 +222,8 @@ class NodeServer(object):
                         break
                         
                 if n_tasks < n_tasks_to_request:
-                    logger.debug('Found %d local tasks' % n_tasks)
-                    logger.debug('Could not find enough local tasks, bidding on non-local')
+                    #logger.debug('Found %d local tasks' % n_tasks)
+                    #logger.debug('Could not find enough local tasks, bidding on non-local')
                     #bid for non-local tasks
                     for rater in raters:
                         taskIDs = []
@@ -233,7 +242,8 @@ class NodeServer(object):
                         if n_tasks >= n_tasks_to_request:
                             break
                         
-                #print task_requests
+                    #print task_requests
+                    #logger.debug('task_requests: %s' % task_requests)
                 
                 #place bids and get results
                 url = self.distributor_url +'bid_on_tasks'

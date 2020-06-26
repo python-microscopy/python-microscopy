@@ -37,7 +37,8 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
     @property
     def _active_bitmap(self):
         import numpy as np
-        from pylab import cm
+        # from pylab import cm
+        from matplotlib import cm
         x = np.linspace(0, 1, 30)
         img = (255*getattr(cm, self._layer.cmap)(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
         

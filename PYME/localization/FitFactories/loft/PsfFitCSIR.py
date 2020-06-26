@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -87,9 +87,9 @@ def setModel(modName, md):
         #    raise RuntimeError("PSF and Image voxel sizes don't match")
 
         #FIXME - are the voxel sizes right here?
-        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        IntXVals = 1e3*voxelsize.x*scipy.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*scipy.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*scipy.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         dx = voxelsize.x*1e3
         dy = voxelsize.y*1e3
@@ -123,7 +123,7 @@ def f_Interp3d(p, X, Y, Z, *args):
 
     #print x1, y1, z1
 
-    coords = array([x1, y1, z1])
+    coords = numpy.array([x1, y1, z1])
 
     g1 = ndimage.interpolation.map_coordinates(interpModel, coords, mode='nearest', prefilter=False).squeeze()
 

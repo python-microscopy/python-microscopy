@@ -252,8 +252,11 @@ if not os.path.exists(user_config_dir):
         #we might not be able to write to the home directory
         pass
 
+from PYME.IO.FileUtils import nameUtils
 
-config_defaults = {}
+config_defaults = {
+    'dataserver-root' : nameUtils.datadir,
+}
 
 config = {}
 config.update(config_defaults)

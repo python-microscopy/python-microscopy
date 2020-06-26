@@ -22,17 +22,18 @@
 ################
 
 if __name__ == '__main__':
-    from pylab import *
+    # from pylab import *
+    import numpy as np
     
     
     from PYME.Analysis.points.DeClump import deClump
     
     
-    t = arange(0, 200, .02)
+    t = np.arange(0, 200, .02)
     print((len(t)))
-    x = randn(10000)
-    y = randn(10000)
-    delta_x = .05*ones(x.shape)
+    x = np.random.randn(10000)
+    y = np.random.randn(10000)
+    delta_x = .05*np.ones(x.shape)
     
     asg = deClump.findClumps(t.astype('i'), x.astype('f4'), y.astype('f4'), delta_x.astype('f4'), 2)
     

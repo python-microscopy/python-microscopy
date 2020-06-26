@@ -110,14 +110,15 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
 
 
 
-
-def fileResults(URI, data_raw):
-    # translate data into wire format
+def format_results(data_raw, URI=''):
+    """
+    translate data into wire format
+    """
     output_format = None
-
+    
     if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
         output_format = 'text/csv'
-
+        
         if isinstance(data_raw, bytes):
             data = data_raw
         elif isinstance(data_raw, str):
@@ -126,45 +127,57 @@ def fileResults(URI, data_raw):
             import pandas as pd
             df = pd.DataFrame(data_raw)
             data = df.to_csv()
-
+    
     elif URI.endswith('.json'):
         output_format = 'text/json'
         if isinstance(data_raw, bytes):
             data = data_raw
         elif isinstance(data_raw, str):
             data = data_raw.encode()
+        elif hasattr(data_raw, 'to_JSON'):
+            data = data_raw.to_JSON().encode()
         else:
             import pandas as pd
+            if isinstance(data_raw, np.ndarray):
+                from PYME.IO.tabular import unnest_dtype
+                data_raw = data_raw.view(unnest_dtype(data_raw.dtype))
+            
             df = pd.DataFrame(data_raw)
             data = df.to_json().encode()
-
+    
     elif URI.endswith('.pzf'):
         raise RuntimeError('PZF format needs parameters, pack data yourself and call fileFormattedResults')
-
+    
     elif isinstance(data_raw, image.ImageStack):
         #output_format = 'image'
         raise NotImplementedError('Need to add code for saving images')
         #TODO - easy solution is to save locally and then copy. Better solution would be to change exporters to write into a file object
-
+    
     elif URI.endswith('.npy'): # or isinstance(data_raw, np.ndarray):
         #output_format = 'numpy'
         data = BytesIO()
         np.save(data, np.array(data_raw))
         data = data.getvalue()
-
+    
     elif isinstance(data_raw, np.ndarray):
         #very reluctantly use pickle to serialize numpy arrays rather than the better .npy format as reading .npy is really slow.
         data = data_raw.dumps()
-
+    
     elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
+        # NB - this may be redundant as we usually request metadata.json which will get caught and handled by the .endswith('json') cas above
+        # keeping for now in case we want to change default metadata handling and/or also support .xml or .md formats
         output_format = 'text/json'
         data = data_raw.to_JSON().encode()
-
+    
     else:
         logging.warning('No handler for data type found, using pickle')
         #output_format = 'pickle'
         data = cPickle.dumps(data_raw)
+        
+    return data, output_format
 
+def fileResults(URI, data_raw):
+    data, output_format = format_results(data_raw, URI)
 
     #now do URI translation
     if '__aggregate' in URI and URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):

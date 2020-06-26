@@ -22,7 +22,8 @@
 ##################
 
 from numpy import *
-from pylab import *
+# from pylab import *
+from matplotlib.pyplot import *
 
 def rotMod(p, x1,y1):
     dx,dy,xc, yc, theta = p

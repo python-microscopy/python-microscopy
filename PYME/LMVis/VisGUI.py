@@ -39,7 +39,7 @@ import sys
 
 import matplotlib
 matplotlib.use('wxagg')
-import pylab
+# import pylab
 
 from PYME import config
 from PYME.misc import extraCMaps
@@ -196,6 +196,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     self.pipeline.recipe.update_from_yaml(recipe)
                     #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
+
+                self._recipe_editor.update_recipe_text()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
@@ -238,7 +240,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         while len(self.pipeline.filesToClose) > 0:
             self.pipeline.filesToClose.pop().close()
 
-        pylab.close('all')
+        # pylab.close('all')
+        matplotlib.pyplot.close('all')
         self._cleanup()
 
 
@@ -394,8 +397,13 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.OpenChannel(filename)
 
     def OnOpenRaw(self, event):
-        from PYME.DSView import ViewIm3D, ImageStack
-        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        from PYME.IO import image
+        from PYME.DSView import ViewIm3D
+        try:
+            ViewIm3D(image.ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        except image.FileSelectionError:
+            # the user canceled the open dialog
+            pass
         
     def AddExtrasMenuItem(self,label, callback):
         """Add an item to the VisGUI extras menu.

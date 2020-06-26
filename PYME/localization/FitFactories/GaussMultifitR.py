@@ -170,7 +170,7 @@ class GaussianFitFactory:
             dataMean = dataMean - bgMean
             
         #ofind step
-        import pylab
+        # import pylab
         #find pixels which are > 2 sigma above noise floor.
         dt = dataMean > threshold*sigma
         

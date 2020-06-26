@@ -12,7 +12,7 @@
 import setuptools #to monkey-patch distutils for ms visualc for python
 from PYME.misc import cython_numpy_monkey
 
-from PYME.setup import configuration
+#from PYME.setup import configuration
 
 # def configuration(parent_package='',top_path=None):
 #     from numpy.distutils.misc_util import Configuration
@@ -31,32 +31,59 @@ with open(os.path.join(os.path.dirname(__file__), 'conda-recipes', 'python-micro
 
 entry_points={'console_scripts':ep}
 
-# entry_points={
-#     'console_scripts': [
-#         'PYMEBatch = PYME.recipes.batchProcess:main',
-#         'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
-#         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
-#         'PYMEDataServer = PYME.cluster.HTTPDataServer:main',
-#         'PYMEClusterDup = PYME.io.clusterDuplication:main',
-#         #'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
-#         'PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main',
-#         #'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
-#         'dh5view = PYME.DSView.dsviewer:main',
-#         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
-#         'VisGUI = PYME.LMVis.VisGUI:main',
-#         'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
-#         #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
-#         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
-#         'fitMonP = PYME.ParallelTasks.fitMonP:main',
-#         'bakeshop = PYME.recipes.bakeshop:main',
-#         'PYMERuleServer = PYME.cluster.PYMERuleServer:main',
-#         'PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main',
-#     ]
-# }
+# if __name__ == '__main__':
+#     from numpy.distutils.core import setup
+#     conf = configuration(top_path='').todict()
+#     conf['entry_points'] = entry_points
+#     setup(**conf)
+
+def configuration(parent_package='', top_path=None):
+    if os.path.exists('MANIFEST'):
+        os.remove('MANIFEST')
+    
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration(None, parent_package, top_path)
+    
+    config.set_options(
+        ignore_setup_xxx_py=True,
+        assume_default_configuration=True,
+        delegate_options_to_subpackages=True,
+        #quiet=True,
+    )
+
+    #config['entry_points'] = entry_points
+    
+    config.add_subpackage('PYME')
+    config.get_version('PYME/version.py')
+    return config
 
 if __name__ == '__main__':
     import setuptools
+    import os
+    from distutils.command.sdist import sdist
     from numpy.distutils.core import setup
-    conf = configuration(top_path='').todict()
-    conf['entry_points'] = entry_points
-    setup(**conf)
+
+
+    with open('README.md', 'r') as f:
+        long_description = f.read()
+
+    setup(name='python-microscopy',
+        description='Tools for (super-resolution) microscopy data analysis and microsope control',
+        author='David Baddeley',
+        author_email='david.baddeley@auckland.ac.nz',
+        url='https://github.com/python-microscopy/python-microscopy',
+        long_description=long_description,
+        long_description_content_type="text/markdown",
+        license="GNU General Public License v3 (GPLv3)",
+        install_requires=['numpy'],
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)', # Again, pick a license
+            'Programming Language :: Python :: 2.7', #Specify which python versions that you want to support
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+        ],
+        cmdclass={'sdist': sdist},
+        entry_points=entry_points,
+        configuration=configuration)

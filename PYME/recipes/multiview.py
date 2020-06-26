@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, CStr, Bool, Int, File
+from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
 import numpy as np
 from PYME.IO import tabular
 from PYME.Analysis.points import multiview
@@ -67,7 +67,7 @@ class ShiftCorrect(ModuleBase):
     -----
     """
     input_name = Input('folded')
-    shift_map_path = CStr('')
+    shift_map_path = FileOrURI('')
     output_name = Output('registered')
 
     def execute(self, namespace):
@@ -218,7 +218,7 @@ class MapAstigZ(ModuleBase):
     """
     input_name = Input('merged')
 
-    astigmatism_calibration_location = CStr('')
+    astigmatism_calibration_location = FileOrURI('')
     rough_knot_spacing = Float(50.)
 
     output_name = Output('zmapped')

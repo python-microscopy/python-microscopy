@@ -341,6 +341,11 @@ class foldElement:
 
 class foldingPane(wx.Panel):
     def __init__(self, *args, **kwargs):
+        # NOTE: If you are creating a foldingPane to encapsulate other 
+        # foldingPanes, the top-level foldingPane must have the flag
+        # pinned=True or all the sub-foldingPanes will be hidden,
+        # unhidable, and no error will be thrown. Alternatively you
+        # can pass folded=False to the top-level pane.
         try:
             self.orientation = kwargs.pop('orientation')
         except KeyError:
