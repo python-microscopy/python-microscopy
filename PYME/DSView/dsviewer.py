@@ -155,7 +155,7 @@ class DSViewFrame(AUIFrame):
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
         # Closing needs three different bindings, each for a different way to
         # close the program, to ensure the same cleanup operation happens
-        # rfor each method
+        # for each method
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)  # Press the X button in the upper-left of the window
         self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_CLOSE)  # Choose Close from the File menu
         self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_EXIT)  # Command+Q
