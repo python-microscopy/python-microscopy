@@ -885,12 +885,15 @@ class ModuleCollection(HasTraits):
         extend to other types.
         """
         #modify this to allow for different file types - currently only supports images
-        from PYME.IO import unifiedIO
+        from PYME.IO import unifiedIO, MetaDataHandler
         import os
+
+        events = None
+        mdh = MetaDataHandler.NestedClassMDHandler()
+
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']:
             import tables
-            from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
 
             with unifiedIO.local_or_temp_filename(filename) as fn:
@@ -898,12 +901,18 @@ class ModuleCollection(HasTraits):
                     #make sure our hdf file gets closed
                     
                     key_prefix = '' if key == 'input' else key + '_'
-    
+
+                    # try and find MetaData group
                     try:
                         mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
                     except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
                         logger.warning('No metadata found, proceeding with empty metadata')
-                        mdh = MetaDataHandler.NestedClassMDHandler()
+                    
+                    # look for any events
+                    try:
+                        events = h5f.root.Events[:]
+                    except AttributeError:
+                        pass
                     
                     for t in h5f.list_nodes('/'):
                         # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
@@ -913,25 +922,27 @@ class ModuleCollection(HasTraits):
                         # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
                         # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
                         # > 3D data?
+                        if t.name == 'Events':
+                            continue
                         
                         if isinstance(t, tables.VLArray):
                             from PYME.IO.ragged import RaggedVLArray
                             
                             rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                            rag.mdh = mdh
+                            rag.mdh, rag.events = mdh, events
     
                             self.namespace[key_prefix + t.name] = rag
     
                         elif isinstance(t, tables.table.Table):
                             #  pipe our table into h5r or hdf source depending on the extension
                             tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                            tab.mdh = mdh
+                            tab.mdh, tab.events = mdh, events
     
                             self.namespace[key_prefix + t.name] = tab
     
                         elif isinstance(t, tables.EArray):
-                            # load using ImageStack._loadh5, which finds metdata
-                            im = ImageStack(filename=filename, haveGUI=False)
+                            # load using ImageStack._loadh5. We've already found the events/metadata, so pipe them in
+                            im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
                             # assume image is the main table in the file and give it the named key
                             self.namespace[key] = im
                         
