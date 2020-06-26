@@ -39,8 +39,6 @@ class ColumnMappingDialog(wx.Dialog):
                             'sig':'std. deviation of Gaussian [nm]',
                             'error_x':'fit error in x direction [nm]'}
     niceVariables = {'error_y':'fit error in y direction [nm]'}
-    colNames = []
-    dataLines = []
     fileType = 'column source'  # string to indicate file type in user dialog box
 
     def __init__(self, parent, fileName):
@@ -50,7 +48,7 @@ class ColumnMappingDialog(wx.Dialog):
 
         wx.Dialog.__init__(self, parent, title='Import data from {} file'.format(self.fileType))
 
-        self._parse_header(fileName)
+        self.Names, self.dataLines = self._parse_header(fileName)
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -212,8 +210,7 @@ class ImportTextDialog(ColumnMappingDialog):
         else:
             colNames = ['column_%d' % i for i in range(numCols)]
 
-        self.colNames = colNames
-        self.dataLines = dataLines
+       return colNames, dataLines
 
 
 class ImportMatDialog(wx.Dialog):
@@ -296,8 +293,7 @@ class ImportMatlabDialog(ColumnMappingDialog):
                 dataLines.append(mf[k][:10].squeeze())
         dataLines = np.array(dataLines).T.astype(str).tolist()
 
-        self.colNames = colNames
-        self.dataLines = dataLines
+        return colNames, dataLines
 
     def GetMultichannel(self):
         return self.multichannel
