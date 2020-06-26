@@ -125,13 +125,22 @@ class DensityMapping(ModuleBase):
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
+    """
+    Perform standard mappings, including those derived from acquisition events.
+
+    Parameters
+    ----------
+    inputFitResults : tabular.TabularBase
+        Typically the FitResults table of an h5r file
+    outputLocalizations = tabular.MappingFilter
+    pixelSizeNM : float
+        Scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units. Defaults to 1.
+    """
     inputFitResults = Input('FitResults')
-    inputDriftResults = Input('')
     inputEvents = Input('')
+    inputDriftResults = Input('')
     outputLocalizations = Output('localizations')
-
-    pixelSizeNM = Float(1)
-
+    pixelSizeNM = Float(1, label='nanometer units', desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
 
     def execute(self, namespace):
         from PYME.LMVis import pipeline
