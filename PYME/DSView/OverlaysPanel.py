@@ -22,7 +22,7 @@
 ##################
 
 import wx
-import pylab
+# import pylab
 
 
 class OverlayPanel(wx.Panel):

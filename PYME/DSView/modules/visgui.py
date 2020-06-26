@@ -21,7 +21,8 @@
 ##################
 
 from PYME.LMVis.imageView2 import ImageViewPanel, ColourImageViewPanel
-import pylab
+# import pylab
+import matplotlib.cm
 import numpy
 import wx
 import os
@@ -114,7 +115,7 @@ class GLImageView(LMGLShaderCanvas):
 def Plug(dsviewer):
     dsviewer.vgextras = visGuiExtras(dsviewer)
 
-    cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
+    cmaps = [matplotlib.cm.r, matplotlib.cm.g, matplotlib.cm.b]
 
     if not 'ivps' in dir(dsviewer):
         dsviewer.ivps = []

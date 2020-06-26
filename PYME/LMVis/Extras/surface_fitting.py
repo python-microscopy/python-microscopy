@@ -1,4 +1,7 @@
 
+import logging
+logger=logging.getLogger(__name__)
+
 class SurfaceFitter(object):
     def __init__(self, vis_frame):
         self.vis_frame = vis_frame
@@ -43,7 +46,6 @@ class SurfaceFitter(object):
         pipeline.Rebuild()
         
         self.vis_frame.Refresh()
-
 
 def Plug(visFr):
     '''Plugs this module into the gui'''

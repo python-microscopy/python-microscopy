@@ -1,5 +1,7 @@
-from pylab import *
-ioff()
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
+plt.ioff()
 
 from reactions import Reaction, System, Stimulus
 from discreteReactions import DiscreteModel
@@ -116,11 +118,11 @@ def dyedyemodt(p, t):
 
 def plotInitialDecay():
     from PYME.Analysis.BleachProfile import rawIntensity
-    t = linspace(1, 1e5, 10000)
+    t = np.linspace(1, 1e5, 10000)
 
     res = s.solve(t)
 
-    figure()
+    plt.figure()
 
     toplot = ['S0', 'T1', 'R', 'X', 'O2', 'q']
 
@@ -128,31 +130,31 @@ def plotInitialDecay():
         lw = 2
         if n == 'S0':
             lw = 3
-        plot((t/1e6), res[n], label=n, lw=lw)
+        plt.plot((t/1e6), res[n], label=n, lw=lw)
 
-    ylim(0, 1.1*s.initialConditions['S0'])
+    plt.ylim(0, 1.1*s.initialConditions['S0'])
 
-    legend()
-    xlabel('Time [s]')
-    ylabel('Concentration [M/L]')
+    plt.legend()
+    plt.xlabel('Time [s]')
+    plt.ylabel('Concentration [M/L]')
     
-    figure()
+    plt.figure()
     s0 = res['S0']
     t_ = t/1e6
     
-    loglog(t_, s0)
+    plt.loglog(t_, s0)
     
     fr = rawIntensity.FitModel(dyedyemodt, [s0[0], t_[1] - t_[0], 1.], s0, t_)
     print(fr[0])
     
-    loglog(t_, dyedyemodt(fr[0], t_))
+    plt.loglog(t_, dyedyemodt(fr[0], t_))
 
 
 import gillespie
 
 G = gillespie.gillespie(s, 1e-21)
 
-ion()
+plt.ion()
 
 
 

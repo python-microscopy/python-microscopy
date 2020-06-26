@@ -7,7 +7,9 @@ Created on Mon Mar  9 21:56:18 2015
 import numpy as np
 import toposort
 import networkx as nx
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
+import matplotlib.cm
 from scipy import optimize
 from six.moves import xrange
 import six
@@ -320,8 +322,8 @@ def drawGraph(dg):
     ips = arrangeNodes(dg)
     #ts = list(toposort.toposort(dg))
     
-    f = pylab.figure()
-    a = pylab.axes([0,0,1,1])
+    f = plt.figure()
+    a = plt.axes([0,0,1,1])
     
     axisWidth = a.get_window_extent().width
     nCols = max([v[0] for v in ips.values()])
@@ -352,42 +354,42 @@ def drawGraph(dg):
                 x1, y1 = ips[k]
                 
                 if not e in cols.keys():
-                    cols[e] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
+                    cols[e] = 0.7*np.array(matplotlib.cm.hsv(np.random.rand()))
 
                 #yo = yoff[i]                
                 
-                pylab.plot([x0,x0+.5, x0+.5, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
+                plt.plot([x0,x0+.5, x0+.5, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
                 
     for k, v in ips.items():   
         if not isinstance(k, six.string_types):
             s = k.__class__.__name__
-            #pylab.plot(v[0], v[1], 'o', ms=5)
-            rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
+            #plt.plot(v[0], v[1], 'o', ms=5)
+            rect = plt.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
             
             rect._data = k
-            pylab.gca().add_patch(rect)
-            pylab.text(v[0]+.05, v[1]+.18 , s, size=fontSize, weight='bold')
+            plt.gca().add_patch(rect)
+            plt.text(v[0]+.05, v[1]+.18 , s, size=fontSize, weight='bold')
             
             s2 = '\n'.join(['%s : %s' %i for i in k.get().items()])
-            pylab.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
+            plt.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
         else:
             s = k
             if not k in cols.keys():
-                cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
-            pylab.plot(v[0], v[1], 'o', color=cols[k])
-            pylab.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold')
+                cols[k] = 0.7*np.array(matplotlib.cm.hsv(np.random.rand()))
+            plt.plot(v[0], v[1], 'o', color=cols[k])
+            plt.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold')
                 
                 
-    #pylab.ylim(-1, 2)
+    #plt.ylim(-1, 2)
                 
     ipsv = np.array(ips.values())
     xmn, ymn = ipsv.min(0)
     xmx, ymx = ipsv.max(0)
     
-    pylab.ylim(ymn-1, ymx+1)
-    pylab.xlim(xmn-.5, xmx + .7)
+    plt.ylim(ymn-1, ymx+1)
+    plt.xlim(xmn-.5, xmx + .7)
     
-    pylab.axis('off')
+    plt.axis('off')
     
     def OnPick(event):
         k = event.artist._data
