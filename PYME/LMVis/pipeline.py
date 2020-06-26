@@ -667,7 +667,7 @@ class Pipeline:
             if 'MetaData' in h5f.root:
                 mdh = MetaDataHandler.HDFMDHandler(h5f)
             
-            if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
+            if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
                 events = h5f.root.Events[:]
 
         elif filename.endswith('.hdf'):
@@ -677,6 +677,8 @@ class Pipeline:
             self.filesToClose.append(h5f)
 
             for t in h5f.list_nodes('/'):
+                if t.name == 'Events':
+                    continue
                 if isinstance(t, tables.table.Table):
                     tab = tabular.HDFSource(h5f, t.name)
                     self.addDataSource(t.name, tab)
@@ -770,8 +772,6 @@ class Pipeline:
 
         add_pipeline_variables = Pipelineify(self.recipe, 
             inputFitResults='results_source',
-            inputDriftResults='' if self.driftInputMapping is None else self.driftInputMapping,
-            inputEvents='' if self.events is None else self.events,
             pixelSizeNM=1. if 'PixelSize' not in kwargs.keys() else kwargs['PixelSize'],
             outputLocalizations='Localizations')
         self.recipe.add_module(add_pipeline_variables)
