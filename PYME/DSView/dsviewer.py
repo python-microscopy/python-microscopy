@@ -137,7 +137,7 @@ class DSViewFrame(AUIFrame):
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
         tmp_menu.AppendSeparator()
-        tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
+        tmp_menu.Append(wx.ID_CLOSE, "&Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
 
         self.view_menu = wx.Menu()
@@ -153,8 +153,12 @@ class DSViewFrame(AUIFrame):
         self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-        self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_EXIT)  # Needed to run through self.OnCloseWindow on a command+Q call
+        # Closing needs three different bindings, each for a different way to
+        # close the program, to ensure the same cleanup operation happens
+        # rfor each method
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)  # Press the X button in the upper-left of the window
+        self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_CLOSE)  # Choose Close from the File menu
+        self.Bind(wx.EVT_MENU, self.OnCloseWindow, id=wx.ID_EXIT)  # Command+Q
         
 
 		
