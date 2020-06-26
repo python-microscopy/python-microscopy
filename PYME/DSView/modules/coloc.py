@@ -23,7 +23,8 @@ from __future__ import print_function
 import numpy
 import numpy as np
 import wx
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
@@ -194,8 +195,8 @@ class colocaliser:
         imB = self.image.data[:,:,zs:ze,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
-        tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #pylab.mean(self.ivps[0].clim)
-        tB = self.do.Offs[chans[1]] + .5/self.do.Gains[chans[1]] #pylab.mean(self.ivps[0].clim)
+        tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #plt.mean(self.ivps[0].clim)
+        tB = self.do.Offs[chans[1]] + .5/self.do.Gains[chans[1]] #plt.mean(self.ivps[0].clim)
         
         nameA = names[chans[0]]
         nameB = names[chans[1]]
@@ -224,31 +225,31 @@ class colocaliser:
                 print("M(B->A) %s" % MBzs)
                 print("Species A: %s, Species B: %s" %(nameA,nameB))
     
-                pylab.figure()
-                pylab.subplot(211)
+                plt.figure()
+                plt.subplot(211)
                 if 'filename' in self.image.__dict__:
-                    pylab.title(self.image.filename)
+                    plt.title(self.image.filename)
                 # nameB with nameA
-                cAB, = pylab.plot(MAzs,'o', label = '%s with %s' %(nameB,nameA))
+                cAB, = plt.plot(MAzs,'o', label = '%s with %s' %(nameB,nameA))
                 # nameA with nameB
-                cBA, = pylab.plot(MBzs,'*', label = '%s with %s' %(nameA,nameB))
-                pylab.legend([cBA,cAB])
-                pylab.xlabel('z slice level')
-                pylab.ylabel('Manders coloc fraction')
-                pylab.ylim(0,None)
+                cBA, = plt.plot(MBzs,'*', label = '%s with %s' %(nameA,nameB))
+                plt.legend([cBA,cAB])
+                plt.xlabel('z slice level')
+                plt.ylabel('Manders coloc fraction')
+                plt.ylim(0,None)
     
-                pylab.subplot(212)
+                plt.subplot(212)
                 if 'filename' in self.image.__dict__:
-                    pylab.title(self.image.filename)
+                    plt.title(self.image.filename)
                 # nameB with nameA
-                fA, = pylab.plot(FAzs,'o', label = '%s mask fraction' %(nameA))
+                fA, = plt.plot(FAzs,'o', label = '%s mask fraction' %(nameA))
                 # nameA with nameB
-                fB, = pylab.plot(FBzs,'*', label = '%s mask fraction' %(nameB))
-                pylab.legend([fA,fB])
-                pylab.xlabel('z slice level')
-                pylab.ylabel('Mask fraction')
-                pylab.ylim(0,None)
-                pylab.show()
+                fB, = plt.plot(FBzs,'*', label = '%s mask fraction' %(nameB))
+                plt.legend([fA,fB])
+                plt.xlabel('z slice level')
+                plt.ylabel('Mask fraction')
+                plt.ylim(0,None)
+                plt.show()
 
         print('Performing distance transform ...')
         #bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
@@ -298,7 +299,7 @@ class colocaliser:
         edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_AB, enrichment_BB, enclosed_AB, enclosed_BB, enclosed_area_B, pearson,
                                               MA, MB, nameB, nameA)
         
-        pylab.show()
+        plt.show()
         
         im = ImageStack(plots, titleStub='Radial Distribution')
         im.xvals = bins[:-1]
@@ -349,8 +350,8 @@ class colocaliser:
         imB = self.image.data[:,:,:,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
-        tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #pylab.mean(self.ivps[0].clim)
-        tB = self.do.Offs[chans[1]] + .5/self.do.Gains[chans[1]] #pylab.mean(self.ivps[0].clim)
+        tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #plt.mean(self.ivps[0].clim)
+        tB = self.do.Offs[chans[1]] + .5/self.do.Gains[chans[1]] #plt.mean(self.ivps[0].clim)
         
         nameA = names[chans[0]]
         nameB = names[chans[1]]
@@ -364,16 +365,16 @@ class colocaliser:
         I2 = imB.ravel()
         h1 = np.histogram2d(np.clip(I1/I1.mean(), 0, 100), np.clip(I2/I2.mean(), 0, 100), 200)
 
-        pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f    MI: %2.3f' % (pearson, MA, MB, mutual_information))
-        pylab.subplot(111)
+        plt.figure()
+        plt.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f    MI: %2.3f' % (pearson, MA, MB, mutual_information))
+        plt.subplot(111)
         
-        pylab.imshow(np.log10(h1[0] + .1).T)
-        pylab.xlabel('%s' % nameA)
-        pylab.ylabel('%s' % nameB)
+        plt.imshow(np.log10(h1[0] + .1).T)
+        plt.xlabel('%s' % nameA)
+        plt.ylabel('%s' % nameB)
 
         
-        pylab.show()
+        plt.show()
 
     def OnFRC(self, event):
         import matplotlib.pyplot as plt

@@ -4,7 +4,8 @@ import dispatch
 
 from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool, Instance, CStr
 
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 
 ENGINES = {

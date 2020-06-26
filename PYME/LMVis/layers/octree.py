@@ -4,7 +4,8 @@ from .mesh import TriangleRenderLayer  #, ENGINES
 from PYME.experimental._octree import Octree
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 
 

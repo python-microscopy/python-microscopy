@@ -7,7 +7,8 @@ from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 import dispatch
 
@@ -214,7 +215,7 @@ class TrackRenderLayer(EngineLayer):
             self.clumpSizes = [len(cl_i) for cl_i in clist]
 
             #reorder x, y, z, c in clump order  
-            I = np.hstack([np.array(cl) for cl in clist])
+            I = np.hstack([np.array(cl) for cl in clist]).astype(np.int)
 
             x = x[I]
             y = y[I]

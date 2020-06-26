@@ -248,14 +248,15 @@ class PsfExtractor(object):
         
     def OnCalcShift(self, event):
         if (len(self.PSFLocs) > 0):
-            import pylab
+            # import pylab
+            import matplotlib.pyplot as plt
             
             x,y,z = self.PSFLocs[0]
             
             z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
             z_ -= z_.mean()
 
-            pylab.figure()
+            plt.figure()
             p_0 = 1.0*self.image.data[x,y,:,0].squeeze()
             p_0  -= p_0.min()
             p_0 /= p_0.max()
@@ -276,11 +277,11 @@ class PsfExtractor(object):
 
             print(('z0: %f, z1: %f, dz: %f' % (z0,z1,dz)))
             
-            pylab.plot(z_, p_0)
-            pylab.plot(z_, p_1)
-            pylab.vlines(z0, 0, 1)
-            pylab.vlines(z1, 0, 1)
-            pylab.figtext(.7,.7, 'dz = %3.2f' % dz)
+            plt.plot(z_, p_0)
+            plt.plot(z_, p_1)
+            plt.vlines(z0, 0, 1)
+            plt.vlines(z1, 0, 1)
+            plt.figtext(.7,.7, 'dz = %3.2f' % dz)
             
     def OnExtract(self, event):
         method = self.chMethod.GetStringSelection()

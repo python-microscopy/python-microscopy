@@ -21,7 +21,8 @@
 ##################
 import numpy
 import wx
-import pylab
+# import pylab
+import matplotlib.cm
 
 from PYME.ui.AUIFrame import AUIFrame
 import wx.lib.agw.aui as aui
@@ -95,7 +96,7 @@ class visualiser:
         self.dsviewer.f3d.scene.stereo = True
 
         for i in range(self.image.data.shape[3]):
-            c = mlab.contour3d(self.image.data[:,:,:,i].squeeze().astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
+            c = mlab.contour3d(self.image.data[:,:,:,i].squeeze().astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = matplotlib.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
             self.lastSurf = c
             c.mlab_source.dataset.spacing = self.image.voxelsize
             

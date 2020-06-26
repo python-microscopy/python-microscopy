@@ -253,14 +253,16 @@ class GaussianFitFactory(FFBase.FFBase):
         dataROI = np.maximum(dataROI - bgROI, -sigma)
         
         if (self.metadata.getOrDefault('Analysis.DebugLevel', 0) == 2):
-            import pylab
-            pylab.figure()
-            pylab.subplot(121)
-            pylab.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
-            pylab.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
-            pylab.subplot(122)
-            pylab.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
-            pylab.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
+            # import pylab
+            import matplotlib.pyplot as plt
+            import matplotlib.cm
+            plt.figure()
+            plt.subplot(121)
+            plt.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
+            plt.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
+            plt.subplot(122)
+            plt.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
+            plt.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
 
 	
         #do the fit

@@ -23,7 +23,8 @@
 
 import numpy
 import numpy as np
-import pylab
+# import pylab
+import matplotlib.cm
 import wx
 import wx.glcanvas
 from OpenGL import GLUT
@@ -267,7 +268,7 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
-        self.cmap = pylab.cm.hsv
+        self.cmap = matplotlib.cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
 

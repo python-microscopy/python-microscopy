@@ -13,7 +13,7 @@
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 from PYME.Analysis.PSFGen.ps_app import *
 
 from _fithelpers import *
@@ -127,9 +127,9 @@ class PSFFitFactory:
         #print scipy.sqrt(diag(cov_x))
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
         if (misfit1 < misfit2):
-            return PSFFitResult(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(diag(cov_x1)))
+            return PSFFitResult(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(scipy.diag(cov_x1)))
         else:
-            return PSFFitResult(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(diag(cov_x2)))
+            return PSFFitResult(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(scipy.diag(cov_x2)))
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
         if (z is None): # use position of maximum intensity

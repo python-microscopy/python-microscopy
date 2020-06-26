@@ -134,7 +134,7 @@ class ModuleBase(HasTraits):
         
         for input in self.inputs:
             if not input in keys:
-                raise MissingInputError('Input "%s" is missing from namespace' % input)
+                raise MissingInputError('Input "%s" is missing from namespace; keys: %s' % (input, keys))
         
 
     def outputs_in_namespace(self, namespace):
@@ -878,73 +878,107 @@ class ModuleCollection(HasTraits):
                     
         return outputs
 
-    def loadInput(self, filename, key='input'):
-        """Load input data from a file and inject into namespace
+    def _inject_tables_from_hdf5(self, key, h5f, filename, extension):
+        """
+        Search through hdf5 file nodes and add them to the recipe namespace
 
-        Currently only handles images (anything you can open in dh5view). TODO -
-        extend to other types.
+        Parameters
+        ----------
+        key : str
+            base key name for loaded file components, if key is not the default 'input', each file node will be loaded into
+            recipe namespace with `key`_`node_name`.
+        h5f : file
+            open hdf5 file
+        filename : str
+            full filename
+        extension : str
+            file extension, used here mainly to toggle which PYME.IO.tabular source is used for table nodes.
+        """
+        import tables
+        from PYME.IO import MetaDataHandler, tabular
+
+        key_prefix = '' if key == 'input' else key + '_'
+
+        try:
+            mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+        except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+            logger.warning('No metadata found, proceeding with empty metadata')
+            mdh = MetaDataHandler.NestedClassMDHandler()
+        
+        try:
+            events = h5f.root.Events[:]
+        except AttributeError:
+            events = None
+        
+        for t in h5f.list_nodes('/'):
+            # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+            # PZF formatted image data, Image data which is not in an EArray, etc ...)
+            # Note that EArray is only used for streaming data!
+            # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+            # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+            # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+            # > 3D data?
+            
+            if isinstance(t, tables.VLArray):
+                from PYME.IO.ragged import RaggedVLArray
+                
+                rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
+                rag.mdh, rag.events = mdh, events
+
+                self.namespace[key_prefix + t.name] = rag
+
+            elif isinstance(t, tables.table.Table):
+                #  pipe our table into h5r or hdf source depending on the extension
+                tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
+                tab.mdh, tab.events = mdh, events
+
+                self.namespace[key_prefix + t.name] = tab
+
+            elif isinstance(t, tables.EArray):
+                # load using ImageStack._loadh5
+                # FIXME - ._loadh5 will load events lazily, which isn't great if we got here after
+                # sending file over clusterIO inside of a context manager -> force it through since we already found it
+                im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
+                # assume image is the main table in the file and give it the named key
+                self.namespace[key] = im
+
+    def loadInput(self, filename, key='input'):
+        """
+        Load input data from a file and inject into namespace
         """
         #modify this to allow for different file types - currently only supports images
-        from PYME.IO import unifiedIO, MetaDataHandler
+        from PYME.IO import unifiedIO
         import os
-
-        events = None
-        mdh = MetaDataHandler.NestedClassMDHandler()
 
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']:
             import tables
-            from PYME.IO import tabular
-
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                with tables.open_file(fn, mode='r') as h5f:
-                    #make sure our hdf file gets closed
-                    
-                    key_prefix = '' if key == 'input' else key + '_'
-
-                    # try and find MetaData group
-                    try:
-                        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-                    except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
-                        logger.warning('No metadata found, proceeding with empty metadata')
-                    
-                    # look for any events
-                    try:
-                        events = h5f.root.Events[:]
-                    except AttributeError:
-                        pass
-                    
-                    for t in h5f.list_nodes('/'):
-                        # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
-                        # PZF formatted image data, Image data which is not in an EArray, etc ...)
-                        # Note that EArray is only used for streaming data!
-                        # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
-                        # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
-                        # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
-                        # > 3D data?
-                        if t.name == 'Events':
-                            continue
-                        
-                        if isinstance(t, tables.VLArray):
-                            from PYME.IO.ragged import RaggedVLArray
-                            
-                            rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                            rag.mdh, rag.events = mdh, events
-    
-                            self.namespace[key_prefix + t.name] = rag
-    
-                        elif isinstance(t, tables.table.Table):
-                            #  pipe our table into h5r or hdf source depending on the extension
-                            tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                            tab.mdh, tab.events = mdh, events
-    
-                            self.namespace[key_prefix + t.name] = tab
-    
-                        elif isinstance(t, tables.EArray):
-                            # load using ImageStack._loadh5. We've already found the events/metadata, so pipe them in
-                            im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
-                            # assume image is the main table in the file and give it the named key
-                            self.namespace[key] = im
+            from PYME.IO import h5rFile
+            try:
+                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
+                        self._inject_tables_from_hdf5(key, h5f, fn, extension)
+            except tables.exceptions.HDF5ExtError as e:  # access issue likely due to multiple processes
+                if unifiedIO.is_cluster_uri(filename):
+                    # try again, this time forcing access through the dataserver
+                    # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
+                    # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
+                    # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
+                    # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
+                    # scenario would match what has been observed with old style spooling analysis where copying a file
+                    # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
+                    # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
+                    # TODO - consider whether h5r_part might be a better choice.
+                    # FIXME: (DB) I'm not comfortable with having this kind of special case retry logic here, and would
+                    # much prefer if we could find an alternative workaround, refactor into something like h5rFile.open_robust(),
+                    # or just let this fail). Leaving it for the meantime to get chained recipes working, but we should revisit.
+                    from PYME.IO import clusterIO
+                    relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
+                    file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter, local_short_circuit=False)
+                    with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes, driver_core_backing_store=0) as h5f:
+                        self._inject_tables_from_hdf5(key, h5f, filename, extension)
+                else:
+                    #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
+                    raise e
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')

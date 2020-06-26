@@ -10,22 +10,30 @@ class TopticaIBeamLaser(Laser):
         self.maxpower = maxpower
         self.minpower = minpower
         self.power = 0.01
+
+        with serial.Serial(**self.ser_args) as ser:
+            ser.write(b'talk robot\r\necho off\r\n')
+            ser.flush()
         
-        Laser.__init__(self, name, turnOn)
+        Laser.__init__(self, name, turnOn, **kwargs)
     
     def IsOn(self):
         return self.isOn
     
     def TurnOn(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write(b'la on\n')
+            ser.write(b'la on\r\n')
             ser.flush()
+            #print(ser.readline())
+            #print(ser.readline())
             self.isOn = True
     
     def TurnOff(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write(b'la off\n')
+            ser.write(b'la off\r\n')
             ser.flush()
+            #print(ser.readline())
+            #print(ser.readline())
             self.isOn = False
     
     def SetPower(self, power):
@@ -34,8 +42,10 @@ class TopticaIBeamLaser(Laser):
         self.power = power
         
         with serial.Serial(**self.ser_args) as ser:
-            ser.write(b'ch 1 pow %3.3f\n' % (self.power * 1e3))
+            ser.write(b'ch 1 pow %3.3f\r\n' % (self.power * 1e3))
             ser.flush()
+            #print(ser.readline())
+            #print(ser.readline())
     
     def GetPower(self):
         return self.power
