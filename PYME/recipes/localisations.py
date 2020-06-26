@@ -4,6 +4,8 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 import numpy as np
 from PYME.IO import tabular
 from PYME.LMVis import renderers
+import logging
+logger = logging.getLogger(__name__)
 
 
 @register_module('ExtractTableChannel')
@@ -132,9 +134,19 @@ class Pipelineify(ModuleBase):
     ----------
     inputFitResults : tabular.TabularBase
         Typically the FitResults table of an h5r file
-    outputLocalizations = tabular.MappingFilter
+    inputEvents : tabular.TabularBase
+        .. deprecated:: 20.06.26 - events separate from a datasource should no longer be in the recipe namespace. PYME generated
+        data should have events associated with each file, and external data wishing to spoof PYME events can use
+        PYME.recipes.fudges.AddEvents upstream of this module.
+    inputDriftResults : tabular.TabularBase
+        .. deprecated:: 20.06.26 - Currently does nothing. 
     pixelSizeNM : float
         Scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units. Defaults to 1.
+    
+    Returns
+    -------
+    outputLocalizations : tabular.MappingFilter
+    
     """
     inputFitResults = Input('FitResults')
     inputEvents = Input('')
@@ -156,7 +168,16 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        events = namespace.get(self.inputEvents, None)
+        if self.inputEvents != '':
+            logger.warn('Having Events in the recipe namespace is deprecated, they should be associated with datasources during load, or with PYME.recipes.fudges.AddEvents')
+            events = namespace[self.inputEvents]
+        else:
+            try:
+                events = fitResults.events
+            except AttributeError:
+                logger.debug('no events found')
+                events = None
+        
         if isinstance(events, tabular.TabularBase):
             events = events.to_recarray()
 
