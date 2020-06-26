@@ -351,6 +351,7 @@ class DSViewFrame(AUIFrame):
 
     def _cleanup(self):
         self.timer.Stop()
+        del(self.image)
         
         AUIFrame._cleanup(self)
 
@@ -476,6 +477,7 @@ def main(argv=sys.argv[1:]):
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
+    print('Finished main loop')
 
 
 if __name__ == "__main__":
