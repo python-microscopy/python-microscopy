@@ -1,8 +1,6 @@
-# <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left">
+# <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left"> The PYthon Microscopy Environment
 
-# The PYthon Microscopy Environment
-
-[![Azure](https://dev.azure.com/davidbaddeleynz/pyme-ci/_build/status/azure-pipeline%20numpy.numpy)](
+[![Azure](https://dev.azure.com/davidbaddeleynz/pyme-ci/_apis/build/status/azure-pipeline%davidbaddeleynz.pyme-ci)](
     https://dev.azure.com/davidbaddeleynz/pyme-ci/_build/latest?definitionId=5)
 
 The PYthon Microscopy Environment provides image acquisition and data analysis functionality for a number of  widefield microscopy applications, but with a particular emphasis on single molecule localisation microscopy (PALM/STORM). The package is multi platform, running on Windows, Linux, and OSX.
