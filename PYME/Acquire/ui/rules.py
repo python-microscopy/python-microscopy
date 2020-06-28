@@ -2,9 +2,10 @@
 import wx
 from  PYME.ui import manualFoldPanel
 from PYME.cluster.rules import LocalizationRule
-from PYME.cluster.rules import RuleChain
 from collections import OrderedDict
 import queue
+import logging
+logger = logging.getLogger(__name__)
 
 class ProtocolRules(OrderedDict):
     """
@@ -20,20 +21,12 @@ class ProtocolRules(OrderedDict):
             have time to execute, by default 5. .. seealso:: modules :py:mod:`PYME.cluster.rules`
         """
         import queue
+        from PYME.cluster.rules import RuleChain
         OrderedDict.__init__(self)
 
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
         self['default'] = RuleChain(self.posting_thread_queue)
-    
-    def __getitem__(self, key):
-        """
-        Override standard __getitem__ to make sure we always have a default
-        rule chain available. Seems slightly more sane that trying to avoid 
-        it being deleted.
-        """
-        if 'default' not in self.keys():
-            self['default'] = RuleChain(self.posting_thread_queue)
-        OrderedDict.__getitem__(self, key)
+
 
 class RuleChainListCtrl(wx.ListCtrl):
     def __init__(self, rule_chain, wx_parent):
@@ -187,14 +180,32 @@ class ProtocolRulesListCtrl(wx.ListCtrl):
         self.Update()
         self.Refresh()
     
-    def delete_rules(self, indices=None):
+    def delete_rule_chains(self, indices=None):
         selected_indices = self.get_selected_items() if indices is None else indices
 
         for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
+            if self.GetItemText(ind, col=0) == 'default':
+                logger.error('Cannot delete the default rule chain')
+                continue  # try to keep people from deleting the default chain
             self._protocol_rules.popitem(ind)
             self.DeleteItem(ind)
 
         self.update_list()
+    
+    def get_selected_items(self):
+        selection = []
+        current = -1
+        next = 0
+        while next != -1:
+            next = self.get_next_selected(current)
+            if next != -1:
+                selection.append(next)
+                current = next
+        return selection
+
+    def get_next_selected(self, current):
+        return self.GetNextItem(current, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
+
 
 class ChainedAnalysisPanel(wx.Panel):
     _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
@@ -258,6 +269,12 @@ class ChainedAnalysisPanel(wx.Panel):
         h_sizer.Add(self._protocol_rules_list)
         v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
 
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_del_chain = wx.Button(self, -1, 'Delete pair')
+        self.button_del_chain.Bind(wx.EVT_BUTTON, self.OnRemoveProtocolRule)
+        h_sizer.Add(self.button_del_chain, 0, wx.ALL, 2)
+        v_sizer.Add(h_sizer)
+
         self.SetSizerAndFit(v_sizer)
 
     def OnAddFromRecipePanel(self, wx_event=None):
@@ -268,6 +285,9 @@ class ChainedAnalysisPanel(wx.Panel):
 
     def OnRemoveRules(self, wx_event=None):
         self._rule_list.delete_rules()
+    
+    def OnRemoveProtocolRule(self, wx_event=None):
+        self._protocol_rules_list.delete_rule_chains()
     
     def OnPairWithProtocol(self, wx_event=None):
         from PYME.Acquire import protocol
