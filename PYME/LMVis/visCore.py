@@ -18,7 +18,7 @@ from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
 #import sys
 
-import pylab
+# import pylab
 
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps
@@ -674,21 +674,41 @@ class VisGUICore(object):
             from scipy.io import loadmat
         
             mf = loadmat(filename)
-            if not 'x' in mf.keys():
-                #bewersdorf style .mat where each variable is in a separate column
-                dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-                ret = dlg.ShowModal()
+            if ('x' not in mf.keys()) or ('y' not in mf.keys()):
+                # This MATLAB file has some weird variable names
+
+                if (len([k for k in mf.keys() if not k.startswith('_')]) < 3):
+                    # All the data is probably packed in a single variable
+                    dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+                    ret = dlg.ShowModal()
+                
+                    if not ret == wx.ID_OK:
+                        dlg.Destroy()
+                        return #we cancelled
+                
+                    args['FieldNames'] = dlg.GetFieldNames()
+                    args['VarName'] = dlg.GetVarName()
+                    # args['PixelSize'] = dlg.GetPixelSize()
             
-                if not ret == wx.ID_OK:
+            
                     dlg.Destroy()
-                    return #we cancelled
-            
-                args['FieldNames'] = dlg.GetFieldNames()
-                args['VarName'] = dlg.GetVarName()
-                # args['PixelSize'] = dlg.GetPixelSize()
-        
-        
-                dlg.Destroy()
+                else:
+                    # We have to map the field names
+                    from PYME.LMVis import importTextDialog
+
+                    dlg = importTextDialog.ImportMatlabDialog(self, mf)
+
+                    ret = dlg.ShowModal()
+                
+                    if not ret == wx.ID_OK:
+                        dlg.Destroy()
+                        return #we cancelled
+
+                    args['FieldNames'] = dlg.GetFieldNames()
+                    args['PixelSize'] = dlg.GetPixelSize()
+                    args['Multichannel'] = dlg.GetMultichannel()
+                
+                    dlg.Destroy()
     
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog

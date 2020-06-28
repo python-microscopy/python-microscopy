@@ -1,4 +1,6 @@
-from pylab import *
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
 #ioff()
 
 import reactions
@@ -36,13 +38,13 @@ s.initialConditions['Th'] = 1
 
 #print s.getDEs()
 
-t = linspace(.1, 300, 300)
+t = np.linspace(.1, 300, 300)
 
 res = s.solve(t)
 
 for n in res.dtype.names:
-    plot(t, res[n], label=n)
+    plt.plot(t, res[n], label=n)
 
-legend()
-show()
+plt.legend()
+plt.show()
 

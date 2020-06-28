@@ -24,7 +24,8 @@
 import wx
 import numpy as np
 import time
-import pylab
+# import pylab
+from matplotlib import cm
 from PYME.Analysis.piecewiseMapping import times_to_frames, frames_to_times
 
 class eventLogPanel(wx.Panel):
@@ -349,7 +350,7 @@ class eventLogPanel(wx.Panel):
         for e in self.eventSource:
             self.evKeyNames.add(bytes(e['EventName']))
 
-        colours = 0.9*pylab.cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
+        colours = 0.9*cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):
@@ -734,7 +735,7 @@ class eventLogTPanel(wx.Panel):
         for e in self.eventSource:
             self.evKeyNames.add(e['EventName'])
 
-        colours = 0.9*pylab.cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
+        colours = 0.9*cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):

@@ -778,6 +778,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
 
         return mdf
 
@@ -908,6 +910,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
                 
         
         print(self.dataSource.shape)

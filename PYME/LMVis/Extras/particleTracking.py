@@ -91,6 +91,8 @@ class ParticleTracker:
         from PYME.LMVis.layers.tracks import TrackRenderLayer
 
         from PYME.recipes import tracking
+        from PYME.recipes.tablefilters import FilterTable
+
         recipe = self.visFr.pipeline.recipe
     
         visFr = self.visFr
@@ -119,18 +121,23 @@ class ParticleTracker:
         if tracking_module.configure_traits(kind='modal'):
             self._mol_tracking_module = tracking_module
             recipe.add_module(tracking_module)
-    
+            # Add dynamic filtering on track length, etc.
+            recipe.add_module(FilterTable(recipe, 
+                                          inputName=tracking_module.outputName, 
+                                          outputName='filtered_{}'.format(tracking_module.outputName), 
+                                          filters={'clumpSize':[tracking_module.minClumpSize, 1e6]}))
             recipe.execute()
-            self.visFr.pipeline.selectDataSource(output_name)
+            self.visFr.pipeline.selectDataSource('filtered_{}'.format(tracking_module.outputName))
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
-            layer = TrackRenderLayer(pipeline, dsname=tracking_module.outputName, method='tracks')
+            layer = TrackRenderLayer(pipeline, dsname='filtered_{}'.format(tracking_module.outputName), method='tracks')
             visFr.add_layer(layer)
         
         #dlg.Destroy()
 
     def OnCalcMSDs(self,event):
         #TODO - move this logic to reports - like dh5view module
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
 
@@ -151,7 +158,7 @@ class ParticleTracker:
         alphas_ =  np.zeros(pipeline['x'].shape)
         error_Ds = np.zeros(len(clumps))
 
-        pylab.figure()
+        plt.figure()
 
         for i, ci in enumerate(clumps):
             I = pipeline['clumpIndex'] == ci
@@ -167,7 +174,7 @@ class ParticleTracker:
 
             t_ = dt*np.arange(len(h))
 
-            pylab.plot(t_, h)
+            plt.plot(t_, h)
 
             res = fh.FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
 
@@ -182,8 +189,8 @@ class ParticleTracker:
             else:
                 error_Ds[i] = -1e3
 
-        pylab.figure()
-        pylab.scatter(Ds, alphas)
+        plt.figure()
+        plt.scatter(Ds, alphas)
 
         pipeline.addColumn('diffusionConst', Ds_, -1)
         pipeline.addColumn('diffusionExp', alphas_)

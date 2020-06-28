@@ -128,8 +128,8 @@ class ShiftPanel(wx.Panel):
         self.dsviewer.do.OnChange()
         
     def OnCorrelate(self, event):
-        from scipy.fftpack import fftn, ifftn
-        from pylab import fftshift, ifftshift
+        from numpy.fft import fftn, ifftn, fftshift, ifftshift
+        # from pylab import fftshift, ifftshift
         import numpy as np
         #ch0 = self.image.data[:,:,:,0]
         chanList = self.image.data.dataList
@@ -833,6 +833,5 @@ def Plug(dsviewer):
     #if 'chanList' in dir(dsviewer.image.data) and 'shifts' in dir(dsviewer.image.data.chanList[0]):
         #we have shiftable channels
         
-
 
 

@@ -23,7 +23,8 @@
 
 import wx
 import wx.lib.agw.aui as aui
-import pylab
+# import pylab
+from matplotlib import cm
 
 from PYME import resources
 
@@ -61,7 +62,7 @@ class OptionsPanel(wx.Panel):
         self.hcs = []
         self.shIds = []
 
-        cmapnames = list(pylab.cm.cmapnames) + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
+        cmapnames = list(cm.cmapnames) + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
         cmapnames.sort()
         ##do = parent.do
 
@@ -246,7 +247,7 @@ class OptionsPanel(wx.Panel):
         elif cmn == 'labeled':
             self.do.SetCMap(ind, labeled)
         else:
-            self.do.SetCMap(ind, pylab.cm.__getattribute__(cmn))
+            self.do.SetCMap(ind, cm.__getattribute__(cmn))
             
     def OnComplexChanged(self, event):
         #print event.GetId()

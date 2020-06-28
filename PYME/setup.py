@@ -97,7 +97,7 @@ if __name__ == '__main__':
         classifiers=[
             'Development Status :: 3 - Alpha',
             # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
-            'License :: OSI Approved :: GPL v3', # Again, pick a license
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)', # Again, pick a license
             'Programming Language :: Python :: 2.7', #Specify which python versions that you want to support
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
