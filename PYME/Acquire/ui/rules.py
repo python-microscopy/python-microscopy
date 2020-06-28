@@ -2,6 +2,38 @@
 import wx
 from  PYME.ui import manualFoldPanel
 from PYME.cluster.rules import LocalizationRule
+from PYME.cluster.rules import RuleChain
+from collections import OrderedDict
+import queue
+
+class ProtocolRules(OrderedDict):
+    """
+    Container for associating sets of analysis rules with specific acquisition protocols
+    """
+    def __init__(self, posting_thread_queue_size=5):
+        """[summary]
+
+        Parameters
+        ----------
+        posting_thread_queue_size : int, optional
+            sets the size of a queue to hold rule posting threads to ensure they
+            have time to execute, by default 5. .. seealso:: modules :py:mod:`PYME.cluster.rules`
+        """
+        import queue
+        OrderedDict.__init__(self)
+
+        self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
+        self['default'] = RuleChain(self.posting_thread_queue)
+    
+    def __getitem__(self, key):
+        """
+        Override standard __getitem__ to make sure we always have a default
+        rule chain available. Seems slightly more sane that trying to avoid 
+        it being deleted.
+        """
+        if 'default' not in self.keys():
+            self['default'] = RuleChain(self.posting_thread_queue)
+        OrderedDict.__getitem__(self, key)
 
 class RuleChainListCtrl(wx.ListCtrl):
     def __init__(self, rule_chain, wx_parent):
@@ -16,8 +48,10 @@ class RuleChainListCtrl(wx.ListCtrl):
         wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
         self._rule_chain = rule_chain
 
-        self.InsertColumn(0, 'Type', width=50)
-        self.InsertColumn(1, 'ID', width=100)
+        self.InsertColumn(0, 'Type', width=125)
+        self.InsertColumn(1, 'ID', width=75)
+
+        self.update_list()
 
     @property
     def localization_rule_indices(self):
@@ -102,10 +136,69 @@ class RuleChainListCtrl(wx.ListCtrl):
         self.delete_rules(self.localization_rule_indices)
 
 
+class ProtocolRulesListCtrl(wx.ListCtrl):
+    def __init__(self, protocol_rules, wx_parent):
+        """
+
+        Parameters
+        ----------
+        protocol_rules: dict
+            acquisition protocols (keys) and their associated rule chains
+        wx_parent
+        """
+        wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
+        
+        self._protocol_rules = protocol_rules
+
+        self.InsertColumn(0, 'Protocol', width=125)
+        self.InsertColumn(1, '# Rules', width=75)
+
+        self.update_list()
+
+    def OnGetItemText(self, item, col):
+        """
+        Note that this is overriding the wxListCtrl method as required for wxLC_VIRTUAL style
+        
+        Parameters
+        ----------
+        item : long
+            wx list item
+        col : long
+            column specifier for wxListCtrl
+
+        Returns
+        -------
+        str : Returns string of column 'col' for item 'item'
+
+        """
+        try:
+            if col == 0:
+                return list(self._protocol_rules.keys())[item]
+            if col == 1:
+                print(list(self._protocol_rules.items()))
+                return str(len(list(self._protocol_rules.values())[item]))
+        except:
+            return ''
+        else:
+            return ''
+        
+    def update_list(self, sender=None, **kwargs):
+        self.SetItemCount(len(self._protocol_rules.keys()))
+        self.Update()
+        self.Refresh()
+    
+    def delete_rules(self, indices=None):
+        selected_indices = self.get_selected_items() if indices is None else indices
+
+        for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
+            self._protocol_rules.popitem(ind)
+            self.DeleteItem(ind)
+
+        self.update_list()
 
 class ChainedAnalysisPanel(wx.Panel):
     _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
-    def __init__(self, parent, rule_chain, recipe_manager, spool_controller):
+    def __init__(self, parent, protocol_rules, recipe_manager, spool_controller):
         """
 
         Parameters
@@ -115,11 +208,19 @@ class ChainedAnalysisPanel(wx.Panel):
         recipe_manager: PYME.recipes.recipeGui.RecipeManager
         spool_controller: PYME.Acquire.SpoolController.SpoolController
         """
+        import dispatch
+
         wx.Panel.__init__(self, parent, -1)
 
-        self._rule_chain = rule_chain
+        self._protocol_rules_updated = dispatch.Signal()
+
+        self._protocol_rules = protocol_rules
+        self._rule_chain = protocol_rules[list(protocol_rules.keys())[0]]
         self._recipe_manager = recipe_manager
         self._spool_controller = spool_controller
+
+        # self._rule_chain_updated = dispatch.Signal()
+        self._protocol_rules_updated = dispatch.Signal()
 
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -142,10 +243,20 @@ class ChainedAnalysisPanel(wx.Panel):
         h_sizer.Add(self.button_add, 0, wx.ALL, 2)  # todo - (disable until activeRecipe.modules) > 0
 
         self.button_del = wx.Button(self, -1, 'Delete')
-        self.button_del.Bind(wx.EVT_BUTTON, self.OnRemove)
+        self.button_del.Bind(wx.EVT_BUTTON, self.OnRemoveRules)
         h_sizer.Add(self.button_del, 0, wx.ALL, 2)
-
         v_sizer.Add(h_sizer)
+
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_pair_protocol = wx.Button(self, -1, 'Pair with protocol')
+        self.button_pair_protocol.Bind(wx.EVT_BUTTON, self.OnPairWithProtocol)
+        h_sizer.Add(self.button_pair_protocol, 0, wx.ALL, 2)
+        v_sizer.Add(h_sizer)
+
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._protocol_rules_list = ProtocolRulesListCtrl(self._protocol_rules, self)
+        h_sizer.Add(self._protocol_rules_list)
+        v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
 
         self.SetSizerAndFit(v_sizer)
 
@@ -155,8 +266,28 @@ class ChainedAnalysisPanel(wx.Panel):
             rule = RecipeRule(self._recipe_manager.activeRecipe.toYAML())
             self._rule_list.add_rule(rule)
 
-    def OnRemove(self, wx_event=None):
+    def OnRemoveRules(self, wx_event=None):
         self._rule_list.delete_rules()
+    
+    def OnPairWithProtocol(self, wx_event=None):
+        from PYME.Acquire import protocol
+        from PYME.cluster.rules import RuleChain
+        dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocol.get_protocol_list())
+
+        ret = dialog.ShowModal()
+
+        if ret == wx.ID_OK:
+            protocol_name = dialog.GetStringSelection()
+            self._protocol_rules[protocol_name] = self._rule_chain
+            # replace the gui-editable chain with a new one
+            self._rule_chain = RuleChain(thread_queue=self._rule_chain.thread_queue)
+            self._rule_list._rule_chain = self._rule_chain
+            self._rule_list.update_list()
+            self._protocol_rules['default'] = self._rule_chain
+
+        dialog.Destroy()
+        self._protocol_rules_list.update_list()
+        self._protocol_rules_updated.send(self)
 
     def OnToggleAuto(self, wx_event=None):
         mode = self.choice_launch.GetSelection()
@@ -181,8 +312,13 @@ class ChainedAnalysisPanel(wx.Panel):
         """
         # pipe the input series name into the rule list
         series_uri = self._spool_controller.spooler.getURL()
-        self._rule_chain.set_chain_input([{'input': series_uri}])
-        self._rule_chain.post_all()
+        try:
+            rule_chain = self._protocol_rules[self._spool_controller.protocol_name]
+        except KeyError:
+            rule_chain = self._protocol_rules['default']
+        
+        rule_chain.set_chain_input([{'input': series_uri}])
+        rule_chain.post()
 
     @staticmethod
     def plug(main_frame, scope):
@@ -197,20 +333,22 @@ class ChainedAnalysisPanel(wx.Panel):
             the microscope itself
         """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
-        from PYME.cluster.rules import RuleChain
 
+        # add a recipe panel
         scope._recipe_manager = RecipeManager()
         main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
         main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
 
-        scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
-        chained_analysis = ChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager, scope.spoolController)
+        # give the scope a protocol_rules dict
+        scope.protocol_rules = ProtocolRules()
 
+        # add this panel
+        chained_analysis = ChainedAnalysisPanel(main_frame, scope.protocol_rules, scope._recipe_manager, scope.spoolController)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))
 
 
 class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
-    def __init__(self, wx_parent, rule_chain, recipe_manager, localization_settings, spool_controller):
+    def __init__(self, wx_parent, protocol_rules, recipe_manager, localization_settings, spool_controller):
         """
 
         Parameters
@@ -221,7 +359,6 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         """
         from PYME.ui.autoFoldPanel import collapsingPane
         from PYME.Acquire.ui import AnalysisSettingsUI
-
         manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
 
         # add checkbox to propagate rule to rule chain
@@ -255,9 +392,17 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         self._localization_settings = localization_settings
         self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
 
-        rule_panel = ChainedAnalysisPanel(self, rule_chain, recipe_manager, spool_controller)
-        self.AddNewElement(rule_panel)
-        self._rule_list_ctrl = rule_panel._rule_list
+        self.rule_panel = ChainedAnalysisPanel(self, protocol_rules, recipe_manager, spool_controller)
+        self.AddNewElement(self.rule_panel)
+        self._rule_list_ctrl = self.rule_panel._rule_list
+        self.rule_panel._protocol_rules_updated.connect(self.reset)
+    
+    def reset(self, **kwargs):
+        self.checkbox_propagate.SetValue(False)
+        self._rule_list_ctrl.clear_localization_rules()
+        self.checkbox_view_live.Disable()
+        self.checkbox_view_live.SetValue(False)
+        self.rule_panel._protocol_rules_list.update_list()
 
     def OnTogglePropagate(self, wx_event=None):
         # for now, assume max of one localization rule per chain, and assume it's controlled by this panel
@@ -270,6 +415,8 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
             self._rule_list_ctrl.clear_localization_rules()
             self.checkbox_view_live.Disable()
             self.checkbox_view_live.SetValue(False)
+        
+        self.rule_panel._protocol_rules_list.update_list()
     
     def OnToggleLiveView(self, wx_event=None):
         if self.checkbox_view_live.GetValue() and 0 in self._rule_list_ctrl.localization_rule_indices:
@@ -296,10 +443,7 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         import subprocess
         # get the URL
         uri = self._rule_list_ctrl._rule_chain[self._rule_list_ctrl.localization_rule_indices[0]].outputs[0]['input'] + '/live'
-        print(uri)
         subprocess.Popen('visgui %s' % uri, shell=True)
-
-
 
     @staticmethod
     def plug(main_frame, scope):
@@ -315,16 +459,14 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
         from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
-        from PYME.cluster.rules import RuleChain
 
         scope._recipe_manager = RecipeManager()
         main_frame.recipe_view = RecipeView(main_frame, scope._recipe_manager)
         main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
 
-        scope._rule_chain = RuleChain(scope.spoolController._analysis_launchers)
-
+        scope.protocol_rules = ProtocolRules()
         scope._localization_settings = AnalysisSettings()
 
-        chained_analysis = SMLMChainedAnalysisPanel(main_frame, scope._rule_chain, scope._recipe_manager,
+        chained_analysis = SMLMChainedAnalysisPanel(main_frame, scope.protocol_rules, scope._recipe_manager,
                                                     scope._localization_settings, scope.spoolController)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))

@@ -451,7 +451,7 @@ class RuleChain(list):
         self.thread_queue = thread_queue
         self.posted = dispatch.Signal()
 
-    def post_all(self):
+    def post(self):
         """
         Chains all rules such that the inputs/outputs are connected, and then nests rules such that they will all be
         in the 'on_completion' part of the first rule, which is then posted
