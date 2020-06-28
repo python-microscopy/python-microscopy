@@ -26,7 +26,8 @@
 import wx
 #from pylab import *
 import numpy as np
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 
 from . import deMod
 
@@ -97,21 +98,21 @@ def eMod4(p, t):
 def doTraceDisp(prof, lOn, dt):
     T = np.arange(len(prof))*dt
 
-    pylab.clf()
-    a1 = pylab.axes([.1, .3,.8,.6])
+    plt.clf()
+    a1 = plt.axes([.1, .3,.8,.6])
     a1.plot(T, prof)
     a1.grid()
     a1.set_ylabel('Fluorescence Intensity [a.u.]')
     
 
-    a2 = pylab.axes([.1, .1,.8,.1], sharex=a1)
+    a2 = plt.axes([.1, .1,.8,.1], sharex=a1)
     a2.plot(T, lOn)
     a2.set_ylim(-.1, 1.1)
     a2.set_xlabel('Time [s]')
     a2.set_ylabel('Illumination')
 
     a1.set_xlim(0, T.max())
-    pylab.show()
+    plt.show()
 
     return (a1, a2)
 

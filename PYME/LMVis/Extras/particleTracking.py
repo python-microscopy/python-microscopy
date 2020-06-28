@@ -136,7 +136,8 @@ class ParticleTracker:
 
     def OnCalcMSDs(self,event):
         #TODO - move this logic to reports - like dh5view module
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
 
@@ -157,7 +158,7 @@ class ParticleTracker:
         alphas_ =  np.zeros(pipeline['x'].shape)
         error_Ds = np.zeros(len(clumps))
 
-        pylab.figure()
+        plt.figure()
 
         for i, ci in enumerate(clumps):
             I = pipeline['clumpIndex'] == ci
@@ -173,7 +174,7 @@ class ParticleTracker:
 
             t_ = dt*np.arange(len(h))
 
-            pylab.plot(t_, h)
+            plt.plot(t_, h)
 
             res = fh.FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
 
@@ -188,8 +189,8 @@ class ParticleTracker:
             else:
                 error_Ds[i] = -1e3
 
-        pylab.figure()
-        pylab.scatter(Ds, alphas)
+        plt.figure()
+        plt.scatter(Ds, alphas)
 
         pipeline.addColumn('diffusionConst', Ds_, -1)
         pipeline.addColumn('diffusionExp', alphas_)

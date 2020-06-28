@@ -23,7 +23,7 @@
 
 import wx
 import numpy as np
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from io import StringIO
 

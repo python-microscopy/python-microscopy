@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import numpy
-import pylab
+# import pylab
 
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *

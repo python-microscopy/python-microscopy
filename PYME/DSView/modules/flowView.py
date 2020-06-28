@@ -14,7 +14,7 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 import numpy as np
 #import pandas as pd
-import pylab
+# import pylab
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
     

@@ -22,7 +22,8 @@
 import numpy as np
 from scipy import ndimage
 from . import correlationCoeffs
-from pylab import rand
+# from pylab import 
+from numpy.random import rand
 from . import edtColoc
 from PIL import Image
 

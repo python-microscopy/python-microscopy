@@ -20,7 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import pylab
+# import pylab
+import matplotlib.cm
 import numpy
 import sys
 import os
@@ -32,10 +33,10 @@ if __name__ == "__main__":
 
     outDir = sys.argv[1]
 
-    cmapnames = pylab.cm.cmapnames
+    cmapnames = matplotlib.cm.cmapnames
 
     for cmn in cmapnames:
-        c = (255*pylab.cm.__dict__[cmn](numpy.arange(256)))[:,:3].astype('uint8')
+        c = (255*matplotlib.cm.__dict__[cmn](numpy.arange(256)))[:,:3].astype('uint8')
 
         f = open(os.path.join(outDir, '%s.lut' % cmn), 'wb')
         c.T.tofile(f)

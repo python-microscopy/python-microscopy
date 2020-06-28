@@ -15,8 +15,8 @@ from .uc480_h import *
 
 #wintypes fails on linux, copy definitions here so that we are cross platform
 BYTE = ctypes.c_byte
-WORD = ctypes.c_ushort
-DWORD = ctypes.c_ulong
+WORD = ctypes.c_uint16
+DWORD = ctypes.c_uint32
 BOOL = ctypes.c_long
 
 HANDLE = ctypes.c_void_p

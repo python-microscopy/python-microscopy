@@ -23,7 +23,8 @@
 import wx
 
 #from PYME.Acquire.mytimer import mytimer
-import pylab
+# import pylab
+import matplotlib.cm
 from scipy import ndimage
 import numpy as np
 import wx.lib.agw.aui as aui
@@ -174,7 +175,7 @@ class manualLabel:
             
         for i in range(im.data.shape[3]):
             self.labv.do.Gains[i] = .1
-            self.labv.do.cmaps[i] = pylab.cm.labeled
+            self.labv.do.cmaps[i] = matplotlib.cm.labeled
             
     def OnSaveClassifier(self, event=None):
         filename = wx.FileSelector("Save classifier as:", wildcard="*.pkl", flags=wx.FD_SAVE)
@@ -238,7 +239,7 @@ class manualLabel:
         self.labv.update()
         #try:
         self.labv.do.Gains = [.1]
-        self.labv.do.cmaps = [pylab.cm.labeled]          
+        self.labv.do.cmaps = [matplotlib.cm.labeled]          
         self.labv.Refresh()
         self.labv.Update()
         
@@ -279,7 +280,7 @@ class manualLabel:
         self.labv.update()
         #try:
         self.labv.do.Gains = [.1]
-        self.labv.do.cmaps = [pylab.cm.labeled]          
+        self.labv.do.cmaps = [matplotlib.cm.labeled]          
         self.labv.Refresh()
         self.labv.Update()
         
@@ -296,7 +297,7 @@ class manualLabel:
         self.OnSVMSegment(None)
         
     def OnSVMSegment(self, event):
-        import pylab
+        # import pylab
         #sp = self.image.data.shape[:3]
         #if len(sp)        
         lab2 = self.cf.classify(self.image.data[:,:,self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
@@ -320,7 +321,7 @@ class manualLabel:
         #set scaling to (0,10)
         for i in range(im.data.shape[3]):
             self.dv.do.Gains[i] = .1
-            self.dv.do.cmaps[i] = pylab.cm.labeled
+            self.dv.do.cmaps[i] = matplotlib.cm.labeled
             
         self.dv.Refresh()
         self.dv.Update()

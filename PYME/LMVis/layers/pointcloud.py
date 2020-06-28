@@ -4,7 +4,8 @@ from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShade
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 import dispatch
 
