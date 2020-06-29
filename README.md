@@ -2,6 +2,14 @@
 
 PYME (the PYthon Microscopy Environment) is an open-source application suite for light microscopy image acquisition, data storage, visualization, and analysis. It offers a particularly comprehensive set of features for single molecule localisation based super-resolution techniques (PALM, STORM, PAINT, etc ...), but also has good support other microscopy modalities. The package is multi platform, running on Windows, Linux, and OSX.
 
+<!-- ![license](https://img.shields.io/github/license/python-microscopy/python-microscopy) -->
+![tag](https://img.shields.io/github/v/tag/python-microscopy/python-microscopy?sort=semver)
+![commits](https://img.shields.io/github/commit-activity/m/python-microscopy/python-microscopy)
+
+![conda](https://img.shields.io/conda/v/david_baddeley/python-microscopy.svg)
+![plat](https://img.shields.io/conda/pn/david_baddeley/python-microscopy.svg)
+
+
 - **Website:** https://www.python-microscopy.org
 - **Installation:** https://www.python-microscopy.org/doc/Installation/InstallationWithAnaconda.html
 - **Documentation:** https://python-microscopy.org/doc/
