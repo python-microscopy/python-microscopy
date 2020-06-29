@@ -1,9 +1,6 @@
 # <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left"> The PYthon Microscopy Environment
 
-[![Azure](https://dev.azure.com/davidbaddeleynz/pyme-ci/_apis/build/status/azure-pipeline%davidbaddeleynz.pyme-ci)](
-    https://dev.azure.com/davidbaddeleynz/pyme-ci/_build/latest?definitionId=5)
-
-The PYthon Microscopy Environment provides image acquisition and data analysis functionality for a number of  widefield microscopy applications, but with a particular emphasis on single molecule localisation microscopy (PALM/STORM). The package is multi platform, running on Windows, Linux, and OSX.
+PYME (the PYthon Microscopy Environment) is an open-source application suite for light microscopy image acquisition, data storage, visualization, and analysis. It offers a particularly comprehensive set of features for single molecule localisation based super-resolution techniques (PALM, STORM, PAINT, etc ...), but also has good support other microscopy modalities. The package is multi platform, running on Windows, Linux, and OSX.
 
 - **Website:** https://www.python-microscopy.org
 - **Installation:** https://www.python-microscopy.org/doc/Installation/InstallationWithAnaconda.html
