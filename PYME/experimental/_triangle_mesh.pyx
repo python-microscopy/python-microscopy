@@ -157,7 +157,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _H
     cdef object _K
 
-    def __init__(self, vertices=None, faces=None, edges=None, mesh=None, **kwargs):
+    def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
         Expects STL-like input.
@@ -166,14 +166,9 @@ cdef class TriangleMesh(TrianglesBase):
         ----------
             vertices : np.array
                 N x 3 array of Euclidean points.
-            faces : np.array
+            faces : np .array
                 M x 3 array of vertex indices indicating triangle connectivity.
                 Expects STL redundancy.
-            edges : np.array
-                P x 2 array of edges, indicating connectivity. Each index 
-                references a vertex. Optional.
-            mesh : PYME.experimental._triangle_mesh.TriangleMesh
-                Mesh, usually for copying, optional.
         """
         if mesh is not None:
             import copy
@@ -212,13 +207,10 @@ cdef class TriangleMesh(TrianglesBase):
             self._halfedge_vacancies = []
             
             print('initializing halfedges ...')
-            if faces is not None:
-                print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
-            elif edges is not None:
-                print('vertices.shape = %s, edges.shape = %s' % (vertices.shape, edges.shape))
+            print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
             if vertices.shape[0] >= MAX_VERTEX_COUNT:
                 raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
-            self._initialize_halfedges(vertices, faces, edges)
+            self._initialize_halfedges(vertices, faces)
             print('done initializing halfedges')
 
         # Representation of faces by triplets of vertices
@@ -253,7 +245,7 @@ cdef class TriangleMesh(TrianglesBase):
         # Set fix_boundary, etc.
         for key, value in kwargs.items():
             setattr(self, key, value)
-        
+
     def __getitem__(self, k):
         # this defers evaluation of the properties until we actually access them, 
         # as opposed to the mappings which stored the values on class creation.
@@ -504,7 +496,7 @@ cdef class TriangleMesh(TrianglesBase):
     def _set_cvertices(self, vertex_d[:] vertices):
         self._cvertices = &vertices[0]
 
-    def _initialize_halfedges(self, vertices, faces=None, edges=None):
+    def _initialize_halfedges(self, vertices, faces):
         """
         Accepts unordered vertices, indices parameterization of a triangular 
         mesh from an STL file and converts to topologically-connected halfedge
@@ -516,68 +508,62 @@ cdef class TriangleMesh(TrianglesBase):
                 N x 3 array of Euclidean points.
             faces : np .array
                 M x 3 array of vertex indices indicating triangle connectivity. 
-                Expects STL redundancy. Optional.
-            edges : np.array
-                P x 2 array of edges, indicating connectivity. Each index 
-                references a vertex. Optional.
+                Expects STL redundancy.
         """
-        if (vertices is None) or ((faces is None) and (edges is None)):
-            raise RuntimeError('Mesh generation requires vertices and faces or vertices and edges.')
-
-        # Unordered halfedges
-        if edges is None:
+        if vertices is not None and faces is not None:
+            # Unordered halfedges
             edges = np.vstack([faces[:,[0,1]], faces[:,[1,2]], faces[:,[2,0]]])
+
+            # Now order them...
             n_faces = len(faces)
+            n_edges = len(edges)
+            j = np.arange(n_faces)
+            
+            self._halfedges = np.zeros(n_edges, dtype=HALFEDGE_DTYPE)
+            self._set_chalfedges(self._halfedges)
+
+            self._halfedges[:] = -1  # initialize everything to -1 to start with
+
+            self._halfedges['vertex'] = edges[:, 1]
+            
+            self._faces = np.zeros(n_faces, dtype=FACE_DTYPE)
+            # Flatten to address cython view problem
+            self._flat_faces = self._faces.view(FACE_DTYPE2)
+            # Set up c views to arrays
+            self._set_cfaces(self._flat_faces)
+            self._faces[:] = -1  # initialize everything to -1 to start with
+
+            # Sort the edges lo->hi so we can arrange them uniquely
+            # Convert to list of tuples for use with dictionary
+            edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
+
+
+            print('iterating edges')
+            # Use a dictionary to keep track of which edges are already assigned twins
+            d = {}
+            for i, e in enumerate(edges_packed):
+                if e in d:
+                    idx = d.pop(e)
+                    if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+                        # Don't assign a halfedge to multivalent edges
+                        continue
+                        
+                    self._halfedges['twin'][idx] = i
+                    self._halfedges['twin'][i] = idx
+                else:
+                    d[e] = i
+
+            self._halfedges['face'] = np.hstack([j, j, j])
+            self._halfedges['next'] = np.hstack([j+n_faces, j+2*n_faces, j])
+            self._halfedges['prev'] = np.hstack([j+2*n_faces, j, j+n_faces])
+            self._halfedges['length'] = np.linalg.norm(self._vertices['position'][self._halfedges['vertex']] - self._vertices['position'][self._halfedges['vertex'][self._halfedges['prev']]], axis=1)
+            
+            # Set the vertex halfedges (multiassignment, but should be fine)
+            self._vertices['halfedge'][self._halfedges['vertex']] = self._halfedges['next']
+
+            self._faces['halfedge'] = j  # Faces are defined by associated halfedges
         else:
-            n_faces = int(np.ceil(len(edges)/3.0))
-
-        # Now order them...
-        n_edges = len(edges)
-        j = np.arange(n_faces)
-        
-        self._halfedges = np.zeros(n_edges, dtype=HALFEDGE_DTYPE)
-        self._set_chalfedges(self._halfedges)
-
-        self._halfedges[:] = -1  # initialize everything to -1 to start with
-
-        self._halfedges['vertex'] = edges[:, 1]
-        
-        self._faces = np.zeros(n_faces, dtype=FACE_DTYPE)
-        # Flatten to address cython view problem
-        self._flat_faces = self._faces.view(FACE_DTYPE2)
-        # Set up c views to arrays
-        self._set_cfaces(self._flat_faces)
-        self._faces[:] = -1  # initialize everything to -1 to start with
-
-        # Sort the edges lo->hi so we can arrange them uniquely
-        # Convert to list of tuples for use with dictionary
-        edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
-
-
-        print('iterating edges')
-        # Use a dictionary to keep track of which edges are already assigned twins
-        d = {}
-        for i, e in enumerate(edges_packed):
-            if e in d:
-                idx = d.pop(e)
-                if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                    # Don't assign a halfedge to multivalent edges
-                    continue
-                    
-                self._halfedges['twin'][idx] = i
-                self._halfedges['twin'][i] = idx
-            else:
-                d[e] = i
-
-        self._halfedges['face'] = np.hstack([j, j, j])
-        self._halfedges['next'] = np.hstack([j+n_faces, j+2*n_faces, j])
-        self._halfedges['prev'] = np.hstack([j+2*n_faces, j, j+n_faces])
-        self._halfedges['length'] = np.linalg.norm(self._vertices['position'][self._halfedges['vertex']] - self._vertices['position'][self._halfedges['vertex'][self._halfedges['prev']]], axis=1)
-        
-        # Set the vertex halfedges (multiassignment, but should be fine)
-        self._vertices['halfedge'][self._halfedges['vertex']] = self._halfedges['next']
-
-        self._faces['halfedge'] = j  # Faces are defined by associated halfedges
+            raise ValueError('Mesh does not contain vertices and faces.')
 
     def _update_face_normals(self, f_idxs):
         """
