@@ -331,9 +331,11 @@ class ScaledShell(object):
         mlab.mesh(xs, ys, zs)
         mlab.points3d(x, y, z, mode='point')
 
-    def get_mesh_vertices_edges(self, d_zenith=0.1):
-        """Compute vertices and edges to pass to 
+    def get_mesh_vertices_faces(self, d_zenith=0.1):
+        """Compute vertices and faces to pass to 
         PYME.experimental._triangle_mesh.TriangleMesh.
+
+        Note this will be non-manifold because of cuts at zenith=0, azimuth=0.
 
         Parameters
         ----------
@@ -341,25 +343,20 @@ class ScaledShell(object):
             zenith step size for generating vector in plane of the shell [radians], by default 0.1
         """
 
-        # Compute surface points as grid, with each point adjacent in angular space
+        # Compute surface points as grid, with each point adjacent in angular space,
+        # staggered by d_zenith/2 to generate triangles directly
         zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith, 0:(2 * np.pi + d_zenith):d_zenith]
         xs, ys, zs = self.get_fitted_shell(azimuth, zenith)
 
-        # Find vertices 
-        v = np.vstack([xs.ravel(), ys.ravel(), zs.ravel()]).T   # Row-major ravel
-        vertices, idxs = np.unique(v, axis=0, return_inverse=True)
-        adj = idxs.reshape(xs.shape)  # Adjacency matrix
+        # Create vertices 
+        vertices = np.vstack([xs.ravel(), ys.ravel(), zs.ravel()]).T   # Row-major ravel
+        # Index faces as two oppositely-would triangles per grid square
+        f_list = np.arange(len(vertices))
+        tri1 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list, f_list[:-xs.shape[1]]+xs.shape[1])])
+        tri2 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list[:-xs.shape[1]]+xs.shape[1], f_list[1:-xs.shape[1]-1]+xs.shape[1])])
+        faces = np.vstack([tri1, tri2])
 
-        # Calculate edges
-        e_up = np.vstack([idxs, np.roll(adj,1,axis=0).ravel()])
-        e_down = np.vstack([idxs, np.roll(adj,-1,axis=0).ravel()])
-        e_left = np.vstack([idxs, np.roll(adj,1,axis=1).ravel()])
-        e_right = np.vstack([idxs, np.roll(adj,-1,axis=1).ravel()])
-        e = np.hstack([e_up, e_down, e_left, e_right]).T
-        # edges = np.zeros(e.shape, dtype=np.int32)
-        # np.lib.stride_tricks.as_strided(edges, shape=e.shape, strides=(8,4))[:] = e
-
-        return vertices.astype(np.float32), e.astype(np.int32)
+        return vertices.astype(np.float32), faces.astype(np.int32)
 
     # def _visualize_scaled(self):
     #     from mayavi import mlab

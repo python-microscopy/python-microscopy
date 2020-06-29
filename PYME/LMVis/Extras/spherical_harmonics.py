@@ -48,8 +48,8 @@ class SphericalHarmonicShellManager(object):
         self.pipeline.selectDataSource('shell_mapped')
 
         # Add a surface rendering
-        v, e = shell.get_mesh_vertices_edges(self.d_angle)        
-        surf = triangle_mesh.TriangleMesh(v, edges=e)
+        v, f = shell.get_mesh_vertices_faces(self.d_angle)        
+        surf = triangle_mesh.TriangleMesh(v, f)
         self.pipeline.dataSources['shell_surface'] = surf
 
         layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
@@ -88,8 +88,8 @@ class SphericalHarmonicShellManager(object):
         self.pipeline.addDataSource('shell%d_mapped' % shell_number, points)
         self.pipeline.selectDataSource('shell%d_mapped' % shell_number)
 
-        v, e = shell.get_mesh_vertices_edges(self.d_angle)        
-        surf = triangle_mesh.TriangleMesh(v, edges=e)
+        v, f = shell.get_mesh_vertices_faces(self.d_angle)        
+        surf = triangle_mesh.TriangleMesh(v, f)
         self.pipeline.dataSources['shell_surface'] = surf
 
         layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
