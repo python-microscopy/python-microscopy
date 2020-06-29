@@ -529,9 +529,7 @@ cdef class TriangleMesh(TrianglesBase):
             edges = np.vstack([faces[:,[0,1]], faces[:,[1,2]], faces[:,[2,0]]])
             n_faces = len(faces)
         else:
-            # Assume manifold, use Euler characteristic
-            print('n_edges: {}'.format(len(edges)))
-            n_faces = int(len(edges)/3.0)
+            n_faces = int(np.ceil(len(edges)/3.0))
 
         # Now order them...
         n_edges = len(edges)
