@@ -948,7 +948,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._chalfedges[_edge].next = -1
         self._chalfedges[_edge].prev = -1
         self._chalfedges[_edge].length = -1
-        self._chalfedges[_edge].component = -15
+        self._chalfedges[_edge].component = -1
 
         self._halfedge_vacancies.append(_edge)
 
