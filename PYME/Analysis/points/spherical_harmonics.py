@@ -352,8 +352,9 @@ class ScaledShell(object):
         vertices = np.vstack([xs.ravel(), ys.ravel(), zs.ravel()]).T   # Row-major ravel
         # Index faces as two oppositely-would triangles per grid square
         f_list = np.arange(len(vertices))
-        tri1 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list, f_list[:-xs.shape[1]]+xs.shape[1])])
-        tri2 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list[:-xs.shape[1]]+xs.shape[1], f_list[1:-xs.shape[1]-1]+xs.shape[1])])
+        l = xs.shape[1]
+        tri1 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list, f_list[l:])])
+        tri2 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list[l:], f_list[(l+1):])])
         faces = np.vstack([tri1, tri2])
 
         return vertices.astype(np.float32), faces.astype(np.int32)
