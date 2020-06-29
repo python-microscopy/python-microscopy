@@ -331,6 +331,36 @@ class ScaledShell(object):
         mlab.mesh(xs, ys, zs)
         mlab.points3d(x, y, z, mode='point')
 
+    def get_mesh_vertices_edges(self, d_zenith=0.1):
+        """Compute vertices and edges to pass to 
+        PYME.experimental._triangle_mesh.TriangleMesh.
+
+        Parameters
+        ----------
+        d_zenith : float, optional
+            zenith step size for generating vector in plane of the shell [radians], by default 0.1
+        """
+
+        # Compute surface points as grid, with each point adjacent in angular space
+        zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith, 0:(2 * np.pi + d_zenith):d_zenith]
+        xs, ys, zs = self.get_fitted_shell(azimuth, zenith)
+
+        # Find vertices 
+        v = np.vstack([xs.ravel(), ys.ravel(), zs.ravel()]).T   # Row-major ravel
+        vertices, idxs = np.unique(v, axis=0, return_inverse=True)
+        adj = idxs.reshape(xs.shape)  # Adjacency matrix
+
+        # Calculate edges
+        e_up = np.vstack([idxs, np.roll(adj,1,axis=0).ravel()])
+        e_down = np.vstack([idxs, np.roll(adj,-1,axis=0).ravel()])
+        e_left = np.vstack([idxs, np.roll(adj,1,axis=1).ravel()])
+        e_right = np.vstack([idxs, np.roll(adj,-1,axis=1).ravel()])
+        e = np.hstack([e_up, e_down, e_left, e_right]).T
+        # edges = np.zeros(e.shape, dtype=np.int32)
+        # np.lib.stride_tricks.as_strided(edges, shape=e.shape, strides=(8,4))[:] = e
+
+        return vertices.astype(np.float32), e.astype(np.int32)
+
     # def _visualize_scaled(self):
     #     from mayavi import mlab
     #     visualize_shell(self.modes, self.coefficients)#, scaling_factors=self.standard_deviations,
