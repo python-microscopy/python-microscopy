@@ -948,7 +948,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._chalfedges[_edge].next = -1
         self._chalfedges[_edge].prev = -1
         self._chalfedges[_edge].length = -1
-        self._chalfedges[_edge].component = -1
+        self._chalfedges[_edge].component = -15
 
         self._halfedge_vacancies.append(_edge)
 
@@ -2326,6 +2326,12 @@ cdef class TriangleMesh(TrianglesBase):
         self._fill_holes()
 
         self._manifold = None
+
+        # Now we gotta recalculate the normals
+        self._faces['normal'][:] = -1
+        self._vertices['normal'][:] = -1
+        self.face_normals
+        self.vertex_normals
 
     def to_stl(self, filename):
         """

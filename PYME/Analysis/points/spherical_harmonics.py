@@ -353,9 +353,12 @@ class ScaledShell(object):
         # Index faces as two oppositely-would triangles per grid square
         f_list = np.arange(len(vertices))
         l = xs.shape[1]
-        tri1 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list, f_list[l:])])
-        tri2 = np.vstack([[x,y,z] for x,y,z in zip(f_list[1:], f_list[l:], f_list[(l+1):])])
-        faces = np.vstack([tri1, tri2])
+        tri1 = np.vstack([[v0,v1,v2] for v0,v1,v2 in zip(f_list[1:], f_list, f_list[l:])])
+        tri2 = np.vstack([[v0,v1,v2] for v0,v1,v2 in zip(f_list[1:], f_list[l:], f_list[(l+1):])])
+        # Stitch boundaries
+        # stitch1 = np.vstack([[v0,v1,v2] for v0,v1,v2 in zip(f_list[::l], f_list[(l-1)::l], f_list[(2*l-1)::l])])
+        # stitch2 = np.vstack([[v0,v1,v2] for v0,v1,v2 in zip(f_list[::l], f_list[(2*l-1)::l], f_list[(2*l)::l])])
+        faces = np.vstack([tri1, tri2]) #, stitch1, stitch2])
 
         return vertices.astype(np.float32), faces.astype(np.int32)
 
