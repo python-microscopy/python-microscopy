@@ -65,7 +65,7 @@ class SphericalHarmonicShellManager(object):
         from PYME.LMVis.layers.mesh import TriangleRenderLayer
 
         fdialog = wx.FileDialog(None, 'Load Spherical Harmonic Representation', wildcard='Harmonic shell (*.hdf)|*.hdf',
-                                style=wx.OPEN, defaultDir=FileUtils.nameUtils.genShiftFieldDirectoryPath())
+                                style=wx.FD_OPEN, defaultDir=FileUtils.nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             path = fdialog.GetPath()
