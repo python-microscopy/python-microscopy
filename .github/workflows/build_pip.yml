@@ -30,6 +30,7 @@ jobs:
         python -m twine upload --skip-existing dist/*
     
   deploy_wheel:
+    needs: deploy_source #don't build wheels unless we successfully built source package.
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
