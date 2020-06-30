@@ -11,7 +11,7 @@ jobs:
   deploy:
     strategy:
       matrix:
-        os: [ubuntu-latest,] # windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python: ['3.6',] # '3.7', 2.7]
 
     runs-on: ${{ matrix.os }}
@@ -32,4 +32,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py sdist bdist_wheel
-        #twine upload dist/*
+        twine upload dist/*
