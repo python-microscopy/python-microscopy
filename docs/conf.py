@@ -15,6 +15,11 @@ import sys, os
 
 import mock
 import numpy
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+sys.path.append(os.path.abspath('..'))
 import PYME.version
  
 #MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.special', 'scipy.io', 
@@ -44,9 +49,10 @@ sys.modules['skimage'] = mock.Mock()
 sys.modules['pyfftw'] = mock.Mock()
 sys.modules['quaternion'] = mock.Mock()
     
+sys.modules['wx'] = mock.Mock()
 import wx
-import wx.py.shell
-from wx.lib.agw.aui.aui_utilities import BitmapFromBits
+#import wx.py.shell
+#from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 
 class mClass:
     pass
@@ -54,10 +60,7 @@ class mClass:
 wx.Frame = mClass
 wx.Panel = mClass
 wx.Dialog = mClass
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
+
 
 # -- General configuration -----------------------------------------------------
 
