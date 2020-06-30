@@ -11,8 +11,8 @@ jobs:
   deploy:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ['2.7', '3.6', '3.7']
+        os: [ubuntu-latest,] # windows-latest, macos-latest]
+        python: ['3.6',] # '3.7', 2.7]
 
     runs-on: ${{ matrix.os }}
 
