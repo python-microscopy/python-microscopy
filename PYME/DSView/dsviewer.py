@@ -357,14 +357,18 @@ class DSViewFrame(AUIFrame):
         else:
             self._cleanup()
 
+        if event == wx.ID_EXIT:
+            # Check if we need to do anything else with ID_EXIT
+            event.Skip()
+
     def _cleanup(self):
         self.timer.Stop()
         del(self.image)
 
-        # In case garbage collection didn't work, kill the Java VM so it can't
-        # hold the program open.
-        import javabridge
-        javabridge.kill_vm()
+        # In case garbage collection didn't work, check if we need to kill the Java VM 
+        # so it can't hold the program open.
+        from PYME.IO.DataSources.BioformatsDataSource import release_VM
+        release_VM()
 
         AUIFrame._cleanup(self)
 
