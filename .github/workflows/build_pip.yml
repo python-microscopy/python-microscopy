@@ -27,7 +27,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py sdist
-        python -m twine upload dist/*
+        python -m twine upload --skip-exisiting dist/*
     
   deploy_wheel:
     strategy:
@@ -53,4 +53,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py bdist_wheel
-        twine upload dist/*
+        twine upload --skip-existing dist/*
