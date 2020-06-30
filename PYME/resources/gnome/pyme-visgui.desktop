@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=VisGUI
+Name=PYMEVisualize
 Comment=Generate images from pont position data
 Exec=VisGUI.py %f
 Icon=eog
