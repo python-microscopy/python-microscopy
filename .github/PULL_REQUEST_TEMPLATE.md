@@ -1,4 +1,4 @@
-Adresses issue # .
+Addresses issue # .
 
 **Is this a bugfix or an enhancement?**
 
