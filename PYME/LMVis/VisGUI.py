@@ -487,7 +487,6 @@ if __name__ == '__main__':
     main()
     mProfile.report()
 
-
 def ipython_visgui(filename=None, **kwargs):
     import PYME.config
     
@@ -500,4 +499,5 @@ def ipython_visgui(filename=None, **kwargs):
     visFr.Show()
     return visFr
     
-    
+def ipython_pymevisualize(filename=None, **kwargs):
+    return ipython_visgui(filename, **kwargs)
