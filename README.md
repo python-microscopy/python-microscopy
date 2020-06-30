@@ -1,4 +1,4 @@
-# <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left" height="128"> The PYthon Microscopy Environment
+# <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left" height="150"> The PYthon Microscopy Environment
 
 ![tag](https://img.shields.io/github/v/tag/python-microscopy/python-microscopy?sort=semver&logo=github)
 ![commits](https://img.shields.io/github/commit-activity/m/python-microscopy/python-microscopy?logo=github)
