@@ -164,7 +164,7 @@ class MultiwellCircularTiler(object):
     Creates a circular tiler for each well at a given spacing. For now create a separate tilepyramid for each well.
     """
     def __init__(self, well_scan_radius, x_spacing, y_spacing, n_x, n_y, scope, tile_dir, tile_spacing=None,
-                 dwelltime=1, background=0, evtLog=False, trigger=False, base_tile_size=256):
+                 dwelltime=1, background=0, evtLog=False, trigger=False, base_tile_size=256, laser_state=None):
         """
         Creates a new pyramid for each well due to performance constraints.
 
@@ -190,6 +190,9 @@ class MultiwellCircularTiler(object):
         evtLog
         trigger
         base_tile_size
+        laser_state: dict
+            state lasers should be in at the start of each well - lasers are blanked between wells. Should be compatible
+            with PYME.Acquire.microscope.StateManager.setItems
         """
 
         self.well_scan_radius = well_scan_radius
@@ -203,6 +206,8 @@ class MultiwellCircularTiler(object):
 
         self.set_well_positions()
 
+        self.start_state = laser_state if laser_state is not None else {}
+
         # store the individual tiler settings
         self.tile_spacing = tile_spacing
         self.dwelltime = dwelltime
@@ -211,6 +216,7 @@ class MultiwellCircularTiler(object):
         self.trigger = trigger
         self.base_tile_size = base_tile_size
 
+        # set our current well index
         self.ind = 0
 
     def set_well_positions(self):
@@ -256,8 +262,9 @@ class MultiwellCircularTiler(object):
             pass
 
         if self.ind < self.max_ind:
-            self.scope.state.setItems({'Positioning.x': self._x_wells[self.ind],
-                                       'Positioning.y': self._y_wells[self.ind]},
+            self.start_state.update({'Positioning.x': self._x_wells[self.ind],
+                                     'Positioning.y': self._y_wells[self.ind]})
+            self.scope.state.setItems(self.start_state,
                                       stopCamera=True)  # stop cam to make sure the next tiler gets the right center pos
 
             tile_dir = os.path.join(self.tile_dir, 'well_%d' % self.ind)
