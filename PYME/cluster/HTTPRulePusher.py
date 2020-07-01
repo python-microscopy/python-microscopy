@@ -51,7 +51,7 @@ def _getTaskQueueURI(n_retries=2):
         local_queues = [q for q in queueURLs if compName in q]
         logger.debug('local_queues: %s' % local_queues)
         return queueURLs[local_queues[0]]
-    except KeyError:
+    except (KeyError, IndexError):
         #if there is no local distributor, choose one at random
         logger.info('no local rule server, choosing one at random')
         return random.choice(list(queueURLs.values()))
