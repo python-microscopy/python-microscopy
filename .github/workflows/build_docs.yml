@@ -34,10 +34,11 @@ jobs:
         cd docs
         ./gen_api_docs
         make html
+        tar -jcf doc_html.tar.bz2 html
         
     - name: Upload
       uses: actions/upload-artifact@v1
       with:
-        name: docs_html
-        path: docs/html 
+        name: docs_html.tar.bz2
+        path: docs/doc_html.tar.bz2
         
