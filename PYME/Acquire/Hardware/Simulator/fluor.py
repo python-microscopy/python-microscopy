@@ -21,7 +21,6 @@
 #
 ##################
 
-from scipy import *
 import numpy as np
 import threading
 import time
@@ -56,7 +55,7 @@ def ConstIllum(fluors, position):
     return 1.0
 
 def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.001,0], pOnBleach=[0,0,0], pCagedBlinked = [0,0,0]):
-    M = zeros((states.n,states.n,len(pPA)), 'f')
+    M = np.zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
     M[states.active, states.blinked, :] = pOnDark
     M[states.blinked, states.active, :] = pDarkOn
@@ -80,17 +79,17 @@ class fluorophore:
         self.state = initialState
         self.activeState = activeState
         self.thetas = thetas
-        self.transitionProbabilities = transitionProbablilities * concatenate(([1], abs(cos(thetas))),0)
-        self.excitationCrossections = excitationCrossections *abs(cos(thetas))
+        self.transitionProbabilities = transitionProbablilities * np.concatenate(([1], abs(np.cos(thetas))),0)
+        self.excitationCrossections = excitationCrossections *abs(np.cos(thetas))
 
     def illuminate(self, laserPowers, expTime):
-        dose = concatenate(([1],laserPowers),0)*expTime
+        dose = np.concatenate(([1],laserPowers),0)*expTime
         #grab transition matrix
         transVec = (self.transitionProbabilities[self.state,:,:]*dose).sum(1)
         transVec[self.state]= 1 - transVec.sum()
         transCs = transVec.cumsum()
         
-        r = rand()
+        r = np.random.RandomState().rand()  # replace with np.random.default_rng() on later numpy versions
         
         for i in range(len(transVec)):
             if (r < transCs[i]):
@@ -102,13 +101,13 @@ class fluorophore:
         
 class fluors:
     def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
-        self.fl = zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i')])
+        self.fl = np.zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i')])
         self.fl['x'] = x
         self.fl['y'] = y
         self.fl['z'] = z
         #fl['exc'][:] = abs(cos(thetas))
         self.fl['exc'][:] = excitationCrossections 
-        self.fl['abcosthetas'][:] = abs(cos(thetas))
+        self.fl['abcosthetas'][:] = abs(np.cos(thetas))
         self.fl['state'][:] = initialState 
 
         self.transitionTensor = transitionProbablilities.astype('f')
@@ -125,7 +124,7 @@ class fluors:
             return illuminate.illuminate(self.transitionTensor, self.fl, self.fl['state'], self.fl['abcosthetas'], dose, ilFrac, self.activeState)
     else:
         def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
-            dose = concatenate(([1.0],laserPowers),0)*expTime
+            dose = np.concatenate(([1.0],laserPowers),0)*expTime
             #grab transition matrix
             transMat = self.transitionTensor[self.fl['state'],:,:].copy()
             
@@ -149,7 +148,7 @@ class fluors:
                 transVec[m, i]= 1 - tvs[m]
             transCs = transVec.cumsum(1)
             
-            r = rand(len(self.fl))
+            r = np.random.RandomState().rand(len(self.fl))  # replace with np.random.default_rng() on later numpy versions
             
             self.fl['state'] = (transCs < r[:, None]).sum(1)
             
@@ -158,13 +157,13 @@ class fluors:
 
 class specFluors(fluors):
     def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], spectralSig = [1,0], initialState=states.caged, activeState=states.active):
-        self.fl = zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i'), ('spec', '2f')])
+        self.fl = np.zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i'), ('spec', '2f')])
         self.fl['x'] = x
         self.fl['y'] = y
         self.fl['z'] = z
         #fl['exc'][:] = abs(cos(thetas))
         self.fl['exc'][:] = excitationCrossections 
-        self.fl['abcosthetas'][:] = abs(cos(thetas))
+        self.fl['abcosthetas'][:] = abs(np.cos(thetas))
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
 
@@ -186,7 +185,7 @@ class EmpiricalHistFluors(fluors):
                  initialState=states.active, activeState=states.active):
 
         self.histogram = histogram
-        self.fl = zeros(len(x), [('x', 'f'), ('y', 'f'), ('z', 'f'),
+        self.fl = np.zeros(len(x), [('x', 'f'), ('y', 'f'), ('z', 'f'),
                                  ('state', 'i'), ('spec', '2f')])
         self.fl['x'] = x
         self.fl['y'] = y
