@@ -144,24 +144,25 @@ class ActionManagerWebWrapper(object):
         Parameters
         ----------
         body: str
-            json.dumps(dict):
+            json.dumps(dict) with the following keys:
                 function_name : str
                     The name of a function relative to the microscope object.
-                    e.g. to `call scope.spoolController.StartSpooling()`, you would use
-                    a functionName of 'spoolController.StartSpooling'.
+                    e.g. to `call scope.spoolController.StartSpooling()`, you 
+                    would use a functionName of 'spoolController.StartSpooling'.
                     
-                    The function should either return `None` if the operation has already
-                    completed, or function which evaluates to True once the operation
-                    has completed. See `scope.spoolController.StartSpooling()` for an
-                    example.
+                    The function should either return `None` if the operation 
+                    has already completed, or function which evaluates to True 
+                    once the operation has completed. See 
+                    `scope.spoolController.StartSpooling()` for an example.
                 args : dict, optional
                     a dictionary of arguments to pass to `function_name`
                 nice : int, optional
-                    priority with which to execute the function, by default 10. Functions with a
-                    lower nice value execute first.
+                    priority with which to execute the function, by default 10. 
+                    Functions with a lower nice value execute first.
                 timeout : float, optional
-                    A timeout in seconds from the current time at which the action
-                    becomes irrelevant and should be ignored., by default 1e6
+                    A timeout in seconds from the current time at which the 
+                    action becomes irrelevant and should be ignored. By default
+                    1e6.
         """
         import json
         params = json.loads(body)
@@ -185,7 +186,8 @@ class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
         port : int
             port to listen on
         bind_address : str, optional
-            specifies ip address to listen on, by default '' will bind to local host.
+            specifies ip address to listen on, by default '' will bind to local 
+            host.
         """
         webframework.APIHTTPServer.__init__(self, (bind_address, port))
         ActionManagerWebWrapper.__init__(self, action_manager)
