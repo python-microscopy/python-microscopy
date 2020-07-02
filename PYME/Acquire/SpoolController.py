@@ -33,7 +33,7 @@ from PYME.misc import hybrid_ns
 
 import os
 import sys
-#import glob
+import json
 
 import subprocess
 import threading
@@ -297,13 +297,15 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, filename, max_frames=sys.maxsize, 
+    def StartSpooling(self, filename=None, max_frames=sys.maxsize, 
                       do_preflight_check=True, **kwargs):
         """
 
         Parameters
         ----------
-        filename : str
+        filename : str, optional
+            filename can be hardcoded here, otherwise differs to the seriesName
+            property which will create one if need-be.
         max_frames : int, optional
             point at which to end the series automatically, by default 
             sys.maxsize
@@ -315,6 +317,7 @@ class SpoolController(object):
             of this spool. See `SpoolController.update_settings`
         
         """
+        filename = self.seriesName if filename in ['', None] else filename
         self.update_settings(kwargs)
         
         #make directories as needed
@@ -520,12 +523,9 @@ class SpoolControllerWrapper(object):
         return 'OK'
 
     @webframework.register_endpoint('/start_spooling', output_is_json=False)
-    def start_spooling(self, filename=None, max_frames=sys.maxsize, 
-                       do_preflight_check=True, body=''):
-        import json
-        settings = {} if body == '' else json.loads(body)
-        self.spool_controller.StartSpooling(filename, max_frames, 
-                                            do_preflight_check, **settings)
+    def start_spooling(self, body='{}'):
+        settings = json.loads(body)
+        self.spool_controller.StartSpooling(**settings)
         return 'OK'
 
 
