@@ -38,4 +38,4 @@ The VisGUI can be launched using the `VisGUI` script.
 
 """
 
-from . import VisGUI as PYMEVisualize
+from .VisGUI import ipython_pymevisualize, ipython_visgui
