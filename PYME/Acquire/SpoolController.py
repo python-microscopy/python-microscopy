@@ -474,7 +474,7 @@ class SpoolController(object):
             self.protocolZ = pmod.PROTOCOL_STACK
             self.protocolZ.filename = protocolName
             
-    def SetSpoolMethod(self, method, update_series_counter=True):
+    def SetSpoolMethod(self, method):
         """Set the spooling method
         
         Parameters
@@ -484,8 +484,7 @@ class SpoolController(object):
             One of 'File', 'Queue', or 'HTTP'
         """
         self.spoolType = method
-        if update_series_counter:
-            self._update_series_counter()
+        self._update_series_counter()
 
     def __del__(self):
         # make sure our analysis launchers have a chance to finish their job before exiting
