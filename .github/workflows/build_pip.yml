@@ -1,0 +1,57 @@
+# This workflows will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+name: Build PIP packages
+
+on:
+  release:
+    types: [created, edited]
+
+jobs:
+  deploy_source:
+    runs-on: 'ubuntu-latest'
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine cython numpy==1.14 pyyaml
+    - name: Build and publish
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        python setup.py sdist
+        python -m twine upload --skip-existing dist/*
+    
+  deploy_wheel:
+    needs: deploy_source #don't build wheels unless we successfully built source package.
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        python: ['3.6', '3.7'] #,2.7] - # 2.7 disabled for now due to missing VC9
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine cython numpy==1.14 pyyaml
+    - name: Build and publish
+      env:
+        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        python setup.py bdist_wheel
+        twine upload --skip-existing dist/*

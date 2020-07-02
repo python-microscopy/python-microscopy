@@ -24,7 +24,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -51,8 +51,8 @@ def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     #force amilitude to be positive
-    Ag = sqrt(Ag**2 + 1) - 1
-    Ar = sqrt(Ar**2 + 1) - 1   
+    Ag = scipy.sqrt(Ag**2 + 1) - 1
+    Ar = scipy.sqrt(Ar**2 + 1) - 1   
     
     r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
@@ -68,8 +68,8 @@ def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
     
     #force amilitude to be positive
-    Ag = sqrt(Ag**2 + 1) - 1
-    Ar = sqrt(Ar**2 + 1) - 1   
+    Ag = scipy.sqrt(Ag**2 + 1) - 1
+    Ar = scipy.sqrt(Ar**2 + 1) - 1   
     
     r = genGauss(Xr,Yr,Ar,x0,y0,s,0,0,0)
     r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....

@@ -778,6 +778,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
 
         return mdf
 
@@ -789,6 +791,11 @@ class ImageStack(object):
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
         print(self.dataSource.shape)
+
+        if getattr(self.dataSource, 'RGB', False) and self.haveGUI:
+            import wx
+            wx.MessageBox('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).', 'WARNING', wx.OK)
+        
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
 
@@ -908,6 +915,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
                 
         
         print(self.dataSource.shape)

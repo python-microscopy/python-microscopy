@@ -23,7 +23,7 @@
 import wx
 
 #from PYME.Acquire.mytimer import mytimer
-import pylab
+# import pylab
 from scipy import ndimage
 import numpy as np
 

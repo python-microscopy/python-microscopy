@@ -34,7 +34,7 @@
 
 import scipy
 import scipy.ndimage as ndimage
-import pylab
+# import pylab
 import numpy as np
 from PYME.DSView import View3D
 

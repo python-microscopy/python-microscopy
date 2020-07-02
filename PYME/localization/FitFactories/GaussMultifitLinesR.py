@@ -161,7 +161,8 @@ class GaussianFitFactory:
         dataMean = dataMean - bgEst
             
         #ofind step
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         #find pixels which are above noise floor.
         pe = np.log(np.maximum(dataMean/sigma, .1))
         dt = dataMean > threshold*sigma
@@ -180,9 +181,9 @@ class GaussianFitFactory:
         labels, nlabels = ndimage.label(mask)
             
         if gui:
-            pylab.imshow(dataMean.T,interpolation='nearest')
-            pylab.figure()
-            pylab.imshow(mask.T, interpolation='nearest')
+            plt.imshow(dataMean.T,interpolation='nearest')
+            plt.figure()
+            plt.imshow(mask.T, interpolation='nearest')
             
         
         if nlabels == 0:
@@ -198,25 +199,25 @@ class GaussianFitFactory:
         
         
         def plotIterate(res, os, residuals, resfilt):
-            pylab.figure(figsize=(20,4))
-            pylab.subplot(141)
-            pylab.imshow(dataMean.T,interpolation='nearest')
-            pylab.contour(mask.T, [0.5], colors=['y'])
-            pylab.plot(res[1::3]/70, res[2::3]/70, 'xr')
-            pylab.subplot(142)
+            plt.figure(figsize=(20,4))
+            plt.subplot(141)
+            plt.imshow(dataMean.T,interpolation='nearest')
+            plt.contour(mask.T, [0.5], colors=['y'])
+            plt.plot(res[1::3]/70, res[2::3]/70, 'xr')
+            plt.subplot(142)
             md = self.fitfcn(res,self.X.ravel(), self.Y.ravel(), gSig).reshape(dataMean.shape)
-            pylab.imshow(md.T)
-            pylab.subplot(143)
-            #pylab.imshow(((dataMean-md)/sigma).T, interpolation='nearest')
+            plt.imshow(md.T)
+            plt.subplot(143)
+            #plt.imshow(((dataMean-md)/sigma).T, interpolation='nearest')
             rs = np.zeros_like(dataMean)
             rs[os] = residuals
-            pylab.imshow(rs.T)
-            #pylab.colorbar()
-            pylab.subplot(144)
+            plt.imshow(rs.T)
+            #plt.colorbar()
+            plt.subplot(144)
             rs = np.zeros_like(dataMean)
             rs[os] = resfilt
-            pylab.imshow(rs.T)
-            pylab.colorbar()
+            plt.imshow(rs.T)
+            plt.colorbar()
             
         
         #loop over objects

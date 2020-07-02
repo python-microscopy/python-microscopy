@@ -41,8 +41,9 @@ if __name__ == '__main__':
     import matplotlib
     matplotlib.use('Agg')
     
-    from pylab import *
-    
+    # from pylab import *
+    from matplotlib.pyplot import *
+    from numpy import *
     
     dpi = 100.
     

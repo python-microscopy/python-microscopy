@@ -68,6 +68,8 @@ class DataSource(BaseDataSource):
         
         tf = tifffile.TIFFfile(self.filename)
         
+        self.tf = tf # keep a reference for debugging
+        
         print(tf.series[0].shape)
 
         self.im = tf.series[0].pages
@@ -81,10 +83,15 @@ class DataSource(BaseDataSource):
             
             self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
         elif tf.is_rgb:
-            print('Detected RGB TIFF')
+            print('WARNING: Detected RGB TIFF - data not likely to be suitable for quantitative analysis')
             self.sizeC = 3
             self.RGB = True
-            self.additionalDims = 'C'
+            if len(self.im) > 1:
+                # we can have multi-page RGB TIFF - why?????
+                print('WARNING: Multi-page RGB TIFF detected - where did this come from???')
+                self.additionalDims='TC'
+            else:
+                self.additionalDims = 'C'
             
             
                 
@@ -96,7 +103,10 @@ class DataSource(BaseDataSource):
         #return ima.reshape((self.im.size[1], self.im.size[0]))
         #return self.data[:,:,ind]
         if self.RGB:
-            return self.im[0].asarray(False, False)[0, 0, :,:,ind].squeeze()
+            # special case for RGB TIFF
+            ind_0 = ind%len(self.im)
+            ind_1 = int(ind/len(self.im))
+            return self.im[ind_0].asarray(False, False)[0, 0, :,:,ind_1].squeeze()
         
         res =  self.im[ind].asarray(False, False)
         #if res.ndim == 3:

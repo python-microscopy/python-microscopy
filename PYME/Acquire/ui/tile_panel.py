@@ -195,11 +195,6 @@ class MultiwellTilePanel(TilePanel):
         hsizer.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
-        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        # self.pProgress = wx.Gauge(self, -1, range=100)
-        # hsizer.Add(self.pProgress, 1, wx.ALL | wx.EXPAND, 2)
-        # vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Well Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
         self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
@@ -248,10 +243,13 @@ class MultiwellTilePanel(TilePanel):
     def OnGo(self, event=None):
         trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
 
+        # get laser states
+        laser_state = {k:v for k, v in dict(self.scope.state).items() if k.startswith('Laser')}
+
         self.scope.tiler = tiler.MultiwellCircularTiler(float(self.radius_um.GetValue()),
             float(self.x_spacing_mm.GetValue()) * 1e3, float(self.y_spacing_mm.GetValue()) * 1e3,
             int(self.n_x.GetValue()), int(self.n_y.GetValue()), self.scope, self.tDestination.GetValue(),
-            trigger=trigger)
+            trigger=trigger, laser_state=laser_state)
 
         self.bStop.Enable()
         self.bGo.Disable()

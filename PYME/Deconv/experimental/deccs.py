@@ -85,7 +85,8 @@ class dec:
             LS[:,k] = Lfunc(S[:,k])
         
         if show_plots:
-            import pylab as plt
+            # import pylab as plt
+            import matplotlib.pyplot as plt
             plt.figure(1)
             plt.clf()
             plt.subplot(311)

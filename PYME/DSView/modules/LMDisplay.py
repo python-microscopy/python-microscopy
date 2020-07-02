@@ -13,7 +13,8 @@ import os
 
 
 import numpy
-import pylab
+# import pylab
+import matplotlib.cm
 
 #import PYME.ui.autoFoldPanel as afp
 
@@ -132,7 +133,7 @@ class LMDisplay(visCore.VisGUICore):
 
         from PYME.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
+        self.glCanvas.cmap = matplotlib.cm.gist_rainbow
         self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')

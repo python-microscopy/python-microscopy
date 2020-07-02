@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -85,9 +85,9 @@ def setModel(modName, md):
         if not voxelsize.x == md.voxelsize.x:
             raise RuntimeError("PSF and Image voxel sizes don't match")
 
-        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        IntXVals = 1e3*voxelsize.x*scipy.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*scipy.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*scipy.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         dx = voxelsize.x*1e3
         dy = voxelsize.y*1e3
@@ -145,9 +145,9 @@ def setModel(modName, md):
 #    return m
 
 def interp(X, Y, Z):
-    X = atleast_1d(X)
-    Y = atleast_1d(Y)
-    Z = atleast_1d(Z)
+    X = numpy.atleast_1d(X)
+    Y = numpy.atleast_1d(Y)
+    Z = numpy.atleast_1d(Z)
 
     ox = X[0]
     oy = Y[0]
@@ -338,7 +338,7 @@ class PSFFitFactory:
         Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
 
-        Zg = array([0]).astype('f')
+        Zg = numpy.array([0]).astype('f')
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
