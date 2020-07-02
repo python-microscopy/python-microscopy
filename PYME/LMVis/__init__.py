@@ -37,5 +37,3 @@ Plugins are located in :py:mod:`PYME.LMVis.Extras`.
 The VisGUI can be launched using the `VisGUI` script.
 
 """
-
-from .VisGUI import ipython_pymevisualize, ipython_visgui
