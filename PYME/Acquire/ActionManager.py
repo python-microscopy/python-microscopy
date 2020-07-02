@@ -137,32 +137,38 @@ class ActionManagerWebWrapper(object):
         self.action_manager = action_manager
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
-    def queue_action(self, function_name, args=None, nice=10, timeout=1e6):
+    def queue_action(self, body):
         """
         adds an action to the queue
 
         Parameters
         ----------
-        function_name : str
-            The name of a function relative to the microscope object.
-            e.g. to `call scope.spoolController.StartSpooling()`, you would use
-            a functionName of 'spoolController.StartSpooling'.
-            
-            The function should either return `None` if the operation has already
-            completed, or function which evaluates to True once the operation
-            has completed. See `scope.spoolController.StartSpooling()` for an
-            example.
-        args : dict, optional
-            a dictionary of arguments to pass to `function_name`
-        nice : int, optional
-            priority with which to execute the function, by default 10. Functions with a
-            lower nice value execute first.
-        timeout : float, optional
-            A timeout in seconds from the current time at which the action
-            becomes irrelevant and should be ignored., by default 1e6
+        body: str
+            json.dumps(dict):
+                function_name : str
+                    The name of a function relative to the microscope object.
+                    e.g. to `call scope.spoolController.StartSpooling()`, you would use
+                    a functionName of 'spoolController.StartSpooling'.
+                    
+                    The function should either return `None` if the operation has already
+                    completed, or function which evaluates to True once the operation
+                    has completed. See `scope.spoolController.StartSpooling()` for an
+                    example.
+                args : dict, optional
+                    a dictionary of arguments to pass to `function_name`
+                nice : int, optional
+                    priority with which to execute the function, by default 10. Functions with a
+                    lower nice value execute first.
+                timeout : float, optional
+                    A timeout in seconds from the current time at which the action
+                    becomes irrelevant and should be ignored., by default 1e6
         """
-        if args == None:
-            args = {}
+        import json
+        params = json.loads(body)
+        function_name = params['function_name']
+        args = params.get('args', {})
+        nice = params.get('nice', 10.)
+        timeout = params.get('timeout', 1e6)
         self.action_manager.QueueAction(function_name, args, nice, timeout)
 
 
