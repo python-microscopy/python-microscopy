@@ -39,8 +39,6 @@ class UpdateSpoolerSettings(ModuleBase):
                 see PYME.Acquire.HTTPSpooler
             protocol_name : str
                 filename of the acquisition protocol to follow while spooling
-            series_name : str
-                name of series to spool
     input_name : anything
         input will simply be piped to output
     output_name : anything
@@ -77,6 +75,8 @@ class QueueAcquisitions(OutputModule):
         settings to be passed to `PYME.Acquire.SpoolController.StartSpooling` as
         key-word arguments. Ones that make sense in the context of this recipe
         module include:
+            max_frames : int
+                number of frames to spool per series
             method : str
                 'File', 'Queue' (py2 only), or 'Cluster'. 
             hdf_compression_level: int
@@ -108,7 +108,6 @@ class QueueAcquisitions(OutputModule):
     """
     input_positions = Input('input')
     action_server_url = CStr('http://127.0.0.1:9393')
-    frames_per_series = Int(1)
     spool_settings = DictStrAny()
     lifo = Bool(True)
     optimize_path = Bool(True)
@@ -155,8 +154,7 @@ class QueueAcquisitions(OutputModule):
                           headers={'Content-Type': 'application/json'})
             
             args = {'function_name': 'spoolController.StartSpooling',
-                    'args': {'settings': self.spool_settings, 
-                    'maxFrames': self.frames_per_series},
+                    'args': self.spool_settings,
                     'timeout': self.timeout, 'nice': nices[2 * ri + 1]}
             requests.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
