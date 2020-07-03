@@ -48,7 +48,7 @@ class ColumnMappingDialog(wx.Dialog):
 
         wx.Dialog.__init__(self, parent, title='Import data from {} file'.format(self.fileType))
 
-        self.Names, self.dataLines = self._parse_header(fileName)
+        self.colNames, self.dataLines = self._parse_header(fileName)
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -206,11 +206,11 @@ class ImportTextDialog(ColumnMappingDialog):
         #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
 
         if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
-            colNames = commentLines[-1].split(delim)
+            colNames = [s.strip() for s in commentLines[-1].split(delim)]
         else:
             colNames = ['column_%d' % i for i in range(numCols)]
 
-       return colNames, dataLines
+        return colNames, dataLines
 
 
 class ImportMatDialog(wx.Dialog):
