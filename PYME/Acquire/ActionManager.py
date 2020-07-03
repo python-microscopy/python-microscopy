@@ -15,6 +15,10 @@ except ImportError:
 import time
 import dispatch
 import weakref
+import numpy as np
+import threading
+import logging
+logger = logging.getLogger(__name__)
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -57,8 +61,13 @@ class ActionManager(object):
         self.onQueueChange = dispatch.Signal()
         
         self._timestamp = 0
+
+        self._monitoring = True
+        self._monitor = threading.Thread(target=self._monitor_defunct)
+        self._monitor.start()
         
-    def QueueAction(self, functionName, args, nice=10, timeout=1e6):
+    def QueueAction(self, functionName, args, nice=10, timeout=1e6, 
+                    max_duration=np.finfo(float).max):
         """Add an action to the queue
         
         Parameters
@@ -82,6 +91,13 @@ class ActionManager(object):
         timeout : float
             A timeout in seconds from the current time at which the action
             becomes irrelevant and should be ignored.
+        max_duration : float
+            A generous estimate, in seconds, of how long the task might take, 
+            after which the lasers will be automatically turned off and the 
+            action queue paused. This will not interrupt the current task, 
+            though it has presumably already failed at that point. Intended as a
+            safety feature for automated acquisitions, the check is every 3 s 
+            rather than fine-grained.
             
         """
         curTime = time.time()    
@@ -93,7 +109,8 @@ class ActionManager(object):
         #ensure FIFO behaviour for events with the same priority
         nice_ = nice + self._timestamp*1e-10
         
-        self.actionQueue.put_nowait((nice_, functionName, args, expiry))
+        self.actionQueue.put_nowait((nice_, functionName, args, expiry, 
+                                     max_duration))
         self.onQueueChange.send(self)
         
         
@@ -109,7 +126,8 @@ class ActionManager(object):
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
-                nice, functionName, args, expiry = self.currentTask
+                nice, functionName, args, expiry, max_duration = self.currentTask
+                self._cur_task_kill_time = time.time() + max_duration
                 self.onQueueChange.send(self)
             except Queue.Empty:
                 self.currentTask = None
@@ -118,8 +136,26 @@ class ActionManager(object):
             if expiry > time.time():
                 print('%s, %s' % (self.currentTask, functionName))
                 fcn = eval('.'.join(['self.scope()', functionName]))
-                self.isLastTaskDone = fcn(**args)
-                
+                self.isLastTaskDone = fcn(**args)            
+    
+    def _monitor_defunct(self):
+        """
+        polling thread method to check that if a task is being executed through
+        the action manager it isn't taking longer than its `max_duration`.
+        """
+        while self._monitoring:
+            if self.currentTask is not None:
+                logger.debug('here, %f s until kill' % (self._cur_task_kill_time - time.time()))
+                if time.time() > self._cur_task_kill_time:
+                    self.scope().turnAllLasersOff()
+                    # pause and reset so we can start up again later
+                    self.paused = True
+                    self.isLastTaskDone = None
+                    self.currentTask = None
+                    self.onQueueChange.send(self)
+                    logger.error('task exceeded specified max duration')
 
-        
-                
+            time.sleep(3)
+    
+    def __del__(self):
+        self._monitoring = False
