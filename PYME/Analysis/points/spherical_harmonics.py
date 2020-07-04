@@ -236,6 +236,15 @@ def icosahedron_mesh(n_subdivision=1):
            /    \    ==>   v3----v5
           /      \         / \  / \
          v1------v2       v1--v4--v2
+
+    Returns
+    -------
+        azimuth : np.array
+            Azimuth of mesh vertices [0, 2*pi].
+        zenith : np.array
+            Zenith of mesh vertices [0, pi].
+        faces : np.array
+            20 x 3, counterclockwise triangles denoting mesh faces.
     """
     
     # First, generate the icosahedron
