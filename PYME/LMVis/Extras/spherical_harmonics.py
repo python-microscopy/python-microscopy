@@ -50,7 +50,6 @@ class SphericalHarmonicShellManager(object):
         # Add a surface rendering
         v, f = shell.get_mesh_vertices_faces(self.d_angle)        
         surf = triangle_mesh.TriangleMesh(v, f)
-        surf.repair()  # Deal with cuts at theta=0, phi=0
         self.pipeline.dataSources['shell_surface'] = surf
 
         layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
@@ -91,7 +90,6 @@ class SphericalHarmonicShellManager(object):
 
         v, f = shell.get_mesh_vertices_faces(self.d_angle)        
         surf = triangle_mesh.TriangleMesh(v, f)
-        surf.repair()  # Deal with cuts at theta=0, phi=0
         self.pipeline.dataSources['shell_surface'] = surf
 
         layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
