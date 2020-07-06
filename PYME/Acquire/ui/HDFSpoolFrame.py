@@ -515,6 +515,7 @@ class PanSpool(afp.foldingPane):
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
         self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
 
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
 
