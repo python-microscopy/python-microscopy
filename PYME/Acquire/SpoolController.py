@@ -174,6 +174,11 @@ class SpoolController(object):
             # limit single directory size for (cluster) IO performance
             subdir = '%03d' % int(self.seriesCounter/100)
             dir = dir + self._sep + subdir
+        
+        # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
+        if (self.spoolType != 'Cluster') and (not os.path.exists(dir)):
+                os.makedirs(dir)
+
         return dir
 
     def get_cluster_dirname(self, dirname):
@@ -277,12 +282,6 @@ class SpoolController(object):
         cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
         fn = self.seriesName if fn in ['', None] else fn
         zDwellTime = self.z_dwell if zDwellTime is None else zDwellTime
-        
-        #make directories as needed
-        if not (self.spoolType == 'Cluster'):
-            dirname = os.path.split(self._get_queue_name(fn))[0]
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
 
         if self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
