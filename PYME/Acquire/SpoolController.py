@@ -78,9 +78,10 @@ class SpoolController(object):
         
         #dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
         
-        self._user_dir = None
         self._base_dir = nameUtils.get_local_data_directory()
-        self._subdir = nameUtils.get_spool_subdir()
+        self._dirname = os.sep.join([self._base_dir, ] + nameUtils.get_spool_subdir())
+        self._cluster_dirname = self.get_cluster_dirname(self._dirname)
+
         self.seriesStub = defSeries % nameUtils.dateDict
 
         self.seriesCounter = 0
@@ -168,10 +169,11 @@ class SpoolController(object):
         
     @property
     def dirname(self):
-        if self.spoolType == 'Cluster':
-            dir = self.get_cluster_dirname(self._user_dir) if self._user_dir is not None else '/'.join(self._subdir)
-        else:
-            dir = self._user_dir if self._user_dir is not None else os.sep.join([self._base_dir, ] + self._subdir)
+        dir = self._dirname if self.spoolType != 'Cluster' else self._cluster_dirname
+        if config.get('acquire-spool_subdirectories', False):
+            # limit single directory size for (cluster) IO performance
+            subdir = '%03d' % int(self.seriesCounter/100)
+            dir = dir + self._sep + subdir
         return dir
 
     def get_cluster_dirname(self, dirname):
@@ -179,7 +181,7 @@ class SpoolController(object):
         dir = dirname.replace(self._base_dir + os.sep, '')
         # if we weren't below PYMEData dir, which probably isn't great, at least drop any windows nonsense
         dir = dir.split(':')[-1]
-        return unifiedIO.fix_name(dir.replace(os.sep, '/'))
+        return unifiedIO.verbose_fix_name(dir.replace(os.sep, '/'))
         
     @property
     def seriesName(self):
@@ -199,12 +201,7 @@ class SpoolController(object):
     
 
     def _GenSeriesName(self):
-        if config.get('acquire-spool_subdirectories', False):
-            # High-throughput performance optimization
-            # If true, add a layer of directories to limit the number of series saved in a single directory
-            return '%03d%s%s_%05d' % (int(self.seriesCounter/100), self._sep, self.seriesStub, self.seriesCounter)
-        else:
-            return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
+        return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
@@ -246,7 +243,9 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        self._user_dir = dirname + os.sep
+        print('setting spool dir: %s' % dirname)
+        self._dirname = dirname
+        self._cluster_dirname = self.get_cluster_dirname(dirname)
         #if we've had to quit for whatever reason start where we left off
         self._update_series_counter()
             
@@ -261,8 +260,8 @@ class SpoolController(object):
             ext = '.pcs'
         else:
             ext = '.h5'
-            
-        return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
+        
+        return self._sep.join([self.dirname, fn + ext])
 
 
     def StartSpooling(self, fn=None, stack=None, compLevel=None, zDwellTime=None, doPreflightCheck=True, maxFrames=sys.maxsize,
@@ -356,8 +355,21 @@ class SpoolController(object):
         return lambda : not self.spooler.spoolOn
 
     @property
-    def rel_dirname(self):
-        return self._sep.join(self._subdir)
+    def display_dirname(self):
+        """ 
+        Returns a relative directory name for display in user interfaces
+
+        Returns
+        -------
+        dirname : str
+            current spool directory, relative to local PYMEData directory 
+            (ideally)
+        """
+        dirname = self.dirname
+        if self.spoolType == 'Cluster':
+            return dirname
+        else:
+            return dirname.replace(self._base_dir + os.sep, '')
 
     def StopSpooling(self):
         """GUI callback to stop spooling."""

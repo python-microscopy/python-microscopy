@@ -339,7 +339,7 @@ class PanSpool(afp.foldingPane):
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
         self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
 
-        self.stSpoolDirName.SetLabel(self.spoolController.rel_dirname)
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
 
@@ -541,7 +541,7 @@ class PanSpool(afp.foldingPane):
         if not ndir == '':
             logger.debug('series name %s' % self.spoolController.seriesName)
             self.spoolController.SetSpoolDir(ndir)
-            self.stSpoolDirName.SetLabel(self.spoolController.dirname)
+            self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             logger.debug('series name %s' % self.spoolController.seriesName)
 
@@ -572,7 +572,7 @@ class PanSpool(afp.foldingPane):
         
     def OnSpoolMethodChanged(self, event):
         self.spoolController.SetSpoolMethod(self._get_spool_method())
-        self.stSpoolDirName.SetLabel(self.spoolController.rel_dirname)
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
 
         self.UpdateFreeSpace()
