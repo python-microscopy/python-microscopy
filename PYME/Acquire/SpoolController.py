@@ -174,10 +174,6 @@ class SpoolController(object):
             # limit single directory size for (cluster) IO performance
             subdir = '%03d' % int(self.seriesCounter/100)
             dir = dir + self._sep + subdir
-        
-        # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
-        if (self.spoolType != 'Cluster') and (not os.path.exists(dir)):
-                os.makedirs(dir)
 
         return dir
 
@@ -238,7 +234,9 @@ class SpoolController(object):
             return free_storage / 1e9
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
-            return get_free_space(self.dirname)/1e9
+            # avoid dirname property here so we can differ building
+            # 'acquire-spool_subdirectories' to `StartSpooling`
+            return get_free_space(self._dirname)/1e9
         
     def _update_series_counter(self):
         logger.debug('Updating series counter')
@@ -282,6 +280,10 @@ class SpoolController(object):
         cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
         fn = self.seriesName if fn in ['', None] else fn
         zDwellTime = self.z_dwell if zDwellTime is None else zDwellTime
+
+        # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
+        if (self.spoolType != 'Cluster') and (not os.path.exists(self.dirname)):
+                os.makedirs(self.dirname)
 
         if self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
@@ -452,7 +454,7 @@ class SpoolController(object):
         ----------
         
         method : string
-            One of 'File', 'Queue', or 'HTTP'
+            One of 'File', 'Queue', or 'Cluster'
         """
         self.spoolType = method
         self._update_series_counter()
