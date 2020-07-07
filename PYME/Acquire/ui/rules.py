@@ -333,7 +333,7 @@ class ChainedAnalysisPanel(wx.Panel):
         # pipe the input series name into the rule list
         series_uri = self._spool_controller.spooler.getURL()
         try:
-            rule_chain = self._protocol_rules[self._spool_controller.protocol_name]
+            rule_chain = self._protocol_rules[self._spool_controller.protocol.filename]
         except KeyError:
             rule_chain = self._protocol_rules['default']
         
