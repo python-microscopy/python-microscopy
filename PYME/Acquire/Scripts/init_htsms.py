@@ -182,6 +182,11 @@ def focus_keys(MainFrame, scope):
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
 
+@init_gui('Chained Analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
+    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import actionUI
