@@ -800,13 +800,13 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
             s = _getSession(url)
             r = s.get(url, timeout=.5)
             haveResult = True
-        except (requests.Timeout, requests.ConnectionError) as e:
+        except (requests.Timeout, requests.ConnectionError):
             # s.get sometimes raises ConnectionError instead of ReadTimeoutError
             # see https://github.com/requests/requests/issues/2392
             logger.exception('Timeout on get file %s' % url)
             logger.info('%d retries left' % (numRetries - nTries))
             if nTries == numRetries:
-                raise e
+                raise
 
     #s = _getSession(url)
     #r = s.get(url, timeout=.5)
