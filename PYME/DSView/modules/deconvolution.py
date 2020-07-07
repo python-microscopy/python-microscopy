@@ -40,11 +40,10 @@ def _pt(sl):
     #r = 0
     return r
 
-class deconvolver:
+from ._base import Plugin
+class Deconvolver(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         self.tq = None
         
         dsviewer.AddMenuItem("Processing", "Deconvolution", self.OnDeconvICTM)
@@ -497,4 +496,4 @@ class WienerDeconvolver(wx.Panel):
 
 
 def Plug(dsviewer):
-    dsviewer.deconvolver = deconvolver(dsviewer)
+    return Deconvolver(dsviewer)

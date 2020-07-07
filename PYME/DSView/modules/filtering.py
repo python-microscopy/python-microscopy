@@ -24,12 +24,11 @@ import wx
 #import pylab
 #from PYME.IO.image import ImageStack
 
-class filterer:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
+from ._base import Plugin
 
-        self.image = dsviewer.image
+class Filterer(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self,dsviewer)
                 
         dsviewer.AddMenuItem('Processing', '&Gaussian Filter', self.OnGaussianFilter)        
         dsviewer.AddMenuItem('Processing', 'Generate &Mask', self.OnApplyThreshold)
@@ -326,7 +325,7 @@ class filterer:
 
 
 def Plug(dsviewer):
-    dsviewer.filtering = filterer(dsviewer)
+    return Filterer(dsviewer)
 
 
 

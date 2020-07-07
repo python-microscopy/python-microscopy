@@ -81,12 +81,10 @@ class ColocSettingsDialog(wx.Dialog):
     def GetChans(self):
         return [self.cChan1.GetSelection(), self.cChan2.GetSelection()]
 
-class RingCorrelator:
+from ._base import Plugin
+class RingCorrelator(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(dsviewer)
         
         PROC_COLOCALISE = wx.NewId()
         
@@ -168,7 +166,7 @@ class RingCorrelator:
 
 
 def Plug(dsviewer):
-    dsviewer.ringCorrelator = RingCorrelator(dsviewer)
+    return RingCorrelator(dsviewer)
 
 
 

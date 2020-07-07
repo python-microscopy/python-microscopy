@@ -133,12 +133,10 @@ class ColocSettingsDialog(wx.Dialog):
             ze = zs+1 # it is still possible that ze now greater than max size
         return (zs,ze)
 
-class colocaliser:
+from ._base import Plugin
+class Colocaliser(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.mProcessing.AppendSeparator()
         dsviewer.AddMenuItem('Processing', "&Colocalisation", self.OnColocBasic)
@@ -406,7 +404,7 @@ class colocaliser:
 
 
 def Plug(dsviewer):
-    dsviewer.coloc = colocaliser(dsviewer)
+    return Colocaliser(dsviewer)
 
 
 

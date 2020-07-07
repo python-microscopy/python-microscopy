@@ -24,6 +24,7 @@
 
 import glob
 import os
+import weakref
 
 from imp import reload
 
@@ -76,9 +77,16 @@ def loadModule(modName, dsviewer):
     the plugin name) or a dictionary if multiple objects are being returned or if things should be
     available under a name other than the module name. The dictionary return is largely to support
     an easy transition from the old plugin naming and should be avoided in new code, using a wrapper
-    class if more than one object needs to be accessed.
+    class if more than one object needs to be accessed. In the future we might require the return to
+    be a subclass of a `Plugin` object or similar.
     
-    In the future we might require the return to be a subclass of a `Plugin` object or similar.
+    Plugins should **NOT** inject themselves directly into the dsviewer namespace as has been done
+    in the case in the past as this is likely to result in circular references.
+    
+    Plugins should also avoid holding a reference to dsviewer.image, dsviewer.do, etc, although it is
+    currently permissible to hold a reference to dsviewer itself TODO - Move these into a plugin base
+    class and use weakrefs.
+    
     
     Parameters
     ----------
@@ -109,13 +117,16 @@ def loadModule(modName, dsviewer):
         logger.warning('Plugin [%s] injects into dsviewer namespace, could result in circular references' % modName)
 
     # new style module tracking
+    # TODO - make this accessible via dsviewer.plugins.x rather than dsviewer.x
     if ret is not None:
         if isinstance(ret, dict):
-            # either track named outputs
-            dsviewer._module_injections.update(ret)
+            # either track named outputs [legacy]
+            for k, v in ret:
+                setattr(dsviewer, k, weakref.proxy(v))
         else:
             # or track module data under module name.
-            dsviewer._module_injections[modName] = ret
+            setattr(dsviewer, modName, weakref.proxy(ret))
+            #dsviewer._module_injections[modName] = ret
 
 
     dsviewer.installedModules.append(modName)

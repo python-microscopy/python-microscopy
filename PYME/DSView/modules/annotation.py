@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import wx
 import wx.lib.agw.aui as aui
 
+from ._base import Plugin
+
 class _Snake_Settings(HasTraits):
     length_weight = Float(0) #alpha
     smoothness = Float(0.1) #beta
@@ -110,10 +112,9 @@ class LabelPanel(wx.Panel):
     def get_labels(self):
         return {n : self.lLabels.GetItemText(n, 1) for n in range(10)}
 
-class Annotater(object):
+class Annotater(Plugin):
     def __init__(self, dsviewer):
-        self.do = dsviewer.do
-        self.dsviewer = dsviewer
+        Plugin.__init__(self, dsviewer)
 
         self.cur_label_index = 1
         self.line_width = 1
@@ -452,4 +453,4 @@ class Annotater(object):
                     
 
 def Plug(dsviewer):
-    dsviewer.annotation = Annotater(dsviewer)
+    return Annotater(dsviewer)

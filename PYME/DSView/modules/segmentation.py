@@ -154,12 +154,10 @@ class SegmentationPanel(wx.Panel):
         else:
             return False
 
-
-class segmenter:
+from ._base import Plugin
+class Segmenter(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Processing', "MC Annealing Segmentation", self.OnSegmentAnneal)
         
@@ -192,4 +190,4 @@ class segmenter:
     #        self.decvp.imagepanel.Refresh()
 
 def Plug(dsviewer):
-    dsviewer.segmenter = segmenter(dsviewer)
+    return Segmenter(dsviewer)

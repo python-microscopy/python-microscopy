@@ -97,12 +97,10 @@ class UnMixSettingsDlg(wx.Dialog):
         return float(self.tOffset.GetValue())
 
                                        
-    
-class Unmixer:
+from ._base import Plugin
+class Unmixer(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image 
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Processing', "&Unmix", self.OnUnmix)
 
@@ -147,6 +145,6 @@ class Unmixer:
 
 
 def Plug(dsviewer):
-    dsviewer.unmux = Unmixer(dsviewer)
+    return Unmixer(dsviewer)
                                        
     
