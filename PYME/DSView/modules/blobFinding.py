@@ -30,12 +30,12 @@ import wx.lib.agw.aui as aui
 import os
 import six
 
-class blobFinder:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
 
-        self.image = dsviewer.image
-        self.do = dsviewer.do
+from ._base import Plugin
+
+class BlobFinder(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
 
         self.vObjPos = None
         self.vObjFit = None
@@ -365,7 +365,7 @@ class blobFinder:
 
 
 def Plug(dsviewer):
-    dsviewer.blobFinder = blobFinder(dsviewer)
+    blobFinder = BlobFinder(dsviewer)
     
     if not 'overlaypanel' in dir(dsviewer):    
         dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
@@ -374,4 +374,6 @@ def Plug(dsviewer):
         dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
     
         dsviewer.panesToMinimise.append(pinfo2)
+        
+    return blobFinder
     

@@ -66,13 +66,10 @@ def new_mesh_viewer(parent=None,*args, **kwargs):
     f.canvas.initialize()
     return f.canvas
         
-
-class visualiser:
+from ._base import Plugin
+class Visualiser(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         self.tq = None
         
         self.canvases = []
@@ -204,7 +201,7 @@ class visualiser:
 
 
 def Plug(dsviewer):
-    dsviewer.vis3D = visualiser(dsviewer)
+    return Visualiser(dsviewer)
 
 
 

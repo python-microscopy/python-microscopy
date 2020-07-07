@@ -33,12 +33,11 @@ import logging
 logger=logging.getLogger(__name__)
         
 global_shiftfield = None                               
-    
-class Unmixer:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
 
-        self.image = dsviewer.image 
+from ._base import Plugin
+class Unmixer(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self,dsviewer)
         
         dsviewer.AddMenuItem('Processing', "&Unsplit\tCtrl-U", self.OnUnmix)
         dsviewer.AddMenuItem('Processing', "&Unsplit, taking brightest\tCtrl-Shift-U", self.OnUnmixMax)
@@ -193,6 +192,6 @@ class Unmixer:
 
 
 def Plug(dsviewer):
-    dsviewer.unmux = Unmixer(dsviewer)
+    return Unmixer(dsviewer)
                                        
     

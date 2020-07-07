@@ -906,7 +906,7 @@ class ImageStack(object):
         print("Bioformats:done")
         
         #fix voxelsizes if not specified in OME metadata
-        if self.haveGUI and not (self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0):
+        if self.haveGUI and ((self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0)):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
             dlg = VoxSizeDialog(None)

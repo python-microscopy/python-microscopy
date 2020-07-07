@@ -136,8 +136,8 @@ class TrackList(wx.ListCtrl):
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
 
-
-class ParticleTrackingView(HasTraits):
+from ._base import Plugin
+class ParticleTrackingView(HasTraits, Plugin):
     #features = CStr('x, y')    
     #pNew = Float(0.2)
     #r0 = Float(500)
@@ -188,10 +188,7 @@ class ParticleTrackingView(HasTraits):
         
         self.clumps = []
         
-        self.dsviewer = dsviewer
-        self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         #self.tracker = None
         self.selectedTrack = None
@@ -457,6 +454,8 @@ def Plug(dsviewer):
      #ensure that our local cherrypy server is running
     htmlServe.StartServing()
     
-    dsviewer.tracker = ParticleTrackingView(dsviewer)
-    htmlServe.mount(dsviewer.tracker, '/tracks')
-    dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')
+    tracker = ParticleTrackingView(dsviewer)
+    htmlServe.mount(tracker, '/tracks')
+    tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')
+     
+    return tracker
