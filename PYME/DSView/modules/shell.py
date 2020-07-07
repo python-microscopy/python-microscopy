@@ -20,7 +20,6 @@
 #
 ##################
 
-import weakref
 import wx.py.shell
 from PYME import config
 
@@ -36,4 +35,4 @@ def Plug(dsviewer):
 
     dsviewer.AddPage(page=sh, select=False, caption='Shell')
 
-    dsviewer.sh = weakref.proxy(sh)
+    dsviewer.sh = sh
