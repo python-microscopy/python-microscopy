@@ -84,6 +84,9 @@ class DSViewFrame(AUIFrame):
         self.statusHooks = []
         self.installedModules = []
         
+        # will store weakrefs to things that modules previously injected into our namespace
+        self._module_injections = weakref.WeakValueDictionary()
+        
         self.dataChangeHooks = []
 
         self.updating = False

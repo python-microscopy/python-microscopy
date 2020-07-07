@@ -28,6 +28,8 @@ import os
 from imp import reload
 
 from PYME import config
+import logging
+logger = logging.getLogger(__name__)
 
 localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
 
@@ -65,6 +67,28 @@ modeModules = {
 }
 
 def loadModule(modName, dsviewer):
+    """
+    Loads a module my calling that modules `Plug()` function.
+    
+    The `outputs = Plug(dsviewer)` function takes an instance of the data viewer and optionally
+    returns a module class (or classes) which should be programatically accessible as an attribute
+    of the viewer. This return can either be an object (in which case it will be accessible under
+    the plugin name) or a dictionary if multiple objects are being returned or if things should be
+    available under a name other than the module name. The dictionary return is largely to support
+    an easy transition from the old plugin naming and should be avoided in new code, using a wrapper
+    class if more than one object needs to be accessed.
+    
+    In the future we might require the return to be a subclass of a `Plugin` object or similar.
+    
+    Parameters
+    ----------
+    modName
+    dsviewer
+
+    Returns
+    -------
+
+    """
     ml = modLocations[modName]
     mod = __import__('.'.join(ml) + '.' + modName, fromlist=ml)
     
@@ -75,9 +99,24 @@ def loadModule(modName, dsviewer):
         pass
     
     reload(mod)
-        
-    mod.Plug(dsviewer)
     
+    # record dsviewer keyw so we can warn if we inject into dsviewer class
+    # part of module injection deprecation
+    dsv_keys = list(dsviewer.__dict__.keys())
+    ret = mod.Plug(dsviewer)
+    
+    if list(dsviewer.__dict__.keys()) != dsv_keys:
+        logger.warning('Plugin [%s] injects into dsviewer namespace, could result in circular references' % modName)
+
+    # new style module tracking
+    if ret is not None:
+        if isinstance(ret, dict):
+            # either track named outputs
+            dsviewer._module_injections.update(ret)
+        else:
+            # or track module data under module name.
+            dsviewer._module_injections[modName] = ret
+
 
     dsviewer.installedModules.append(modName)
 
