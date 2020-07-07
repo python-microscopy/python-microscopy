@@ -23,6 +23,7 @@ headings. New entries should be added to the top of the changes section below.
 ## Changes
 
 **20.07.08** - created CHANGELOG.md (changes before here are incomplete)
+
 **20.07.07** - improved dsviewer plugin API - see PYME.DSView.modules.loadModule() docs
 
-### Release 20.04.25 (note - conda only)
+### Release 20.04.25 (conda only)
