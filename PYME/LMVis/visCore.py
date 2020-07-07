@@ -665,6 +665,8 @@ class VisGUICore(object):
     
         if os.path.splitext(filename)[1] == '.h5r':
             pass
+        elif filename.endswith('.h5r/live'):
+            pass
         elif os.path.splitext(filename)[1] == '.hdf':
             pass
         elif os.path.splitext(filename)[1] == '.mat':

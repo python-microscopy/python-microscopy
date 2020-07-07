@@ -22,12 +22,10 @@ python functions defining that method (linked from the table above). The server 
 command (see :mod:`PYME.cluster.PYMERuleServer`) which loads this in a separate thread and takes care of logging and zeroconf
 registration, rather than by directly running this file.
 """
-#import cherrypy
 import threading
 import requests
 import queue as Queue
 from six.moves import xrange
-
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('ruleserver')
@@ -36,17 +34,12 @@ logger.setLevel(logging.DEBUG)
 import time
 import sys
 import ujson as json
-#import json
 import os
-
 from PYME.misc import computerName
 from PYME import config
-#from PYME.IO import clusterIO
 from PYME.util import webframework
 import collections
-
 import uuid
-
 import numpy as np
 
 class Rule(object):
@@ -175,6 +168,7 @@ class IntegerIDRule(Rule):
         
         self._n_max = max_task_ID
         
+        logger.debug('on completion present: %s' % (on_completion != None))
         self.on_completion = on_completion
         
         self.avCost = 0
@@ -198,10 +192,25 @@ class IntegerIDRule(Rule):
         self.avCost = av_cost
         
     def make_range_available(self, start, end):
-        '''Make a range of tasks available (to be called once the underlying data is available)'''
+        """
+        Make a range of tasks available (to be called once the underlying data is available)
+        [start, end)
+
+        Parameters
+        ----------
+        start : int
+            first task number to release (inclusive)
+        end : int
+            last task number to release (exclusive)
+
+        Raises
+        ------
+        RuntimeError
+            if asked to release a range which is invalid for the max tasks we can create from this rule
+        """
         
         if start < 0 or start > self._task_info.size or end < 0 or end > self._task_info.size:
-            raise RuntimeError('Range (%d, %d) invalid with maxTasks=%d' % (start, end, self._task_info.size))
+            raise RuntimeError('Range (%d, %d) invalid with max task info=%d' % (start, end, self._task_info.size))
         
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
         with self._info_lock:
@@ -449,22 +458,28 @@ class RuleServer(object):
         while self._do_poll:
             for qn in list(self._rules.keys()):
                 self._rules[qn].poll_timeouts()
+                # logger.debug('%s, n_max: %d, n_completed: %d, n_assigned: %d, n_failed: %d' % (self._rules[qn].ruleID, self._rules[qn]._n_max,
+                # self._rules[qn].nCompleted, self._rules[qn].nAssigned, self._rules[qn].nFailed))
                 
                 # look for rules that have processed all tasks
                 if self._rules[qn].finished:
+                    logger.debug('rule finished, ID %s' % self._rules[qn].ruleID)
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
                     follow_on = r.on_completion
                     if follow_on is not None:
+                        logger.debug('adding chained rule')
                         # if a follow on rule is defined, add it
                         template = follow_on['template']
                         n_tasks = follow_on.get('max_tasks', 1)
                         timeout = follow_on.get('rule_timeout', 3600.)
                         ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+                        logger.debug('chained rule ID %s' % ruleID)
     
                         rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
-                                             rule_timeout=float(timeout), on_completion=follow_on.get('on_completion', None))
+                                             rule_timeout=float(timeout),
+                                             on_completion=follow_on.get('on_completion', None))
     
                         rule.make_range_available(0, int(n_tasks))
     
@@ -472,10 +487,10 @@ class RuleServer(object):
                             self._rules[ruleID] = rule
     
                         self._rule_n += 1
-                    
                 
                 #remore queue if expired (no activity for an hour) to free up memory
-                if self._rules[qn].expired:
+                elif self._rules[qn].expired:
+                    logger.debug('removing expired rule: %s' % self._rules[qn].ruleID)
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
@@ -599,21 +614,19 @@ class RuleServer(object):
             ``{"ok" : "True", 'ruleID' : str}``
 
         """
-        rule_info = json.loads(body)
+        with self._rule_lock:  # lock ~entire call so we don't hit KeyErrors if clients immediately try to interact with the server after post call
+            rule_info = json.loads(body)
+            
+            if ruleID is None:
+                ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+            
+            rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
+                                inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
+            
+            if not release_start is None:
+                rule.make_range_available(int(release_start), int(release_end))
         
-        if ruleID is None:
-            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
-        
-        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
-                             inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
-        
-        #print rule._inputs_by_task
-        if not release_start is None:
-            rule.make_range_available(int(release_start), int(release_end))
-        
-        with self._rule_lock:
             self._rules[ruleID] = rule
-        
         self._rule_n += 1
         
         return json.dumps({'ok': 'True', 'ruleID' : ruleID})
@@ -650,6 +663,29 @@ class RuleServer(object):
     
         return json.dumps({'ok': 'True'})
     
+    @webframework.register_endpoint('/update_max_tasks')
+    def update_max_tasks(self, rule_id, n_max):
+        """
+        
+        HTTP Endpoint (POST) to update the number of max tasks which can be
+        created from a given rule.
+        
+        Parameters
+        ----------
+        rule_id : str
+            ID of the rule to update
+        n_max : int
+            max tasks which should be created from the rule
+
+        Returns
+        -------
+        success : str
+            ``{"ok" : "True"}`` if successful.
+        """
+        with self._rule_lock:  # if this is called by client shortly after post we may still be making the rule
+            self._rules[rule_id]._n_max = int(n_max)
+        return json.dumps({'ok': 'True'})
+    
     @webframework.register_endpoint('/inactivate_rule')
     def inactivate_rule(self, ruleID):
         self._rules[ruleID].inactivate()
@@ -677,13 +713,13 @@ class RuleServer(object):
 
         """
         
-        #logger.debug('Handing in tasks...')
-        for handin in json.loads(body):
-            ruleID = handin['ruleID']
-            
-            rule = self._rules[ruleID]
-            
-            rule.mark_complete(handin)
+        try:
+            for handin in json.loads(body):
+                ruleID = handin['ruleID']
+                rule = self._rules[ruleID]
+                rule.mark_complete(handin)
+        except KeyError as e:
+            return json.dumps({'ok': False, 'error': str(e)})
             
         return json.dumps({'ok': True})
     
