@@ -83,10 +83,14 @@ def loadModule(modName, dsviewer):
     Plugins should **NOT** inject themselves directly into the dsviewer namespace as has been done
     in the case in the past as this is likely to result in circular references.
     
-    Plugins should also avoid holding a reference to dsviewer.image, dsviewer.do, etc, although it is
-    currently permissible to hold a reference to dsviewer itself TODO - Move these into a plugin base
-    class and use weakrefs.
+    if Plugins wish to keep track of the dsviewer object they are ascociated with (or it's .image,
+    .do or .view attributes) they should inherit from `PYME.DSView.modules._base.Plugin` which implements
+    weak proxies of the above to avoid reference counting issues.
     
+    NOTE: the `Plugin` class and safe dsviewer injection of values returned by `Plug()` are only
+    available in python-microscopy>=2020.07.07. Plugins planning to use these should either pin to
+    python-microscopy>=2020.07.07 in their conda recipe or pip requirements, or handle old versions
+    of PYME gracefully (e.g. by checking the PYME version and prompting users to update if needed).
     
     Parameters
     ----------
