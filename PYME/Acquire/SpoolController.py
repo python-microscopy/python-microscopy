@@ -212,8 +212,7 @@ class SpoolController(object):
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
             logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
-            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
-            #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
+            return HTTPSpooler.exists(pyme_cluster)
         else:
             local_h5 = os.sep.join([self.dirname, fn + '.h5'])
             logger.debug('Looking for %s on local machine' % local_h5)

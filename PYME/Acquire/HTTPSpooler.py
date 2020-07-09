@@ -94,7 +94,22 @@ def getReducedFilename(filename):
     return sname
     
 def exists(seriesName):
-    return clusterIO.exists(getReducedFilename(seriesName))
+    """
+    Check for PYME Cluster Series or h5 file on the cluster so we don't end up
+    with degenerate file stubs.
+    
+    Parameters
+    ----------
+    seriesName : str
+        cluster data directory relative path and filename (without extension) to
+        look for
+
+    Returns
+    -------
+    exists : bool
+        True if series name already exists, else False
+    """
+    return clusterIO.series_exists(getReducedFilename(seriesName))
 
 #Push data to cluster from multiple threads simultaeneously to hide IO latency
 #of each individual node. Not sure what the best number is here - currenty set
@@ -292,12 +307,14 @@ class Spooler(sp.Spooler):
         
     def cleanup(self):
         self._dPoll = False
-      
+    
     def FlushBuffer(self):
-      self._postQueue.put(self._buffer)
-      self._buffer = []
-     
+        # each item in the post-queue will be pushed to a single dataserver,
+        # keep things relatively spread out
+        for chunk in chunk_buffer(self._buffer, self.buflen):
+            self._postQueue.put(chunk)
+        self._buffer = []
 
-
-
-   
+def chunk_buffer(buffer, chunk_size):
+        for ind in range(0, len(buffer), chunk_size):
+            yield buffer[ind:ind + chunk_size]

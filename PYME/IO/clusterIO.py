@@ -554,6 +554,41 @@ def exists(name, serverfilter=local_serverfilter):
     """
     return (len(locate_file(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
 
+def series_exists(relative_name, serverfilter=local_serverfilter):
+    """
+    Performance version of `exists` when checking for multiple extensions of the
+    same base filename. Checks for PYME Cluster Series (.pcs) and .h5
+    
+    Parameters
+    ----------
+    relative_name : str
+        data server relative path and filename without extension
+    serverfilter : str
+        name of the cluster (optional)
+    exts : iterator
+        extensions (str) to check for. 
+
+    Returns
+    -------
+    exists : bool
+        True if file exists, else False
+
+    """
+    # get the directory listing one time:
+    dirname, filename = os.path.split(relative_name)
+    name = (dirname)
+    serverfilter = (serverfilter)
+    
+    d_list = set(listdirectory(name, serverfilter).keys())
+    
+    if len(d_list) < 1:
+        # trivial case
+        return False
+    
+    # check permutations of our filename
+    return ((filename + '.pcs') in d_list) or ((filename + '.h5') in d_list)
+
+
 class _StatResult(object):
     def __init__(self, file_info):
         self.st_size = file_info.size
