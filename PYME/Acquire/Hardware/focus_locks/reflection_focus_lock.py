@@ -198,13 +198,13 @@ class ReflectedLinePIDFocusLock(PID):
         if self.mode == 'time':
             self.StartPolling()
         else:
-            self.scope.frameWrangler.onFrame.connect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
 
     def deregister(self):
         if self.mode == 'time':
             self.StopPolling()
         else:
-            self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
