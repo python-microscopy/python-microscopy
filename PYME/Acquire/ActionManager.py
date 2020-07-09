@@ -179,6 +179,11 @@ class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
         Server process to expose queue_action functionality to everything on the
         cluster network.
 
+        NOTE - this will likely not be around long, as it would be preferable to
+        add the ActionManagerWebWrapper to
+        `PYME.acquire_server.AcquireHTTPServer` and run a single server process
+        on the microscope computer.
+
         Parameters
         ----------
         action_manager : ActionManager
