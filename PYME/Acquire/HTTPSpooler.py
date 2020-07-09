@@ -97,7 +97,7 @@ def exists(seriesName):
     """
     Check for PYME Cluster Series or h5 file on the cluster so we don't end up
     with degenerate file stubs.
-    
+
     Parameters
     ----------
     seriesName : str
@@ -309,12 +309,5 @@ class Spooler(sp.Spooler):
         self._dPoll = False
     
     def FlushBuffer(self):
-        # each item in the post-queue will be pushed to a single dataserver,
-        # keep things relatively spread out
-        for chunk in chunk_buffer(self._buffer, self.buflen):
-            self._postQueue.put(chunk)
+        self._postQueue.put(self._buffer)
         self._buffer = []
-
-def chunk_buffer(buffer, chunk_size):
-        for ind in range(0, len(buffer), chunk_size):
-            yield buffer[ind:ind + chunk_size]
