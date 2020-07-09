@@ -532,6 +532,9 @@ class SpoolControllerServer(webframework.APIHTTPServer, SpoolControllerWrapper):
     """
     Atand-alone server process for exposing spool controller methods to the cluster
     network.
+
+    NOTE - this will likely disapear soon in favor of using the full
+    `PYME.acquire_server.AcquireHTTPServer`
     """
     def __init__(self, spool_controller, port, bind_address=''):
         """
