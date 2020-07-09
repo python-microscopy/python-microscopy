@@ -1,61 +1,9 @@
 
-from .base import register_module, ModuleBase, OutputModule
-from .traits import Input, Output, CStr, Int, DictStrAny, Bool, Float, ListFloat
+from .base import register_module, OutputModule
+from .traits import Input, Output, CStr, DictStrAny, Bool, Float, ListFloat
 import requests
 import json
 import numpy as np
-
-@register_module('UpdateSpoolerSettings')
-class UpdateSpoolerSettings(ModuleBase):
-    """
-    Updates the SpoolController settings. 
-
-    NOTE - not the prefered way of changing spooler settings. The spool 
-    controller can also be accessed through action-queue tasks, which has the 
-    advantage that settings can be effectively associated with acquisition tasks
-    based on `Nice` if not directly as key-word arguments to 
-    SpoolController.start_spooling.
-    
-    Parameters
-    ----------
-    spool_controller_url : CStr
-    settings : traits.DictStrAny
-        Settings to apply to the spool controller. Must be json serializable. 
-        See PYME.IO.SpoolController.info for example settings, at the time of
-        writing they include
-            method : str
-                'File', 'Queue' (py2 only), or 'Cluster'. 
-            hdf_compression_level: int
-                pytables compression level, valid for file/queue methods only.
-            z_stepped : bool
-                flag to toggle z stepping or standard protocol during spool
-            z_dwell : int
-                number of frames to acquire at each z position for z-stepped 
-                spools
-            cluster_h5 : bool
-                spool to single h5 file on cluster (True) or pzf files (False).
-                Only relevant for `Cluster` method.
-            pzf_compression_settings : dict
-                see PYME.Acquire.HTTPSpooler
-            protocol_name : str
-                filename of the acquisition protocol to follow while spooling
-    input_name : anything
-        input will simply be piped to output
-    output_name : anything
-        input_name
-    
-    """
-    input_name = Input('input')
-    spool_controller_url = CStr('http://127.0.0.1:9394')
-    settings = DictStrAny()
-    output_name = Output('output')
-
-    def execute(self, namespace):
-        requests.post(self.spool_controller_url + '/settings', 
-                      data=json.dumps(self.settings),
-                      headers={'Content-Type': 'application/json'})
-        
-        namespace[self.output_name] = namespace[self.input_name]
 
 
 @register_module('QueueAcquisitions')
