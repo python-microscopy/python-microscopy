@@ -313,6 +313,14 @@ class StateManager(object):
     
 
 class microscope(object):
+    """
+
+    Attributes
+    ----------
+    frameWrangler : PYME.Acquire.frameWrangler.FrameWrangler
+        Initialized in between hardware initializations and gui initializations.
+    
+    """
     def __init__(self):
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
