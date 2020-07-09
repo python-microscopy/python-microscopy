@@ -65,11 +65,15 @@ def focus_lock(MainFrame, scope):
     from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.075, i=-0.0025, d=-0.002, sample_time=0.005)
+    sample_time = 0.005
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, 
+                                            p=-0.075, i=-0.0025, d=-0.002, 
+                                            sample_time=sample_time)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
+    scope.frameWrangler._polling_interval = sample_time
 
     # # display dark-subtracted profile
     # fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
