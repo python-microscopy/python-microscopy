@@ -286,29 +286,30 @@ class RLPIDFocusLockClient(object):
         self.name = name
 
         self.base_url = 'http://%s:%d' % (host, port)
+        self._session = requests.Session()
 
     @property
     def lock_enabled(self):
         return self.LockEnabled()
 
     def LockEnabled(self):
-        response = requests.get(self.base_url + '/LockEnabled')
+        response = self._session.get(self.base_url + '/LockEnabled')
         return bool(response.json())
 
     def EnableLock(self):
-        return requests.get(self.base_url + '/EnableLock')
+        return self._session.get(self.base_url + '/EnableLock')
 
     def DisableLock(self):
-        return requests.get(self.base_url + '/DisableLock')
+        return self._session.get(self.base_url + '/DisableLock')
 
     def GetPeakPosition(self):
-        response = requests.get(self.base_url + '/GetPeakPosition')
+        response = self._session.get(self.base_url + '/GetPeakPosition')
         return float(response.json())
 
     def ChangeSetpoint(self, setpoint=None):
         if setpoint is None:
             setpoint = self.GetPeakPosition()
-        return requests.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+        return self._session.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
 
     def ToggleLock(self):
         if self.lock_enabled:
@@ -317,7 +318,7 @@ class RLPIDFocusLockClient(object):
             self.EnableLock()
 
     def SetSubtractionProfile(self):
-        return requests.get(self.base_url + '/SetSubtractionProfile')
+        return self._session.get(self.base_url + '/SetSubtractionProfile')
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):
