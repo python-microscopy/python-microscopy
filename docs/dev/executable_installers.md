@@ -5,7 +5,7 @@ We use conda constructor [https://github.com/conda/constructor](https://github.c
 
 1) Make sure conda packages for `python-microscopy`, `pyme-depends` and `pymecompress` are up to date 
 2) [optional] Create a clean conda environment (or just install constructor into the conda base environment)
-3) `conda install constructor` **NOTE:** At one point it was to git clone the constructor source, checkout the "v3" branch
+3) `conda install constructor` **NOTE:** At one point it was neccesary to git clone the constructor source, checkout the "v3" branch
    and do a `python setup.py install` instead of the above. I think that the v3 branch has now been merged into main, but 
    it might be worth trying the source install if you run into issues.
 4) Download the latest `conda.exe` for the platform you are building for from 
