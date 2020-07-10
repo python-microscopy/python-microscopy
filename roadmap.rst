@@ -31,6 +31,12 @@ The exact nature of this split is unclear, but could look something like core, c
 and VisGUI), and PYMEAcquire. Relatively self-contained analysis features such as the meshing functions could also be
 split out.
 
+Define what is API and what is internal
+---------------------------------------
+
+Decide what is likely to be used from external code / plugins / contributions. Annotate and document what constitutes the
+API. Make this API more consistent and more clearly structured.
+
 
 New features / Improvements
 ===========================
@@ -43,34 +49,88 @@ UI
 UI alignment between VisGUI and dh5view
 '''''''''''''''''''''''''''''''''''''''
 
+With the goal of promoting a more seamless user-experience and reducing the amount of stuff to be learnt by a new user.
+Goal is that if you can use PYMEImage you have a head-start on PYMEVisualise and vice versa. Should also help code re-use
+by allowing us to remove quite a lot of duplicated code (e.g. pixel -> nm translations etc ...) Includes:
 
-Web UI
-''''''
+- Making display settings / layers appear in the same place in PYMEImage and PYMEVisualise (maybe right hand sidebar)
+- Making overlays and scaling work the same in both
+- Allowing easier overlaying of image and localisation data.
 
-
-Better logging / error reporting in UI apps
-'''''''''''''''''''''''''''''''''''''''''''
-
-
-Recipe error handling
-'''''''''''''''''''''
-
-Cleanup of VisGUI shader related code
-'''''''''''''''''''''''''''''''''''''
-
-Standardised UI components for tabular data and "reports"
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+And lays the framework for having things like annotation modules which can work on both image and point data.
 
 OpenGL based replacement for dh5view image display
 ''''''''''''''''''''''''''''''''''''''''''''''''''
 
-With support for large, tiled, datasets.
+With support for large, tiled, datasets and tile pyramids. Should improve viewer performance. Potentially a part of UI alignment above.
 
 
-IO / Analysis
--------------
+Standardised UI components for tabular data and "reports"
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+This would take the form of a spreadsheet type view for tabular results in recipes, and a viewer for HTML reports generated
+by recipes in dh5view/visgui. Longer term it would involve porting many of the current analysis tasks that display matplotlib
+windows to producing html reports.
+
+Better logging / error reporting in UI apps
+'''''''''''''''''''''''''''''''''''''''''''
+
+Largely addressed with error context manager on menu items, but doesn't capture everything.
+
+Web UI
+''''''
+
+Would allow:
+- the use of a hosted version of PYME without installation
+- quick exploration of cluster data
+- more platforms (e.g. phones & tablets)
+- reduced dependence on traitsui
+
+General housekeeping
+''''''''''''''''''''
+
+- tidy up shader code (which currently has at least one too many layers of abstraction)
+- tidy/sort menus
+- tidy/sort plugins
+- unified splashscreens when loading (and update institutional icons etc ...)
+- better support for associating files with UI components
+- single UI entry point??
+- make windows use non-generic icons in taskbar
+- improve PYMEImage opening speed (currently limited by clusterIO name resolution)
 
 
+IO
+--
+
+- more support for tiled/chunked image formats (e.g. zarr)
+- move to a true 5D data model
+- better OME interop
+  - get PYME formats into bioformats
+  - access files from OMERO
+  - push stuff to OMERO
+
+Localisation Analysis
+---------------------
+
+- Make it easy to plug custom localisation routines
+- 3D multi-emitter fitting
+- Refresh / fix fitInfo localisation inspection
+- Other sample quality stuff?
+
+Acquisition
+-----------
+
+- add support for using micromanager hardware drivers
+- expand and better document hardware base classes
+- clearly document how new hardware types (e.g. Adaptive optics, FPGAs etc) should interface with PYMEAcquire
+- write an initialisation script wizard to lower the barrier to setting up PYMEAcquire on new microscopes
+
+Recipes
+-------
+
+- add support for parallelism on a per-chunk rather than per image basis
+- deprecate the `processFramesIndividually` option in favour of separate minumum chunk size and
+- re-organise modules to make them easier to find. Potentially push some of the more esoteric stuff out into plugins
 
 Planned Deprecations
 ====================
