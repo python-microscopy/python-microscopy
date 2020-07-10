@@ -18,3 +18,6 @@ PYME (the PYthon Microscopy Environment) is an open-source application suite for
 - **Bug reports:** https://github.com/python-microscopy/python-microscopy/issues
 
 The documentation is also available in the *docs* subdirectory of the repository.
+
+**Have a question?** Get in touch! \
+We're a community partner of the image.sc forum - tag your post with `pyme` and we'll be happy to support you.
