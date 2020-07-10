@@ -163,7 +163,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         // If we hit a boundary, try the reverse direction, 
         // starting from orig_idx
         // twin now becomes prev
-        if ((twin_idx == -1) && (curr_idx != -1))
+        if ((twin_idx == -1) && (curr_idx != -1) && (i < NEIGHBORSIZE))
         {
             // Ideally we sweep through the neighbors in a continuous fashion,
             // so we'll reverse the order of all the edges so far.
