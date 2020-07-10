@@ -1,22 +1,23 @@
 # name and version (required)
 name: python-microscopy
-version: 19.12.17
+version: 20.07.10
 
 # channels to pull packages from
 channels: &id1
-  - http://repo.anaconda.com/pkgs/main/
-  - http://repo.anaconda.com/pkgs/free/
+  - https://repo.anaconda.com/pkgs/main/
+  - https://repo.anaconda.com/pkgs/free/
   - https://conda.anaconda.org/david_baddeley
-  - http://repo.anaconda.com/pkgs/msys2
+  - https://repo.anaconda.com/pkgs/msys2
 
 # specifications
 specs:
-  - python
+  # - python
+  - pyme-depends
   - python-microscopy
   - conda
-  - wxpython <3.9
-  - numpy=1.14
-  - pillow
+  # - wxpython <3.9
+  # - numpy=1.14
+  # - pillow
   #- console_shortcut [win]
   - menuinst [win]
   #- sample                            [osx]
@@ -35,9 +36,9 @@ exclude:
 packages:
 #  - python-2.7.9-0.tar.bz2
 
-#install_in_dependency_order: True
+install_in_dependency_order: True
 
-keep_pkgs: True
+# keep_pkgs: True
 
 #pre_install: hello.sh                 [unix]
 #post_install: goodbye.sh              [unix]
@@ -62,6 +63,8 @@ license_file: LICENSE
 attempt_hardlinks: True
 
 ignore_duplicate_files: True
+
+welcome_image: PYME/resources/icons/pymeLogo.png   [win]
 
 # default install prefix
 #default_prefix: /opt/example
