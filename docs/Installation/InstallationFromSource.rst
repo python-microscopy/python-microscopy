@@ -7,7 +7,7 @@ If you want to contribute to PYMEs development, or you want to use PYME in a con
 requires modification to some of the scripts you will want to have the PYME sources somewhere you can easily find, modify
 and update them.
 
-If you just want to use the data analysis features then you are strongly advised to follow the instructions in :ref:`installationanaconda`_
+If you just want to use the data analysis features then you are strongly advised to follow the instructions in :ref:`installationanaconda`
 instead.
 
 The easiest (and only supported) way of getting a development build up and running also uses

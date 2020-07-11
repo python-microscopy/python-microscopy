@@ -3,7 +3,7 @@
 Get started
 ***********
 
-single-click installation for users (Windows only)
+single-click installation for users (Windows-only)
 ==================================================
 
 Download the latest installer from https://python-microscopy.org/downloads/. Double-click
@@ -47,6 +47,18 @@ Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Then, open a
     cd python-microscopy
     pip install requirements.txt
     python setup.py develop
+
+enable bioformats compatibility (optional)
+==========================================
+
+Install Java Development Kit 1.8. Open a command prompt in the installation ``conda`` or ``venv`` 
+environment and enter
+
+.. code-block:: bash
+
+    pip install javabridge
+    pip install python-bioformats
+
 
 Verify installation
 *******************
@@ -101,5 +113,5 @@ This can be solved by the following.
 Additional resources
 ********************
 
-- Additional PYME installation docs can be found at https://github.com/csoeller/pyme-install-docs.
-- Detailed developer installation docs are located at :ref:`installationFromSource`.
+- Detailed developer installation docs are located at :ref:`installationFromSource`
+- Additional PYME installation docs can be found at https://github.com/csoeller/pyme-install-docs
