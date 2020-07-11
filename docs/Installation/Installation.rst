@@ -3,7 +3,7 @@
 Get started
 ***********
 
-single-click installation for users (Windows-only)
+Single-click installation for users (Windows-only)
 ==================================================
 
 Download the latest installer from https://python-microscopy.org/downloads/. Double-click
@@ -48,7 +48,7 @@ Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Then, open a
     pip install requirements.txt
     python setup.py develop
 
-enable bioformats compatibility (optional)
+Enable bioformats compatibility (optional)
 ==========================================
 
 Install Java Development Kit 1.8. Open a command prompt in the installation ``conda`` or ``venv`` 
@@ -87,7 +87,7 @@ installed as part of PYME.
 Troubleshooting
 ***************
 
-single-click
+Single-click
 ============
 If prompted with **Windows protected your PC**, click **More info** and then **Run anyway**. 
 
