@@ -23,6 +23,18 @@ Then, open a command prompt and enter
     conda config --add channels david_baddeley
     conda install python-microscopy
 
+pip installation for users
+==========================
+
+Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
+Then, open a command prompt and enter
+
+.. code-block:: bash
+	
+    conda create -n pyme python=2.7
+    source activate pyme
+    pip install python-microscopy
+
 conda installation for developers
 =================================
 
