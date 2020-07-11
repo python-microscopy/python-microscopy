@@ -64,7 +64,7 @@ attempt_hardlinks: True
 
 ignore_duplicate_files: True
 
-welcome_image: PYME/resources/icons/pymeLogo.png   [win]
+welcome_image: PYME/resources/icons/pymeLogo_install.png   [win]
 
 # default install prefix
 #default_prefix: /opt/example
