@@ -73,6 +73,13 @@ changes however is high in order not to break existing code. Such changes:
 - Must consider how the code might be used (e.g. several people use bits of PYME from ipython notebooks) and provide
   backwards compatible fallbacks (along with deprecation warnings) where appropriate
 
+Documentation
+=============
+
+In addition to writing Numpy-style docstrings for every function, we encourage developers to add documentation when applicable. 
+We follow the Divio documentation system (https://documentation.divio.com/). This means new documentation should fall into
+one of four categories: a tutorial, a how-to guide, an explanation, or a reference, and guidelines for the selected style
+must be followed.
 
 Licensing
 =========
