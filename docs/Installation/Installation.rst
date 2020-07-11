@@ -76,12 +76,12 @@ installed as part of PYME.
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``PYMEImage -t -m lite``| This is the data viewer for image files (also used to launch localization analysis). The **-t -m lite** options      |
-|                         | initiates a test mode which should display a image consisting of random noise.                                       |
+| ``PYMEImage -t``        | This is for viewing images. The **-t** option initiates a test mode which displays an image of random noise.         |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``PYMEAcquire``         | This is the data acquistion component, which when launched without any options will start with simulated hardware.   |
+| ``PYMEAcquire``         | This for acquiring data from a custom microscope. When launched without any options, it will start with simulated    |
+|                         | hardware. It will display a live image of random noise, streamed from a simulated camera.                            |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``PYMEVisualize``       | This is a viewer for point data sets. When launched without any parameters it will show a large pink triangle.       |
+| ``PYMEVisualize``       | This is for viewing point data sets. It shows a blank canvas when launched without any parameters.                   |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
 
 Troubleshooting
