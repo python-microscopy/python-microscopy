@@ -19,7 +19,7 @@ Then, open a command prompt and enter
 .. code-block:: bash
 	
     conda create -n pyme python=2.7
-    source activate pyme
+    conda activate pyme
     conda config --add channels david_baddeley
     conda install python-microscopy
 
@@ -32,7 +32,7 @@ Then, open a command prompt and enter
 .. code-block:: bash
 	
     conda create -n pyme python=2.7
-    source activate pyme
+    conda activate pyme
     pip install python-microscopy
 
 conda installation for developers
