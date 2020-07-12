@@ -260,9 +260,9 @@ class Ripleys(ModuleBase):
             Name of resulting PYME.IO.tabular.DictSource data ource
         normalization : traits.Enum
             Ripley's normalization type. See M. A. Kiskowski, J. F. Hancock, 
-            and A. K. Kenworthy, "On the use of Ripley’s K-function and its 
+            and A. K. Kenworthy, "On the use of Ripley's K-function and its 
             derivatives to analyze domain size," Biophys. J., vol. 97, no. 4, 
-            pp. 1095–1103, 2009.
+            pp. 1095-1103, 2009.
         nbins : traits.Int
             Number of bins over which to analyze K-function
         binSize : traits.Float
