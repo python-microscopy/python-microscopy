@@ -12,7 +12,6 @@ channels: &id1
 # specifications
 specs:
   # - python
-  - pyme-depends
   - python-microscopy
   - conda
   # - wxpython <3.9
