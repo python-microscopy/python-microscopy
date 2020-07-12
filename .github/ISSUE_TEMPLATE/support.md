@@ -1,6 +1,6 @@
 ---
 name: Support request
-about: Having trouble getting something to work? Let us know and we'll try and help. Support is also available by emailing support@python-microscopy.org, choose this option if you would like the question and answer to be publicly searchable (and especially if you think this is likely to effect multiple people and should really be in our docs).
+about: Having trouble getting something to work? Let us know and we'll try and help. Support is also available by emailing support@python-microscopy.org, choose this option if you would like the question and answer to be publicly searchable.
 title: "[SUPPORT]"
 labels: support
 assignees: ''
