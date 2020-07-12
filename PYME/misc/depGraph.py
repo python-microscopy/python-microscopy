@@ -6,7 +6,6 @@ Created on Mon Mar  9 21:56:18 2015
 """
 import numpy as np
 import toposort
-import networkx as nx
 # import pylab
 import matplotlib.pyplot as plt
 import matplotlib.cm
@@ -15,6 +14,8 @@ from six.moves import xrange
 import six
 
 def makeGraph(dg):
+    import networkx as nx
+    
     G = nx.DiGraph()
     for k, v in dg.items():
         for e in v:
