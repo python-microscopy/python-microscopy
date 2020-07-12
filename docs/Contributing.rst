@@ -76,10 +76,18 @@ changes however is high in order not to break existing code. Such changes:
 Documentation
 =============
 
-In addition to writing Numpy-style docstrings for every function, we encourage developers to add documentation when applicable. 
-We follow the Divio documentation system (https://documentation.divio.com/). This means new documentation should fall into
-one of four categories: a tutorial, a how-to guide, an explanation, or a reference, and guidelines for the selected style
-must be followed.
+In addition to providing Numpy-style docstrings for any new code submitted, any effort to improve the existing documentation is 
+extremely welcome. Our documentation needs to cater to two distinct audiences - *"end users"* who are often biologists, and 
+whilst intelligent, may not have any exposure to coding (or even running stuff on the command line), and *"developers"* who wish to
+create plugins, use some of our library code from, or contribute back to PYME. In general, documentation can fall into one of 
+four categories: a tutorial, a how-to guide, an explanation, or a reference. We are not prescriptive about how documentation
+should be written, but the Divio documentation system (https://documentation.divio.com/) is a good inspiration for what makes 
+good documentation. 
+
+**Writing documentation is a great way to get involved**, even if you are not an expert coder. If you had difficulty getting something 
+to work, but then found a solution, **please write it up** and submit! If coding as `.rst` is a bit scary, you can 
+also submit documentation by opening a feature request and attaching a .docx or .pdf. Documentation submitted this way may take several
+months before we manage to re-format it and include, but is still immensely valuable.
 
 Licensing
 =========
