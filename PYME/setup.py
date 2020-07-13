@@ -53,7 +53,6 @@ def configuration(parent_package='',top_path=None):
     
     config.add_subpackage('cluster')
     config.add_data_dir('cluster')
-    config.add_data_dir('cluster/clusterUI')
     
     #config.add_subpackage('pad')
     #config.add_subpackage('bcl')
