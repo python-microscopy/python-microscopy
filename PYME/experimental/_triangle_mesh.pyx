@@ -231,7 +231,7 @@ cdef class TriangleMesh(TrianglesBase):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'mean_curvature', 'gaussian_curvature']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'curvature_mean', 'curvature_gaussian']
 
         self.fix_boundary = True  # Hold boundary edges in place
 
@@ -313,13 +313,13 @@ cdef class TriangleMesh(TrianglesBase):
         return self.vertices[:,2]
 
     @property
-    def mean_curvature(self):
+    def curvature_mean(self):
         if self._H is None:
             self.calculate_curvatures()
         return self._H
     
     @property
-    def gaussian_curvature(self):
+    def curvature_gaussian(self):
         if self._K is None:
             self.calculate_curvatures()
         return self._K
