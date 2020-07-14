@@ -151,6 +151,15 @@ functional by that time.
 Documentation
 =============
 
+Both the user facing and api documentation need a **lot** of work. An incomplete list of items
+
+- Much of the existing end user documentation is out of date. Refresh this.
+- Write more user documentation where needed. This should be a combination of general overviews (what are the components
+and what are they good for) as well as task-specific walk-throughs, HOWTOs, tutorials etc ...
+- Document recipes better
+- Make sure functions which are likely to be called from plugin code (the API) all have docstrings (ideally all functions
+should have docstrings, but this is a realistic starting point).
+
 
 Packaging / Distribution
 ========================
@@ -158,19 +167,31 @@ Packaging / Distribution
 Continuous Integration & Testing
 --------------------------------
 
+We currently have some CI based testing, but this is pretty limited. Packaging etc is done manually.
+
+Testing:
+''''''''
+
+- fix failing tests
+- improve test coverage
+- run coverage checks on newly submitted PRs (and get this summarized nicely / with a bot etc ... so we can see if a given PR improves coverage)
+
+Packaging:
+''''''''''
+
+- set up automatic package builds (conda, pip)
+- set up automatic builds of executable installers
+
+
 Conda packages & dependencies
 -----------------------------
 
-Py3
-'''
+There are still a few holes in our default conda based packaging:
 
-
-Streamlined bioformats installation / packaging
-'''''''''''''''''''''''''''''''''''''''''''''''
-
-Shapely?
-''''''''
-
+- start building conda packages for python-microscopy for py3
+- ensure all dependencies are being built for py3.6 and 3.7
+- make it easy to install bioformats (this might mean maintaining conda packages for both bioformats and a JVM)
+- consider packaging shapely (not available across platforms from the core conda channels)
 
 Pip-installable packages (wheels)
 ---------------------------------
@@ -195,6 +216,7 @@ The other arguments for conda over pip are:
 - conda has a nice way of installing menu items/ shortcuts. If you 'conda install python-microscopy' on windows you now get links to the component programs in your start menu. This is not possible using pip.
 - conda constructor offers a reasonably simple way of creating an executable installer for windows and OSX.
 
-Stacked against this is the pain that is conda dependency management. My gut feeling is to stick with conda as the default install route, but to offer pip as an option for people with a little move technical expertise.
+Stacked against this is the pain that is conda dependency management. My gut feeling is to stick with conda as the default
+install route, but to offer pip as an option for people with a little move technical expertise.
 
 
