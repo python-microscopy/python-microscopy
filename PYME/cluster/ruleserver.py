@@ -437,7 +437,7 @@ class RuleServer(object):
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
         
-        with open(os.path.splitext(__file__)[0] + '.html', 'r') as f:
+        with open(os.path.join(os.path.split(__file__)[0], 'clusterUI', 'ruleserver.html'), 'r') as f:
             self._status_page = f.read()
     
     
