@@ -125,7 +125,7 @@ def loadModule(modName, dsviewer):
     if ret is not None:
         if isinstance(ret, dict):
             # either track named outputs [legacy]
-            for k, v in ret:
+            for k, v in ret.items():
                 setattr(dsviewer, k, weakref.proxy(v))
         else:
             # or track module data under module name.
