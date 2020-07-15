@@ -288,7 +288,10 @@ signature-mutators=
 # Should be able to eliminate this with gl[A-Z][a-zA-Z]*, but I can't use regex
 # in additional-builtins and dummy-variables-rgx doesn't work for some reason,
 # so we have to explicitly list all the C gl variables
-additional-builtins=glVertexPointerf,glNormalPointerf,glColorPointerf,glReadPixelsf
+additional-builtins=glVertexPointerf,
+                    glNormalPointerf,
+                    glColorPointerf,
+                    glReadPixelsf
 
 # Tells whether unused global variables should be treated as a violation.
 allow-global-unused-variables=yes

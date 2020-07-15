@@ -10,3 +10,4 @@ repos:
   rev: v3.1.0  # Use the ref you want to point at
   hooks:
   - id: fix-encoding-pragma  # Add # -*- coding: utf-8 -*- to the top of python files.
+  
