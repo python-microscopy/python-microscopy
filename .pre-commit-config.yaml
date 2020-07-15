@@ -6,4 +6,3 @@ repos:
     entry: pylint --errors-only --extension-pkg-whitelist=wx
     language: system
     types: [python]
-    files: 'PYME/*'
