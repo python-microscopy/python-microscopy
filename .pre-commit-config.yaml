@@ -3,6 +3,10 @@ repos:
   hooks:
   - id: pylint
     name: pylint
-    entry: pylint --errors-only --extension-pkg-whitelist=wx
+    entry: pylint --errors-only
     language: system
     types: [python]
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.1.0  # Use the ref you want to point at
+  hooks:
+  - id: fix-encoding-pragma  # Add # -*- coding: utf-8 -*- to the top of python files.
