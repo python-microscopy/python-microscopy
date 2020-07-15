@@ -150,18 +150,33 @@ logger = logging.getLogger(__name__)
 _ns = None
 _ns_lock = threading.Lock()
 
-def get_ns():
-    global _ns
-    with _ns_lock:
-        if _ns is None:
-            #stagger query times
-            time.sleep(3*np.random.rand())
-            #_ns = pzc.getNS('_pyme-http')
-            _ns = hybrid_ns.getNS('_pyme-http')
-            #wait for replies
-            time.sleep(5)
 
-    return _ns
+if config.get('clusterIO-hybridns', True):
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3*np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = hybrid_ns.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+    
+        return _ns
+else:
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3 * np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = pzc.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+        
+        return _ns
             
 
 if not 'sphinx' in sys.modules.keys():
