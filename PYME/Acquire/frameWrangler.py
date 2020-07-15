@@ -74,9 +74,7 @@ class FrameWrangler(object):
         Called on each new frame group (once per polling interval) - use for 
         updateing GUIs etc.
     onStop : dispatch.Signal
-    _polling_interval : float
-        Length of time to sleep between loops in the polling thread. Defaults to
-        0.01, units of seconds.
+        Called when acquisition stops.
 
     """
     def __init__(self, _cam, _ds = None, event_loop=None):
@@ -130,7 +128,7 @@ class FrameWrangler(object):
 
         self._current_frame_lock = threading.Lock()
         self._poll_lock = threading.Lock()
-        self._polling_interval = 0.01  # [s]
+        self._polling_interval = 0.01  # time between calls to poll the camera [s]
         self._poll_thread = threading.Thread(target=self._poll_loop)
         self._poll_thread.start()
         
