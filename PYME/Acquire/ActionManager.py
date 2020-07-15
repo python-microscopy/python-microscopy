@@ -145,7 +145,7 @@ class ActionManager(object):
         """
         while self._monitoring:
             if self.currentTask is not None:
-                logger.debug('here, %f s until kill' % (self._cur_task_kill_time - time.time()))
+                #logger.debug('here, %f s until kill' % (self._cur_task_kill_time - time.time()))
                 if time.time() > self._cur_task_kill_time:
                     self.scope().turnAllLasersOff()
                     # pause and reset so we can start up again later
