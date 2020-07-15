@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
@@ -13,8 +14,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 from OpenGL.GL import *
-
-import non_existent_packages
 
 class Points3DEngine(BaseEngine):
     def __init__(self, context=None):
