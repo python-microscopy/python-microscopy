@@ -433,6 +433,7 @@ class SpoolController(object):
             
             self.protocolZ = pmod.PROTOCOL_STACK
             self.protocolZ.filename = protocolName
+            self.z_dwell = self.protocolZ.dwellTime
             
     def SetSpoolMethod(self, method):
         """Set the spooling method

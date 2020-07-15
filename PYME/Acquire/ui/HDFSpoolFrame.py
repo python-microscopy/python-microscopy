@@ -280,7 +280,8 @@ class PanSpool(afp.foldingPane):
         self.AddNewElement(self._protocol_pan())
 
         clp = afp.collapsingPane(self, caption='Z stepping ...')
-        clp.AddNewElement(seqdialog.seqPanel(clp, self.scope, mode='sequence'))
+        self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
+        clp.AddNewElement(self._seq_panel)
         self.AddNewElement(clp)
         self.seq_pan = clp
 
@@ -561,6 +562,7 @@ class PanSpool(afp.foldingPane):
             self.spoolController.SetProtocol(pname)
             # do this after setProtocol so that an error in SetProtocol avoids setting the new name
             self.stAqProtocol.SetLabel(pname)
+            self._seq_panel.UpdateDisp()  # update display of e.g. z_dwell
 
         pDlg.Destroy()
 
