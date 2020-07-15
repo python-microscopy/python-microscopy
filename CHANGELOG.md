@@ -32,8 +32,6 @@ The intention of this file is to be easier to parse than the PR / commit history
 
 ## Changes
 
-**FIXVERSION** - socket keep-alives in OffsetPiezoClient and RLPIDFocusLockClient
-
 **20.07.08** - created CHANGELOG.md (changes before here are incomplete)
 
 **20.07.07** - improved dsviewer plugin API - see PYME.DSView.modules.loadModule() docs
