@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 from OpenGL.GL import *
 
+import non_existent_package
+
 class Points3DEngine(BaseEngine):
     def __init__(self, context=None):
         BaseEngine.__init__(self, context=context)
