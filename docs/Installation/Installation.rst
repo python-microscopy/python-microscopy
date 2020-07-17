@@ -57,7 +57,7 @@ Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Then, open a
 	
     git clone git@github.com:python-microscopy/python-microscopy.git
     cd python-microscopy
-    xargs -L 1 pip install < requirements.txt
+    pip install -r requirements.txt
     python setup.py develop
 
 Enable bioformats compatibility (optional)
@@ -121,6 +121,12 @@ This can be solved by the following.
 
     cd /path/to/python-microscopy/
     /path/to/mininconda/install/python.app/Contents/MacOS/python setup.py develop
+
+pip for developers
+==================
+
+If you run into any dependency not installed issues after entering `pip install -r requirements.txt`,
+just run this command again.
 
 Additional resources
 ********************
