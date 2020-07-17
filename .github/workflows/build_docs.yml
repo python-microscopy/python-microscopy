@@ -35,8 +35,14 @@ jobs:
         ./gen_api_docs
         make html
         tar -jcf doc_html.tar.bz2 html
-        
     - name: Upload
+      env:
+        DOCS_USERNAME: ${{ secrets.DOCS_USERNAME }}
+        DOCS_PASSWORD: ${{ secrets.DOCS_PASSWORD }}
+      run: |
+        cd docs
+        curl -u "${DOCS_USERNAME}:${DOCS_PASSWORD}" -T doc_html.tar.bz2 https://python-microscopy.org:2078/
+    - name: Artifact
       uses: actions/upload-artifact@v1
       with:
         name: docs_html.tar.bz2
