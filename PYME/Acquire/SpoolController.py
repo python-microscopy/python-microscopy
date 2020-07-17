@@ -297,19 +297,21 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, filename=None, max_frames=sys.maxsize, 
-                      do_preflight_check=True, **kwargs):
+    def StartSpooling(self, fn=None, stack=None, compLevel=None, 
+                      zDwellTime=None, doPreflightCheck=True, 
+                      maxFrames=sys.maxsize, pzf_compression_settings=None, 
+                      cluster_h5=None, protocol=None):
         """
 
         Parameters
         ----------
-        filename : str, optional
-            filename can be hardcoded here, otherwise differs to the seriesName
+        fn : str, optional
+            fn can be hardcoded here, otherwise differs to the seriesName
             property which will create one if need-be.
-        max_frames : int, optional
+        maxFrames : int, optional
             point at which to end the series automatically, by default 
             sys.maxsize
-        do_preflight_check : bool, optional
+        doPreflightCheck : bool, optional
             toggle performing pre-flights specified in the acquisition protocol,
             by default True.
         kwargs : dict
@@ -317,29 +319,40 @@ class SpoolController(object):
             of this spool. See `SpoolController.update_settings`
         
         """
-        filename = self.seriesName if filename in ['', None] else filename
-        self.update_settings(kwargs)
+        # these settings were managed by the GUI, but are now managed by the 
+        # controller, still allow them to be passed in, but default to internals
+        fn = self.seriesName if fn in ['', None] else fn
+        stack = self.z_stepped if stack is None else stack
+        compLevel = self.hdf_compression_level if compLevel is None else compLevel
+        z_dwell = self.z_dwell if zDwellTime is None else zDwellTime
+        pzf_compression_settings = self.pzf_compression_settings if pzf_compression_settings is None else pzf_compression_settings
+        cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
+        if protocol is None:
+            protocol, protocol_z = self.protocol, self.protocolZ
+        else:
+            pmod = prot.get_protocol(protocol)
+            protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
         
         #make directories as needed
         if not (self.spoolType == 'Cluster'):
-            dirname = os.path.split(self._get_queue_name(filename))[0]
+            dirname = os.path.split(self._get_queue_name(fn))[0]
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
 
-        if self._checkOutputExists(filename): #check to see if data with the same name exists
+        if self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
             raise IOError('A series with the same name already exists')
 
-        if self.z_stepped:
-            protocol = self.protocolZ
-            protocol.dwellTime = self.z_dwell
+        if stack:
+            protocol = protocol_z
+            protocol.dwellTime = z_dwell
             print(protocol)
         else:
-            protocol = self.protocol
+            protocol = protocol
 
-        if do_preflight_check and not preflight.ShowPreflightResults(None, self.protocol.PreflightCheck()):
+        if doPreflightCheck and not preflight.ShowPreflightResults(None, protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
@@ -353,26 +366,26 @@ class SpoolController(object):
         
         if self.spoolType == 'Queue':
             from PYME.Acquire import QueueSpooler
-            self.queueName = getRelFilename(self._get_queue_name(filename))
+            self.queueName = getRelFilename(self._get_queue_name(fn))
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
-                                                guiUpdateCallback=self._ProgressUpate, complevel=self.hdf_compression_level, 
-                                                fakeCamCycleTime=fakeCycleTime, maxFrames=max_frames)
+                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
+                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
-            self.queueName = self._get_queue_name(filename, pcs=(not self.cluster_h5))
+            self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
                                                frameShape = frameShape, protocol=protocol,
-                                               guiUpdateCallback=self._ProgressUpate, complevel=self.hdf_compression_level,
-                                               fakeCamCycleTime=fakeCycleTime, maxFrames=max_frames,
-                                               compressionSettings=self.pzf_compression_settings, aggregate_h5=self.cluster_h5)
+                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel,
+                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                               compressionSettings=self.pzf_compression_settings, aggregate_h5=cluster_h5)
            
         else:
             from PYME.Acquire import HDFSpooler
-            self.spooler = HDFSpooler.Spooler(self._get_queue_name(filename), self.scope.frameWrangler.onFrame,
+            self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn), self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
-                                              guiUpdateCallback=self._ProgressUpate, complevel=self.hdf_compression_level, 
-                                              fakeCamCycleTime=fakeCycleTime, maxFrames=max_frames)
+                                              guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
+                                              fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
         #TODO - sample info is probably better handled with a metadata hook
         #if sampInf:
@@ -522,7 +535,13 @@ class SpoolControllerWrapper(object):
         return 'OK'
 
     @webframework.register_endpoint('/start_spooling', output_is_json=False)
-    def start_spooling(self, body='{}'):
-        settings = json.loads(body)
-        self.spool_controller.StartSpooling(**settings)
+    def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
+                      z_dwell=None, preflight_check=True, 
+                      max_frames=sys.maxsize, pzf_compression_settings=None, 
+                      cluster_h5=None, protocol=None):
+        self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
+                                            z_dwell, preflight_check,
+                                            max_frames, 
+                                            pzf_compression_settings, 
+                                            cluster_h5, protocol)
         return 'OK'
