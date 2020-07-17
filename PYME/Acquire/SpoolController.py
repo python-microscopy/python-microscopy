@@ -378,7 +378,7 @@ class SpoolController(object):
                                                frameShape = frameShape, protocol=protocol,
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel,
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=self.pzf_compression_settings, aggregate_h5=cluster_h5)
+                                               compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5)
            
         else:
             from PYME.Acquire import HDFSpooler
@@ -467,9 +467,18 @@ class SpoolController(object):
 
 
     def SetProtocol(self, protocolName=None, reloadProtocol=True):
-        """Set the current protocol .
+        """
+        Set the current protocol.
         
-        See also: PYME.Acquire.Protocols."""
+        Parameters
+        ----------
+        protocolName: str
+            path to protocol file including extension
+        reloadProtocol : bool
+            currently ignored; protocol module is reinitialized regardless.
+        
+        See also: PYME.Acquire.Protocols.
+        """
 
         if (protocolName is None) or (protocolName == '<None>'):
             self.protocol = prot.NullProtocol
