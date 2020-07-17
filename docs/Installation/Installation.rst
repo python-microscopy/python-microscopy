@@ -57,7 +57,7 @@ Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Then, open a
 	
     git clone git@github.com:python-microscopy/python-microscopy.git
     cd python-microscopy
-    pip install requirements.txt
+    xargs -L 1 pip install < requirements.txt
     python setup.py develop
 
 Enable bioformats compatibility (optional)
@@ -126,4 +126,3 @@ Additional resources
 ********************
 
 - Detailed developer installation docs are located at :ref:`installationFromSource`
-- Additional PYME installation docs can be found at https://github.com/csoeller/pyme-install-docs
