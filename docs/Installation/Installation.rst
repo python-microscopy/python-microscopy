@@ -61,6 +61,12 @@ and cython are installed. Then, open a command prompt and enter
     pip install -r requirements.txt
     python setup.py develop
 
+To get PYMEVisualize to run, you will need to additionally enter
+
+.. code-block:: bash
+	
+    pip install docutils mpld3
+
 Enable bioformats compatibility (optional)
 ==========================================
 
