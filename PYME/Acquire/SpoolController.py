@@ -308,16 +308,34 @@ class SpoolController(object):
         fn : str, optional
             fn can be hardcoded here, otherwise differs to the seriesName
             property which will create one if need-be.
-        maxFrames : int, optional
-            point at which to end the series automatically, by default 
-            sys.maxsize
+        stack : bool, optional
+            toggle z-stepping during acquisition. By default None, which differs
+            to current `SpoolController` state.
+        compLevel : int, optional
+            zlib compression level for pytables. Not relevant for `Cluster`
+            spool method unless `cluster_h5` is True. By default None, which 
+            differs to current `SpoolController` state.
+        zDwellTime : int, optional
+            frames per z-step. By default None, which differs to current 
+            `SpoolController` state.
         doPreflightCheck : bool, optional
             toggle performing pre-flights specified in the acquisition protocol,
             by default True.
-        kwargs : dict
-            can be used to update the SpoolController settings at the beginning
-            of this spool. See `SpoolController.update_settings`
-        
+        maxFrames : int, optional
+            point at which to end the series automatically, by default 
+            sys.maxsize
+        pzf_compression_settings : dict, optional
+            Compression settings relevant for 'Cluster' `method` if `cluster_h5`
+            is False. See HTTPSpooler.defaultCompSettings. By default None, 
+            which differs to current `SpoolController` state.
+        cluster_h5 : bool, optional
+            Toggle spooling to single h5 file on cluster rather than pzf file 
+            per frame. Only applicable to 'Cluster' `method` and preferred for 
+            PYMEClusterOfOne. By default None, which differs to current 
+            `SpoolController` state.
+        protocol : str, optional
+            path to acquisition protocol. By default None which differs to 
+            current `SpoolController` state.
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -376,7 +394,7 @@ class SpoolController(object):
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
                                                frameShape = frameShape, protocol=protocol,
-                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel,
+                                               guiUpdateCallback=self._ProgressUpate,
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5)
            
@@ -548,6 +566,42 @@ class SpoolControllerWrapper(object):
                       z_dwell=None, preflight_check=True, 
                       max_frames=sys.maxsize, pzf_compression_settings=None, 
                       cluster_h5=None, protocol=None):
+        """
+
+        Parameters
+        ----------
+        filename : str, optional
+            fn can be hardcoded here, otherwise differs to the seriesName
+            property which will create one if need-be.
+        stack : bool, optional
+            toggle z-stepping during acquisition. By default None, which differs
+            to current `SpoolController` state.
+        hdf_comp_level : int, optional
+            zlib compression level for pytables. Not relevant for `Cluster`
+            spool method unless `cluster_h5` is True. By default None, which 
+            differs to current `SpoolController` state.
+        z_dwell : int, optional
+            frames per z-step. By default None, which differs to current 
+            `SpoolController` state.
+        preflight_check : bool, optional
+            toggle performing pre-flights specified in the acquisition protocol,
+            by default True.
+        max_frames : int, optional
+            point at which to end the series automatically, by default 
+            sys.maxsize
+        pzf_compression_settings : dict, optional
+            Compression settings relevant for 'Cluster' `method` if `cluster_h5`
+            is False. See HTTPSpooler.defaultCompSettings. By default None, 
+            which differs to current `SpoolController` state.
+        cluster_h5 : bool, optional
+            Toggle spooling to single h5 file on cluster rather than pzf file 
+            per frame. Only applicable to 'Cluster' `method` and preferred for 
+            PYMEClusterOfOne. By default None, which differs to current 
+            `SpoolController` state.
+        protocol : str, optional
+            path to acquisition protocol. By default None which differs to 
+            current `SpoolController` state.
+        """
         self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
                                             z_dwell, preflight_check,
                                             max_frames, 
