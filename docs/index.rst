@@ -8,11 +8,11 @@
 PYME's Documentation
 ####################
 
-Welcome to the documentation for the python-microscopy environment, set of tools for optical microscopy, and in particular
+This is the documentation for the python-microscopy environment, set of tools for optical microscopy, and in particular
 localization - based super-resolution microscopy.
 
 This documentation is currently very much a work in progress and is far from being complete. The API documentation, in
-particular could use a lot of work. Hopefully it's enough to get you started, however.
+particular could use a lot of work. Hopefully it's enough to get you started.
 
 
 .. toctree::
