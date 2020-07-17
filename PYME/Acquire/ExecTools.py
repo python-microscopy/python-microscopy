@@ -190,6 +190,14 @@ class GUIInitTask(object):
         self.codeObj = codeObj
 
     def run(self, parent, scope):
+        """
+
+        Parameters
+        ----------
+        parent : PYME.Acquire.acquiremainframe.PYMEMainFrame, wx.Frame
+        scope : PYME.Acquire.microscope.microscope
+        
+        """
         global defGlobals
         global defLocals
         #try:
