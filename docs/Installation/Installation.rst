@@ -51,7 +51,8 @@ Create a Python 3.6 virtual environment with ``conda``. Then, open a command pro
 pip installation for developers
 =================================
 
-Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Then, open a command prompt and enter
+Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Make sure numpy
+and cython are installed. Then, open a command prompt and enter
 
 .. code-block:: bash
 	
@@ -122,11 +123,17 @@ This can be solved by the following.
     cd /path/to/python-microscopy/
     /path/to/mininconda/install/python.app/Contents/MacOS/python setup.py develop
 
-pip for developers
-==================
+pip install for developers
+==========================
 
-If you run into any dependency not installed issues after entering `pip install -r requirements.txt`,
-just run this command again.
+If you installed from `requirements.txt` in a conda environment, see the OSX instructions under **conda for developers**. 
+To execute the command
+
+.. code-block:: bash
+
+    /path/to/mininconda/install/python.app/Contents/MacOS/python setup.py develop
+
+you may need to run `conda install python.app`.
 
 Additional resources
 ********************
