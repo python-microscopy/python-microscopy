@@ -126,7 +126,7 @@ class Spooler(sp.Spooler):
         self.clusterFilter = kwargs.get('serverfilter', CLUSTERID)
         self._buffer = []
         
-        self.buflen = config.get('http-chunk-size', 50)
+        self.buflen = config.get('httpspooler-chunksize', 50)
         
         self._postQueue = Queue.Queue(QUEUE_MAX_SIZE)
         self._dPoll = True
