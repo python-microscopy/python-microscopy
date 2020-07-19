@@ -88,7 +88,10 @@ def _verifyResultsFilename(resultsFilename):
 
 
 def _verifyClusterResultsFilename(resultsFilename):
-    from PYME.IO import clusterIO
+    from PYME.IO import clusterIO, unifiedIO
+    
+    resultsFilename = unifiedIO.verbose_fix_name(resultsFilename) # fix any spaces in the input filename
+    
     if clusterIO.exists(resultsFilename):
         di, fn = os.path.split(resultsFilename)
         i = 1
