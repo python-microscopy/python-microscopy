@@ -154,7 +154,7 @@ class Annotater(Plugin):
         
     
     def add_curved_line(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
@@ -173,7 +173,7 @@ class Annotater(Plugin):
         self.dsviewer.Update()
 
     def add_filled_polygon(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
@@ -218,7 +218,7 @@ class Annotater(Plugin):
             
     def snake_refine_trace(self, event=None, sender=None, **kwargs):
         print('Refining selection')
-        if self.lock_mode == 'None' or not self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.lock_mode == 'None' or not self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             return
         else:
             try:
