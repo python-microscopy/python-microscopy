@@ -396,6 +396,10 @@ class fitTask(taskDef.Task):
     def __call__(self, gui=False, taskQueue=None):
         global dBuffer, bBuffer, dataSourceID, nTasksProcessed
         
+        # short-circuit if a task is generated for a frame pre-StartAt
+        if 'Analysis.StartAt' in self.md.keys() and self.index < self.md['Analysis.StartAt']:
+            return fitResult(self, [], [])
+        
         #create a local copy of the metadata        
         md = copy.copy(self.md)
         md.tIndex = self.index
