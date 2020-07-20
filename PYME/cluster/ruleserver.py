@@ -198,8 +198,21 @@ class IntegerIDRule(Rule):
         self.avCost = av_cost
         
     def make_range_available(self, start, end):
-        '''Make a range of tasks available (to be called once the underlying data is available)'''
-        
+        """
+        Make a range of tasks available (to be called once the underlying data is available)
+        [start, end)
+        Parameters
+        ----------
+        start : int
+            first task number to release (inclusive)
+        end : int
+            last task number to release (exclusive)
+        Raises
+        ------
+        RuntimeError
+            if asked to release a range which is invalid for the max tasks we can create from this rule
+        """
+
         if start < 0 or start > self._task_info.size or end < 0 or end > self._task_info.size:
             raise RuntimeError('Range (%d, %d) invalid with maxTasks=%d' % (start, end, self._task_info.size))
         
