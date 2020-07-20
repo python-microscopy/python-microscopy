@@ -702,8 +702,11 @@ class RuleServer(object):
             ``{"ok" : "True"}`` if successful.
 
         """
-        rule = self._rules[ruleID]
-    
+        with self._rule_lock:
+            # take out the lock in case the rule is still being added in another
+            # request and we are already trying to release tasks
+            rule = self._rules[ruleID]
+        
         rule.make_range_available(int(release_start), int(release_end))
     
     
@@ -711,7 +714,10 @@ class RuleServer(object):
     
     @webframework.register_endpoint('/inactivate_rule')
     def inactivate_rule(self, ruleID):
-        self._rules[ruleID].inactivate()
+        with self._rule_lock:
+            # take out the lock in case the rule is still being added in another
+            # request and we are already trying to abort
+            self._rules[ruleID].inactivate()
 
         return json.dumps({'ok': 'True'})
     
@@ -737,16 +743,20 @@ class RuleServer(object):
         """
         
         #logger.debug('Handing in tasks...')
-        try:
-            for handin in json.loads(body):
-                ruleID = handin['ruleID']
-                
+        expired_rules = set()
+        for handin in json.loads(body):
+            ruleID = handin['ruleID']
+            try:
                 rule = self._rules[ruleID]
-                
                 rule.mark_complete(handin)
-            return json.dumps({'ok': True})
-        except KeyError as e:  # rule may have expired
-            return json.dumps({'ok': False, 'error': str(e)})
+            except KeyError:  # rule may have expired
+                expired_rules.add(ruleID)
+        
+        if len(expired_rules) == 0:
+            return json.dumps({'ok': 'True'})
+        else:
+            # rulenodeserver currently ignores what we say here other than 'ok'
+            return json.dumps({'ok': 'False', 'error': str(expired_rules)})
     
     @webframework.register_endpoint('/mark_datasource_complete')
     def mark_datasource_complete(self, rule_id, n_max):
