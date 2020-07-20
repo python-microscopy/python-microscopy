@@ -734,14 +734,16 @@ class RuleServer(object):
         """
         
         #logger.debug('Handing in tasks...')
-        for handin in json.loads(body):
-            ruleID = handin['ruleID']
-            
-            rule = self._rules[ruleID]
-            
-            rule.mark_complete(handin)
-            
-        return json.dumps({'ok': True})
+        try:
+            for handin in json.loads(body):
+                ruleID = handin['ruleID']
+                
+                rule = self._rules[ruleID]
+                
+                rule.mark_complete(handin)
+            return json.dumps({'ok': True})
+        except KeyError as e:  # rule may have expired
+            return json.dumps({'ok': False, 'error': str(e)})
     
     @webframework.register_endpoint('/mark_datasource_complete')
     def mark_datasource_complete(self, rule_id, n_max):
