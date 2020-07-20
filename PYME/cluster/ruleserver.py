@@ -655,19 +655,22 @@ class RuleServer(object):
             ``{"ok" : "True", 'ruleID' : str}``
 
         """
-        rule_info = json.loads(body)
-        
-        if ruleID is None:
-            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
-        
-        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
-                             inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
-        
-        #print rule._inputs_by_task
-        if not release_start is None:
-            rule.make_range_available(int(release_start), int(release_end))
-        
         with self._rule_lock:
+            # lock ~entire call so we don't hit KeyErrors if clients immediately
+            # try to abort/mark datasource complete, etc. after posting
+            rule_info = json.loads(body)
+            
+            if ruleID is None:
+                ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+            
+            rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
+                                inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
+            
+            #print rule._inputs_by_task
+            if not release_start is None:
+                rule.make_range_available(int(release_start), int(release_end))
+            
+
             self._rules[ruleID] = rule
         
         self._rule_n += 1
