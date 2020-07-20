@@ -75,6 +75,11 @@ class IntegerIDRule(Rule):
     rule_timeout : float
         A timeout in seconds from the last task we processed after which we assume that no more tasks are coming and
         we can delete the rule (to keep memory down in a long-term usage scenario).
+    datasource_complete : bool
+        Whether the data this rule applies to is complete (True) or still being
+        generated (False). `datasource_complete==False` will block the rule from
+        being marked as finished, and can be updated using 
+        `self.mark_datasource_complete`.
         
     Notes
     -----
@@ -141,15 +146,17 @@ class IntegerIDRule(Rule):
     but the template being optional (max_tasks defaults to 1). Follow on / chained rules are slightly more restricted
     than standard rules in that recipe "inputs" must be hardcoded (no ``{{taskInputs}}`` substitution).
     
-    Chained rules will only execute if a max_task_ID is specified when creating the original rule, and will be
-    created when ``nCompleted >= max_task_ID``. All tasks for the chained rule will be released immediately.
+    Chained rules are created once the original rule is finished (see 
+    `IntegerIDRule.finished`). All tasks for the chained rule will be released 
+    immediately.
         
     """
     TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
     
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
-                 max_task_ID=100000, task_timeout=600, rule_timeout=3600, on_completion=None):
+                 max_task_ID=100000, task_timeout=600, rule_timeout=3600, 
+                 on_completion=None, datasource_complete=True):
         self.ruleID = ruleID
         
         if not inputs_by_task is None:
@@ -174,6 +181,7 @@ class IntegerIDRule(Rule):
         self.nFailed = 0
         
         self._n_max = max_task_ID
+        self._datasource_complete = datasource_complete
         
         self.on_completion = on_completion
         
@@ -183,6 +191,37 @@ class IntegerIDRule(Rule):
               
         self._info_lock = threading.Lock()
         self._advert_lock = threading.Lock()
+    
+    def mark_datasource_complete(self, n_max):
+        """
+        Update the number of tasks this rule can create and mark the datasource
+        as complete such that the rule can be marked as finished.
+
+        Parameters
+        ----------
+        n_max : int
+            number of tasks this rule can create
+
+        Raises
+        ------
+        ValueError
+            If `n_max` is less than number of tasks already assigned.
+        """
+        with self._info_lock, self._advert_lock:
+            # NOTE - context likely also holds RuleServer._advert_lock
+
+            self._update_nums()
+            if self.nAssigned > n_max:
+                raise ValueError('max_tasks cannot be less than nAssigned')
+            
+            # extend _task_info array if necessary
+            if n_max > len(self._task_info):
+                extension = np.zeros(n_max - len(self._task_info), 
+                                     self.TASK_INFO_DTYPE)
+                self._task_info = np.concatenate([self._task_info, extension])
+            
+            self._n_max = n_max
+        self._datasource_complete = True
         
     def _update_nums(self):
         self.nAvailable = int((self._task_info['status'] == STATUS_AVAILABLE).sum())
@@ -359,8 +398,11 @@ class IntegerIDRule(Rule):
     
     @property
     def finished(self):
-        """ Whether the rule has finished (completed the maximum number of tasks that could be assigned)"""
-        return self.nCompleted >= self._n_max
+        """ 
+        Whether the rule has finished (datasource is marked as complete and
+        the maximum number of tasks which can be created have been completed).
+        """
+        return self._datasource_complete and (self.nCompleted >= self._n_max)
     
     def inactivate(self):
         """
@@ -701,7 +743,36 @@ class RuleServer(object):
             
         return json.dumps({'ok': True})
     
-    
+    @webframework.register_endpoint('/mark_datasource_complete')
+    def mark_datasource_complete(self, rule_id, n_max):
+        """
+        
+        HTTP Endpoint (POST) to update the number of max tasks which can be
+        created from a given rule and mark its datasource as complete so the
+        rule can eventually be marked as finished. 
+        
+        Parameters
+        ----------
+        rule_id : str
+            ID of the rule to update
+        n_max : int
+            max tasks which should be created from the rule
+        
+        Returns
+        -------
+        success : str
+            ``{"ok" : "True"}`` if successful.
+        
+        Raises
+        ------
+        ValueError
+            If `value` is less than number of tasks already assigned.
+        """
+        # take out the rule lock in case we are still creating the rule and the
+        # client POSTs this (e.g. if a series is started/stopped quickly)
+        with self._rule_lock:
+            self._rules[rule_id].mark_datasource_complete(int(n_max))
+        return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')
     def get_queues(self):
