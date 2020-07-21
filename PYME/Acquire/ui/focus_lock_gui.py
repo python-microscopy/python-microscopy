@@ -31,13 +31,14 @@ class FocusLockPanel(wx.Panel):
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
 
         if self.offset_piezo is not None:
-            pos = self.offset_piezo.GetPos()
-            self._offset_slider = wx.Slider(self, -1, 100 * pos, 
-                                           100 * self.offset_piezo.GetMin(), 
-                                           100 * self.offset_piezo.GetMax(), 
+            offset, offset_range = self._get_offset_and_range()
+
+            self._offset_slider = wx.Slider(self, -1, 100 * (offset - offset_range[0]), 
+                                           0, 
+                                           100 * (offset_range[1] - offset_range[0]), 
                                            size=wx.Size(100, -1),
                                            style=wx.SL_HORIZONTAL)
-            self._offset_label = wx.StaticBox(self, -1, u'%s - %2.3f %s' % ('offset', pos, u'\u03BCm'))
+            self._offset_label = wx.StaticBox(self, -1, u'%s - %2.3f %s' % ('offset', offset, u'\u03BCm'))
             
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self._offset_slider, 0, wx.ALL, 2)
@@ -45,6 +46,16 @@ class FocusLockPanel(wx.Panel):
             sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.SetSizerAndFit(sizer_1)
+    
+    def _get_offset_and_range(self):
+        target = self.offset_piezo.GetTargetPos()
+        offset = self.offset_piezo.GetOffset()
+        min_pos, max_pos = self.offset_piezo.GetMin(), self.offset_piezo.GetMax()
+        #  basePiezo position - offset = OffsetPiezo position
+        min_offset = -(target + min_pos)
+        max_offset = max_pos - target
+
+        return offset, (min_offset, max_offset)
 
     def OnToggleLock(self, event):
         self.servo.ToggleLock()
@@ -58,10 +69,9 @@ class FocusLockPanel(wx.Panel):
     def refresh(self):
         self.lock_checkbox.SetValue(bool(self.servo.lock_enabled))
         if self.offset_piezo is not None:
-            pos = self.offset_piezo.GetOffset()
+            offset, offset_range = self._get_offset_and_range()
 
-            self._offset_slider.SetValue(int(100 * pos))
-            self._offset_slider.SetMin(100 * self.offset_piezo.GetMin())
-            self._offset_slider.SetMax(100 * self.offset_piezo.GetMax())
-            
-            self._offset_label.SetLabel(u'%s - %2.3f %s' % ('offset', pos, u'\u03BCm'))
+            self._offset_slider.SetValue(int(100 * (offset - offset_range[0])))
+            self._offset_slider.SetMin(0)
+            self._offset_slider.SetMax(100 * (offset_range[1] - offset_range[0]))
+            self._offset_label.SetLabel(u'%s - %2.3f %s' % ('offset', offset, u'\u03BCm'))
