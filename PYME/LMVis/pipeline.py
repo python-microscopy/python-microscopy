@@ -759,14 +759,21 @@ class Pipeline:
         
         if ds is None:
             from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
-            
-            # load from file(/cluster, downloading a copy of the file if needed)
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
-                # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
-                # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
-                # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
-                ds = self._ds_from_file(fn, **kwargs)
+            if filename.endswith('/live'):
+                from PYME.IO import http_tabular
+                filename = filename.rstrip('/live')
+                fn, server_filter = unifiedIO.split_cluster_url(filename)
+                ds = http_tabular.HTTPFitResultsSource(fn, server_filter)
+                ds.updated.connect(self.recipe.invalidate_data)
+                self.mdh.copyEntriesFrom(ds.mdh)
+            else:
+                # load from file(/cluster, downloading a copy of the file if needed)
+                with unifiedIO.local_or_temp_filename(filename) as fn:
+                    # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
+                    # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
+                    # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
+                    # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
+                    ds = self._ds_from_file(fn, **kwargs)
 
             
         #wrap the data source with a mapping so we can fiddle with things

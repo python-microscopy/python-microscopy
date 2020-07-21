@@ -667,6 +667,8 @@ class VisGUICore(object):
             pass
         elif os.path.splitext(filename)[1] == '.hdf':
             pass
+        elif filename.endswith('/live'):
+            pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
             from scipy.io import loadmat
