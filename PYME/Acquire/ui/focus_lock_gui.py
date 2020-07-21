@@ -38,11 +38,10 @@ class FocusLockPanel(wx.Panel):
                                            100 * (offset_range[1] - offset_range[0]), 
                                            size=wx.Size(100, -1),
                                            style=wx.SL_HORIZONTAL)
-            self._offset_label = wx.StaticBox(self, -1, u'%s - %2.3f %s' % ('offset', offset, u'\u03BCm'))
+            self._offset_label = wx.StaticBox(self, -1, u'%s: %2.3f %s' % ('offset', offset, u'\u03BCm'))
             
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hsizer.Add(self._offset_slider, 0, wx.ALL, 2)
-            hsizer.Add(self._offset_label, 0, wx.ALL, 2)
+            hsizer = wx.StaticBoxSizer(self._offset_label, wx.HORIZONTAL)
+            hsizer.Add(self._offset_slider, 1, wx.ALL|wx.EXPAND, 0)
             sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.SetSizerAndFit(sizer_1)
