@@ -73,4 +73,4 @@ class FocusLockPanel(wx.Panel):
             self._offset_slider.SetValue(int(100 * (offset - offset_range[0])))
             self._offset_slider.SetMin(0)
             self._offset_slider.SetMax(100 * (offset_range[1] - offset_range[0]))
-            self._offset_label.SetLabel(u'%s - %2.3f %s' % ('offset', offset, u'\u03BCm'))
+            self._offset_label.SetLabel(u'%s: %2.3f %s' % ('offset', offset, u'\u03BCm'))
