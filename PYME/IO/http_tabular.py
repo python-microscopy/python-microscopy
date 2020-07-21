@@ -48,32 +48,34 @@ class HTTPFitResultsSource(FitResultsSource):
             try:
                 logging.debug('trying to locate results file')
                 self.uri = clusterIO.locate_file(self.filename, server_filter, return_first_hit=True)[0][0]
-                logging.debug('series uri: %s' % self.uri)
+                logging.debug('found results file, uri: %s' % self.uri)
                 break
             except IndexError:
                 time.sleep(1)
-
+        
+        self._have_results = False
         self.updating, self.last_update_time = True, time.time()
         self.update_lock = threading.Lock() if update_lock is None else update_lock
         self.updated = dispatch.Signal()
         self._update_thread = threading.Thread(target=self._update_loop)
         self._update_thread.start()
-        while self.updating and (len(self.fitResults) == 0):
-            time.sleep(1)  # don't let the init exit until fitResults/transkeys are set
-            logging.debug('waiting for localization results')
-
+        while self.updating and not self._have_results:
+            logging.debug('waiting for localization results / transkey setup')
+            time.sleep(1)
+    
     def _add_results(self, new_results):
         if len(new_results) > 0:
             with self.update_lock:
                 if len(self.fitResults) == 0:
                     logging.debug('setting localization results (n: %d)' % len(new_results))
-                    self.setResults(new_results)
+                    self.setResults(new_results, sort=False)
                     self.mdh.update(json.load(BytesIO(requests.get(self.uri + '/MetaData.json').content)))
+                    # finally allow __init__ to exit
+                    self._have_results = True
                 else:
                     logging.debug('adding %d new localization results' % len(new_results))
-                    self.fitResults = np.concatenate((self.fitResults, new_results))
+                    self.fitResults = np.concatenate((self.fitResults, new_results))  # new_results.sort(order='tIndex')))
                 self.last_update_time = time.time()
-                logging.debug('releaseing update lock')
             self.updated.send(self)
 
     def _update_loop(self):
@@ -90,4 +92,13 @@ class HTTPFitResultsSource(FitResultsSource):
     
     @property
     def events(self):
+        """
+        Return acquisition events
+
+        Returns
+        -------
+        events : numpy.ndarray
+            strctured event array, see PYME.IO.h5File. Returns 0-length array if
+            there are no events.
+        """
         return np.load(BytesIO((requests.get(self.uri + '/Events.npy').content)))
