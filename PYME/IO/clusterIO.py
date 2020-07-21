@@ -794,7 +794,7 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
     nTries = 1
     while nTries < numRetries and len(locs) == 0:
         #retry, giving a little bit of time for the data servers to come up
-        logger.debug('Could not find file, retrying ...')
+        logger.debug('Could not find %s, retrying ...' % filename)
         time.sleep(1)
         nTries += 1
         locs = locate_file(filename, serverfilter, return_first_hit=True)
@@ -815,10 +815,10 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
             s = _getSession(url)
             r = s.get(url, timeout=.5)
             haveResult = True
-        except (requests.Timeout, requests.ConnectionError) as e:
+        except (requests.Timeout, requests.ConnectionError):
             # s.get sometimes raises ConnectionError instead of ReadTimeoutError
             # see https://github.com/requests/requests/issues/2392
-            logger.exception('Timeout on get file')
+            logger.exception('Timeout on get file %s' % url)
             logger.info('%d retries left' % (numRetries - nTries))
             if nTries == numRetries:
                 raise
