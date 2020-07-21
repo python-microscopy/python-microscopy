@@ -39,8 +39,10 @@ def getUsername():
         import win32api
         return '_'.join(win32api.GetUserName().split(' '))
     else: # OSX / linux
+        import getpass
         #return os.getlogin() #broken when not runing from command line
-        return os.environ.get('USER', 'nobody')
+        #return os.environ.get('USER', 'nobody')
+        return getpass.getuser()
 
 
 dtn = datetime.datetime.now()
