@@ -396,6 +396,12 @@ class fitTask(taskDef.Task):
     def __call__(self, gui=False, taskQueue=None):
         global dBuffer, bBuffer, dataSourceID, nTasksProcessed
         
+        # short-circuit if a task is generated for a frame pre-StartAt
+        # FIXME - we should never generate tasks for these frames.
+        if self.index < self.md.get('Analysis.StartAt', 0):
+            logger.error("Frame index is less than 'Analysis.StartAt', frame should not have been released for analysis. Skipping to avoid potential buffer errors.")
+            return fitResult(self, [], [])
+        
         #create a local copy of the metadata        
         md = copy.copy(self.md)
         md.tIndex = self.index
