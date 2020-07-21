@@ -41,6 +41,7 @@ import os
 
 from PYME.misc import computerName
 from PYME import config
+from PYME import resources
 #from PYME.IO import clusterIO
 from PYME.util import webframework
 import collections
@@ -437,7 +438,7 @@ class RuleServer(object):
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
         
-        with open(os.path.splitext(__file__)[0] + '.html', 'r') as f:
+        with open(os.path.join(resources.get_web_dir(),  'ruleserver.html'), 'r') as f:
             self._status_page = f.read()
     
     
