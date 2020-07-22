@@ -15,8 +15,9 @@ except ImportError:
 import time
 import dispatch
 import weakref
-import numpy as np
 import threading
+from PYME.util import webframework
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
@@ -154,8 +155,96 @@ class ActionManager(object):
                     self.currentTask = None
                     self.onQueueChange.send(self)
                     logger.error('task exceeded specified max duration')
-
+        
             time.sleep(3)
     
     def __del__(self):
         self._monitoring = False
+
+
+class ActionManagerWebWrapper(object):
+    def __init__(self, action_manager):
+        """ Wraps an action manager instance with server endpoints
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            action manager instance to wrap
+        """
+        self.action_manager = action_manager
+    
+    @webframework.register_endpoint('/queue_action', output_is_json=False)
+    def queue_action(self, body):
+        """
+        adds an action to the queue
+
+        Parameters
+        ----------
+        body: str
+            json.dumps(dict) with the following keys:
+                function_name : str
+                    The name of a function relative to the microscope object.
+                    e.g. to `call scope.spoolController.StartSpooling()`, you 
+                    would use a functionName of 'spoolController.StartSpooling'.
+                    
+                    The function should either return `None` if the operation 
+                    has already completed, or function which evaluates to True 
+                    once the operation has completed. See 
+                    `scope.spoolController.StartSpooling()` for an example.
+                args : dict, optional
+                    a dictionary of arguments to pass to `function_name`
+                nice : int, optional
+                    priority with which to execute the function, by default 10. 
+                    Functions with a lower nice value execute first.
+                timeout : float, optional
+                    A timeout in seconds from the current time at which the 
+                    action becomes irrelevant and should be ignored. By default
+                    1e6.
+        """
+        import json
+        params = json.loads(body)
+        function_name = params['function_name']
+        args = params.get('args', {})
+        nice = params.get('nice', 10.)
+        timeout = params.get('timeout', 1e6)
+        self.action_manager.QueueAction(function_name, args, nice, timeout)
+
+
+class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
+    def __init__(self, action_manager, port, bind_address=''):
+        """
+        Server process to expose queue_action functionality to everything on the
+        cluster network.
+
+        NOTE - this will likely not be around long, as it would be preferable to
+        add the ActionManagerWebWrapper to
+        `PYME.acquire_server.AcquireHTTPServer` and run a single server process
+        on the microscope computer.
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            already initialized
+        port : int
+            port to listen on
+        bind_address : str, optional
+            specifies ip address to listen on, by default '' will bind to local 
+            host.
+        """
+        webframework.APIHTTPServer.__init__(self, (bind_address, port))
+        ActionManagerWebWrapper.__init__(self, action_manager)
+        
+        self.daemon_threads = True
+        self._server_thread = threading.Thread(target=self._serve)
+        self._server_thread.daemon_threads = True
+        self._server_thread.start()
+
+    def _serve(self):
+        try:
+            logger.info('Starting ActionManager server on %s:%s' % (self.server_address[0], self.server_address[1]))
+            self.serve_forever()
+        finally:
+            logger.info('Shutting down ActionManager server ...')
+            self.shutdown()
+            self.server_close()
+
