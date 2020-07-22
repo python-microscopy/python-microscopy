@@ -200,6 +200,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                 self._recipe_editor.update_recipe_text()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
+
+            if filename.endswith('/live'):
+                from PYME.LMVis import progGraph
+                wx.CallLater(100, progGraph.Plug, self)
             #self.refv = False
         
         wx.CallAfter(self.RefreshView)
