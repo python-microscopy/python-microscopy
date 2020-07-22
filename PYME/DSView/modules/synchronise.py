@@ -28,13 +28,10 @@ import os
 #from PYME.IO import dataWrap
 from PYME.DSView import dsviewer
 
-
-class syncer:
+from ._base import Plugin
+class Syncer(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Processing', "Sync Windows", self.OnSynchronise)
 
@@ -61,7 +58,7 @@ class syncer:
 
 
 def Plug(dsviewer):
-    dsviewer.compos = syncer(dsviewer)
+    return Syncer(dsviewer)
 
 
 

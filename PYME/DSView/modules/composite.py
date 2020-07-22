@@ -572,12 +572,10 @@ class CompositeDialog(wx.Dialog):
         return self.cbInterp.GetValue()
         
 
-class compositor:
+from ._base import Plugin
+class Compositor(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
 
         #self.compMenu = wx.Menu()
 
@@ -829,7 +827,7 @@ class compositor:
 
 
 def Plug(dsviewer):
-    dsviewer.compos = compositor(dsviewer)
+    return Compositor(dsviewer)
     #if 'chanList' in dir(dsviewer.image.data) and 'shifts' in dir(dsviewer.image.data.chanList[0]):
         #we have shiftable channels
         

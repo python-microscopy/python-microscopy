@@ -1,6 +1,6 @@
 
 [Desktop Entry]
-Name=Data Viewer
+Name=PYMEImage
 Comment=View (and analyse) raw data
 Exec=dh5view.py
 Icon=eog

@@ -229,7 +229,7 @@ class ImageStack(object):
         
         if (data is None):
             #if we've supplied data, use that, otherwise load from file
-            self.Load(filename, prompt=load_prompt)
+            self.Load(filename, prompt=load_prompt, haveGUI=self.haveGUI)
 
         #do the necessary munging to get the data in the format we want it        
         self.SetData(self.data)
@@ -906,7 +906,7 @@ class ImageStack(object):
         print("Bioformats:done")
         
         #fix voxelsizes if not specified in OME metadata
-        if self.haveGUI and not (self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0):
+        if self.haveGUI and ((self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0)):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
             dlg = VoxSizeDialog(None)

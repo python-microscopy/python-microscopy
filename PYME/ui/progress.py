@@ -107,3 +107,8 @@ def managed(fcn, window, description):
             return fcn(*args, **kwargs)
             
     return func
+
+
+class SlowComputation(object):
+    """ Pops up a dialog with a launches a computation in a separate thread """
+    

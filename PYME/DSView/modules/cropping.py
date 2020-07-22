@@ -24,12 +24,11 @@ import wx
 #import pylab
 #from PYME.IO.image import ImageStack
 
-class cropper:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
+from ._base import Plugin
 
-        self.image = dsviewer.image
+class Cropper(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem("Processing", "&Crop\tCtrl-Shift-D", self.OnCrop)
         dsviewer.AddMenuItem("Processing", "Diagonal Composite", self.OnDiagSplit)
@@ -138,7 +137,7 @@ class cropper:
 
 
 def Plug(dsviewer):
-    dsviewer.cropper = cropper(dsviewer)
+    return Cropper(dsviewer)
 
 
 

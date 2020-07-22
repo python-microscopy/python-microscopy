@@ -201,7 +201,7 @@ def layout_vertical(dg, rdg):
                     _descend(child, dg, rdg)
     
     for t_i in ts:
-        for n in sorted(list(t_i)):
+        for n in sorted(list(t_i), key=lambda x: x if isinstance(x,str) else x.__class__.__name__):
             if not n in ordered:
                 ordered.append(n)
                 _descend(n, dg, rdg)
