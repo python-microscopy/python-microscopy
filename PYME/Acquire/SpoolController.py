@@ -33,7 +33,7 @@ from PYME.misc import hybrid_ns
 
 import os
 import sys
-#import glob
+import json
 
 import subprocess
 import threading
@@ -141,8 +141,40 @@ class SpoolController(object):
         return info
     
     def update_settings(self, settings):
+        """
+        Sets the state of the `SpoolController` by calling set-methods or by 
+        setting attributes.
+
+        Parameters
+        ----------
+        settings : dict
+            keys should be `SpoolController` attributes or properties with 
+            setters. Not all keys must be present, and example keys include:
+                method : str
+                    One of 'File', 'Cluster', or 'Queue'(py2 only)
+                hdf_compression_level: int
+                    zlib compression level that pytables should use (spool to 
+                    file and queue)
+                z_stepped : bool
+                    toggle z-stepping during acquisition
+                z_dwell : int
+                    number of frames to acquire at each z level (predicated on
+                    `SpoolController.z_stepped` being True)
+                cluster_h5 : bool
+                    Toggle spooling to single h5 file on cluster rather than pzf
+                    file per frame. Only applicable to 'Cluster' `method` and
+                    preferred for PYMEClusterOfOne.
+                pzf_compression_settings : dict
+                    Compression settings relevant for 'Cluster' `method` if 
+                    `cluster_h5` is False. See HTTPSpooler.defaultCompSettings.
+                protocol_name : str
+                    Note that passing the protocol name will force a (re)load of
+                    the protocol file (even if it is already selected).
+            Notable keys which are not supported through this method include 
+            'series_name', 'seriesName' and 'dirname'.
+        """
         method = settings.pop('method', None)
-        if method:
+        if method and method != self.spoolType:
             self.SetSpoolMethod(method)
         
         protocol_name = settings.pop('protocol_name', None)
@@ -152,7 +184,7 @@ class SpoolController(object):
         pzf_settings = settings.pop('pzf_compression_settings', None)
         if pzf_settings:
             self.pzf_compression_settings = dict(pzf_settings)
-            
+        
         for k, v in settings.items():
             setattr(self, k, v)
         
@@ -265,19 +297,59 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, fn=None, stack=None, compLevel=None, zDwellTime=None, doPreflightCheck=True, maxFrames=sys.maxsize,
-                      pzf_compression_settings=None, cluster_h5 = None):
-        """Start spooling
+    def StartSpooling(self, fn=None, stack=None, compLevel=None, 
+                      zDwellTime=None, doPreflightCheck=True, 
+                      maxFrames=sys.maxsize, pzf_compression_settings=None, 
+                      cluster_h5=None, protocol=None):
         """
-        
-        # these settings were managed by the GUI, but are now managed by the controller, still allow them to be passed in,
-        # but default to using our internal values
-        compLevel = self.hdf_compression_level if compLevel is None else compLevel
-        pzf_compression_settings = self.pzf_compression_settings if pzf_compression_settings is None else pzf_compression_settings
-        stack = self.z_stepped if stack is None else stack
-        cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
+
+        Parameters
+        ----------
+        fn : str, optional
+            fn can be hardcoded here, otherwise differs to the seriesName
+            property which will create one if need-be.
+        stack : bool, optional
+            toggle z-stepping during acquisition. By default None, which differs
+            to current `SpoolController` state.
+        compLevel : int, optional
+            zlib compression level for pytables. Not relevant for `Cluster`
+            spool method unless `cluster_h5` is True. By default None, which 
+            differs to current `SpoolController` state.
+        zDwellTime : int, optional
+            frames per z-step. By default None, which differs to current 
+            `SpoolController` state.
+        doPreflightCheck : bool, optional
+            toggle performing pre-flights specified in the acquisition protocol,
+            by default True.
+        maxFrames : int, optional
+            point at which to end the series automatically, by default 
+            sys.maxsize
+        pzf_compression_settings : dict, optional
+            Compression settings relevant for 'Cluster' `method` if `cluster_h5`
+            is False. See HTTPSpooler.defaultCompSettings. By default None, 
+            which differs to current `SpoolController` state.
+        cluster_h5 : bool, optional
+            Toggle spooling to single h5 file on cluster rather than pzf file 
+            per frame. Only applicable to 'Cluster' `method` and preferred for 
+            PYMEClusterOfOne. By default None, which differs to current 
+            `SpoolController` state.
+        protocol : str, optional
+            path to acquisition protocol. By default None which differs to 
+            current `SpoolController` state.
+        """
+        # these settings were managed by the GUI, but are now managed by the 
+        # controller, still allow them to be passed in, but default to internals
         fn = self.seriesName if fn in ['', None] else fn
-        zDwellTime = self.z_dwell if zDwellTime is None else zDwellTime
+        stack = self.z_stepped if stack is None else stack
+        compLevel = self.hdf_compression_level if compLevel is None else compLevel
+        z_dwell = self.z_dwell if zDwellTime is None else zDwellTime
+        pzf_compression_settings = self.pzf_compression_settings if pzf_compression_settings is None else pzf_compression_settings
+        cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
+        if protocol is None:
+            protocol, protocol_z = self.protocol, self.protocolZ
+        else:
+            pmod = prot.get_protocol(protocol)
+            protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
         
         #make directories as needed
         if not (self.spoolType == 'Cluster'):
@@ -292,14 +364,13 @@ class SpoolController(object):
             raise IOError('A series with the same name already exists')
 
         if stack:
-            protocol = self.protocolZ
-            if not zDwellTime is None:
-                protocol.dwellTime = zDwellTime
+            protocol = protocol_z
+            protocol.dwellTime = z_dwell
             print(protocol)
         else:
-            protocol = self.protocol
+            protocol = protocol
 
-        if doPreflightCheck and not preflight.ShowPreflightResults(None, self.protocol.PreflightCheck()):
+        if doPreflightCheck and not preflight.ShowPreflightResults(None, protocol.PreflightCheck()):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
@@ -323,7 +394,7 @@ class SpoolController(object):
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
                                                frameShape = frameShape, protocol=protocol,
-                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel,
+                                               guiUpdateCallback=self._ProgressUpate,
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5)
            
@@ -414,9 +485,18 @@ class SpoolController(object):
 
 
     def SetProtocol(self, protocolName=None, reloadProtocol=True):
-        """Set the current protocol .
+        """
+        Set the current protocol.
         
-        See also: PYME.Acquire.Protocols."""
+        Parameters
+        ----------
+        protocolName: str
+            path to protocol file including extension
+        reloadProtocol : bool
+            currently ignored; protocol module is reinitialized regardless.
+        
+        See also: PYME.Acquire.Protocols.
+        """
 
         if (protocolName is None) or (protocolName == '<None>'):
             self.protocol = prot.NullProtocol
@@ -483,13 +563,49 @@ class SpoolControllerWrapper(object):
         return 'OK'
 
     @webframework.register_endpoint('/start_spooling', output_is_json=False)
-    def start_spooling(self, filename=None, max_frames=sys.maxsize):
-        self.spool_controller.StartSpooling(fn=filename, maxFrames=max_frames)
-        return 'OK'
-        
-    
-        
-    
-    
-    
+    def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
+                      z_dwell=None, preflight_check=True, 
+                      max_frames=sys.maxsize, pzf_compression_settings=None, 
+                      cluster_h5=None, protocol=None):
+        """
 
+        Parameters
+        ----------
+        filename : str, optional
+            fn can be hardcoded here, otherwise differs to the seriesName
+            property which will create one if need-be.
+        stack : bool, optional
+            toggle z-stepping during acquisition. By default None, which differs
+            to current `SpoolController` state.
+        hdf_comp_level : int, optional
+            zlib compression level for pytables. Not relevant for `Cluster`
+            spool method unless `cluster_h5` is True. By default None, which 
+            differs to current `SpoolController` state.
+        z_dwell : int, optional
+            frames per z-step. By default None, which differs to current 
+            `SpoolController` state.
+        preflight_check : bool, optional
+            toggle performing pre-flights specified in the acquisition protocol,
+            by default True.
+        max_frames : int, optional
+            point at which to end the series automatically, by default 
+            sys.maxsize
+        pzf_compression_settings : dict, optional
+            Compression settings relevant for 'Cluster' `method` if `cluster_h5`
+            is False. See HTTPSpooler.defaultCompSettings. By default None, 
+            which differs to current `SpoolController` state.
+        cluster_h5 : bool, optional
+            Toggle spooling to single h5 file on cluster rather than pzf file 
+            per frame. Only applicable to 'Cluster' `method` and preferred for 
+            PYMEClusterOfOne. By default None, which differs to current 
+            `SpoolController` state.
+        protocol : str, optional
+            path to acquisition protocol. By default None which differs to 
+            current `SpoolController` state.
+        """
+        self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
+                                            z_dwell, preflight_check,
+                                            max_frames, 
+                                            pzf_compression_settings, 
+                                            cluster_h5, protocol)
+        return 'OK'

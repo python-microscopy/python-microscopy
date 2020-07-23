@@ -46,8 +46,8 @@ git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
 
 #pycairo
 
-#pymecompress >=0.2
-git+https://github.com/python-microscopy/pymecompress.git@master#egg=pymecompress
+pymecompress >=0.2
+#git+https://github.com/python-microscopy/pymecompress.git@master#egg=pymecompress
 
 six
 future

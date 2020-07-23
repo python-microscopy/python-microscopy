@@ -178,7 +178,7 @@ def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
-    panel = FocusLockPanel(MainFrame, scope.focus_lock)
+    panel = FocusLockPanel(MainFrame, scope.focus_lock, offset_piezo=scope.piFoc)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
 
