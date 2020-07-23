@@ -166,8 +166,9 @@ class LocalizationRule(Rule):
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
+        from PYME.cluster.HTTPRulePusher import verify_cluster_results_filename  # TODO - David if you like maybe we move this function to clusterResults?
         unifiedIO.assert_uri_ok(series_uri)
-        self.results_filename = clusterResults.verify_cluster_results_filename(genClusterResultFileName(series_uri))
+        self.results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
         if '~' in series_uri or '~' in self.results_filename:
             raise RuntimeError('filenames on the cluster must NOT contain ~')
         logger.info('Results file: ' + self.results_filename)
