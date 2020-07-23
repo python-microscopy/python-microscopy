@@ -795,10 +795,13 @@ class RuleServer(object):
             
         FIXME - HTTP endpoints should not raise - they should handle the error and return an error response to the client.
         """
+        if n_tasks is not None:
+            n_tasks = int(n_tasks)
+        
         # take out the rule lock in case we are still creating the rule and the
         # client POSTs this (e.g. if a series is started/stopped quickly)
         with self._rule_lock:
-            self._rules[rule_id].mark_release_complete(int(n_max))
+            self._rules[rule_id].mark_release_complete(n_tasks)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')
