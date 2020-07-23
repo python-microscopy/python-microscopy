@@ -161,7 +161,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 
                 
                 
-        ipsv = np.array(node_positions.values())
+        ipsv = np.array(list(node_positions.values()))
         try:
             xmn, ymn = ipsv.min(0)
             xmx, ymx = ipsv.max(0)
