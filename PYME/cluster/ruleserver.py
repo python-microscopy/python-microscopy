@@ -401,9 +401,15 @@ class IntegerIDRule(Rule):
     @property
     def finished(self):
         """ 
-        Whether the rule has finished (datasource is marked as complete and
-        the maximum number of tasks which can be created have been completed).
+        Whether the rule has finished (the maximum number of tasks which can be created have been completed).
         """
+        
+        # TODO - change this so that we can release starting at task_ID > 0???? 
+        # TODO - make rules finish when some tasks fail.
+        
+        # To fix: Potentially replace with `np.all(self._task_info['status']>=STATUS_COMPLETE)` (although this would need to be cached and refreshed - property access should be cheap). 
+        # combined with a new enum value STATUS_INVALID==6 -  `self.mark_release_complete()` could be re-written as `self._task_info['status'][self._task_info['status'] == 0] = STATUS_INVALID`
+        
         return (self.nCompleted >= self._n_max)
     
     def inactivate(self):
@@ -771,8 +777,10 @@ class RuleServer(object):
         ----------
         rule_id : str
             ID of the rule to update
-        n_tasks : int, [optional]
-            a fixed number of tasks to truncate the rule at. Used for avoiding locks/race conditions in a multi-threaded task release process. 
+        n_tasks : int, [optional, discouraged]
+            a fixed number of tasks to truncate the rule at. Used for avoiding locks/race conditions in a multi-threaded client process. NOTE - this parameter 
+            may disappear in a future version to enable rules with incomplete ranges to be marked as complete (see comments in `IntegerIDRule.finished`). Locking or 
+            otherwise structuring the client such that no `release_rule_tasks()` calls can occur after a call to `mark_release_complete()` is therefore preferred.
         
         Returns
         -------
