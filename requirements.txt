@@ -20,7 +20,7 @@ toposort
 #pyfftw3; python_version < '3.0'
 pyfftw #; python_version > '3.0'
 
-#mpld3
+mpld3
 cherrypy
 scikit-image
 scikit-learn
