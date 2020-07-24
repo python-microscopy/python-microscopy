@@ -190,7 +190,7 @@ class PointScanner(object):
                     self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
                     self.view.Refresh()
             
-            if self.callNum >= self.dwellTime * self.imsize:
+            if self.callNum >= self.dwellTime * self.imsize - 1:
                 # we've acquired the last frame
                 if self._stop_on_complete:
                     self._stop()
