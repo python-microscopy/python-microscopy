@@ -792,7 +792,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         from PYME.ui import progress
         
         try:
-            with progress.ComputationInProgress(self):
+            with progress.ComputationInProgress(self, 'Batch Analysis'):
                 if not len(self.inputFiles) == len(self.inputFiles2):
                     batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
                 else:
