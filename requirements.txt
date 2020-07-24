@@ -36,7 +36,7 @@ pyyaml
 psutil
 
 docutils
-#sphinx
+sphinx
 ujson
 jinja2
 django==1.11.29
