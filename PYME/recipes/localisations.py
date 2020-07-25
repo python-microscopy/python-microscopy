@@ -633,7 +633,7 @@ class MeasureClusters3D(ModuleBase):
         if np.min(inp[self.labelKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
-        labels = inp[self.labelKey]
+        labels = inp[self.labelKey].astype(np.int)
         I = np.argsort(labels)
         I = I[labels[I] > 0]
         
