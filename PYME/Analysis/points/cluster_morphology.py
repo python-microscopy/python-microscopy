@@ -171,9 +171,6 @@ def measure_3d(x, y, z, output=None):
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_c, y_c, z_c]).T)
 
-    print(x_c.shape, y_c.shape, z_c.shape)
-    print(s.shape)
-
     standard_deviations = s / np.sqrt(N - 1)  # with bessel's correction
     for i in range(3):
         output['axis%d' % i] = v[i]
