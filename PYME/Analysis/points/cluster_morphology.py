@@ -144,7 +144,9 @@ def measure_3d(x, y, z, output=None):
     N = len(x)
     output['count'] = N
     if N < 3:
-        raise UserWarning('measure_3D can only be used on clusters of size 3 or larger')
+        import warnings
+        warnings.warn('measure_3D can only be used on clusters of size 3 or larger', UserWarning)
+        return
     
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()
@@ -168,6 +170,9 @@ def measure_3d(x, y, z, output=None):
 
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_c, y_c, z_c]).T)
+
+    print(x_c.shape, y_c.shape, z_c.shape)
+    print(s.shape)
 
     standard_deviations = s / np.sqrt(N - 1)  # with bessel's correction
     for i in range(3):
