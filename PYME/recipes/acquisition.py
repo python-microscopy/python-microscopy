@@ -4,6 +4,7 @@ from .traits import Input, Output, CStr, DictStrAny, Bool, Float, ListFloat
 import requests
 import json
 import numpy as np
+import time
 
 
 @register_module('QueueAcquisitions')
@@ -53,6 +54,12 @@ class QueueAcquisitions(OutputModule):
     timeout : Float
         time in seconds after which the acquisition tasks associated with these
         positions will be ignored/unqueued from the action manager.
+    nice_range : ListFloat
+        lower and upper bounds for Nice to be used when queuing these
+        acquisitions. Will default to `[0, 2 * len(_inputpositions)]`
+    between_post_throttle : Float
+        Time in seconds to sleep between posts to avoid bombarding the 
+        microscope-side server. Can be set to zero for ~no throttling.
     """
     input_positions = Input('input')
     action_server_url = CStr('http://127.0.0.1:9393')
@@ -61,6 +68,7 @@ class QueueAcquisitions(OutputModule):
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)
     nice_range = ListFloat()
+    between_post_throttle = Float(0.01)
 
     def save(self, namespace, context={}):
         """
@@ -102,8 +110,12 @@ class QueueAcquisitions(OutputModule):
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
+            time.sleep(self.between_post_throttle)
+
             args = {'function_name': 'spoolController.StartSpooling',
                     'args': self.spool_settings,
                     'timeout': self.timeout, 'nice': nices[2 * ri + 1]}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
+            
+            time.sleep(self.between_post_throttle)
