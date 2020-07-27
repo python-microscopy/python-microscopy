@@ -88,7 +88,7 @@ class QueueAcquisitions(OutputModule):
         
         if self.optimize_path:
             from PYME.Analysis.points.traveling_salesperson import sort
-            start = len(positions) if self.lifo else 0
+            start = -1 if self.lifo else 0
             positions = sort.tsp_sort(positions, start)
         else:
             positions = positions[::-1, :] if self.lifo else positions
