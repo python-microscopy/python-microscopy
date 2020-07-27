@@ -84,7 +84,7 @@ class QueueAcquisitions(OutputModule):
             nices = np.linspace(self.nice_range[0], self.nice_range[1], 
                                 2 * len(positions))
         else:
-            nices = np.arange(2 * len(positions))
+            nices = np.arange(2 * len(positions), dtype=float)
         
         if self.optimize_path:
             from PYME.Analysis.points.traveling_salesperson import sort
