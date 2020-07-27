@@ -94,15 +94,16 @@ class QueueAcquisitions(OutputModule):
             positions = positions[::-1, :] if self.lifo else positions
         
         dest = self.action_server_url + '/queue_action'
+        session = requests.Session()
         for ri in range(positions.shape[0]):
             args = {'function_name': 'centre_roi_on', 
             'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
                     'timeout': self.timeout, 'nice': nices[2 * ri]}
-            requests.post(dest, data=json.dumps(args), 
+            session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
             args = {'function_name': 'spoolController.StartSpooling',
                     'args': self.spool_settings,
                     'timeout': self.timeout, 'nice': nices[2 * ri + 1]}
-            requests.post(dest, data=json.dumps(args), 
+            session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
