@@ -19,9 +19,6 @@ class QueueAcquisitions(OutputModule):
         PYME.IO.tabular containing 'x_um' and 'y_um' coordinates in units of 
         micrometers (preferred) *or* 'x' and 'y' coordinates in units of 
         nanometers.
-    position_units : CStr
-        Units the `input_positions` are in. Should be 'nm' for nanometers or 
-        'um' for micrometers. 'um' by default.
     action_server_url : CStr
         URL of the microscope-side action server process.
     spool_settings : DictStrAny
