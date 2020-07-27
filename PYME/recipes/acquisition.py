@@ -16,8 +16,9 @@ class QueueAcquisitions(OutputModule):
     Parameters
     ----------
     input_positions : Input
-        PYME.IO.tabular containing 'x' and 'y' coordinates in units of 
-        nanometers
+        PYME.IO.tabular containing 'x_um' and 'y_um' coordinates in units of 
+        micrometers (preferred) *or* 'x' and 'y' coordinates in units of 
+        nanometers.
     position_units : CStr
         Units the `input_positions` are in. Should be 'nm' for nanometers or 
         'um' for micrometers. 'um' by default.
@@ -65,7 +66,6 @@ class QueueAcquisitions(OutputModule):
         microscope-side server. Can be set to zero for ~no throttling.
     """
     input_positions = Input('input')
-    position_units = CStr('um')
     action_server_url = CStr('http://127.0.0.1:9393')
     spool_settings = DictStrAny()
     lifo = Bool(True)
@@ -88,16 +88,14 @@ class QueueAcquisitions(OutputModule):
             resolved.
         """
         
-        if self.position_units not in ['nm', 'um']:
-            raise ValueError('input positions must be "nm" or "um"')
-
-        positions = np.stack((namespace[self.input_positions]['x'], 
-                              namespace[self.input_positions]['y']), 
-                              axis=1) # (N, 2)
-        
-        if self.position_units == 'nm':
-            # PYME stages use micrometers
-            positions = positions / 1e3  # nm -> um
+        try:  # get positions in units of micrometers
+            positions = np.stack((namespace[self.input_positions]['x_um'], 
+                                  namespace[self.input_positions]['y_um']), 
+                                 axis=1) # (N, 2), [um]
+        except KeyError:  # assume x and y are in nanometers
+            positions = np.stack((namespace[self.input_positions]['x'], 
+                                  namespace[self.input_positions]['y']), 
+                                 axis=1) / 1e3  # (N, 2), [nm] -> [um]
 
         if len(self.nice_range) == 2:
             nices = np.linspace(self.nice_range[0], self.nice_range[1], 
