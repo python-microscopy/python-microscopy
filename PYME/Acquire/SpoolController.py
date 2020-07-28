@@ -430,7 +430,7 @@ class SpoolController(object):
     def rel_dirname(self):
         return self._sep.join(self._subdir)
 
-    def StopSpooling(self):
+    def StopSpooling(self, **kwargs):
         """GUI callback to stop spooling."""
         self.spooler.StopSpool()
         
