@@ -174,7 +174,7 @@ T(1, ps.start),
 #T(maxint, ps.stop),
 #T(maxint, scope.EnableJoystick, True),
 #T(maxint, SetContinuousMode, True),
-# T(maxint, MainFrame.pan_spool.OnBAnalyse, None),
+T(maxint, MainFrame.pan_spool.OnBAnalyse, None),
 ]
 
 #optional - metadata entries
