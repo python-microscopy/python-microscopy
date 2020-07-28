@@ -38,7 +38,11 @@ class DecayAnalyser:
         kinModels.fitDecay(pipeline)
         kinModels.fitFluorBrightness(pipeline)
         #kinModels.fitFluorBrightnessT(pipeline)
-        kinModels.fitOnTimes(pipeline)
+        if 'clumpSize' in pipeline.keys():
+            kinModels.fitOnTimes(pipeline)
+        else:
+            import warnings
+            warnings.warn('To fit on times, first run Corrections>Chaining>Find consecutive appearances and Corrections>Chaining>Clump consecutive appearances.', UserWarning)
         
 
     def OnRetrieveIntensitySteps(self, event):
