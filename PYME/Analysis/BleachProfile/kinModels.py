@@ -315,7 +315,7 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
         
         b = 0.5*(1+erf(res[0][2]))*Nm
     
-        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return 0
 
@@ -356,7 +356,7 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
         plt.ylim((1, plt.ylim()[1]))
         plt.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
-        plt.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
     return 0
 
 
@@ -390,7 +390,7 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None, qui
         plt.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
         #print res[0][2]
     
-        plt.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return [channame, res[0][3], NEvents]
 
