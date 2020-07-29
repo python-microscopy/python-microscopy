@@ -55,9 +55,8 @@ class QueueAcquisitions(OutputModule):
     timeout : Float
         time in seconds after which the acquisition tasks associated with these
         positions will be ignored/unqueued from the action manager.
-    nice_range : ListFloat
-        lower and upper bounds for Nice to be used when queuing these
-        acquisitions. Will default to `[0, 2 * len(_inputpositions)]`
+    nice: Int
+        priority at which acquisition tasks should execute (default=10)
     between_post_throttle : Float
         Time in seconds to sleep between posts to avoid bombarding the 
         microscope-side server. Can be set to zero for ~no throttling.
@@ -68,7 +67,7 @@ class QueueAcquisitions(OutputModule):
     lifo = Bool(True)
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)
-    nice_range = ListFloat()
+    nice = Int(10)
     between_post_throttle = Float(0.01)
 
     def save(self, namespace, context={}):
@@ -93,12 +92,6 @@ class QueueAcquisitions(OutputModule):
             positions = np.stack((namespace[self.input_positions]['x'], 
                                   namespace[self.input_positions]['y']), 
                                  axis=1) / 1e3  # (N, 2), [nm] -> [um]
-
-        if len(self.nice_range) == 2:
-            nices = np.linspace(self.nice_range[0], self.nice_range[1], 
-                                2 * len(positions))
-        else:
-            nices = np.arange(2 * len(positions), dtype=float)
         
         if self.optimize_path:
             from PYME.Analysis.points.traveling_salesperson import sort
@@ -120,7 +113,7 @@ class QueueAcquisitions(OutputModule):
 
             args = {'function_name': 'spoolController.StartSpooling',
                     'args': self.spool_settings,
-                    'timeout': self.timeout, 'nice': nices[2 * ri + 1]}
+                    'timeout': self.timeout, 'nice': self.nice}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
