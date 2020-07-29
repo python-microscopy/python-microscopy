@@ -14,7 +14,7 @@ Modules
 =======
 
 DSView has a number of modules for performing various analysis tasks,
-including :ref:`Localisation Analysis <localisationanalysis>`, PSF Extraction, Deconvolution, and Tiling.
+including :ref:`Localisation Analysis <localization_analysis>`, PSF Extraction, Deconvolution, and Tiling.
 
 Modes
 =====

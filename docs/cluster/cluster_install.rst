@@ -5,7 +5,7 @@ Setting up PYME cluster hardware and software
 
 This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
 analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
-experiments, see the 'Cluster of one' docs for key differences.
+experiments, see :ref:`localization analysis<_localization_analysis>` docs for key differences.
 
 Recommended Hardware configuration
 ==================================
