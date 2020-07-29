@@ -51,7 +51,7 @@ from PYME.Acquire.ui import HDFSpoolFrame
 
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
-
+from PYME import config
 from PYME.IO import MetaDataHandler
 #from PYME.IO.FileUtils import nameUtils
 import six
@@ -275,16 +275,17 @@ class PYMEMainFrame(AUIFrame):
             self.time1.WantNotification.append(self.pos_sl.update)
 
             self.AddTool(self.pos_sl, 'Positioning')
-
-            self.seq_d = seqdialog.seqPanel(self, self.scope)
-            self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
-            #self.seq_d.Show()
+            
+            if config.get('acquiremainframe-default_acq_tools', True):
+                self.seq_d = seqdialog.seqPanel(self, self.scope)
+                self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
+                #self.seq_d.Show()
         
         for t in self.toolPanels:
             #print(t)
             self.AddTool(*t)
             
-        if self.scope.cam.CamReady():
+        if self.scope.cam.CamReady() and config.get('acquiremainframe-default_acq_tools', True):
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
             self.AddAqTool(self.pan_spool, 'Time/Blinking series', pinned=False, folded=False)
             
