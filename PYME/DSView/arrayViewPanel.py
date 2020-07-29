@@ -351,7 +351,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
             dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
             if self.scaleBarLength > 1000:
-                s = u'%1.1f \u03BCm' % (self.scaleBarLength/1000.)
+                s = u'%1.1f \u00B5m' % (self.scaleBarLength / 1000.)
             else:
                 s = u'%d nm' % int(self.scaleBarLength)
             w, h = dc.GetTextExtent(s)
