@@ -189,6 +189,12 @@ class PointScanner(object):
                 if self.avg:
                     self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
                     self.view.Refresh()
+            
+            if self.callNum >= self.dwellTime * self.imsize - 1:
+                # we've acquired the last frame
+                if self._stop_on_complete:
+                    self._stop()
+                    return
 
             if ((self.callNum +1) % self.dwellTime) == 0:
                 #move piezo
@@ -207,14 +213,11 @@ class PointScanner(object):
                     eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
-                if cam_trigger:
-                    #logger.debug('Firing camera trigger')
-                    self.scope.cam.FireSoftwareTrigger()
+            if cam_trigger:
+                #logger.debug('Firing camera trigger')
+                self.scope.cam.FireSoftwareTrigger()
+                if self.evtLog:
                     eventLog.logEvent('StartAq',"")
-                    
-            if (int(self.callNum/self.dwellTime)) > self.imsize:
-                if self._stop_on_complete:
-                    self._stop()
 #
         #
         #if self.sync:
