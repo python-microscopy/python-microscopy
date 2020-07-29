@@ -166,8 +166,8 @@ class FFBase(object):
         
         #look up shifts
         if not self.metadata.getOrDefault('Analysis.FitShifts', False):
-            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+            DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+            DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
         else:
             DeltaX = 0
             DeltaY = 0
@@ -229,7 +229,7 @@ class FFBase(object):
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
         
 
         Xr = Xg + DeltaX - vx*dxp
@@ -271,8 +271,8 @@ class FFBase(object):
     
         #look up shifts
         if not self.metadata.getOrDefault('Analysis.FitShifts', False):
-            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+            DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+            DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
         else:
             DeltaX = 0
             DeltaY = 0
@@ -340,7 +340,7 @@ class FFBase(object):
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
     
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
     
     
         Xr = Xg + DeltaX - vx * dxp

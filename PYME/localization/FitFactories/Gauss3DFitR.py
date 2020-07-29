@@ -163,7 +163,7 @@ class Gauss3dFitFactory:
 
         #print X.shape, dataROI.shape, zslice
 
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*np.maximum(dataROI, 1))/self.metadata['Camera.ElectronsPerCount']
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #print X

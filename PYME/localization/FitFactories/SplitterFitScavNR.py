@@ -154,8 +154,8 @@ def genFitImage(fitResults, metadata):
     y_ = (yslice.start + roi_y0) * vy
     
     #look up shifts
-    DeltaX = metadata.chroma.dx.ev(x_, y_)
-    DeltaY = metadata.chroma.dy.ev(x_, y_)
+    DeltaX = metadata['chroma.dx'].ev(x_, y_)
+    DeltaY = metadata['chroma.dy'].ev(x_, y_)
     
     dxp = int(DeltaX/vx)
     dyp = int(DeltaY/vy)
