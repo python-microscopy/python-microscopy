@@ -1,7 +1,7 @@
 #PIP requirements
 #NB - this might be incomplete / buggy, the conda route is currently more reliable
 
-numpy==1.14.*
+numpy>=1.14.*
 scipy
 matplotlib
 wxpython
