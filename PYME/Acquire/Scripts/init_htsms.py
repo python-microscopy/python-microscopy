@@ -184,10 +184,15 @@ def focus_keys(MainFrame, scope):
 
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
+    from PYME import config
     from PYME.Acquire.ui import actionUI
+    from PYME.Acquire.ActionManager import ActionManagerServer
 
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
+
+    ActionManagerServer(scope.actions, 9393, 
+                        config.get('actionmanagerserver-address', '127.0.0.1'))
 
 @init_hardware('tweeter')
 def tweeter(scope):
