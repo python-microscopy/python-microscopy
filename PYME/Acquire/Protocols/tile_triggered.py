@@ -42,6 +42,7 @@ if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
 # TODO - squash this file and add triggering as option to standard tile protocol
 ps = PointScanner(scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False,
                   evtLog = True, sync=True,trigger=True, stop_on_complete=True)
+ps.on_stop.connect(scope.spoolController.StopSpooling)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
