@@ -214,6 +214,7 @@ class PointScanner(object):
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
             if cam_trigger:
+                #logger.debug('Firing camera trigger')
                 self.scope.cam.FireSoftwareTrigger()
                 if self.evtLog:
                     eventLog.logEvent('StartAq',"")
