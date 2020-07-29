@@ -54,7 +54,7 @@ class ParticleTracker:
     #
     #     dlg.Destroy()
         
-    def OnFindClumps(self, event):
+    def OnFindClumps(self, event=None):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
@@ -84,7 +84,7 @@ class ParticleTracker:
 
         dlg.Destroy()
 
-    def OnTrackMolecules(self, event):
+    def OnTrackMolecules(self, event=None):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
@@ -134,7 +134,7 @@ class ParticleTracker:
         
         #dlg.Destroy()
 
-    def OnCalcMSDs(self,event):
+    def OnCalcMSDs(self, event=None):
         #TODO - move this logic to reports - like dh5view module
         # import pylab
         import matplotlib.pyplot as plt
@@ -197,7 +197,7 @@ class ParticleTracker:
 
         pipeline.Rebuild()
         
-    def _OnCoalesce(self, event):
+    def _OnCoalesce(self, event=None):
         from PYME.IO import tabular
         from PYME.Analysis.points.DeClump import pyDeClump
         
@@ -217,7 +217,7 @@ class ParticleTracker:
 
         #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
-    def OnCoalesce(self, event):
+    def OnCoalesce(self, event=None):
         #with progress.ComputationInProgress(self.visFr, 'coalescing consecutive appearances'):
         from PYME.recipes import localisations
         recipe = self.visFr.pipeline.recipe
@@ -228,7 +228,7 @@ class ParticleTracker:
         self.visFr.pipeline.selectDataSource('coalesced')
         #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
-    def OnCalcWidths(self,event):
+    def OnCalcWidths(self, event=None):
         #FIXME - this is probably broken on modern VisGUI
         from scipy.stats import binned_statistic
 
@@ -271,4 +271,4 @@ class ParticleTracker:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    ParticleTracker(visFr)
+    visFr.particleTracker = ParticleTracker(visFr)

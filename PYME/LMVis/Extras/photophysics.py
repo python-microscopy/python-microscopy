@@ -35,15 +35,14 @@ class DecayAnalyser:
         
         pipeline = self.visFr.pipeline
 
+        if 'clumpSize' not in pipeline.keys():
+            # Clump 
+            self.visFr.particleTracker.OnFindClumps()
+
         kinModels.fitDecay(pipeline)
         kinModels.fitFluorBrightness(pipeline)
         #kinModels.fitFluorBrightnessT(pipeline)
-        if 'clumpSize' in pipeline.keys():
-            kinModels.fitOnTimes(pipeline)
-        else:
-            import warnings
-            warnings.warn('To fit on times, first run Corrections>Chaining>Find consecutive appearances and Corrections>Chaining>Clump consecutive appearances.', UserWarning)
-        
+        kinModels.fitOnTimes(pipeline)
 
     def OnRetrieveIntensitySteps(self, event):
         from PYME.Analysis import piecewiseMapping
