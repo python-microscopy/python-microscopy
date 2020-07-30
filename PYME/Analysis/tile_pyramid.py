@@ -124,13 +124,13 @@ class TileIO(object):
         pass
 
 class NumpyTileIO(TileIO):
-    def __init__(self, base_dir, suff='img'):
+    def __init__(self, base_dir, suff='img', cache_size=1000):
         self.base_dir = base_dir
         self.suff = suff + '.npy'
         
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
         
-        self._tilecache = TileCache()
+        self._tilecache = TileCache(cache_size)
         self._coords = {}
     
     def _filename(self, layer, x, y):
@@ -177,15 +177,15 @@ class NumpyTileIO(TileIO):
     
     def flush(self):
         self._tilecache.flush()
-        
+    
 class PZFTileIO(NumpyTileIO):
-    def __init__(self, base_dir, suff='img'):
+    def __init__(self, base_dir, suff='img', cache_size=1000):
         self.base_dir = base_dir
         self.suff = suff + '.pzf'
 
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
     
-        self._tilecache = PZFTileCache()
+        self._tilecache = PZFTileCache(cache_size)
         self._coords = {}
         
 
@@ -256,7 +256,9 @@ class SqliteTileIO(TileIO):
     
 
 class ImagePyramid(object):
-    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, pixel_size=1):
+    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
+                 n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
+                 pixel_size=1, cache_size=1000):
         self.base_dir = storage_directory
         self.tile_size = pyramid_tile_size
         
@@ -282,13 +284,16 @@ class ImagePyramid(object):
             
         #self._tilecache = TileCache()
             
-        self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
-        self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
-        self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
+        self.cache_size = cache_size
+        if cache_size != 0:
+            self._imgs = PZFTileIO(self.base_dir, 'img', self.cache_size)
+            self._acc = PZFTileIO(self.base_dir, 'acc', self.cache_size)
+            self._occ = PZFTileIO(self.base_dir, 'occ', self.cache_size)
+        else:
+            self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
+            self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
+            self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
 
-        # self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
-        # self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
-        # self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
     
     def get_tile(self, layer, x, y):
         return self._imgs.get_tile(layer, x, y)
@@ -466,7 +471,8 @@ def get_position_from_events(events, mdh):
 
 def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False, shiftfield=None,
                  mixmatrix=[[1., 0.], [0., 1.]],
-                 correlate=False, dark=None, flat=None, pyramid_tile_size=256):
+                 correlate=False, dark=None, flat=None, pyramid_tile_size=256, 
+                 cache_size=1000):
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
     
     if split:
@@ -529,7 +535,9 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     else:
         offset = 0.
 
-    P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'))
+    P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, 
+                     pixel_size=mdh.getEntry('voxelsize.x'), 
+                     cache_size=cache_size)
 
     logger.debug('Adding base tiles ...')
     

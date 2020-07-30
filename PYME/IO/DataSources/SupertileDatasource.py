@@ -47,7 +47,7 @@ class DataSource(BaseDataSource):
         self.mdh.copyEntriesFrom(pyramid.mdh)
         
         voxelsize = self.mdh['Pyramid.PixelSize'] * (2 ** self.level)
-        self.mdh['voxelsize.x'], self.mdh['voxelsize.y'] = voxelsize
+        self.mdh['voxelsize.x'], self.mdh['voxelsize.y'] = (voxelsize, voxelsize)
 
         self._pyr = pyramid
         

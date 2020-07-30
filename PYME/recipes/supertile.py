@@ -67,24 +67,32 @@ class SupertileFromImageStack(ModuleBase):
     level = Int(0)
     stride = Int(3)
     overlap = Int(1)
+    max_cache_size = Int(1000)
     output_name = Output('supertile')
-    
+
     def execute(self, namespace):
         from PYME.IO.DataSources.SupertileDatasource import DataSource
         from PYME.Analysis import tile_pyramid
         import tempfile
+
+        if self.max_cache_size <= 0:
+            raise ValueError('max_cache_size must be > 0')
         
         stack = namespace[self.input_name]
 
         x, y = tile_pyramid.get_position_from_events(stack.events, stack.mdh)
         
         with tempfile.TemporaryDirectory() as dirname:
-            # this is the 'cleanest' solution, but we can't really put a useful
-            # datasource into the namespace as getslices involve file i/o and
-            # will fail if the file is deleted, which it will be when this
-            # with exits
+            
             p = tile_pyramid.tile_pyramid(dirname, stack.data, x, y, stack.mdh,
-                                            pyramid_tile_size=self.tile_size)
-            namespace[self.output_name] = DataSource(p, self.level, self.stride,
-                                                        self.overlap)
+                                          pyramid_tile_size=self.base_tile_size,
+                                          cache_size=self.max_cache_size)
+
+            datasource = DataSource(p, self.level, self.stride, self.overlap)
+
+        n_slices, n_cached = datasource.getNumSlices(), p.cache_size
+        if n_slices > n_cached:
+            raise MemoryError('ImagePyramid cache size %d not sufficient to create entire %d slice datasource in memory' % (n_cached, n_slices))
+
+        namespace[self.output_name] = datasource
         
