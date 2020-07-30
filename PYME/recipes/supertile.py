@@ -1,11 +1,16 @@
 
+from .base import ModuleBase, register_module
+from .traits import Input, Output, CStr, Int
+from PYME.IO import tabular
+import logging
+
+logger = logging.getLogger(__name__)
+
 @register_module('TilePhysicalCoords')
 class TilePhysicalCoords(ModuleBase):
     """
     Adds x_um, y_um, x_px, and y_px columns to input measurements performed on an Supertile image sequence, mapping
     the x and y values to physical coordinates.
-    
-    TODO: Does this belong here??
 
     Parameters
     ----------
@@ -53,3 +58,33 @@ class TilePhysicalCoords(ModuleBase):
         
         namespace[self.output_name] = out
 
+
+@register_module('SupertileFromImageStack')
+class SupertileFromImageStack(ModuleBase):
+
+    input_name = Input('input')
+    base_tile_size = Int(256)
+    level = Int(0)
+    stride = Int(3)
+    overlap = Int(1)
+    output_name = Output('supertile')
+    
+    def execute(self, namespace):
+        from PYME.IO.DataSources.SupertileDatasource import DataSource
+        from PYME.Analysis import tile_pyramid
+        import tempfile
+        
+        stack = namespace[self.input_name]
+
+        x, y = tile_pyramid.get_position_from_events(stack.events, stack.mdh)
+        
+        with tempfile.TemporaryDirectory() as dirname:
+            # this is the 'cleanest' solution, but we can't really put a useful
+            # datasource into the namespace as getslices involve file i/o and
+            # will fail if the file is deleted, which it will be when this
+            # with exits
+            p = tile_pyramid.tile_pyramid(dirname, stack.data, x, y, stack.mdh,
+                                            pyramid_tile_size=self.tile_size)
+            namespace[self.output_name] = DataSource(p, self.level, self.stride,
+                                                        self.overlap)
+        
