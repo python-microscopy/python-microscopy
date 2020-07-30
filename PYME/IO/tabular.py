@@ -267,7 +267,7 @@ class FitResultsSource(TabularBase):
 
 
     def keys(self):
-        return self._keys + list(self.transkeys.keys())
+        return list(self._keys) + list(self.transkeys.keys())
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
