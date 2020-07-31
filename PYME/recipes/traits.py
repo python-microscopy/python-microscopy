@@ -1,5 +1,6 @@
 """ Shim to give us a uniform way of importing traits (and replacing them if needed in the future)"""
 from __future__ import absolute_import
+import numpy as np
 
 try:
     from enthought.traits.api import *
@@ -31,3 +32,19 @@ class FileOrURI(File):
         # Traitsui hangs up if a file doesn't validate correctly and doesn't allow selecting a replacement - disable validation for now :(
         # FIXME
         return value
+
+class IntFloat(BaseFloat):
+    default_value = 0.0
+    info_text = 'Frankenstein to deal with automatic introspection'
+
+    def set(self, obj, name, value):
+        setattr(self, name, value)
+        self.set_value(obj, name, value)
+
+    def get(self, obj, name):
+        val = self.get_value(obj, name)
+        if val is None:
+            val = self.default_value
+        if val == np.round(val):
+            val = int(val)
+        return val
