@@ -553,13 +553,13 @@ class ImageStack(object):
         self.mode = 'default'
 
     def _load_supertile(self, filename):
-        from PYME.IO.DataSources import SupertileDatasource
+        from PYME.IO.DataSources.SupertileDatasource import DataSource
         
         #strip leading supertile schema
         if filename.upper().startswith('SUPERTILE:'):
             filename = filename[10:]
         
-        self.data = SupertileDatasource.DataSource(filename)
+        self.data = DataSource.from_raw_tile_series(filename)
         self.mdh = self.data.mdh
     
         self.mode = 'default'
