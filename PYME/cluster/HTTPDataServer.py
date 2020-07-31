@@ -510,7 +510,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         matches = glob.glob(pattern)
 
         f = BytesIO()
-        f.write(json.dumps(matches))
+        f.write(json.dumps(matches).encode())
         length = f.tell()
         f.seek(0)
         self.send_response(200)
