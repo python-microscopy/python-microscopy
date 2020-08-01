@@ -362,9 +362,9 @@ class ClassicMappingFFTW(DeconvMappingBase):
         
         print('Calculating OTF')
 
-        self.FTshape = [self.shape[0], self.shape[1], self.shape[2]/2 + 1]
+        self.FTshape = [self.shape[0], self.shape[1], int(self.shape[2]/2 + 1)]
 
-        self.g = g.astype('f4');
+        self.g = g.astype('f4')
         self.g2 = 1.0*self.g[::-1, ::-1, ::-1]
 
         #allocate memory
