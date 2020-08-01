@@ -57,8 +57,10 @@ class TrackList(wx.ListCtrl):
         # for wxGTK
         self.Bind(wx.EVT_RIGHT_UP, self.OnListRightClick)
 
-        self._attr_disabled = wx.ListItemAttr(wx.LIGHT_GREY)
-        self._attr_enabled = wx.ListItemAttr(wx.BLACK)
+        self._attr_disabled = wx.ListItemAttr()
+        self._attr_disabled.SetTextColour(wx.LIGHT_GREY)
+        self._attr_enabled = wx.ListItemAttr()
+        self._attr_enabled.SetTextColour(wx.BLACK)
 
         
         #self.SetItemCount(100)
