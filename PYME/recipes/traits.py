@@ -33,7 +33,10 @@ class FileOrURI(File):
         # FIXME
         return value
 
-class IntFloat(BaseFloat):
+class _IntFloat(BaseFloat):
+    # WARNING: This is a fudge used in skimage wrapping. It should not be used unless absolutely necessary and might dissappear if and when we 
+    # find a better replacement. Has a 'private' (leading underscore) name to discourage use.
+    # TODO - Can we inherit from Float instead to eliminate the `set()` method?
     default_value = 0.0
     info_text = 'Frankenstein to deal with automatic introspection'
 
