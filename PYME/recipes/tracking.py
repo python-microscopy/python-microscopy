@@ -135,6 +135,8 @@ class TrackFeatures(ModuleBase):
         #self.clumps = clumps        
         # pipeline.clumps = clumps
 
+        # FIXME - is this the right thing to be adding (and under the right name?) Does the pipeline (As used in dsviewer)
+        # actually support multiple data sources in a meaningful way? Consider fixing DSView/modules/particleTracking and removing this function completely.
         pipeline.addDataSource('clumps', clumpInfo)
         
         return clumps
