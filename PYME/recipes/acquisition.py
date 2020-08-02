@@ -1,6 +1,6 @@
 
 from .base import register_module, OutputModule
-from .traits import Input, Output, CStr, DictStrAny, Bool, Float, ListFloat, Int
+from .traits import Input, Output, CStr, DictStrAny, Bool, Float, Int
 import requests
 import json
 import numpy as np
@@ -105,7 +105,7 @@ class QueueAcquisitions(OutputModule):
         for ri in range(positions.shape[0]):
             args = {'function_name': 'centre_roi_on', 
             'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': nices[2 * ri]}
+                    'timeout': self.timeout, 'nice': self.nice}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
