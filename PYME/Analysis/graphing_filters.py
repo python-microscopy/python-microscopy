@@ -255,7 +255,7 @@ def movieplot2(clump, image):
                 else:
                     scMax = img.max()
                 
-                print(x_0, y_0, img.shape, img_out.shape, i)
+                # print(x_0, y_0, img.shape, img_out.shape, i)
                 
                 img_out[x_0:(x_0 + roiSize), y_0:(y_0 + roiSize), 0] = np.clip(255. * img.T / scMax, 0, 255).astype(
                     'uint8')
