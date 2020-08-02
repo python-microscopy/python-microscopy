@@ -59,8 +59,8 @@ class TilePhysicalCoords(ModuleBase):
         namespace[self.output_name] = out
 
 
-@register_module('SupertileFromImageStack')
-class SupertileFromImageStack(ModuleBase):
+@register_module('Supertile')
+class Supertile(ModuleBase):
     """
     Take an input series acquired ay many positions, tiling an image, and 
     insert those images into the proper position, averaging with any overlapping
