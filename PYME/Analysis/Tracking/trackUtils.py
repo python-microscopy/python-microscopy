@@ -42,7 +42,9 @@ class FeaturePlot(object):
             
         data = self.clump[key]
 
-        if len(data.shape) > 2:
+        if len(data.shape) >= 2:
+            # FIXME - handle this better. Potentially a kymograph for ndim==2?
+            # FIXME - warn???
             return ''
             
         plt.ioff()
