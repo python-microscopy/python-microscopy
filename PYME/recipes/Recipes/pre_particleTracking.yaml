@@ -11,6 +11,11 @@
     method: mean
     mode: reflect
     offset: -0.5
+    outputName: skf_mask
+    processFramesIndividually: true
+- FractionalThreshold:
+    inputName: skf_mask
+    fractionThreshold: 0.5
     outputName: mask
     processFramesIndividually: true
 - Label:
