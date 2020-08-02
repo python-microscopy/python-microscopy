@@ -5,7 +5,7 @@ Created on Fri Feb 20 17:11:05 2015
 @author: david
 """
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, IntFloat
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, _IntFloat
 from scipy import ndimage
 
 
@@ -119,7 +119,7 @@ for filtName in skFilterNames:
             elif argTypes[a] == 'int':
                 paramString += '%s = Int(%s)\n    ' % (a, argDefaults[a])
             elif argTypes[a] == 'int_float':
-                paramString += '%s = IntFloat(%s)\n    ' % (a, argDefaults[a])
+                paramString += '%s = _IntFloat(%s)\n    ' % (a, argDefaults[a])
 
         doc = filt.__doc__
                 
