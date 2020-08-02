@@ -92,7 +92,9 @@ class TrackFeatures(ModuleBase):
         pipe = {}
         pipe.update(clumpInfo)
         pipe.update(objects)
-        pipe = pd.DataFrame(pipe)
+        # pipe = pd.DataFrame(pipe)
+        from PYME.IO.tabular import DictSource
+        pipe = DictSource(pipe)
         
         if 'mdh' in dir(objects):
             #propagate metadata
@@ -105,7 +107,8 @@ class TrackFeatures(ModuleBase):
         else:
             clumps = [c for c in clumps.all if (c.nEvents > self.minTrackLength) ]
 
-        clumpInfo = pd.DataFrame(clumpInfo)
+        # clumpInfo = pd.DataFrame(clumpInfo)
+        clumpInfo = DictSource(clumpInfo)
         
         if 'mdh' in dir(objects):
             #propagate metadata
@@ -125,12 +128,14 @@ class TrackFeatures(ModuleBase):
         into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
 
-        pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
-        pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
-        pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
+        # pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
+        # pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
+        # pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
         
         #self.clumps = clumps        
-        pipeline.clumps = clumps
+        # pipeline.clumps = clumps
+
+        pipeline.addDataSource('clumps', clumpInfo)
         
         return clumps
 
