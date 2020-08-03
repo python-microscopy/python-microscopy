@@ -24,8 +24,18 @@
 import numpy as np
 from . import fitCommon
 from scipy import ndimage
+import six
 
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
+from PYME.Analysis.points import twoColour
+
+def get_shiftmap(shiftmap):
+    ' Get shiftmap from metadata entry. Module level function to permit future caching'
+    
+    if isinstance(shiftmap, six.string_types):
+        return twoColour.ShiftModel.from_md_entry(shiftmap)
+    else:
+        return shiftmap
 
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None, roi_offset=[0,0]):
@@ -37,6 +47,23 @@ class FFBase(object):
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         self.noiseSigma = noiseSigma
         self.roi_offset = roi_offset # offset (x, y) from camera ROI to permit best common ROI for both channels when splitting
+        
+        self._shift_x = None
+        self._shift_y = None
+        
+    @property
+    def shift_x(self):
+        if self._shift_x is None:
+            self._shift_x = get_shiftmap(self.metadata['chroma.dx'])
+            
+        return self._shift_x
+
+    @property
+    def shift_y(self):
+        if self._shift_y is None:
+            self._shift_y = get_shiftmap(self.metadata['chroma.dy'])
+    
+        return self._shift_y
         
     def _calc_sigma(self, data, n_slices_averaged=1):
         """ NOTE: This is a fallback and will normally not be used - fit factories should get noiseSigma passed in from
@@ -166,8 +193,8 @@ class FFBase(object):
         
         #look up shifts
         if not self.metadata.getOrDefault('Analysis.FitShifts', False):
-            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+            DeltaX = self.shift_x.ev(x_, y_)
+            DeltaY = self.shift_y.ev(x_, y_)
         else:
             DeltaX = 0
             DeltaY = 0
@@ -229,7 +256,7 @@ class FFBase(object):
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
         
 
         Xr = Xg + DeltaX - vx*dxp
@@ -271,8 +298,8 @@ class FFBase(object):
     
         #look up shifts
         if not self.metadata.getOrDefault('Analysis.FitShifts', False):
-            DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-            DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+            DeltaX = self.shift_x.ev(x_, y_)
+            DeltaY = self.shift_y.ev(x_, y_)
         else:
             DeltaX = 0
             DeltaY = 0
@@ -340,7 +367,7 @@ class FFBase(object):
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
     
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
     
     
         Xr = Xg + DeltaX - vx * dxp

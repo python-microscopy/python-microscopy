@@ -301,7 +301,7 @@ class AnalysisSettingsView(object):
         
 class AnalysisController(object):
     def __init__(self, imageMdh=None, tq = None):
-        self.analysisMDH = MetaDataHandler.NestedClassMDHandler(imageMdh)
+        self.analysisMDH = MetaDataHandler.CopyOnWriteMDHandler(imageMdh) #MetaDataHandler.NestedClassMDHandler(imageMdh)
         self.onImagesPushed = dispatch.Signal()
         self.onMetaDataChange = dispatch.Signal()
 

@@ -49,7 +49,7 @@ class GaussianFitFactory(FFBase.FFBase):
         X, Y, dataMean, bgMean, sigma, xslice, yslice, zslice= self.getROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         res = np.zeros(1, fresultdtype)
-        res['tIndex'] = self.metadata.tIndex
+        res['tIndex'] = self.metadata['tIndex']
         res['x'] = x
         res['y'] = y
         
