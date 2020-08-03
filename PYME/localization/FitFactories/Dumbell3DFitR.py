@@ -34,7 +34,7 @@ from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac
 # Model functions
 def f_dumbell3d(p, X, Y, Z):
     """Pair of 3D Gaussian model functions with linear background
-     - parameter vector [A, x0, y0, z0, x1, y1, z1, sigma_xy, sigma_z, background]
+     - parameter vector [A, x0, y0, z0, x1, y1, z1, wxy, wz, background]
      Note: Assumes sames sigma for both Gaussian (dumbell). """
     A, x0, y0, z0, x1, y1, z1, sxy, sz, b = p
         
@@ -50,12 +50,12 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('A', '<f4'),
                               ('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),
                               ('x1', '<f4'),('y1', '<f4'),('z1', '<f4'),
-                              ('sigma_xy', '<f4'),('sigma_z','<f4'),
+                              ('wxy', '<f4'),('wz','<f4'),
                               ('background', '<f4')]),
               ('fitError', [('A', '<f4'),
                             ('x0', '<f4'),('y0', '<f4'),('z0', '<f4'),
                             ('x1', '<f4'),('y1', '<f4'),('z1', '<f4'),
-                            ('sigma_xy', '<f4'),('sigma_z','<f4'), 
+                            ('wxy', '<f4'),('wz','<f4'), 
                             ('background', '<f4')]),
               ('length', '<f4'),
               ('resultCode', '<i4'), 
@@ -135,8 +135,8 @@ class Dumbell3DFitFactory(FFBase.FitFactory):
                            x0-rand_x,       # x1
                            y0-rand_y,       # y1
                            z0-rand_z,       # z1
-                           sxy,             # sigma_xy
-                           2.5*sxy,         # sigma_z
+                           sxy,             # wxy
+                           2.5*sxy,         # wz
                            dataMean.min()]  # background
 
         # do the fit

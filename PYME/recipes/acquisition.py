@@ -1,9 +1,10 @@
 
 from .base import register_module, OutputModule
-from .traits import Input, Output, CStr, DictStrAny, Bool, Float, ListFloat
+from .traits import Input, Output, CStr, DictStrAny, Bool, Float, Int
 import requests
 import json
 import numpy as np
+import time
 
 
 @register_module('QueueAcquisitions')
@@ -15,8 +16,9 @@ class QueueAcquisitions(OutputModule):
     Parameters
     ----------
     input_positions : Input
-        PYME.IO.tabular containing 'x' and 'y' coordinates in units of 
-        nanometers
+        PYME.IO.tabular containing 'x_um' and 'y_um' coordinates in units of 
+        micrometers (preferred) *or* 'x' and 'y' coordinates in units of 
+        nanometers.
     action_server_url : CStr
         URL of the microscope-side action server process.
     spool_settings : DictStrAny
@@ -53,6 +55,11 @@ class QueueAcquisitions(OutputModule):
     timeout : Float
         time in seconds after which the acquisition tasks associated with these
         positions will be ignored/unqueued from the action manager.
+    nice: Int
+        priority at which acquisition tasks should execute (default=10)
+    between_post_throttle : Float
+        Time in seconds to sleep between posts to avoid bombarding the 
+        microscope-side server. Can be set to zero for ~no throttling.
     """
     input_positions = Input('input')
     action_server_url = CStr('http://127.0.0.1:9393')
@@ -60,7 +67,8 @@ class QueueAcquisitions(OutputModule):
     lifo = Bool(True)
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)
-    nice_range = ListFloat()
+    nice = Int(10)
+    between_post_throttle = Float(0.01)
 
     def save(self, namespace, context={}):
         """
@@ -76,33 +84,37 @@ class QueueAcquisitions(OutputModule):
             resolved.
         """
         
-        positions = np.stack((namespace[self.input_positions]['x'], 
-                              namespace[self.input_positions]['y']), 
-                              axis=1) / 1e3  # (N, 2), nm -> um
-
-        if len(self.nice_range) == 2:
-            nices = np.linspace(self.nice_range[0], self.nice_range[1], 
-                                2 * len(positions))
-        else:
-            nices = np.arange(2 * len(positions))
+        try:  # get positions in units of micrometers
+            positions = np.stack((namespace[self.input_positions]['x_um'], 
+                                  namespace[self.input_positions]['y_um']), 
+                                 axis=1) # (N, 2), [um]
+        except KeyError:  # assume x and y are in nanometers
+            positions = np.stack((namespace[self.input_positions]['x'], 
+                                  namespace[self.input_positions]['y']), 
+                                 axis=1) / 1e3  # (N, 2), [nm] -> [um]
         
         if self.optimize_path:
             from PYME.Analysis.points.traveling_salesperson import sort
-            start = len(positions) if self.lifo else 0
+            start = -1 if self.lifo else 0
             positions = sort.tsp_sort(positions, start)
         else:
             positions = positions[::-1, :] if self.lifo else positions
         
         dest = self.action_server_url + '/queue_action'
+        session = requests.Session()
         for ri in range(positions.shape[0]):
             args = {'function_name': 'centre_roi_on', 
             'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': nices[2 * ri]}
-            requests.post(dest, data=json.dumps(args), 
+                    'timeout': self.timeout, 'nice': self.nice}
+            session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
+            time.sleep(self.between_post_throttle)
+
             args = {'function_name': 'spoolController.StartSpooling',
                     'args': self.spool_settings,
-                    'timeout': self.timeout, 'nice': nices[2 * ri + 1]}
-            requests.post(dest, data=json.dumps(args), 
+                    'timeout': self.timeout, 'nice': self.nice}
+            session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
+            
+            time.sleep(self.between_post_throttle)

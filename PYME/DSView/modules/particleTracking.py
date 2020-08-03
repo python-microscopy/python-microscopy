@@ -57,8 +57,10 @@ class TrackList(wx.ListCtrl):
         # for wxGTK
         self.Bind(wx.EVT_RIGHT_UP, self.OnListRightClick)
 
-        self._attr_disabled = wx.ListItemAttr(wx.LIGHT_GREY)
-        self._attr_enabled = wx.ListItemAttr(wx.BLACK)
+        self._attr_disabled = wx.ListItemAttr()
+        self._attr_disabled.SetTextColour(wx.LIGHT_GREY)
+        self._attr_enabled = wx.ListItemAttr()
+        self._attr_enabled.SetTextColour(wx.BLACK)
 
         
         #self.SetItemCount(100)
@@ -68,9 +70,9 @@ class TrackList(wx.ListCtrl):
         
     def OnGetItemText(self, item, col):
         if col == 0:
-            return self.clumps[item].clumpID
+            return str(self.clumps[item].clumpID)
         if col == 1:
-            return self.clumps[item].nEvents
+            return str(self.clumps[item].nEvents)
         elif col == 2:
             return str(self.clumps[item].enabled)
         else:
@@ -260,10 +262,10 @@ class ParticleTrackingView(HasTraits, Plugin):
         self.list.SetClumps(self.clumps)
         
     def OnSelectTrack(self, event):
-        self.selectedTrack = self.clumps[event.m_itemIndex]
+        self.selectedTrack = self.clumps[event.GetIndex()]
         #template = env.get_template('trackView.html')
         #self.trackview.SetPage(template.render(clump=self.selectedTrack, img=self.dsviewer.image), '')
-        self.trackview.LoadURL(htmlServe.getURL() + 'tracks/trackDetail?trackNum=%d' % event.m_itemIndex)
+        self.trackview.LoadURL(htmlServe.getURL() + 'tracks/trackDetail?trackNum=%d' % event.GetIndex())
         #self.trackview.SetPage(self.trackDetail(event.m_itemIndex), '')
 
     @cherrypy.expose
