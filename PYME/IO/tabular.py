@@ -216,16 +216,23 @@ def unnest_dtype(dtype, parent=''):
         
     dt = []
     for node in descr:
-        if isinstance(node, tuple) and len(node) == 2:
-            name, t = node
+        if isinstance(node, tuple):# and len(node) == 2:
+            name, t = node[:2]
             if isinstance(t, str):
-                dt.append((parent + name, t))
-            else:
+                dt.append((parent + name, ) + node[1:])
+            elif len(node) == 2:
                 dt += unnest_dtype(node[1], parent=parent + name + '_')
+            else:
+                raise RuntimeError('unexpected dtype descr: %s, node: %s' % (descr, node))
         else:
-            raise RuntimeError('unexpected dtype descr: %s' % descr)
-        
-    return np.dtype(dt)
+            raise RuntimeError('unexpected dtype descr: %s, node: %s' % (descr, node))
+    
+    if parent == '':
+        #cast to a numpy dtype if we are at the top recursion level
+        return np.dtype(dt)
+    else:
+        # otherwise just return the description
+        return dt
 
 @deprecated_name('fitResultsSource')
 class FitResultsSource(TabularBase):
@@ -250,9 +257,9 @@ class FitResultsSource(TabularBase):
             self.fitResults.sort(order='tIndex')
 
         #allow access using unnested original names
-        # TODO - replace with unnest_dtype(self.fitResults.dtype).names
         # TODO???? - replace key translation with a np.view call?
-        self._keys = unNestDtype(self.fitResults.dtype.descr)
+        #self._keys = unNestDtype(self.fitResults.dtype.descr)
+        self._keys = list(unnest_dtype(self.fitResults.dtype).names)
         
         #or shorter aliases
         self._set_transkeys()
@@ -588,7 +595,7 @@ class MatfileColumnSource(TabularBase):
         if not key in self._keys:
             raise KeyError('Key (%s) not found' % key)
         
-        return self.res[key][sl].squeeze()
+        return self.res[key][sl].astype('f4').squeeze()
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])

@@ -65,7 +65,7 @@ class visGuiExtras:
     def OnExport(self, event):
         #ivp = self.notebook.GetPage(self.notebook.GetSelection())
         ivp = self.dsviewer.GetSelectedPage()
-        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif;*.bmp;*.gif;*.jpg;*.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 
         if not fname == "":
             ext = os.path.splitext(fname)[-1]

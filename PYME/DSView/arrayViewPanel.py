@@ -272,7 +272,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
                 
-            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
@@ -351,7 +351,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
             dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
             if self.scaleBarLength > 1000:
-                s = u'%1.1f \u03BCm' % (self.scaleBarLength/1000.)
+                s = u'%1.1f \u00B5m' % (self.scaleBarLength / 1000.)
             else:
                 s = u'%d nm' % int(self.scaleBarLength)
             w, h = dc.GetTextExtent(s)

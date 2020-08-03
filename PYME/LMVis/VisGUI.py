@@ -114,7 +114,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
-              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
+              introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
@@ -487,7 +487,6 @@ if __name__ == '__main__':
     main()
     mProfile.report()
 
-
 def ipython_visgui(filename=None, **kwargs):
     import PYME.config
     
@@ -500,4 +499,5 @@ def ipython_visgui(filename=None, **kwargs):
     visFr.Show()
     return visFr
     
-    
+def ipython_pymevisualize(filename=None, **kwargs):
+    return ipython_visgui(filename, **kwargs)

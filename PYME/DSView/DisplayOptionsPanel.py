@@ -374,7 +374,7 @@ class OptionsPanel(wx.Panel):
         
     def OnSelectSquiggle(self, event):
         self.do.leftButtonAction = DisplayOpts.ACTION_SELECTION
-        self.do.selectionMode = DisplayOpts.SELECTION_SQUIGLE
+        self.do.selectionMode = DisplayOpts.SELECTION_SQUIGGLE
         self.do.showSelection = True
 
         #self.Refresh()

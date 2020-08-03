@@ -29,13 +29,11 @@ import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
-class manualSegment:
+from ._base import Plugin
+class ManualSegment(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        #self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
+        
         self.mask = None
         self.rois = []
         
@@ -179,6 +177,8 @@ class manualSegment:
 
 
 def Plug(dsviewer):
-    dsviewer.mSegment = manualSegment(dsviewer)
-    dsviewer.mSegment.OnCreateMask(None)
+    mSegment = ManualSegment(dsviewer)
+    mSegment.OnCreateMask(None)
+    
+    return mSegment
     

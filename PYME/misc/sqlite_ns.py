@@ -93,14 +93,17 @@ nsd = {}
 
 import threading
 
+sqlite_ns_lock = threading.Lock()
+
 def getNS(protocol='_pyme-pyro'):
     #TODO - is it better to do this, or to open and close the connection around each call?
     thread_id = threading.current_thread().ident
-    try:
-        ns = nsd[(protocol, thread_id)]
-    except KeyError:
-        ns = SQLiteNS(protocol)
-        nsd[(protocol, thread_id)] = ns
-        #time.sleep(1) #wait for the services to come up
+    with sqlite_ns_lock:
+        try:
+            ns = nsd[(protocol, thread_id)]
+        except KeyError:
+            ns = SQLiteNS(protocol)
+            nsd[(protocol, thread_id)] = ns
+            #time.sleep(1) #wait for the services to come up
     
     return ns

@@ -128,7 +128,7 @@ class FFBase(object):
         #generate grid to evaluate function on
         X = vx * (np.mgrid[xslice] + self.roi_offset[0])
         Y = vy * (np.mgrid[yslice] + self.roi_offset[1])
-        Z = vz * (np.mgrid[yslice])
+        Z = vz * (np.mgrid[zslice])
     
         return X, Y, Z, dataROI, bgROI, sigma, xslice, yslice, zslice
 

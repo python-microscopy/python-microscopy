@@ -231,7 +231,7 @@ cdef class TriangleMesh(TrianglesBase):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'H', 'K']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'curvature_mean', 'curvature_gaussian']
 
         self.fix_boundary = True  # Hold boundary edges in place
 
@@ -313,13 +313,13 @@ cdef class TriangleMesh(TrianglesBase):
         return self.vertices[:,2]
 
     @property
-    def H(self):
+    def curvature_mean(self):
         if self._H is None:
             self.calculate_curvatures()
         return self._H
     
     @property
-    def K(self):
+    def curvature_gaussian(self):
         if self._K is None:
             self.calculate_curvatures()
         return self._K
@@ -2326,6 +2326,12 @@ cdef class TriangleMesh(TrianglesBase):
         self._fill_holes()
 
         self._manifold = None
+
+        # Now we gotta recalculate the normals
+        self._faces['normal'][:] = -1
+        self._vertices['normal'][:] = -1
+        self.face_normals
+        self.vertex_normals
 
     def to_stl(self, filename):
         """

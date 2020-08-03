@@ -14,6 +14,23 @@ either by email, or by raising a feature request or proposal issue in our issue 
 potential points for friction (see below), and should also allow us to provide additional information which may be helpful
 when dealing with some of the hairier and less well documented bits of the codebase.
 
+Versioning and Releases
+=======================
+
+PYME operates a "continuous alpha" release model where we try and get changes into the head as soon as possible. This
+means that there will inevitably be some regressions, but we do endeavour to ensure backwards compatibility. Whilst
+feature development often occurs in separate branches, we do not have formal staged, 'stable', releases. The reasoning
+behind this is that we are still a relatively small project, with a small team of core developers and want to get new
+features out as soon as we can. In line with this continuous alpha model, we use date based versioning (we also record
+the last commit hash for sub-day versioning). The current version of PYME is thus always the date of the last commit to
+the master branch. In theory, `PYME.version.version` should track this but it can lag due to how `PYME.version.version` is
+updated (see issue #312).
+
+In addition, we have tagged "releases" corresponding to the the generation of conda and pip packages (and hopefully, as
+we improve CI, executable installers). These "releases" do not imply that the code is any better / more stable than that
+in the repository head - they simply mark when packages were built. Package building is currently manually triggered, but
+this will hopefully change to an automated weekly build in the near future.
+
 Roadmap / Future directions
 ===========================
 

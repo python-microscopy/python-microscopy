@@ -24,12 +24,11 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 import numpy
 
-class PsfExtractor(object):
+from ._base import Plugin
+
+class PsfExtractor(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
 
         try:  # stack multiview channels
             self.numChan = self.image.mdh['Multiview.NumROIs']
@@ -544,5 +543,5 @@ class PsfExtractor(object):
 
 
 def Plug(dsviewer):
-    dsviewer.psfExtractor = PsfExtractor(dsviewer)
+    return PsfExtractor(dsviewer)
 

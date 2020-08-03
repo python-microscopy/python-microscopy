@@ -172,7 +172,7 @@ class seqPanel(wx.Panel):
 
         #hsizer.Add(sNSlices, 1, 0, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 5)
-        
+
         if not (self.mode == 'sequence'):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             self.stMemory = wx.StaticText(self, -1, '')
@@ -187,6 +187,14 @@ class seqPanel(wx.Panel):
             hsizer.Add(self.bLive, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
     
             vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        else:
+            # sequence mode doesn't have dwell functionality yet
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Dwell [frames]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.t_zdwell = wx.TextCtrl(self, -1, value=str(self.scope.spoolController.z_dwell), size=(75,-1))
+            self.t_zdwell.Bind(wx.EVT_KILL_FOCUS, self.OnDwellKillFocus)
+            hsizer.Add(self.t_zdwell, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 5)
 
         self.SetSizerAndFit(vsizer)
 
@@ -378,7 +386,10 @@ class seqPanel(wx.Panel):
         self.UpdateDisp()
 
         event.Skip()
-
+    
+    def OnDwellKillFocus(self, wx_event):
+        self.scope.spoolController.z_dwell = int(self.t_zdwell.GetValue())
+        wx_event.Skip()
         
 
     def UpdateDisp(self):
@@ -416,6 +427,8 @@ class seqPanel(wx.Panel):
         
         if not self.mode == 'sequence':
             self.stMemory.SetLabel('Mem: %2.1f MB' % (self.scope.cam.GetPicWidth()*self.scope.cam.GetPicHeight()*self.stackSettings.GetSeqLength()*2*1/(1024.0*1024.0)))
+        else:
+            self.t_zdwell.SetValue(str(self.scope.spoolController.z_dwell))
 
 
 class SeqProgressPanel(wx.Panel):
