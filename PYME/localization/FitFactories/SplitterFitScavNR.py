@@ -204,7 +204,7 @@ def _munge_chans(res, A, bg, brightest_chan):
         res[6] = r2[5]
         res[5] = bg
     
-    res[2:4] = r2[1:3]
+    res[2:5] = r2[1:4]
     
     return res
 
