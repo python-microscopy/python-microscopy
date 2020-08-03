@@ -9,7 +9,7 @@ Created on Mon May 25 17:02:04 2015
 #import wx
 import six
 
-from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output, IntFloat
+from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output, _IntFloat
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
