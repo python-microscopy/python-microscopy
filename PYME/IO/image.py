@@ -212,6 +212,8 @@ class ImageStack(object):
         self.events = events  #events
 
         self.queueURI = queueURI
+        if filename is not None and not filename.lower().startswith('pyme-cluster'):
+            filename = os.path.abspath(filename)
         self.filename = filename
 
         self.haveGUI = haveGUI
