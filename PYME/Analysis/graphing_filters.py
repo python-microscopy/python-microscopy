@@ -282,7 +282,7 @@ def movieplot2(clump, image):
             
             if not contours is None:
                 xc, yc = contours[i].T
-                plt.plot(xc - xp + 20, yc - yp + 20, c='b')#plt.cm.hsv(clump.clumpID/16.))
+                plt.plot(xc - xp + roiHalfSize + y_0, yc - yp + roiHalfSize + x_0, c='b')#plt.cm.hsv(clump.clumpID/16.))
         
         if img_out.shape[2] <= 1:
             plt.imshow(img_out.squeeze(), interpolation='nearest', cmap=plt.cm.gray, clim=[0, 255])
