@@ -22,8 +22,6 @@
 ################
 import numpy as np
 
-from scipy import *
-
 def bareDNA(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75.0)
 
@@ -77,7 +75,7 @@ class wormlikeChain:
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(np.round(lengthPerKbp*kbp/steplength))
 
-        exp_costheta = (exp(-steplength/persistLength))
+        exp_costheta = (np.exp(-steplength/persistLength))
 
         E = np.random.exponential(1. / get_k_for_exp_costheta(exp_costheta), numsteps * 2)
         E = E[E <= 1][:numsteps]
@@ -98,7 +96,7 @@ class wormlikeChain:
         ys = np.random.uniform(-1, 1, numsteps)
         zs = np.random.uniform(-1, 1, numsteps)
 
-        nrm = sqrt(xs*xs + ys*ys + zs*zs)
+        nrm = np.sqrt(xs*xs + ys*ys + zs*zs)
 
         xs = xs/nrm
         ys = ys/nrm
@@ -121,15 +119,15 @@ class wormlikeChain:
     
         xs, ys, zs = steplength*steps
 
-        self.xp = cumsum(concatenate(([0], xs),0))
-        self.yp = cumsum(concatenate(([0], ys),0))
-        self.zp = cumsum(concatenate(([0], zs),0))
+        self.xp = np.cumsum(np.concatenate(([0], xs),0))
+        self.yp = np.cumsum(np.concatenate(([0], ys),0))
+        self.zp = np.cumsum(np.concatenate(([0], zs),0))
 
 class wormlikeChain2D:
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(np.round(lengthPerKbp * kbp / steplength))
 
-        exp_costheta = (exp(-steplength/persistLength))
+        exp_costheta = (np.exp(-steplength/persistLength))
         #theta = sqrt(2*log(1/exp_costheta))*abs(randn(numsteps))
 
         #costheta = np.random.lognormal(exp_costheta, exp_costheta, numsteps)
@@ -156,7 +154,7 @@ class wormlikeChain2D:
         ys = np.random.uniform(-1, 1, numsteps)
         #zs = np.random.uniform(-1, 1, numsteps)
 
-        nrm = sqrt(xs * xs + ys * ys)# + zs * zs)
+        nrm = np.sqrt(xs * xs + ys * ys)# + zs * zs)
 
         xs = xs / nrm
         ys = ys / nrm
@@ -178,9 +176,9 @@ class wormlikeChain2D:
 
         xs, ys = steplength * steps
 
-        self.xp = cumsum(concatenate(([0], xs), 0))
-        self.yp = cumsum(concatenate(([0], ys), 0))
-        self.zp = cumsum(concatenate(([0], 0*xs), 0))
+        self.xp = np.cumsum(np.concatenate(([0], xs), 0))
+        self.yp = np.cumsum(np.concatenate(([0], ys), 0))
+        self.zp = np.cumsum(np.concatenate(([0], 0*xs), 0))
         #plot3(xp, yp, zp)
         #grid
         #daspect([1 1 1])
