@@ -32,7 +32,7 @@ Create a Python 3.6 virtual environment with ``conda``. Then, open a command pro
 	
     conda config --add channels david_baddeley
     conda install pyme-depends
-    git clone git@github.com:python-microscopy/python-microscopy.git
+    git clone https://github.com/python-microscopy/python-microscopy.git
     cd python-microscopy
     python setup.py develop
 
@@ -44,7 +44,7 @@ and cython are installed. Then, open a command prompt and enter
 
 .. code-block:: bash
 	
-    git clone git@github.com:python-microscopy/python-microscopy.git
+    git clone https://github.com/python-microscopy/python-microscopy.git
     cd python-microscopy
     pip install -r requirements.txt
     python setup.py develop
