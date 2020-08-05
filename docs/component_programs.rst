@@ -6,7 +6,7 @@ Common Tasks
 .. toctree::
    :maxdepth: 1
 
-   localization_analysis
+   LocalisationAnalysis
    PSFExtraction
    Recipes
    howtos/distancecolocalization
