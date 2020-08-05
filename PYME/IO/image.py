@@ -213,7 +213,7 @@ class ImageStack(object):
 
         self.queueURI = queueURI
         
-        if filename is not None os.path.exists(filename): # is a real filename on disk, rather than a schemified one e.g. pyme-cluster://
+        if filename is not None and os.path.exists(filename): # is a real filename on disk, rather than a schemified one e.g. pyme-cluster://
             # make the filename fully resolved rather than relative to the directory we launched from (if we launched with a partial filename)
             # TODO: does this belong here, or should this logic be elsewhere
             filename = os.path.abspath(filename)
