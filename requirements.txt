@@ -1,7 +1,8 @@
-#PIP requirements
-#NB - this might be incomplete / buggy, the conda route is currently more reliable
+# PIP requirements
+# NB - this might be incomplete / buggy, the conda route is currently more reliable
+# 
 
-numpy==1.14.*
+numpy>=1.14.* # we build and test against 1.14, but should work against any higher version. Try numpy==1.14.* if you run into issues.
 scipy
 matplotlib
 wxpython
