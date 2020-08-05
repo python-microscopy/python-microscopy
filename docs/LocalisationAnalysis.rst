@@ -9,60 +9,55 @@ Analysing Localisation Microscopy data
    AnalysingForeignData
    SplitterMulticolour
 
-Starting distributed analysis infrastructure
-============================================
+Starting analysis infrastructure
+================================
 
 To improve performance, PYME distributes localization analysis over multiple worker processes, with a server process
 used for communication. These can either all be on the same machine, or be distributed across a network/cluster. The
-server and worker processes need to be running before starting the analysis. This is achieved with the
+server and worker processes need to be running before starting the analysis. To launch all components on a single machine
+, launch ``PYME>PYMEClusterOfOne`` from the start menu (Windows), or run
 
 .. code-block:: bash
 
-   launchWorkers
+   PYMEClusterOfOne
 
-command. On OSX or linux, enter this in a terminal window. On Windows either enter it in an *"Anaconda prompt"* (found
-under the "Anaconda" group on the start menu, or navigate to the directory you installed Anaconda to (most likely
-``C:\Users\<username>\Anaconda2`` or ``C:\Users\<username>\Miniconda2``) and make a shortcut to ``Scripts\launchWorkers.exe``
-somewhere convenient for you.
-
-This ``launchWorkers`` script starts the server and the same number
-of workers as there are cores on the current machine [#numworkers]_. The server and worker processes should then find
-each other automatically [#mdns]_ and communicate using a package called Pyro. On Windows you may be prompted to allow
+in a terminal window (OSX, Linux) or *"Anaconda prompt"* (Windows) [#anacondaprompt]_ .On Windows you may be prompted to allow
 python through the firewall, which you should accept.
 
 .. note::
 
-   We are currently in the process of migrating all our analysis to use the new, high-throughput infrastructure which is
-   python3 compatible, faster, and more robust. This will mean that you need to run ``PYMEClusterOfOne`` (or similar),
-   rather than ``launchWorkers`` but will leave the rest of the process largely unchanged.
+   We previously used a slightly different analysis architecture, launched with the ``launchWorkers`` command. If you are familiar with
+   ``launchWorkers``, ``PYMEClusterOfOne`` should be a drop in replacement. The most noticeable differences will be a different
+   task monitoring window, and that analysis results now go in an ``analysis`` subdirectory of the image directory
+   rather than a higher level analysis directory. We've done a reasonable ammount of testing, but if something doesn't
+   work ``launchWorkers`` is still available (for now, python 2.7 only). Please also let us know so we can fix it.
+
+.. note::
+
+   To distribute analysis over a computer cluster, see :ref:`cluster setup <cluster_install>`.
 
 Loading data
 ============
 
-Once the server and worker processes are running, the data should be opened
-using :ref:`dh5view <dh5view>`.
+Once the the cluster (of one) is running, open raw blinking series with :ref:`dh5view <dh5view>`.
 
-Data acquired using PYMEAcquire
-+++++++++++++++++++++++++++++++
-
-Data spooled to a ``.h5 file`` can be opened by running ``dh5view filename.h5``, by double clicking ``dh5view.exe`` in
-the ``Anaconda\Scripts`` directory (or a shortcut) and using the file open dialog, or by ascociating ``dh5view`` with ``.h5``
-files. For data saved directly to a queue, the easiest way is probably to click the **Analyse** button on the
-Spooling panel in :ref:`PYMEAcquire <PYMEAcquire>`. Many protocols will do this
-automatically after a the intial pre-bleaching phase has been performed.
-
-Data not acquired using PYMEAcquire
-+++++++++++++++++++++++++++++++++++
-For data not originating from *PYMEAcquire* the process is a little more complex as ``dh5view`` will not detect that it
-should launch in *"Localization Mode"* and some metadata will probably be missing.
-(see :ref:`analysingforeigndata` for details). In short, either use ``dh5view -m LM filename`` or use the file open dialog,
-complete any missing metadata entries and then choose ``LMAnalysis`` from the ``Modules`` menu.
-
-Special attention is also needed for analysing simultaeneous multi-colour data (see :ref:`imagesplitter`).
+If the data was acquired with :ref:`PYMEAcquire <PYMEAcquire>` and saved as `.h5` the localization analysis plugin should
+load automatically. Otherwise, select ``LMAnalysis`` from the ``Modules`` drop-down menu to activate *"Localisation Mode"* [#lmmode]_.
 
 With the data loaded in dh5view, one should see something like:
 
 .. image:: /images/dh5view_lm.*
+
+
+Data not acquired using PYMEAcquire
+-----------------------------------
+In addition to requiring manual activation of *"Localisation Mode"*, data not originating from *PYMEAcquire* will require
+values for various camera parameters to be entered in the metadata (see :ref:`analysingforeigndata` for details).
+
+Ratiometric multicolor data
+---------------------------
+Special attention is also needed for analysing simultaeneous multi-colour data (see :ref:`imagesplitter`).
+
 
 
 Analysis settings
@@ -72,7 +67,7 @@ The **Analysis** and **Point Finding** panes in the left hand panel control the
 analysis settings.
 
 Fit types
-+++++++++
+---------
 
 PYME offers a large number of different fit types, and is easily extensible to support more.
 The most useful ones are given below. If in doubt, you usually want **LatGaussFitFR**.
@@ -85,13 +80,14 @@ InterpFitR              Fits an interpolated PSF to localisation Data (**3D**)
 SplitterFitFNR          Like LatGaussFitFR but for ratiometric data
 SplitterFitInterpNR     Like InterpFitR but for ratiometric data (**3D**)
 SplitterFitInterpBNR    Like SplitterFitInterpNR but for biplane ratiometric data (**3D**)
-GaussMultiFitSR       2D Multi-emitter fitting
+GaussMultiFitSR         2D Multi-emitter fitting
 SplitterShiftEstFR      Used for estimating shift fields between channels
+AstigGaussGPUFitFR      Fast astigmatic fitting (**3D**) Requires `pyme-warp-drive <https://github.com/python-microscopy/pyme-warp-drive>`_.
 ======================  ==============================================================
 
 
 Settings
-++++++++
+--------
 
 ====================  ============================================================================
 Setting               Description
@@ -103,7 +99,7 @@ Threshold             The threshold for event detection. This is not a strict th
 Type                  The type of fit to perform
 Interp                The type of interpolation to perform (only methods with *Interp* in
                       their name)
-Start at              The frame # should to start our analysis at
+Start at              The frame # should to start our analysis at (zero-indexed)
 Background            What range of frames should be used for background estimation. Uses
                       python slice notation.
 Subtract background   Should we subtract the background before fitting (rather than just for event detection)
@@ -125,20 +121,21 @@ Some fit modules will also display custom settings.
 Starting the fitting
 ====================
 
-Testing the object detection
-++++++++++++++++++++++++++++
+Testing object detection
+------------------------
 
-Whilst the threhold factor is fairly robust, it is generally worth testing the
-detection by clicking the **Test** button. This performs the object finding step
-on a selection of frames spaced throughout the sequence. If this fails one should
-check the ``Camera.ADOffset`` setting in the metadata (accessible through the **Metadata** tab)
-to see if this is reasonable before attempting to tweak the detection threshold. (The *ADOffset* is estimated by
-taking a number of dark frames before the acquisition starts, and can be fooled if
-the room lights are on and/or the laser shutters are misbehaving). Metadata parameters
-can be edited by right clicking the appropriate field in the Metadata tab.
+We use a signal-to-noise dependent threshold, which makes detection fairly robust with a threshold factor near 1 (if
+that the metadata is correct). It is nevertheless worth testing the detection by clicking the **Test** button, especially
+when looking at data from a new microscope or type of sample. This performs the object finding step
+on the current frame. If this performs poorly, one should check the ``Camera.ADOffset`` setting in the metadata (accessible
+through the **Metadata** tab) to see if this is reasonable before attempting to tweak the detection threshold. *ADOffset*
+is defined as the average dark value on the camera. We recommend imaging protocols take a number of dark frames before the
+turning the laser on, and will use these frames, if present, to estimate *ADOffset*. This estimation can be fooled if
+the room lights are on and/or the laser shutters are misbehaving). Incorrect camera maps (sCMOS), or read noise calibrations
+can also lead to poor detection. Metadata parameters can be edited by right clicking the appropriate field in the Metadata tab.
 
 Launching the analysis tasks
-++++++++++++++++++++++++++++
+----------------------------
 
 Once satisfied with the event detection, the analysis proper can be started by
 clicking the **Go** button. The results will automatically be saved as ``.h5r`` files, either under the
@@ -148,25 +145,33 @@ called ``PYMEData`` in the users home directory (``c:\\Users\\<username>\\`` und
 The resulting ``.h5r`` files can be opened in :ref:`VisGUI <VisGUI>`.
 
 
-.. note::
+Localizing directly from PYMEAcquire
+====================================
 
-   Distributing analysis over multiple computers
-   =============================================
+Localization can be initiated directly from PYMEAcquire. In the 'Time/ Blinking Series' panel on the right of PYMEAcquire,
+expand the 'Real-time analysis' section and click the 'Save analysis settings to metadata' checkbox. During acquisition,
+you can either click the 'Analyse' button in spooling progress section, or your acquisition protocol can do this automatically.
 
-   A crude form of distributing the analysis over multiple computers (a small ad-hoc cluster) can be achieved by:
 
-   * Make sure that the same version of PYME is installed on all machines
-   * Run ``launchWorkers`` on each machine you want to use.
+Batching analysis
+=================
 
-   A much better approach, however, is to use the 'new-style' distributed analysis which is both significantly faster and
-   more robust. TODO - write docs.
+To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI=True``.
+This will require the optional dependency django (See also :ref:`cluster setup <cluster_install>`).
+
 
 .. rubric:: Footnotes
 
+.. [#anacondaprompt] Found under the "PYME" group on the start menu, if you used the installer, otherwise under the "Miniconda"
+   or "Anaconda" group.
+
 .. [#numworkers] If you're running the analysis on the data acquisition computer, and have a decent number of
    cores available (e.g. 8),  better performance can be achieved by reserving a core for
-   each of the Acqusition and Server processes (ie limiting the number of workers to 6 in our
+   each of the Acquisition and Server processes (ie limiting the number of workers to 6 in our
    8 core case). This can be done by explicitly specifying the number of workers to launch as
    an argument eg: ``launchWorkers 6``.
+
+.. [#lmmode] Instead of manually loading the LMAnalysis module every time you launch dh5view, you can force it to start
+   in localisation mode with the ``-m LM`` command line switch - i.e. ``dh5view -m LM filename``
 
 .. [#mdns] Using the zeroconf/MDNS protocol.

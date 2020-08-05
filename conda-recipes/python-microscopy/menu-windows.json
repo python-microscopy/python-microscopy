@@ -12,6 +12,15 @@
                 "quicklaunch": true
             },
             {
+                "script": "${PREFIX}/Scripts/PYMEClusterOfOne.exe",
+                "scriptarguments": [],
+                "name": "PYMEClusterOfOne",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
                 "script": "${PREFIX}/Scripts/dh5view.exe",
                 "scriptarguments": [],
 
