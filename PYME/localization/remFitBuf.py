@@ -53,7 +53,7 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 bufferMisses = 0
 nTasksProcessed = 0
 
-splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR',
+splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR', 'SplitterFitScavNR',
                       'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterFitFusionR',
                       'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR', 'SplitterFitInterpBNR', 'SplitterROIExtractNR']
 

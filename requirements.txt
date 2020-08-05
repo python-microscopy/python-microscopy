@@ -1,7 +1,8 @@
-#PIP requirements
-#NB - this might be incomplete / buggy, the conda route is currently more reliable
+# PIP requirements
+# NB - this might be incomplete / buggy, the conda route is currently more reliable
+# 
 
-numpy==1.14.*
+numpy>=1.14.* # we build and test against 1.14, but should work against any higher version. Try numpy==1.14.* if you run into issues.
 scipy
 matplotlib
 wxpython
@@ -10,7 +11,6 @@ pyopengl
 traits
 traitsui
 pillow
-cython
 six
 future
 requests
@@ -21,6 +21,8 @@ jinja2
 toposort
 pymecompress >=0.2
 zeroconf==0.17.7 #TODO - can we relax this pin?
+
+cython # do we need this for a non-dev install?
 
 #pyfftw3; python_version < '3.0'
 pyfftw #; python_version > '3.0'
@@ -61,7 +63,4 @@ git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
 #pyro [py2k]# install on py 2.7 if you want to use old style distributed analysis
 #pycairo
 #mayavi # 3D volume rendering, alternative 3D isosurface implementation
-
-
-
 

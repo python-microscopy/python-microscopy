@@ -138,6 +138,9 @@ def fourier_ring_correlation(imA, imB, voxelsize=[1.0, 1.0], window=False):
     bn2, bm2, bs2 = binAvg.binAvg(R, np.fft.fftshift((H2 * H2.conjugate()).real), rB)
     
     plt.figure()
+
+    fig = plt.gcf()
+    fig.canvas.set_window_title('Fourier Ring Correlation')
     
     ax = plt.gca()
     

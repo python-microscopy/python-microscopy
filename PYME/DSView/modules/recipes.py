@@ -97,7 +97,13 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 self.outp = self.activeRecipe.execute(input=self.image)
                 
                 if saveResults:
-                    self.activeRecipe.save() #FIXME - set context
+                    dir_dialog = wx.DirDialog(None, 'Set output directory', style=wx.FD_OPEN)
+                    succ = dir_dialog.ShowModal()
+                    if (succ == wx.ID_OK):
+                        output_dir = dir_dialog.GetPath()
+                        file_stub = os.path.splitext(os.path.split(self.image.filename)[-1])[0]
+                        self.activeRecipe.save({'output_dir': output_dir, 
+                                                'file_stub': file_stub})
                     
                     
             def _display_output_image(outp):
