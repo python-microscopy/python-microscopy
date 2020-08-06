@@ -27,7 +27,7 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. note::
 
-    **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
+    **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python 2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
 
 
 Updating
@@ -66,10 +66,17 @@ environment and enter
 
 .. code-block:: bash
 
-    conda install javabridge
-    conda install python-bioformats
+    pip install javabridge
+    pip install python-bioformats
 
-**Caveat:** This currently only works on OSX. If conda packages for javabridge and bioformats don't work, try pip. 
+If you'd prefer to install via ``conda``, instead enter
+
+.. code-block:: bash
+
+    conda install -c conda-forge javabridge
+    conda install -c bioconda bioformats
+
+**Caveat:** pip is the only installation route confirmed to work. 
 
 
 
@@ -140,7 +147,7 @@ If installing in a tricky evironment, you can manually edit requirements.txt bef
 
 .. rubric:: Footnotes
 
-.. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
+.. [#anacondaprompt] On OSX or linux this is the terminal. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
 
 
 
