@@ -21,12 +21,13 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. code-block:: bash
 	
+    conda config --append channels anaconda
     conda config --add channels david_baddeley
     conda install python-microscopy
 
 .. note::
 
-   **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
+    **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
 
 
 Updating
@@ -127,7 +128,7 @@ pip installation [EXPERIMENTAL]
 ===============================
 
 You can also install PYME using pip, although we recommend this as a last resort as a conda based installation will generally give better performance and should be easier. When using pip, you might need to manually hunt down some dependencies, and for dependencies which don't have binary wheels, you might need to spend a lot of time setting up the development evironment and finding the DLLs etc which dependencies link against. Some of our dependencies also need to be compiled using gcc (rather than MSVCC), even on windows. Because we view this as a fallback when, e.g. conda can't come up
-with a resolvable set of dependencies, the pip packages depend only on numpy, with the rest of the dependencies being installed separately through the use of a requirements.txt file. 
+with a resolvable set of dependencies, or when you are installing on top of a bunch of existing packages, the pip packages depend only on numpy, with the rest of the dependencies being installed separately through the use of a requirements.txt file. 
 
 .. code-block:: bash
 
@@ -135,9 +136,11 @@ with a resolvable set of dependencies, the pip packages depend only on numpy, wi
     pip install python-microscopy
 
 
-You can also use the top line to setup for a development install.
+If installing in a tricky evironment, you can manually edit requirements.txt before installing. You can also use the top line to setup for a development install.
 
+.. rubric:: Footnotes
 
+.. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
 
 
 
