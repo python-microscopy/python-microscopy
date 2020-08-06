@@ -82,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PYME'
-copyright = u'2016, David Baddeley'
+copyright = u'2020, PYME Developer Community'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
