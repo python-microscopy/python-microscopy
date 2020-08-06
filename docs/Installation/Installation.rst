@@ -1,83 +1,81 @@
 .. _installation:
 
-Get started
-***********
+Installation
+************
 
-Single-click installation for users (Windows-only)
-==================================================
+The best to install PYME will depend on your background and whether you are already using python on your computer.
 
-Download the latest installer from https://python-microscopy.org/downloads/. Double-click
-the installer and follow instructions.
+Executable installers (Windows-only)
+=====================================
+
+Recommended if you don't already have python on your computer and/or are unfamiliar with python. Download the latest installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions. 
+
+**Caveats:** The executable installers lag the conda packages so you're getting an older version. The installers give you a bunch of error messages which you can safely ignore.
 
 
-conda installation for users
-============================
+Installing using conda
+======================
 
-Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
-Then, open a command prompt and enter
+Download and install the python **2.7** version of `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
+Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. code-block:: bash
 	
-    conda create -n pyme python=2.7
-    conda activate pyme
     conda config --add channels david_baddeley
     conda install python-microscopy
 
-conda installation for developers
-=================================
+.. note::
 
-Create a Python 3.6 virtual environment with ``conda``. Then, open a command prompt and enter
+   **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
+
+
+Updating
+========
+
+Assuming that you've installed using either the executable or conda routes, you can update PYME by dropping into the *Anaconda prompt* [#anacondaprompt]_ and entering:
 
 .. code-block:: bash
-	
+
+    conda update python-microscopy
+
+
+Development installs
+====================
+
+This assumes a basic familiarity with python and conda. We maintain a conda metapackage, ``pyme-depends`` for PYMEs dependencies, and reccomend a separate conda environment for development installs. Entering the following at the command prompt should get you a functional system, alter to suit your needs:
+
+.. code-block:: bash
+    
     conda config --add channels david_baddeley
-    conda install pyme-depends
+    conda create -n pyme pyme-depends python=X.X
+    conda activate pyme
+
     git clone https://github.com/python-microscopy/python-microscopy.git
     cd python-microscopy
     python setup.py develop
 
-pip installation for developers
-=================================
+On OSX, use ``/path/to/conda/environment/python.app/Contents/MacOS/python setup.py develop`` instead  of ``python setup.py develop`` so that the PYME programs can access the screen. 
 
-Create a Python 3.6 virtual environment with ``venv`` or ``conda``. Make sure numpy
-and cython are installed. Then, open a command prompt and enter
 
-.. code-block:: bash
-	
-    git clone https://github.com/python-microscopy/python-microscopy.git
-    cd python-microscopy
-    pip install -r requirements.txt
-    python setup.py develop
+Enable bioformats data importers
+================================
 
-To get PYMEVisualize to run, you will need to additionally enter
-
-.. code-block:: bash
-	
-    pip install docutils mpld3
-
-Enable bioformats compatibility (optional)
-==========================================
-
-Install Java Development Kit 1.8. Open a command prompt in the installation ``conda`` or ``venv`` 
+Install a JAVA JDK or JRE. Open a command prompt in the installation ``conda`` 
 environment and enter
 
 .. code-block:: bash
 
-    pip install javabridge
-    pip install python-bioformats
+    conda install javabridge
+    conda install python-bioformats
+
+**Caveat:** This currently only works on OSX. If conda packages for javabridge and bioformats don't work, try pip. 
+
 
 
 Verify installation
 *******************
 
-single-click
-============
-Locate the **PYMEVisualize (VisGUI)** desktop shortcut. Double-click it and confirm the program launches.
-
-conda or pip
-============
-
-From the command prompt, launch any of the following programs, which should have been
+Locate the **PYMEVisualize (VisGUI)** desktop shortcut. Double-click it and confirm the program launches. If you don't have a desktop shortcut, launch any of the following programs from an anaconda prompt, which should have been
 installed as part of PYME.
 
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
@@ -94,14 +92,14 @@ installed as part of PYME.
 Troubleshooting
 ***************
 
-Single-click
-============
+Executable installers
+=====================
 If prompted with **Windows protected your PC**, click **More info** and then **Run anyway**. 
 
 If prompted with **Installation error**, press **OK** and then **Ignore**.
 
-conda for developers
-====================
+Developer installs [OSX]
+========================
 
 On OSX, the following error may appear when launching a PYME application from the command line.
 
@@ -117,19 +115,29 @@ This can be solved by the following.
     cd /path/to/python-microscopy/
     /path/to/mininconda/install/python.app/Contents/MacOS/python setup.py develop
 
-pip install for developers
-==========================
-
-If you installed from `requirements.txt` in a conda environment, see the OSX instructions under **conda for developers**. 
-To execute the command
-
-.. code-block:: bash
-
-    /path/to/mininconda/install/python.app/Contents/MacOS/python setup.py develop
-
-you may need to run `conda install python.app`.
 
 Additional resources
 ********************
 
 - Detailed developer installation docs are located at :ref:`installationFromSource`
+- A step by step walkthough of installation using anaconda along with some troubleshooting tips can be found at :ref:`installationanaconda`
+
+
+pip installation [EXPERIMENTAL]
+===============================
+
+You can also install PYME using pip, although we recommend this as a last resort as a conda based installation will generally give better performance and should be easier. When using pip, you might need to manually hunt down some dependencies, and for dependencies which don't have binary wheels, you might need to spend a lot of time setting up the development evironment and finding the DLLs etc which dependencies link against. Some of our dependencies also need to be compiled using gcc (rather than MSVCC), even on windows. Because we view this as a fallback when, e.g. conda can't come up
+with a resolvable set of dependencies, the pip packages depend only on numpy, with the rest of the dependencies being installed separately through the use of a requirements.txt file. 
+
+.. code-block:: bash
+
+    pip install -r https://raw.githubusercontent.com/python-microscopy/python-microscopy/master/requirements.txt
+    pip install python-microscopy
+
+
+You can also use the top line to setup for a development install.
+
+
+
+
+
