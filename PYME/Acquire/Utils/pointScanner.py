@@ -266,10 +266,37 @@ class PointScanner(object):
             self._stop()
             
 
+class CircularPointScanner(PointScanner):
+    def genCoords(self):
+        """
+        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
+        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
+        an ~optimal order.
+        """
+        self.currPos = self.scope.GetPos()
+        logger.debug('Current positions: %s' % (self.currPos,))
+    
+        r, t = [0], [np.array([0])]
+        for r_ring in self.pixelsize[0] * np.arange(1, self.pixels + 1):  # 0th ring is (0, 0)
+            # keep the rings spaced by pixel size and hope the overlap is enough
+            # 2 pi / (2 pi r / pixsize) = pixsize/r
+            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
+            r.extend(r_ring * np.ones_like(thetas))
+            t.append(thetas)
+    
+        # convert to cartesian and add currPos offset
+        r = np.asarray(r)
+        t = np.concatenate(t)
+        self.xp = r * np.cos(t) + self.currPos['x']
+        self.yp = r * np.sin(t) + self.currPos['y']
+    
+        self.nx = len(self.xp)
+        self.ny = len(self.yp)
+        self.imsize = self.nx
 
-        
-        
-
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
 
 
 class PointScanner3D:
