@@ -216,7 +216,8 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.CircularTilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
 
-    ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
 
 #must be here!!!
