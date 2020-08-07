@@ -273,6 +273,7 @@ class SpoolController(object):
     def _update_series_counter(self):
         logger.debug('Updating series counter')
         self.seriesCounter = 0
+        self.seriesName = self._GenSeriesName()
         while self._checkOutputExists(self.seriesName):
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
