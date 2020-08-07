@@ -38,24 +38,40 @@ from six.moves.urllib.parse import parse_qs
 
 class DataSource(BaseDataSource):
     moduleName = 'SupertileDataSource'
-    def __init__(self, filename, taskQueue=None):
-        from PYME.Analysis.tile_pyramid import ImagePyramid
-        self.tile_base, query = filename.split('?')
-        qp = parse_qs(query)
-        self.level = int(qp.get('level', [0])[0])
-        self.stride = int(qp.get('stride', [3])[0])
-        self.overlap = int(qp.get('overlap', [1])[0])
+    def __init__(self, pyramid, level=0, stride=3, overlap=1):
+        self.level = int(level)
+        self.stride = int(stride)
+        self.overlap = int(overlap)
 
-        self.mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
+        self.mdh.copyEntriesFrom(pyramid.mdh)
         
-        self.mdh['voxelsize.x'] = self.mdh['Pyramid.PixelSize']*(2**self.level)
-        self.mdh['voxelsize.y'] = self.mdh['voxelsize.x']
+        voxelsize = self.mdh['Pyramid.PixelSize'] * (2 ** self.level)
+        self.mdh['voxelsize.x'], self.mdh['voxelsize.y'] = (voxelsize, voxelsize)
 
-        self._pyr = ImagePyramid(self.tile_base, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
-                                 x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'])
+        self._pyr = pyramid
         
         self.tile_size = self._pyr.tile_size*(self.stride + self.overlap)
+    
+    @staticmethod
+    def from_raw_tile_series(filename, taskQueue=None):
+        from PYME.Analysis.tile_pyramid import ImagePyramid
+        
+        tile_base, query = filename.split('?')
+        qp = parse_qs(query)
+        level = int(qp.get('level', [0])[0])
+        stride = int(qp.get('stride', [3])[0])
+        overlap = int(qp.get('overlap', [1])[0])
+        
+        mdh = MetaDataHandler.load_json(os.path.join(tile_base, 'metadata.json'))
+        
+        voxelsize = mdh['Pyramid.PixelSize'] * (2 ** level)
+        mdh['voxelsize.x'], mdh['voxelsize.y'] = (voxelsize, voxelsize)
 
+        pyramid = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'],
+                                 x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'])
+        
+        return DataSource(pyramid, level, stride, overlap)
 
     @property
     def tile_coords(self):
