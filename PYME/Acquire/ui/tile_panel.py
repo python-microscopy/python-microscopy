@@ -354,8 +354,11 @@ class MultiwellProtocolQueuePanel(wx.Panel):
             for x, y in zip(x_wells, y_wells):
                 args = {'state': {'Positioning.x': x, 'Positioning.y': y}}
                 self.scope.actions.QueueAction('state.update', args, nice)
-                args = {'protocol': protocol_name, 'stack': False}
+                args = {'protocol': protocol_name, 'stack': False, 
+                        'doPreflightCheck':False}
                 self.scope.actions.QueueAction('spoolController.StartSpooling', 
+                                               args, nice)
+            self.scope.actions.QueueAction('turnAllLasersOff', 
                                                args, nice)
         
         dialog.Destroy()
