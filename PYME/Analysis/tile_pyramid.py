@@ -5,6 +5,7 @@ import glob
 import collections
 import time
 import six
+import tempfile
 import logging
 
 logger = logging.getLogger(__name__)
@@ -259,6 +260,11 @@ class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
                  pixel_size=1, cache_size=1000):
+        
+        if isinstance(storage_directory, tempfile.TemporaryDirectory):
+            self._temp_directory = storage_directory
+            storage_directory = storage_directory.name
+        
         self.base_dir = storage_directory
         self.tile_size = pyramid_tile_size
         
@@ -293,7 +299,12 @@ class ImagePyramid(object):
             self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
             self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
             self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
-
+    
+    def __del__(self):
+        try:
+            self._temp_directory.cleanup()
+        except:
+            pass
     
     def get_tile(self, layer, x, y):
         return self._imgs.get_tile(layer, x, y)
@@ -575,6 +586,10 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     P.update_pyramid()
     logger.debug(time.time() - t2)
     logger.debug('Done')
+
+    with open(os.path.join(P.base_dir, 'metadata.json'), 'w') as f:
+        f.write(P.mdh.to_JSON())
+    
     return P
 
 def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
@@ -588,8 +603,7 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
     
     p = tile_pyramid(outdir, dataset.data, xm, ym, dataset.mdh, pyramid_tile_size=tile_size)
     
-    with open(os.path.join(outdir, 'metadata.json'), 'w') as f:
-        f.write(p.mdh.to_JSON())
+    return p
         
         
         

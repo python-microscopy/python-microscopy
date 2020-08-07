@@ -55,23 +55,19 @@ class DataSource(BaseDataSource):
     
     @staticmethod
     def from_raw_tile_series(filename, taskQueue=None):
-        from PYME.Analysis.tile_pyramid import ImagePyramid
+        from PYME.Analysis.tile_pyramid import create_pyramid_from_dataset
+        from tempfile import TemporaryDirectory
         
         tile_base, query = filename.split('?')
         qp = parse_qs(query)
         level = int(qp.get('level', [0])[0])
         stride = int(qp.get('stride', [3])[0])
         overlap = int(qp.get('overlap', [1])[0])
+        tile_size = int(qp.get('tilesize', [256])[0])
         
-        mdh = MetaDataHandler.load_json(os.path.join(tile_base, 'metadata.json'))
+        p = create_pyramid_from_dataset(tile_base, TemporaryDirectory(), tile_size)
         
-        voxelsize = mdh['Pyramid.PixelSize'] * (2 ** level)
-        mdh['voxelsize.x'], mdh['voxelsize.y'] = (voxelsize, voxelsize)
-
-        pyramid = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'],
-                                 x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'])
-        
-        return DataSource(pyramid, level, stride, overlap)
+        return DataSource(p, level, stride, overlap)
 
     @property
     def tile_coords(self):
