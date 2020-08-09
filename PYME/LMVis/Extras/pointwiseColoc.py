@@ -22,7 +22,7 @@ class PointwiseColocaliser:
         #mProfile.profileOn(['distColoc.py'])
         from PYME.Analysis.Colocalisation import distColoc
         #A vs B
-        distColoc.calcDistCorr(self.visFr.colourFilter, *(self.visFr.colourFilter.getColourChans()[::1]))
+        distColoc.calcDistCorr(self.visFr.pipeline.colourFilter, *(self.visFr.pipeline.colourFilter.getColourChans()[::1]))
         #B vs A
         #distColoc.calcDistCorr(self.visFr.colourFilter, *(self.visFr.colourFilter.getColourChans()[::-1]))
         #mProfile.report()
