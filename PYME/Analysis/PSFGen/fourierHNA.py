@@ -352,8 +352,8 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
     
     sx = ps.shape[0]
     sy = ps.shape[1]
-    ox = (X.shape[0] - sx) / 2
-    oy = (X.shape[1] - sy) / 2
+    ox = int((X.shape[0] - sx) / 2)
+    oy = int((X.shape[1] - sy) / 2)
     ex = ox + sx
     ey = oy + sy
     

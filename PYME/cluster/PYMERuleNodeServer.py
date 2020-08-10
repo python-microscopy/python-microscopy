@@ -7,7 +7,7 @@ import socket
 import subprocess
 import tempfile
 import time
-
+import sys
 import yaml
 from PYME import config as conf
 from PYME.misc import pyme_zeroconf, sqlite_ns
@@ -109,12 +109,12 @@ def main():
     nodeserverLog.debug('Launching worker processors')
     numWorkers = conf.get('nodeserver-num_workers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -s %d' % serverPort, shell=True, stdin=subprocess.PIPE)
+    workerProcs = [subprocess.Popen('%s -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir=%s' % (serverPort, profiledir), shell=True,
+    workerProcs.append(subprocess.Popen('%s -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir=%s' % (sys.executable, serverPort, profiledir), shell=True,
                                         stdin=subprocess.PIPE))
 
     try:
