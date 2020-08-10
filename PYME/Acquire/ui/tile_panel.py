@@ -314,6 +314,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnQueue(self, event=None):
+        import numpy as np
         from PYME.Acquire import protocol
         tile_protocols = [p for p in protocol.get_protocol_list() if 'tile' in p]
 
@@ -323,13 +324,12 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         if ret == wx.ID_OK:
             protocol_name = dialog.GetStringSelection()
-            self._protocol_rules[protocol_name] = self._rule_chain
-        
 
             x_spacing = float(self.x_spacing_mm.GetValue()) * 1e3  # [mm -> um]
             y_spacing = float(self.y_spacing_mm.GetValue()) * 1e3  # [mm -> um]
             n_x = int(self.n_x.GetValue())
             n_y = int(self.n_y.GetValue())
+            nice = int(self.nice.GetValue())
 
             curr_pos = self.scope.GetPos()
 
