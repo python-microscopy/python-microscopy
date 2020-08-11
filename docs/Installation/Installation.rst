@@ -69,7 +69,7 @@ environment and enter
     conda install javabridge
     conda install python-bioformats
 
-**Caveat:** This feature is currently in development. If ``conda`` packages for ``javabridge`` and ``bioformats`` don't work, try pip. 
+**Caveat:** This feature is currently in development. If ``conda`` packages for ``javabridge`` and ``bioformats`` don't work, try ``pip``. 
 
 Verify installation
 *******************
