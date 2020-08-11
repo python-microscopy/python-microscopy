@@ -57,37 +57,19 @@ This assumes a basic familiarity with python and conda. We maintain a conda meta
 
 On OSX, use ``/path/to/conda/environment/python.app/Contents/MacOS/python setup.py develop`` instead  of ``python setup.py develop`` so that the PYME programs can access the screen. 
 
-
 Enable bioformats data importers
 ================================
 
 Download and install `JAVA JDK 1.8 <https://www.oracle.com/java/technologies/javase/javase-jdk8-downloads.html>`_. 
 Note that you may need to create an account to access the installer. Open a command prompt in the installation ``conda`` 
-environment.
-
-If you are on Windows, enter
+environment and enter
 
 .. code-block:: bash
 
-    set MSSdk=1
-    set DISTUTILS_USE_SDK=1
+    conda install javabridge
+    conda install python-bioformats
 
-Otherwise (or subsequently, if on Windows) enter
-
-.. code-block:: bash
-
-    pip install javabridge
-    pip install python-bioformats
-
-If you'd prefer to install via ``conda``, instead enter
-
-.. code-block:: bash
-
-    conda install -c free javabridge
-    conda install -c bioconda bioformats
-
-**Caveat:** ``pip`` is the only installation route confirmed to work. Installation issues on ``pip``
-are likely caused by ``javabridge`` and addressed at `https://pythonhosted.org/javabridge/installation.html <https://pythonhosted.org/javabridge/installation.html>`_.
+**Caveat:** This feature is currently in development. If conda packages for javabridge and bioformats don't work, try pip. 
 
 Verify installation
 *******************
