@@ -422,6 +422,10 @@ class RecipeRule(Rule):
             inputs = inputs[0]
 
         self._template['inputs'] = inputs
+        if 'output_dir' not in self._template.keys():
+            # ensure we have somewhere to save outputs
+            import posixpath  # cluster filenames are posix separated
+            self._template['output_dir'] = posixpath.split(list(inputs.values())[0])[0] + '/recipe_outputs'
         self._task_inputs = []
 
 
