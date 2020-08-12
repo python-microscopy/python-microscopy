@@ -412,6 +412,7 @@ def fit_quad_surf(pts, control_pt, fitPos=True):
         return leastsq(arcfit.quad_surf_mf, sp, args=(pts[0,:], pts[1,:], pts[2,:]))[0]
     else:
         res = np.copy(sp)
+        print(sp[3:], len(sp[3:]))
         #res[3:] = leastsq(quad_rot_surf_misfit,sp[3:], args=(pts,control_pt))[0]
         res[3:] = leastsq(arcfit.quad_surf_mf_fpos, sp[3:], args=(pts[0,:], pts[1,:], pts[2,:], control_pt))[0]
         return res
@@ -626,11 +627,13 @@ def fit_quad_surfaces_tr(data, kdt, ivals, results, radius=100, fitPos=True):
     
     #loop over controll points
     for i in ivals:
-        #print i
+        print('Fitting suf #: %d' % i)
         #res = np.zeros(1, SURF_PATCH_DTYPE)
         
         #do the fit
         r = fit_quad_surf_to_neighbourbood(data, kdt, i, radius, fitPos=fitPos)
+        
+        print('fitted surf %d' % i)
         
         #pach our results into the correct format
         #note that the fit will only be performed if there are enough points in the neighbourbood to actually constrain
@@ -719,6 +722,8 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     
     if NFits == 0:
         NFits = data.shape[0]
+        
+        print('NFits: %d' % NFits)
     
     nCPUs = multiprocessing.cpu_count()
     #nCPUs = 1
@@ -736,7 +741,7 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     #nCPUth point. This was done as a simple way of allocating the tasks evenly, but might not be optimal in terms of e.g.
     #cache coherency. The process creation here will be significantly more efficient on *nix platforms which use copy on
     #write forking when compared to windows which will end up copying both the data and kdt structures
-    if multiprocessing.current_process().name == 'MainProcess':  # avoid potentially trying to spawn children from daemon
+    if False: #multiprocessing.current_process().name == 'MainProcess':  # avoid potentially trying to spawn children from daemon
         processes = [multiprocessing.Process(target=fit_quad_surfaces_tr,
                                              args=(data, kdt, fnums[i::nCPUs], results, radius, fitPos)) for i in range(nCPUs)]
         # launch all the processes
@@ -768,6 +773,7 @@ def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
     
     filtered = []
     
+    print(fits[:10])
     
     
     for i in range(len(fits)):
@@ -775,6 +781,7 @@ def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
         neighbour_normals = normals[kdt.query_ball_point(fits[i]['pos'].view('3f4'), radius)]
         
         median_proj = np.median([np.abs(np.dot(N, n)) for n in neighbour_normals])
+        #print(len(neighbour_normals), median_proj)
         if median_proj > proj_threshold: #aligned more or less the same way as the neighbours
             filtered.append(fits[i])
 

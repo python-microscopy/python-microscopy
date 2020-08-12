@@ -117,7 +117,7 @@ class PSFFitFactory(FFBase.FitFactory):
 
         #estimate errors in data
         #sigma = (4 + scipy.sqrt(2*dataROI)/2)
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*np.maximum(dataROI, 1))/self.metadata['Camera.ElectronsPerCount']
 
         #fit with start values above current position        
         (res1, cov_x1, infodict1, mesg1, resCode1) = FitModelWeighted(f_PSF3d, startParameters1, dataROI, sigma, X, Y, Z, P, 2*np.pi/488, 1.47, 50e3)

@@ -25,6 +25,14 @@ class StageLeveler(object):
         -----
         Units are derived from PYME.Acquire.microscope.microscope.GetPos and SetPos and should be in micrometers.
 
+        Attributes
+        ----------
+        _positions : list
+            list of position dictionaries with 'x' and 'y' keys in units of micrometers.
+        _scans: list of dict
+            list of measurement iterations. Each scan is a dict with 'x', 'y', and 'offset' keys which each return 1d
+            arrays, all in units of micrometers.
+
         """
         self._scope = scope
         self._offset_piezo = offset_piezo
@@ -33,23 +41,68 @@ class StageLeveler(object):
         self._pause_on_relocate = pause_on_relocate
 
     def clear_positions(self):
+        """
+        Removes all positions stored by the stage leveler (positions to visit, not scans of visited positions)
+        """
         self._positions = []
 
     def add_position(self):
+        """
+        Add the current microscope position to the list of positions to be scanned on subsequent calls to
+        measure_offsets.
+        """
         self._positions.append(self._scope.GetPos())
 
-    def measure_offsets(self):
+    def add_grid(self, x_length, y_length, x_spacing, y_spacing):
+        """
+        Add a grid of set spacings to the list of positions to scan when measuring offsets.
+
+        Parameters
+        x_length : float
+            approximate x length to span in the grid, units of micrometers.
+        y_length : float
+            approximate y length to span in the grid, units of micrometers.
+        x_spacing : float
+            x grid spacing, micrometers.
+        y_spacing : float
+            y grid spacing, micrometers.
+
+        """
+        current = self._scope.GetPos()
+        x = np.arange(0, x_length, x_spacing)
+        x = x - (0.5 * x.max()) + current['x']
+        y = np.arange(0, y_length, y_spacing)
+        y = y - (0.5 * y.max()) + current['y']
+
+        x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
+
+        self._positions.extend([{'x': xi, 'y': yi} for xi, yi in zip(x_grid.ravel(), y_grid.ravel())])
+
+    def measure_offsets(self, optimize_path=True):
         """
         Visit each position and log the offset
 
+        Parameters
+        ----------
+        optimize_path : bool
+            Flag to toggle visiting the positions in an order which minimizes the path relative to the microscope
+            starting position.
+
         """
+        from PYME.Analysis.points.traveling_salesperson import sort
         n_positions = len(self._positions)
-        x = np.zeros(len(self._positions), dtype=float)
-        y = np.zeros_like(x)
-        offset = np.zeros_like(x)
+        offset = np.zeros(len(self._positions), dtype=float)
+        x, y = np.zeros_like(offset), np.zeros_like(offset)
+        positions = np.zeros((n_positions, 2), dtype=float)
+        for ind in range(n_positions):
+            positions[ind, :] = (self._positions[ind]['x'], self._positions[ind]['y'])
+
+        if optimize_path:
+            current_pos = self._scope.GetPos()
+            positions = sort.tsp_sort(positions, start=(current_pos['x'], current_pos['y']))
 
         for ind in range(n_positions):
-            self._scope.SetPos(x=self._positions[ind]['x'], y=self._positions[ind]['y'])
+            self._scope.SetPos(x=positions[ind, 0], y=positions[ind, 1])
             time.sleep(self._pause_on_relocate)
             actual = self._scope.GetPos()
             x[ind], y[ind] = actual['x'], actual['y']
@@ -60,7 +113,7 @@ class StageLeveler(object):
         })
 
     @staticmethod
-    def plot_scan(scan=None, interpolation_factor=50):
+    def plot_scan(scan, interpolation_factor=50):
         """
 
         Parameters
@@ -95,6 +148,7 @@ class StageLeveler(object):
         plt.xlabel('y [um]')
         plt.ylabel('x [um]')
         plt.legend()
+        plt.axes().set_aspect('equal', 'box')
         plt.tight_layout()
         plt.show()
 

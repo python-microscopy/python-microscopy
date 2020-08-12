@@ -28,7 +28,7 @@ import wx.grid
 from . import fluor
 from . import wormlike2
 import json
-import pylab
+# import pylab
 import scipy
 import numpy as np
 #import os
@@ -603,7 +603,8 @@ class dSimControl(afp.foldPanel):
             return
 
         #self.points = pylab.load(fn)
-        pylab.save(fn, scipy.array(self.points))
+        # pylab.save(fn, scipy.array(self.points))
+        np.savetxt(fn, scipy.array(self.points))
         #self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
         

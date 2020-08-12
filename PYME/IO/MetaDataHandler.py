@@ -588,6 +588,25 @@ class CachingMDHandler(MDHandlerBase):
     def getEntryNames(self):
         return self.cache.keys()
     
+    
+class CopyOnWriteMDHandler(MDHandlerBase):
+    def __init__(self, orig_md):
+        self._orig_md = orig_md
+        
+        self._cache = dict()
+    
+    def getEntry(self, entryName):
+        try:
+            return self._cache[entryName]
+        except KeyError:
+            return self._orig_md.getEntry(entryName)
+    
+    def setEntry(self, entryName, value):
+        self._cache[entryName] = value
+    
+    def getEntryNames(self):
+        return sorted(list(set(self._cache.keys()).union(self._orig_md.keys())))
+    
 
 from xml.dom.minidom import getDOMImplementation, parse, parseString
 #from xml.sax.saxutils import escape, unescape

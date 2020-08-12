@@ -212,6 +212,12 @@ class ImageStack(object):
         self.events = events  #events
 
         self.queueURI = queueURI
+        
+        if filename is not None and os.path.exists(filename): # is a real filename on disk, rather than a schemified one e.g. pyme-cluster://
+            # make the filename fully resolved rather than relative to the directory we launched from (if we launched with a partial filename)
+            # TODO: does this belong here, or should this logic be elsewhere
+            filename = os.path.abspath(filename)
+            
         self.filename = filename
 
         self.haveGUI = haveGUI
@@ -229,7 +235,7 @@ class ImageStack(object):
         
         if (data is None):
             #if we've supplied data, use that, otherwise load from file
-            self.Load(filename, prompt=load_prompt)
+            self.Load(filename, prompt=load_prompt, haveGUI=self.haveGUI)
 
         #do the necessary munging to get the data in the format we want it        
         self.SetData(self.data)
@@ -778,6 +784,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
 
         return mdf
 
@@ -789,6 +797,11 @@ class ImageStack(object):
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
         print(self.dataSource.shape)
+
+        if getattr(self.dataSource, 'RGB', False) and self.haveGUI:
+            import wx
+            wx.MessageBox('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).', 'WARNING', wx.OK)
+        
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
 
@@ -899,7 +912,7 @@ class ImageStack(object):
         print("Bioformats:done")
         
         #fix voxelsizes if not specified in OME metadata
-        if self.haveGUI and not (self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0):
+        if self.haveGUI and ((self.mdh['voxelsize.x'] < 0) or (self.mdh['voxelsize.y'] < 0)):
             from PYME.DSView.voxSizeDialog import VoxSizeDialog
 
             dlg = VoxSizeDialog(None)
@@ -908,6 +921,8 @@ class ImageStack(object):
             self.mdh.setEntry('voxelsize.x', dlg.GetVoxX())
             self.mdh.setEntry('voxelsize.y', dlg.GetVoxY())
             self.mdh.setEntry('voxelsize.z', dlg.GetVoxZ())
+            
+            dlg.Destroy()
                 
         
         print(self.dataSource.shape)

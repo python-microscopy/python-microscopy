@@ -23,7 +23,8 @@
 
 import wx
 import math
-import pylab
+# import pylab
+from matplotlib import cm
 import numpy as np
 
 from PYME.contrib import wxPlotPanel
@@ -276,8 +277,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 
                 #look up shifts
                 if not self.mdh.getOrDefault('Analysis.FitShifts', False):
-                    DeltaX = self.mdh.chroma.dx.ev(x_, y_)
-                    DeltaY = self.mdh.chroma.dy.ev(x_, y_)
+                    DeltaX = self.mdh['chroma.dx'].ev(x_, y_)
+                    DeltaY = self.mdh['chroma.dy'].ev(x_, y_)
                 else:
                     DeltaX = 0
                     DeltaY = 0
@@ -412,7 +413,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 #imd = self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
                 imd = self._extractROI(fri)
 
-                self.subplot1.imshow(imd, interpolation='nearest', cmap=pylab.cm.hot)
+                self.subplot1.imshow(imd, interpolation='nearest', cmap=cm.hot)
                 self.subplot1.set_title('Data')
 
                 fitMod = __import__('PYME.localization.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
@@ -421,9 +422,9 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 if 'genFitImage' in dir(fitMod):
                     imf = fitMod.genFitImage(fri, self.mdh).squeeze()
 
-                    self.subplot2.imshow(imf, interpolation='nearest', cmap=pylab.cm.hot)
+                    self.subplot2.imshow(imf, interpolation='nearest', cmap=cm.hot)
                     self.subplot2.set_title('Fit')
-                    self.subplot3.imshow(imd - imf, interpolation='nearest', cmap=pylab.cm.hot)
+                    self.subplot3.imshow(imd - imf, interpolation='nearest', cmap=cm.hot)
                     self.subplot3.set_title('Residuals')
                     self.subplot4.plot(imd.sum(0))
                     self.subplot4.plot(imf.sum(0))

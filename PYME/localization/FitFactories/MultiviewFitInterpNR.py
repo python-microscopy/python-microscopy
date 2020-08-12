@@ -354,7 +354,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             infodict = {'fvec': self.fitfcn(res, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata.Analysis.AxialShifts, self.nViews) - (dataROI + bgROI)}
             resCode = 1
         else:
-            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata.Analysis.AxialShifts, self.nViews)
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata['Analysis.AxialShifts'], self.nViews)
             #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted_D(self.fitfcn, startParameters, dataROI, sigma, pScale, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
 
         fitErrors=None

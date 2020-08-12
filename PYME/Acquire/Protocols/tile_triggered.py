@@ -41,7 +41,8 @@ if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
     tsy *= 0.5
 # TODO - squash this file and add triggering as option to standard tile protocol
 ps = PointScanner(scope, pixels = [10,10], pixelsize=numpy.array([tsx*.7, tsy*.7]), dwelltime=1, avg=False,
-                  evtLog = True, sync=True,trigger=True)
+                  evtLog = True, sync=True,trigger=True, stop_on_complete=True)
+ps.on_stop.connect(scope.spoolController.StopSpooling)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):
@@ -142,15 +143,6 @@ class ShiftfieldPreviewDialog(wx.Dialog):
         ps.genCoords()
         self.EndModal(True)
 
-
-def stop():
-    #scope.frameWrangler.stop()
-    ps.stop()
-    MainFrame.pan_spool.OnBStopSpoolingButton(None)
-
-
-stopTask = T(500, stop)
-
 def ShowSFDialog():
     #ps.pixelsize[0] = float(scope.cam.GetPicWidth())
     vsx, vsy = scope.GetPixelSize()
@@ -163,10 +155,6 @@ def ShowSFDialog():
     dlg = ShiftfieldPreviewDialog()
     ret = dlg.ShowModal()
     dlg.Destroy()
-
-    #stop after one full scan
-    stopTask.when = 2 + 1*ps.imsize
-    print((stopTask.when))
 
 
 
@@ -183,7 +171,7 @@ T(-1, ShowSFDialog),
 #T(1, SetCameraShutter, True),
 T(1, ps.start),
 #T(30, MainFrame.pan_spool.OnBAnalyse, None),
-stopTask,
+# stopTask,
 #T(maxint, ps.stop),
 #T(maxint, scope.EnableJoystick, True),
 #T(maxint, SetContinuousMode, True),

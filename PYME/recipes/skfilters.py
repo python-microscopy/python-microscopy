@@ -5,7 +5,7 @@ Created on Fri Feb 20 17:11:05 2015
 @author: david
 """
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, _IntFloat
 from scipy import ndimage
 
 
@@ -74,12 +74,12 @@ for filtName in skFilterNames:
         argspec = inspect.getfullargspec(filt)
     except AttributeError:  # python 2
         argspec = inspect.getargspec(filt)
-    
+
     if len(argspec.args) > 0:
         args = argspec.args[1:]
         
         if len(args) > 0:
-            argTypes = {a: 'float' for a in args}
+            argTypes = {a: 'int_float' for a in args}
             argDefaults = {a: 0.0 for a in args}
             
             #print filtName, argspec
@@ -98,7 +98,7 @@ for filtName in skFilterNames:
                         argTypes[a] = 'dict'
                     elif isinstance(ad, bool):
                         argTypes[a] = 'bool'
-                    elif isinstance(ad, int):
+                    elif isinstance(ad, int) and (ad != 0):
                         argTypes[a] = 'int'
             
             #disregard parameters which need another image for now        
@@ -118,6 +118,8 @@ for filtName in skFilterNames:
                 paramString += '%s = Bool(%s)\n    ' % (a, argDefaults[a])
             elif argTypes[a] == 'int':
                 paramString += '%s = Int(%s)\n    ' % (a, argDefaults[a])
+            elif argTypes[a] == 'int_float':
+                paramString += '%s = _IntFloat(%s)\n    ' % (a, argDefaults[a])
 
         doc = filt.__doc__
                 

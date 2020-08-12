@@ -31,7 +31,8 @@ class VibrationAnalyser:
         visFr.AddMenuItem('Extras>Diagnostics','Plot vibration spectra', self.VibrationSpecgram)
 
     def VibrationSpecgram(self, event):
-        import pylab as pl
+        # import pylab as pl
+        import matplotlib.pyplot as pl
         
         pipeline = self.visFr.pipeline
         

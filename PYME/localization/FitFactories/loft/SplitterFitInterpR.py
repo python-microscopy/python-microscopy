@@ -24,7 +24,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -246,12 +246,12 @@ class PSFFitFactory:
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
         vs = self.metadata.voxelsize_nm
         x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*vs.x
         y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*vs.y
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+        DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
 
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY

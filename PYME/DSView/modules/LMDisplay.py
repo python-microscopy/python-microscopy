@@ -13,7 +13,8 @@ import os
 
 
 import numpy
-import pylab
+# import pylab
+import matplotlib.cm
 
 #import PYME.ui.autoFoldPanel as afp
 
@@ -38,14 +39,11 @@ def debugPrint(msg):
         
 
 from PYME.LMVis import visCore
+from ._base import Plugin
 
-class LMDisplay(visCore.VisGUICore):    
+class LMDisplay(visCore.VisGUICore, Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        
-        self.image = dsviewer.image
-        self.view = dsviewer.view
-        self.do = dsviewer.do
+        Plugin.__init__(self, dsviewer)
 
         if 'fitResults' in dir(self.image):
             self.fitResults = self.image.fitResults
@@ -132,7 +130,7 @@ class LMDisplay(visCore.VisGUICore):
 
         from PYME.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
+        self.glCanvas.cmap = matplotlib.cm.gist_rainbow
         self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
@@ -321,12 +319,6 @@ class LMDisplay(visCore.VisGUICore):
     
 
 def Plug(dsviewer):
-    dsviewer.LMDisplay = LMDisplay(dsviewer)
-
-    if not 'overlaypanel' in dir(dsviewer):    
-        dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
-        dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
-        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
+    dsviewer.create_overlay_panel()
     
-        dsviewer.panesToMinimise.append(pinfo2)
+    return LMDisplay(dsviewer)

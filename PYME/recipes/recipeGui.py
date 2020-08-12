@@ -23,7 +23,9 @@ from PYME.recipes import modules
 from PYME.recipes import batchProcess
 from PYME.recipes import recipeLayout
 
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
+import matplotlib.cm
 from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 
@@ -92,7 +94,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         for xv, yv, e in connecting_lines:
             #choose a colour at random for this input
             if not e in cols.keys():
-                cols[e] = 0.7 * np.array(pylab.cm.hsv(pylab.rand()))
+                cols[e] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
 
             self.ax.plot(xv, yv, c=cols[e], lw=2)
                 
@@ -119,7 +121,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     else:
                         ec = 'k'
                     
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec=ec, lw=lw, fc=fc, picker=True)
+                rect = plt.Rectangle([v[0], v[1]-.25], 1, .5, ec=ec, lw=lw, fc=fc, picker=True)
                 rect._data = k
                 self.ax.add_patch(rect)
                 
@@ -149,7 +151,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 #line - draw an output dot, and a text label 
                 s = k
                 if not k in cols.keys():
-                    cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
+                    cols[k] = 0.7*np.array(matplotlib.cm.hsv(np.random.rand()))
                 self.ax.plot(v[0], v[1], 'o', color=cols[k])
                 if k.startswith('out'):
                     t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
@@ -159,7 +161,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 
                 
                 
-        ipsv = np.array(node_positions.values())
+        ipsv = np.array(list(node_positions.values()))
         try:
             xmn, ymn = ipsv.min(0)
             xmx, ymx = ipsv.max(0)
@@ -790,7 +792,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         from PYME.ui import progress
         
         try:
-            with progress.ComputationInProgress(self):
+            with progress.ComputationInProgress(self, 'Batch Analysis'):
                 if not len(self.inputFiles) == len(self.inputFiles2):
                     batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
                 else:

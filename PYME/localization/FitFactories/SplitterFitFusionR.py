@@ -159,8 +159,8 @@ def genFitImage(fitResults, metadata):
     y_ = (yslice.start + roi_y0) * vy
     
     #look up shifts
-    DeltaX = metadata.chroma.dx.ev(x_, y_)
-    DeltaY = metadata.chroma.dy.ev(x_, y_)
+    DeltaX = metadata['chroma.dx'].ev(x_, y_)
+    DeltaY = metadata['chroma.dy'].ev(x_, y_)
     
     dxp = int(DeltaX/vx)
     dyp = int(DeltaY/vy)
@@ -253,14 +253,16 @@ class GaussianFitFactory(FFBase.FFBase):
         dataROI = np.maximum(dataROI - bgROI, -sigma)
         
         if (self.metadata.getOrDefault('Analysis.DebugLevel', 0) == 2):
-            import pylab
-            pylab.figure()
-            pylab.subplot(121)
-            pylab.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
-            pylab.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
-            pylab.subplot(122)
-            pylab.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=pylab.cm.gray)
-            pylab.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
+            # import pylab
+            import matplotlib.pyplot as plt
+            import matplotlib.cm
+            plt.figure()
+            plt.subplot(121)
+            plt.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
+            plt.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
+            plt.subplot(122)
+            plt.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
+            plt.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
 
 	
         #do the fit

@@ -22,11 +22,13 @@ class ActionList(wx.ListCtrl):
         self.InsertColumn(1, "Function")
         self.InsertColumn(2, "Args")
         self.InsertColumn(3, "Expiry")
+        self.InsertColumn(4, 'Max Duration')
         
         self.SetColumnWidth(0, 50)
         self.SetColumnWidth(1, 150)
         self.SetColumnWidth(2, 450)
         self.SetColumnWidth(3, 50)
+        self.SetColumnWidth(4, 200)
 
 
     def OnGetItemText(self, item, col):
@@ -81,8 +83,12 @@ class ActionPanel(wx.Panel):
         hsizer.Add(self.tArgs, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         hsizer.Add(wx.StaticText(self, -1, 'Timeout [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        self.tTimeout = wx.TextCtrl(self, -1, '1000000', size=(30, -1))
+        self.tTimeout = wx.TextCtrl(self, -1, '1000000', size=(50, -1))
         hsizer.Add(self.tTimeout, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Max Duration [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.t_duration = wx.TextCtrl(self, -1, '%.1f' % np.finfo(float).max, size=(50, -1))
+        hsizer.Add(self.t_duration, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
         self.bAdd.Bind(wx.EVT_BUTTON, self.OnAddAction)
@@ -167,7 +173,9 @@ class ActionPanel(wx.Panel):
         functionName = self.tFunction.GetValue()
         args = eval('dict(%s)' % self.tArgs.GetValue())
         timeout = float(self.tTimeout.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout)
+        max_duration = float(self.t_duration.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout,
+                                       max_duration)
 
     def OnAddMove(self, event):
         nice = float(self.tNice.GetValue())
@@ -180,7 +188,9 @@ class ActionPanel(wx.Panel):
                            'Positioning.z': self.scope.state['Positioning.z']}}
 
         timeout = float(self.tTimeout.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout)
+        max_duration = float(self.t_duration.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout, 
+                                       max_duration)
         
 
     def OnAddSequence(self, event):
@@ -188,7 +198,9 @@ class ActionPanel(wx.Panel):
         functionName = 'spoolController.StartSpooling'
         args = {'maxFrames' : int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
         timeout = float(self.tTimeout.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout)
+        max_duration = float(self.t_duration.GetValue())
+        self.actionManager.QueueAction(functionName, args, nice, timeout,
+                                       max_duration)
         
     
     def _add_ROIs(self, rois):
@@ -199,7 +211,12 @@ class ActionPanel(wx.Panel):
         ----------
         rois: list-like
             list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers.
-
+        
+        Notes
+        -----
+        Currently ignores the `Max Duration` GUI control, ensuring the timeout
+        is long enough for all queued ROI tasks, and with 10 s max duration on
+        movements and ~2x acquisition time max durations for spooling series.
         """
         
         # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
@@ -216,13 +233,16 @@ class ActionPanel(wx.Panel):
         # get queue parameters
         n_frames = int(self.tNumFrames.GetValue())
         nice = float(self.tNice.GetValue())
-        time_est = positions.shape[0] * n_frames / self.scope.cam.GetFPS()
-        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_est)  # allow enough time for what we queue
+        time_est =  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
+        logger.debug('Expecting series to complete in %.1f s each' % time_est)
+        # allow enough time for what we queue
+        timeout = max(float(self.tTimeout.GetValue()), 
+                      positions.shape[0] * time_est)
         for ri in range(positions.shape[0]):
             args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
-            self.actionManager.QueueAction('state.update', args, nice, timeout)
+            self.actionManager.QueueAction('state.update', args, nice, timeout, 10)
             args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout, 2 * time_est)
     
     def OnROIsFromFile(self, event):
         import wx

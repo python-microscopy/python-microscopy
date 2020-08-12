@@ -128,8 +128,8 @@ class ShiftPanel(wx.Panel):
         self.dsviewer.do.OnChange()
         
     def OnCorrelate(self, event):
-        from scipy.fftpack import fftn, ifftn
-        from pylab import fftshift, ifftshift
+        from numpy.fft import fftn, ifftn, fftshift, ifftshift
+        # from pylab import fftshift, ifftshift
         import numpy as np
         #ch0 = self.image.data[:,:,:,0]
         chanList = self.image.data.dataList
@@ -572,12 +572,10 @@ class CompositeDialog(wx.Dialog):
         return self.cbInterp.GetValue()
         
 
-class compositor:
+from ._base import Plugin
+class Compositor(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
 
         #self.compMenu = wx.Menu()
 
@@ -829,10 +827,9 @@ class compositor:
 
 
 def Plug(dsviewer):
-    dsviewer.compos = compositor(dsviewer)
+    return Compositor(dsviewer)
     #if 'chanList' in dir(dsviewer.image.data) and 'shifts' in dir(dsviewer.image.data.chanList[0]):
         #we have shiftable channels
         
-
 
 

@@ -147,12 +147,18 @@ class BaseDataSource(object):
         return r
     
 class XYZTCDataSource(object):
-    def __init__(self, datasource):
+    def __init__(self, datasource, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
         self._datasource = datasource
+        self._input_order = input_order
         
-    @property
-    def shape(self):
-        raise NotImplementedError()
+        if not input_order.startswith('XY'):
+            raise RuntimeError('First 2 dimensions of input must be X and Y')
+        
+        self.shape = self._datasource.getSliceShape() + [size_z, size_t, size_c]
+        
+    #@property
+    #def shape(self):
+    #    raise NotImplementedError()
     
     def __getitem__(self, item):
         raise NotImplementedError()

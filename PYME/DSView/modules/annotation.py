@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import wx
 import wx.lib.agw.aui as aui
 
+from ._base import Plugin
+
 class _Snake_Settings(HasTraits):
     length_weight = Float(0) #alpha
     smoothness = Float(0.1) #beta
@@ -110,10 +112,9 @@ class LabelPanel(wx.Panel):
     def get_labels(self):
         return {n : self.lLabels.GetItemText(n, 1) for n in range(10)}
 
-class Annotater(object):
+class Annotater(Plugin):
     def __init__(self, dsviewer):
-        self.do = dsviewer.do
-        self.dsviewer = dsviewer
+        Plugin.__init__(self, dsviewer)
 
         self.cur_label_index = 1
         self.line_width = 1
@@ -153,7 +154,7 @@ class Annotater(object):
         
     
     def add_curved_line(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
@@ -172,7 +173,7 @@ class Annotater(object):
         self.dsviewer.Update()
 
     def add_filled_polygon(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
@@ -217,7 +218,7 @@ class Annotater(object):
             
     def snake_refine_trace(self, event=None, sender=None, **kwargs):
         print('Refining selection')
-        if self.lock_mode == 'None' or not self.do.selectionMode == self.do.SELECTION_SQUIGLE:
+        if self.lock_mode == 'None' or not self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             return
         else:
             try:
@@ -420,7 +421,8 @@ class Annotater(object):
     def svm_segment(self):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
-        import pylab
+        # import pylab
+        import matplotlib.cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
         lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
@@ -444,11 +446,11 @@ class Annotater(object):
         #set scaling to (0,10)
         for i in range(im.data.shape[3]):
             self.dv.do.Gains[i] = .1
-            self.dv.do.cmaps[i] = pylab.cm.labeled
+            self.dv.do.cmaps[i] = matplotlib.cm.labeled
     
         self.dv.Refresh()
         self.dv.Update()
                     
 
 def Plug(dsviewer):
-    dsviewer.annotation = Annotater(dsviewer)
+    return Annotater(dsviewer)

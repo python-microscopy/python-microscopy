@@ -5,7 +5,7 @@ Setting up PYME cluster hardware and software
 
 This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
 analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
-experiments, see the 'Cluster of one' docs for key differences.
+experiments, see :ref:`localization analysis<_localization_analysis>` docs for key differences.
 
 Recommended Hardware configuration
 ==================================
@@ -116,7 +116,7 @@ On each node:
 
    #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
 
-   #. *Optional, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
+   #. *Optional*, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
       package is hosted in the ``david_baddeley`` conda channel, and installable with :code:`conda install nvidia-ml-py`.
 
 

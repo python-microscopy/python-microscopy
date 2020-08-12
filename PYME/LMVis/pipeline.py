@@ -698,8 +698,17 @@ class Pipeline:
                 #old style matlab import
                 ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                ds = tabular.MatfileColumnSource(filename)
+                if 'Multichannel' in kwargs.keys():
+                    ds = tabular.MatfileMultiColumnSource(filename)
+                else:
+                    ds = tabular.MatfileColumnSource(filename)
                 
+                # check for column name mapping
+                field_names = kwargs.get('FieldNames', None)
+                if field_names:
+                    if 'Multichannel' in kwargs.keys():
+                        field_names.append('probe')  # don't forget to copy this field over
+                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
