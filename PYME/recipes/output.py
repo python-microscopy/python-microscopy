@@ -353,9 +353,10 @@ class HDFOutput(OutputModule):
         from PYME.ui.custom_traits_editors import DictChoiceStrEditor
 
         inputs, outputs, params = self.get_params()
-
-        return View([Item(tn, editor=DictChoiceStrEditor(choices=self._namespace_keys)) for tn in inputs], 
-                    buttons=['OK', 'Cancel'])
+        
+        return View([Item(tn, editor=DictChoiceStrEditor(choices=self._namespace_keys)) for tn in inputs] +
+                    [Item('_'),] +
+                    self._view_items(params), buttons=['OK', 'Cancel'])
 
 
 
