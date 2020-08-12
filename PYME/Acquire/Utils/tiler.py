@@ -206,8 +206,8 @@ class MultiwellCircularTiler(object):
         """
         self.curr_pos = self.scope.GetPos()
 
-        x_wells = np.arange(0, self.n_x * self.x_spacing)
-        y_wells = np.arange(0, self.n_y * self.y_spacing)
+        x_wells = np.arange(0, self.n_x * self.x_spacing, self.x_spacing)
+        y_wells = np.arange(0, self.n_y * self.y_spacing, self.y_spacing)
 
         self._x_wells = []
         self._y_wells = np.repeat(y_wells, self.n_x)
