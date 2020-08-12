@@ -33,6 +33,9 @@ from sys import maxsize as maxint
 #minimal protocol which does nothing
 class Protocol:
     def __init__(self, filename=None):
+        # NOTE: .filename attribute is currently set in the spool controller, and will over-ride the filename passed to the constructor.
+        # The filename parameter exists to allow setting the filename in protocols which are not instantiated through the spool controller, and
+        # requires passing __name__ to the constructor in the protocol itself. Both solutions are a bit gross, and may be revisited in the future.
         self.filename = filename
 
     def Init(self, spooler):
