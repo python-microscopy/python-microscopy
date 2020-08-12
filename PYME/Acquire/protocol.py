@@ -129,7 +129,7 @@ class TaskListProtocol(Protocol):
         while not self.listPos >= len(self.taskList) and frameNum >= self.taskList[self.listPos].when:
             t = self.taskList[self.listPos]
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join([str(p) for p in t.params]))
             self.listPos += 1
 
     def OnFinish(self):
@@ -137,7 +137,7 @@ class TaskListProtocol(Protocol):
             t = self.taskList[self.listPos]
             self.listPos += 1
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join([str(p) for p in t.params]))
             
 
 
