@@ -207,8 +207,10 @@ class DictChoiceStrPanel(wx.Panel):
 
         # for wxMSW
         self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
+        self.lFiltKeys.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.OnFilterListRightClick)
         # for wxGTK
         self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
+        self.lFiltKeys.Bind(wx.EVT_LEFT_UP, self.OnFilterListRightClick)
 
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
