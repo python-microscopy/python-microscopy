@@ -27,6 +27,7 @@ class PcoCam(Camera):
     def __init__(self, camNum):
         Camera.__init__(self)
         self.camNum = camNum
+        self.initalized = False
 
     def Init(self):
         self.cam = pco.Camera(debuglevel='error')
@@ -35,6 +36,11 @@ class PcoCam(Camera):
         self.SetHotPixelCorrectionMode('off')
         self.buffer_size = 0
         self.curr_frame = 0
+        self.initalized = True
+
+    @property
+    def noise_properties(self):
+        return self.noiseProps
 
     def SetDescription(self):
         self.desc = self.cam.sdk.get_camera_description()
@@ -46,7 +52,8 @@ class PcoCam(Camera):
         return self.cam.sdk.get_camera_name()['camera name']
 
     def CamReady(self):
-        return self.cam.sdk.get_camera_busy_status()['busy status'] == 0
+        # return self.cam.sdk.get_camera_busy_status()['busy status'] == 0
+        return self.initalized
 
     def ExtractColor(self, chSlice, mode):
 
@@ -70,7 +77,7 @@ class PcoCam(Camera):
         return self.cam.sdk.get_camera_type()['camera type']
 
     def GetSerialNumber(self):
-        return self.cam.sdk.get_camera_type()['serial number']
+        return str(self.cam.sdk.get_camera_type()['serial number'])
 
     def SetIntegTime(self, time):
         lb = self.desc['Min Expos DESC']*1e-9  # ns
