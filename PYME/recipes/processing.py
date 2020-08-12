@@ -1749,6 +1749,7 @@ class AverageFramesByZStep(ModuleBase):
             z_vals = namespace[self.input_zvals][self.z_column_name]
         
         # later we will mash z with %3.3f, round here so we don't duplicate steps
+        # TODO - make rounding precision a parameter?
         z_vals = np.round(z_vals, decimals=3)
 
         # make sure everything is sorted. We'll carry the args to sort, rather than creating another full array
