@@ -32,9 +32,11 @@ from sys import maxsize as maxint
 
 #minimal protocol which does nothing
 class Protocol:
-    filename=None
-    def __init__(self):
-        pass
+    def __init__(self, filename=None):
+        # NOTE: .filename attribute is currently set in the spool controller, and will over-ride the filename passed to the constructor.
+        # The filename parameter exists to allow setting the filename in protocols which are not instantiated through the spool controller, and
+        # requires passing __name__ to the constructor in the protocol itself. Both solutions are a bit gross, and may be revisited in the future.
+        self.filename = filename
 
     def Init(self, spooler):
         pass
@@ -100,9 +102,10 @@ def SetContinuousMode(contMode):
 
 
 class TaskListProtocol(Protocol):
-    def __init__(self, taskList, metadataEntries = [], preflightList=[]):
+    def __init__(self, taskList, metadataEntries = [], preflightList=[], 
+                 filename=None):
         self.taskList = taskList
-        Protocol.__init__(self)
+        Protocol.__init__(self, filename)
         self.listPos = 0
 
         self.metadataEntries = metadataEntries
@@ -146,7 +149,7 @@ class TaskListProtocol(Protocol):
 
 class ZStackTaskListProtocol(TaskListProtocol):
     def __init__(self, taskList, startFrame, dwellTime, metadataEntries=[], preflightList=[], randomise=False,
-                 slice_order='saw', require_camera_restart=True):
+                 slice_order='saw', require_camera_restart=True, filename=None):
         """
 
         Parameters
@@ -171,7 +174,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
         require_camera_restart: bool
             Flag to toggle restarting the camera/frameWrangler on each step (True) or leave the camera running (False)
         """
-        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList)
+        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList,
+                                  filename)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime
