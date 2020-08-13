@@ -123,7 +123,7 @@ def open_surface(visFr):
         
 def save_surface(visFr):
     import wx
-    from PYME.experimental import triangle_mesh
+    from PYME.experimental import _triangle_mesh as triangle_mesh
     
     surf_keys = [key for key, mesh in visFr.pipeline.dataSources.items() if isinstance(mesh, triangle_mesh.TriangleMesh)]
     
@@ -144,7 +144,8 @@ def save_surface(visFr):
 
     filename = wx.FileSelector('Save surface as...',
                                default_extension='stl',
-                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
+                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply',
+                               flags=wx.FD_SAVE)
 
     if not filename == '':
         ext = filename.split('.')[-1]

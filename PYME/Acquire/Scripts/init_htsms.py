@@ -184,10 +184,15 @@ def focus_keys(MainFrame, scope):
 
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
+    from PYME import config
     from PYME.Acquire.ui import actionUI
+    from PYME.Acquire.ActionManager import ActionManagerServer
 
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
+    
+    ActionManagerServer(scope.actions, 9393, 
+                        config.get('actionmanagerserver-address', '127.0.0.1'))
 
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
@@ -216,7 +221,8 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.CircularTilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
 
-    ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
 
 #must be here!!!

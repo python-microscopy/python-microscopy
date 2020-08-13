@@ -16,11 +16,11 @@ class Plugin(object):
     """
     
     def __init__(self, dsviewer):
-        self._dsviewer = weakref.proxy(dsviewer)
+        self._dsviewer = weakref.ref(dsviewer)
     
     @property
     def dsviewer(self):
-        return self._dsviewer # type: PYME.DSView.dsviewer
+        return self._dsviewer() # type: PYME.DSView.dsviewer
         
     @property
     def do(self):

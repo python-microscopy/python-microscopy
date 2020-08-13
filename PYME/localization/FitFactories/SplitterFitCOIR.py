@@ -77,13 +77,13 @@ class COIFitFactory(FFBase.FitFactory):
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
         roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
 
         x_ = Xg.mean() + roi_x0*vs.x
         y_ = Yg.mean() + roi_y0*vs.y
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+        DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
 
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY

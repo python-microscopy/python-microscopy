@@ -259,7 +259,7 @@ class FitResultsSource(TabularBase):
         #allow access using unnested original names
         # TODO???? - replace key translation with a np.view call?
         #self._keys = unNestDtype(self.fitResults.dtype.descr)
-        self._keys = unnest_dtype(self.fitResults.dtype).names
+        self._keys = list(unnest_dtype(self.fitResults.dtype).names)
         
         #or shorter aliases
         self._set_transkeys()

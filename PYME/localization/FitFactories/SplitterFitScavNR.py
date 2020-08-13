@@ -32,25 +32,19 @@ from . import FFBase
 from PYME.localization.cModels.gauss_app import *
 from PYME.Analysis._fithelpers import *
 
-
+from .LatGaussFitFR import f_gauss2d, f_gauss2d_no_bg
 
 def f_gauss2d2c(p, Xg, Yg, Xr, Yr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    Ag,Ar, x0, y0, sr, sg, bG, bR  = p
+    Ag,Ar, x0, y0, s, bG, bR, b_x, b_y  = p
     #return A*scipy.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
-    r = genGauss(Xr,Yr,Ar,x0,y0,sr,bR)
+    r = genGauss(Xr,Yr,Ar,x0,y0,s,bR,b_x,b_y)
     #r.strides = r.strides #Really dodgy hack to get around something which numpy is not doing right ....
 
-    g = genGauss(Xg,Yg,Ag,x0,y0,sg,bG)
+    g = genGauss(Xg,Yg,Ag,x0,y0,s,bG,b_x,b_y)
     #g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
     
     return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
-    
-def f_gauss2d(p, X, Y):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
-    A, x0, y0, s, b = p
-    r = genGauss(X,Y,A,x0,y0,s,b) #this is coded in c and defined in gauss_app
-    return r
 
 def f_gauss2d2cA(p, Xg, Yg, Xr, Yr, Arr):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
@@ -84,10 +78,12 @@ def f_gauss2d2ccb(p, Xg, Yg, Xr, Yr):
 #fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('backgroundG', '<f4'),('backgroundR', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 fresultdtype=[('tIndex', '<i4'),
-              ('fitResults', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]),
-              ('fitError', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]),
-              ('startParams', [('Ag', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'),('Ar', '<f4'),('x1', '<f4'),('y1', '<f4'),('sigmag', '<f4'), ('br', '<f4')]), 
-              ('subtractedBackground', [('g','<f4'),('r','<f4')]), ('nchi2', '<f4'),
+              ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
+              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
+              ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
+              ('subtractedBackground', [('g','<f4'),('r','<f4')]),
+              ('sumIntensity', [('g','<f4'),('r','<f4')]),
+              ('nchi2', '<f4'),
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 
@@ -102,26 +98,25 @@ fresultdtype=[('tIndex', '<i4'),
 #
 #    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), background, resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
 
-def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=-5e3, nchi2=-1, background=0):
+def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=-5e3, nchi2=-1, background=0, sumIntensity = 0):
     fr = np.zeros(1, dtype=fresultdtype)
     
     n = len(fitResults)
-    
-    #print n, fitResults, fr['fitResults'].dtype, fr['fitResults'].view('8f4').shape
 
     fr['tIndex'] = metadata.tIndex
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
-    fr['fitResults'].view('10f4')[:n] = fitResults   
-    fr['startParams'].view('10f4')[:n] = startParams
+    fr['fitResults'].view('7f4')[:n] = fitResults
+    fr['startParams'].view('7f4')[:n] = startParams
     
     if fitErr is None:
-        fr['fitError'].view('10f4')[:] = -5e3
+        fr['fitError'].view('7f4')[:] = -5e3
     else:
-        fr['fitError'].view('10f4')[:n] = fitErr
+        fr['fitError'].view('7f4')[:n] = fitErr
         
     fr['subtractedBackground'].view('2f4')[:] = background
+    fr['sumIntensity'].view('2f4')[:] = sumIntensity
     slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
     #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
     fr['slicesUsed'].view('6i4')[:] = slu.ravel()
@@ -131,7 +126,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
     r['tIndex'] = metadata.tIndex
-    r['fitError'].view('5f')[:] = -5e3
+    r['fitError'].view('7f')[:] = -5e3
     return r
 		
 def splWrap(*args):
@@ -192,16 +187,35 @@ def genFitImage(fitResults, metadata):
 
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
     
-
+def _munge_chans(res, A, bg, brightest_chan):
+    # munge results - TODO make this a bit cleaner / faster
+    r2 = np.zeros(7)
+    r2[:len(res)] = res
+    res = np.zeros(7)
+    
+    if brightest_chan == 0:
+        res[0] = r2[0]
+        res[1] = A*r2[0]
+        res[5] = r2[4]
+        res[6] = bg
+    else:
+        res[1] = r2[0]
+        res[0] = A*r2[0]
+        res[6] = r2[5]
+        res[5] = bg
+    
+    res[2:5] = r2[1:4]
+    
+    return res
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None, **kwargs):
+    def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None, noiseSigma=None, **kwargs):
         super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
-        if False:#'D' in dir(fitfcn): #function has jacobian
-            self.solver = FitModelWeightedJac
-        else:
-            self.solver = FitModelWeighted
+        #if False:#'D' in dir(fitfcn): #function has jacobian
+        #    self.solver = FitModelWeightedJac
+        #else:
+        #    self.solver = FitModelWeighted
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
@@ -230,67 +244,82 @@ class GaussianFitFactory(FFBase.FFBase):
         #return splWrap(params, Xg, Yg, Xr, Yr), Xg.ravel()[0], Yg.ravel()[0], 0
 		
         
-    def FromPoint(self, x, y, z=None, roiHalfSize=10, axialHalfSize=15):
+    def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
         
         if min(dataROI.shape[:2]) < 4: # too small to fit
             return BlankResult(self.metadata)
-      
-        #estimate some start parameters...
-        Ag = dataROI[:,:,0].max() - dataROI[:,:,0].min() #amplitude
-        Ar = dataROI[:,:,1].max() - dataROI[:,:,1].min() #amplitude
-
-        x0 =  Xg.mean()
-        y0 =  Yg.mean()
-
-        #fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
-        #if fitBackground:
-        startParameters1 = numpy.array([Ag, x0, y0, 250., 0])
-        startParameters2 = numpy.array([Ar, Xr.mean(), Yr.mean(), 250., 0])
-        #else:
-        #    startParameters = numpy.array([Ag, Ar, x0, y0, 250., 250.])
         
         dataROI = np.maximum(dataROI - bgROI, -sigma)
-        
-        if (self.metadata.getOrDefault('Analysis.DebugLevel', 0) == 2):
-            # import pylab
-            import matplotlib.pyplot as plt
-            import matplotlib.cm
-            plt.figure()
-            plt.subplot(121)
-            plt.imshow(dataROI[:,:,0].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
-            plt.title('(%d, %d - %d, %d)'%(x,y, xslice.start+roiHalfSize, yslice.start+roiHalfSize))
-            plt.subplot(122)
-            plt.imshow(dataROI[:,:,1].squeeze(), interpolation='nearest', cmap=matplotlib.cm.gray)
-            plt.title('(%d, %d)'%(xslice2.start+roiHalfSize, yslice2.start+roiHalfSize))
-
-	
-        #do the fit
-        #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        (res1, cov_x1, infodict1, mesg1, resCode1) = self.solver(self.fitfcn, startParameters1, dataROI[:,:,0], sigma[:,:,0], Xg, Yg)#, buf)
-        (res2, cov_x2, infodict2, mesg2, resCode2) = self.solver(self.fitfcn, startParameters2, dataROI[:,:,1], sigma[:,:,1], Xr, Yr)
-        #buf = numpy.zeros(dataROI.size)
-        #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
-        #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
-
-        fitErrors=None
-        try:       
-            fitErrors1 = scipy.sqrt(scipy.diag(cov_x1)*(infodict1['fvec']*infodict1['fvec']).sum()/(len(dataROI[:,:,0].ravel())- len(res1)))
-            fitErrors2 = scipy.sqrt(scipy.diag(cov_x2)*(infodict2['fvec']*infodict2['fvec']).sum()/(len(dataROI[:,:,0].ravel())- len(res1)))
-            fitErrors = np.hstack([fitErrors1, fitErrors2])
-        except Exception:
-            pass
-        
-        #normalised Chi-squared
-        nchi2 = (infodict1['fvec']**2).sum()/(dataROI[:,:,0].size - res1.size)
+        sI = dataROI.mean(0).mean(0)
         
         if bgROI.ndim == 3:
             bgs = bgROI.mean(0).mean(0)
         else:
             bgs = bgROI
+        
+        brightest_chan = np.argmax(sI) #only perform fit on brightest channel
+        
+        chandata = dataROI[:,:,brightest_chan]
+        chansigma = sigma[:,:,brightest_chan]
+        
+        #estimate some start parameters...
+        A = chandata.max() - chandata.min() #amplitude
+        
+        if brightest_chan == 0:
+            X, Y = Xg, Yg
+            X_, Y_ = Xr, Yr
+        else:
+            X,Y = Xr, Yr
+            X_, Y_ = Xg, Yg
 
-        return GaussianFitResultR(np.hstack([res1, res2]), self.metadata, np.hstack([startParameters1, startParameters2]),(xslice, yslice), resCode1, fitErrors, nchi2, bgs)
+        vs = self.metadata.voxelsize_nm
+        x0 = vs.x * x
+        y0 = vs.y * y
+        
+        # x0 = X.mean()
+        # y0 = Y.mean()
+
+        fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+
+        if fitBackground:
+            startParameters = [A, x0, y0, 250 / 2.35, chandata.min(), .001, .001]
+    
+            #do the fit
+            (res, cov_x, infodict, mesg, resCode) = FitModelWeighted(f_gauss2d, startParameters, chandata, chansigma, X, Y)
+        else:
+            startParameters = [A, x0, y0, 250 / 2.35]
+    
+            #do the fit
+            (res, cov_x, infodict, mesg, resCode) = FitModelWeighted(f_gauss2d_no_bg, startParameters, chandata, chansigma, X, Y)
+
+        # try to estimate errors based on the covariance matrix
+        fitErrors=None
+        try:       
+            fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
+        except Exception:
+            pass
+        
+        # normalised Chi-squared
+        nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
+        
+        
+        # evaluate the fitted model on other ROIs coordinates. We will use this as a template to calculate intensity
+        # in the second channel
+        fitted_model = f_gauss2d_no_bg(res[:4], X_, Y_).ravel()
+
+        # grab the data from the dimmer channel
+        chandata = dataROI[:, :, 1 - brightest_chan].ravel()
+        weights = 1./(sigma[:, :, 1 - brightest_chan]**2).ravel()
+        
+        # the dimmer channel should be a linear combination of the brighter channel and a constant background
+        A, bg = np.linalg.lstsq(np.vstack((fitted_model, np.ones_like(fitted_model))).T*weights[:,None], chandata*weights, rcond=None)[0]
+        
+        res = _munge_chans(res, A, bg, brightest_chan)
+        if not fitErrors is None:
+            fitErrors = _munge_chans(fitErrors, 0, 0, brightest_chan)
+
+        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgs, sI)
 
     
         
@@ -313,6 +342,11 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
               ]
               
-DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts).'
-LONG_DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts). This variant of the splitter fit uses the shiftmap to extract a different ROI in each of the colour channels, allowing chromatic shifts to be larger than for the other splitter fits. Useful if there is a magnification difference between the two colour channels, but will perform just as well (or better) on low shift data, as a smaller ROI can be used. Assumes background already subtracted.'
+DESCRIPTION = 'Ratiometric multi-colour 2D Gaussian fit (large shifts, imbalanced ratios).'
+LONG_DESCRIPTION = '''Ratiometric multi-colour 2D Gaussian fit (large shifts). This variant of the splitter fit uses the
+shiftmap to extract a different ROI in each of the colour channels, allowing chromatic shifts to be larger than for the
+other splitter fits. Useful if there is a magnification difference between the two colour channels, but will perform just
+as well (or better) on low shift data, as a smaller ROI can be used. Assumes background already subtracted.
+
+This variant only fits brightest channel and is suitable for scavanged fluorescnce or other situations with very imbalanced splitting ratios'''
 USE_FOR = '2D multi-colour'

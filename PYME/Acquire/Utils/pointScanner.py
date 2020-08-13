@@ -27,6 +27,7 @@ import threading
 import numpy as np
 from PYME.Acquire import eventLog
 import uuid
+import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ class PointScanner(object):
         
         self.running = False
         self._uuid = uuid.uuid4()
+        self.on_stop = dispatch.Signal()
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
@@ -189,6 +191,12 @@ class PointScanner(object):
                 if self.avg:
                     self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
                     self.view.Refresh()
+            
+            if self.callNum >= self.dwellTime * self.imsize - 1:
+                # we've acquired the last frame
+                if self._stop_on_complete:
+                    self._stop()
+                    return
 
             if ((self.callNum +1) % self.dwellTime) == 0:
                 #move piezo
@@ -207,14 +215,11 @@ class PointScanner(object):
                     eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
-                if cam_trigger:
-                    #logger.debug('Firing camera trigger')
-                    self.scope.cam.FireSoftwareTrigger()
+            if cam_trigger:
+                #logger.debug('Firing camera trigger')
+                self.scope.cam.FireSoftwareTrigger()
+                if self.evtLog:
                     eventLog.logEvent('StartAq',"")
-                    
-            if (int(self.callNum/self.dwellTime)) > self.imsize:
-                if self._stop_on_complete:
-                    self._stop()
 #
         #
         #if self.sync:
@@ -238,6 +243,8 @@ class PointScanner(object):
             logger.exception('Could not disconnect pointScanner tick from frameWrangler.onFrame')
     
         self.scope.frameWrangler.stop()
+
+        self.on_stop.send(self)
         
         if self._return_to_start:
             logger.debug('Returning home : %s' % self.currPos)
@@ -259,10 +266,37 @@ class PointScanner(object):
             self._stop()
             
 
+class CircularPointScanner(PointScanner):
+    def genCoords(self):
+        """
+        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
+        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
+        an ~optimal order.
+        """
+        self.currPos = self.scope.GetPos()
+        logger.debug('Current positions: %s' % (self.currPos,))
+    
+        r, t = [0], [np.array([0])]
+        for r_ring in self.pixelsize[0] * np.arange(1, self.pixels + 1):  # 0th ring is (0, 0)
+            # keep the rings spaced by pixel size and hope the overlap is enough
+            # 2 pi / (2 pi r / pixsize) = pixsize/r
+            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
+            r.extend(r_ring * np.ones_like(thetas))
+            t.append(thetas)
+    
+        # convert to cartesian and add currPos offset
+        r = np.asarray(r)
+        t = np.concatenate(t)
+        self.xp = r * np.cos(t) + self.currPos['x']
+        self.yp = r * np.sin(t) + self.currPos['y']
+    
+        self.nx = len(self.xp)
+        self.ny = len(self.yp)
+        self.imsize = self.nx
 
-        
-        
-
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
 
 
 class PointScanner3D:

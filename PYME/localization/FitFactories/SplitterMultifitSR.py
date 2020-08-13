@@ -185,9 +185,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(data, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(data, 1)/nSlices)/self.metadata['Camera.ElectronsPerCount']
 
-        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and self.metadata.getOrDefault('Analysis.subtractBackground', True):
             #average in z
             bgM = self.background
             
@@ -297,8 +297,8 @@ class GaussianFitFactory:
                 y = (Y_m*d_m).sum()/imOs
                 
                 #correct for chromatic shift
-                DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-                DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+                DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+                DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
                 
                 A = imO.max()
     
