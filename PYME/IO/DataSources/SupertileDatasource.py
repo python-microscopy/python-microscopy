@@ -36,9 +36,11 @@ from six.moves.urllib.parse import parse_qs
 
 #from PYME.misc import tifffile
 
-class DataSource(BaseDataSource):
+class SupertileDataSource(BaseDataSource):
     moduleName = 'SupertileDataSource'
     def __init__(self, pyramid, level=0, stride=3, overlap=1):
+        # NOTE: We cheat a bit here to allow this to be constructed from an existing pyramid - the cannonical module.DataSource(filename) instantiation 
+        # is handled in the function below
         self.level = int(level)
         self.stride = int(stride)
         self.overlap = int(overlap)
@@ -54,7 +56,7 @@ class DataSource(BaseDataSource):
         self.tile_size = self._pyr.tile_size*(self.stride + self.overlap)
     
     @staticmethod
-    def from_raw_tile_series(filename, taskQueue=None):
+    def from_tile_series(filename):
         from PYME.Analysis.tile_pyramid import create_pyramid_from_dataset
         from tempfile import TemporaryDirectory
         
@@ -115,3 +117,7 @@ class DataSource(BaseDataSource):
 
     def reloadData(self):
         pass
+    
+def DataSource(filename, taskQueue=None):
+    # cannonical DataSource constructor from filename (needed in order to be able to use this datasource as a task input)
+    return SupertileDataSource.from_tile_series(filename)
