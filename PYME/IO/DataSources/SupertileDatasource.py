@@ -36,26 +36,61 @@ from six.moves.urllib.parse import parse_qs
 
 #from PYME.misc import tifffile
 
-class DataSource(BaseDataSource):
+class SupertileDataSource(BaseDataSource):
     moduleName = 'SupertileDataSource'
-    def __init__(self, filename, taskQueue=None):
-        from PYME.Analysis.tile_pyramid import ImagePyramid
-        self.tile_base, query = filename.split('?')
-        qp = parse_qs(query)
-        self.level = int(qp.get('level', [0])[0])
-        self.stride = int(qp.get('stride', [3])[0])
-        self.overlap = int(qp.get('overlap', [1])[0])
+    def __init__(self, pyramid, level=0, stride=3, overlap=1):
+        # NOTE: We cheat a bit here to allow this to be constructed from an existing pyramid - the cannonical module.DataSource(filename) instantiation 
+        # is handled in the function below
+        self.level = int(level)
+        self.stride = int(stride)
+        self.overlap = int(overlap)
 
-        self.mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
+        self.mdh.copyEntriesFrom(pyramid.mdh)
         
-        self.mdh['voxelsize.x'] = self.mdh['Pyramid.PixelSize']*(2**self.level)
-        self.mdh['voxelsize.y'] = self.mdh['voxelsize.x']
+        voxelsize = self.mdh['Pyramid.PixelSize'] * (2 ** self.level)
+        self.mdh['voxelsize.x'], self.mdh['voxelsize.y'] = (voxelsize, voxelsize)
 
-        self._pyr = ImagePyramid(self.tile_base, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
-                                 x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'])
+        self._pyr = pyramid
         
         self.tile_size = self._pyr.tile_size*(self.stride + self.overlap)
-
+    
+    @staticmethod
+    def from_raw_tile_series(filename):
+        # TODO - do we really want/need this?? We should not be creating the pyramid from scratch in the datasource as this violates the assumption that
+        # datasource loading is comparatively fast / lightweight. Delete me??
+        import warnings
+        warnings.warn('This function might dissappear')
+        from PYME.Analysis.tile_pyramid import create_pyramid_from_dataset
+        from tempfile import TemporaryDirectory
+        
+        tile_base, query = filename.split('?')
+        qp = parse_qs(query)
+        level = int(qp.get('level', [0])[0])
+        stride = int(qp.get('stride', [3])[0])
+        overlap = int(qp.get('overlap', [1])[0])
+        tile_size = int(qp.get('tilesize', [256])[0])
+        
+        p = create_pyramid_from_dataset(tile_base, TemporaryDirectory(), tile_size)
+        
+        return DataSource(p, level, stride, overlap)
+    
+    @staticmethod
+    def from_filename(filename):
+        from PYME.Analysis.tile_pyramid import ImagePyramid
+        from tempfile import TemporaryDirectory
+        
+        tile_base, query = filename.split('?')
+        qp = parse_qs(query)
+        level = int(qp.get('level', [0])[0])
+        stride = int(qp.get('stride', [3])[0])
+        overlap = int(qp.get('overlap', [1])[0])
+        
+        mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
+        # TODO - make the ImagePyramid read it's own metadata
+        p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
+        
+        return DataSource(p, level, stride, overlap)
 
     @property
     def tile_coords(self):
@@ -103,3 +138,7 @@ class DataSource(BaseDataSource):
 
     def reloadData(self):
         pass
+    
+def DataSource(filename, taskQueue=None):
+    # cannonical DataSource constructor from filename (needed in order to be able to use this datasource as a task input)
+    return SupertileDataSource.from_filename(filename)
