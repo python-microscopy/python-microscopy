@@ -57,7 +57,7 @@ class SupertileDataSource(BaseDataSource):
     
     @staticmethod
     def from_raw_tile_series(filename):
-        # TODO - do we really want this?? We should not be creating the pyramid from scratch in the datasource as this violates the assumption that
+        # TODO - do we really want/need this?? We should not be creating the pyramid from scratch in the datasource as this violates the assumption that
         # datasource loading is comparatively fast / lightweight. Delete me??
         import warnings
         warnings.warn('This function might dissappear')
@@ -88,7 +88,7 @@ class SupertileDataSource(BaseDataSource):
         
         mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
         # TODO - make the ImagePyramid read it's own metadata
-        p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'])
+        p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
         
         return DataSource(p, level, stride, overlap)
 
