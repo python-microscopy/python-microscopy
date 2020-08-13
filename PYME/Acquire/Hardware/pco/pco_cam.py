@@ -13,6 +13,13 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+import ctypes
+import platform
+
+sys = platform.system()
+if sys != 'Windows':
+    raise Exception("Operating system is not supported.")
+
 # We use https://pypi.org/project/pco/
 # For API docs, see https://www.pco.de/fileadmin/user_upload/pco-manuals/pco.sdk_manual.pdf and
 # https://www.pco.de/fileadmin/user_upload/pco-manuals/pco.recorder_manual.pdf
@@ -66,7 +73,10 @@ class PcoCam(Camera):
             self.curr_frame = 0
 
         # Grab the image (unused metadata _)
-        chSlice, _ = self.cam.image(self.curr_frame)
+        image, _ = self.cam.image(self.curr_frame)
+
+        ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
+                   image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), chSlice.nbytes)
 
         # Increment the frame number
         self.curr_frame += 1
