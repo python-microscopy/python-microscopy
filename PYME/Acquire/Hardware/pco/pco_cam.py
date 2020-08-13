@@ -31,10 +31,13 @@ except ModuleNotFoundError:
 timebase = {'ns': 1e-9, 'us': 1e-6, 'ms': 1e-3}  # Conversions from a pco dictionary
 
 class PcoCam(Camera):
+    numpy_frames = 1
+    
     def __init__(self, camNum):
         Camera.__init__(self)
         self.camNum = camNum
         self.initalized = False
+        self.noiseProps = None
 
     def Init(self):
         self.cam = pco.Camera(debuglevel='error')
@@ -68,7 +71,7 @@ class PcoCam(Camera):
             # Take a beat, we're going too fast
             return True
 
-        if self.curr_frame >= self.buffer_size:
+        if self.curr_frame > self.buffer_size:
             # We're using a ring buffer, so wrap
             self.curr_frame = 0
 
@@ -80,8 +83,6 @@ class PcoCam(Camera):
 
         # Increment the frame number
         self.curr_frame += 1
-
-        return 0
 
     def GetHeadModel(self):
         return self.cam.sdk.get_camera_type()['camera type']
@@ -119,10 +120,10 @@ class PcoCam(Camera):
         return self.desc['max. vertical resolution standard']
 
     def GetPicWidth(self):
-        return self.GetROI()[2] - self.GetROI()[0]
+        return self.GetROI()[2] - self.GetROI()[0] + 1
 
     def GetPicHeight(self):
-        return self.GetROI()[3] - self.GetROI()[1]
+        return self.GetROI()[3] - self.GetROI()[1] + 1
 
     def SetHorizontalBin(self, value):
         b_max, step_type = self.desc['max. binning horizontal'], self.desc['binning horizontal stepping']
@@ -249,16 +250,17 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_cooling_setpoint_temperature(temp)
 
-    def GetAcqusitionMode(self):
+    def GetAcquisitionMode(self):
         return self._mode
 
-    def SetAcqusitionMode(self, mode):
+    def SetAcquisitionMode(self, mode):
         if mode in [self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT]:
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
 
     def StartExposure(self):
+        self.StopAq()
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
         elif self._mode == self.MODE_CONTINUOUS:
@@ -268,11 +270,17 @@ class PcoCam(Camera):
 
         eventLog.logEvent('StartAq', '')
 
+        return 0
+
     def StopAq(self):
         self.cam.stop()
 
     def GetNumImsBuffered(self):
-        return self.cam.rec.get_status()['dwProcImgCount']
+        try:
+            n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.curr_frame
+        except:
+            n_buf = 0
+        return n_buf
 
     def GetBufferSize(self):
         return self.cam.rec.get_settings()['maximum number of images']
