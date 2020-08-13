@@ -62,6 +62,10 @@ class TilePhysicalCoords(ModuleBase):
 @register_module('Supertile')
 class Supertile(ModuleBase):
     """
+    FIXME: This should be 2 separate modules (pyramid creation and supertile creation)
+    WARNING: This module will likely dissappear / change extensively. Do not expect this
+    to be present in future versions of the code.
+    
     Take an input series acquired ay many positions, tiling an image, and 
     insert those images into the proper position, averaging with any overlapping
     images. Output is a series of sub-frames of this nicely coalesced overview,
