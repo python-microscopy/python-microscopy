@@ -565,7 +565,7 @@ class ImageStack(object):
         if filename.upper().startswith('SUPERTILE:'):
             filename = filename[10:]
         
-        self.data = SupertileDataSource.DataSource(filename)
+        self.data = SupertileDatasource.DataSource(filename)
         self.mdh = self.data.mdh
     
         self.mode = 'default'
