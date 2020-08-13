@@ -46,6 +46,7 @@ class PcoCam(Camera):
         self.SetHotPixelCorrectionMode('off')
         self.buffer_size = 0
         self.curr_frame = 0
+        self.n_read = 0
         self.initalized = True
 
     @property
@@ -67,9 +68,9 @@ class PcoCam(Camera):
 
     def ExtractColor(self, chSlice, mode):
 
-        if self.curr_frame > self.GetNumImsBuffered():
-            # Take a beat, we're going too fast
-            return True
+        # if self.curr_frame > self.GetNumImsBuffered():
+        #     # Take a beat, we're going too fast
+        #     return True
 
         if self.curr_frame > self.buffer_size:
             # We're using a ring buffer, so wrap
@@ -83,6 +84,7 @@ class PcoCam(Camera):
 
         # Increment the frame number
         self.curr_frame += 1
+        self.n_read += 1
 
     def GetHeadModel(self):
         return self.cam.sdk.get_camera_type()['camera type']
@@ -277,7 +279,7 @@ class PcoCam(Camera):
 
     def GetNumImsBuffered(self):
         try:
-            n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.curr_frame
+            n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.n_read
         except:
             n_buf = 0
         return n_buf
