@@ -4,6 +4,7 @@ from  PYME.ui import manualFoldPanel
 from PYME.cluster.rules import LocalizationRule
 from collections import OrderedDict
 import queue
+import os
 import logging
 logger = logging.getLogger(__name__)
 
@@ -286,7 +287,7 @@ class ChainedAnalysisPanel(wx.Panel):
         ret = dialog.ShowModal()
 
         if ret == wx.ID_OK:
-            protocol_name = dialog.GetStringSelection()
+            protocol_name = os.path.splitext(dialog.GetStringSelection())[0]
             self._protocol_rules[protocol_name] = self._rule_chain
             # replace the gui-editable chain with a new one
             self._rule_chain = RuleChain(thread_queue=self._rule_chain.thread_queue)
@@ -320,7 +321,9 @@ class ChainedAnalysisPanel(wx.Panel):
         # pipe the input series name into the rule list
         series_uri = self._spool_controller.spooler.getURL()
         try:
-            rule_chain = self._protocol_rules[self._spool_controller.spooler.protocol.filename]
+            protocol_name = os.path.splitext(os.path.split(self._spool_controller.spooler.protocol.filename)[-1])[0]
+            logger.debug(protocol_name)
+            rule_chain = self._protocol_rules[protocol_name]
         except KeyError:
             rule_chain = self._protocol_rules['default']
 
