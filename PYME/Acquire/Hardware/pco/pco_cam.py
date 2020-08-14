@@ -72,7 +72,7 @@ class PcoCam(Camera):
         #     # Take a beat, we're going too fast
         #     return True
 
-        if self.curr_frame > self.buffer_size:
+        if self.curr_frame >= self.buffer_size:
             # We're using a ring buffer, so wrap
             self.curr_frame = 0
 
