@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 import ctypes
 import platform
+import time
 
 sys = platform.system()
 if sys != 'Windows':
@@ -45,7 +46,6 @@ class PcoCam(Camera):
         self._mode = self.MODE_CONTINUOUS
         self.SetHotPixelCorrectionMode('off')
         self.buffer_size = 0
-        self.curr_frame = 0
         self.n_read = 0
         self.initalized = True
 
@@ -68,22 +68,23 @@ class PcoCam(Camera):
 
     def ExtractColor(self, chSlice, mode):
 
-        # if self.curr_frame > self.GetNumImsBuffered():
-        #     # Take a beat, we're going too fast
-        #     return True
+        # Somehow this check matters... shouldn't this be taken care of by ExpReady???
+        if self.GetNumImsBuffered() < 1:
+            return True
 
-        if self.curr_frame >= self.buffer_size:
-            # We're using a ring buffer, so wrap
-            self.curr_frame = 0
+        if self.n_read < self.buffer_size:
+            curr_frame = self.n_read
+        else:
+            curr_frame = self.buffer_size-self.GetNumImsBuffered()
 
         # Grab the image (unused metadata _)
-        image, _ = self.cam.image(self.curr_frame)
+        image, _ = self.cam.image(curr_frame)
+
+        # print('curr_frame: {}, recorder_image_number: {}, num_ims_buffered: {}, num_ims_read: {}'.format(curr_frame, meta['recorder image number'], self.cam.rec.get_status()['dwProcImgCount'], self.n_read))
 
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
                    image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), chSlice.nbytes)
 
-        # Increment the frame number
-        self.curr_frame += 1
         self.n_read += 1
 
     def GetHeadModel(self):
@@ -104,6 +105,9 @@ class PcoCam(Camera):
         time = np.clip(time, lb, ub)
             
         self.cam.set_exposure_time(time)
+
+        # This is going to reset the recorder, so we need to change ring buffer position
+        self.n_read = 0
 
         self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
@@ -134,7 +138,7 @@ class PcoCam(Camera):
             # binary binning, round to powers of two
             value = 1<<(value-1).bit_length()
         else:
-            value = np.round(value) # integer
+            value = int(np.round(value)) # integer
 
         value = np.clip(value, 1, b_max)
 
@@ -152,7 +156,7 @@ class PcoCam(Camera):
             # binary binning, round to powers of two
             value = 1<<(value-1).bit_length()
         else:
-            value = np.round(value) # integer
+            value = int(np.round(value)) 
 
         value = np.clip(value, 1, b_max)
 
@@ -187,10 +191,10 @@ class PcoCam(Camera):
         dy = self.desc['roi vert steps']
 
         # Round to a multiple of dx, dy
-        x0 = np.floor(x0/dx)*dx
-        y0 = np.floor(y0/dy)*dy
-        x1 = np.floor(x1/dx)*dx
-        y1 = np.floor(y1/dy)*dy
+        x0 = int(np.floor(x0/dx)*dx)
+        y0 = int(np.floor(y0/dy)*dy)
+        x1 = int(np.floor(x1/dx)*dx)
+        y1 = int(np.floor(y1/dy)*dy)
 
         lx_max = self.desc['max. horizontal resolution standard']
         ly_max = self.desc['max. vertical resolution standard']
@@ -198,10 +202,10 @@ class PcoCam(Camera):
         ly_min = self.desc['min size vert']
 
         # Don't let the ROI go out of bounds
-        x0 = np.clip(x0, 0, lx_max)
-        y0 = np.clip(y0, 0, ly_max)
-        x1 = np.clip(x1, 0, lx_max)
-        y1 = np.clip(y1, 0, ly_max)
+        x0 = np.clip(x0, 1, lx_max)
+        y0 = np.clip(y0, 1, ly_max)
+        x1 = np.clip(x1, 1, lx_max)
+        y1 = np.clip(y1, 1, ly_max)
 
         # Make sure everything is ordered
         if x1 < x0:
@@ -228,7 +232,10 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_roi(x0, y0, x1, y1)
 
-        logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x0, y0, x1-x0, y1-y0))
+        logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x0, y0, x1-x0+1, y1-y0+1))
+
+        # Recording state is reset, so set to 0
+        self.n_read = 0
 
         self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
@@ -268,7 +275,7 @@ class PcoCam(Camera):
         elif self._mode == self.MODE_CONTINUOUS:
             # Allocate buffer (2 seconds of buffer)
             self.buffer_size = int(max(int(2.0*self.GetFPS()), 1))
-            self.cam.record(number_of_images=self.buffer_size, mode='ring buffer')
+            self.cam.record(number_of_images=int(max(int(2.0*self.GetFPS()), 1)), mode='ring buffer')
 
         eventLog.logEvent('StartAq', '')
 
