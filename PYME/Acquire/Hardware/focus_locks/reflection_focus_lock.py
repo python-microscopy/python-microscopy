@@ -255,19 +255,23 @@ class ReflectedLinePIDFocusLock(PID):
         results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
         if not success:
             logger.debug('Focus lock fit error')
-            return np.nan
-        return results[1] + start
+            return success, results[1] + start
 
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
         if self.subtraction_profile is not None:
-            self.peak_position = self.find_peak(profile - self.subtraction_profile)
+            success, peak_position = self.find_peak(profile - self.subtraction_profile)
         else:
-            self.peak_position = self.find_peak(profile)
+            success, peak_position = self.find_peak(profile)
 
-        if self.peak_position == np.nan:
+        if not success:
+            # restart the integration / derivatives so we don't go wild when we
+            # eventually get a good fit again
+            self.reset()
             return
+        
+        self.peak_position = peak_position
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
