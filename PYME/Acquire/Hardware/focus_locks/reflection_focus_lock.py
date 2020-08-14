@@ -248,6 +248,10 @@ class ReflectedLinePIDFocusLock(PID):
 
         Returns
         -------
+        success : bool
+            Whether the fit converged
+        peak_position : float
+            center position of the reflection on the camera [pix]
 
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
@@ -255,15 +259,15 @@ class ReflectedLinePIDFocusLock(PID):
         results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
         if not success:
             logger.debug('Focus lock fit error')
-            return success, results[1] + start
+        return results[1] + start, success
 
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
         if self.subtraction_profile is not None:
-            success, peak_position = self.find_peak(profile - self.subtraction_profile)
+            peak_position, success = self.find_peak(profile - self.subtraction_profile)
         else:
-            success, peak_position = self.find_peak(profile)
+            peak_position, success = self.find_peak(profile)
 
         if not success:
             # restart the integration / derivatives so we don't go wild when we
