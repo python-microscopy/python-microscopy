@@ -3,6 +3,8 @@
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 import threading
 import ctypes
+import logging
+logger = logging.getLogger(__name__)
 
 mazlib = ctypes.WinDLL('Tango_DLL.dll')
 # mazlib = ctypes.WinDLL('MwPCIeUi_x64.dll')
@@ -42,6 +44,17 @@ Parameters
 X, Y, Z, A: Positions
 Example
 pTango->GetPos(1, &X, &Y, &Z, &A);"""
+
+GetEncoder = mazlib.LSX_GetEncoder 
+GetEncoder.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double)]
+GetEncoder.__doc__ = """ Retrieves all encoder positions
+Parameters 
+XP, YP, ZP, AP: Counter values, 4x interpolated
+Example 
+pTango->GetEncoder(1, &XP, &YP, &ZP, &AP);"""
 
 # --- Units
 GetDimensions = mazlib.LSX_GetDimensions
@@ -158,6 +171,50 @@ Example
 SetDistance(1, 1, 2, 0, 0); // sets distances for axes X to 1mm and Y to 2mm (if dimension=2), Z and A are not moved when calling function LSX_MoveRelShort"""
 
 
+# --- velocity
+
+GetVel = mazlib.LSX_GetVel
+GetVel.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+GetVel.__doc__ = """Retrieves velocity of all axes
+Parameters 
+pdX, pdY, pdZ, pdA: Velocity values [r/sec]
+Example
+GetVel(1, &X, &Y, &Z, &A);"""
+
+SetVel = mazlib.LSX_SetVel
+SetVel.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_double, 
+                   ctypes.c_double, ctypes.c_double]
+SetVel.__doc__ = """ Set velocity of all axes
+Parameters
+X, Y, Z, A: >0 – max. speed [r/sec]
+Example 
+SetVel(1, 20.0, 15.0, 0.5, 10)"""
+
+IsVel = mazlib.LSX_IsVel
+IsVel.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+IsVel.__doc__ = """ Read the actual velocities at which the axes are currently 
+travelling. Unlike '?vel' or '?speed' this instruction returns the currently 
+travelled (true) speed of the axes, even when controlled by a HDI device.
+Parameters pdX, pdY, pd Z, pdA: actual axes velocities in [mm/s]
+Example pTango->IsVel(1, &vx, &vy, &vz, &va);"""
+
+GetPitch = mazlib.LSC_GetPitch
+GetPitch.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+GetPitch.__doc__ = """ Provides spindle pitch.
+Parameters X, Y, Z, A: Spindle pitch [mm]
+Example pTango->GetPitch(1, &X, &Y, &Z, &A);
+NOTE - it looks like this is actually [mm/r]"""
+
+
 # --- Joystick
 SetJoystickOn = mazlib.LSX_SetJoystickOn
 SetJoystickOff = mazlib.LSX_SetJoystickOff
@@ -191,7 +248,7 @@ class MarzHauserJoystick(object):
         return self.stepper._joystick_enabled
 
 
-class MarzhauserTangoXY(PiezoBase):
+class MarzhauserTango(PiezoBase):
     """
     Marzhauser stage set-up only for lateral positioning
     """
@@ -206,9 +263,6 @@ class MarzhauserTangoXY(PiezoBase):
         # ConnectSimple(1, -1, NULL, 57600, TRUE); // Autoconnect with the first found USB or PCI TANGO in the system
         ConnectSimple(self.lsid, ctypes.c_int(-1), None, ctypes.c_int(57600), ctypes.c_bool(False))  # baud doesn't matter for dll usage
 
-        # clear the current position
-        # ClearPos(self.lsid, 7)
-
         self.last_x, self.last_y, self.last_z = ctypes.c_double, ctypes.c_double, ctypes.c_double
         self.last_a = ctypes.c_double
 
@@ -216,6 +270,16 @@ class MarzhauserTangoXY(PiezoBase):
         z, a = ctypes.c_double(0), ctypes.c_double(0)
         GetDistance(self.lsid, self._move_short_increment['x'], self._move_short_increment['y'], z, a)
 
+        self.__target_rps = (ctypes.c_double(0),  # X, [r/sec]
+                                ctypes.c_double(0),  # Y, [r/sec]
+                                ctypes.c_double(0),  # Z, throw away for XY stage
+                                ctypes.c_double(0))  # A, throw away for XY stage
+        
+        self.__encoder_positions = (ctypes.c_double(0),  # X, [mm]
+                                ctypes.c_double(0),  # Y, [mm]
+                                ctypes.c_double(0),  # Z, throw away for XY stage
+                                ctypes.c_double(0))  # A, throw away for XY stage
+        
         self._joystick_enabled = False
         self.SetJoystick(True)
 
@@ -281,6 +345,33 @@ class MarzhauserTangoXY(PiezoBase):
 
     def clear_position(self):
         ClearPos(self.lsid, 7)
+    
+    @property
+    def _target_rps(self):
+        """
+        Returns
+        -------
+        target_rps : list
+            (x, y, z, a) velocities in [revolutions / s]
+        """
+        GetVel(self.lsid, ctypes.byref(self.__target_rps[0]),
+               ctypes.byref(self.__target_rps[1]), 
+               ctypes.byref(self.__target_rps[2]),
+               ctypes.byref(self.__target_rps[3]))
+        return [v.value for v in self._target_rps]
+    
+    @_target_rps.setter
+    def _target_rps(self, rps):
+        rps = [ctypes.c_double(v) for v in rps]
+        SetVel(self.lsid, *rps)
+        self.__target_rps = rps
+    
+    def get_encoder_positions(self):
+        GetEncoder(self.lsid, ctypes.byref(self._encoder_positions[0]),
+                              ctypes.byref(self._encoder_positions[1]), 
+                              ctypes.byref(self._encoder_positions[2]),
+                              ctypes.byref(self._encoder_positions[3]))
+        return [p.value for p in self._encoder_positions]
 
 
 import numpy as np
