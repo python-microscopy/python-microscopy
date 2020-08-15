@@ -16,7 +16,7 @@ class CondaPackageManager(object):
         self._installed = self.get_installed()
 
     @staticmethod
-    def get_channel_info(channel='barentine'):
+    def get_channel_info(channel):
         r = requests.get('https://api.anaconda.org/packages/%s' % channel)
         return json.loads(r.content)
     
