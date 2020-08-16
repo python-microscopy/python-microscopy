@@ -262,6 +262,8 @@ class ImagePyramid(object):
                  pixel_size=1):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
+            # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
+            # used to support transitory pyramids. 
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
         
