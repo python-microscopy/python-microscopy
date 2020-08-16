@@ -3,6 +3,7 @@
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 import threading
 import ctypes
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
@@ -250,7 +251,11 @@ class MarzHauserJoystick(object):
 
 class MarzhauserTango(PiezoBase):
     """
-    Marzhauser stage set-up only for lateral positioning
+    Marzhauser Tango stage. The dll API supports 4 axes (x, y, z, a), all of
+    which are exposed/supported by this class. For stages only supporting (x, y)
+    or (x, y, z) axes, you can directly use this class and only register the
+    axes you have wth PYMEAcquire, however it is recommended to subclass and
+    expose only the axes present
     """
     units_um=1  # units of the stage default to mm, but we set to um in init
 
@@ -265,10 +270,6 @@ class MarzhauserTango(PiezoBase):
 
         SetDimensions(self.lsid, ctypes.c_int(1), ctypes.c_int(1), 
                       ctypes.c_int(1), ctypes.c_int(1))  # put all axes in [um]
-
-        # self._move_short_increment = dict(x=ctypes.c_double(0), y=ctypes.c_double(0))
-        # z, a = ctypes.c_double(0), ctypes.c_double(0)
-        # GetDistance(self.lsid, self._move_short_increment['x'], self._move_short_increment['y'], z, a)
 
         self._allocate_memory()
         
@@ -417,8 +418,10 @@ class MarzhauserTango(PiezoBase):
         return [p.value for p in self._c_encoder_positions]
 
 
-import numpy as np
 class MarzhauserTangoXY(MarzhauserTango):
+    """
+    Marzhauser tango stage set up only for lateral (x, y) positioning
+    """
     pass
 
 
