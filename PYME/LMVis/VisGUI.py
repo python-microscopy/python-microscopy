@@ -57,6 +57,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
+logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+logging.getLogger('PIL.PngImagePlugin').setLevel(logging.ERROR)
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
