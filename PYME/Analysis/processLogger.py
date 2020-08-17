@@ -58,7 +58,7 @@ class ContextLayer(object):
         dt = np.dtype(reca.dtype.descr + recb.dtype.descr)
         #print dt
         
-        return np.fromstring(reca.data[:]+ recb.data[:], dt)
+        return np.fromstring(bytes(reca.data[:])+ bytes(recb.data[:]), dt)
         
     def AddRecord(self, table, record):
         self.parent.AddRecord(table, self._reccat(self.contextInfo, record))
