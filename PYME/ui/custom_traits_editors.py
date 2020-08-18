@@ -48,7 +48,7 @@ class _CBEditor (Editor):
                 n = choices.index(self.value)
                 self.control.SetSelection(n)
             except ValueError:
-                self.control.SetValue(self.value)
+                self.control.SetValue(str(self.value))
 
         return
     
@@ -113,7 +113,242 @@ class FilterEditor(BasicEditorFactory):
 
     datasource = Instance(tabular.TabularBase)
 
+class DictChoiceStrEditDialog(wx.Dialog):
+    def __init__(self, parent, mode='new', possibleKeys=(), key='', val=''):
+        wx.Dialog.__init__(self, parent, title='Edit ...')
 
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Input:'), 0, 
+                   wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        
+        self.cbKey = wx.ComboBox(self, -1, value=key, 
+                                 choices=sorted(possibleKeys), 
+                                 style=wx.CB_DROPDOWN, size=(150, -1))
+
+        if not mode == 'new':
+            self.cbKey.Enable(False)
+
+        hsizer.Add(self.cbKey, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Table_Name:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        self.tVal = wx.TextCtrl(self, -1, val, size=(140, -1))
+        
+
+        hsizer.Add(self.tVal, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        
+        btSizer = wx.StdDialogButtonSizer()
+
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+
+        btSizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+
+        btSizer.AddButton(btn)
+
+        btSizer.Realize()
+
+        vsizer.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(vsizer)
+        vsizer.Fit(self)
+
+
+class DictChoiceStrPanel(wx.Panel):
+    def __init__(self, parent, filterKeys, choices=None, unique_vals=True):
+        """
+
+        Parameters
+        ----------
+        parent : wx.Window
+
+        filterKeys : dict
+            Dictionary keys
+
+        dataSource : function
+            function to call to get the current data source
+        """
+        wx.Panel.__init__(self, parent)
+
+        self.filterKeys = filterKeys
+        self._choices = choices
+        self._unique_vals = unique_vals
+
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 25*(max(len(self.filterKeys.keys())+1, 5))))
+        self.lFiltKeys.InsertColumn(0, 'Input')
+        self.lFiltKeys.InsertColumn(1, 'Table Name')
+
+        self.populate()
+
+        self.lFiltKeys.SetColumnWidth(0, 150)  # wx.LIST_AUTOSIZE)
+        self.lFiltKeys.SetColumnWidth(1, 150)  #wx.LIST_AUTOSIZE)
+
+        # only do this part the first time so the events are only bound once
+        if not hasattr(self, "ID_FILT_ADD"):
+            self.ID_FILT_ADD = wx.NewId()
+            self.ID_FILT_DELETE = wx.NewId()
+            self.ID_FILT_EDIT = wx.NewId()
+
+            self.Bind(wx.EVT_MENU, self.OnFilterAdd, id=self.ID_FILT_ADD)
+            self.Bind(wx.EVT_MENU, self.OnFilterDelete, id=self.ID_FILT_DELETE)
+            self.Bind(wx.EVT_MENU, self.OnFilterEdit, id=self.ID_FILT_EDIT)
+
+        # for wxMSW
+        self.lFiltKeys.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self.OnFilterListRightClick)
+        self.lFiltKeys.Bind(wx.EVT_COMMAND_LEFT_CLICK, self.OnFilterListRightClick)
+        # for wxGTK
+        self.lFiltKeys.Bind(wx.EVT_RIGHT_UP, self.OnFilterListRightClick)
+        self.lFiltKeys.Bind(wx.EVT_LEFT_UP, self.OnFilterListRightClick)
+
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
+        self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
+        
+        vsizer.Add(self.lFiltKeys, 1, wx.ALL|wx.EXPAND, 0)
+        self.SetSizerAndFit(vsizer)
+        
+    def update(self, filter_keys, choices):
+        self.filterKeys = filter_keys
+        self._choices = choices
+        self.populate()
+
+    def populate(self):
+        self.lFiltKeys.DeleteAllItems()
+        ind = 0
+        for key, value in self.filterKeys.items():
+            ind = self.lFiltKeys.InsertStringItem(ind+1, key)
+            self.lFiltKeys.SetStringItem(ind, 1, value)
+
+    @property
+    def choices(self):
+        if self._choices is None:
+            return None
+        elif callable(self._choices):
+            #support passing data source as a callable
+            return self._choices()
+        else:
+            return self._choices
+
+    def OnFilterListRightClick(self, event):
+        x = event.GetX()
+        y = event.GetY()
+
+        item, flags = self.lFiltKeys.HitTest((x, y))
+
+        menu = wx.Menu()
+        menu.Append(self.ID_FILT_ADD, "Add")
+
+        if item != wx.NOT_FOUND and flags & wx.LIST_HITTEST_ONITEM:
+            self.currentFilterItem = item
+            self.lFiltKeys.Select(item)
+
+            menu.Append(self.ID_FILT_DELETE, "Delete")
+            menu.Append(self.ID_FILT_EDIT, "Edit")
+
+        # Popup the menu.  If an item is selected then its handler
+        # will be called before PopupMenu returns.
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    def OnFilterItemSelected(self, event):
+        self.currentFilterItem = event.GetIndex()
+        event.Skip()
+
+    def OnFilterItemDeselected(self, event):
+        self.currentFilterItem = None
+        event.Skip()
+
+    def OnFilterAdd(self, event):
+        import sys
+
+        try:
+            possibleKeys = list(self.choices)
+        except:
+            possibleKeys = []
+
+        dlg = DictChoiceStrEditDialog(self, mode='new', 
+                                      possibleKeys=possibleKeys)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            val = str(dlg.tVal.GetValue())
+            key = str(dlg.cbKey.GetValue())
+
+            if key == '':
+                return
+            elif self._unique_vals and (val in self.filterKeys.values()):
+                raise UserWarning('Please choose a unique Table Name')
+
+            self.filterKeys[key] = val
+
+            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
+            self.lFiltKeys.SetStringItem(ind, 1, val)
+
+        dlg.Destroy()
+
+    def OnFilterDelete(self, event):
+        it = self.lFiltKeys.GetItem(self.currentFilterItem)
+        self.lFiltKeys.DeleteItem(self.currentFilterItem)
+        self.filterKeys.pop(it.GetText())
+
+    def OnFilterEdit(self, event):
+        key = str(self.lFiltKeys.GetItem(self.currentFilterItem).GetText())
+        val = self.filterKeys[key]
+        
+        dlg = DictChoiceStrEditDialog(self, mode='edit', key=key, val=val)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            val = str(dlg.tVal.GetValue())
+            if self._unique_vals and (val in self.filterKeys.values()):
+                raise UserWarning('Please choose a unique Table Name')
+            self.filterKeys[key] = val
+            self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, val)
+
+        dlg.Destroy()
+
+class _DictChoiceStrEditor(Editor):
+    def init(self, parent):
+        """
+        Finishes initializing the editor by creating the underlying widget.
+        """
+        from PYME.LMVis.filterPane import FilterPanel
+
+
+        self.control = DictChoiceStrPanel(parent, filterKeys=self.value, 
+                                          choices=self.factory.choices)
+
+
+    def update_editor(self):
+        """
+        Updates the editor when the object trait changes externally to the
+        editor.
+        """
+        if self.value:
+            self.control.populate()
+    
+    def dispose(self):
+        self.control = None
+        # super(Editor, self).dispose()
+        super().dispose()
+
+class DictChoiceStrEditor(BasicEditorFactory):
+    klass = _DictChoiceStrEditor
+    choices = List()
 
 from . import editList
 
