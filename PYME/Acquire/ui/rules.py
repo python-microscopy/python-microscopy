@@ -1,7 +1,7 @@
 
 import wx
 from  PYME.ui import manualFoldPanel
-from PYME.cluster.rules import LocalizationRule
+from PYME.cluster._rules import LocalizationRule
 from collections import OrderedDict
 import queue
 import os
@@ -21,7 +21,7 @@ class ProtocolRules(OrderedDict):
             have time to execute, by default 5. .. seealso:: modules :py:mod:`PYME.cluster.rules`
         """
         import queue
-        from PYME.cluster.rules import RuleChain
+        from PYME.cluster._rules import RuleChain
         OrderedDict.__init__(self)
 
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
@@ -268,7 +268,7 @@ class ChainedAnalysisPanel(wx.Panel):
         self.SetSizerAndFit(v_sizer)
 
     def OnAddFromRecipePanel(self, wx_event=None):
-        from PYME.cluster.rules import RecipeRule
+        from PYME.cluster._rules import RecipeRule
         if len(self._recipe_manager.activeRecipe.modules) > 0:
             rule = RecipeRule(self._recipe_manager.activeRecipe.toYAML())
             self._rule_list.add_rule(rule)
@@ -281,7 +281,7 @@ class ChainedAnalysisPanel(wx.Panel):
 
     def OnPairWithProtocol(self, wx_event=None):
         from PYME.Acquire import protocol
-        from PYME.cluster.rules import RuleChain
+        from PYME.cluster._rules import RuleChain
         dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocol.get_protocol_list())
 
         ret = dialog.ShowModal()

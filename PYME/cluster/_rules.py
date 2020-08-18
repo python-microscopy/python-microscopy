@@ -1,4 +1,15 @@
+"""
+Initial attempt to refactor rule pushing to make it easier to push chained rules
 
+WARNING: this will change significantly or potentially disappear - best to stick with HTTPRulePusher for most
+use cases at present.
+
+Major sticking point of this implementation is that the Rule class behaviour is not 
+particularly intuitive (initialised with one series name, rule_id, etc ... , but modified and 
+re-used for different series, and that the implementation of chaining does not map well to how 
+chaining is implemented in the json rules it generates).
+
+"""
 import time
 import threading
 from PYME.IO import DataSources, clusterIO, unifiedIO, clusterResults
