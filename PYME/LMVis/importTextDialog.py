@@ -31,9 +31,7 @@ def isnumber(s):
     except:
         return False
     
-
-
-class ImportTextDialog(wx.Dialog):
+class ColumnMappingDialog(wx.Dialog):
     requiredVariables = {'x':'x position [nm]',
                         'y':'y position [nm]'}
     recommendedVariables = {'A':'amplitude of Gaussian',
@@ -41,11 +39,16 @@ class ImportTextDialog(wx.Dialog):
                             'sig':'std. deviation of Gaussian [nm]',
                             'error_x':'fit error in x direction [nm]'}
     niceVariables = {'error_y':'fit error in y direction [nm]'}
+    fileType = 'column source'  # string to indicate file type in user dialog box
 
-    def __init__(self, parent, textFileName):
-        wx.Dialog.__init__(self, parent, title='Import data from text file')
+    def __init__(self, parent, fileName):
+        """
+        Dialog box for importing data source with arbitrary column names.
+        """
 
-        self.colNames, self.dataLines = self.TextFileHeaderParse(textFileName)
+        wx.Dialog.__init__(self, parent, title='Import data from {} file'.format(self.fileType))
+
+        self.colNames, self.dataLines = self._parse_header(fileName)
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -89,42 +92,8 @@ class ImportTextDialog(wx.Dialog):
         self.SetSizer(sizer1)
         sizer1.Fit(self)
 
-    def TextFileHeaderParse(self, filename):
-        n = 0
-        commentLines = []
-        dataLines = []
-
-        fid = open(filename, 'r')
-        
-        if filename.endswith('.csv'):
-            delim = ','
-        else:
-            delim = None #whitespace
-
-        while n < 10:
-            line = fid.readline()
-            if line.startswith('#'): #check for comments
-                commentLines.append(line[1:])
-            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
-                commentLines.append(line)
-            else:
-                dataLines.append(line.split(delim))
-                n += 1
-                
-        self.numCommentLines = len(commentLines)
-
-        numCols = len(dataLines[0])
-        
-        #print commentLines
-        
-        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
-
-        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
-            colNames = commentLines[-1].split(delim)
-        else:
-            colNames = ['column_%d' % i for i in range(numCols)]
-
-        return colNames, dataLines
+    def _parse_header(self, file):
+        raise NotImplementedError('Implemented in a derived class.')
 
     def CheckColNames(self):
         reqNotDef = [var for var in self.requiredVariables.keys() if not var in self.colNames]
@@ -154,8 +123,6 @@ class ImportTextDialog(wx.Dialog):
             self.stRecommendedNotPresent.SetForegroundColour(wx.GREEN)
 
         self.stRecommendedNotPresent.SetLabel(sreq)
-
-        
 
     def GenerateDataGrid(self, sizer):
         vsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Column names and preview:'))
@@ -195,7 +162,6 @@ class ImportTextDialog(wx.Dialog):
 
         self.CheckColNames()
 
-
     def GetFieldNames(self):
         return self.colNames
         
@@ -205,8 +171,50 @@ class ImportTextDialog(wx.Dialog):
     def GetPixelSize(self):
         return float(self.tPixelSize.GetValue())
 
+class ImportTextDialog(ColumnMappingDialog):
+    # Text/CSV importer with variable mapping
+    fileType='text'
+
+    def _parse_header(self, file):
+        n = 0
+        commentLines = []
+        dataLines = []
+
+        fid = open(file, 'r')
+        
+        if file.endswith('.csv'):
+            delim = ','
+        else:
+            delim = None #whitespace
+
+        while n < 10:
+            line = fid.readline()
+            if line.startswith('#'): #check for comments
+                commentLines.append(line[1:])
+            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
+                commentLines.append(line)
+            else:
+                dataLines.append(line.split(delim))
+                n += 1
+                
+        self.numCommentLines = len(commentLines)
+
+        numCols = len(dataLines[0])
+        
+        #print commentLines
+        
+        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
+
+        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
+            colNames = [s.strip() for s in commentLines[-1].split(delim)]
+        else:
+            colNames = ['column_%d' % i for i in range(numCols)]
+
+        return colNames, dataLines
+
 
 class ImportMatDialog(wx.Dialog):
+    # Old-style MATLAB importer
     def __init__(self, parent, varnames=['Orte']):
         wx.Dialog.__init__(self, parent, title='Import data from matlab file')
 
@@ -256,3 +264,36 @@ class ImportMatDialog(wx.Dialog):
     def GetVarName(self):
         return self.cbVarNames.GetValue()
         
+class ImportMatlabDialog(ColumnMappingDialog):
+    # MATLAB importer with variable mapping
+    fileType = 'MATLAB'
+    multichannel = False  # Is out matlab source multichannel?
+
+    def _parse_header(self, file):
+        import numpy as np
+
+        if isinstance(file, dict):
+            # We've passed the loaded file (scipy.io.loadmat returns a dict)
+            mf = file
+        else:
+            from scipy.io import loadmat
+            mf = loadmat(file)
+
+        self.numCommentLines = 0
+
+        colNames = [k for k in mf.keys() if not k.startswith('_')]
+
+        dataLines = []
+        for k in colNames:
+            if mf[k].shape[1] > mf[k].shape[0]:
+                # Multicolor
+                self.multichannel = True
+                dataLines.append(mf[k][0,0][:10].squeeze())
+            else:
+                dataLines.append(mf[k][:10].squeeze())
+        dataLines = np.array(dataLines).T.astype(str).tolist()
+
+        return colNames, dataLines
+
+    def GetMultichannel(self):
+        return self.multichannel

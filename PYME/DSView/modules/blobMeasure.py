@@ -26,6 +26,9 @@ from scipy import ndimage
 import wx
 import wx.lib.agw.aui as aui
 
+from ._base import Plugin
+
+#TODO - move non-GUI logic out of here!!
 
 def iGen():
     i = 1
@@ -780,11 +783,10 @@ class BlobObject(object):
         self._3diso = s
         return s
 
-class Measurements(wx.Panel):
+class Measurements(wx.Panel, Plugin):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer)
-        self.dsviewer = dsviewer
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.do.overlays.append(self.DrawOverlays)
         
@@ -920,7 +922,7 @@ class Measurements(wx.Panel):
         slx, sly, slz = o
         
         X, Y, Z = np.ogrid[slx, sly, slz]
-        vs = (1e3*self.image.mdh['voxelsize.x'], 1e3*self.image.mdh['voxelsize.y'],1e3*self.image.mdh['voxelsize.z'])
+        vs = self.image.voxelsize
         
         #return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j] - self.image.data[slx, sly, slz, j].min(), 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
         return [DataBlock(np.maximum(self.image.data[slx, sly, slz, j], 0)*mask , X, Y, Z, vs) for j in range(self.image.data.shape[3])]
@@ -1081,9 +1083,11 @@ class Measurements(wx.Panel):
         
         
 def Plug(dsviewer):
-    dsviewer.measure = Measurements(dsviewer)
+    measure = Measurements(dsviewer)
     
-    dsviewer.measure.SetSize(dsviewer.measure.GetBestSize())
+    measure.SetSize(measure.GetBestSize())
     pinfo2 = aui.AuiPaneInfo().Name("measurePanel").Left().Caption('Blob Characterisation').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-    dsviewer._mgr.AddPane(dsviewer.measure, pinfo2)
+    dsviewer._mgr.AddPane(measure, pinfo2)
     dsviewer._mgr.Update()
+    
+    return measure

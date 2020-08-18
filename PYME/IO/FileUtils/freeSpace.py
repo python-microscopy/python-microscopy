@@ -24,8 +24,9 @@
 import os
 import platform
 import ctypes
+import warnings
 
-def get_free_space(folder):
+def get_free_space_bytes(folder):
     """ Return folder/drive free space (in bytes)
     """
     if platform.system() == 'Windows':
@@ -36,6 +37,12 @@ def get_free_space(folder):
     else:
         stats = os.statvfs(folder)
         return stats.f_bfree*stats.f_frsize
+    
+def get_free_space(folder):
+    """ Return folder/drive free space (in bytes)
+    """
+    warnings.warn(DeprecationWarning('Use get_free_space_bytes() instead'))
+    return get_free_space_bytes(folder)
 
 def disk_usage(folder):
     if platform.system() == 'Windows':

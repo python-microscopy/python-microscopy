@@ -40,11 +40,10 @@ def _pt(sl):
     #r = 0
     return r
 
-class deconvolver:
+from ._base import Plugin
+class Deconvolver(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         self.tq = None
         
         dsviewer.AddMenuItem("Processing", "Deconvolution", self.OnDeconvICTM)
@@ -96,9 +95,7 @@ class deconvolver:
             decMDH['Deconvolution.NumIterations'] = nIter
             decMDH['Deconvolution.OriginalFile'] = self.image.filename
 
-            vx = self.image.mdh.getEntry('voxelsize.x')*1e3
-            vy = self.image.mdh.getEntry('voxelsize.y')*1e3
-            vz = self.image.mdh.getEntry('voxelsize.z')*1e3
+            vx, vy, vz = self.image.voxelsize_nm
 
             if beadMode:
                 from PYME.Deconv import beadGen
@@ -235,22 +232,15 @@ class deconvolver:
             decMDH['Deconvolution.NumIterations'] = nIter
             decMDH['Deconvolution.OriginalFile'] = self.image.filename
 
-            #self.dlgDeconProg = DeconvProgressDialog(self.dsviewer, nIter)
-            #self.dlgDeconProg.Show()
-            vx = self.image.mdh.getEntry('voxelsize.x')
-            vy = self.image.mdh.getEntry('voxelsize.y')
-            vz = self.image.mdh.getEntry('voxelsize.z')
+            vx, vy, vz = self.image.voxelsize_nm
 
             if beadMode:
                 from PYME.Deconv import beadGen
-                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (1e3*vx, 1e3*vy, 1e3*vz))
+                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (vx, vy, vz))
 
                 decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
                 
             else:
-                #psf, vs = numpy.load(dlg.GetPSFFilename())
-                #psf = numpy.atleast_3d(psf)
-                
                 psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
 
                 decMDH['Deconvolution.PSFFile'] = psfFilename
@@ -506,4 +496,4 @@ class WienerDeconvolver(wx.Panel):
 
 
 def Plug(dsviewer):
-    dsviewer.deconvolver = deconvolver(dsviewer)
+    return Deconvolver(dsviewer)

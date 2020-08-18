@@ -6,7 +6,9 @@ Created on Fri Mar 28 15:02:50 2014
 """
 
 import numpy as np
-from pylab import fftn, ifftn, fftshift, ifftshift
+# from pylab import fftn, ifftn, fftshift, ifftshift
+from numpy.fft import fftn, ifftn, fftshift, ifftshift
+
 import time
 from scipy import ndimage
 from PYME.Acquire import eventLog

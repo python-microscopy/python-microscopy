@@ -31,25 +31,11 @@ class ExtractTableChannel(ModuleBase):
         except:
             return []
 
-    @property
-    def pipeline_view(self):
-        from traitsui.api import View, Group, Item
+    def _view_items(self, params=None):
+        from traitsui.api import Item
         from PYME.ui.custom_traits_editors import CBEditor
-
-        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
-
-        return View(Group(Item('channel', editor=CBEditor(choices=self._colour_choices)), label=modname))
-
-    @property
-    def default_view(self):
-        from traitsui.api import View, Group, Item
-        from PYME.ui.custom_traits_editors import CBEditor
-
-        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('channel', editor=CBEditor(choices=self._colour_choices)),
-                    Item('_'),
-                    Item('outputName'), buttons=['OK'])
+        return [Item('channel', editor=CBEditor(choices=self._colour_choices)),]
+    
 
 
 @register_module('DensityMapping')
@@ -109,16 +95,11 @@ class DensityMapping(ModuleBase):
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
-        namespace[self.outputImage] = renderer.Generate(self.get())
-
-    @property
-    def default_view(self):
-        from traitsui.api import View, Group, Item, TextEditor, CSVListEditor
-        from PYME.ui.custom_traits_editors import CBEditor
-    
-        return View(Item('inputLocalizations', editor=CBEditor(choices=self._namespace_keys)),
-                    Item('_'),
-                    Item('renderingModule'),
+        namespace[self.outputImage] = renderer.Generate(self.trait_get())
+        
+    def _view_items(self, params=None):
+        from traitsui.api import Group, Item
+        return [Item('renderingModule'),
                     Item('pixelSize'),
                     Item('colours', style='text'),#editor=CSVListEditor()),
                     Item('softRender'),
@@ -140,8 +121,7 @@ class DensityMapping(ModuleBase):
                         Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
                         label='Output Image Size',
                     ),
-                    Item('_'),
-                    Item('outputImage'), buttons=['OK'])
+                ]
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
@@ -256,7 +236,9 @@ class ProcessColour(ModuleBase):
                     cr = mdh['Protocol.ColorRange%d' % i]
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
                     
-        namespace[self.output] = output
+        cached_output = tabular.CachingResultsFilter(output)
+        cached_output.mdh = output.mdh
+        namespace[self.output] = cached_output
 
 
 @register_module('TimeBlocks')
@@ -423,6 +405,17 @@ class DBSCANClustering(ModuleBase):
     @property
     def hide_in_overview(self):
         return ['columns']
+        
+    def _view_items(self, params=None):
+        from traitsui.api import Item, TextEditor
+        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+                    Item('searchRadius'),
+                    Item('minClumpSize'),
+                    Item('multithreaded'),
+                    Item('numberOfJobs'),
+                    Item('clumpColumnName'),]
+
+
 
 #TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
@@ -640,7 +633,7 @@ class MeasureClusters3D(ModuleBase):
         if np.min(inp[self.labelKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
-        labels = inp[self.labelKey]
+        labels = inp[self.labelKey].astype(np.int)
         I = np.argsort(labels)
         I = I[labels[I] > 0]
         
@@ -831,143 +824,4 @@ class AutocorrelationDriftCorrection(ModuleBase):
             pass
         
         namespace[self.outputName] = out
-
-
-@register_module('SphericalHarmonicShell')
-class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong here
-    """
-    Fits a shell represented by a series of spherical harmonic co-ordinates to a 3D set of points. The points
-    should represent a hollow, fairly round structure (e.g. the surface of a cell nucleus). The object should NOT
-    be filled (i.e. points should only be on the surface).
-    
-    Parameters
-    ----------
-
-        max_m_mode: Maximum order to calculate to.
-        zscale: Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the
-            x, y, and z extents are roughly equal.
-            
-    Inputs
-    ------
-        inputName: name of a tabular datasource containing the points to be fitted with a spherical harmonic shell
-        
-
-    """
-    input_name = Input('input')
-    max_m_mode = Int(5)
-    z_scale = Float(5.0)
-    n_iterations = Int(2)
-    init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
-    output_name = Output('harmonic_shell')
-
-    def execute(self, namespace):
-        import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO import MetaDataHandler
-
-        inp = namespace[self.input_name]
-
-        modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
-                                                                    mmax=self.max_m_mode,
-                                                                    centre_points=True,
-                                                                    nIters=self.n_iterations,
-                                                                    tol_init=self.init_tolerance)
-        
-        mdh = MetaDataHandler.NestedClassMDHandler()
-        try:
-            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
-        except AttributeError:
-            pass
-        
-        mdh['Processing.SphericalHarmonicShell.ZScale'] = self.z_scale
-        mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
-        mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
-        mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
-        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
-
-        output_dtype = [('modes', '<2i4'), ('coefficients', '<f4')]
-        out = np.zeros(len(coefficients), dtype=output_dtype)
-        out['modes']= modes
-        out['coefficients'] = coefficients
-        out = tabular.RecArraySource(out)
-        out.mdh = mdh
-
-        namespace[self.output_name] = out
-
-@register_module('AddShellMappedCoordinates')
-class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
-    """
-
-    Maps x,y,z co-ordinates into the co-ordinate space of spherical harmonic shell. Notably, a normalized
-    radius is provided, which can be used to determine which localizations are within the structure.
-
-    Inputs
-    ------
-
-    inputName : name of tabular data whose coordinates one would like to have generated with respect to a spherical
-            harmonic structure
-    inputSphericalHarmonics: name of reference spherical harmonic shell representation (e.g.
-            output of recipes.localizations.SphericalHarmonicShell). See PYME.Analysis.points.spherical_harmonics.
-
-    Outputs
-    -------
-
-    outputName: a new tabular data source containing spherical coordinates generated with respect to the spherical
-    harmonic representation.
-
-    Parameters
-    ----------
-
-    None
-
-    Notes
-    -----
-
-    """
-
-
-    inputName = Input('points')
-    inputSphericalHarmonics = Input('harmonicShell')
-
-    input_name_r = CStr('r')
-    input_name_theta = CStr('theta')
-    input_name_phi = CStr('phi')
-    input_name_r_norm = CStr('r_norm')
-    input_name_distance_to_shell = CStr('distance_to_shell')
-
-    outputName = Output('shell_mapped')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import spherical_harmonics
-        from PYME.IO.MetaDataHandler import NestedClassMDHandler
-
-        inp = namespace[self.inputName]
-        mapped = tabular.MappingFilter(inp)
-
-        rep = namespace[self.inputSphericalHarmonics]
-
-        center = rep.mdh['Processing.SphericalHarmonicShell.Centre']
-        z_scale = rep.mdh['Processing.SphericalHarmonicShell.ZScale']
-        x0, y0, z0 = center
-
-        # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spherical_harmonics.cart2sph(inp['x'] - x0, inp['y'] - y0, (inp['z'] - z0)/z_scale)
-        # additionally calculate the cartesian distance
-        min_distance, nearest_point_on_shell = spherical_harmonics.distance_to_surface([inp['x'], inp['y'], inp['z']],
-                                                                                       center, rep['modes'],
-                                                                                       rep['coefficients'],
-                                                                                       z_scale=z_scale)
-        mapped.addColumn(self.input_name_r, datRad)
-        mapped.addColumn(self.input_name_theta, theta)
-        mapped.addColumn(self.input_name_phi, phi)
-        mapped.addColumn(self.input_name_r_norm, datRad / spherical_harmonics.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
-        mapped.addColumn(self.input_name_distance_to_shell, min_distance)
-
-        try:
-            # note that copying overwrites shared fields
-            mapped.mdh = NestedClassMDHandler(rep.mdh)
-            mapped.mdh.copyEntriesFrom(inp.mdh)
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = mapped
 

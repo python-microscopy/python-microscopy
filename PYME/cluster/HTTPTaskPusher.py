@@ -15,6 +15,7 @@ from PYME.IO import DataSources
 from PYME.IO import clusterIO
 from PYME.IO import clusterResults
 from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
 from six import string_types
 
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def _getTaskQueueURI(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-taskdist')
+    ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
     
@@ -43,10 +44,12 @@ def _getTaskQueueURI(n_retries=2):
 
     try:
         #try to grab the distributor on the local computer
-        return queueURLs[compName]
-    except KeyError:
+        local_queues = [q for q in queueURLs if compName in q]
+        logger.debug('local_queues: %s' % local_queues)
+        return queueURLs[local_queues[0]]
+    except (KeyError, IndexError):
         #if there is no local distributor, choose one at random
-        logging.info('no local distributor, choosing one at random')
+        logger.info('no local distributor, choosing one at random')
         return random.choice(queueURLs.values())
 
 def verify_cluster_results_filename(resultsFilename):
@@ -267,7 +270,7 @@ class HTTPTaskPusher(object):
         
         while (self.doPoll == True):
             framesOutstanding = self.fileTasksForFrames()
-            if self.ds.isComplete() and not (framesOutstanding > 0):
+            if self.ds.is_complete and not (framesOutstanding > 0):
                 logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
             else:

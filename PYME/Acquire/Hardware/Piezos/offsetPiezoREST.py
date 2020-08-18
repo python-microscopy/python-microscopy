@@ -95,9 +95,9 @@ class OffsetPiezo(PiezoBase):
         return self.basePiezo.OnTarget()
 
     @webframework.register_endpoint('/LogFocusCorrection', output_is_json=False)
-    def LogFocusCorrection(self,offset):
+    def LogFocusCorrection(self, offset):
         import wx
-        wx.CallAfter(eventLog.logEvent, 'update offset', '%3.4f' % float(offset))
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset))
 
 
 import requests
@@ -108,54 +108,54 @@ class OffsetPiezoClient(PiezoBase):
         self.name = name
         
         self.urlbase = 'http://%s:%d' % (host, port)#,self.name)
+        self._session = requests.Session()
 
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        return requests.get(self.urlbase + '/MoveTo?iChannel=%d&fPos=%3.3f' % (iChannel, fPos))
+        return self._session.get(self.urlbase + '/MoveTo?iChannel=%d&fPos=%3.3f' % (iChannel, fPos))
 
     def MoveRel(self, iChannel, incr, bTimeOut=True):
-        return requests.get(self.urlbase + '/MoveRel?iChannel=%d&incr=%3.3f' % (iChannel, incr))
+        return self._session.get(self.urlbase + '/MoveRel?iChannel=%d&incr=%3.3f' % (iChannel, incr))
 
     def GetPos(self, iChannel=0):
-        res = requests.get(self.urlbase + '/GetPos?iChannel=%d' % (iChannel, ))
+        res = self._session.get(self.urlbase + '/GetPos?iChannel=%d' % (iChannel, ))
         return float(res.json())
 
     def GetTargetPos(self, iChannel=0):
-        res = requests.get(self.urlbase + '/GetTargetPos?iChannel=%d' % (iChannel,))
+        res = self._session.get(self.urlbase + '/GetTargetPos?iChannel=%d' % (iChannel,))
         return float(res.json())
 
     def GetMin(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMin?iChan=%d' % (iChan,))
+        res = self._session.get(self.urlbase + '/GetMin?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetMax(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMax?iChan=%d' % (iChan,))
+        res = self._session.get(self.urlbase + '/GetMax?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetFirmwareVersion(self):
-        res = requests.get(self.urlbase + '/GetFirmwareVersion')
+        res = self._session.get(self.urlbase + '/GetFirmwareVersion')
         return str(res.json())
 
     def GetOffset(self):
-        res = requests.get(self.urlbase + '/GetOffset')
+        res = self._session.get(self.urlbase + '/GetOffset')
         return float(res.json())
 
     def SetOffset(self, offset):
-        return requests.get(self.urlbase + '/SetOffset?offset=%3.3f' % (offset))
+        return self._session.get(self.urlbase + '/SetOffset?offset=%3.3f' % (offset))
 
     def CorrectOffset(self, shim):
-        return requests.get(self.urlbase + '/CorrectOffset?correction=%3.3f' % (shim))
+        return self._session.get(self.urlbase + '/CorrectOffset?correction=%3.3f' % (shim))
 
     def LogShifts(self, dx, dy, dz, active=True):
-        res = requests.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
+        res = self._session.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
         return float(res.json())
 
     def OnTarget(self):
-        res = requests.get(self.urlbase + '/OnTarget')
-        return float(res.json())
+        res = self._session.get(self.urlbase + '/OnTarget')
+        return bool(res.json())
 
     def LogFocusCorrection(self, offset):
-        res = requests.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
-        return float(res.json())
+        self._session.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
 
 def generate_offset_piezo_server(offset_piezo_base_class):
     """

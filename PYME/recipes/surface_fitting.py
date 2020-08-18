@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool
+from .traits import Input, Output, Float, Int, Bool, CStr
 import numpy as np
 from PYME.IO import tabular
 
@@ -132,7 +132,7 @@ class DualMarchingCubes(ModuleBase):
     output = Output('mesh')
     
     threshold_density = Float(2e-5)
-    n_points_min = Int(5) # lets us truncate on SNR
+    n_points_min = Int(50) # lets us truncate on SNR
     
     repair = Bool(False)
     remesh = Bool(False)
@@ -202,3 +202,100 @@ class MarchingTetrahedra(ModuleBase):
             surf.remesh(5, l=0.5, n_relax=10)
         
         namespace[self.output] = surf
+
+@register_module('DistanceToMesh')
+class DistanceToMesh(ModuleBase):
+    input_mesh = Input('mesh')
+    input_points = Input('input')
+    output = Output('output')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.experimental.isosurface import distance_to_mesh
+
+        inp = namespace[self.input_points]
+        surf = namespace[self.input_mesh]
+
+        points = np.vstack([inp['x'], inp['y'], inp['z']]).T
+
+        d = distance_to_mesh(points, surf)
+
+        out = tabular.MappingFilter(inp)
+        out.addColumn('distance_to_{}'.format(self.input_mesh), d)
+
+        try:
+            out.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.output] = out
+
+
+@register_module('SphericalHarmonicShell')
+class SphericalHarmonicShell(ModuleBase):
+    """
+    Fits a shell represented by a series of spherical harmonic co-ordinates to a 3D set of points. The points
+    should represent a hollow, fairly round structure (e.g. the surface of a cell nucleus). The object should NOT
+    be filled (i.e. points should only be on the surface).
+
+    Parameters
+    ----------
+    input_name: PYME.IO.tabular.TabularBase
+        input localizations to fit a shell to
+    max_n_mode: Int
+        maximum order of spherical harmonics to use in fit
+    max_iterations: Int
+        number of fit iterations
+    init_tolerance: Float
+        relative outlier tolerance. Used to ignore outliers in subsequent iterations
+    d_angles: Float
+        Sets the step size in radians of zenith and azimuth arrays used in reconstructing the spherical harmonic shell.
+        Only relevant for distance_to_shell column of mapped output.
+
+
+    Returns
+    ------
+    output_name: PYME.Analysis.points.spherical_harmonics.ScaledShell
+        The shell instance, with to_hdf method for use with PYME.recipes.outputs.HDFOutput
+    output_name_mapped: PYME.IO.tabular.TabularBase
+        localizations used to fit the shell, with two additional columns corresponding to whether than point is inside
+        the shell, and it's approximate distance to the shell (the latter being subject to the precision of a gridded
+        reconstruction subject to `d_angles` input).
+    name_inside_shell: CStr
+        name of column in `output_name_mapped` indicating whether each point is inside of the shell or not
+    name_distance_to_shell: CStr
+        name of column in `output_name_mapped` containing the approximate distance to the shell, in the same units as
+        the input localizations [nm]
+
+    """
+    input_name = Input('input')
+
+    max_n_mode = Int(3)
+    max_iterations = Int(2)
+    init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
+
+    name_inside_shell = CStr('inside_shell')
+    name_distance_to_shell = CStr('distance_to_shell')
+    d_angles = Float(0.1)
+
+    output_name = Output('harmonic_shell')
+    output_name_mapped = Output('shell_mapped')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import spherical_harmonics
+
+        points = tabular.MappingFilter(namespace[self.input_name])
+
+        shell = spherical_harmonics.ScaledShell()
+        shell.set_fitting_points(points['x'], points['y'], points['z'])
+        shell.fit_shell(max_iterations=self.max_iterations, tol_init=self.init_tolerance)
+
+        separations, closest_points = shell.distance_to_shell((points['x'], points['y'], points['z']),
+                                                              d_angles=self.d_angles)
+
+        points.addColumn(self.name_distance_to_shell, separations)
+        points.addColumn(self.name_inside_shell, shell.check_inside())
+
+        namespace[self.output_name] = shell
+        namespace[self.output_name_mapped] = points

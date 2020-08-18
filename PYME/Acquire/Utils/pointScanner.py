@@ -27,12 +27,17 @@ import threading
 import numpy as np
 from PYME.Acquire import eventLog
 import uuid
+import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
-class PointScanner:
+class PointScanner(object):
     def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False,
-                 trigger=False, stop_on_complete=False):
+                 trigger=False, stop_on_complete=False, return_to_start=True):
+        """
+        :param return_to_start: bool
+            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+        """
         self.scope = scope
         #self.xpiezo = xpiezo
         #self.ypiezo = ypiezo
@@ -45,6 +50,7 @@ class PointScanner:
         self.pixels = pixels
         self.pixelsize = pixelsize
         self._stop_on_complete = stop_on_complete
+        self._return_to_start = return_to_start
 
         if np.isscalar(pixelsize):
             self.pixelsize = np.array([pixelsize, pixelsize])
@@ -56,6 +62,7 @@ class PointScanner:
         
         self.running = False
         self._uuid = uuid.uuid4()
+        self.on_stop = dispatch.Signal()
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
@@ -146,7 +153,24 @@ class PointScanner:
         #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
+        #FIXME
         return self.xpiezo[0].onTarget
+    
+    def _position_for_index(self, callN):
+        # todo - precalculate ???
+        x_i = callN % self.nx
+        y_i = int((callN % (self.imsize)) / self.nx)
+    
+        # do a bidirectional scan(faster)
+        if ((y_i) % 2):
+            #scan in reverse direction on odd runs
+            new_x = self.xp[(len(self.xp) - 1) - x_i]
+        else:
+            new_x = self.xp[x_i]
+            
+        new_y = self.yp[y_i]
+        
+        return new_x, new_y
 
     def tick(self, frameData, **kwargs):
         with self._rlock:
@@ -167,28 +191,20 @@ class PointScanner:
                 if self.avg:
                     self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
                     self.view.Refresh()
+            
+            if self.callNum >= self.dwellTime * self.imsize - 1:
+                # we've acquired the last frame
+                if self._stop_on_complete:
+                    self._stop()
+                    return
 
             if ((self.callNum +1) % self.dwellTime) == 0:
                 #move piezo
                 callN = int((self.callNum+1)/self.dwellTime)
-
-                #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
-                #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
-
-                #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
-                # todo - precalculate and move out of tick() ???
-                x_i = callN % self.nx
-                y_i = int((callN % (self.imsize))/self.nx)
-
-                # do a bidirectional scan(faster)
-                if ((y_i) % 2):
-                    #scan in reverse direction on odd runs
-                    new_x = self.xp[(len(self.xp) - 1) - x_i]
-                else:
-                    new_x = self.xp[x_i]
+                new_x, new_y = self._position_for_index(callN)
 
                 self.scope.state.setItems({'Positioning.x' : new_x,
-                                           'Positioning.y' : self.yp[y_i]
+                                           'Positioning.y' : new_y
                                            }, stopCamera = not cam_trigger)
 
                 #print 'SetP'
@@ -199,14 +215,11 @@ class PointScanner:
                     eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
-                if cam_trigger:
-                    #logger.debug('Firing camera trigger')
-                    self.scope.cam.FireSoftwareTrigger()
+            if cam_trigger:
+                #logger.debug('Firing camera trigger')
+                self.scope.cam.FireSoftwareTrigger()
+                if self.evtLog:
                     eventLog.logEvent('StartAq',"")
-                    
-            if (int(self.callNum/self.dwellTime)) > self.imsize:
-                if self._stop_on_complete:
-                    self._stop()
 #
         #
         #if self.sync:
@@ -229,12 +242,16 @@ class PointScanner:
         except:
             logger.exception('Could not disconnect pointScanner tick from frameWrangler.onFrame')
     
-        logger.debug('Returning home : %s' % self.currPos)
-    
         self.scope.frameWrangler.stop()
-        self.scope.state.setItems({'Positioning.x': self.currPos['x'],
-                                   'Positioning.y': self.currPos['y'],
-                                   }, stopCamera=True)
+
+        self.on_stop.send(self)
+        
+        if self._return_to_start:
+            logger.debug('Returning home : %s' % self.currPos)
+            self.scope.state.setItems({'Positioning.x': self.currPos['x'],
+                                       'Positioning.y': self.currPos['y'],
+                                       }, stopCamera=True)
+        
         self.scope.turnAllLasersOff()
     
         if self.trigger:
@@ -249,10 +266,37 @@ class PointScanner:
             self._stop()
             
 
+class CircularPointScanner(PointScanner):
+    def genCoords(self):
+        """
+        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
+        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
+        an ~optimal order.
+        """
+        self.currPos = self.scope.GetPos()
+        logger.debug('Current positions: %s' % (self.currPos,))
+    
+        r, t = [0], [np.array([0])]
+        for r_ring in self.pixelsize[0] * np.arange(1, self.pixels + 1):  # 0th ring is (0, 0)
+            # keep the rings spaced by pixel size and hope the overlap is enough
+            # 2 pi / (2 pi r / pixsize) = pixsize/r
+            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
+            r.extend(r_ring * np.ones_like(thetas))
+            t.append(thetas)
+    
+        # convert to cartesian and add currPos offset
+        r = np.asarray(r)
+        t = np.concatenate(t)
+        self.xp = r * np.cos(t) + self.currPos['x']
+        self.yp = r * np.sin(t) + self.currPos['y']
+    
+        self.nx = len(self.xp)
+        self.ny = len(self.yp)
+        self.imsize = self.nx
 
-        
-        
-
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
 
 
 class PointScanner3D:
@@ -426,8 +470,4 @@ class PointScanner3D:
                 self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
         finally:
             pass
-        
-
-
-
 

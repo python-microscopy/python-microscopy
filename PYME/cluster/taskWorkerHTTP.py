@@ -115,11 +115,14 @@ Traceback:
         
 
 class taskWorker(object):
-    def __init__(self):
+    def __init__(self, nodeserver_port):
         self.inputQueue = Queue.Queue()
         self.resultsQueue = Queue.Queue()
 
         self.procName = '%s_%d' % (compName, os.getpid())
+        
+        self._nodeserver_port = nodeserver_port
+        self._local_queue_url = 'http://127.0.0.1:%d/' % self._nodeserver_port
 
         self._loop_alive = True
 
@@ -219,26 +222,26 @@ class taskWorker(object):
             flag to report whether _get_tasks added new tasks to the taskWorker queue
 
         """
-        queue_URLs = distribution.getNodeInfo()
-        queue_URLs = {k: v for k, v in queue_URLs.items() if k == local_queue_name}
+        #queue_URLs = distribution.getNodeInfo()
+        #queue_URLs = {k: v for k, v in queue_URLs.items() if k == local_queue_name}
 
         # loop over all queues, looking for tasks to process
         tasks = []
-        while len(tasks) == 0 and len(queue_URLs) > 0:
+        
+        while len(tasks) == 0:# and len(queue_URLs) > 0:
             # try queue on current machine first
-            # TODO - only try local machine?
             # print queueNames
 
-            if local_queue_name in queue_URLs.keys():
-                qName = local_queue_name
-                queueURL = queue_URLs.pop(qName)
-            else:
-                logger.error('Could not find local node server')
+            # if local_queue_name in queue_URLs.keys():
+            #     qName = local_queue_name
+            #     queueURL = queue_URLs.pop(qName)
+            # else:
+            #     logger.error('Could not find local node server')
+                
+            queueURL = self._local_queue_url
 
             try:
                 # ask the queue for tasks
-                # TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
-                # try:
                 s = clusterIO._getSession(queueURL)
                 r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)  # , timeout=0)
                 if r.status_code == 200:
@@ -377,30 +380,33 @@ def on_SIGHUP(signum, frame):
     raise RuntimeError('Recieved SIGHUP')
     
 
+from argparse import ArgumentParser
+
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1] == '-p':
-            profile = True
-            from PYME.util import mProfile
-            mProfile.profileOn(['taskWorkerHTTP.py', 'remFitBuf.py'])
-            
-            if len(sys.argv) == 3:
-                profileOutDir = sys.argv[2]
-            else:
-                profileOutDir = None
-    else: 
-        profile = False
+    op = ArgumentParser(description="PYME rule server for task distribution. This should run once per cluster.")
+    
+    op.add_argument('-p', dest='profile', default=False, action='store_true',
+                    help="enable profiling")
+    op.add_argument('--profile-dir', dest='profile_dir')
+    op.add_argument('-s', '--server-port', dest='server_port', type=int, default=config.get('nodeserver-port', 15347),
+                    help='Optionally restrict advertisements to local machine')
+    
+    args = op.parse_args()
+    
+    if args.profile:
+        from PYME.util import mProfile
+        mProfile.profileOn(['taskWorkerHTTP.py', 'remFitBuf.py'])
         
     if not platform.platform().startswith('Windows'):
         signal.signal(signal.SIGHUP, on_SIGHUP)
     
     try:
         #main()
-        tW = taskWorker()
+        tW = taskWorker(nodeserver_port=args.server_port)
         tW.loop_forever()
     except KeyboardInterrupt:
         #supress error message here -  we only want to know if something bad happened
         pass
     finally:
-        if profile:
-            mProfile.report(display=False, profiledir=profileOutDir)
+        if args.profile:
+            mProfile.report(display=False, profiledir=args.profile_dir)

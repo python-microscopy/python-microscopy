@@ -24,7 +24,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -145,14 +145,15 @@ class GaussianFitFactory:
         xslice, yslice, zslice = key
 
         #cut region out of data stack
-        dataROI = self.data[xslice, yslice, zslice] - self.metadata.Camera.ADOffset
+        dataROI = self.data[xslice, yslice, zslice] - self.metadata['Camera.ADOffset']
 
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on        
-        Xg = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Yg = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        vs = self.metadata.voxelsize_nm
+        Xg = vs.x*scipy.mgrid[xslice]
+        Yg = vs.y*scipy.mgrid[yslice]
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -160,11 +161,11 @@ class GaussianFitFactory:
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
-        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*1e3*self.metadata.voxelsize.x
-        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*1e3*self.metadata.voxelsize.y
-        DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-        DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
+        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*vs.x
+        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*vs.y
+        DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+        DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
 
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY

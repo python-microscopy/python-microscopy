@@ -6,7 +6,8 @@ Created on Thu Jul  9 00:55:38 2015
 """
 
 import numpy as np
-import pylab as pl
+# import pylab as pl
+import matplotlib.pyplot as pl
 from PYME.IO import image
 import PYME.Analysis.Tracking.trackUtils as trackUtils
 import json
@@ -14,7 +15,7 @@ import json
 def plotEvent(clump, pipeline, rawData = None, plotRaw = True):
     pl.figure()
     
-    vs = 1e3*pipeline.mdh['voxelsize.x']
+    vs = pipeline.mdh.voxelsize_nm.x
     xp = int(clump['x'].mean()/vs)
     yp = int(clump['y'].mean()/vs)
 
@@ -78,7 +79,7 @@ def plotEvent(clump, pipeline, rawData = None, plotRaw = True):
 def plotEvent2(clump, pipeline, rawData = None, plotRaw = True):
     pl.figure()
     
-    vs = 1e3*pipeline.mdh['voxelsize.x']
+    vs = pipeline.mdh.voxelsize_nm.x
     xp = int(clump['x'].mean()/vs)
     yp = int(clump['y'].mean()/vs)
 
@@ -191,7 +192,7 @@ def plotEvent3(clump, rawData = None, fitRes = None):
     pl.figure()
     
     tvals = np.array([-20, -5, 1, 5, 10, 20, 50, 100]) + int(t0)
-    vs = 1e3*clump.pipeline.mdh['voxelsize.x']
+    vs = clump.pipeline.mdh.voxelsize_nm.x
     xp = int(clump['x'].mean()/vs)
     yp = int(clump['y'].mean()/vs)
     
@@ -418,7 +419,7 @@ def fitIntensities(clump):
    
 def prepPipeline(pipeline):
     #we fit peak intensity - define mappings which are propotional to integrated intensity instead
-    pipeline.mapping.a_norm = 2*np.pi/(1e3*pipeline.mdh['voxelsize.x'])**2
+    pipeline.mapping.a_norm = 2*np.pi/(pipeline.mdh.voxelsize_nm.x)**2
     pipeline.mapping.setMapping('Ag', 'a_norm*fitResults_Ag*fitResults_sigma**2')
     pipeline.mapping.setMapping('Ar', 'a_norm*fitResults_Ar*fitResults_sigmag**2')
     
@@ -451,7 +452,7 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speck
     
     
     if not speckleFile is None: #use speckle file to determine which tracks correspond to fusion events
-        vs = (1e3*pipeline.mdh['voxelsize.x'])
+        vs = pipeline.mdh.voxelsize_nm.x
         speckles = readSpeckles(speckleFile)
         
         #print speckles

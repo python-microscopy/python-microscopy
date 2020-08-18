@@ -24,11 +24,11 @@ import wx
 import numpy as np
 #from PYME.Analysis import piecewiseMapping
 
-class PrebleachExtractor:
+from ._base import Plugin
+class PrebleachExtractor(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
+        
         self.split = 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule')
         self.mixmatrix=np.array([[.85, .15],[.11, .89]])
 
@@ -60,7 +60,7 @@ class PrebleachExtractor:
 
         if self.split:
             from PYME.Acquire.Hardware import splitter
-            unmux = splitter.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], 1e3*mdh.getEntry('voxelsize.x'))
+            unmux = splitter.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], mdh.voxelsize_nm.x)
 
             dt = unmux.Unmix(dt, self.mixmatrix, 0, [ROIX1, ROIY1, ROIX2, ROIY2])
 
@@ -70,6 +70,6 @@ class PrebleachExtractor:
 
 
 def Plug(dsviewer):
-    dsviewer.pbe = PrebleachExtractor(dsviewer)
+    return PrebleachExtractor(dsviewer)
 
 

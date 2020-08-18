@@ -1,4 +1,3 @@
-import pytest
 
 from PYME.IO import tabular
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
@@ -6,8 +5,9 @@ from PYME.recipes import measurement, base, tablefilters
 import numpy as np
 from scipy.spatial import KDTree
 
-@pytest.mark.xfail(reason="Module being tested doesn't exist")
-def test_FilterOverlappingROIs():
+import pytest
+
+def test_IdentifyOverlappingROIs():
     mdh = NestedClassMDHandler()
     mdh['voxelsize.x'] = 0.115
     roi_size = 256
@@ -18,7 +18,7 @@ def test_FilterOverlappingROIs():
     points.mdh = mdh
 
     recipe = base.ModuleCollection()
-    recipe.add_module(measurement.FilterOverlappingROIs(roi_size_pixels=roi_size, output='mapped'))
+    recipe.add_module(measurement.IdentifyOverlappingROIs(roi_size_pixels=roi_size, output='mapped'))
     recipe.add_module(tablefilters.FilterTable(inputName='mapped', filters={'rejected': [-0.5, 0.5]},
                                                outputName='output'))
     recipe.namespace['input'] = points
@@ -38,7 +38,7 @@ def test_TravelingSalesperson():
     x = np.concatenate([x, r * np.cos(theta + 0.5 * dt)])
     y = np.concatenate([y, r * np.sin(theta + 0.5 * dt)])
 
-    points = tabular.MappingFilter({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
+    points = tabular.DictSource({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
                                     'y_um': np.concatenate([y, 1.1 * r * np.sin(theta)])})
 
     recipe = base.ModuleCollection()
@@ -50,16 +50,17 @@ def test_TravelingSalesperson():
     # should be not too much more than the rough circumference.
     assert ordered.mdh['TravelingSalesperson.Distance'] < 1.25 * (2 * np.pi * r)
 
+@pytest.mark.xfail(reason='Requires sklearn, which is not installed for testing to ease dependency management')
 def test_ChunkedTravelingSalesman():
     n = 500
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 
-    points = tabular.MappingFilter({'x_um': x, 'y_um': y})
+    points = tabular.DictSource({'x_um': x, 'y_um': y})
 
     recipe = base.ModuleCollection()
     recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,
-                                                              points_per_chunk=int(n / 20)))
+                                                              points_per_chunk=50))
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
@@ -72,7 +73,7 @@ if __name__ == '__main__':
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 
-    points = tabular.MappingFilter({'x_um': x, 'y_um': y})
+    points = tabular.DictSource({'x_um': x, 'y_um': y})
 
     recipe = base.ModuleCollection()
     recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,

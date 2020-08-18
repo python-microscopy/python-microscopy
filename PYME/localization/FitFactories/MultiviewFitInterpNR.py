@@ -219,9 +219,8 @@ def genFitImage(fitResults, metadata):
     from PYME.IO.MetaDataHandler import get_camera_roi_origin
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
-    
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+
+    vx, vy, _ = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)
@@ -269,8 +268,8 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             startPosEstimator.splines.clear()
 
         X, Y, Z, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
-        vx = 1e3 * md.voxelsize.x
-        vy = 1e3 * md.voxelsize.y
+
+        vx, vy, _ = md.voxelsize_nm
         
         DeltaX = md.chroma.dx.ev(x, y)
         DeltaY = md.chroma.dy.ev(x, y)
@@ -355,7 +354,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
             infodict = {'fvec': self.fitfcn(res, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata.Analysis.AxialShifts, self.nViews) - (dataROI + bgROI)}
             resCode = 1
         else:
-            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata.Analysis.AxialShifts, self.nViews)
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xvs, Yvs, Zvs, safeRegion, self.metadata['Analysis.AxialShifts'], self.nViews)
             #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted_D(self.fitfcn, startParameters, dataROI, sigma, pScale, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
 
         fitErrors=None

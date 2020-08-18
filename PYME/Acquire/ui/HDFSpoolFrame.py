@@ -84,7 +84,10 @@ class PanSpool(afp.foldingPane):
         self.rbZStepped.Bind(wx.EVT_RADIOBUTTON, self.OnToggleZStepping)
         hsizer.Add(self.rbZStepped, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
     
-        self.rbNoSteps.SetValue(True)
+        if self.spoolController.z_stepped:
+            self.rbZStepped.SetValue(True)
+        else:
+            self.rbNoSteps.SetValue(True)
     
         APSizer.Add(hsizer, 0, wx.TOP | wx.EXPAND, 4)
     
@@ -112,12 +115,18 @@ class PanSpool(afp.foldingPane):
         hsizer.Add(self.rbSpoolCluster, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
     
         if int(sys.version[0]) < 3:
+            # don't display Queue as an option on python 3
             self.rbSpoolQueue = wx.RadioButton(pan, -1, 'Queue')
             self.rbSpoolQueue.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
             hsizer.Add(self.rbSpoolQueue, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+            
+        if self.spoolController.spoolType == 'Queue':
             self.rbSpoolQueue.SetValue(True)
-        else:
+        elif (self.spoolController.spoolType == 'Cluster'):
             self.rbSpoolCluster.SetValue(True)
+        else:
+            print(self.spoolController.spoolType)
+            self.rbSpoolFile.SetValue(True)
     
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
     
@@ -147,7 +156,7 @@ class PanSpool(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
     
         self.cbCompress = wx.CheckBox(pan, -1, 'Compression')
-        self.cbCompress.SetValue(True)
+        self.cbCompress.SetValue(self.spoolController.hdf_compression_level > 0)
     
         hsizer.Add(self.cbCompress, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
@@ -180,7 +189,9 @@ class PanSpool(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
     
         self.cbClusterh5 = wx.CheckBox(pan, -1, 'Spool to h5 on cluster (cluster of 1)')
-        self.cbClusterh5.SetValue(False)
+        self.cbClusterh5.SetValue(self.spoolController.cluster_h5)
+        self.cbClusterh5.Bind(wx.EVT_CHECKBOX, lambda e: setattr(self.spoolController,'cluster_h5', self.cbClusterh5.GetValue()))
+        #self.cbClusterh5.SetValue(self._N_data_servers == 1) #set to true if we have a single node cluster
     
         hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -231,12 +242,11 @@ class PanSpool(afp.foldingPane):
         spoolProgSizer = wx.StaticBoxSizer(self.sbSpoolProgress, wx.VERTICAL)
     
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
-        self.stSpoolingTo.Enable(False)
-    
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
         self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
-        self.stNImages.Enable(False)
+        self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
+        self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     
         spoolProgSizer.Add(self.stNImages, 0, wx.ALL, 0)
     
@@ -270,7 +280,8 @@ class PanSpool(afp.foldingPane):
         self.AddNewElement(self._protocol_pan())
 
         clp = afp.collapsingPane(self, caption='Z stepping ...')
-        clp.AddNewElement(seqdialog.seqPanel(clp, self.scope, mode='sequence'))
+        self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
+        clp.AddNewElement(self._seq_panel)
         self.AddNewElement(clp)
         self.seq_pan = clp
 
@@ -316,20 +327,25 @@ class PanSpool(afp.foldingPane):
         """
         afp.foldingPane.__init__(self, parent, caption='Spooling', **kwargs)
         self.scope = scope
+        self.spoolController = scope.spoolController
+
+        #check to see if we have a cluster
+        #self._N_data_servers = len(hybrid_ns.getNS('_pyme-http').get_advertised_services())
+        
         self._init_ctrls()
         
         #self.spoolController = SpoolController(scope, defDir, **kwargs)
-        self.spoolController = scope.spoolController
+        
         self.spoolController.onSpoolProgress.connect(self._tick)
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
         self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
 
-        self.stSpoolDirName.SetLabel(self.spoolController.rel_dirname)
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
 
         #update the spool method (specifically so that the default in the GUI and spool controller match)
-        self.OnSpoolMethodChanged(None)
+        #self.OnSpoolMethodChanged(None)
         
         #make default compression settings in spooler match the display.
         self.update_spooler_compression_settings(False)
@@ -337,7 +353,8 @@ class PanSpool(afp.foldingPane):
 
     def update_spooler_compression_settings(self, ui_on_error=True):
         try:
-            self.spoolController.compressionSettings = self.get_compression_settings(ui_on_error)
+            self.spoolController.pzf_compression_settings = self.get_compression_settings(ui_on_error)
+            self.spoolController.hdf_compression_level = 2 if self.cbCompress.GetValue() else 0
         except:
             logger.warn('Compression settings invalid, disabling quantization')
             if ui_on_error:
@@ -345,7 +362,7 @@ class PanSpool(afp.foldingPane):
                     "Compression settings invalid, disabling quantization",
                     'Error', wx.OK)
             self.cbQuantize.SetValue(False)
-            self.spoolController.compressionSettings = self.get_compression_settings()
+            self.spoolController.pzf_compression_settings = self.get_compression_settings()
     
     def _get_spool_method(self):
         if self.rbSpoolFile.GetValue():
@@ -370,6 +387,7 @@ class PanSpool(afp.foldingPane):
             self.stDiskSpace.SetForegroundColour(wx.BLACK)
        
     def OnToggleZStepping(self, event):
+        self.spoolController.z_stepped = self.rbZStepped.GetValue()
         pan = event.GetEventObject().GetParent()
         if self.rbZStepped.GetValue():
             if self.seq_pan.folded:
@@ -433,8 +451,8 @@ class PanSpool(afp.foldingPane):
         
         NB: this is also called programatically by the start stack button."""
         
-        if self.rbZStepped.GetValue():
-            stack = True
+        #if self.rbZStepped.GetValue():
+        #    stack = True
         
         fn = self.tcSpoolFile.GetValue()
 
@@ -442,20 +460,24 @@ class PanSpool(afp.foldingPane):
             wx.MessageBox('Please enter a series name', 'No series name given', wx.OK)
             return #bail
             
-        if self.cbCompress.GetValue():
-            compLevel = 2
-        else:
-            compLevel = 0
+        # if self.cbCompress.GetValue():
+        #     compLevel = 2
+        # else:
+        #     compLevel = 0
         
 
         try:
-            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel,
-                                               compressionSettings=self.get_compression_settings(),
-                                               cluster_h5=self.cbClusterh5.GetValue())
-        except IOError:
+            self.spoolController.StartSpooling(fn, #stack=stack, #compLevel = compLevel,
+                                               #pzf_compression_settings=self.get_compression_settings(),
+                                               #cluster_h5=self.cbClusterh5.GetValue()
+                                               )
+        except IOError as e:
             logger.exception('IO error whilst spooling')
-            ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
+            ans = wx.MessageBox(str(e.message), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+            
+    def update_ui(self):
+        self.cbCompress.SetValue(self.spoolController.hdf_compression_level > 0)
             
             
             
@@ -466,8 +488,10 @@ class PanSpool(afp.foldingPane):
         self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
         self.bStopSpooling.Enable(True)
-        self.stSpoolingTo.Enable(True)
-        self.stNImages.Enable(True)
+        #self.stSpoolingTo.Enable(True)
+        #self.stNImages.Enable(True)
+        self.stSpoolingTo.SetForegroundColour(None)
+        self.stNImages.SetForegroundColour(None)
         self.stSpoolingTo.SetLabel('Spooling to ' + self.spoolController.seriesName)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
         
@@ -487,9 +511,12 @@ class PanSpool(afp.foldingPane):
         self.bStartSpool.Enable(True)
         #self.bStartStack.Enable(True)
         self.bStopSpooling.Enable(False)
-        self.stSpoolingTo.Enable(False)
-        self.stNImages.Enable(False)
+        #self.stSpoolingTo.Enable(False)
+        #self.stNImages.Enable(False)
+        self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
+        self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
 
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
 
@@ -516,7 +543,7 @@ class PanSpool(afp.foldingPane):
         if not ndir == '':
             logger.debug('series name %s' % self.spoolController.seriesName)
             self.spoolController.SetSpoolDir(ndir)
-            self.stSpoolDirName.SetLabel(self.spoolController.dirname)
+            self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             logger.debug('series name %s' % self.spoolController.seriesName)
 
@@ -536,6 +563,7 @@ class PanSpool(afp.foldingPane):
             self.spoolController.SetProtocol(pname)
             # do this after setProtocol so that an error in SetProtocol avoids setting the new name
             self.stAqProtocol.SetLabel(pname)
+            self._seq_panel.UpdateDisp()  # update display of e.g. z_dwell
 
         pDlg.Destroy()
 
@@ -547,7 +575,7 @@ class PanSpool(afp.foldingPane):
         
     def OnSpoolMethodChanged(self, event):
         self.spoolController.SetSpoolMethod(self._get_spool_method())
-        self.stSpoolDirName.SetLabel(self.spoolController.rel_dirname)
+        self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
 
         self.UpdateFreeSpace()

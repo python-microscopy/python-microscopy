@@ -7,10 +7,10 @@ import socket
 import subprocess
 import tempfile
 import time
-
+import sys
 import yaml
 from PYME import config as conf
-from PYME.misc import pyme_zeroconf
+from PYME.misc import pyme_zeroconf, sqlite_ns
 from PYME.misc.computerName import GetComputerName
 
 logging.basicConfig(level=logging.INFO)
@@ -27,26 +27,37 @@ from PYME.cluster import distribution
 from PYME.cluster import rulenodeserver
 from multiprocessing import cpu_count
 import sys
+from argparse import ArgumentParser
 import threading
 
 from PYME.util import fProfile, mProfile
 
 def main():
-    
-    #prof = fProfile.thread_profiler()
-    #prof.profileOn('.*PYME.*|.*zeroconf.*', 'ruleserver_prof.txt')
-    #mProfile.profileOn(['rulenodeserver.py', 'zeroconf.py'])
-    
-    confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
-    with open(confFile) as f:
-        config = yaml.load(f)
+    op = ArgumentParser(description="PYME node server for task distribution. This should run on every node of the cluster")
 
-    serverAddr, serverPort = config['nodeserver']['http_endpoint'].split(':')
+
+    #NOTE - currently squatting on port 15347 for testing - TODO can we use an ephemeral port?
+    op.add_argument('-p', '--port', dest='port', default=conf.get('nodeserver-port', 15347), type=int,
+                    help="port number to serve on (default: 15347, see also 'nodeserver-port' config entry)")
+
+    op.add_argument('-a', '--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
+                    help='Optionally restrict advertisements to local machine')
+
+    args = op.parse_args()
+
+    serverPort = args.port
     externalAddr = socket.gethostbyname(socket.gethostname())
     
-    print(distribution.getDistributorInfo().values())
-
-    distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo().values()]
+    if args.advertisements == 'zeroconf':
+        ns = pyme_zeroconf.getNS('_pyme-taskdist')
+    else:
+        #assume local
+        ns = sqlite_ns.getNS('_pyme-taskdist')
+        externalAddr = '127.0.0.1' #bind to localhost
+    
+    #TODO - move this into the nodeserver proper so that the ruleserver doesn't need to be up before we start
+    print(distribution.getDistributorInfo(ns).values())
+    distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo(ns).values()]
     
     #set up nodeserver logging
     cluster_root = conf.get('dataserver-root')
@@ -81,27 +92,29 @@ def main():
         
     else:
         nodeserver_log_dir = os.path.join(os.curdir, 'LOGS', GetComputerName())
+        nodeserverLog = logger
 
-    #proc = subprocess.Popen('python -m PYME.cluster.rulenodeserver %s %s' % (distributors[0], serverPort), shell=True,
-    #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    proc = rulenodeserver.ServerThread(distributors[0], serverPort, profile=False)
+    proc = rulenodeserver.ServerThread(distributors[0], serverPort, externalAddr=externalAddr, profile=False)
     proc.start()
-    
-
-    ns = pyme_zeroconf.getNS('_pyme-taskdist')
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
+        
+    # TODO - do we need this advertisement
+    #get the actual adress (port) we bound to
+    time.sleep(0.5)
+    sa = proc.nodeserver.socket.getsockname()
+    serverPort = int(sa[1])
+    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, serverPort)
 
     time.sleep(2)
-    logger.debug('Launching worker processors')
-    numWorkers = config.get('nodeserver-num_workers', cpu_count())
+    nodeserverLog.debug('Launching worker processors')
+    numWorkers = conf.get('nodeserver-num_workers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
+    workerProcs = [subprocess.Popen('%s -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -p %s' % profiledir, shell=True,
+    workerProcs.append(subprocess.Popen('%s -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir=%s' % (sys.executable, serverPort, profiledir), shell=True,
                                         stdin=subprocess.PIPE))
 
     try:
@@ -134,17 +147,11 @@ def main():
                 pass
 
         logger.info('Shutting down nodeserver')
-        #try:
+
         proc.shutdown()
         proc.join()
-        #except:
-        #    pass
 
         logger.info('Workers and nodeserver are shut down')
-        
-        
-        #mProfile.report()
-        #prof.profileOff()
 
         sys.exit()
             
@@ -152,7 +159,13 @@ def main():
 
 
 if __name__ == '__main__':
+    #prof = fProfile.thread_profiler()
+    #prof.profileOn('.*PYME.*|.*zeroconf.*', 'ruleserver_prof.txt')
+    #mProfile.profileOn(['rulenodeserver.py', 'zeroconf.py'])
     main()
+
+    #mProfile.report()
+    #prof.profileOff()
 
 
 

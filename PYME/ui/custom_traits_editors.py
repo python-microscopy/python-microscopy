@@ -8,7 +8,9 @@ from PYME.IO import tabular
 
 class _CBEditor (Editor):
     """
-    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    Dropdown list of options (as strings). Generally passed a list (choices=list_name).
+    Example: Used to select datasource and color channel in 
+    PYME.recipes.localisations.ExtractTableChannel.
     """
 
     def init ( self, parent ):
@@ -19,7 +21,7 @@ class _CBEditor (Editor):
 
         self.control = wx.ComboBox(parent,
                                    size=(120,-1),
-                                   style = wx.CB_DROPDOWN, value=self.value, choices=self.factory.choices)
+                                   style = wx.CB_DROPDOWN, value=str(self.value), choices=self.factory.choices)
         self.control.Bind(wx.EVT_COMBOBOX, self.text_changed)
         #self.control.Bind(wx.EVT_COMBOBOX_CLOSEUP, lambda e: print('foo'))
         self.control.Bind(wx.EVT_TEXT, self.text_changed)
@@ -66,7 +68,10 @@ class CBEditor(BasicEditorFactory):
 
 class _FilterEditor (Editor):
     """
-    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    Editable table with three columns, "Key", "Min", and "Max", for specifying
+    filters to apply to a datasource. Generally passed a dataSource, and users
+    are asked to specify which keys to filter on.
+    Example: PYME.recipes.tablefilters.FilterTable.
     """
 
     def init ( self, parent ):
@@ -153,7 +158,8 @@ class DictFloatEditList(editList.EditListCtrl):
 
 class _DictFloatEditor(Editor):
     """
-    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    Provides a column editor for dictionaries, similar to FilterEditor. Not
+    used anywhere in PYME at the moment (31 March 2020).
     """
     
     def init(self, parent):
@@ -197,7 +203,9 @@ class DictFloatEditor(BasicEditorFactory):
     
 class _HistLimitsEditor (Editor):
     """
-    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    Custom traits UI editor for displaying and adjusting the limits of a 
+    histogram. Example: Used to set the limits of parameters used to color
+    pointclouds in PYME.LMVis.layers.pointcloud.
     """
 
     def init ( self, parent ):
@@ -220,7 +228,7 @@ class _HistLimitsEditor (Editor):
 
     def limits_changed(self, event=None):
         """
-        Event for when calendar is selected, update/create date string.
+        Event for when histogram limits are changed, update/create lower/upper bound.
         """
         self.value = list(self.control.GetValue())
         print(self.value)

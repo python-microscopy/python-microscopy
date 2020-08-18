@@ -13,7 +13,7 @@
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 # try:
 #     # noinspection PyCompatibility
 #     import copy_reg
@@ -72,7 +72,7 @@ class GaussianFitResult:
         return self.fitResults[4]
 
     def FWHMnm(self):
-        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize.x*1e3
+        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize_nm.x
 
     def correctedFWHM(self, FWHM_PSF):
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)

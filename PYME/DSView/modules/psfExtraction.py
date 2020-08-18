@@ -24,12 +24,11 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 import numpy
 
-class PsfExtractor(object):
+from ._base import Plugin
+
+class PsfExtractor(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
 
         try:  # stack multiview channels
             self.numChan = self.image.mdh['Multiview.NumROIs']
@@ -248,14 +247,15 @@ class PsfExtractor(object):
         
     def OnCalcShift(self, event):
         if (len(self.PSFLocs) > 0):
-            import pylab
+            # import pylab
+            import matplotlib.pyplot as plt
             
             x,y,z = self.PSFLocs[0]
             
             z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
             z_ -= z_.mean()
 
-            pylab.figure()
+            plt.figure()
             p_0 = 1.0*self.image.data[x,y,:,0].squeeze()
             p_0  -= p_0.min()
             p_0 /= p_0.max()
@@ -276,11 +276,11 @@ class PsfExtractor(object):
 
             print(('z0: %f, z1: %f, dz: %f' % (z0,z1,dz)))
             
-            pylab.plot(z_, p_0)
-            pylab.plot(z_, p_1)
-            pylab.vlines(z0, 0, 1)
-            pylab.vlines(z1, 0, 1)
-            pylab.figtext(.7,.7, 'dz = %3.2f' % dz)
+            plt.plot(z_, p_0)
+            plt.plot(z_, p_1)
+            plt.vlines(z0, 0, 1)
+            plt.vlines(z1, 0, 1)
+            plt.figtext(.7,.7, 'dz = %3.2f' % dz)
             
     def OnExtract(self, event):
         method = self.chMethod.GetStringSelection()
@@ -315,7 +315,7 @@ class PsfExtractor(object):
             mdh['ImageType']='PSF'
 
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -350,7 +350,7 @@ class PsfExtractor(object):
             mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data=psfs, mdh=mdh, titleStub='Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateMultiview(self, event):
@@ -521,7 +521,7 @@ class PsfExtractor(object):
             mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
-            im.defaultExt = '*.psf' #we want to save as PSF by default
+            im.defaultExt = '*.tif' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def write_metadata(self, mdh, mode, axialshift=None):
@@ -543,5 +543,5 @@ class PsfExtractor(object):
 
 
 def Plug(dsviewer):
-    dsviewer.psfExtractor = PsfExtractor(dsviewer)
+    return PsfExtractor(dsviewer)
 

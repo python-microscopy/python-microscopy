@@ -1,7 +1,9 @@
-from pylab import *
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
 
 if __name__ == '__main__':
-    ioff()
+    plt.ioff()
     
     import reactions
     
@@ -14,13 +16,13 @@ if __name__ == '__main__':
     s.initialConditions['A'] = 1
     s.initialConditions['B'] = 1
     
-    t = linspace(.1, 10, 100)
+    t = np.linspace(.1, 10, 100)
     
     res = s.solve(t)
     
     for n in res.dtype.names:
-        plot(t, res[n], label=n)
+        plt.plot(t, res[n], label=n)
     
-    legend()
-    show()
+    plt.legend()
+    plt.show()
 

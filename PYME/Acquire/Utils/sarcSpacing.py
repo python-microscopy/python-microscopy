@@ -21,7 +21,8 @@
 #
 ##################
 
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 #from PYME import cSMI
 import numpy as np
 import wx
@@ -49,14 +50,16 @@ class SarcomereChecker:
         voxy = 0.07
         
         im = self.scope.frameWrangler.currentFrame
-        F = (abs(pylab.fftshift(pylab.fftn(im - im.mean()))) + 1e-2).squeeze()
+        F = (abs(np.fft.fftshift(np.fft.fftn(im - im.mean()))) + 1e-2).squeeze()
 
-        currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
-        if not currVoxelSizeID is None:
-            voxx, voxy = self.scope.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+        #currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory ORDER BY time DESC").fetchone()
+        #if not currVoxelSizeID is None:
+        #    voxx, voxy = self.scope.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            
+        voxx, voxy = self.scope.getPixelSize()
 
-        pylab.figure(2)
-        pylab.clf()
+        plt.figure(2)
+        plt.clf()
 
         xd = F.shape[0]/2.
         yd = F.shape[1]/2.
@@ -64,18 +67,18 @@ class SarcomereChecker:
         cd = xd*2*voxx/5
         #kill central spike
         F[(xd-cd):(xd+cd),(yd-cd):(yd+cd)] = F.mean()
-        pylab.imshow(F.T, interpolation='nearest', cmap=cm.hot)
+        plt.imshow(F.T, interpolation='nearest', cmap=cm.hot)
 
         xd = F.shape[0]/2.
         yd = F.shape[1]/2.
 
-        pylab.plot(xd+(xd*2*voxx/1.8)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/1.8)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=2,label='$1.8 {\mu}m$')
-        pylab.plot(xd+(xd*2*voxx/2.)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/2.)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=1,label='$2 {\mu}m$')
-        pylab.plot(xd+(xd*2*voxx/1.6)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/1.6)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=1,label='$1.6 {\mu}m$')
+        plt.plot(xd+(xd*2*voxx/1.8)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/1.8)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=2,label='$1.8 {\mu}m$')
+        plt.plot(xd+(xd*2*voxx/2.)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/2.)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=1,label='$2 {\mu}m$')
+        plt.plot(xd+(xd*2*voxx/1.6)*np.cos(np.arange(0, 2.1*np.pi, .1)), yd+(xd*2*voxx/1.6)*np.sin(np.arange(0, 2.1*np.pi, .1)), lw=1,label='$1.6 {\mu}m$')
 
-        pylab.xlim(xd - xd*2*voxx/1, xd + xd*2*voxx/1)
-        pylab.ylim(yd - xd*2*voxx/1, yd + xd*2*voxx/1)
-        pylab.legend()
+        plt.xlim(xd - xd*2*voxx/1, xd + xd*2*voxx/1)
+        plt.ylim(yd - xd*2*voxx/1, yd + xd*2*voxx/1)
+        plt.legend()
 
         self.F = F
 

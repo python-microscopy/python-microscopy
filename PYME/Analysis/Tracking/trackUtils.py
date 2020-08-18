@@ -22,7 +22,13 @@
 ################
 import numpy as np
 import matplotlib.pyplot as plt
+
 import mpld3
+import warnings
+if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+    #mpld3 has messed with warnings - undo
+    warnings.filters.pop(0)
+
 import pandas as pd
 import os
 
@@ -35,10 +41,15 @@ class FeaturePlot(object):
             return ''
             
         data = self.clump[key]
+
+        if len(data.shape) >= 2:
+            # FIXME - handle this better. Potentially a kymograph for ndim==2?
+            # FIXME - warn???
+            return ''
             
         plt.ioff()
         f = plt.figure(figsize=(6,2))
-        
+
         if 't' in self.clump.keys():        
             plt.plot(self.clump['t'], data)
         else:

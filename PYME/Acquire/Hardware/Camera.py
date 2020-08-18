@@ -33,7 +33,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-def check_mapexists(mdh, type='dark'):
+def check_mapexists(mdh, type='dark', fill=True):
     import os
     from PYME.IO import clusterIO
     from PYME.IO.FileUtils import nameUtils
@@ -56,20 +56,43 @@ def check_mapexists(mdh, type='dark'):
 
     if clusterIO.exists(cluster_path):
         c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
-        mdh[id] = c_path
+        if fill:
+            mdh[id] = c_path
         return c_path
     elif os.path.exists(local_path):
-        mdh[id] = local_path
+        if fill:
+            mdh[id] = local_path
         return local_path
     else:
         return None
 
 
 class CameraMapMixin(object):
+    def _map_cache_key(self, mdh, map_type):
+        if map_type == 'flatfield':
+            return (map_type, mdh['Camera.SerialNumber'])
+        else:
+            return (map_type, mdh['Camera.SerialNumber'], mdh['Camera.IntegrationTime'])
+        
+    def _fill_camera_map_id(self, mdh, mdh_key, map_type):
+        #create cache if not already present
+        if not hasattr(self, '_camera_map_cache'):
+            self._camera_map_cache = {}
+            
+        cache_key = self._map_cache_key(mdh, map_type)
+        try:
+            map_fn = self._camera_map_cache[cache_key]
+        except KeyError:
+            map_fn = check_mapexists(mdh, map_type, fill=False)
+            self._camera_map_cache[cache_key] = map_fn
+        
+        if not map_fn is None:
+            mdh[mdh_key] = map_fn
+    
     def fill_camera_map_metadata(self, mdh):
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
-        check_mapexists(mdh, type='flatfield')
+        self._fill_camera_map_id(mdh, 'Camera.DarkMapID', map_type='dark')
+        self._fill_camera_map_id(mdh, 'Camera.VarianceMapID', map_type='variance')
+        self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
 
 
 class Camera(object):
@@ -669,7 +692,7 @@ class Camera(object):
 
                 a dictionary with the following entries:
 
-                'ReadNoise' : camera read noise as a standard deviation in units of ADU
+                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
                 'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
                 'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
                     doi: 10.1109/TED.2003.813462
@@ -930,7 +953,7 @@ class MultiviewCameraMixin(object):
 
             Parameters
             ----------
-            views: List
+            views: list
                 views to activate. Should be integers which can be used to index self.multiview_info
 
             Returns
@@ -942,6 +965,7 @@ class MultiviewCameraMixin(object):
             again. This is not special to this function, but rather anytime SetROI gets called.
 
             """
+            views = list(views)  # tuple(int) isn't iterable, make sure we avoid it
             # set the camera FOV to be just large enough so we do most of the cropping where it is already optimized
             self.x_origins, self.y_origins = zip(*[self.view_origins[view] for view in views])
             chip_x_min, chip_x_max = min(self.x_origins), max(self.x_origins)

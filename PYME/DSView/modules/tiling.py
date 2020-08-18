@@ -24,11 +24,10 @@ import wx
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
 
-class tiler:
+from ._base import Plugin
+class Tiler(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
 
         dsviewer.AddMenuItem('Processing', "&Tiling", self.OnTile)
 
@@ -103,6 +102,6 @@ class tiler:
 
 
 def Plug(dsviewer):
-    dsviewer.tiler = tiler(dsviewer)
+    return Tiler(dsviewer)
 
     

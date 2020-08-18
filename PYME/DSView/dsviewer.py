@@ -29,8 +29,11 @@ import wx.lib.agw.aui as aui
 import matplotlib
 matplotlib.use('WxAgg')
 
-import pylab
-pylab.ion()
+# import pylab
+# pylab.ion()
+import matplotlib.pyplot as plt
+plt.ion()
+import numpy as np
 from . import modules
 
 from PYME.DSView import splashScreen
@@ -80,6 +83,9 @@ class DSViewFrame(AUIFrame):
         self.updateHooks = []
         self.statusHooks = []
         self.installedModules = []
+        
+        # will store weakrefs to things that modules previously injected into our namespace
+        #self._module_injections = weakref.WeakValueDictionary()
         
         self.dataChangeHooks = []
 
@@ -195,7 +201,7 @@ class DSViewFrame(AUIFrame):
         self.Layout()
 
         if 'view' in dir(self):
-            sc = pylab.floor(pylab.log2(1.0*self.view.Size[0]/self.do.ds.shape[0]))
+            sc = np.floor(np.log2(1.0*self.view.Size[0]/self.do.ds.shape[0]))
             #print self.view.Size[0], self.do.ds.shape[0], sc
             self.do.SetScale(sc)
             self.view.Refresh()
@@ -224,6 +230,7 @@ class DSViewFrame(AUIFrame):
             self.moduleMenuIDByName[mn] = id
             if mn in self.installedModules:
                 self.mModules.Check(id, True)
+                self.mModules.Enable(id, False)
 
             self.Bind(wx.EVT_MENU, self.OnToggleModule, id=id)
 
@@ -248,6 +255,7 @@ class DSViewFrame(AUIFrame):
         if moduleName in self.installedModules:
             id = self.moduleMenuIDByName[moduleName]
             self.mModules.Check(id, True)
+            self.mModules.Enable(id, False)
 
         self.CreateFoldPanel()
         self._mgr.Update()
@@ -260,9 +268,17 @@ class DSViewFrame(AUIFrame):
         return currPage
 
     
-
-
-
+    def create_overlay_panel(self):
+        from PYME.DSView.OverlaysPanel import OverlayPanel
+        if not 'overlaypanel' in dir(self):
+            self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
+            self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+            pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(
+                False).MinimizeButton(True).MinimizeMode(
+                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.overlaypanel, pinfo2)
+        
+            self.panesToMinimise.append(pinfo2)
     
 
 
@@ -330,7 +346,7 @@ class DSViewFrame(AUIFrame):
         #View3D(self.image.data[])
 
     def OnCloseWindow(self, event):
-        pylab.close('all')
+        plt.close('all')
         if (not self.image.saved):
             dialog = wx.MessageDialog(self, "Save data stack?", "PYME", wx.YES_NO|wx.CANCEL)
             ans = dialog.ShowModal()
@@ -349,6 +365,7 @@ class DSViewFrame(AUIFrame):
 
     def _cleanup(self):
         self.timer.Stop()
+        del(self.image)
         
         AUIFrame._cleanup(self)
 
@@ -405,6 +422,7 @@ class MyApp(wx.App):
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
         op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
+        op.add_option( '--test3d', dest='test3d', help="Show a 3d test image", action="store_true", default=False)
         op.add_option('-d', '--metadata', dest='metadata', help="Load image with specified metadata file", default=None)
         op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
         op.add_option('-r', '--recipe', dest='recipe_filename', help='Recipe to load', default=None)
@@ -417,8 +435,12 @@ class MyApp(wx.App):
             #    md = options.metadata
             print('Loading data')
             if options.test:
-                import pylab
-                im = ImageStack(pylab.randn(100,100))
+                # import pylab
+                im = ImageStack(np.random.randn(100,100))
+            elif options.test3d:
+                # import numpy as np
+                from scipy import ndimage
+                im = ImageStack(ndimage.gaussian_filter(np.random.rand(100,100,100, 2), [20, 20, 20, 0]))
             elif len (args) > 0:
                 im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
             else:
@@ -469,6 +491,7 @@ def main(argv=sys.argv[1:]):
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
+    print('Finished main loop')
 
 
 if __name__ == "__main__":

@@ -83,6 +83,7 @@ Function Documentation
 """
 import six
 import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 #import urllib
 import socket
 import requests
@@ -149,17 +150,33 @@ logger = logging.getLogger(__name__)
 _ns = None
 _ns_lock = threading.Lock()
 
-def get_ns():
-    global _ns
-    with _ns_lock:
-        if _ns is None:
-            #stagger query times
-            time.sleep(3*np.random.rand())
-            _ns = pzc.getNS('_pyme-http')
-            #wait for replies
-            time.sleep(5)
 
-    return _ns
+if config.get('clusterIO-hybridns', True):
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3*np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = hybrid_ns.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+    
+        return _ns
+else:
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3 * np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = pzc.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+        
+        return _ns
             
 
 if not 'sphinx' in sys.modules.keys():
@@ -731,7 +748,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True):
     """
     Get a file from the cluster.
     
@@ -749,6 +766,9 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
         when we get over 100 entries. Under our working assumption that data on the cluster is immutable, this is generally
         safe, with the exception of log files and files streamed using the _aggregate functionality. We can optionally
         request a non-cached version of the file.
+    local_short_circuit: bool
+        if file exists locally, load/read/return contents directly in this thread unless this flag is False in which case
+        we will get the contents through the dataserver over the network.
 
     Returns
     -------
@@ -764,7 +784,7 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
             pass
 
     #look for the file in the local server folder (short-circuit the server)
-    localpath = get_local_path(filename, serverfilter)
+    localpath = get_local_path(filename, serverfilter) if local_short_circuit else None
     if localpath:
         with open(localpath, 'rb') as f:
             return f.read()
@@ -774,7 +794,7 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
     nTries = 1
     while nTries < numRetries and len(locs) == 0:
         #retry, giving a little bit of time for the data servers to come up
-        logger.debug('Could not find file, retrying ...')
+        logger.debug('Could not find %s, retrying ...' % filename)
         time.sleep(1)
         nTries += 1
         locs = locate_file(filename, serverfilter, return_first_hit=True)
@@ -795,10 +815,10 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
             s = _getSession(url)
             r = s.get(url, timeout=.5)
             haveResult = True
-        except (requests.Timeout, requests.ConnectionError) as e:
+        except (requests.Timeout, requests.ConnectionError):
             # s.get sometimes raises ConnectionError instead of ReadTimeoutError
             # see https://github.com/requests/requests/issues/2392
-            logger.exception('Timeout on get file')
+            logger.exception('Timeout on get file %s' % url)
             logger.info('%d retries left' % (numRetries - nTries))
             if nTries == numRetries:
                 raise
@@ -903,7 +923,7 @@ def mirror_file(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def put_file(filename, data, serverfilter=local_serverfilter):
+def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
     """
     Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
     designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
@@ -914,7 +934,7 @@ def put_file(filename, data, serverfilter=local_serverfilter):
         filename collisions cannot occur. In practice this is reasonably easy to achieve when machine generated filenames
         are used, but implies that interfaces which allow the user to specify arbitrary filenames should run through a
         single user interface with external locking (e.g. clusterUI), particularly if there is any chance that multiple
-        users will be creating files simultaeneously.
+        users will be creating files simultaneously.
     
     Parameters
     ----------
@@ -924,6 +944,10 @@ def put_file(filename, data, serverfilter=local_serverfilter):
         the data to put
     serverfilter : string
         the cluster name (optional)
+    timeout: float
+        timeout in seconds for http operations. **Warning:** alter from the default setting of 1s only with extreme care.
+        If operations are timing out it is usually an indication that something else is going wrong and you should usually
+        fix this first. The serverless and lockless architecture depends on having low latency.
 
     Returns
     -------
@@ -951,7 +975,7 @@ def put_file(filename, data, serverfilter=local_serverfilter):
         url = url.encode()
         try:
             s = _getSession(url)
-            r = s.put(url, data=data, timeout=1)
+            r = s.put(url, data=data, timeout=timeout)
             dt = time.time() - t
             #print r.status_code
             if not r.status_code == 200:
@@ -1086,7 +1110,8 @@ if USE_RAW_SOCKETS:
         files : list of tuple
             a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
             
-        serverfilter
+        serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
         Returns
         -------
@@ -1217,7 +1242,8 @@ else:
         files : list of tuple
             a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
             
-        serverfilter
+        serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
         Returns
         -------
@@ -1256,15 +1282,47 @@ def get_status(serverfilter=local_serverfilter):
     
     Parameters
     ----------
-    serverfilter
+    serverfilter: str
+            the cluster name (optional), to select a specific cluster
 
     Returns
     -------
-    
-    a list of status dictionaries
+    status_list: list
+        a status dictionary for each node. See PYME.cluster.HTTPDataServer.updateStatus
+            Disk: dict
+                total: int
+                    storage on the node [bytes]
+                used: int
+                    used storage on the node [bytes]
+                free: int
+                    available storage on the node [bytes]
+            CPUUsage: float
+                cpu usage as a percentile
+            MemUsage: dict
+                total: int
+                    total RAM [bytes]
+                available: int
+                    free RAM [bytes]
+                percent: float
+                    percent usage
+                used: int
+                    used RAM [bytes], calculated differently depending on platform
+                free: int
+                    RAM which is zero'd and ready to go [bytes]
+                [other]:
+                    more platform-specific fields
+            Network: dict
+                send: int
+                    bytes sent per second since the last status update
+                recv: int
+                    bytes received per second since the last status update
+            GPUUsage: list of float
+                [optional] returned for NVIDIA GPUs only. Should be compute usage per gpu as percent?
+            GPUMem: list of float
+                [optional] returned for NVIDIA GPUs only. Should be memory usage per gpu as percent?
+
 
     """
-    import json
     global _cached_status, _cached_status_expiry
 
     serverfilter = (serverfilter)

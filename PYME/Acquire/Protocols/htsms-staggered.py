@@ -8,7 +8,7 @@ taskList = [
     T(8000, scope.l560.TurnOn),
     T(maxint, scope.turnAllLasersOff),
     T(maxint, scope.focus_lock.EnableLock),
-    # T(maxint, scope.spoolController.LaunchAnalysis)  # todo - add this back in
+    T(maxint, scope.spoolController.LaunchAnalysis)
 ]
 
 metaData = [
@@ -18,6 +18,6 @@ metaData = [
 preflight = []  # no preflight checks
 
 # must be defined for protocol to be discovered
-PROTOCOL = TaskListProtocol(taskList, metaData, preflight)
+PROTOCOL = TaskListProtocol(taskList, metaData, preflight, filename=__file__)
 PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 1, 1000, metaData, preflight, slice_order='triangle',
-                                        require_camera_restart=False)
+                                        require_camera_restart=False, filename=__file__)

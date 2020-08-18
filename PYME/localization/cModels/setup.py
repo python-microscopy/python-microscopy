@@ -27,7 +27,7 @@ import sys
 #import os
 
 if sys.platform == 'darwin':#MacOS
-    linkArgs = []
+    linkArgs = ['-headerpad_max_install_names']
 else:
     linkArgs = ['-static-libgcc', '-lm']
 
@@ -38,7 +38,7 @@ def configuration(parent_package = '', top_path = None):
     config.add_extension('gauss_app',
         sources=['gauss_ap.c'],
         include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
         extra_link_args=linkArgs)
 
     return config

@@ -4,7 +4,8 @@ from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShade
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 import dispatch
 
@@ -271,14 +272,16 @@ class PointCloudRenderLayer(EngineLayer):
 
     @property
     def default_view(self):
-        from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
+        from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor, TextEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
     
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour', visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
-                     Group(Item('cmap', label='LUT'), Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']"), Item('point_size'))])
+                     Group(Item('cmap', label='LUT'),
+                           Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']", editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
+                           Item('point_size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

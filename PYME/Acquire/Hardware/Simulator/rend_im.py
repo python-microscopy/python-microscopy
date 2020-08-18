@@ -96,19 +96,18 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
 
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
+    
+        vs = md.voxelsize_nm
+        IntXVals = vs.x*mgrid[-150:150]
+        IntYVals = vs.y*mgrid[-150:150]
+        IntZVals = vs.z*mgrid[-30:30]
 
-        IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
-        IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
-        IntZVals = 1e3*md.voxelsize.z*mgrid[-30:30]
-
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = arange(0,1.01,.01)
 
         #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
-        im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
+        im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=vs.x, **kwargs)
         
         #print('foo')
         #print((interpModel.strides, interpModel.shape))
@@ -124,46 +123,51 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
                                                                                                               
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
-                                                                                                              
-        IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
-        IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
+    
+        vs = md.voxelsize_nm
+        IntXVals = vs.x*mgrid[-150:150]
+        IntYVals = vs.y*mgrid[-150:150]
         IntZVals = 20*mgrid[-60:60]
                                                                                                               
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
+        dx, dy = vs.x, vs.y
         dz = 20.#md.voxelsize.z*1e3
                                                                                                               
         for i, phase in enumerate(phases):
             print('Simulating 4Pi PSF for channel %d' % i)
             #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).as
-            im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
+            im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=vs.x, **kwargs)
                                                                                                                   
             zm =  int(len(IntZVals)/2)
             norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
             interpModel_by_chan[i] = np.maximum(im/norm, 0) #normalise to 1 and clip
 
+def get_psf():
+    from PYME.IO.image import ImageStack
+    from PYME.IO.MetaDataHandler import NestedClassMDHandler
+    
+    mdh = NestedClassMDHandler()
+    mdh['ImageType'] = 'PSF'
+    mdh['voxelsize.x'] = dx/1e3
+    mdh['voxelsize.y'] = dy/1e3
+    mdh['voxelsize.z'] = dz/1e3
+    
+    im = ImageStack(data=[c for c in interpModel_by_chan if not c is None], mdh=mdh, titleStub='Simulated PSF')
+    
+    return im
+
 
 def setModel(modName, md):
     global IntXVals, IntYVals, IntZVals, dx, dy, dz
+    from PYME.IO import load_psf
     
-    mf = open(getFullExistingFilename(modName), 'rb')
-    mod, voxelsize = pickle.load(mf)
-    mf.close()
-    
+    mod, vs_nm = load_psf.load_psf(modName)
     mod = resizePSF(mod, interpModel().shape)
 
-    #if not voxelsize.x == md.voxelsize.x:
-    #    raise RuntimeError("PSF and Image voxel sizes don't match")
+    IntXVals = vs_nm.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+    IntYVals = vs_nm.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+    IntZVals = vs_nm.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
-    IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-    IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-    IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
-
-    dx = voxelsize.x*1e3
-    dy = voxelsize.y*1e3
-    dz = voxelsize.z*1e3
-
-    #interpModel = mod
+    dx, dy, dz = vs_nm
 
     #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
     interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip

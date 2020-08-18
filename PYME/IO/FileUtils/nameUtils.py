@@ -38,11 +38,11 @@ def getUsername():
     if sys.platform == 'win32':
         import win32api
         return '_'.join(win32api.GetUserName().split(' '))
-    if sys.platform.startswith('darwin'):
-        return os.environ['USER']
-    else: #linux
+    else: # OSX / linux
+        import getpass
         #return os.getlogin() #broken when not runing from command line
-        return os.environ.get('USER', 'nobody')
+        #return os.environ.get('USER', 'nobody')
+        return getpass.getuser()
 
 
 dtn = datetime.datetime.now()
@@ -122,20 +122,24 @@ def genResultFileName(dataFileName, create=True):
 def genClusterResultFileName(dataFileName, create=True):
     """Generates a filename for saving fit results based on the original image
     filename"""
+    from PYME import config
     fn, ext = os.path.splitext(dataFileName) #remove extension
+    
+    if fn.upper().startswith('PYME-CLUSTER://'):
+        # std case - we are analysing a file that is already on the cluster
 
-    clusterfilter = fn.split('://')[1].split('/')[0]
-    rel_name = fn.split('://%s/' % clusterfilter)[1]
+        clusterfilter = fn.split('://')[1].split('/')[0]
+        rel_name = fn.split('://%s/' % clusterfilter)[1]
+    else:
+        # special case for cluster of one uses where we didn't open file using a cluster URI
+        # if not fn.startswith('/'):
+        #     # filename is relative to PYMEDATATDIR
+        #     fn = getFullFilename(fn)
+            
+        rel_name = getRelFilename(fn, config.get('dataserver-root'))
 
     dir_name = os.path.dirname(rel_name)
     file_name = os.path.basename(rel_name)
-
-    #fn = fn.replace(':', '/')
-    #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
-    #p = os.path.join(*(seps.split(resultsdirPatternShort) + seps.split(fn)[-2:])) %dateDict
-
-    #if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
-    #    os.makedirs(os.path.split(p)[0])
 
     return '/'.join([dir_name, 'analysis', file_name]) + '.h5r'
 
@@ -228,7 +232,7 @@ def getFullExistingFilename(relFilename):
         return getFullFilename(relFilename)
 
 
-def getRelFilename(filename):
+def getRelFilename(filename, datadir=datadir):
     """returns the tail of filename - ie that portion which is underneath the
     PYMEDATADIR directory"""
     filename = translateSeparators(filename)

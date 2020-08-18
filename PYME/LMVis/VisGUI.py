@@ -39,7 +39,7 @@ import sys
 
 import matplotlib
 matplotlib.use('wxagg')
-import pylab
+# import pylab
 
 from PYME import config
 from PYME.misc import extraCMaps
@@ -56,6 +56,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
+logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+logging.getLogger('PIL.PngImagePlugin').setLevel(logging.ERROR)
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
@@ -113,7 +116,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
-              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
+              introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
@@ -195,6 +198,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     self.pipeline.recipe.update_from_yaml(recipe)
                     #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
+
+                self._recipe_editor.update_recipe_text()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
@@ -237,7 +242,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         while len(self.pipeline.filesToClose) > 0:
             self.pipeline.filesToClose.pop().close()
 
-        pylab.close('all')
+        # pylab.close('all')
+        matplotlib.pyplot.close('all')
         self._cleanup()
 
 
@@ -393,8 +399,13 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.OpenChannel(filename)
 
     def OnOpenRaw(self, event):
-        from PYME.DSView import ViewIm3D, ImageStack
-        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        from PYME.IO import image
+        from PYME.DSView import ViewIm3D
+        try:
+            ViewIm3D(image.ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        except image.FileSelectionError:
+            # the user canceled the open dialog
+            pass
         
     def AddExtrasMenuItem(self,label, callback):
         """Add an item to the VisGUI extras menu.
@@ -473,11 +484,10 @@ def main():
         visFr.RefreshView()
         
 if __name__ == '__main__':
-    #from PYME.util import mProfile
-    #mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
+    from PYME.util import mProfile
+    mProfile.profileOn(['pipeline.py', 'tabular.py'])
     main()
-    #mProfile.report()
-
+    mProfile.report()
 
 def ipython_visgui(filename=None, **kwargs):
     import PYME.config
@@ -491,4 +501,5 @@ def ipython_visgui(filename=None, **kwargs):
     visFr.Show()
     return visFr
     
-    
+def ipython_pymevisualize(filename=None, **kwargs):
+    return ipython_visgui(filename, **kwargs)

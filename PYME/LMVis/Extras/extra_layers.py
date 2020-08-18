@@ -123,7 +123,7 @@ def open_surface(visFr):
         
 def save_surface(visFr):
     import wx
-    from PYME.experimental import triangle_mesh
+    from PYME.experimental import _triangle_mesh as triangle_mesh
     
     surf_keys = [key for key, mesh in visFr.pipeline.dataSources.items() if isinstance(mesh, triangle_mesh.TriangleMesh)]
     
@@ -144,7 +144,8 @@ def save_surface(visFr):
 
     filename = wx.FileSelector('Save surface as...',
                                default_extension='stl',
-                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
+                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply',
+                               flags=wx.FD_SAVE)
 
     if not filename == '':
         ext = filename.split('.')[-1]
@@ -174,6 +175,31 @@ def save_surface(visFr):
         else:
             raise ValueError('Invalid file extension .' + str(ext))
     
+def distance_to_surface(visFr):
+    from PYME.recipes.surface_fitting import DistanceToMesh
+    from PYME.experimental._triangle_mesh import TriangleMesh
+
+    pipeline = visFr.pipeline
+
+    dist_name = visFr.pipeline.new_ds_name('distance')
+
+    mesh_names = [k for k, v in pipeline.dataSources.items() if isinstance(v, TriangleMesh)]
+    
+    dlg = wx.SingleChoiceDialog(visFr, "Measure distance to which mesh?", "Choose a mesh", mesh_names)
+
+    if not dlg.ShowModal():
+            dlg.Destroy()
+            return
+    else:
+        surf_name = dlg.GetStringSelection()
+        dlg.Destroy()
+
+    recipe = visFr.pipeline.recipe
+    dts = DistanceToMesh(recipe, input_mesh=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)
+
+    recipe.add_module(dts)
+    recipe.execute()
+    visFr.pipeline.selectDataSource(dist_name)
  
 def estimate_density(visFr):
     from PYME.recipes.pointcloud import LocalPointDensity
@@ -289,3 +315,4 @@ def Plug(visFr):
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
+    visFr.AddMenuItem('Mesh>Analysis', 'Distance to mesh', lambda e: distance_to_surface(visFr))

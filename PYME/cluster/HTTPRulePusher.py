@@ -18,6 +18,7 @@ import random
 import hashlib
 
 from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
 from six import string_types
 
@@ -28,13 +29,14 @@ logger = logging.getLogger(__name__)
 
 def _getTaskQueueURI(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-taskdist')
+    ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
     
     def _search():
         for name, info in ns.get_advertised_services():
             if name.startswith('PYMERuleServer'):
+                print(info, info.address)
                 queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
                 
     _search()
@@ -46,10 +48,12 @@ def _getTaskQueueURI(n_retries=2):
 
     try:
         #try to grab the distributor on the local computer
-        return queueURLs[compName]
-    except KeyError:
+        local_queues = [q for q in queueURLs if compName in q]
+        logger.debug('local_queues: %s' % local_queues)
+        return queueURLs[local_queues[0]]
+    except (KeyError, IndexError):
         #if there is no local distributor, choose one at random
-        logging.info('no local rule server, choosing one at random')
+        logger.info('no local rule server, choosing one at random')
         return random.choice(list(queueURLs.values()))
 
 def verify_cluster_results_filename(resultsFilename):
@@ -176,6 +180,8 @@ class HTTPRulePusher(object):
             DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
         self.ds = DataSource(self.dataSourceID)
         
+        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
+        
         #set up results file:
         logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
@@ -219,7 +225,7 @@ class HTTPRulePusher(object):
     def post_rule(self):
         rule = {'template' : self._taskTemplate}
 
-        if self.ds.isComplete():
+        if self.ds.is_complete:
             queueSize = self.ds.getNumSlices()
         else:
             queueSize = 1e6
@@ -275,7 +281,7 @@ class HTTPRulePusher(object):
         
         while (self.doPoll == True):
             framesOutstanding = self.fileTasksForFrames()
-            if self.ds.isComplete() and not (framesOutstanding > 0):
+            if self.ds.is_complete and not (framesOutstanding > 0):
                 logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
             else:

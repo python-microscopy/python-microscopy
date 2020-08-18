@@ -31,7 +31,7 @@ class VoxSizeDialog(wx.Dialog):
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer2.Add(wx.StaticText(self, -1, u'x [\u03BCm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(wx.StaticText(self, -1, u'x\u00A0[\u00B5m]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tVoxX = wx.TextCtrl(self, -1, '0.08')
 
         sizer2.Add(self.tVoxX, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -39,7 +39,7 @@ class VoxSizeDialog(wx.Dialog):
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer2.Add(wx.StaticText(self, -1, u'y [\u03BCm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(wx.StaticText(self, -1, u'y\u00A0[\u00B5m]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tVoxY = wx.TextCtrl(self, -1, '0.08')
 
         sizer2.Add(self.tVoxY, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -47,7 +47,7 @@ class VoxSizeDialog(wx.Dialog):
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer2.Add(wx.StaticText(self, -1, u'z [\u03BCm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(wx.StaticText(self, -1, u'z\u00A0[\u00B5m]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tVoxZ = wx.TextCtrl(self, -1, '0.2')
 
         sizer2.Add(self.tVoxZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)

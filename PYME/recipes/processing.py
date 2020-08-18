@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -515,6 +515,10 @@ class CaWave(object):
     def direction_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
         
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
@@ -548,6 +552,10 @@ class CaWave(object):
     def velocity_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
     
         plt.ioff()
         f = plt.figure(figsize=(4, 3))
@@ -1043,13 +1051,42 @@ class ProjectOnVector(ModuleBase):
         namespace[self.outputNameS] = im
         
 
+class PSFFile(FileOrURI):
+    '''Custom trait that verifies that the file can be loaded as a PSF'''
+    
+    info_text = 'a file name for a pyme PSF (.tif or .psf)'
+    
+    def validate(self, object, name, value):
+        value = FileOrURI.validate(self, object, name, value)
+        
+        # Traitsui hangs up if a file doesn't validate correctly and doesn't allow selecting a replacement - disable validation for now :(
+        # FIXME
+        return value
+        
+        if value == '':
+            return value
+        
+        try:
+            assert(value.endswith('.tif') or value.endswith('.psf')) # is the file a valid psf format?
+            
+            # try loading as a PSF
+            object.GetPSF((70., 70., 200.), psfFilename=value)
+            return value
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            
+        self.error(object, name, value)
+        
+        
+
 @register_module('Deconvolve')         
 class Deconvolve(Filter):
     offset = Float(0)
     method = Enum('Richardson-Lucy', 'ICTM') 
     iterations = Int(10)
     psfType = Enum('file', 'bead', 'Lorentzian', 'Gaussian')
-    psfFilename = CStr('') #only used for psfType == 'file'
+    psfFilename = PSFFile('', exists=True) #only used for psfType == 'file'
     lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     gaussianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
     beadDiameter = Float(200.) #only used for psfType == 'bead'
@@ -1057,16 +1094,18 @@ class Deconvolve(Filter):
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
     zPadding = Int(0) # padding along the z axis
     
+    processFramesIndividually = False # Make deconvolution 3D by default
+    
     _psfCache = {}
     _decCache = {}
 
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item(name='outputName'),
-                    Item(name='processFramesIndividually'),
+                    Item(name='processFramesIndividually', label='2D'),
                     Group(Item(name='method'),
                           Item(name='iterations'),
                           Item(name='offset'),
@@ -1085,14 +1124,23 @@ class Deconvolve(Filter):
                 
 
     
-    def GetPSF(self, vshint):
+    def GetPSF(self, vshint, psfFilename=None):
         from PYME.IO.load_psf import load_psf
-        psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint)
+        
+        if psfFilename is None:
+            psfFilename = self.psfFilename
+        
+        psfKey = (self.psfType, psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint, self.processFramesIndividually)
         
         if not psfKey in self._psfCache.keys():
             if self.psfType == 'file':
-                psf, vs = load_psf(self.psfFilename)
+                psf, vs = load_psf(psfFilename)
                 psf = np.atleast_3d(psf)
+
+                if self.processFramesIndividually and psf.shape[2] > 1:
+                    raise RuntimeError('Selected 2D deconvolution but PSF is 3D')
+                elif (not self.processFramesIndividually) and (psf.shape[2] == 1):
+                    raise RuntimeError('Selected 3D deconvolution but PSF is 2D')
                 
                 vsa = np.array([vs.x, vs.y, vs.z])
                 
@@ -1102,6 +1150,10 @@ class Deconvolve(Filter):
                 self._psfCache[psfKey] = (psf, vs)        
             elif (self.psfType == 'Lorentzian'):
                 from scipy import stats
+                
+                if not self.processFramesIndividually:
+                    raise RuntimeError('Lorentzian PSF only supported for 2D deconvolution')
+                
                 sc = self.lorentzianFWHM/2.0
                 X, Y = np.mgrid[-30.:31., -30.:31.]
                 R = np.sqrt(X*X + Y*Y)
@@ -1111,7 +1163,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
                     
@@ -1119,6 +1171,10 @@ class Deconvolve(Filter):
                 
             elif (self.psfType == 'Gaussian'):
                 from scipy import stats
+                
+                if not self.processFramesIndividually:
+                    raise RuntimeError('Gaussian PSF only supported for 2D deconvolution')
+                
                 sc = self.gaussianFWHM/2.35
                 X, Y = np.mgrid[-30.:31., -30.:31.]
                 R = np.sqrt(X*X + Y*Y)
@@ -1128,7 +1184,7 @@ class Deconvolve(Filter):
                 else:
                     vx = sc/2.
                 
-                vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+                vs = type('vs', (object,), dict(x=vx, y=vx))
                 
                 psf = np.atleast_3d(stats.norm.pdf(vx*R, scale=sc))
                     
@@ -1137,7 +1193,11 @@ class Deconvolve(Filter):
                 from PYME.Deconv import beadGen
                 psf = beadGen.genBeadImage(self.beadDiameter/2, vshint)
                 
-                vs = type('vs', (object,), dict(x=vshint[0]/1e3, y=vshint[1]/1e3))
+                if self.processFramesIndividually:
+                    # project our PSF if we are doing a 2D deconvolution.
+                    psf=np.atleast_3d(psf.sum(2))
+                
+                vs = type('vs', (object,), dict(x=vshint[0], y=vshint[1]))
                 
                 self._psfCache[psfKey] = (psf/psf.sum(), vs)
                 
@@ -1298,7 +1358,7 @@ class DeconvolveMotionCompensating(Deconvolve):
         return res
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
@@ -1673,24 +1733,24 @@ class AverageFramesByZStep(ModuleBase):
     output = Output('averaged_by_frame')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis import piezo_movement_correction
         from scipy.stats import mode
         import time
 
         image_stack = namespace[self.input_image]
 
         if self.input_zvals == '':
-            # z from events if we can
+            # z from events
             frames = np.arange(image_stack.data.shape[2], dtype=int)
-            
-            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
-            z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
-                                                          image_stack.mdh['StartTime'],
-                                                          image_stack.mdh['Protocol.PiezoStartPos'])
-            z_vals = z_mapping(frames)
+
+            z_vals = piezo_movement_correction.correct_target_positions(frames, image_stack.events, image_stack.mdh)
         else:
             #z values are provided as input
             z_vals = namespace[self.input_zvals][self.z_column_name]
+        
+        # later we will mash z with %3.3f, round here so we don't duplicate steps
+        # TODO - make rounding precision a parameter?
+        z_vals = np.round(z_vals, decimals=3)
 
         # make sure everything is sorted. We'll carry the args to sort, rather than creating another full array
         frames_z_sorted = np.argsort(z_vals)
@@ -1754,7 +1814,7 @@ class ResampleZ(ModuleBase):
     output = Output('regular_stack')
 
     def execute(self, namespace):
-        from PYME.Analysis import piecewiseMapping
+        from PYME.Analysis import piezo_movement_correction
         from scipy.interpolate import RegularGridInterpolator
 
         stack = namespace[self.input]
@@ -1762,11 +1822,7 @@ class ResampleZ(ModuleBase):
         # grab z from events if we can
         frames = np.arange(stack.data.shape[2], dtype=int)
 
-        # GeneratePMFromEventList internally handles converting time stamps to frame numbers
-        z_mapping = piecewiseMapping.GeneratePMFromEventList(stack.events, stack.mdh,
-                                                             stack.mdh['StartTime'],
-                                                             stack.mdh['Protocol.PiezoStartPos'])
-        z_vals = z_mapping(frames)
+        z_vals = piezo_movement_correction.correct_target_positions(frames, stack.events, stack.mdh)
 
         x = np.arange(0, stack.mdh['voxelsize.x'] * stack.data.shape[0], stack.mdh['voxelsize.x'])
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
@@ -1774,10 +1830,15 @@ class ResampleZ(ModuleBase):
         # generate grid for sampling
         xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
                                  indexing='ij')
-
+        # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
+        uni, counts = np.unique(z_vals, return_counts=True)
+        if np.any(counts > 1):
+            raise RuntimeError('Resampling requires one frame per z-step. Please run AverageFramesByZStep first')
+        I = np.argsort(z_vals)
+        sorted_z_vals = z_vals[I]
         regular = []
         for ci in range(stack.data.shape[3]):
-            interp = RegularGridInterpolator((x, y, z_vals), stack.data[:, :, :, ci], method='linear')
+            interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
         regular_stack = ImageStack(regular, mdh=stack.mdh)
@@ -1959,3 +2020,27 @@ class StatisticsByFrame(ModuleBase):
             pass
             
         namespace[self.output_name] = res
+
+@register_module('DarkAndVarianceMap')
+class DarkAndVarianceMap(ModuleBase):
+    input = Input('input')
+    output_variance = Output('variance')
+    output_dark = Output('dark')
+    dark_threshold = Float(1e4)  # this really should depend on the gain mode (12bit vs 16 bit etc)
+    variance_threshold = Float(300**2)  # again this is currently picked fairly arbitrarily
+    blemish_variance = Float(1e8) #set broken pixels to super high variance)
+    start = Int(0)
+    end = Int(-1)
+
+    def execute(self, namespace):
+        from PYME.Analysis import gen_sCMOS_maps
+
+        image = namespace[self.input]
+        
+        dark_map, variance_map = gen_sCMOS_maps.generate_maps(image, self.start, self.end,
+                                                              darkthreshold=self.dark_threshold,
+                                                              variancethreshold=self.variance_threshold,
+                                                              blemishvariance=self.blemish_variance)
+
+        namespace[self.output_dark] = dark_map
+        namespace[self.output_variance] = variance_map

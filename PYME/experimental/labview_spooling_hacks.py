@@ -28,6 +28,8 @@ def spoof_focus_from_metadata(mdh):
     try:
         frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
             'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
+        position = None
+        assert mdh['StackSettings.StepSize'] > 0  # np.arange will fail with a step size of 0 
         position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
                              mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
                                  'StackSettings.StepSize'], mdh['StackSettings.StepSize'])

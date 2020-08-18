@@ -24,12 +24,11 @@ import wx
 #import pylab
 #from PYME.IO.image import ImageStack
 
-class cropper:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
+from ._base import Plugin
 
-        self.image = dsviewer.image
+class Cropper(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem("Processing", "&Crop\tCtrl-Shift-D", self.OnCrop)
         dsviewer.AddMenuItem("Processing", "Diagonal Composite", self.OnDiagSplit)
@@ -40,12 +39,9 @@ class cropper:
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        #dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
-
-        #if dlg.ShowModal() == wx.ID_OK:
-            #sigmas = eval(dlg.GetValue())
-            #print sigmas
-            #print self.images[0].img.shape
+        if not (self.do.selectionMode == self.do.SELECTION_RECTANGLE):
+            wx.MessageBox('Cropping only supported for rectangular selections\n For non-rectangular masking see the `annotation` module', 'Error', wx.OK|wx.ICON_ERROR)
+            return
 
         x0, x1, y0, y1, z0, z1 = self.do.sorted_selection
         
@@ -141,7 +137,7 @@ class cropper:
 
 
 def Plug(dsviewer):
-    dsviewer.cropper = cropper(dsviewer)
+    return Cropper(dsviewer)
 
 
 

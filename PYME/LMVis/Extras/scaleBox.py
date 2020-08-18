@@ -54,7 +54,7 @@ class ScaleBoxPanel(DockedPanel):
         color_button.Bind(wx.EVT_BUTTON, lambda e: self.pick_color())
         show_button.Bind(wx.EVT_BUTTON, lambda e: self.show_box())
 
-        grid_sizer = wx.GridSizer(3, 1)
+        grid_sizer = wx.GridSizer(rows=3, cols=1, vgap=1, hgap=1)
         horizontal_box = wx.BoxSizer(wx.HORIZONTAL)
         horizontal_box.Add(x_button, 1, flag=wx.EXPAND | wx.ALL)
         horizontal_box.Add(y_button, 1, flag=wx.EXPAND | wx.ALL)

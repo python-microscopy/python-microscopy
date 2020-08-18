@@ -13,7 +13,8 @@ import os
 
 
 import numpy
-import pylab
+# import pylab
+import matplotlib.cm
 
 #import PYME.ui.autoFoldPanel as afp
 
@@ -38,14 +39,11 @@ def debugPrint(msg):
         
 
 from PYME.LMVis import visCore
+from ._base import Plugin
 
-class LMDisplay(visCore.VisGUICore):    
+class LMDisplay(visCore.VisGUICore, Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        
-        self.image = dsviewer.image
-        self.view = dsviewer.view
-        self.do = dsviewer.do
+        Plugin.__init__(self, dsviewer)
 
         if 'fitResults' in dir(self.image):
             self.fitResults = self.image.fitResults
@@ -126,20 +124,19 @@ class LMDisplay(visCore.VisGUICore):
    
 
     def GenResultsView(self):
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        voxx, voxy = self.image.voxelsize_nm
         
         self.SetFitInfo()
 
         from PYME.LMVis import gl_render
         self.glCanvas = gl_render.LMGLCanvas(self.dsviewer, False, vp = self.do, vpVoxSize = voxx)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow
+        self.glCanvas.cmap = matplotlib.cm.gist_rainbow
         self.glCanvas.pointSelectionCallbacks.append(self.OnPointSelect)
 
         self.dsviewer.AddPage(page=self.glCanvas, select=True, caption='VisLite')
 
-        xsc = self.image.data.shape[0]*1.0e3*self.image.mdh.getEntry('voxelsize.x')/self.glCanvas.Size[0]
-        ysc = self.image.data.shape[1]*1.0e3*self.image.mdh.getEntry('voxelsize.y')/ self.glCanvas.Size[1]
+        xsc = self.image.data.shape[0]*voxx/self.glCanvas.Size[0]
+        ysc = self.image.data.shape[1]*voxy/ self.glCanvas.Size[1]
 
         if xsc > ysc:
             self.glCanvas.setView(0, xsc*self.glCanvas.Size[0], 0, xsc*self.glCanvas.Size[1])
@@ -154,8 +151,8 @@ class LMDisplay(visCore.VisGUICore):
         
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
-        voxx = 1e3*self.image.mdh.getEntry('voxelsize.x')
-        voxy = 1e3*self.image.mdh.getEntry('voxelsize.y')
+        voxx, voxy = self.image.voxelsize_nm
+        
         self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
@@ -177,8 +174,9 @@ class LMDisplay(visCore.VisGUICore):
         
         cand = dist.argmin()
         
-        self.dsviewer.do.xp = xp/(1.0e3*self.image.mdh.getEntry('voxelsize.x'))
-        self.dsviewer.do.yp = yp/(1.0e3*self.image.mdh.getEntry('voxelsize.y'))
+        vx, vy, _ = self.image.voxelsize_nm
+        self.dsviewer.do.xp = xp/vx
+        self.dsviewer.do.yp = yp/vy
         self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
@@ -241,7 +239,7 @@ class LMDisplay(visCore.VisGUICore):
 #    def OnProgDispColourChange(self, event):
 #        #print 'foo'
 #        self.analDispMode = self.chProgDispColour.GetStringSelection()
-#        self.analRefresh()
+#        self.refresh_analysis()
 #
 #    def OnProgDispCMapChange(self, event):
 #        #print 'foo'
@@ -249,7 +247,7 @@ class LMDisplay(visCore.VisGUICore):
 
    
 
-#    def analRefresh(self):
+#    def refresh_analysis(self):
 #        newNumAnalysed = self.tq.getNumberTasksCompleted(self.image.seriesName)
 #        if newNumAnalysed > self.numAnalysed:
 #            self.numAnalysed = newNumAnalysed
@@ -321,12 +319,6 @@ class LMDisplay(visCore.VisGUICore):
     
 
 def Plug(dsviewer):
-    dsviewer.LMDisplay = LMDisplay(dsviewer)
-
-    if not 'overlaypanel' in dir(dsviewer):    
-        dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
-        dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
-        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
+    dsviewer.create_overlay_panel()
     
-        dsviewer.panesToMinimise.append(pinfo2)
+    return LMDisplay(dsviewer)

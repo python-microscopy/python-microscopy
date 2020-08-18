@@ -1,5 +1,7 @@
-from pylab import *
-ioff()
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
+plt.ioff()
 
 from reactions import Reaction, System, Stimulus
 from discreteReactions import DiscreteModel
@@ -110,11 +112,11 @@ def dyedyemodt(p, t):
 
 def plotInitialDecay():
     from PYME.Analysis.BleachProfile import rawIntensity
-    t = linspace(1, 1e5, 10000)
+    t = np.linspace(1, 1e5, 10000)
 
     res = s.solve(t)
 
-    figure()
+    plt.figure()
 
     toplot = ['S0', 'T1', 'R', 'X']#, 'O2', 'q']
 
@@ -122,24 +124,24 @@ def plotInitialDecay():
         lw = 2
         if n == 'S0':
             lw = 3
-        plot((t/1e6), res[n], label=n, lw=lw)
+        plt.plot((t/1e6), res[n], label=n, lw=lw)
 
-    ylim(0, 1.1*s.initialConditions['S0'])
+    plt.ylim(0, 1.1*s.initialConditions['S0'])
 
-    legend()
-    xlabel('Time [s]')
-    ylabel('Concentration [M/L]')
+    plt.legend()
+    plt.xlabel('Time [s]')
+    plt.ylabel('Concentration [M/L]')
     
-    figure()
+    plt.figure()
     s0 = res['S0']
     t_ = t/1e6
     
-    loglog(t_, s0)
+    plt.loglog(t_, s0)
     
     fr = rawIntensity.FitModel(dyedyemodt, [s0[0], t_[1] - t_[0], 1.], s0, t_)
     print(fr[0])
     
-    loglog(t_, dyedyemodt(fr[0], t_))
+    plt.loglog(t_, dyedyemodt(fr[0], t_))
 
 
     #detected intensity
@@ -148,17 +150,17 @@ def plotInitialDecay():
 
 def emod(p, t):
     A, tau = p
-    return A*exp(-t/tau)
+    return A*np.exp(-t/tau)
 
 def stateLifetimes(spec, concs):
     from PYME.Analysis._fithelpers import * 
 
-    figure()
+    plt.figure()
 
     constants={'q':10e-3, 'O2':0.05*air_sat_O2_conc}
     I = Stimulus(0, [], [])
 
-    t = linspace(1, 10e6, 1000)
+    t = np.linspace(1, 10e6, 1000)
 
     tXs = []
     tRs = []
@@ -185,15 +187,15 @@ def stateLifetimes(spec, concs):
         print(max(tXs[-1], tRs[-1]))
         #t = linspace(1, 5e6*max(max(tXs[-1], tRs[-1]), 1e-3), 1000)
 
-    loglog(concs, tXs, label='X', lw=2)
-    loglog(concs, tRs, label='R', lw=2)
+    plt.loglog(concs, tXs, label='X', lw=2)
+    plt.loglog(concs, tRs, label='R', lw=2)
 
-    plot([nConc, nConc], ylim(), 'k--')
+    plt.plot([nConc, nConc], plt.ylim(), 'k--')
 
-    ylabel('Time constant [s]')
-    xlabel('[%s]' % spec)
+    plt.ylabel('Time constant [s]')
+    plt.xlabel('[%s]' % spec)
 
-    legend()
+    plt.legend()
 
 def stateLifetimes2(spec, concs, r, labelAddition = '',  constants={'q':10e-3, 'O2':0.1*air_sat_O2_conc}, **kwargs):
     lineSpec = {'lw':2}
@@ -204,7 +206,7 @@ def stateLifetimes2(spec, concs, r, labelAddition = '',  constants={'q':10e-3, '
     #constants={'q':10e-3, 'O2':0.1*air_sat_O2_conc}
     I = Stimulus(0, [], [])
 
-    t = linspace(1, 10e6, 1000)
+    t = np.linspace(1, 10e6, 1000)
 
     tXs = []
     tRs = []
@@ -228,17 +230,17 @@ def stateLifetimes2(spec, concs, r, labelAddition = '',  constants={'q':10e-3, '
         s.initialConditions[spec] = concs[i]
         rates.append(s.GradFcn(0, s.initialConditions.view('f8')).view(s.dtype))
 
-    rates = hstack(rates)
+    rates = np.hstack(rates)
 
-    loglog(concs, 1e-6/(-rates['X']/initConc), c = 'b', label='X' + labelAddition, **lineSpec)
-    loglog(concs, 1e-6/(-rates['R']/initConc), c = 'g', label='R' + labelAddition, **lineSpec)
+    plt.loglog(concs, 1e-6/(-rates['X']/initConc), c = 'b', label='X' + labelAddition, **lineSpec)
+    plt.loglog(concs, 1e-6/(-rates['R']/initConc), c = 'g', label='R' + labelAddition, **lineSpec)
 
-    plot([nConc, nConc], ylim(), 'k--')
+    plt.plot([nConc, nConc], plt.ylim(), 'k--')
 
-    ylabel('Dark state lifetime [s]')
-    xlabel('[%s]' % spec)
+    plt.ylabel('Dark state lifetime [s]')
+    plt.xlabel('[%s]' % spec)
 
-    legend()
+    plt.legend()
 
 def dyeConc2(concs):
     constants={'q':5e-3, 'O2':0.1*air_sat_O2_conc}
@@ -255,21 +257,21 @@ def dyeConc2(concs):
 
         rates.append(s.GradFcn(0, res.view('f8')).view(s.dtype))
 
-    rates = hstack(rates)
+    rates = np.hstack(rates)
 
-    figure()
+    plt.figure()
     #plot(concs, rates['S0']/concs)
-    plot(concs, rates['T1']/concs)
+    plt.plot(concs, rates['T1']/concs)
 
 def dyeConc(concs):
     from PYME.Analysis._fithelpers import FitModel
 
-    figure()
+    plt.figure()
 
     constants={'q':0, 'O2':0}
     I = Stimulus(I0, [], [])
 
-    t = linspace(1, 1e6, 1000)
+    t = np.linspace(1, 1e6, 1000)
 
     tXs = []
     tRs = []
@@ -288,17 +290,17 @@ def dyeConc(concs):
         r1 = FitModel(emod, [1e-3, 3], res['R'][t>1e6], t[t>1e6]/1e6 - 1)
         tRs.append(r1[0][1])
 
-    loglog(concs, tXs, label='X', lw=2)
-    loglog(concs, tRs, label='R', lw=2)
+    plt.loglog(concs, tXs, label='X', lw=2)
+    plt.loglog(concs, tRs, label='R', lw=2)
 
-    ylabel('Time constant [$s^{-1}$]')
+    plt.ylabel('Time constant [$s^{-1}$]')
 
-    legend()
+    plt.legend()
 
 def viscLifetimes(viscs):
     from PYME.Analysis._fithelpers import FitModel
 
-    figure()
+    plt.figure()
 
     constants={'q':1e-6, 'O2':0.1*air_sat_O2_conc}
     I = Stimulus(I0, [1e6], [0])
@@ -313,9 +315,9 @@ def viscLifetimes(viscs):
         visc2 = visc
 
         if visc <= 10:
-            t = linspace(1, 10e6, 10000)
+            t = np.linspace(1, 10e6, 10000)
         else:
-            t = linspace(1, 10e6, 1000)
+            t = np.linspace(1, 10e6, 1000)
 
         r = genReactionScheme(visc, visc2)
 
@@ -331,19 +333,19 @@ def viscLifetimes(viscs):
         r1 = FitModel(emod, [1e-3, 3], res['R'][t>1e6], t[t>1e6]/1e6 - 1)
         tRs.append(r1[0][1])
 
-    loglog(viscs, tXs, label='X', lw=2)
-    loglog(viscs, tRs, label='R', lw=2)
+    plt.loglog(viscs, tXs, label='X', lw=2)
+    plt.loglog(viscs, tRs, label='R', lw=2)
 
-    ylabel('Time constant [$s^{-1}$]')
+    plt.ylabel('Time constant [$s^{-1}$]')
 
-    legend()
+    plt.legend()
 
 
         
 
 def plotMCTraces():
     import matplotlib.patches
-    figure(figsize=(4.5, 1.5))
+    plt.figure(figsize=(4.5, 1.5))
     #dm = DiscreteModel(s, ['S0', 'S1', 'T1', 'R', 'X'])
     dm = DiscreteModel(s, ['S0', 'T1', 'R', 'X', 'P'])
     timestep=1e-0#3e-3
@@ -352,14 +354,14 @@ def plotMCTraces():
 
 
     NSteps = 5000000
-    t = arange(NSteps)*timestep/1e6 + blinkStartTime
+    t = np.arange(NSteps)*timestep/1e6 + blinkStartTime
 
     for i in range(1):
         tr = dm.DoSteps(NSteps)
 
         #subplot(1, 1, i+1)
-        axes([.15,.3,.8,.65])
-        ax = gca()
+        plt.axes([.15,.3,.8,.65])
+        ax = plt.gca()
 
         p = matplotlib.patches.Rectangle([0,.5], (t[-1] - 1)*1e3,3,facecolor=[.8,.8,.8], edgecolor=None)
         ax.add_patch(p)
@@ -367,22 +369,22 @@ def plotMCTraces():
         p = matplotlib.patches.Rectangle([0,-.5], (t[-1] - 1)*1e3,1,facecolor=[.9,1.,.8], edgecolor=None)
         ax.add_patch(p)
 
-        step((t[::1] - 1)*1e3, tr[::1])# , lw=1)
+        plt.step((t[::1] - 1)*1e3, tr[::1])# , lw=1)
 
-        yticks(range(4))
+        plt.yticks(range(4))
         #ax = gca()
         #ax.set_yticklabels(dm.states)
 
         ax.set_yticklabels(['S0/S1', 'T1', '$D^*_{red}$', '$D^*_{ox}$'])
 
-        axis([0, (t[-1] - 1)*1e3, 3.5, -.5])
+        plt.axis([0, (t[-1] - 1)*1e3, 3.5, -.5])
 
     #ylim(-.2, 4.1)
 
-    xlabel(u'Time [ms]')
+    plt.xlabel(u'Time [ms]')
 
 def plotConcDep(spec, concs):
-    figure()
+    plt.figure()
 
     constants={'I': I0, 'q':1e-3, 'O2':0.1*air_sat_O2_conc}
 
@@ -391,7 +393,7 @@ def plotConcDep(spec, concs):
     #dm.GenTransitionMatrix(t=[1e6*blinkStartTime], timestep=timestep)
 
     NSteps = 100000
-    t = arange(NSteps)*timestep/1e6 + blinkStartTime
+    t = np.arange(NSteps)*timestep/1e6 + blinkStartTime
 
     for i in range(len(concs)):
         constants[spec] = concs[i]
@@ -405,16 +407,16 @@ def plotConcDep(spec, concs):
 
         tr = dm.DoSteps(NSteps)
 
-        subplot(len(concs), 1, i+1)
-        step(t[::1], tr[::1] , lw=2)
+        plt.subplot(len(concs), 1, i+1)
+        plt.step(t[::1], tr[::1] , lw=2)
 
-        yticks(range(5))
-        ax = gca()
+        plt.yticks(range(5))
+        ax = plt.gca()
         ax.set_yticklabels(dm.states)
 
-        ylabel('%3g [M/L]' % concs[i])
+        plt.ylabel('%3g [M/L]' % concs[i])
 
-    xlabel('Time [s]')
+    plt.xlabel('Time [s]')
 
 plotInitialDecay()
 plotMCTraces()
@@ -439,9 +441,9 @@ plotMCTraces()
 #stateLifetimes2('O2', air_sat_O2_conc*logspace(-9, 0), r, '  $\eta = 1000$, [MEA] = 10mM', ls='--', lw=1)
 #viscLifetimes(logspace(0, 3, 10))
 
-draw()
+plt.draw()
 
-show()
-ion()
+plt.show()
+plt.ion()
 
 

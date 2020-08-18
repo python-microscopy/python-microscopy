@@ -78,6 +78,8 @@ def Plug(dsviewer):
     else:
         ylabel=''
         
-    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel, ylabel=ylabel)
-    dsviewer.AddPage(dsviewer.gv, True, 'Graph View')
+    gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel, ylabel=ylabel)
+    dsviewer.AddPage(gv, True, 'Graph View')
+    
+    return {'gv' : gv}
     

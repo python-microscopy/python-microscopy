@@ -138,7 +138,10 @@ def save_ply(fn, vertices, faces, colors=None, file_format='binary'):
                 for _iv in np.arange(len(vertices)):
                     f.write(vertices[_iv].astype(order + 'f4'))
                     f.write(colors[_iv].astype(order + 'u1'))
-                for _if in np.arange(len(faces)):
-                    curr_faces = faces[_if]
-                    f.write(np.ubyte(curr_faces.size))
-                    f.write(curr_faces.astype(order + 'i4'))
+            else:
+                for _iv in np.arange(len(vertices)):
+                    f.write(vertices[_iv].astype(order + 'f4'))
+            for _if in np.arange(len(faces)):
+                curr_faces = faces[_if]
+                f.write(np.ubyte(curr_faces.size))
+                f.write(curr_faces.astype(order + 'i4'))

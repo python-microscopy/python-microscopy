@@ -53,23 +53,23 @@ def makedirs_safe(dir):
 import logging
 import logging.handlers
 dataserver_root = config.get('dataserver-root')
-if dataserver_root:
-    log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
-    #if not os.path.exists(log_dir):
-    #    os.makedirs(log_dir)
-    makedirs_safe(log_dir)
-
-    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
-        
-    #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
-    #logger = logging.getLogger('')
-    logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
-    logger.addHandler(fh)
-else:
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger('')
+# if dataserver_root:
+#     log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
+#     #if not os.path.exists(log_dir):
+#     #    os.makedirs(log_dir)
+#     makedirs_safe(log_dir)
+#
+#     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
+#
+#     #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+#     #logger = logging.getLogger('')
+#     logger = logging.getLogger('')
+#     logger.setLevel(logging.DEBUG)
+#     fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+#     logger.addHandler(fh)
+# else:
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('')
     
 #now do all the normal imports
     
@@ -86,6 +86,7 @@ import shutil
 import sys
 import ujson as json
 import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import sqlite_ns
 
 try:
     # noinspection PyCompatibility
@@ -101,6 +102,7 @@ import socket
 import threading
 import datetime
 import time
+from PYME.IO import h5File
 
 #GPU status functions
 try:
@@ -508,7 +510,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         matches = glob.glob(pattern)
 
         f = BytesIO()
-        f.write(json.dumps(matches))
+        f.write(json.dumps(matches).encode())
         length = f.tell()
         f.seek(0)
         self.send_response(200)
@@ -566,6 +568,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
+        elif '.h5r/' in self.path or '.hdf/' in self.path:
+            # throw the query back on to our fully resolved path
+            return self.get_tabular_part(path + '?' + urlparse.urlparse(self.path).query)
 
         ctype = self.guess_type(path)
         try:
@@ -678,6 +683,60 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except IOError:
             self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
+
+    def get_tabular_part(self, path):
+        """
+
+        Parameters
+        ----------
+        path: str
+            path to an hdf or h5r file on the dataserver computer. Append the part of the file to read after the file
+            extension, e.g. .h5r/Events. Return format (for arrays) can additionally be specified, as can slices
+            using the following syntax: test.h5r/FitResults.json?from=0&to=100. Supported array formats include json and
+            npy.
+
+        Returns
+        -------
+        f: BytesIO
+            Requested part of the file encoded as bytes
+
+        """
+        from PYME.IO import h5rFile, clusterResults
+
+        # parse path
+        ext = '.h5r' if '.h5r' in path else '.hdf'
+        filename, details = path.split(ext + '/')
+        filename = filename + ext  # path to file on dataserver disk
+        query = urlparse.urlparse(details).query
+        details = details.strip('?' + query)
+        if '.' in details:
+            part, return_type = details.split('.')
+        else:
+            part, return_type = details, ''
+
+
+        try:
+            with h5rFile.openH5R(filename) as h5f:
+                if part == 'Metadata':
+                    wire_data, output_format = clusterResults.format_results(h5f.mdh, return_type)
+                else:
+                    # figure out if we have any slicing to do
+                    query = urlparse.parse_qs(query)
+                    start = int(query.get('from', [0])[0])
+                    end = None if 'to' not in query.keys() else int(query['to'][0])
+                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, slice(start, end)),
+                                                                             '.' + return_type)
+
+            f, length = self._string_to_file(wire_data)
+            self.send_response(200)
+            self.send_header("Content-Type", output_format if output_format else 'application/octet-stream')
+            self.send_header("Content-Length", length)
+            #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            return f
+
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
         
         
 
@@ -796,8 +855,9 @@ def main(protocol="HTTP/1.0"):
 
     op = OptionParser(usage='usage: %s [options]' % sys.argv[0])
 
-    op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 8080),
-                  help="port number to serve on (default: 8080, see also 'dataserver-port' config entry)")
+    #NOTE - currently squatting on port 15348 for testing - TODO can we use an ephemeral port?
+    op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 15348),
+                  help="port number to serve on (default: 15348, see also 'dataserver-port' config entry)")
     op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
@@ -807,7 +867,8 @@ def main(protocol="HTTP/1.0"):
     default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
-    op.add_option('--no-advertise', dest='advertise', action="store_false", default=True, help='do not advertise with zeroconf')
+    op.add_option('-a', '--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
+                    help='Optionally restrict advertisements to local machine')
 
 
     options, args = op.parse_args()
@@ -817,6 +878,14 @@ def main(protocol="HTTP/1.0"):
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 
+    # setup logging to file
+    log_dir = '%s/LOGS/%s' % (options.root, compName)
+    makedirs_safe(log_dir)
+
+    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (options.root, compName)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+    logger.addHandler(fh)
+
     
     logger.info('========================================\nPYMEDataServer, running on python %s\n' % sys.version)
     
@@ -824,7 +893,19 @@ def main(protocol="HTTP/1.0"):
     logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
 
-    server_address = ('', int(options.port))
+    if options.advertisements == 'local':
+        ns = sqlite_ns.getNS('_pyme-http')
+        server_address = ('127.0.0.1', int(options.port))
+        ip_addr = '127.0.0.1'
+    else:
+        #default
+        ns = pzc.getNS('_pyme-http')
+        server_address = ('', int(options.port))
+        
+        try:
+            ip_addr = socket.gethostbyname(socket.gethostname())
+        except:
+            ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
 
     PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
     PYMEHTTPRequestHandler.bandwidthTesting = options.test
@@ -835,17 +916,10 @@ def main(protocol="HTTP/1.0"):
     #httpd = http.server.HTTPServer(server_address, PYMEHTTPRequestHandler)
     httpd.daemon_threads = True
 
+    #get the actual adress (port) we bound to
     sa = httpd.socket.getsockname()
-
-    try:
-        ip_addr = socket.gethostbyname(socket.gethostname())
-    except:
-        ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
-    
-
-    if options.advertise:
-        ns = pzc.getNS('_pyme-http')
-        ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
+    service_name = 'PYMEDataServer [%s]: ' % options.server_filter + procName
+    ns.register_service(service_name, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address
@@ -871,6 +945,8 @@ def main(protocol="HTTP/1.0"):
         logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+        
+        ns.unregister(service_name)
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)

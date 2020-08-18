@@ -71,7 +71,7 @@ class CSInterpolator(__interpolator):
         
         #print self.interpModel.shape
         #print self.dx
-        print(self.PSF2Offset)
+        #print(self.PSF2Offset)
 
 
         r = cInterp.InterpolateCS(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
@@ -114,8 +114,9 @@ class CSInterpolator(__interpolator):
     def getCoords(self, metadata, xslice, yslice, zslice):
         """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
-        X = 1e3*metadata.voxelsize.x*mgrid[xslice]
-        Y = 1e3*metadata.voxelsize.y*mgrid[yslice]
+        vs = metadata.voxelsize_nm
+        X = vs.x*mgrid[xslice]
+        Y = vs.y*mgrid[yslice]
         Z = array([0]).astype('f')
         
         #print interpolator.shape

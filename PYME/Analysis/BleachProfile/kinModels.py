@@ -21,7 +21,8 @@
 #
 ################
 #from pylab import *
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 import numpy as np
 from PYME.Analysis._fithelpers import *
 from PYME.Analysis.points.DeClump import deClump
@@ -76,7 +77,7 @@ def goalfcn(indepvars = ''):
 
 
 def getPhotonNums(colourFilter, metadata):
-    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
+    nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(metadata.voxelsize_nm.x))**2)
     nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
 
     return nPh
@@ -220,7 +221,7 @@ def applyByChannel(fcn):
         chans = colourFilter.getColourChans()
         
         if USE_GUI:
-            pylab.figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
+            plt.figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
     
         if len(chans) == 0:
             ret = fcn(colourFilter, metadata)
@@ -302,19 +303,19 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
     PL.AddRecord('/Photophysics/Decay/e2mod_p', munge_res(e2mod, r4, mse=mse, ch2=ch2))
 
     if USE_GUI:        
-        pylab.bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
-        pylab.plot(b1/60, e2mod(res[0], b1, Nm), colours[i], lw=3)
-        pylab.plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
-        pylab.plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
-        pylab.plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
-        pylab.ylim(0, 1.2*n.max())
-        pylab.ylabel('Events')
-        pylab.xlabel('Acquisition Time [mins]')
-        pylab.title('Event Rate')
+        plt.bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
+        plt.plot(b1/60, e2mod(res[0], b1, Nm), colours[i], lw=3)
+        plt.plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
+        plt.plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
+        plt.plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
+        plt.ylim(0, 1.2*n.max())
+        plt.ylabel('Events')
+        plt.xlabel('Acquisition Time [mins]')
+        plt.title('Event Rate')
         
         b = 0.5*(1+erf(res[0][2]))*Nm
     
-        pylab.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return 0
 
@@ -344,18 +345,18 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
     #figure()
 
     if USE_GUI:
-        pylab.semilogy()
+        plt.semilogy()
 
-        pylab.bar(bins[:-1]*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
+        plt.bar(bins[:-1]*cycTime, n, width=cycTime, alpha=0.4, fc=colours[i])
 
-        pylab.plot(np.linspace(1, 20, 50)*cycTime, ei2mod(res2[0], np.linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3, ls='--')
-        pylab.plot(np.linspace(1, 20, 50)*cycTime, eimod(res[0], np.linspace(1, 20, 50)*cycTime), colours[i], lw=3)
-        pylab.ylabel('Events')
-        pylab.xlabel('Event Duration [s]')
-        pylab.ylim((1, pylab.ylim()[1]))
-        pylab.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
+        plt.plot(np.linspace(1, 20, 50)*cycTime, ei2mod(res2[0], np.linspace(1, 20, 50)*cycTime, cycTime), colours[i], lw=3, ls='--')
+        plt.plot(np.linspace(1, 20, 50)*cycTime, eimod(res[0], np.linspace(1, 20, 50)*cycTime), colours[i], lw=3)
+        plt.ylabel('Events')
+        plt.xlabel('Event Duration [s]')
+        plt.ylim((1, plt.ylim()[1]))
+        plt.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
-        pylab.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
     return 0
 
 
@@ -380,16 +381,16 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None, qui
     #figure()
     #semilogy()
     if USE_GUI:
-        pylab.bar(bins, n, width=bins[1]-bins[0], alpha=0.4, fc=colours[i])
+        plt.bar(bins, n, width=bins[1]-bins[0], alpha=0.4, fc=colours[i])
     
-        pylab.plot(bins, fImod(res[0], bins), colours[i], lw=3)
-        pylab.ylabel('Events')
-        pylab.xlabel('Intensity [photons]')
+        plt.plot(bins, fImod(res[0], bins), colours[i], lw=3)
+        plt.ylabel('Events')
+        plt.xlabel('Intensity [photons]')
         #ylim((1, ylim()[1]))
-        pylab.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
+        plt.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
         #print res[0][2]
     
-        pylab.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return [channame, res[0][3], NEvents]
 
@@ -437,22 +438,22 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     rr = fITmod2(res0[0], xb, yb, Nco)
     if USE_GUI:
     
-        pylab.figure()
-        pylab.subplot(131)
-        pylab.imshow(n, interpolation='nearest')
-        pylab.colorbar()
+        plt.figure()
+        plt.subplot(131)
+        plt.imshow(n, interpolation='nearest')
+        plt.colorbar()
         
-        pylab.subplot(132)
-        pylab.imshow(rr, interpolation='nearest')
-        pylab.colorbar()
+        plt.subplot(132)
+        plt.imshow(rr, interpolation='nearest')
+        plt.colorbar()
         
-        pylab.subplot(133)
-        pylab.imshow(n - rr, interpolation='nearest')
-        pylab.colorbar()
+        plt.subplot(133)
+        plt.imshow(n - rr, interpolation='nearest')
+        plt.colorbar()
         
-        pylab.title(channame)
+        plt.title(channame)
         
-        pylab.figure()
+        plt.figure()
         
         t_ = np.linspace(t[0], t[-1], 100)
         
@@ -461,16 +462,16 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
         sc = 1./(1 - np.exp(-(ybins[1] - ybins[0])/lamb))
         print(('sc = ', sc))
         y1 = sc*A/((t_/tauI)**a + 1)
-        pylab.plot(t_, y1)
-        pylab.plot(t_, sc*(Ndet/((t_/tauI)**a + 1) + NDetM))
+        plt.plot(t_, y1)
+        plt.plot(t_, sc*(Ndet/((t_/tauI)**a + 1) + NDetM))
         
-        pylab.bar(ybins[:-1], n.sum(0), width=ybins[1]-ybins[0], alpha=0.5)
-        pylab.plot(ybins[:-1], rr.sum(0), lw=2)
+        plt.bar(ybins[:-1], n.sum(0), width=ybins[1]-ybins[0], alpha=0.5)
+        plt.plot(ybins[:-1], rr.sum(0), lw=2)
         
-        pylab.title(channame)
-        pylab.xlabel('Time [s]')
+        plt.title(channame)
+        plt.xlabel('Time [s]')
         
-        pylab.figtext(.2,.7 , '$A = %3.0f\\;N_{det} = %3.2f\\;\\lambda = %3.0f\\;\\tau = %3.0f$\n$\\alpha = %3.3f\\;A_{crit} = %3.2f\\;N_{det_0} = %3.2f$' % (A, Ndet, lamb, tauI, a, Acrit, NDetM), size=18)
+        plt.figtext(.2,.7 , '$A = %3.0f\\;N_{det} = %3.2f\\;\\lambda = %3.0f\\;\\tau = %3.0f$\n$\\alpha = %3.3f\\;A_{crit} = %3.2f\\;N_{det_0} = %3.2f$' % (A, Ndet, lamb, tauI, a, Acrit, NDetM), size=18)
 
     return [channame, lamb, NEvents]
 

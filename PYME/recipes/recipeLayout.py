@@ -201,7 +201,7 @@ def layout_vertical(dg, rdg):
                     _descend(child, dg, rdg)
     
     for t_i in ts:
-        for n in sorted(list(t_i)):
+        for n in sorted(list(t_i), key=lambda x: x if isinstance(x,str) else x.__class__.__name__):
             if not n in ordered:
                 ordered.append(n)
                 _descend(n, dg, rdg)
@@ -414,7 +414,7 @@ def to_svg(dg):
     import svgwrite
     node_positions, connecting_lines = layout(dg)
 
-    ipsv = np.array(node_positions.values())
+    ipsv = np.array(list(node_positions.values()))
     try:
         xmn, ymn = ipsv.min(0)
         xmx, ymx = ipsv.max(0)
@@ -425,7 +425,7 @@ def to_svg(dg):
         pass
 
     dwg = svgwrite.Drawing()
-    vb = dwg.viewbox(xmn - .5, ymn -.5, xmx + 2, ymx + 2)
+    vb = dwg.viewbox(xmn - .5, ymn -.5, xmx + 2, ymx + 1)
     #dwg.add(vb)
     cols = {}
     for xv, yv, e in connecting_lines:

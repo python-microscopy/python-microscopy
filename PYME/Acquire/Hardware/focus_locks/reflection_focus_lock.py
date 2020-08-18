@@ -190,20 +190,21 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
-        logger.debug('Disabling focus lock')
         self.set_auto_mode(False)
+        logger.debug('Disabling focus lock')
+        self.piezo.LogFocusCorrection(self.piezo.GetOffset())
 
     def register(self):
         if self.mode == 'time':
             self.StartPolling()
         else:
-            self.scope.frameWrangler.onFrame.connect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
 
     def deregister(self):
         if self.mode == 'time':
             self.StopPolling()
         else:
-            self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
@@ -247,6 +248,10 @@ class ReflectedLinePIDFocusLock(PID):
 
         Returns
         -------
+        success : bool
+            Whether the fit converged
+        peak_position : float
+            center position of the reflection on the camera [pix]
 
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
@@ -254,19 +259,23 @@ class ReflectedLinePIDFocusLock(PID):
         results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
         if not success:
             logger.debug('Focus lock fit error')
-            return np.nan
-        return results[1] + start
+        return results[1] + start, success
 
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
         if self.subtraction_profile is not None:
-            self.peak_position = self.find_peak(profile - self.subtraction_profile)
+            peak_position, success = self.find_peak(profile - self.subtraction_profile)
         else:
-            self.peak_position = self.find_peak(profile)
+            peak_position, success = self.find_peak(profile)
 
-        if self.peak_position == np.nan:
+        if not success:
+            # restart the integration / derivatives so we don't go wild when we
+            # eventually get a good fit again
+            self.reset()
             return
+        
+        self.peak_position = peak_position
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
@@ -285,29 +294,30 @@ class RLPIDFocusLockClient(object):
         self.name = name
 
         self.base_url = 'http://%s:%d' % (host, port)
+        self._session = requests.Session()
 
     @property
     def lock_enabled(self):
         return self.LockEnabled()
 
     def LockEnabled(self):
-        response = requests.get(self.base_url + '/LockEnabled')
+        response = self._session.get(self.base_url + '/LockEnabled')
         return bool(response.json())
 
     def EnableLock(self):
-        return requests.get(self.base_url + '/EnableLock')
+        return self._session.get(self.base_url + '/EnableLock')
 
     def DisableLock(self):
-        return requests.get(self.base_url + '/DisableLock')
+        return self._session.get(self.base_url + '/DisableLock')
 
     def GetPeakPosition(self):
-        response = requests.get(self.base_url + '/GetPeakPosition')
+        response = self._session.get(self.base_url + '/GetPeakPosition')
         return float(response.json())
 
     def ChangeSetpoint(self, setpoint=None):
         if setpoint is None:
             setpoint = self.GetPeakPosition()
-        return requests.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+        return self._session.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
 
     def ToggleLock(self):
         if self.lock_enabled:
@@ -316,7 +326,7 @@ class RLPIDFocusLockClient(object):
             self.EnableLock()
 
     def SetSubtractionProfile(self):
-        return requests.get(self.base_url + '/SetSubtractionProfile')
+        return self._session.get(self.base_url + '/SetSubtractionProfile')
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):

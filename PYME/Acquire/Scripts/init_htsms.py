@@ -49,18 +49,18 @@ def mz_stage(scope):
 @init_hardware('Z Piezo')
 def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
+    from PYME.Acquire import stage_leveling
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
-    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.05, update_rate=0.002)
-    #scope.hardwareChecks.append(scope._piFoc.OnTarget)
+    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
     scope.CleanupFunctions.append(scope._piFoc.close)
-    #scope.piFoc = scope._piFoc
 
     scope.piFoc = opr.generate_offset_piezo_server(opr.TargetOwningOffsetPiezo)(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
-    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
     scope.focus_lock = RLPIDFocusLockClient()
+    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
 
 
 @init_hardware('HamamatsuORCA')
@@ -81,10 +81,10 @@ def orca_cam(scope):
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.DefaultROISize': (size, size),
         'Multiview.ROISizeOptions': [128, 240, 256, 304, 352, 384],
-        'Multiview.ROI0Origin': (292 - half_size, 1024 - half_size),
-        'Multiview.ROI1Origin': (856 - half_size, 1024 - half_size),
-        'Multiview.ROI2Origin': (1256 - half_size, 1024 - half_size),
-        'Multiview.ROI3Origin': (1796 - half_size, 1024 - half_size),
+        'Multiview.ROI0Origin': (308 - half_size, 1024 - half_size),
+        'Multiview.ROI1Origin': (872 - half_size, 1024 - half_size),
+        'Multiview.ROI2Origin': (1272 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1812 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
@@ -115,23 +115,6 @@ def orca_cam_controls(MainFrame, scope):
     MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
 
-    # from PYME.Acquire.ui import multiview_panel
-    # mvp = multiview_panel.MultiviewPanel(MainFrame, scope)
-    # MainFrame.camPanels.append((mvp, 'Multiview Panel'))
-
-
-# @init_gui('Sample database')
-# def samp_db(MainFrame, scope):
-#     from PYME.Acquire import sampleInformation
-#     sampPan = sampleInformation.slidePanel(MainFrame)
-#     MainFrame.camPanels.append((sampPan, 'Current Slide'))
-
-# @init_gui('Analysis settings')
-# def anal_settings(MainFrame, scope):
-#     from PYME.Acquire.ui import AnalysisSettingsUI
-#     AnalysisSettingsUI.Plug(scope, MainFrame)
-
-
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware.Coherent import OBIS
@@ -149,7 +132,7 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=30)  # pin 9
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=50)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
@@ -182,20 +165,6 @@ def laser_controls(MainFrame, scope):
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
-# @init_hardware('Line scanner')
-# def line_scanner(scope):
-#     from PYME.experimental import scanner_control
-#     scope.line_scanner = scanner_control.ScannerController()
-
-# @init_gui('line scanner')
-# def line_scanner_gui(MainFrame, scope):
-#     from PYME.Acquire.ui import scanner_panel
-#     from PYME.experimental import scanner_control
-#
-#     scope.line_scanner = scanner_control.ScannerController()
-#     scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
-#     MainFrame.camPanels.append((scp, 'Line Scanner'))
-
 @init_gui('Multiview Selection')
 def multiview_selection(MainFrame, scope):
     from PYME.Acquire.ui import multiview_select
@@ -209,31 +178,26 @@ def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
-    panel = FocusLockPanel(MainFrame, scope.focus_lock)
+    panel = FocusLockPanel(MainFrame, scope.focus_lock, offset_piezo=scope.piFoc)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
 
-#splitter
-# @init_gui('Splitter')
-# def splitter(MainFrame, scope):
-#     from PYME.Acquire.Hardware import splitter
-#     splt1 = splitter.Splitter(MainFrame, scope, scope.cameras['EMCCD'], flipChan = 1, dichroic = 'Unspecified' ,
-#                               transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False, cam_name='EMCCD')
-#     splt2 = splitter.Splitter(MainFrame, scope, scope.cameras['sCMOS'], flipChan = 1, dichroic = 'FF700-Di01' ,
-#                               transLocOnCamera = 'Right', flip=False, dir='left_right', constrain=False, cam_name='sCMOS')
-
-
-#InitGUI("""
-#from PYME.Acquire.Hardware import splitter
-#splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
-#""")
-
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
+    from PYME import config
     from PYME.Acquire.ui import actionUI
+    from PYME.Acquire.ActionManager import ActionManagerServer
 
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
+    
+    ActionManagerServer(scope.actions, 9393, 
+                        config.get('actionmanagerserver-address', '127.0.0.1'))
+
+@init_gui('Chained Analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
+    SMLMChainedAnalysisPanel.plug(main_frame, scope)
 
 @init_hardware('tweeter')
 def tweeter(scope):
@@ -254,8 +218,12 @@ def tweeter(scope):
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import tile_panel
 
-    ap = tile_panel.TilePanel(MainFrame, scope)
-    MainFrame.aqPanels.append((ap, 'Tiling'))
+    ap = tile_panel.CircularTilePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
+
+    # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

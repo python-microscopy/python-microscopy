@@ -39,8 +39,10 @@ def getPSFSlice(datasource, resultsSource, metadata, zm=None):
 
 def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000):
     ims = np.zeros((2*roiSize, 2*roiSize, len(results['x'])))
-    points = (np.array([results['x']/(metadata.voxelsize.x *1e3),
-                        results['y']/(metadata.voxelsize.y *1e3),
+    
+    vs = metadata.voxelsize_nm
+    points = (np.array([results['x']/vs.x,
+                        results['y']/vs.y,
                         results['A']]).T)
 
     pts = np.round(points[:,:2])

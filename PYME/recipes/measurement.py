@@ -419,7 +419,6 @@ class PairwiseDistanceHistogram(ModuleBase):
                 pass
         
         namespace[self.outputName] = res
-        
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):
@@ -719,20 +718,21 @@ class Plot(ModuleBase):
             ms.append(namespace[self.input3])
             labs.append(self.input3)
 
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         
-        pylab.figure()
+        plt.figure()
         for meas in ms:
             if self.type == 'bar':
                 xv = meas[self.xkey]
-                pylab.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
+                plt.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
             else:
-                pylab.plot(meas[self.xkey], meas[self.ykey])
+                plt.plot(meas[self.xkey], meas[self.ykey])
         
-        pylab.grid()
-        pylab.legend(labs)
-        pylab.xlabel(self.xkey)
-        pylab.ylabel(self.ykey)
+        plt.grid()
+        plt.legend(labs)
+        plt.xlabel(self.xkey)
+        plt.ylabel(self.ykey)
         #namespace[self.outputName] = out
 
 @register_module('AddMetadataToMeasurements')         
@@ -773,42 +773,6 @@ class AddMetadataToMeasurements(ModuleBase):
         namespace[self.outputName] = res
         
         
-@register_module('TilePhysicalCoords')
-class TilePhysicalCoords(ModuleBase):
-    """
-    Adds x_um and y_um columns to the results of Measure2D, performed on an Supertile image sequence, mapping the x and y
-    values (which are in pixels with respect to the current frame) to physical co-ordinates
-    
-    NOTE: inputImage must be a SupertileDatasource instance
-    
-    TODO: Does this belong here??
-    """
-
-    inputMeasurements = Input('measurements')
-    inputImage = Input('input')
-    
-    outputName = Output('meas_physical_coords')
-    
-    def execute(self, namespace):
-        meas = namespace[self.inputMeasurements]
-        img = namespace[self.inputImage]
-        
-        out = tabular.MappingFilter(meas)
-        
-        x_frame_um, y_frame_um =img.data.tile_coords_um[meas['t']].T
-        x_frame_px, y_frame_px = img.data.tile_coords[meas['t']].T
-        
-        out.addColumn('x_um', x_frame_um + 1e-3*meas['x'])
-        out.addColumn('y_um', y_frame_um + 1e-3*meas['y'])
-
-        out.addColumn('x_px', x_frame_px + meas['x'])
-        out.addColumn('y_px', y_frame_px + meas['y'])
-        
-        out.mdh = meas.mdh
-        
-        namespace[self.outputName] = out
-
-
 @register_module('IdentifyOverlappingROIs')
 class IdentifyOverlappingROIs(ModuleBase):
     """
@@ -912,7 +876,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
+        from PYME.Analysis.points.traveling_salesperson import sectioned_two_opt
 
         points = namespace[self.input]
 
@@ -921,11 +885,11 @@ class ChunkedTravelingSalesperson(ModuleBase):
         except KeyError:
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        final_route = traveling_salesperson.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
+        final_route = sectioned_two_opt.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
                                                                         self.n_processes)
 
         # note that we sorted the positions / sections once before, need to propagate that through before sorting
-        out = tabular.MappingFilter({k: points[k][final_route] for k in points.keys()})
+        out = tabular.DictSource({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
@@ -952,8 +916,9 @@ class ChunkedTravelingSalesperson(ModuleBase):
 class TravelingSalesperson(ModuleBase):
     """
 
-    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
-    2-opt algorithm is used.
+    Optimize route visiting each position in an input dataset exactly once, starting from the 0th point or
+    the minimum x + y corner. A greedy sort is done first because it is quite fast and should for average case reduce
+    number of moves from O(nlog(n)) to O(n).
 
     Parameters
     ----------
@@ -962,6 +927,8 @@ class TravelingSalesperson(ModuleBase):
         e.g. 'x_um'
     epsilon: Float
         Relative improvement threshold used to stop algorithm when gains become negligible
+    start_from_corner: Bool
+        Flag to toggle starting from the min(x + y) point [True] or the 0th point in the input positions.
     output: Output
         PYME.IO.tabular
 
@@ -969,11 +936,11 @@ class TravelingSalesperson(ModuleBase):
     """
     input = Input('input')
     epsilon = Float(0.001)
+    start_from_corner = Bool(True)
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
-        from scipy.spatial import distance_matrix
+        from PYME.Analysis.points.traveling_salesperson import sort
 
         points = namespace[self.input]
 
@@ -983,22 +950,19 @@ class TravelingSalesperson(ModuleBase):
             # units don't matter for these calculations, but we want to preserve them on the other side
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        distances = distance_matrix(positions, positions)
+        start_index = 0 if not self.start_from_corner else np.argmin(positions.sum(axis=1))
 
+        positions, ogd, final_distance = sort.tsp_sort(positions, start_index, self.epsilon, return_path_length=True)
 
-        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
-
-        # plot_path(positions, route)
-        out = tabular.MappingFilter({'x_um': positions[:, 0][route],
-                                     'y_um': positions[:, 1][route]})
+        out = tabular.DictSource({'x_um': positions[:, 0],
+                                     'y_um': positions[:, 1]})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
         except AttributeError:
             pass
-        out.mdh['TravelingSalesperson.Distance'] = best_distance
-        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+        out.mdh['TravelingSalesperson.Distance'] = final_distance
+        out.mdh['TravelingSalesperson.OriginalDistance'] = ogd
 
         namespace[self.output] = out
-
 

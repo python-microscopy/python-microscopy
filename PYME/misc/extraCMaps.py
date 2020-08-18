@@ -21,13 +21,14 @@
 #
 ################
 import matplotlib.colors as colors
+from matplotlib import cm
 #import matplotlib as mpl
-import pylab
+# import pylab
 import numpy as np
 
 def regCmap(cmap):
-    pylab.cm.__dict__[cmap.name] = cmap
-    pylab.cm.cmapnames.append(cmap.name)
+    cm.__dict__[cmap.name] = cmap
+    cm.cmapnames.append(cmap.name)
     
 #define a decorator
 def register_cmap(name):
@@ -38,11 +39,11 @@ def register_cmap(name):
     
     return _reg_cmap
 
-if not 'cmapnames' in dir(pylab.cm):
-    if 'cmap_d' in dir(pylab.cm):
-        pylab.cm.cmapnames = list(pylab.cm.cmap_d.keys())
+if not 'cmapnames' in dir(cm):
+    if 'cmap_d' in dir(cm):
+        cm.cmapnames = list(cm.cmap_d.keys())
     else:
-        pylab.cm.cmapnames = pylab.cm._cmapnames
+        cm.cmapnames = cm._cmapnames
 
 _r = {'red':((0.,0.,0.), (1.,1.,1.)), 'green':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
 _g = {'green':((0.,0.,0.), (1.,1.,1.)), 'red':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
@@ -65,13 +66,13 @@ _hsv_part = {'red':   ((0., 1., 1.),(0.25, 1.000000, 1.000000),
 ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 
 ncmapnames = list(ndat.keys())
-pylab.cm.cmapnames += ncmapnames
+cm.cmapnames += ncmapnames
 for cmapname in ncmapnames:
-    pylab.cm.__dict__[cmapname] = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], pylab.cm.LUTSIZE)
+    cm.__dict__[cmapname] = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], cm.LUTSIZE)
     cmapname_r = cmapname+'_r'
-    cmapdat_r = pylab.cm.revcmap(ndat[cmapname])
+    cmapdat_r = cm.revcmap(ndat[cmapname])
     ndat[cmapname_r] = cmapdat_r
-    pylab.cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, pylab.cm.LUTSIZE)
+    cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, cm.LUTSIZE)
 
 #solid colour colormaps for VisGUI multichannel and isosurface display
 @register_cmap('R')
@@ -106,13 +107,13 @@ def Yellow(data):
 
 @register_cmap('labeled')
 def labeled(data):
-    return (data > 0).reshape(list(data.shape) +  [1])*pylab.cm.gist_rainbow(data % 1)
+    return (data > 0).reshape(list(data.shape) +  [1])*cm.gist_rainbow(data % 1)
 
 @register_cmap('flow_gray')
 def flow_gray(data):
-    v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*pylab.cm.gray(data)
-    v += (data == 0).reshape(list(data.shape) + [1]) * pylab.array([0, 1., 0, 0]).reshape(list(pylab.ones(data.ndim) + [3]))
-    v += (data == 1).reshape(list(data.shape) + [1]) * pylab.array([1., 0, 1., 0]).reshape(list(pylab.ones(data.ndim) + [3]))
+    v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*cm.gray(data)
+    v += (data == 0).reshape(list(data.shape) + [1]) * np.array([0, 1., 0, 0]).reshape(list(np.ones(data.ndim) + [3]))
+    v += (data == 1).reshape(list(data.shape) + [1]) * np.array([1., 0, 1., 0]).reshape(list(np.ones(data.ndim) + [3]))
     return v
 
 
@@ -159,4 +160,4 @@ try:
 except:
     pass
 
-pylab.cm.cmapnames.sort()
+cm.cmapnames.sort()

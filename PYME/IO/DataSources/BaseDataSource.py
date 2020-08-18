@@ -53,6 +53,22 @@ class BaseDataSource(object):
         """The 4D shape of the datasource"""
         #if self.type == 'DataSource':
         return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
+    
+    @property
+    def is_complete(self):
+        """
+        For datasources which may be opened before spooling is finished.
+        
+        Over-ridden in derived classes (currently only ClusterPZFDataSource)
+        
+        Returns
+        -------
+        
+        is_complete : bool
+            has spooling of this series finished
+
+        """
+        return True
         
     def getSlice(self, ind):
         """Return the nth 2D slice of the DataSource where the higher dimensions
@@ -88,7 +104,11 @@ class BaseDataSource(object):
         #print keys
         for i in range(len(keys)):
             if not isinstance(keys[i], slice):
-                keys[i] = slice(keys[i],keys[i] + 1)
+                if keys[i] == -1:
+                    #special case for -1 indexing
+                    keys[i] = slice(-1, None)
+                else:
+                    keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData
         self.oldSlice = keys
@@ -127,12 +147,18 @@ class BaseDataSource(object):
         return r
     
 class XYZTCDataSource(object):
-    def __init__(self, datasource):
+    def __init__(self, datasource, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
         self._datasource = datasource
+        self._input_order = input_order
         
-    @property
-    def shape(self):
-        raise NotImplementedError()
+        if not input_order.startswith('XY'):
+            raise RuntimeError('First 2 dimensions of input must be X and Y')
+        
+        self.shape = self._datasource.getSliceShape() + [size_z, size_t, size_c]
+        
+    #@property
+    #def shape(self):
+    #    raise NotImplementedError()
     
     def __getitem__(self, item):
         raise NotImplementedError()

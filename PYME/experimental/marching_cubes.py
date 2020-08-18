@@ -326,6 +326,10 @@ class MarchingCubes(object):
 
     _MC_MAP_MODE_MODIFIED = False #allow us to switch between this and modified marching cubes easily
 
+    # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
+    # TODO: Add ('normal', '3f4') for real
+    dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
+
     def __init__(self, isolevel=0):
         """
         Initialize the marching cubes algorithm
@@ -339,10 +343,6 @@ class MarchingCubes(object):
         self.values = None  # The corresponding vertex values (-1, 8)
         self.triangles = None  # The list of triangles
         self.isolevel = isolevel
-
-        # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
-        # TODO: Add ('normal', '3f4') for real
-        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
 
     def cube_index(self, values):
         """
@@ -552,9 +552,13 @@ class MarchingCubes(object):
         """
 
         cube_index = self.cube_index(self.values)
-        edge = MC_EDGES[cube_index]
-        intersections = self.create_intersection_list(edge, self.vertices, self.values)
-        triangles = MC_TRIANGLES[cube_index]
+        
+        #we don't need to calculate anything if all vertices of a cube are above or below the threshold
+        mask = ~((cube_index == 0) | (cube_index == 0xFF))
+        
+        edge = MC_EDGES[cube_index[mask]]
+        intersections = self.create_intersection_list(edge, self.vertices[mask,:,:], self.values[mask,:])
+        triangles = MC_TRIANGLES[cube_index[mask]]
         self.create_triangles(intersections, triangles)
 
         # for v_index in range(self.vertices.shape[0]):
@@ -573,6 +577,107 @@ class MarchingCubes(object):
 
         if return_triangles:
             return self.export_triangles()
+        
+class RasterMarchingCubes(MarchingCubes):
+    """
+    Marching cubes with some optimisations data on a regular grid
+    """
+    
+    v_offsets = np.array([[0,0,0],
+                          [1,0,0],
+                          [1,1,0],
+                          [0,1,0],
+                          [0, 0, 1],
+                          [1, 0, 1],
+                          [1, 1, 1],
+                          [0, 1, 1]])
+    
+    def __init__(self, image, isolevel=0, voxelsize=(1.,1.,1.)):
+        """
+        Initialize the marching cubes algorithm
+
+        Parameters
+        ----------
+        isolevel : int
+            Threshold determining if vertex lies inside or outside the surface.
+        """
+        self.image = image.squeeze().astype('f')
+        self.voxelsize = voxelsize
+        self.triangles = None  # The list of triangles
+        self.isolevel = isolevel
+        
+    def cube_index(self):
+        """
+        Takes in a set of 8 vertex values (values of v0-v7) and determines if each is above or below the isolevel.
+
+        Parameters
+        ----------
+        values : np.array
+            Values at the 8 vertices v0-v7 corresponding to if the box is inside/outside the volume.
+
+        Returns
+        -------
+        indices: int
+            Value to use for lookup in MC_EDGES, MC_TRIANGLES.
+        """
+
+        imm = self.image < self.isolevel
+        
+        res = (imm[:-1,:-1,:-1] << 0) + \
+              (imm[1:, :-1,:-1] << 1) + \
+              (imm[1:, 1:, :-1] << 2) + \
+              (imm[:-1, 1:, :-1] << 3) + \
+              (imm[:-1, :-1, 1:] << 4) + \
+              (imm[1:, :-1, 1:] << 5) + \
+              (imm[1:, 1:, 1:] << 6) + \
+              (imm[:-1, 1:, 1:] << 7)
+        
+        return res
+    
+    def gen_vertices_and_vals(self, cube_mask):
+        coords = np.argwhere(cube_mask)[:,None,:] + self.v_offsets[None,:,:]
+        
+        values = self.image[coords[:,:,0], coords[:,:,1], coords[:,:,2]]
+        
+        #print(coords.shape, values.shape)
+        
+        return coords.astype('f')*np.array(self.voxelsize)[None,None,:], values
+
+    def march(self, return_triangles=True, **kwargs):
+        """
+        March over the input vertices.
+
+        Parameters
+        ----------
+        return_triangles : bool
+            Return the list of triangles post-march or nah?
+
+        Returns
+        -------
+        Optionally, an array of triangles after marching.
+        """
+    
+        cube_index = self.cube_index()
+        
+        #print(cube_index.dtype, cube_index.max(), cube_index.min())
+    
+        #we don't need to calculate anything if all vertices of a cube are above or below the threshold
+        mask = ~((cube_index == 0) | (cube_index == 0xFF))
+        
+        #print(self.image.shape, cube_index.shape, mask.shape, mask.sum())
+        
+        cube_index = cube_index[mask].ravel()
+    
+        edge = MC_EDGES[cube_index]
+        intersections = self.create_intersection_list(edge, *self.gen_vertices_and_vals(mask))
+        triangles = MC_TRIANGLES[cube_index]
+        self.create_triangles(intersections, triangles)
+    
+    
+        if return_triangles:
+            return self.export_triangles()
+        
+        
 
 def generate_sphere_voxels(radius=10):
     """
@@ -647,9 +752,9 @@ def generate_sphere_image(radius=10):
     X, Y, Z = np.mgrid[(-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0]
 
     # Uncomment to create sphere missing a top
-    X += radius/2
-    Y += radius/5
-    Z += radius/5
+    # X += radius/2
+    # Y += radius/5
+    # Z += radius/5
 
     R2 = np.sqrt(X*X + Y*Y + Z*Z)
     
@@ -673,7 +778,10 @@ def image_to_vertex_values(im, voxelsize=1.0):
     -------
 
     """
-    V = voxelsize*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    if np.isscalar(voxelsize):
+        V = voxelsize*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    else:
+        V = np.array(voxelsize)[:,None,None,None]*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
     
     def _rs(v):
         return v.reshape(3, -1).T.reshape(-1, 1, 3)

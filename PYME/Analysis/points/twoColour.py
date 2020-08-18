@@ -25,7 +25,6 @@
 import numpy as np
 import scipy as sp
 from PYME.localization import ofind
-from PYME.localization.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
 #from matplotlib import delaunay
@@ -87,7 +86,7 @@ def robustLinLhood(p, x, y, var=1):
     return -scipy.stats.t.logpdf(err, 1).sum()
     
 
-class shiftModel(object):
+class ShiftModel(object):
     def __init__(self , *args, **kwargs):
         """
         To recreate shiftmap from dictionary of fit results,
@@ -103,9 +102,23 @@ class shiftModel(object):
         
         cn = '.'.join([self.__class__.__module__, self.__class__.__name__])       
         return json.dumps({cn:self.__dict__})
+    
+    @classmethod
+    def from_md_entry(cls, mdentry):
+        import json
+        import importlib
+        
+        cn, dict = json.loads(mdentry).items()[0]
+        
+        parts = cn.split('.')
+        mod, cln = '.'.join(parts[:-1]), parts[-1]
+        
+        cl = getattr(importlib.import_module(mod), cln)
+        
+        return cl(dict=dict)
 
     
-class linModel(shiftModel):
+class linModel(ShiftModel):
         
     def fit(self, x, dx, var, axis):
         #do a simple linear fit to estimate start parameters
@@ -134,7 +147,7 @@ def robustLin2Lhood(p, x, y, dx, var=1):
     err = (dx - (mx*x + my*y + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin2Model(shiftModel):
+class lin2Model(ShiftModel):
     def fit(self, x, y, dx, var=1):
         #do a simple linear fit to estimate start parameters
         pstart = linalg.lstsq(np.vstack([x, y, np.ones_like(x)]).T, dx)[0]
@@ -171,7 +184,7 @@ def robustLin3zLhood(p, x, y, z, dx, var=1):
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0 + mz*z + mxz*x*z + myz*y*z + mxyz*x*y*z))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin3zModel(shiftModel):
+class lin3zModel(ShiftModel):
     ZDEPSHIFT = True
     sc = 1./18e3
     def fit(self, x, y, z, dx, var=1):
@@ -207,7 +220,7 @@ def robustLin3Lhood(p, x, y, dx, var=1):
     err = (dx - (mx*x + my*y + mx2*x*x +my2*y*y + mxy*x*y + mxy2*x*y*y + mx2y*x*x*y + mx3*x*x*x + x0))/var
     return -scipy.stats.t.logpdf(err, 1).sum()
     
-class lin3Model(shiftModel):
+class lin3Model(ShiftModel):
     sc = 1./18e3
     def fit(self, x, y, dx, var=1):
         x = x*self.sc
@@ -323,6 +336,7 @@ def genRGBImage(g,r, gsat = 1, rsat= 1):
 
 
 def fitIndep(g,r,ofindThresh):
+    from PYME.localization.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
     rg = r + g #detect objects in sum image
     
     ofd = ofind.ObjectIdentifier(rg)
@@ -550,7 +564,7 @@ def warpCorrectRedImage(r, dx, dy):
     return vals.T
 
 
-class sffake(shiftModel):
+class sffake(ShiftModel):
     def fit(self, val):
         self.val = val
 

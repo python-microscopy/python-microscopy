@@ -22,7 +22,8 @@
 """generate a phase ramp psf unp.sing fourier optics"""
 import matplotlib.pyplot as plt
 import numpy as np
-from pylab import ifftshift, ifftn, fftn, fftshift
+# from pylab import ifftshift, ifftn, fftn, fftshift
+from numpy.fft import ifftshift, ifftn, fftn, fftshift
 
 k = 2*np.pi/488 #k at 488nm
 
@@ -127,7 +128,6 @@ def GenStripePRIPSF(zs, dx = 5):
 
     return np.abs(ps**2)
    
-
 
 
 

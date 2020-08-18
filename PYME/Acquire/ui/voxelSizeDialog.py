@@ -107,36 +107,37 @@ class VoxelSizeDialog(wx.Dialog):
 
 
     def _setVoxelSizeChoices(self):
-        voxelsizes = self.scope.settingsDB.execute("SELECT ID, name, x,y FROM VoxelSizes ORDER BY ID DESC").fetchall()
-
-        voxIDs = []
-        self.voxNames = {}
-        #self.compNames = []
-
-        for ch in self.vsChoices:
-            ch.Clear()
-
-        for ID, name, x, y in voxelsizes:
-            compName = '%s - (%3.3f, %3.3f)' % (name, x, y)
-
-            voxIDs.append(ID)
-            self.voxNames[compName] = name
-
-            for ch in self.vsChoices:
-                ch.Append(compName)
-
-        #print voxelsizes
-        #print voxIDs
-
-        for ch, camName in zip(self.vsChoices, self.camNames):
-            try:
-                currVoxelSizeID = self.scope.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.scope.cameras[camName].GetSerialNumber(),)).fetchone()[0]
+        with self.scope.settingsDB as conn:
+            voxelsizes = conn.execute("SELECT ID, name, x,y FROM VoxelSizes ORDER BY ID DESC").fetchall()
     
-                #print currVoxelSizeID
-                if not currVoxelSizeID is None:
-                    ch.SetSelection(voxIDs.index(currVoxelSizeID))
-            except:
-                pass
+            voxIDs = []
+            self.voxNames = {}
+            #self.compNames = []
+    
+            for ch in self.vsChoices:
+                ch.Clear()
+    
+            for ID, name, x, y in voxelsizes:
+                compName = '%s - (%3.3f, %3.3f)' % (name, x, y)
+    
+                voxIDs.append(ID)
+                self.voxNames[compName] = name
+    
+                for ch in self.vsChoices:
+                    ch.Append(compName)
+    
+            #print voxelsizes
+            #print voxIDs
+    
+            for ch, camName in zip(self.vsChoices, self.camNames):
+                try:
+                    currVoxelSizeID = conn.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.scope.cameras[camName].GetSerialNumber(),)).fetchone()[0]
+        
+                    #print currVoxelSizeID
+                    if not currVoxelSizeID is None:
+                        ch.SetSelection(voxIDs.index(currVoxelSizeID))
+                except:
+                    pass
 
 
 

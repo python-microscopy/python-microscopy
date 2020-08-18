@@ -21,17 +21,61 @@
 ##################
 import numpy
 import wx
-import pylab
+# import pylab
+import matplotlib.cm
 
-class visualiser:
+from PYME.ui.AUIFrame import AUIFrame
+import wx.lib.agw.aui as aui
+
+class MeshViewFrame(AUIFrame):
+    def __init__(self, *args, **kwargs):
+        from PYME.LMVis import gl_render3D_shaders as glrender
+        from PYME.LMVis import layer_panel
+        AUIFrame.__init__(self, *args, **kwargs)
+        
+        self.canvas = glrender.LMGLShaderCanvas(self)
+        self.AddPage(page=self.canvas, caption='View')
+
+        
+        self.panesToMinimise = []
+        self.layerpanel = layer_panel.LayerPane(self, self.canvas, caption=None, add_button=False)
+        self.layerpanel.SetSize(self.layerpanel.GetBestSize())
+        pinfo = aui.AuiPaneInfo().Name("layerPanel").Right().Caption('Layers').CloseButton(
+            False).MinimizeButton(True).MinimizeMode(
+            aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        self._mgr.AddPane(self.layerpanel, pinfo)
+
+        self.panesToMinimise.append(pinfo)
+
+        # self._mgr.AddPane(self.optionspanel.CreateToolBar(self),
+        #                   aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
+        #                   ToolbarPane().Right().GripperTop())
+        
+        for pn in self.panesToMinimise:
+            self._mgr.MinimizePane(pn)
+        
+        self.Layout()
+        
+        
+def new_mesh_viewer(parent=None,*args, **kwargs):
+    kwargs['size'] = kwargs.get('size', (800,800))
+    f = MeshViewFrame(parent, *args, **kwargs)
+    f.Show()
+
+    f.canvas.SetCurrent(f.canvas.gl_context)
+    f.canvas.initialize()
+    return f.canvas
+        
+from ._base import Plugin
+class Visualiser(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         self.tq = None
         
-        dsviewer.AddMenuItem('&3D', '3D Isosurface', self.On3DIsosurf)
+        self.canvases = []
+        
+        dsviewer.AddMenuItem('&3D', '3D Isosurface (mayavi)', self.On3DIsosurf)
+        dsviewer.AddMenuItem('&3D', '3D Isosurface (builtin)', self.isosurf_builtin)
         dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface(s) as u3d', self.save_u3d)
@@ -49,10 +93,41 @@ class visualiser:
         self.dsviewer.f3d.scene.stereo = True
 
         for i in range(self.image.data.shape[3]):
-            c = mlab.contour3d(self.image.data[:,:,:,i].astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = pylab.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
+            c = mlab.contour3d(self.image.data[:,:,:,i].squeeze().astype('f'), contours=[self.do.Offs[i] + .5/self.do.Gains[i]], color = matplotlib.cm.gist_rainbow(float(i)/self.image.data.shape[3])[:3])
             self.lastSurf = c
-            c.mlab_source.dataset.spacing = (self.image.mdh.getEntry('voxelsize.x') ,self.image.mdh.getEntry('voxelsize.y'), self.image.mdh.getEntry('voxelsize.z'))
+            c.mlab_source.dataset.spacing = self.image.voxelsize
             
+    def isosurf_builtin(self, event=None):
+        from PYME.experimental import isosurface
+        from PYME.LMVis import gl_render3D_shaders as glrender
+        from PYME.LMVis.layers.mesh import TriangleRenderLayer
+
+        glcanvas = new_mesh_viewer()#glrender.showGLFrame()
+        glcanvas.layer_data={}
+
+        for i in range(self.image.data.shape[3]):
+            isolevel = self.do.Offs[i] + .5/self.do.Gains[i]
+            T = isosurface.isosurface(self.image.data[:,:,:,i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
+            glcanvas.layer_data[self.image.names[i]] = T
+            layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context,
+                                        cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6],
+                                        #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                        )
+            glcanvas.add_layer(layer)
+            
+            layer.engine._outlines=False
+            layer.show_lut=False
+            
+        
+        self.canvases.append(glcanvas)
+        
+        glcanvas.displayMode = '3D'
+        glcanvas.fit_bbox()
+        glcanvas.Refresh()
+            
+        
+
+
 
     def On3DVolume(self, event):
         try:
@@ -126,7 +201,7 @@ class visualiser:
 
 
 def Plug(dsviewer):
-    dsviewer.vis3D = visualiser(dsviewer)
+    return Visualiser(dsviewer)
 
 
 

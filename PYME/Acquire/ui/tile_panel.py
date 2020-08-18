@@ -115,3 +115,253 @@ class TilePanel(wx.Panel):
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')
+
+class CircularTilePanel(TilePanel):
+    def __init__(self, parent, scope):
+        wx.Panel.__init__(self, parent)
+
+        self.scope = scope
+
+        self._gui_proc = None
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
+        hsizer2.Add(self.radius_um, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.return_home_checkbox = wx.CheckBox(self, -1, 'Return to start on completion')
+        hsizer2.Add(self.return_home_checkbox, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
+        self.tDestination = wx.TextCtrl(self, -1, value='')
+        hsizer2.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer2, 0, wx.EXPAND, 0)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.pProgress = wx.Gauge(self, -1, range=100)
+        hsizer2.Add(self.pProgress, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer2, 0, wx.EXPAND, 0)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        # self.bTest = wx.Button(self, -1, 'Test')
+        # self.bTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        # self.bTest.Disable()
+        # hsizer2.Add(self.bTest, 0, wx.ALL, 2)
+        self.bGo = wx.Button(self, -1, 'Go')
+        self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
+        hsizer2.Add(self.bGo, 0, wx.ALL, 2)
+        self.bStop = wx.Button(self, -1, 'Stop')
+        self.bStop.Disable()
+        self.bStop.Bind(wx.EVT_BUTTON, self.OnStop)
+        hsizer2.Add(self.bStop, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        self.SetSizerAndFit(vsizer)
+
+    def OnGo(self, event=None):
+        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
+
+        self.scope.tiler = tiler.CircularTiler(self.scope, tile_dir=self.tDestination.GetValue(),
+                                               max_radius_um=float(self.radius_um.GetValue()), trigger=trigger,
+                                               return_to_start=self.return_home_checkbox.GetValue())
+
+        self.bStop.Enable()
+        self.bGo.Disable()
+
+        self.scope.tiler.on_stop.connect(self._on_stop)
+        self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.start()
+
+
+class MultiwellTilePanel(TilePanel):
+    def __init__(self, parent, scope):
+        wx.Panel.__init__(self, parent)
+
+        self.scope = scope
+
+        self._gui_proc = None
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
+        self.tDestination = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Well Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
+        hsizer.Add(self.radius_um, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells x:'), 0, wx.ALL, 2)
+        self.n_x = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_x, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'x cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.x_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 9)
+        hsizer.Add(self.x_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells y:'), 0, wx.ALL, 2)
+        self.n_y = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_y, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'y cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.y_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 9)
+        hsizer.Add(self.y_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bGo = wx.Button(self, -1, 'Go')
+        # self.bGo.Disable()
+        self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
+        hsizer.Add(self.bGo, 0, wx.ALL, 2)
+        self.bStop = wx.Button(self, -1, 'Stop')
+        self.bStop.Disable()
+        self.bStop.Bind(wx.EVT_BUTTON, self.OnStop)
+        hsizer.Add(self.bStop, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        self.SetSizerAndFit(vsizer)
+
+
+    def OnGo(self, event=None):
+        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
+
+        # get laser states
+        laser_state = {k:v for k, v in dict(self.scope.state).items() if k.startswith('Laser')}
+
+        self.scope.tiler = tiler.MultiwellCircularTiler(float(self.radius_um.GetValue()),
+            float(self.x_spacing_mm.GetValue()) * 1e3, float(self.y_spacing_mm.GetValue()) * 1e3,
+            int(self.n_x.GetValue()), int(self.n_y.GetValue()), self.scope, self.tDestination.GetValue(),
+            trigger=trigger, laser_state=laser_state)
+
+        self.bStop.Enable()
+        self.bGo.Disable()
+
+        # self.scope.tiler.on_stop.connect(self._on_stop)
+        # self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.start()
+
+    def OnStop(self, event=None):
+        self.scope.tiler.stop()
+
+
+class MultiwellProtocolQueuePanel(wx.Panel):
+    def __init__(self, parent, scope):
+        wx.Panel.__init__(self, parent)
+        
+        self.scope=scope
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells x:'), 0, wx.ALL, 2)
+        self.n_x = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_x, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'x cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.x_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 9)
+        hsizer.Add(self.x_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, '# wells y:'), 0, wx.ALL, 2)
+        self.n_y = wx.TextCtrl(self, -1, value='%d' % 3)
+        hsizer.Add(self.n_y, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'y cent. dist [mm]:'), 0, wx.ALL, 2)
+        self.y_spacing_mm = wx.TextCtrl(self, -1, value='%.1f' % 9)
+        hsizer.Add(self.y_spacing_mm, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALL, 2)
+        self.nice = wx.TextCtrl(self, -1, value='%d' % 20)
+        hsizer.Add(self.nice, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.queue_button = wx.Button(self, -1, 'Queue')
+        # self.bGo.Disable()
+        self.queue_button.Bind(wx.EVT_BUTTON, self.OnQueue)
+        hsizer.Add(self.queue_button, 0, wx.ALL, 2)
+        # self.bStop = wx.Button(self, -1, 'Stop')
+        # self.bStop.Disable()
+        # self.bStop.Bind(wx.EVT_BUTTON, self.OnStop)
+        # hsizer.Add(self.bStop, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        self.SetSizerAndFit(vsizer)
+
+    def OnQueue(self, event=None):
+        import numpy as np
+        from PYME.Acquire import protocol
+        tile_protocols = [p for p in protocol.get_protocol_list() if 'tile' in p]
+
+        dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', tile_protocols)
+
+        ret = dialog.ShowModal()
+
+        if ret != wx.ID_OK:
+            dialog.Destroy()
+            return
+        
+        protocol_name = dialog.GetStringSelection()
+        dialog.Destroy()
+
+        x_spacing = float(self.x_spacing_mm.GetValue()) * 1e3  # [mm -> um]
+        y_spacing = float(self.y_spacing_mm.GetValue()) * 1e3  # [mm -> um]
+        n_x = int(self.n_x.GetValue())
+        n_y = int(self.n_y.GetValue())
+        nice = int(self.nice.GetValue())
+
+        curr_pos = self.scope.GetPos()
+
+        x_w = np.arange(0, n_x * x_spacing, x_spacing)
+        y_w = np.arange(0, n_y * y_spacing, y_spacing)
+
+        x_wells = []
+        y_wells = np.repeat(y_w, n_x)
+        # zig-zag with turns along x
+        for xi in range(n_y):
+            if xi % 2:
+                x_wells.extend(x_w[::-1])
+            else:
+                x_wells.extend(x_w)
+        x_wells = np.asarray(x_wells)
+
+        # add the current scope position offset
+        x_wells += curr_pos['x']
+        y_wells += curr_pos['y']
+
+        # queue them all
+        for x, y in zip(x_wells, y_wells):
+            args = {'state': {'Positioning.x': x, 'Positioning.y': y}}
+            self.scope.actions.QueueAction('state.update', args, nice)
+            args = {'protocol': protocol_name, 'stack': False, 
+                    'doPreflightCheck':False}
+            self.scope.actions.QueueAction('spoolController.StartSpooling', 
+                                            args, nice)
+        self.scope.actions.QueueAction('turnAllLasersOff', 
+                                            {}, nice)
+        

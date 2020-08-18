@@ -28,7 +28,7 @@ import os
 import wx
 #import wx.lib.agw.aui as aui
 #import histLimits
-import pylab
+# import pylab
 import scipy.misc
 #import subprocess
 
@@ -154,7 +154,7 @@ class ImageViewPanel(wx.Panel):
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
                 
-            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
@@ -251,11 +251,11 @@ class ImageViewPanel(wx.Panel):
         
 
     def OnKeyPress(self, event):
-        if event.GetKeyCode() == wx.WXK_PRIOR:
+        if event.GetKeyCode() == wx.WXK_PAGEUP:
             self.do.zp =max(self.do.zp - 1, 0)
             self.Refresh()
             self.Update()
-        elif event.GetKeyCode() == wx.WXK_NEXT:
+        elif event.GetKeyCode() == wx.WXK_PAGEDOWN:
             self.do.zp = min(self.do.zp + 1, self.image.data.shape[self.zdim] - 1)
             self.Refresh()
             self.Update()

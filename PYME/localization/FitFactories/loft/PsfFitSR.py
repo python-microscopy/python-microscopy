@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -175,13 +175,13 @@ def f_Interp3d(p, X, Y, Z, P, *args):
 
     #print Z[0] - z0
 
-    x1 = x0/dx - floor(X.mean()/dx)
-    y1 = y0/dy - floor(Y.mean()/dy)
-    z1 = z0/dz - floor(Z.mean()/dz)
+    x1 = x0/dx - numpy.floor(X.mean()/dx)
+    y1 = y0/dy - numpy.floor(Y.mean()/dy)
+    z1 = z0/dz - numpy.floor(Z.mean()/dz)
 
     m = numpy.fft.ifftn(interpModelF*numpy.exp(-2j*numpy.pi*(kx*x1 + ky*y1 + kz*z1))).real
 
-    g1 = m[(ceil((m.shape[0]+1)/2.) - ceil(len(X)/2.)):(ceil((m.shape[0]+1)/2.) + len(X)/2), (ceil(m.shape[1]/2.) - ceil(len(Y)/2.) + 1):(floor(m.shape[1]/2.) + len(Y)/2 + 1), (floor(m.shape[2]/2.) - ceil(len(Z)/2.) + 1):(floor(m.shape[2]/2.) + len(Z)/2 + 1)]
+    g1 = m[(numpy.ceil((m.shape[0]+1)/2.) - numpy.ceil(len(X)/2.)):(numpy.ceil((m.shape[0]+1)/2.) + len(X)/2), (numpy.ceil(m.shape[1]/2.) - numpy.ceil(len(Y)/2.) + 1):(numpy.floor(m.shape[1]/2.) + len(Y)/2 + 1), (numpy.floor(m.shape[2]/2.) - numpy.ceil(len(Z)/2.) + 1):(numpy.floor(m.shape[2]/2.) + len(Z)/2 + 1)]
 
     #print g1.shape
 
@@ -290,7 +290,7 @@ class PSFFitFactory:
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
 
-        Z = array([0]).astype('f')
+        Z = numpy.array([0]).astype('f')
         P = scipy.arange(0,1.01,.01)
 
         #print DeltaX

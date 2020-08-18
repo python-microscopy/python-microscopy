@@ -5,9 +5,9 @@ import socket
 import time
 
 import yaml
-from PYME import config as conf
+from PYME import config
 from PYME.cluster import ruleserver
-from PYME.misc import pyme_zeroconf
+from PYME.misc import pyme_zeroconf, sqlite_ns
 from PYME.misc.computerName import GetComputerName
 
 logging.basicConfig()
@@ -15,7 +15,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 #confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
 
+from argparse import ArgumentParser
+
 LOG_STREAMS = True
+
+
 
 def log_stream(stream, logger):
     while LOG_STREAMS:
@@ -24,15 +28,28 @@ def log_stream(stream, logger):
 
 def main():
     global LOG_STREAMS
-    confFile = os.path.join(conf.user_config_dir, 'distributor.yaml')
-    with open(confFile) as f:
-        config = yaml.load(f)
+    
+    op = ArgumentParser(description="PYME rule server for task distribution. This should run once per cluster.")
 
-    serverAddr, serverPort = config['distributor']['http_endpoint'].split(':')
-    externalAddr = socket.gethostbyname(socket.gethostname())
+    #NOTE - currently squatting on port 15346 for testing - TODO can we use an ephemeral port
+    op.add_argument('-p', '--port', dest='port', default=config.get('ruleserver-port', 15346), type=int,
+                  help="port number to serve on (default: 15346, see also 'ruleserver-port' config entry)")
+    
+    op.add_argument('-a','--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
+                  help='Optionally restrict advertisements to local machine')
+    
+    args = op.parse_args()
+
+    serverPort = args.port
+    
+    if args.advertisements == 'local':
+        #bind on localhost
+        bind_addr = '127.0.0.1'
+    else:
+        bind_addr = '' #bind all interfaces
     
     #set up logging
-    data_root = conf.get('dataserver-root')
+    data_root = config.get('dataserver-root')
     if data_root:
         distr_log_dir = '%s/LOGS' % data_root
 
@@ -47,12 +64,20 @@ def main():
         distLogErr.addHandler(dist_err_handler)
     
     
-    proc = ruleserver.ServerThread(serverPort, profile=False)
+    proc = ruleserver.ServerThread(serverPort, bind_addr=bind_addr, profile=False)
     proc.start()
     #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
 
-    ns = pyme_zeroconf.getNS('_pyme-taskdist')
-    ns.register_service('PYMERuleServer: ' + GetComputerName(), externalAddr, int(serverPort))
+    if args.advertisements == 'zeroconf':
+        ns = pyme_zeroconf.getNS('_pyme-taskdist')
+    else:
+        #assume 'local'
+        ns = sqlite_ns.getNS('_pyme-taskdist')
+
+    time.sleep(0.5)
+    #get the actual adress (port) we bound to
+    sa = proc.distributor.socket.getsockname()
+    ns.register_service('PYMERuleServer: ' + GetComputerName(), proc.externalAddr, int(sa[1]))
 
     try:
         while proc.is_alive():

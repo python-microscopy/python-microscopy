@@ -1,11 +1,12 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 import dispatch
 
@@ -37,7 +38,7 @@ class WireframeEngine(BaseEngine):
                 glColorPointerf(layer.get_colors()*sc[None,:])
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
-                
+
 
 
 class FlatFaceEngine(WireframeEngine):
@@ -49,12 +50,31 @@ class FlatFaceEngine(WireframeEngine):
         WireframeEngine.render(self, gl_canvas, layer)
 
 class ShadedFaceEngine(WireframeEngine):
+    _outlines = False
     def __init__(self, context=None):
         BaseEngine.__init__(self, context=context)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(GouraudShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
+        
+class OITShadedFaceEngine(WireframeEngine):
+    _outlines = False
+    
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
+        
+    def use_oit(self, layer):
+        return layer.alpha < 0.99
+
+    def render(self, gl_canvas, layer):
+        if self.use_oit(layer):
+            self.set_shader_program(OITGouraudShaderProgram)
+        else:
+            self.set_shader_program(GouraudShaderProgram)
+        WireframeEngine.render(self, gl_canvas, layer)
+        
+    
         
 class TesselEngine(WireframeEngine):
     _outlines = False
@@ -69,8 +89,9 @@ class TesselEngine(WireframeEngine):
 ENGINES = {
     'wireframe' : WireframeEngine,
     'flat' : FlatFaceEngine,
-    'shaded' : ShadedFaceEngine,
+    #'shaded' : ShadedFaceEngine,
     'tessel' : TesselEngine,
+    'shaded' : OITShadedFaceEngine,
 }
 
 
@@ -129,14 +150,23 @@ class TriangleRenderLayer(EngineLayer):
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
         if not self._pipeline is None:
-            self._pipeline.onRebuild.connect(self.update)
+            try:
+                self._pipeline.onRebuild.connect(self.update)
+            except AttributeError:
+                pass
 
     @property
     def datasource(self):
         """
         Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
         """
-        return self._pipeline.get_layer_data(self.dsname)
+        try:
+            return self._pipeline.get_layer_data(self.dsname)
+        except AttributeError:
+            try:
+                return self._pipeline[self.dsname]
+            except AttributeError:
+                return None
         #return self.datasource
     
     @property
@@ -164,7 +194,10 @@ class TriangleRenderLayer(EngineLayer):
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
+        try:
+            self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
+        except AttributeError:
+            pass
         
         if not self.datasource is None:
             dks = ['constant',]
@@ -283,13 +316,13 @@ class TriangleRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices'), visible_when='_datasource_choices')]),
                      Item('method'),
                      Item('normal_mode', visible_when='method=="shaded"'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
                      Group([Item('cmap', label='LUT'),
-                            Item('alpha', visible_when='method in ["flat", "tessel"]')
+                            Item('alpha', visible_when='method in ["flat", "tessel", "shaded"]')
                             ])
                      ], )
         # buttons=['OK', 'Cancel'])

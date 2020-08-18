@@ -21,6 +21,12 @@
 #
 ##################
 
+"""
+Test a fit - in general use FitTestJigWC instead
+
+"""
+
+
 import numpy
 from PYME.Acquire.Hardware.Simulator.fakeCam import NoiseMaker
 #import numpy as np

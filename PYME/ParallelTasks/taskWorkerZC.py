@@ -28,7 +28,7 @@ import random
 import time
 
 import PYME.version
-import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
 
 import os
 import sys
@@ -52,7 +52,7 @@ Pyro.config.PYRO_MOBILE_CODE=0
 
 def main():    
     #ns=Pyro.naming.NameServerLocator().getNS()
-    ns = pzc.getNS()
+    ns = hybrid_ns.getNS()
 
     #tq = Pyro.core.getProxyForURI("PYRONAME://" + taskQueueName)
 

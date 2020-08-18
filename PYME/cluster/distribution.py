@@ -2,11 +2,13 @@ import requests
 import json
 import socket
 from PYME.misc import pyme_zeroconf
+from PYME.misc import hybrid_ns
 import logging
 logger = logging.getLogger(__name__)
 
-def getNodeInfo():
-    ns = pyme_zeroconf.getNS('_pyme-taskdist')
+def getNodeInfo(ns=None):
+    if ns is None:
+        ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
 
@@ -22,8 +24,9 @@ def getNodeInfo():
 
     return queueURLs
 
-def getDistributorInfo():
-    ns = pyme_zeroconf.getNS('_pyme-taskdist')
+def getDistributorInfo(ns=None):
+    if ns is None:
+        ns = hybrid_ns.getNS('_pyme-taskdist')
 
     queueURLs = {}
 

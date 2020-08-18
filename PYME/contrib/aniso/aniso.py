@@ -78,7 +78,8 @@ def anisodiff(img,niter=1,kappa=50,gamma=0.1,step=(1.,1.),option=1,ploton=False)
 
 	# create the plot figure, if requested
 	if ploton:
-		import pylab as pl
+		# import pylab as pl
+        import matplotlib.pyplot as pl
 		from time import sleep
 
 		fig = pl.figure(figsize=(20,5.5),num="Anisotropic diffusion")
@@ -208,7 +209,8 @@ def anisodiff3(stack,niter=1,kappa=50,gamma=0.1,step=(1.,1.,1.),option=1,ploton=
 
 	# create the plot figure, if requested
 	if ploton:
-		import pylab as pl
+		# import pylab as pl
+        import matplotlib.pyplot as pl
 		from time import sleep
 
 		showplane = stack.shape[0]//2

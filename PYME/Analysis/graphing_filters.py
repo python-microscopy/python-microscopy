@@ -15,6 +15,10 @@ class offline_plotting(object):
 def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabel=None, title=None, figsize=(7,5), **kwargs):
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     #print type
     
@@ -57,6 +61,11 @@ def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabe
 def hist(data, bins=20, type='line', xlabel=None, ylabel=None, title=None, figsize=(7, 5)):
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
+        
     import numpy as np
     
     #print type
@@ -99,6 +108,10 @@ def movieplot(clump, image):
     
     import matplotlib.pyplot as plt
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     with offline_plotting():
         nRows = int(np.ceil(clump.nEvents / 10.))
@@ -187,6 +200,10 @@ def movieplot2(clump, image):
     import matplotlib.pyplot as plt
     #from PIL import Image
     import mpld3
+    import warnings
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
     
     #plt.ioff()
     with offline_plotting():
@@ -218,7 +235,7 @@ def movieplot2(clump, image):
             contours = None
         
         for i in range(clump.nEvents):
-            k = np.floor(i / 10)
+            k = int(np.floor(i / 10))
             l = i % 10
             
             y_0 = l * (roiSize + 2)
@@ -238,7 +255,7 @@ def movieplot2(clump, image):
                 else:
                     scMax = img.max()
                 
-                #print x_0, y_0, img.shape, img_out.shape, i
+                # print(x_0, y_0, img.shape, img_out.shape, i)
                 
                 img_out[x_0:(x_0 + roiSize), y_0:(y_0 + roiSize), 0] = np.clip(255. * img.T / scMax, 0, 255).astype(
                     'uint8')
@@ -265,7 +282,7 @@ def movieplot2(clump, image):
             
             if not contours is None:
                 xc, yc = contours[i].T
-                plt.plot(xc - xp + 20, yc - yp + 20, c='b')#plt.cm.hsv(clump.clumpID/16.))
+                plt.plot(xc - xp + roiHalfSize + y_0, yc - yp + roiHalfSize + x_0, c='b')#plt.cm.hsv(clump.clumpID/16.))
         
         if img_out.shape[2] <= 1:
             plt.imshow(img_out.squeeze(), interpolation='nearest', cmap=plt.cm.gray, clim=[0, 255])

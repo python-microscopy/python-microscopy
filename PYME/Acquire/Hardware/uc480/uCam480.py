@@ -66,6 +66,7 @@ def as_string(cinfo,field):
     return (ctypes.cast(strval, ctypes.c_char_p)).value
 
 def translateCaminfo(camlist):
+    print(camlist, dir(camlist), camlist.dwCount)
     tlist = {}
 
     tlist['count'] = int(camlist.dwCount)
@@ -75,6 +76,7 @@ def translateCaminfo(camlist):
     tlist['cameras'] = []
     for n in range(tlist['count']):
         uci = "uci%d" % n
+        print(uci)
         caminfo = getattr(camlist,uci)
         camdict = {
             'serno'       : as_string(caminfo,'SerNo[16]'),
@@ -92,14 +94,21 @@ def GetCameraList():
     nCams = GetNumCameras()
     
     class UEYE_CAMERA_LIST(ctypes.Structure):
-        _fields_ = [("dwCount", ctypes.wintypes.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
+        _fields_ = [("dwCount", uc480.DWORD ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
         # _fields_ = [("dwCount", ctypes.wintypes.ULONG ),
         #             ("caminfo", uc480.UEYE_CAMERA_INFO * nCams)]
 
     camlist = UEYE_CAMERA_LIST()
     camlist.dwCount = nCams
     
-    uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    #print('dwCount:', camlist.dwCount, nCams)
+
+    ret = uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    if not ret == uc480.IS_SUCCESS:
+        raise RuntimeError('Error (%d) getting camera list' % ret)
+
+    #print('dwCount:', camlist.dwCount, nCams)
+    camlist.dwCount = nCams
 
     return translateCaminfo(camlist)
 
@@ -157,12 +166,12 @@ class uc480Camera(Camera):
             #    All other gain factors are higher than that. This means, the system gain of 0.125 DN
             #    per electron, as specified in the camera test sheet, is the smallest possible value.
             'ElectronsPerCount'  : 7.97,
-            'ReadNoiseElectrons' : 6.0,
+            'ReadNoise' : 6.0,
             'ADOffset' : 10
         },
         'default' : { # fairly arbitrary values
             'ElectronsPerCount'  : 10,
-            'ReadNoiseElectrons' : 20,
+            'ReadNoise' : 20,
             'ADOffset' : 10
         }
     }
@@ -180,11 +189,11 @@ class uc480Camera(Camera):
             raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested %d bit' % (nbits))
         self.nbits = nbits
 
-        self.boardHandle = wintypes.HANDLE(boardNum)
+        self.boardHandle = uc480.HANDLE(boardNum)
         if isDeviceID:
-            self.boardHandle = wintypes.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
+            self.boardHandle = uc480.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
 
-        ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
+        ret = uc480.CALL('InitCamera', byref(self.boardHandle), uc480.HWND(0))
         print(('I',ret))
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
@@ -201,6 +210,8 @@ class uc480Camera(Camera):
             raise RuntimeError('Error getting camera info: %d: %s' % GetError(self.boardHandle))
         
         self.serialNum = caminfo.SerNo
+
+        logger.debug('caminfo: %s' %caminfo)
 
         #get the CCD size 
         sensorProps = uc480.SENSORINFO()
@@ -730,7 +741,7 @@ class uc480Camera(Camera):
         return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())
 
     def GetReadNoise(self): # readnoise in e-
-        return (self.baseProps['ReadNoiseElectrons'])
+        return (self.baseProps['ReadNoise'])
 
     def GetADOffset(self):
         return self.baseProps['ADOffset']
@@ -756,7 +767,7 @@ class uc480Camera(Camera):
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
             mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
             mdh.setEntry('Camera.ADOffset', self.GetADOffset())
-            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e- #FIXME???
+            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e-
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())

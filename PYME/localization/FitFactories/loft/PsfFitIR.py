@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -84,9 +84,9 @@ def setModel(modName, md):
         if not voxelsize.x == md.voxelsize.x:
             raise RuntimeError("PSF and Image voxel sizes don't match")
 
-        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        IntXVals = 1e3*voxelsize.x*scipy.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*scipy.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*scipy.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         dx = voxelsize.x*1e3
         dy = voxelsize.y*1e3
@@ -144,9 +144,9 @@ def setModel(modName, md):
 #    return m
 
 def interp(X, Y, Z):
-    X = atleast_1d(X)
-    Y = atleast_1d(Y)
-    Z = atleast_1d(Z)
+    X = scipy.atleast_1d(X)
+    Y = scipy.atleast_1d(Y)
+    Z = scipy.atleast_1d(Z)
 
     ox = X[0]
     oy = Y[0]
@@ -298,7 +298,7 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     X = 1e3*metadata.getEntry('voxelsize.x')*scipy.mgrid[xslice]
     Y = 1e3*metadata.getEntry('voxelsize.y')*scipy.mgrid[yslice]
-    Z = array([0]).astype('f')
+    Z = numpy.array([0]).astype('f')
     P = scipy.arange(0,1.01,.01)
 
     im = fitfcn(fitResults['fitResults'], X, Y, Z, P).reshape(len(X), len(Y))
@@ -337,7 +337,7 @@ class PSFFitFactory:
 
         X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
         Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Z = array([0]).astype('f')
+        Z = numpy.array([0]).astype('f')
 
         return f_Interp3d(params, X, Y, Z, None)
 
@@ -377,7 +377,7 @@ class PSFFitFactory:
         y0 =  1e3*self.metadata.voxelsize.y*y0
 
 
-        Z = array([0]).astype('f')
+        Z = numpy.array([0]).astype('f')
         P = scipy.arange(0,1.01,.01)
 
         #print DeltaX

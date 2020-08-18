@@ -25,8 +25,8 @@ def CreateLayerPanel(visFr):
     visFr._mgr.AddPane(pane, pinfo)
 
 class LayerPane(afp.foldingPane):
-    def __init__(self, panel, visFr):
-        afp.foldingPane.__init__(self, panel, -1, caption="Layers", pinned=True)
+    def __init__(self, panel, visFr, caption="Layers", add_button=True):
+        afp.foldingPane.__init__(self, panel, -1, caption=caption, pinned=True)
         self.visFr = visFr
         
         self.il = wx.ImageList(16,16)
@@ -50,11 +50,11 @@ class LayerPane(afp.foldingPane):
         self.update()
 
         #self.vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
-        
-        bAddLayer = wx.Button(self.pan, -1, 'New', style=wx.BU_EXACTFIT)
-        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_pointcloud_layer())
-
-        self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
+        if add_button:
+            bAddLayer = wx.Button(self.pan, -1, 'New', style=wx.BU_EXACTFIT)
+            bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_pointcloud_layer())
+    
+            self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
 
         self.pan.SetSizerAndFit(self.vsizer)
         self.AddNewElement(self.pan)

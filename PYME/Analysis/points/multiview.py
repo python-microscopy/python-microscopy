@@ -98,7 +98,7 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     if not inject:
         datasource = tabular.MappingFilter(datasource)
 
-    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh['voxelsize.x']*1000)  # voxelsize is in um
+    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh.voxelsize_nm.x)  # voxelsize is in um
 
     numChans = mdh.getOrDefault('Multiview.NumROIs', 1)
     color_chans = np.array(mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChans, 'i'))).astype('i')

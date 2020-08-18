@@ -153,9 +153,10 @@ static void jacGauss(double *p, double *res, int m, int n, void *data)
 static PyObject * fitGauss(PyObject *self, PyObject *args, PyObject *keywds) 
 {
     double *x_ = 0;  
-    int m=7, n=0;
+    npy_intp m[1];
+    int n=0;
     int i;
-    int covSize[2];
+    npy_intp covSize[2];
         
     PyObject *oX =0;
     PyObject *oY=0;
@@ -182,8 +183,8 @@ static PyObject * fitGauss(PyObject *self, PyObject *args, PyObject *keywds)
     opts[0]=LM_INIT_MU; opts[1]=1E-15; opts[2]=1E-15; opts[3]=1E-20;
     opts[4]=LM_DIFF_DELTA; // relevant only if the finite difference jacobian version is used
 
-    
-    outp = (PyArrayObject*) PyArray_FromDims(1,&m,PyArray_DOUBLE);
+    m[0] = 7;
+    outp = (PyArrayObject*) PyArray_SimpleNew(1,m,PyArray_DOUBLE);
     p = (parameters*)outp->data;
     
     
@@ -291,8 +292,8 @@ static PyObject * fitGauss(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    covSize[0]=m;covSize[1]=m;
-    outcov = (PyArrayObject*) PyArray_FromDims(2,covSize,PyArray_DOUBLE);
+    covSize[0]=m[0];covSize[1]=m[0];
+    outcov = (PyArrayObject*) PyArray_SimpleNew(2,covSize,PyArray_DOUBLE);
         
     x_ = PyMem_Malloc(n*sizeof(double));
     if (x_ == 0)
