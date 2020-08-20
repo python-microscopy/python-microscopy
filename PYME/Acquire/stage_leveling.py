@@ -73,10 +73,14 @@ class StageLeveler(object):
 
         x = np.arange(0, x_length, x_spacing)
         y = np.arange(0, y_length, y_spacing)
-
-        current = self._scope.GetPos() if center else dict(x=0, y=0)
-        x = x - (0.5 * x.max()) + current['x']
-        y = y - (0.5 * y.max()) + current['y']
+        
+        if center:
+            x = x - (0.5 * x.max())
+            y = y - (0.5 * y.max())
+        
+        current = self._scope.GetPos()
+        x += current['x']
+        y += current['y']
         
         x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
 
