@@ -71,9 +71,9 @@ class StageLeveler(object):
             scope position to be the smallest x, y position to queue (False)
         """
 
-        x = np.arange(0, x_length, x_spacing)
-        y = np.arange(0, y_length, y_spacing)
-        
+        x = np.arange(0, x_length, x_spacing, dtype=float)
+        y = np.arange(0, y_length, y_spacing, dtype=float)
+
         if center:
             x = x - (0.5 * x.max())
             y = y - (0.5 * y.max())
