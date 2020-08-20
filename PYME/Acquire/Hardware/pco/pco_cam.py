@@ -281,7 +281,7 @@ class PcoCam(Camera):
         elif self._mode == self.MODE_CONTINUOUS:
             # Allocate buffer (2 seconds of buffer)
             self.buffer_size = int(max(int(2.0*self.GetFPS()), 1))
-            self.cam.record(number_of_images=int(max(int(2.0*self.GetFPS()), 1)), mode='ring buffer')
+            self.cam.record(number_of_images=self.buffer_size, mode='ring buffer')
 
         eventLog.logEvent('StartAq', '')
 
@@ -299,7 +299,8 @@ class PcoCam(Camera):
         return n_buf
 
     def GetBufferSize(self):
-        return self.cam.rec.get_settings()['maximum number of images']
+        # return self.cam.rec.get_settings()['maximum number of images']
+        return self.buffer_size
 
     def GetFPS(self):
         return 1.0/self.GetCycleTime()
