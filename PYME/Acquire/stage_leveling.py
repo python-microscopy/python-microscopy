@@ -53,7 +53,7 @@ class StageLeveler(object):
         """
         self._positions.append(self._scope.GetPos())
 
-    def add_grid(self, x_length, y_length, x_spacing, y_spacing):
+    def add_grid(self, x_length, y_length, x_spacing, y_spacing, center=True):
         """
         Add a grid of set spacings to the list of positions to scan when measuring offsets.
 
@@ -65,15 +65,23 @@ class StageLeveler(object):
         x_spacing : float
             x grid spacing, micrometers.
         y_spacing : float
-            y grid spacing, micrometers.
-
+            y grid spacing, micrometers.'
+        center : bool
+            center the grid on the current position (True) or take the current
+            scope position to be the smallest x, y position to queue (False)
         """
-        current = self._scope.GetPos()
-        x = np.arange(0, x_length, x_spacing)
-        x = x - (0.5 * x.max()) + current['x']
-        y = np.arange(0, y_length, y_spacing)
-        y = y - (0.5 * y.max()) + current['y']
 
+        x = np.arange(0, x_length, x_spacing, dtype=float)
+        y = np.arange(0, y_length, y_spacing, dtype=float)
+
+        if center:
+            x = x - (0.5 * x.max())
+            y = y - (0.5 * y.max())
+        
+        current = self._scope.GetPos()
+        x += current['x']
+        y += current['y']
+        
         x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
 
         self._positions.extend([{'x': xi, 'y': yi} for xi, yi in zip(x_grid.ravel(), y_grid.ravel())])
