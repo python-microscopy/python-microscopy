@@ -77,6 +77,8 @@ class PcoCam(Camera):
         else:
             curr_frame = self.buffer_size-self.GetNumImsBuffered()
 
+        # print('n_buffered: {}, n_read: {}, curr_frame: {}'.format(self.GetNumImsBuffered(), self.n_read, curr_frame))
+
         # Grab the image (unused metadata _)
         image, _ = self.cam.image(curr_frame)
 
@@ -144,6 +146,8 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_binning(value, self.GetVerticalBin())
 
+        self.n_read = 0
+
         self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetHorizontalBin(self):
@@ -161,6 +165,8 @@ class PcoCam(Camera):
         value = np.clip(value, 1, b_max)
 
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
+
+        self.n_read = 0
 
         self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
@@ -275,7 +281,7 @@ class PcoCam(Camera):
         elif self._mode == self.MODE_CONTINUOUS:
             # Allocate buffer (2 seconds of buffer)
             self.buffer_size = int(max(int(2.0*self.GetFPS()), 1))
-            self.cam.record(number_of_images=int(max(int(2.0*self.GetFPS()), 1)), mode='ring buffer')
+            self.cam.record(number_of_images=self.buffer_size, mode='ring buffer')
 
         eventLog.logEvent('StartAq', '')
 
@@ -283,6 +289,7 @@ class PcoCam(Camera):
 
     def StopAq(self):
         self.cam.stop()
+        self.n_read = 0
 
     def GetNumImsBuffered(self):
         try:
@@ -292,7 +299,8 @@ class PcoCam(Camera):
         return n_buf
 
     def GetBufferSize(self):
-        return self.cam.rec.get_settings()['maximum number of images']
+        # return self.cam.rec.get_settings()['maximum number of images']
+        return self.buffer_size
 
     def GetFPS(self):
         return 1.0/self.GetCycleTime()

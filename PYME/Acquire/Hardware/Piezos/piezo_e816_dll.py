@@ -21,6 +21,11 @@
 #
 ##################
 
+# To install the E816 driver, download 
+# http://update.pi-portal.ws/down.php?link=http://syst13.synserver.de/PIUpdateFinder/PI_C-990_CD1_V_1_0_0_6.zip&name=PI_C-990_CD1_V_1_0_0_6.zip&id=59
+# and run PISoftwareSuite.exe. Then, navigate to PI_C-990_CD1_V_1_0_0_6\Development\C++\API\noGUI
+# and copy the correct version of E816_DLL(_x64).dll to C:\Windows\System32
+
 #import serial
 import time
 import numpy as np
