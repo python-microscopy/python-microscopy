@@ -281,7 +281,6 @@ class PcoCam(Camera):
         elif self._mode == self.MODE_CONTINUOUS:
             # Allocate buffer (2 seconds of buffer)
             self.buffer_size = int(max(int(2.0*self.GetFPS()), 1))
-            self.n_read = 0
             self.cam.record(number_of_images=int(max(int(2.0*self.GetFPS()), 1)), mode='ring buffer')
 
         eventLog.logEvent('StartAq', '')
@@ -290,6 +289,7 @@ class PcoCam(Camera):
 
     def StopAq(self):
         self.cam.stop()
+        self.n_read = 0
 
     def GetNumImsBuffered(self):
         try:
