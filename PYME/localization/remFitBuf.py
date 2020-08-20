@@ -151,14 +151,14 @@ class CameraInfoManager(object):
             #special case handling for multiview ROIs
             origins = [md['Multiview.ROI%dOrigin' % ind] for ind in md['Multiview.ActiveViews']]
             size_x, size_y = md['Multiview.ROISize']
-            return [(slice(ox, ox + size_x), slice(oy, oy + size_y)) for ox, oy in origins]
+            return [(slice(int(ox), int(ox + size_x)), slice(int(oy), int(oy + size_y))) for ox, oy in origins]
         
         x0, y0 = get_camera_roi_origin(md)
 
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
-        return [(slice(x0, x1), slice(y0, y1))]
+        return [(slice(int(x0), int(x1)), slice(int(y0), int(y1)))]
 
     def _fetchMap(self, md, mapName):
         """retrive a map, with a given name. First try and get it from the Queue,
