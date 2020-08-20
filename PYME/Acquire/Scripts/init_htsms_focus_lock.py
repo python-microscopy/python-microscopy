@@ -69,7 +69,10 @@ def focus_lock(MainFrame, scope):
     # Stick with a PI tune for now
     kp = 0.45 * ku
     ki = 0.54 * ku / tu
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc,  p=kp, i=ki, d=0, sample_time=0.0035)
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=kp, i=ki, d=0,
+                                            sample_time=0.0035, 
+                                            min_amp=10**5,
+                                            max_sigma=20.)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))

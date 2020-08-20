@@ -22,15 +22,23 @@ class GaussFitter1D(object):
     1D gaussian fitter for use with focus locks which either have line-cameras, or whose frames are summed alone one
     direction to create a line profile, the peak position of which indicates the current focal position.
     """
-    def __init__(self, maxfev=200):
+    def __init__(self, maxfev=200, min_amp=0, max_sigma=np.finfo(float).max):
         """
 
         Parameters
         ----------
         maxfev: int
             see scipy.optimize.leastsq argument by the same name
+        min_amp : float
+            minimum fit result amplitude which we are willing to accept as a
+            successful fit.
+        max_sigma : float
+            maximum fit result sigma which we are willing to accept as a
+            successful fit.
         """
         self.maxfev = maxfev
+        self._min_amp = min_amp
+        self._max_sigma = max_sigma
 
     def _model_function(self, parameters, position):
         """
@@ -67,16 +75,9 @@ class GaussFitter1D(object):
         (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
                                                                  full_output=True, maxfev=self.maxfev)
 
-        # logger.debug('%d iterations' % infodict['nfev'])
-        # if res_code < 1 or res_code > 4:
-        #     # fit error
-        #     logger.debug('Focus lock fit error')
-        #     return tuple(np.zeros(5)), tuple(np.zeros(5))
-
-        success = res_code > 0 and res_code < 5
-        if success:
-            return tuple(res.astype('f')), success
-        return tuple(np.zeros(5)), success
+        success = res_code > 0 and res_code < 5 and res[0] > self._min_amp and res[2] < self._max_sigma
+        return tuple(res.astype('f')), success
+        
         # # estimate uncertainties
         # residuals = infodict['fvec']  # note that fvec is error function evaluation, or (data - model_function)
         # try:
@@ -106,7 +107,9 @@ class ReflectedLinePIDFocusLock(PID):
     of view with axial coordinates relative to the coverslip rather than absolute axial position (which is influenced by
     coverslips sagging from media, etc.).
     """
-    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, mode='frame'):
+    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
+                 mode='frame', fit_roi_size=75, min_amp=0, 
+                 max_sigma=np.finfo(float).max):
         """
 
         Parameters
@@ -121,16 +124,25 @@ class ReflectedLinePIDFocusLock(PID):
             of-sorts by only updating at ~regular time intervals. The correction is only changed once per sample_time.
         mode: str
             flag, where 'frame' queries on each frame and 'time' queries at fixed times by polling at sample_time
+        fit_roi_size : int
+            size of profile to crop about the peak for actual fitting, allowing
+            us to fit partial profiles and save some time
+        min_amp : float
+            minimum fit result amplitude which we are willing to accept as a
+            valid peak measurement we can use to correct the focus.
+        max_sigma : float
+            maximum fit result sigma which we are willing to accept as a valid
+            peak measurement we can use to correct the focus.
+        
         """
         self.scope = scope
         self.piezo = piezo
         # self._last_offset = self.piezo.GetOffset()
 
-        self._fitter = GaussFitter1D()
-        self.fit_roi_size = 75
-
-
-        self.peak_position = 512  # default to half of the camera size
+        self.fit_roi_size = fit_roi_size
+        self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
+        
+        self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
@@ -256,10 +268,10 @@ class ReflectedLinePIDFocusLock(PID):
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
         start, stop = max(crop_start, 0), min(crop_start + self.fit_roi_size, profile.shape[0])
-        results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
+        self._fit_results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
         if not success:
             logger.debug('Focus lock fit error')
-        return results[1] + start, success
+        return self._fit_results[1] + start, success
 
     def on_frame(self, **kwargs):
         # get focus position
