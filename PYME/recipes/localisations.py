@@ -208,7 +208,12 @@ class ProcessColour(ModuleBase):
         mdh = input.mdh
         
         if self.ratios_from_metadata:
+            # turn off invalidation so we don't get a recursive loop. TODO - fix this properly as it's gross to be changing
+            # our parameters here
+            invalidate = self._invalidate_parent
+            self._invalidate_parent = False
             self._get_dye_ratios_from_metadata(mdh)
+            self._invalidate_parent = invalidate
         
         output = tabular.MappingFilter(input)
         output.mdh = mdh
