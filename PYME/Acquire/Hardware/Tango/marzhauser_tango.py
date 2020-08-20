@@ -7,6 +7,8 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+# Download the Tango DLLs from https://www.marzhauser.com/nc/en/service/downloads.html?tx_abdownloads_pi1%5Baction%5D=getviewclickeddownload&tx_abdownloads_pi1%5Buid%5D=594
+# Place the appropriate version of Tango_DLL.dll for your operating system in C:\Windows\System32.
 mazlib = ctypes.WinDLL('Tango_DLL.dll')
 # mazlib = ctypes.WinDLL('MwPCIeUi_x64.dll')
 
