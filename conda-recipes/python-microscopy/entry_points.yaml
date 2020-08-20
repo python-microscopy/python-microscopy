@@ -3,7 +3,7 @@ entry_points:
     - PYMEImage = PYME.DSView.dsviewer:main
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
     - VisGUI = PYME.LMVis.VisGUI:main
-    - PYMEVisualize = PYME.LMVis.VisGUI:main
+    - PYMEVis = PYME.LMVis.VisGUI:main
     - PYMEBatch = PYME.recipes.batchProcess:main
     - bakeshop = PYME.recipes.bakeshop:main
     - PYMEDataServer = PYME.cluster.HTTPDataServer:main

@@ -144,7 +144,9 @@ def measure_3d(x, y, z, output=None):
     N = len(x)
     output['count'] = N
     if N < 3:
-        raise UserWarning('measure_3D can only be used on clusters of size 3 or larger')
+        import warnings
+        warnings.warn('measure_3D can only be used on clusters of size 3 or larger', UserWarning)
+        return
     
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()

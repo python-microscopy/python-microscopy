@@ -953,7 +953,7 @@ class MultiviewCameraMixin(object):
 
             Parameters
             ----------
-            views: List
+            views: list
                 views to activate. Should be integers which can be used to index self.multiview_info
 
             Returns
@@ -965,6 +965,7 @@ class MultiviewCameraMixin(object):
             again. This is not special to this function, but rather anytime SetROI gets called.
 
             """
+            views = list(views)  # tuple(int) isn't iterable, make sure we avoid it
             # set the camera FOV to be just large enough so we do most of the cropping where it is already optimized
             self.x_origins, self.y_origins = zip(*[self.view_origins[view] for view in views])
             chip_x_min, chip_x_max = min(self.x_origins), max(self.x_origins)

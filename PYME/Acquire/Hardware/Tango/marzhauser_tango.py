@@ -3,6 +3,9 @@
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 import threading
 import ctypes
+import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 mazlib = ctypes.WinDLL('Tango_DLL.dll')
 # mazlib = ctypes.WinDLL('MwPCIeUi_x64.dll')
@@ -42,6 +45,17 @@ Parameters
 X, Y, Z, A: Positions
 Example
 pTango->GetPos(1, &X, &Y, &Z, &A);"""
+
+GetEncoder = mazlib.LSX_GetEncoder 
+GetEncoder.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double), 
+                       ctypes.POINTER(ctypes.c_double)]
+GetEncoder.__doc__ = """ Retrieves all encoder positions
+Parameters 
+XP, YP, ZP, AP: Counter values, 4x interpolated
+Example 
+pTango->GetEncoder(1, &XP, &YP, &ZP, &AP);"""
 
 # --- Units
 GetDimensions = mazlib.LSX_GetDimensions
@@ -158,6 +172,50 @@ Example
 SetDistance(1, 1, 2, 0, 0); // sets distances for axes X to 1mm and Y to 2mm (if dimension=2), Z and A are not moved when calling function LSX_MoveRelShort"""
 
 
+# --- velocity
+
+GetVel = mazlib.LSX_GetVel
+GetVel.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+GetVel.__doc__ = """Retrieves velocity of all axes
+Parameters 
+pdX, pdY, pdZ, pdA: Velocity values [r/sec]
+Example
+GetVel(1, &X, &Y, &Z, &A);"""
+
+SetVel = mazlib.LSX_SetVel
+SetVel.argtypes = [ctypes.c_int, ctypes.c_double, ctypes.c_double, 
+                   ctypes.c_double, ctypes.c_double]
+SetVel.__doc__ = """ Set velocity of all axes
+Parameters
+X, Y, Z, A: >0 – max. speed [r/sec]
+Example 
+SetVel(1, 20.0, 15.0, 0.5, 10)"""
+
+IsVel = mazlib.LSX_IsVel
+IsVel.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+IsVel.__doc__ = """ Read the actual velocities at which the axes are currently 
+travelling. Unlike '?vel' or '?speed' this instruction returns the currently 
+travelled (true) speed of the axes, even when controlled by a HDI device.
+Parameters pdX, pdY, pd Z, pdA: actual axes velocities in [mm/s]
+Example pTango->IsVel(1, &vx, &vy, &vz, &va);"""
+
+GetPitch = mazlib.LSX_GetPitch
+GetPitch.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double), 
+                   ctypes.POINTER(ctypes.c_double)]
+GetPitch.__doc__ = """ Provides spindle pitch.
+Parameters X, Y, Z, A: Spindle pitch [mm]
+Example pTango->GetPitch(1, &X, &Y, &Z, &A);
+NOTE - it looks like this is actually [mm/r]"""
+
+
 # --- Joystick
 SetJoystickOn = mazlib.LSX_SetJoystickOn
 SetJoystickOff = mazlib.LSX_SetJoystickOff
@@ -191,11 +249,15 @@ class MarzHauserJoystick(object):
         return self.stepper._joystick_enabled
 
 
-class MarzhauserTangoXY(PiezoBase):
+class MarzhauserTango(PiezoBase):
     """
-    Marzhauser stage set-up only for lateral positioning
+    Marzhauser Tango stage. The dll API supports 4 axes (x, y, z, a), all of
+    which are exposed/supported by this class. For stages only supporting (x, y)
+    or (x, y, z) axes, you can directly use this class and only register the
+    axes you have wth PYMEAcquire, however it is recommended to subclass and
+    expose only the axes present
     """
-    units_um=1000  # units of the stage default to mm, so 1000 um per stage unit
+    units_um=1  # units of the stage default to mm, but we set to um in init
 
     def __init__(self):
         self.lock = threading.Lock()
@@ -206,18 +268,39 @@ class MarzhauserTangoXY(PiezoBase):
         # ConnectSimple(1, -1, NULL, 57600, TRUE); // Autoconnect with the first found USB or PCI TANGO in the system
         ConnectSimple(self.lsid, ctypes.c_int(-1), None, ctypes.c_int(57600), ctypes.c_bool(False))  # baud doesn't matter for dll usage
 
-        # clear the current position
-        # ClearPos(self.lsid, 7)
+        SetDimensions(self.lsid, ctypes.c_int(1), ctypes.c_int(1), 
+                      ctypes.c_int(1), ctypes.c_int(1))  # put all axes in [um]
 
-        self.last_x, self.last_y, self.last_z = ctypes.c_double, ctypes.c_double, ctypes.c_double
-        self.last_a = ctypes.c_double
-
-        self._move_short_increment = dict(x=ctypes.c_double(0), y=ctypes.c_double(0))
-        z, a = ctypes.c_double(0), ctypes.c_double(0)
-        GetDistance(self.lsid, self._move_short_increment['x'], self._move_short_increment['y'], z, a)
-
+        self._allocate_memory()
+        
         self._joystick_enabled = False
         self.SetJoystick(True)
+    
+    def _allocate_memory(self):
+        self._c_position = (ctypes.c_double(0),  # X, [um]
+                                ctypes.c_double(0),  # Y, [um]
+                                ctypes.c_double(0),  # Z, [um]
+                                ctypes.c_double(0))  # A, [um]
+        self._c_position_ref = tuple(ctypes.byref(p) for p in self._c_position)
+
+        self._c_target_rps = (ctypes.c_double(0),  # X, [r/sec]
+                                        ctypes.c_double(0),  # Y, [r/sec]
+                                        ctypes.c_double(0),  # Z, [r/sec]
+                                        ctypes.c_double(0))  # A, [r/sec]
+        self._c_target_rps_ref = tuple(ctypes.byref(p) for p in self._c_target_rps)
+        
+        self._c_encoder_positions = (ctypes.c_double(0),  # X, [um]
+                                ctypes.c_double(0),  # Y, [um]
+                                ctypes.c_double(0),  # Z, [um]
+                                ctypes.c_double(0))  # A, [um]
+        self._c_encoder_positions_ref = tuple(ctypes.byref(p) for p in self._c_encoder_positions)
+
+        # note pitch is always measured in mm, doesn't change with SetDimensions
+        self._c_pitch = (ctypes.c_double(0),  # X, [mm / r]
+                                ctypes.c_double(0),  # Y, [mm / r]
+                                ctypes.c_double(0),  # Z, [mm / r]
+                                ctypes.c_double(0))  # A, [mm / r]
+        self._c_pitch_ref = tuple(ctypes.byref(p) for p in self._c_pitch)
 
     def __del__(self):
         self.close()
@@ -252,18 +335,25 @@ class MarzhauserTangoXY(PiezoBase):
         raise NotImplementedError
 
     def GetPos(self, iChannel=0):
-        pos = [ctypes.c_double() for i in range(4)]
         with self.lock:
-            GetPos(self.lsid, ctypes.byref(pos[0]), ctypes.byref(pos[1]), ctypes.byref(pos[2]),ctypes.byref(pos[3]))
-            self.last_x, self.last_y, self.last_z, self.last_a = [p.value for p in pos]
-
-        return pos[iChannel].value
+            GetPos(self.lsid, *self._c_position_ref)
+        return self._c_position[iChannel].value
 
     def _get_dimensions(self):
+        """ Returns measurement unit specified for each axis:
+        0  Microsteps
+        1  µm
+        2  mm (Pre-set)
+        3  Degree
+        4  Revolutions
+        5  cm
+        6  m
+        7  Inch
+        8  mil (1/1000 Inch)
+        """
         dim = [ctypes.c_int() for i in range(4)]
         with self.lock:
             GetDimensions(self.lsid, ctypes.byref(dim[0]), ctypes.byref(dim[1]), ctypes.byref(dim[2]), ctypes.byref(dim[3]))
-
         return dim
 
     def SetJoystick(self, enabled=True):
@@ -281,285 +371,58 @@ class MarzhauserTangoXY(PiezoBase):
 
     def clear_position(self):
         ClearPos(self.lsid, 7)
-
-
-import numpy as np
-class MarzhauserTangoXYThreaded(PiezoBase):
-    units_um = 1000
-    gui_description = 'Stage %s'
-
-    def __init__(self, portname='', maxtravel=50.00, hasTrigger=False, reference=False, maxvelocity=200.,
-                 validRegion=[[-50, 50], [-50, 50]]):
-        raise NotImplementedError
-        self.max_travel = maxtravel
-        self.maxvelocity = maxvelocity
-
-        self.units = 'mm'
-
-        self.validRegion = validRegion
-        self.onTarget = False
-        self.ptol = 5e-4
-
-        self.onTarget = False
-        self.onTargetLast = False
-
-        self.errCode = 0
-
-        # open interface
-        self.lsid = ctypes.c_int(0)
-        CreateLSID(ctypes.byref(self.lsid))
-        # ConnectSimple(1, -1, NULL, 57600, TRUE); // Autoconnect with the first found USB or PCI TANGO in the system
-        ConnectSimple(self.lsid, ctypes.c_int(-1), None, ctypes.c_int(57600),
-                      ctypes.c_bool(False))  # baud doesn't matter for dll usage
-
-        # clear the current position
-        ClearPos(self.lsid, 7)
-
-        if reference:
-            # find reference switch (should be in centre of range)
-            self.ser_port.write('FRF\n')
-
-            time.sleep(.5)
-            # self.lastPos = self.GetPos()
-        # self.lastPos = [self.GetPos(1), self.GetPos(2)]
-
-        # self.driftCompensation = False
-        self.hasTrigger = hasTrigger
-        self.loopActive = True
-        self.stopMove = False
-        self.position = np.array([12.5, 12.5])
-        self.velocity = np.array([self.maxvelocity, self.maxvelocity])
-
-        self.targetPosition = np.array([12.5, 12.5])
-        self.targetVelocity = self.velocity.copy()
-
-        self.lastTargetPosition = self.position.copy()
-
-        self.lock = threading.Lock()
-        self.tloop = threading.Thread(target=self._Loop)
-        self.tloop.start()
-
-    def _Loop(self):
-        while self.loopActive:
-            self.lock.acquire()
-            try:
-                self.ser_port.flushInput()
-                self.ser_port.flushOutput()
-
-                # check position
-                self.ser_port.write('POS? 1 2\n')
-                self.ser_port.flushOutput()
-                # time.sleep(0.005)
-                res1 = self.ser_port.readline()
-                res2 = self.ser_port.readline()
-                # print res1, res2
-                self.position[0] = float(res1.split('=')[1])
-                self.position[1] = float(res2.split('=')[1])
-
-                self.ser_port.write('ERR?\n')
-                self.ser_port.flushOutput()
-                self.errCode = int(self.ser_port.readline())
-
-                if not self.errCode == 0:
-                    # print(('Stage Error: %d' %self.errCode))
-                    logger.error('Stage Error: %d' % self.errCode)
-
-                # print self.targetPosition, self.stopMove
-
-                if self.stopMove:
-                    self.ser_port.write('HLT\n')
-                    time.sleep(.1)
-                    self.ser_port.write('POS? 1 2\n')
-                    self.ser_port.flushOutput()
-                    # time.sleep(0.005)
-                    res1 = self.ser_port.readline()
-                    res2 = self.ser_port.readline()
-                    # print res1, res2
-                    self.position[0] = float(res1.split('=')[1])
-                    self.position[1] = float(res2.split('=')[1])
-                    self.targetPosition[:] = self.position[:]
-                    self.stopMove = False
-
-                if self.servo:
-                    if not np.all(self.velocity == self.targetVelocity):
-                        for i, vel in enumerate(self.targetVelocity):
-                            self.ser_port.write('VEL %d %3.9f\n' % (i + 1, vel))
-                        self.velocity = self.targetVelocity.copy()
-                        # print('v')
-                        logger.debug('Setting stage target vel: %s' % self.targetVelocity)
-
-                    # if not np.all(self.targetPosition == self.lastTargetPosition):
-                    if not np.allclose(self.position, self.targetPosition, atol=self.ptol):
-                        # update our target position
-                        pos = np.clip(self.targetPosition, 0, self.max_travel)
-
-                        self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
-                        self.lastTargetPosition = pos.copy()
-                        # print('p')
-                        logger.debug('Setting stage target pos: %s' % pos)
-                        time.sleep(.01)
-
-                # check to see if we're on target
-                self.ser_port.write('ONT?\n')
-                self.ser_port.flushOutput()
-                time.sleep(0.005)
-                res1 = self.ser_port.readline()
-                ont1 = int(res1.split('=')[1]) == 1
-                res1 = self.ser_port.readline()
-                ont2 = int(res1.split('=')[1]) == 1
-
-                onT = (ont1 and ont2) or (self.servo == False)
-                self.onTarget = onT and self.onTargetLast
-                self.onTargetLast = onT
-                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
-
-                # time.sleep(.1)
-
-            except serial.SerialTimeoutException:
-                # print('Serial Timeout')
-                logger.debug('Serial Timeout')
-                pass
-            finally:
-                self.stopMove = False
-                self.lock.release()
-
-        # close port on loop exit
-        self.ser_port.close()
-        logger.info("Stage serial port closed")
-
-    def close(self):
-        logger.info("Shutting down XY Stage")
-        with self.lock:
-            self.loopActive = False
-            # time.sleep(.01)
-            # self.ser_port.close()
-
-    def SetServo(self, state=1):
-        self.lock.acquire()
+    
+    @property
+    def _target_rps(self):
+        """
+        Returns
+        -------
+        target_rps : list
+            (x, y, z, a) velocities in [revolutions / s]
+        """
+        GetVel(self.lsid, *self._c_target_rps_ref)
+        return [v.value for v in self._c_target_rps]
+    
+    @_target_rps.setter
+    def _target_rps(self, rps):
         try:
-            self.ser_port.write('SVO 1 %d\n' % state)
-            self.ser_port.write('SVO 2 %d\n' % state)
-            self.servo = state == 1
-        finally:
-            self.lock.release()
+            for ind, value in enumerate(rps):
+                self._c_target_rps[ind].value = value
+            SetVel(self.lsid, *self._c_target_rps)
+        except:
+            GetVel(self.lsid, *self._c_target_rps_ref)  # try and fix state
+            raise
+    
+    @property
+    def _pitch(self):
+        "thread pitch along each axis, in [mm] (equivalently, mm / revolution)"
+        GetPitch(self.lsid, *self._c_pitch_ref)
+        return [v.value for v in self._c_pitch]
+    
+    @property
+    def _velocity(self):
+        vel_mm = np.asarray(self._pitch) * np.asarray(self._target_rps)
+        return vel_mm * 1e3
+    
+    @_velocity.setter
+    def _velocity(self, velocities):
+        """
+        Changing pitch seems a little weird. Might be possible via gear changes,
+        but for now we let the board/stage handle that on its own, so to change
+        the velocity we'll just change the target revolutions per second
+        """
+        self._target_rps = (np.asarray(velocities) / 1e3) / self._pitch
+    
+    def get_encoder_positions(self):
+        GetEncoder(self.lsid, *self._c_encoder_positions_ref)
+        return [p.value for p in self._c_encoder_positions]
 
-    #    def SetParameter(self, paramID, state):
-    #        self.lock.acquire()
-    #        try:
-    #            self.ser_port.write('SVO 1 %d\n' % state)
-    #            self.ser_port.write('SVO 2 %d\n' % state)
-    #            self.servo = state == 1
-    #        finally:
-    #            self.lock.release()
 
-    def ReInit(self, reference=True):
-        # self.ser_port.write('WTO A0\n')
-        self.lock.acquire()
-        try:
-            self.ser_port.write('RBT\n')
-            time.sleep(1)
-            self.ser_port.write('SVO 1 1\n')
-            self.ser_port.write('SVO 2 1\n')
-            self.servo = True
-
-            if reference:
-                # find reference switch (should be in centre of range)
-                self.ser_port.write('FRF\n')
-
-            time.sleep(1)
-            self.stopMove = True
-        finally:
-            self.lock.release()
-
-        # self.lastPos = [self.GetPos(1), self.GetPos(2)]
-
-    def SetVelocity(self, chan, vel):
-        # self.ser_port.write('VEL %d %3.4f\n' % (chan, vel))
-        # self.ser_port.write('VEL 2 %3.4f\n' % vel)
-        self.targetVelocity[chan - 1] = vel
-
-    def GetVelocity(self, chan):
-        return self.velocity[chan - 1]
-
-    def MoveTo(self, iChannel, fPos, bTimeOut=True, vel=None):
-        chan = iChannel - 1
-        if vel is None:
-            vel = self.maxvelocity
-        self.targetVelocity[chan] = vel
-        self.targetPosition[chan] = min(max(fPos, self.validRegion[chan][0]), self.validRegion[chan][1])
-        self.onTarget = False
-
-    # def MoveRel(self, iChannel, incr, bTimeOut=True):
-    #        self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
-
-    def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
-        if vel is None:
-            vel = self.maxvelocity
-        self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]), self.validRegion[0][1])
-        self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]), self.validRegion[1][1])
-        self.targetVelocity[:] = vel
-        self.onTarget = False
-
-    def GetPos(self, iChannel=0):
-        # self.ser_port.flush()
-        # time.sleep(0.005)
-        # self.ser_port.write('POS? %d\n' % iChannel)
-        # self.ser_port.flushOutput()
-        # time.sleep(0.005)
-        # res = self.ser_port.readline()
-        pos = self.GetPosXY()
-
-        return pos[iChannel - 1]
-
-    def GetPosXY(self):
-        return self.position
-
-    def MoveInDir(self, dx, dy, th=.0000):
-        self.targetVelocity[0] = abs(dx) * self.maxvelocity
-        self.targetVelocity[1] = abs(dy) * self.maxvelocity
-
-        logger.debug('md %f,%f' % (dx, dy))
-
-        if dx > th:
-            self.targetPosition[0] = min(max(np.round(self.position[0] + 1), self.validRegion[0][0]),
-                                         self.validRegion[0][1])
-        elif dx < -th:
-            self.targetPosition[0] = min(max(np.round(self.position[0] - 1), self.validRegion[0][0]),
-                                         self.validRegion[0][1])
-        else:
-            self.targetPosition[0] = min(max(self.position[0], self.validRegion[0][0]), self.validRegion[0][1])
-
-        if dy > th:
-            self.targetPosition[1] = min(max(np.round(self.position[1] + 1), self.validRegion[1][0]),
-                                         self.validRegion[1][1])
-        elif dy < -th:
-            self.targetPosition[1] = min(max(np.round(self.position[1] - 1), self.validRegion[1][0]),
-                                         self.validRegion[1][1])
-        else:
-            self.targetPosition[1] = min(max(self.position[1], self.validRegion[1][0]), self.validRegion[1][1])
-
-        self.onTarget = False
-
-    def StopMove(self):
-        self.stopMove = True
-
-    def GetControlReady(self):
-        return True
-
-    def GetChannelObject(self):
-        return 1
-
-    def GetChannelPhase(self):
-        return 2
-
-    def GetMin(self, iChan=1):
-        return 0
-
-    def GetMax(self, iChan=1):
-        return self.max_travel
-
-    def OnTarget(self):
-        return self.onTarget
+class MarzhauserTangoXY(MarzhauserTango):
+    """
+    Marzhauser tango stage set up only for lateral (x, y) positioning
+    """
+    pass
 
 
 if __name__=='__main__':

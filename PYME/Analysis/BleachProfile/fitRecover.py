@@ -20,15 +20,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+Fit the recovery of a fluorophore from the dark state. Use with the PYMEAcquire protocol "recover671.py" which switches the
+laser on and off in pulses to allow bleaching steps followed by recovery steps of varying length. Frame numbers in this file
+match those in the protocol.
+
+Probably sufferring from bitrot.
+"""
 from . import intensProf
 from . import kinModels
-
-from PYME.Analysis._fithelpers import *
+from PYME.Analysis._fithelpers import FitModel
+import numpy as np
 
 
 def FitTrace(tr, mdh):
     # from pylab import *
-    import numpy as np
     import matplotlib.pyplot as plt
     #tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
 
@@ -41,6 +47,7 @@ def FitTrace(tr, mdh):
     yp = -.1*tr.max()
 
     y1 = tr[61:80]
+
     r1 = FitModel(kinModels.e3mod, [y1[0], 1.0, 0], y1, cycTime*np.arange(len(y1)))
 
     plt.plot(t[61:80], kinModels.e3mod(r1[0], cycTime*np.arange(len(y1))), lw=2)
@@ -53,6 +60,7 @@ def FitTrace(tr, mdh):
     plt.text(t[700], yp, '%3.2fs'%r2[0][2])
 
     y3 = tr[1501:1600]
+
     r3 = FitModel(kinModels.e3mod, [y3[0], 1.0, 0], y3, cycTime*np.arange(len(y3)))
 
     plt.plot(t[1501:1600], kinModels.e3mod(r3[0], cycTime*np.arange(len(y3))), lw=2)

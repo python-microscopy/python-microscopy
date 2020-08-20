@@ -190,9 +190,14 @@ def action_manager(MainFrame, scope):
 
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
-
+    
     ActionManagerServer(scope.actions, 9393, 
                         config.get('actionmanagerserver-address', '127.0.0.1'))
+
+@init_gui('Chained Analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
+    SMLMChainedAnalysisPanel.plug(main_frame, scope)
 
 @init_hardware('tweeter')
 def tweeter(scope):
@@ -216,7 +221,8 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.CircularTilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
 
-    ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
+    ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
 
 #must be here!!!
