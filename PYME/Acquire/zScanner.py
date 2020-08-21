@@ -155,45 +155,46 @@ class zScanner:
 
 
     def OnCameraFrame(self, sender, frameData, **kwargs):
-        fn = int(floor(self.callNum) % len(self.zPoss))
-        self.frameNum = fn
-        #print fn
-        if self.sqrt:
-            self.image[:, :,fn] = (self.sc*np.sqrt(frameData[0,:,:] - self.off)).astype('uint16')
-        else:
-            self.image[:, :,fn] = frameData[0,:,:]
+        if self.running:
+            fn = int(floor(self.callNum) % len(self.zPoss))
+            self.frameNum = fn
+            #print fn
+            if self.sqrt:
+                self.image[:, :,fn] = (self.sc*np.sqrt(frameData[0,:,:] - self.off)).astype('uint16')
+            else:
+                self.image[:, :,fn] = frameData[0,:,:]
 
-        #if not fn == self.pos:
+            #if not fn == self.pos:
 
-        self.callNum += 1
-        fn = int(floor(self.callNum) % len(self.zPoss))
+            self.callNum += 1
+            fn = int(floor(self.callNum) % len(self.zPoss))
 
-        #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
-        self._movePiezo(fn)
-        
-        
-        
-        if fn == 0: #we've wrapped around 
-            #make a copy of callbacks so that if we remove one, we still call the others
-            #callbacks = [] + self.WantFrameNotification              
-            #for cb in callbacks:
+            #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
+            self._movePiezo(fn)
+            
+            
+            
+            if fn == 0: #we've wrapped around 
+                #make a copy of callbacks so that if we remove one, we still call the others
+                #callbacks = [] + self.WantFrameNotification              
+                #for cb in callbacks:
+                #    cb()
+                    
+                self.onStack.send(self)
+                    
+                
+                if 'decView' in dir(self.view):
+                    self.view.decView.wienerPanel.OnCalculate()
+            #self.view_xz.Refresh()
+            #self.view_yz.Refresh()
+            #for cb in self.WantTickNotification:
             #    cb()
                 
-            self.onStack.send(self)
+            self.onSingleFrame.send(self)
                 
-            
-            if 'decView' in dir(self.view):
-                self.view.decView.wienerPanel.OnCalculate()
-        #self.view_xz.Refresh()
-        #self.view_yz.Refresh()
-        #for cb in self.WantTickNotification:
-        #    cb()
-            
-        self.onSingleFrame.send(self)
-            
-        if fn == 0:
-            self.view.do.Optimise()
-        self.view.Refresh()
+            if fn == 0:
+                self.view.do.Optimise()
+            self.view.Refresh()
 
     def _movePiezo(self, fn):
         #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
