@@ -99,6 +99,9 @@ class EnumPropertyControl(wx.Panel, PropertyControl):
 ######## Property controls based on PYME.Acquire.Hardware.Camera class    
 class ModePropertyControl(EnumPropertyControl):
     def __init__(self, target='_mode'):
+        """
+        List of available camera modes, grabbed from the Camera base class.
+        """
         from PYME.Acquire.Hardware.Camera import Camera
         modes = [x for x in dir(Camera) if x.startswith('MODE_')]
         choices = sorted(modes, key=lambda x: getattr(Camera, x))
@@ -106,6 +109,18 @@ class ModePropertyControl(EnumPropertyControl):
 
     def set_target_value(self):
         self.cam.SetAcquisitionMode(self.cChoice.GetSelection())
+
+
+######## Example replacement for legacy property control for ATBool
+class ATBoolPropertyControl(wx.CheckBox, PropertyControl):
+    """
+    Property control for ATBools (see PYME.Acquire.Hardware.AndorNeo.ZylaControlPanel).
+    """
+    def set_target_value(self):
+        self.target.setValue(self.GetValue())
+
+    def update(self):
+        self.SetValue(self.target.getValue())
 
 ######## Camera control
 class CameraControlFrame(wx.Panel):
