@@ -30,8 +30,12 @@ class PropertyControl:
             def update(self):
                 # Tell us how our wx.SomeElement should look, based on the value of self.target
     """
-    def __init__(self, target):
+    def __init__(self, target, display_name=None):
         self.target = target  # String
+        if display_name is None:
+            self._display_name = self.target
+        else:
+            self._display_name = display_name
     
     def Init(self, parent):
         self.parent=parent
@@ -55,7 +59,7 @@ class BoolPropertyControl(wx.CheckBox, PropertyControl):
     Property control for True/False values.
     """
     def Init(self, parent):
-        wx.CheckBox.__init__(self, parent, -1, self.target)
+        wx.CheckBox.__init__(self, parent, -1, self._display_name)
         self.Bind(wx.EVT_CHECKBOX, self.onChange) 
         PropertyControl.Init(self, parent)
 
@@ -70,8 +74,8 @@ class EnumPropertyControl(wx.Panel, PropertyControl):
     """
     Property control for list of values.
     """
-    def __init__(self, target, choices=None):
-        PropertyControl.__init__(self, target)
+    def __init__(self, target, choices=None, display_name=None):
+        PropertyControl.__init__(self, target, display_name)
         if type(choices) == str:
             # Assume camera property
             self._choices = getattr(self.cam, choices)
@@ -81,7 +85,7 @@ class EnumPropertyControl(wx.Panel, PropertyControl):
     def Init(self, parent):
         wx.Panel.__init__(self, parent)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, self.target), 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, self._display_name), 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         self.cChoice = wx.Choice(self, -1, size = [100,-1])
         self.cChoice.Bind(wx.EVT_CHOICE, self.onChange)
@@ -98,14 +102,14 @@ class EnumPropertyControl(wx.Panel, PropertyControl):
 
 ######## Property controls based on PYME.Acquire.Hardware.Camera class    
 class ModePropertyControl(EnumPropertyControl):
-    def __init__(self, target='_mode'):
+    def __init__(self, target='_mode', display_name=None):
         """
         List of available camera modes, grabbed from the Camera base class.
         """
         from PYME.Acquire.Hardware.Camera import Camera
         modes = [x for x in dir(Camera) if x.startswith('MODE_')]
         choices = sorted(modes, key=lambda x: getattr(Camera, x))
-        EnumPropertyControl.__init__(self, target, choices)
+        EnumPropertyControl.__init__(self, target, choices, display_name)
 
     def set_target_value(self):
         self.cam.SetAcquisitionMode(self.cChoice.GetSelection())
