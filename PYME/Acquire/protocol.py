@@ -176,7 +176,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
         """
         
         # add a check to ensure that dwell times are sensible
-        preflightList.append('(self.dwellTime*scope.cam.GetIntegTime() > .1) or not scope.cam.contMode', 'Z step dwell time too short - increase either dwell time or integration time, or set camera mode to single shot / software triggered')
+        preflightList.append(C('(self.dwellTime*scope.cam.GetIntegTime() > .1) or not scope.cam.contMode',
+                               'Z step dwell time too short - increase either dwell time or integration time, or set camera mode to single shot / software triggered'))
         
         TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList,
                                   filename)
