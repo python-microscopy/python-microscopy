@@ -128,7 +128,7 @@ class CameraControlFrame(wx.Panel):
     Base class for camera controls. Usage is 
 
 
-        ctrls = [BoolControl('SpuriousNoiseFilter'),
+        ctrls = [BoolPropertyControl('SpuriousNoiseFilter'),
                 etc.]
         MyCamControl = CamControl(parent, cam, scope, ctrls)
 
