@@ -112,7 +112,7 @@ class ModePropertyControl(EnumPropertyControl):
 
 
 ######## Example replacement for legacy property control for ATBool
-class ATBoolPropertyControl(wx.CheckBox, PropertyControl):
+class ATBoolPropertyControl(BoolPropertyControl):
     """
     Property control for ATBools (see PYME.Acquire.Hardware.AndorNeo.ZylaControlPanel).
     """
