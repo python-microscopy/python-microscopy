@@ -49,10 +49,10 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
-    PixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
-                            '12-bit (high well capacity)': 'Mono12',
-                            '16-bit (low noise & high well capacity)' : 'Mono16'
-                            }
+    DefaultPixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
+                                   '12-bit (high well capacity)': 'Mono12',
+                                   '16-bit (low noise & high well capacity)' : 'Mono16'
+    }
 
     _noise_properties = {
         'VSC-00954': {
@@ -73,6 +73,19 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                 'ElectronsPerCount' : 0.5,
                 'ADOffset' : 100,
                 'SaturationThreshold' : (2**16 -1)
+            }},
+        'CSC-00425': { # this is info for a Sona
+            u'12-bit (low noise)': {
+                'ReadNoise' : 1.21,
+                'ElectronsPerCount' : 0.45,
+                'ADOffset' : 100, # check mean (or median) offset
+                'SaturationThreshold' : 1776  #(2**16 -1) # check this is really 11 bit
+            },
+            u'16-bit (high dynamic range)': {
+                'ReadNoise' : 1.84,
+                'ElectronsPerCount' : 1.08,
+                'ADOffset' : 100,
+                'SaturationThreshold' : 44185
             }},
         'VSC-02858': {
              '12-bit (low noise)': {
@@ -130,26 +143,9 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                     }
 
 
-    # this class is compatible with the ATEnum object properties that are used in ZylaControlPanel
-    # we use it as a higher level alternative to setting gainmode and encoding directly
-    class SimpleGainEnum(object):
-        def __init__(self, cam):
-            self.cam = cam
-            self.gainmodes = cam.PixelEncodingForGain.keys()
-            self.propertyName = 'SimpleGainModes'
-            
-        def getAvailableValues(self):
-            return self.gainmodes
-
-        def setString(self,str):
-            self.cam.SetSimpleGainMode(str)
-
-        def getString(self):
-            return self.cam.GetSimpleGainMode()
-
-
     def __init__(self, camNum):
         #define properties
+
         self.CameraAcquiring = ATBool()
         self.SensorCooling = ATBool()
         
@@ -228,11 +224,29 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         
         #set some intial parameters
         #self.setNoisePropertiesByCam(self.GetSerialNumber())
+
+        # figure out preamp gain modes for this camera type
+        if not self.CameraModel.getValue().startswith('SIM'):
+            self.PixelEncodingForGain = {}
+            for mode in self.SimplePreAmpGainControl.getAvailableValues():
+                if mode.startswith('12'):
+                    self.PixelEncodingForGain[mode] = 'Mono12'
+                elif mode.startswith('16'):
+                    self.PixelEncodingForGain[mode] = 'Mono16'
+                else:
+                    raise RuntimeError('PixelEncodingForGain mode "%s" unknown bit depth (neither 12 nor 16 bit)' % (mode))
+        else:
+            self.PixelEncodingForGain = self.DefaultPixelEncodingForGain
+
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
 
         #need this to get full frame rate
-        self.Overlap.setValue(True)
+        try:
+            self.Overlap.setValue(True)
+        except:
+            logger.info("error setting overlap mode")
+            pass
 
         # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
@@ -258,8 +272,18 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         
         self.TriggerMode.setString('Internal')
         
-        self.SensorCooling.setValue(True)
-        #self.TemperatureControl.setString('-30.00')
+        try:
+            self.SensorCooling.setValue(True)
+        except:
+            logger.info("error setting cooling mode")
+            pass
+
+        try:
+            TCModes = self.TemperatureControl.getAvailableValues()
+            self.TemperatureControl.setString(TCModes[0])
+        except:
+            pass
+
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
@@ -653,8 +677,13 @@ class AndorBase(SDK3Camera, CameraMapMixin):
             mdh.setEntry('Camera.ROIOriginY', y1)
             mdh.setEntry('Camera.ROIWidth', x2 - x1)
             mdh.setEntry('Camera.ROIHeight', y2 - y1)
-            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
+            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
+            # these make sense with the Sona choices but should also be ok for the Zyla
+            mdh.setEntry('Camera.TemperatureControl', self.TemperatureControl.getString())
+            mdh.setEntry('Camera.TemperatureStatus', self.TemperatureStatus.getString())
+            mdh.setEntry('Camera.SensorTemperature', self.SensorTemperature.getValue())
+            
             # pick up noise settings for gain mode
             np = self.noise_properties
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
@@ -737,7 +766,7 @@ class AndorZyla(AndorBase):
         self.TemperatureControl = ATEnum()
         self.TemperatureStatus = ATEnum()
         self.SimplePreAmpGainControl = ATEnum()
-        self.SimpleGainEnumInstance = self.SimpleGainEnum(self) # this instance is compatible with use in Zylacontrolpanel
+
         self.BitDepth = ATEnum()
         
         self.ActualExposureTime = ATFloat()
@@ -757,6 +786,7 @@ class AndorZyla(AndorBase):
         self.FirmwareVersion = ATString()
         
         AndorBase.__init__(self,camNum)
+
         
 class AndorSim(AndorBase):
     def __init__(self, camNum):
