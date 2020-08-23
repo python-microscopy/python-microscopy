@@ -48,6 +48,7 @@ class PcoCam(Camera):
         self.buffer_size = 0
         self.n_read = 0
         self.initalized = True
+        self.__roi = None
 
     @property
     def noise_properties(self):
@@ -242,12 +243,14 @@ class PcoCam(Camera):
 
         # Recording state is reset, so set to 0
         self.n_read = 0
-
+        self.GetROI()
         self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetROI(self):
-        roi = self.cam.sdk.get_roi()
-        return roi['x0'], roi['y0'], roi['x1'], roi['y1']
+        if self.n_read == 0:
+            # We reset, check the ROI again
+            self.__roi = self.cam.sdk.get_roi()
+        return self.__roi['x0'], self.__roi['y0'], self.__roi['x1'], self.__roi['y1']
     
     def GetElectrTemp(self):
         return self.cam.sdk.get_temperature()['camera temperature']  # FIXME: should this be 'power temperature'?
@@ -290,6 +293,7 @@ class PcoCam(Camera):
     def StopAq(self):
         self.cam.stop()
         self.n_read = 0
+        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetNumImsBuffered(self):
         try:
