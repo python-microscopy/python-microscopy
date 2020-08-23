@@ -112,8 +112,6 @@ class PcoCam(Camera):
         # This is going to reset the recorder, so we need to change ring buffer position
         self.n_read = 0
 
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
-
     def GetIntegTime(self):
         d = self.cam.sdk.get_delay_exposure_time()
         return d['exposure']*timebase[d['exposure timebase']] 
@@ -149,8 +147,6 @@ class PcoCam(Camera):
 
         self.n_read = 0
 
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
-
     def GetHorizontalBin(self):
         return self.cam.sdk.get_binning()['binning x']
 
@@ -168,8 +164,6 @@ class PcoCam(Camera):
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
 
         self.n_read = 0
-
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetVerticalBin(self):
         return self.cam.sdk.get_binning()['binning y']
@@ -244,7 +238,6 @@ class PcoCam(Camera):
         # Recording state is reset, so set to 0
         self.n_read = 0
         self.GetROI()
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetROI(self):
         if self.n_read == 0:
@@ -293,7 +286,6 @@ class PcoCam(Camera):
     def StopAq(self):
         self.cam.stop()
         self.n_read = 0
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetNumImsBuffered(self):
         try:
