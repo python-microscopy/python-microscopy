@@ -44,7 +44,7 @@ import os
 import datetime
 
 import warnings
-import dispatch
+from PYME.contrib import dispatch
 
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray

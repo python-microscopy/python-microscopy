@@ -466,7 +466,7 @@ class OutputModule(ModuleBase):
         """
         pass
 
-import dispatch
+from PYME.contrib import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)

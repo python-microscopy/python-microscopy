@@ -27,7 +27,7 @@ import threading
 import numpy as np
 from PYME.Acquire import eventLog
 import uuid
-import dispatch
+from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 

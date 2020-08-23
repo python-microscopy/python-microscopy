@@ -10,7 +10,7 @@ from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 # from pylab import cm
 from matplotlib import cm
 import numpy as np
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.Analysis.Tracking.trackUtils import ClumpManager
 

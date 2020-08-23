@@ -13,7 +13,7 @@ except ImportError:
     import queue as Queue
     
 import time
-import dispatch
+from PYME.contrib import dispatch
 import weakref
 import threading
 from PYME.util import webframework

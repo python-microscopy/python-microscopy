@@ -54,7 +54,7 @@ from PYME.LMVis import quadTreeSettings
 from PYME.LMVis import triBlobs
 
 #from PYME.Analysis import MetadataTree
-import dispatch
+from PYME.contrib import dispatch
 import numpy as np
 #import scipy.special
 

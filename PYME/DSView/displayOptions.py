@@ -25,7 +25,7 @@ from matplotlib import cm
 import numpy as np
 #import tables
 
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.IO import dataWrap
 

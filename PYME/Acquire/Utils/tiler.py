@@ -4,7 +4,7 @@ import numpy as np
 import time
 from PYME.IO import MetaDataHandler
 import os
-import dispatch
+from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 

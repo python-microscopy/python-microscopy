@@ -606,7 +606,7 @@ class collapsingPane(foldingPane):
 
 
 
-import dispatch
+from PYME.contrib import dispatch
 class foldPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         try:

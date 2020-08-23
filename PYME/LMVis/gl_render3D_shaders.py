@@ -72,7 +72,7 @@ else:
 name = 'ball_glut'
 
 from . import views
-import dispatch
+from PYME.contrib import dispatch
 
 
 class SelectionSettings(object):

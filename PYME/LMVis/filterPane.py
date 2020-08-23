@@ -26,7 +26,7 @@ import sys
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
 import numpy as np
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.ui import histLimits
 from PYME.LMVis import editFilterDialog

@@ -1,6 +1,6 @@
 from . import layers
 from PYME.IO import tabular
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool, Instance, CStr
 

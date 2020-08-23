@@ -24,7 +24,7 @@ import os
 import PYME.localization.FitFactories
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
-import dispatch
+from PYME.contrib import dispatch
 import numpy as np
 import wx
 import wx.lib.agw.aui as aui

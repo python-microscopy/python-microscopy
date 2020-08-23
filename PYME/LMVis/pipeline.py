@@ -40,7 +40,7 @@ import numpy as np
 import scipy.special
 import os
 
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 

@@ -54,7 +54,7 @@ from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler, HDFSpooler
 
 import time
-import dispatch
+from PYME.contrib import dispatch
 import sys
 
 TEST_FRAME_SIZE = [2000,2000]

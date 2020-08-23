@@ -29,7 +29,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO import image
 import time
 
-import dispatch
+from PYME.contrib import dispatch
 
 class zScanner:
     def __init__(self, scope):

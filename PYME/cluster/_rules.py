@@ -18,7 +18,7 @@ import socket
 import random
 from PYME.misc import hybrid_ns
 from PYME.misc.computerName import GetComputerName
-import dispatch
+from PYME.contrib import dispatch
 import logging
 
 logger = logging.getLogger(__name__)

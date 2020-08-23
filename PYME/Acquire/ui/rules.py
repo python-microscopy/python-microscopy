@@ -209,7 +209,7 @@ class ChainedAnalysisPanel(wx.Panel):
         recipe_manager: PYME.recipes.recipeGui.RecipeManager
         spool_controller: PYME.Acquire.SpoolController.SpoolController
         """
-        import dispatch
+        from PYME.contrib import dispatch
 
         wx.Panel.__init__(self, parent, -1)
 

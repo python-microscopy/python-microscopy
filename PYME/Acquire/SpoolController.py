@@ -43,7 +43,7 @@ except ImportError:
     # py2, remove this when we can
     import Queue as queue
 
-import dispatch
+from PYME.contrib import dispatch
 
 import logging
 logger = logging.getLogger(__name__)

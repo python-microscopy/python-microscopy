@@ -46,7 +46,7 @@ else: #linux
 import time
 import traceback
 
-import dispatch
+from PYME.contrib import dispatch
 import warnings
 
 from PYME.Acquire import eventLog

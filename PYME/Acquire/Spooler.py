@@ -37,7 +37,7 @@ import time
 global timeFcn
 timeFcn = time.time
 
-import dispatch
+from PYME.contrib import dispatch
 import uuid
 
 from PYME.Acquire import eventLog
