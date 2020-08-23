@@ -42,7 +42,7 @@ sphinx
 # automatically installed in the future)
 # TODO - project is no longer maintained - copy move to PYME/contrib and maintain our own copy?
 #dispatch
-git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
+git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch; python_version < '3.0'
 
 #########################
 # Optional dependencies
