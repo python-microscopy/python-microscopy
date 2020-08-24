@@ -108,7 +108,7 @@ class Tiler(pointScanner.PointScanner):
         self.on_stop.send(self)
         self.progress.send(self)
 
-class CircularTiler(Tiler):
+class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256, return_to_start=True):
         """
@@ -123,9 +123,10 @@ class CircularTiler(Tiler):
         pixel_radius = int(max_radius_um / tile_spacing.mean())
         logger.debug('Circular tiler target radius in units of (overlapped) FOVs: %d' % pixel_radius)
 
-        pointScanner.CircularPointScanner(scope, pixel_radius, tile_spacing, 
-                                          dwelltime, background, False, evtLog, 
-                                          trigger=trigger, stop_on_complete=True,
+        pointScanner.CircularPointScanner.__init__(self, scope, pixel_radius,
+                                          tile_spacing, dwelltime, background, 
+                                          False, evtLog, trigger=trigger, 
+                                          stop_on_complete=True,
                                           return_to_start=return_to_start)
         
         self._tiledir = tile_dir
