@@ -2,7 +2,7 @@ import numpy as np
 from scipy import ndimage
 
 def image_to_rgb(image, zoom=1.0, scaling='min-max', scaling_factor=0.99):
-    data = np.zeros([image.data.shape[0] / zoom, image.data.shape[1] / zoom, 3], dtype='uint8')
+    data = np.zeros([int(image.data.shape[0] / zoom), int(image.data.shape[1] / zoom), 3], dtype='uint8')
     
     for i in range(min(3, image.data.shape[3])):
         chan_i = ndimage.zoom(image.data[:, :, :, i].mean(2).squeeze(), 1. / zoom)
