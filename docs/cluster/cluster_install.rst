@@ -216,27 +216,30 @@ Troubleshooting
 mDNS server advertisements point to loopback, rather than external interface
 ----------------------------------------------------------------------------
 
-This is usually the result of an incomplete configuration of your Ubuntu install. The PYME servers advertise themselves
-as being available on the IP that the computer hostname maps to. Some Ubuntu installs have an entry in ``/etc/hosts``
-mapping the computer hostname to the loopback address (127.0.0.1), which is generally unhelpful as it means that when we
-try and find out the IP address associated with the computer we are currently running on we get the loopback address. If
-we then use this to advertise, no-one can find us. I haven't worked out what causes this issue (and it's not universal),
-but it is likely to be something with either the dhcp client or DNS.
+Example symptom: running `PYMEDataServer` logs `INFO:root:Serving HTTP on 127.0.1.1 port 15348 ...` 
+rather than an IP address on the cluster network. 
 
-To fix this error, there are 2 options:
+PYME binds to the IP address associated with the host computer name. On linux this
+is association is set in the `/etc/hosts` file, which often defaults to
+
+.. code-block::
+    127.0.0.1	localhost
+    127.0.1.1	<hostname>
+
+This configuration is incomplete, and there are two ways to resolve it:
 
 **The right way:**
 
 * Make sure DNS (e.g. dnsmasq) and, optionally DHCP, are configured correctly within the cluster
 
-* Comment out / delete the ``<hostname> 127.0.0.1`` line in ``/etc/hosts``
+* Comment out / delete the ``127.0.1.1 <hostname>`` line in ``/etc/hosts``
 
 
 **The quick and dirty way:**
 
 **NOTE:** this only works if you have assigned static IPs to your nodes
 
-* Change the ``<hostname> 127.0.0.1`` line to map to your correct static IP
+* Change the ``127.0.1.1 <hostname>`` line to map to your correct static IP
 
 
 ClusterUI doesn't show files
