@@ -504,12 +504,13 @@ class QuadTreeRenderer(ColourRenderer):
     def genIm(self, settings, imb, mdh):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
+        leaf_size = settings.get('qtLeafSize', 10) #default to 10 record leaf size
 
         if not np.mod(np.log2(pixelSize/self.pipeline.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
                 self.pipeline.QTGoalPixelSize = pixelSize
                 self.pipeline.Quads = None
 
-        self.pipeline.GenQuads()
+        self.pipeline.GenQuads(max_leaf_size=leaf_size)
 
         qtWidth = self.pipeline.Quads.x1 - self.pipeline.Quads.x0
         qtWidthPixels = int(np.ceil(qtWidth/pixelSize))

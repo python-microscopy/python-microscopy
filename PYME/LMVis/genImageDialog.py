@@ -122,6 +122,16 @@ class GenImageDialog(wx.Dialog):
             sizer2.Add(self.tNumSamps, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
     
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            
+            
+        if mode in ['quadtree']:
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer2.Add(wx.StaticText(self, -1, 'max leaf size:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+    
+            self.tMaxLeafSize = wx.TextCtrl(self, -1, '10', size=(60, -1))
+            sizer2.Add(self.tMaxLeafSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+    
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
             
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -263,7 +273,13 @@ class GenImageDialog(wx.Dialog):
             return self.cbTriangGeometric.GetValue()
         except AttributeError:
             return False
-
+        
+    def getQTLeafSize(self):
+        try:
+            return int(self.tMaxLeafSize.GetValue())
+        except AttributeError:
+            return 10
+    
     def get_settings(self):
         return {
             'pixelSize' : self.getPixelSize(),
@@ -278,4 +294,5 @@ class GenImageDialog(wx.Dialog):
             'zSliceThickness' : self.getZSliceThickness(),
             'softRender' : self.getSoftRender(),
             'geometricMean': self.getGeometricMean(),
+            'qtLeafSize' : self.getQTLeafSize(),
         }

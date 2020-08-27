@@ -1004,7 +1004,7 @@ class Pipeline:
             
         return self.objects, self.blobSettings.distThreshold
         
-    def GenQuads(self):
+    def GenQuads(self, max_leaf_size=10):
         from PYME.Analysis.points.QuadTree import pointQT
         
         di = max(self.imageBounds.x1 - self.imageBounds.x0, 
@@ -1019,7 +1019,7 @@ class Pipeline:
                                     self.imageBounds.y0, self.imageBounds.y0 + di)
 
         for xi, yi in zip(self['x'],self['y']):
-            self.Quads.insert(pointQT.qtRec(xi,yi, None))
+            self.Quads.insert(pointQT.qtRec(xi,yi, None), max_leaf_size)
             
     def measureObjects(self):
         from PYME.Analysis.points import objectMeasure
