@@ -48,6 +48,7 @@ class PcoCam(Camera):
         self.buffer_size = 0
         self.n_read = 0
         self.initalized = True
+        self.__roi = None
 
     @property
     def noise_properties(self):
@@ -111,8 +112,6 @@ class PcoCam(Camera):
         # This is going to reset the recorder, so we need to change ring buffer position
         self.n_read = 0
 
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
-
     def GetIntegTime(self):
         d = self.cam.sdk.get_delay_exposure_time()
         return d['exposure']*timebase[d['exposure timebase']] 
@@ -148,8 +147,6 @@ class PcoCam(Camera):
 
         self.n_read = 0
 
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
-
     def GetHorizontalBin(self):
         return self.cam.sdk.get_binning()['binning x']
 
@@ -167,8 +164,6 @@ class PcoCam(Camera):
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
 
         self.n_read = 0
-
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
 
     def GetVerticalBin(self):
         return self.cam.sdk.get_binning()['binning y']
@@ -242,12 +237,13 @@ class PcoCam(Camera):
 
         # Recording state is reset, so set to 0
         self.n_read = 0
-
-        self.SetDescription() # Update the description, for safety. TODO: Is this necessary??
+        self.GetROI()
 
     def GetROI(self):
-        roi = self.cam.sdk.get_roi()
-        return roi['x0'], roi['y0'], roi['x1'], roi['y1']
+        if self.n_read == 0:
+            # We reset, check the ROI again
+            self.__roi = self.cam.sdk.get_roi()
+        return self.__roi['x0'], self.__roi['y0'], self.__roi['x1'], self.__roi['y1']
     
     def GetElectrTemp(self):
         return self.cam.sdk.get_temperature()['camera temperature']  # FIXME: should this be 'power temperature'?
