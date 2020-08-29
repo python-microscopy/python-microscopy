@@ -135,6 +135,9 @@ def genClusterResultFileName(dataFileName, create=True):
         # special case for cluster of one uses where we didn't open file using a cluster URI
         if not fn.startswith('/'):
             # filename is relative to PYMEDATATDIR
+            # TODO - this looks really unsafe under windows!!! Filenames won't ever start with / even if fully resolved, which means that the PYMEDATADIR path will be prepended
+            # to the filename (and we might end up with something like C:\Users\foo\PYMEData\D:\Data\bar\seriesx.tif).
+            # is it possible that we get away with it because os.path.splitdrive (in posix_path() just truncates at the last : in the string?
             fn = getFullFilename(fn)
         
         try:
