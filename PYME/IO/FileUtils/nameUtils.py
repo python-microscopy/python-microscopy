@@ -136,6 +136,7 @@ def genClusterResultFileName(dataFileName, create=True):
         if not fn.startswith('/'):
             # filename is relative to PYMEDATATDIR
             fn = getFullFilename(fn)
+        
         try:
             # relpath will raise ValueError on windows if we aren't on the same drive
             rel_name = os.path.relpath(fn, config.get('dataserver-root'))
@@ -144,6 +145,7 @@ def genClusterResultFileName(dataFileName, create=True):
         except ValueError:
             # recreate the tree under PYMEData, dropping the drive letter or UNC
             rel_name = fn
+            
         rel_name = posix_path(rel_name)
 
     dir_name = posixpath.dirname(rel_name)
@@ -217,6 +219,9 @@ def translateSeparators(filename):
 def posix_path(path):
     """
     Translate any separators to '/' and drop drive letters
+    
+    #FIXME - do something sensible with drive letters?
+    #FIXME - rename? [as this is a relative path / not resolvable]
     """
     import posixpath
     # FIXME - just use pathlib.path().to_posix() when we drop py2
