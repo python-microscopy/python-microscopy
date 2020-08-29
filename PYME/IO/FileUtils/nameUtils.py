@@ -123,6 +123,7 @@ def genClusterResultFileName(dataFileName, create=True):
     """Generates a filename for saving fit results based on the original image
     filename"""
     from PYME import config
+    import posixpath
     fn, ext = os.path.splitext(dataFileName) #remove extension
     
     if fn.upper().startswith('PYME-CLUSTER://'):
@@ -132,16 +133,28 @@ def genClusterResultFileName(dataFileName, create=True):
         rel_name = fn.split('://%s/' % clusterfilter)[1]
     else:
         # special case for cluster of one uses where we didn't open file using a cluster URI
-        # if not fn.startswith('/'):
-        #     # filename is relative to PYMEDATATDIR
-        #     fn = getFullFilename(fn)
+        if not fn.startswith('/'):
+            # filename is relative to PYMEDATATDIR
+            # TODO - this looks really unsafe under windows!!! Filenames won't ever start with / even if fully resolved, which means that the PYMEDATADIR path will be prepended
+            # to the filename (and we might end up with something like C:\Users\foo\PYMEData\D:\Data\bar\seriesx.tif).
+            # is it possible that we get away with it because os.path.splitdrive (in posix_path() just truncates at the last : in the string?
+            fn = getFullFilename(fn)
+        
+        try:
+            # relpath will raise ValueError on windows if we aren't on the same drive
+            rel_name = os.path.relpath(fn, config.get('dataserver-root'))
+            if rel_name.startswith('..'):
+                raise ValueError  # we are not under PYMEData
+        except ValueError:
+            # recreate the tree under PYMEData, dropping the drive letter or UNC
+            rel_name = fn
             
-        rel_name = getRelFilename(fn, config.get('dataserver-root'))
+        rel_name = posix_path(rel_name)
 
-    dir_name = os.path.dirname(rel_name)
-    file_name = os.path.basename(rel_name)
+    dir_name = posixpath.dirname(rel_name)
+    file_name = posixpath.basename(rel_name)
 
-    return '/'.join([dir_name, 'analysis', file_name]) + '.h5r'
+    return posixpath.join(dir_name, 'analysis', file_name + '.h5r')
 
 def genResultDirectoryPath():
     """Returns the default destination for saving fit reults"""
@@ -205,6 +218,17 @@ def translateSeparators(filename):
     fn = os.sep.join(seps2.split(filename))
 
     return fn
+
+def posix_path(path):
+    """
+    Translate any separators to '/' and drop drive letters
+    
+    #FIXME - do something sensible with drive letters?
+    #FIXME - rename? [as this is a relative path / not resolvable]
+    """
+    import posixpath
+    # FIXME - just use pathlib.path().to_posix() when we drop py2
+    return posixpath.sep.join(seps2.split(os.path.splitdrive(path)[-1]))
 
 def getFullFilename(relFilename):
     """ returns a fully resolved filename given a filename relative to
