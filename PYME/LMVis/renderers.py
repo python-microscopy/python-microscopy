@@ -511,13 +511,16 @@ class QuadTreeRenderer(ColourRenderer):
                 self.pipeline.Quads = None
 
         self.pipeline.GenQuads(max_leaf_size=leaf_size)
+        quads = self.pipeline.Quads #TODO remove GenQuads from pipeline
 
-        qtWidth = self.pipeline.Quads.x1 - self.pipeline.Quads.x0
+        qtWidth = max(quads.x1 - quads.x0, quads.y1 - quads.y0)
         qtWidthPixels = int(np.ceil(qtWidth/pixelSize))
 
         im = np.zeros((qtWidthPixels, qtWidthPixels))
-        QTrend.rendQTa(im, self.pipeline.Quads)
-        return im[int(imb.x0/pixelSize):int(imb.x1/pixelSize),int(imb.y0/pixelSize):int(imb.y1/pixelSize)]
+        QTrend.rendQTa(im, quads)
+        
+        #FIXME - make this work for imb > quadtree size
+        return im[int(max(imb.x0 - quads.x0, 0)/pixelSize):int((imb.x1 - quads.x0)/pixelSize),int(max(imb.y0 - quads.y0, 0)/pixelSize):int((imb.y1 - quads.y0)/pixelSize)]
 
 
 RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
