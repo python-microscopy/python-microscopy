@@ -108,14 +108,14 @@ class ShiftModel(object):
         import json
         import importlib
         
-        cn, dict = json.loads(mdentry).items()[0]
+        cn, d = list(json.loads(mdentry).items())[0]
         
         parts = cn.split('.')
         mod, cln = '.'.join(parts[:-1]), parts[-1]
         
         cl = getattr(importlib.import_module(mod), cln)
         
-        return cl(dict=dict)
+        return cl(dict=d)
 
     
 class linModel(ShiftModel):
