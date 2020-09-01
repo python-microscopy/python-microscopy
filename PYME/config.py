@@ -179,9 +179,15 @@ dataserver-filter : default = '', multi-cluster support. Specifies a cluster nam
 
 dataserver-port : default=8080, what port to run the PYMEDataServer on. Overridden by the --port command line option (e.g. if you want to run multiple servers on one machine).
 
-cluster-listing-no-countdir : default=False, hack to disable the loading of the low-level countdir module which allows rapid
+cluster-listing-no-countdir : default=False, hack to disable (True) the loading of the low-level countdir module which allows rapid
     directory statistics on posix systems. Needed on OSX if `dataserver-root` is a mapped network drive rather than a
     physical disk
+
+clusterIO-hybridns : default=True, toggles whether a protocol compatibility 
+    nameserver (True) or zeroconf only (False) is used in clusterIO. The hybrid
+    nameserver offers greater protocol/version compatibility but is effectively
+    two nameservers, which has performance implications on very high bandwidth 
+    systems.
 
 h5r-flush_interval : default=1, how often (in s) should we call the .flush() method and write records from the HDF/pytables
     caches to disk when writing h5r files.

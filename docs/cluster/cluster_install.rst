@@ -263,6 +263,16 @@ be avoided by adding the following to ``.PYME/config.yaml``
     cluster-listing-no-countdir: True
 
 
+Poor clusterIO performance
+--------------------------
+If you are seeing timeout or retry errors on `clusterIO.get_file` calls, consider 
+disabling the PYME hybrid nameserver (SQL and zeroconf) and using the PYME 
+zeroconf nameserver only by adding the following to ``.PYME/config.yaml``
+
+.. code-block::
+    clusterIO-hybridns: False
+
+
 .. rubric:: Footnotes
 
 .. [#switch] In practice this means an 'enterprise class' switch, not the cheapest 10 port switch you can get
