@@ -251,6 +251,17 @@ ClusterUI doesn't show files
   ``dataserver-filter`` entry in its ``config.yaml`` file.
 
 
+getdents: Bad file descriptor
+-----------------------------
+
+* We default to using a low-level directory counting function for a speed improvement. We have run
+into issues with it on later kernels (Ubuntu 16, 18), which can present as PYMEDataServer failing 
+(and e.g. clusterUI timing out when navigating to `<ip:port>/files`). The offending function call can
+be avoided by adding the following to ``.PYME/config.yaml``
+
+.. code-block::
+    cluster-listing-no-countdir: True
+
 
 .. rubric:: Footnotes
 
