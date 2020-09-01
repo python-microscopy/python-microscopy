@@ -272,6 +272,16 @@ zeroconf nameserver only by adding the following to ``.PYME/config.yaml``
 .. code-block::
     clusterIO-hybridns: False
 
+If you are performing sliding-window background estimation during localization
+analysis, you may also want to play with the chunksize used in HTTPSpooler on 
+the instrument computer (or wherever you are spooling data from). It
+defaults to 50 frames; depending on the window sizes you use in analysis you may
+consider increasing this to increase data locality (and decrease network I/O).
+This can be done in ``.PYME/config.yaml``. For 100 frame chunks, you would have:
+
+.. code-block::
+    httpspooler-chunksize: 100
+
 
 .. rubric:: Footnotes
 
