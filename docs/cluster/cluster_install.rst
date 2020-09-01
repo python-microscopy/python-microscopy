@@ -82,7 +82,7 @@ On each node:
 
 #. Create a user for PYME
 
-#. Install the python 2.7 version of anaconda
+#. Install the python 3.6 version of miniconda
 
 #. Add the ``david_baddeley`` conda channel
 
@@ -109,13 +109,11 @@ On each node:
      is recommended (the typical use case here would be a "Cluster of One" on an acquisition computer for standard low
      throughput analysis).
 
-     **Use with** ``dataserver-filter`` **set to anything other than** ``""`` **is not well tested.**
-
 #. *Optional, but strongly recommended for high-throughput - enable GPU fitting (PYME will allow CPU based fitting in the absence of these steps)*
 
    #. Install CUDA
 
-   #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
+   #. Install ``pyme-warp-drive`` following instructions on [github](https://github.com/python-microscopy/pyme-warp-drive)
 
    #. *Optional*, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
       package is hosted in the ``david_baddeley`` conda channel, and installable with :code:`conda install nvidia-ml-py`.
@@ -135,9 +133,9 @@ just running the extra processes but it could also be a standalone machine.
 
 9. Follow the individual node steps (optionally without configuring the data server if this is not also a storage node)
 
-#. Checkout the PYME source from bitbucket to get the ``clusterUI`` sources. ``clusterUI`` is a Django web app for browsing the cluster.
+#. Checkout the PYME source from [github](github.com/python-microscopy/python-microscopy) to get the ``clusterUI`` sources. ``clusterUI`` is a Django web app for browsing the cluster.
 
-#. ``conda install`` the ``django`` python module (tested for django=1.8.4, more recent versions might also work)
+#. ``conda install django=1.11``
 
 
 Running the software
