@@ -312,6 +312,85 @@ class IntensityAtPoints(ModuleBase):
         namespace[self.outputName] = res
 
 
+class ExtractROIs(ModuleBase):
+    """
+    Extract ROIs around input positions and return them as an ImageStack. Points
+    too close to the edge of the input image will be filtered. The ROI-relative
+    positions are also determined (distance from the upper left hand corner of
+    each ROI to the point about which it was cropped). 
+
+    Parameters
+    ----------
+    input_series : PYME.IO.image.ImageStack
+        series to crop ROIs from
+    input_positions : PYME.IO.tabular.TabularBase
+        positions to extract
+    roi_half_size : int
+        size of ROIs to extract, as a half size, so final ROI size will be
+        `2 * roi_half_size + 1`.
+    output_relative_positions : PYME.IO.tabular.TabularBase
+        distances [nm] from ROI upper left hand corner (x, y = 0, 0) to 
+        corresponding extraction position.
+    output_rois : PYME.IO.image.ImageStack
+        extracted ROIs as an image stack. Dimension 2 (typically z/t)
+        corresponds to position index.
+
+    Notes
+    -----
+    - Positions too close to the frame edge, which will result in ROIs cropped
+    being smaller than specified, will be removed and not included in the module
+    outputs.
+    - Multiview positions are not supported, and must be 'unmapped' to the
+    original camera positions first.
+    """
+    input_series = Input('series')
+    input_positions = Input('positions')
+
+    roi_half_size = Int(7)
+    
+    output_relative_positions = Output('relative_positions')
+    output_rois = Output('roi_stack')
+
+    def execute(self, namespace):
+        from PYME.IO.image import ImageStack
+
+        series = namespace[self.input_series]
+        positions = namespace[self.input_positions]
+
+        ox_nm, oy_nm, oz = series.origin
+        vs_nm = np.array([series.voxelsize_nm.x, series.voxelsize_nm.y])
+        roi_half_nm = (self.roi_half_size + 1) * vs_nm
+        x_max, y_max = (series.data.shape[:2] * vs_nm) - roi_half_nm
+        
+        edge_filtered = tabular.ResultsFilter(positions, 
+                                              x=[ox_nm + roi_half_nm[0], x_max],
+                                              y=[oy_nm + roi_half_nm[1], y_max])
+        n_filtered = len(positions) - len(edge_filtered)
+        if n_filtered > 0:
+            logger.error('%d positions too close to edge, filtering.' % n_filtered)
+
+        extracted = FitPoints(fitModule='ROIExtractNR', 
+                              roiHalfSize=self.roi_half_size, 
+                              channel=0).apply_simple(inputImage=series,
+                                                      inputPositions=edge_filtered)
+        
+        # get roi edge position. FFBase._get_roi rounds before extracting
+        relative_positions = edge_filtered.to_recarray()
+        x_edge = np.round(edge_filtered['x'] / series.voxelsize_nm.x) - self.roi_half_size
+        y_edge = np.round(edge_filtered['y'] / series.voxelsize_nm.y) - self.roi_half_size
+        # subtract off ofset to ROI edge 
+        relative_positions['x'] = edge_filtered['x'] - (x_edge * series.voxelsize_nm.x)
+        relative_positions['y'] = edge_filtered['y'] - (y_edge * series.voxelsize_nm.y)
+        relative_positions['fitResults_x0'] = relative_positions['x']
+        relative_positions['fitResults_y0'] = relative_positions['y']
+        relative_positions = tabular.RecArraySource(relative_positions)
+        relative_positions.mdh = MetaDataHandler.NestedClassMDHandler(positions.mdh)
+        relative_positions.mdh['ExtractROIs.RoiHalfSize'] = self.roi_half_size
+
+        namespace[self.output_rois] = ImageStack(data=np.moveaxis(extracted['data'], 0, 2), 
+                                                 mdh=series.mdh)
+        namespace[self.output_relative_positions] = relative_positions
+
 
 @register_module('MeanNeighbourDistances') 
 class MeanNeighbourDistances(ModuleBase):
