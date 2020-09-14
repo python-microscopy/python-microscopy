@@ -317,9 +317,14 @@ class RecipePusher(object):
         self.taskQueueURI = _getTaskQueueURI()
 
         #generate a queue ID as a hash of the recipe and the current time
-        h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
-        h.update('%s' % time.time())
-        self.queueID = h.hexdigest()
+        to_hash = self.recipeURI if self.recipeURI else self.recipe_text
+        try:  # hashlib requires bytes on py3
+            to_hash = to_hash.encode()
+        except TypeError:  # encoding without a string argument, i.e. already bytes
+            pass
+        h = hashlib.md5(to_hash)
+        h.update(str(time.time()).encode())
+        self.queueID = h.hexdigest()  # hexdigest returns str
 
 
     @property
