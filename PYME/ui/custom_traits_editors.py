@@ -343,8 +343,7 @@ class _DictChoiceStrEditor(Editor):
     
     def dispose(self):
         self.control = None
-        # super(Editor, self).dispose()
-        super().dispose()
+        super(Editor, self).dispose()
 
 class DictChoiceStrEditor(BasicEditorFactory):
     klass = _DictChoiceStrEditor
