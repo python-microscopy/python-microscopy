@@ -117,7 +117,8 @@ class TabularBase(object):
         #print(dt)
         return records.fromarrays(cols, names=keys_, dtype=dt)
 
-    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
+    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None,
+               close_after=False):
         from PYME.IO import h5rFile
 
         with h5rFile.openH5R(filename, 'a') as f:
@@ -128,6 +129,9 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
+            
+        if close_after:
+            f.wait_close()
                 
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
