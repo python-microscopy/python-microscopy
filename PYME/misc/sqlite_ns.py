@@ -38,7 +38,14 @@ class SQLiteNS(object):
 
         tableNames = [a[0] for a in self._conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
         if not 'dns' in tableNames:
-            self._conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
+            try:
+                self._conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
+            except sqlite3.OperationalError as e:
+                # catch race condition where table is created in another process
+                if 'table dns already exists' in str(e):
+                    pass
+                else:
+                    raise
             
         self.remove_inactive_services()
     
