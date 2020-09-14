@@ -131,7 +131,7 @@ class TrackRenderLayer(EngineLayer):
     
     def _update(self, *args, **kwargs):
         cdata = self._get_cdata()
-        self.clim = [float(cdata.min()), float(cdata.max())]
+        self.clim = [float(np.nanmin(cdata)), float(np.nanmax(cdata))]
         #self.update(*args, **kwargs)
     
     def update(self, *args, **kwargs):
