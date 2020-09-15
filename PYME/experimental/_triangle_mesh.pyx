@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-
+# cython: profile=True
 cimport numpy as np
 import numpy as np
 cimport cython
@@ -7,7 +7,73 @@ cimport cython
 # Regular, boundary, and max vertex valences. These need tp be
 VALENCE = 6
 BOUNDARY_VALENCE = 4
-NEIGHBORSIZE = 20  # Note this must match NEIGHBORSIZE in triangle_mesh_utils.h
+
+cdef extern from 'triangle_mesh_utils.h':
+    const int NEIGHBORSIZE  # Note this must match NEIGHBORSIZE in triangle_mesh_utils.h
+    const int VECTORSIZE
+    
+    cdef packed struct halfedge_t:
+        np.int32_t vertex
+        np.int32_t face
+        np.int32_t twin
+        np.int32_t next
+        np.int32_t prev
+        np.float32_t length
+        np.int32_t component
+        
+    cdef packed struct face_t:
+        np.int32_t halfedge
+        float normal[VECTORSIZE]
+        float area
+        np.int32_t component
+        
+    cdef packed struct face_d:
+        np.int32_t halfedge
+        np.float32_t normal0
+        np.float32_t normal1
+        np.float32_t normal2
+        np.float32_t area
+        np.int32_t component
+        
+    cdef packed struct vertex_t:
+        float position[VECTORSIZE];
+        float normal[VECTORSIZE];
+        np.int32_t halfedge;
+        np.int32_t valence;
+        np.int32_t neighbors[NEIGHBORSIZE];
+        np.int32_t component;
+        
+    cdef packed struct vertex_d:
+        np.float32_t position0
+        np.float32_t position1
+        np.float32_t position2
+        np.float32_t normal0
+        np.float32_t normal1
+        np.float32_t normal2
+        np.int32_t halfedge
+        np.int32_t valence
+        np.int32_t neighbor0
+        np.int32_t neighbor1
+        np.int32_t neighbor2
+        np.int32_t neighbor3
+        np.int32_t neighbor4
+        np.int32_t neighbor5
+        np.int32_t neighbor6
+        np.int32_t neighbor7
+        np.int32_t neighbor8
+        np.int32_t neighbor9
+        np.int32_t neighbor10
+        np.int32_t neighbor11
+        np.int32_t neighbor12
+        np.int32_t neighbor13
+        np.int32_t neighbor14
+        np.int32_t neighbor15
+        np.int32_t neighbor16
+        np.int32_t neighbor17
+        np.int32_t neighbor18
+        np.int32_t neighbor19
+        np.int32_t component
+        
 
 from PYME.experimental import triangle_mesh_utils
 
@@ -48,53 +114,79 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
                           ('neighbor19', 'i4'), 
                           ('component', 'i4')])
 
-cdef packed struct halfedge_d:
-    np.int32_t vertex
-    np.int32_t face
-    np.int32_t twin
-    np.int32_t next
-    np.int32_t prev
-    np.float32_t length
-    np.int32_t component
+# cdef packed struct halfedge_d:
+#     np.int32_t vertex
+#     np.int32_t face
+#     np.int32_t twin
+#     np.int32_t next
+#     np.int32_t prev
+#     np.float32_t length
+#     np.int32_t component
+#
+# cdef packed struct face_d:
+#     np.int32_t halfedge
+#     np.float32_t normal0
+#     np.float32_t normal1
+#     np.float32_t normal2
+#     np.float32_t area
+#     np.int32_t component
+    
+# cdef packed struct face_t: #non flattened type from triangle_mesh_utils.h
+#     np.int32_t halfedge
+#     float normal[VECTORSIZE]
+#     float area
+#     np.int32_t component
 
-cdef packed struct face_d:
-    np.int32_t halfedge
-    np.float32_t normal0
-    np.float32_t normal1
-    np.float32_t normal2
-    np.float32_t area
-    np.int32_t component
+# cdef packed struct vertex_d:
+#     np.float32_t position0
+#     np.float32_t position1
+#     np.float32_t position2
+#     np.float32_t normal0
+#     np.float32_t normal1
+#     np.float32_t normal2
+#     np.int32_t halfedge
+#     np.int32_t valence
+#     np.int32_t neighbor0
+#     np.int32_t neighbor1
+#     np.int32_t neighbor2
+#     np.int32_t neighbor3
+#     np.int32_t neighbor4
+#     np.int32_t neighbor5
+#     np.int32_t neighbor6
+#     np.int32_t neighbor7
+#     np.int32_t neighbor8
+#     np.int32_t neighbor9
+#     np.int32_t neighbor10
+#     np.int32_t neighbor11
+#     np.int32_t neighbor12
+#     np.int32_t neighbor13
+#     np.int32_t neighbor14
+#     np.int32_t neighbor15
+#     np.int32_t neighbor16
+#     np.int32_t neighbor17
+#     np.int32_t neighbor18
+#     np.int32_t neighbor19
+#     np.int32_t component
 
-cdef packed struct vertex_d:
-    np.float32_t position0
-    np.float32_t position1
-    np.float32_t position2
-    np.float32_t normal0
-    np.float32_t normal1
-    np.float32_t normal2
-    np.int32_t halfedge
-    np.int32_t valence
-    np.int32_t neighbor0
-    np.int32_t neighbor1
-    np.int32_t neighbor2
-    np.int32_t neighbor3
-    np.int32_t neighbor4
-    np.int32_t neighbor5
-    np.int32_t neighbor6
-    np.int32_t neighbor7
-    np.int32_t neighbor8
-    np.int32_t neighbor9
-    np.int32_t neighbor10
-    np.int32_t neighbor11
-    np.int32_t neighbor12
-    np.int32_t neighbor13
-    np.int32_t neighbor14
-    np.int32_t neighbor15
-    np.int32_t neighbor16
-    np.int32_t neighbor17
-    np.int32_t neighbor18
-    np.int32_t neighbor19
-    np.int32_t component
+# cdef packed struct vertex_t:  # non-flattened version from triangle_mesh_utils.c
+#     float position[VECTORSIZE];
+#     float normal[VECTORSIZE];
+#     np.int32_t halfedge;
+#     np.int32_t valence;
+#     np.int32_t neighbors[NEIGHBORSIZE];
+#     np.int32_t component;
+
+#cdef union halfedge_d:
+#ctypedef halfedge_t halfedge_d
+#ctypedef face_t face_d
+#ctypedef vertex_t vertex_d
+
+    
+cdef extern from "triangle_mesh_utils.c":
+    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_d *vertices, face_d *faces, signed int n_idxs)
+    
+    void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
+    void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
@@ -139,7 +231,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _flat_halfedges
     cdef object _flat_faces
     cdef object _flat_vertices
-    cdef halfedge_d * _chalfedges
+    cdef halfedge_t * _chalfedges
     cdef face_d * _cfaces
     cdef vertex_d * _cvertices
 
@@ -195,6 +287,7 @@ cdef class TriangleMesh(TrianglesBase):
             # Flatten to address cython view problem
             self._flat_vertices = self._vertices.view(VERTEX_DTYPE2)
             # Set up c views to arrays
+            #print self._flat_vertices.shape
             self._set_cvertices(self._flat_vertices)
             self._vertices[:] = -1  # initialize everything to -1 to start with
             self._vertices['position'] = vertices
@@ -493,13 +586,14 @@ cdef class TriangleMesh(TrianglesBase):
     def keys(self):
         return list(self.vertex_properties) + list(self.extra_vertex_data.keys())
 
-    def _set_chalfedges(self, halfedge_d[:] halfedges):
+    def _set_chalfedges(self, halfedge_t[:] halfedges):
         self._chalfedges = &halfedges[0]
 
     def _set_cfaces(self, face_d[:] faces):
         self._cfaces = &faces[0]
 
     def _set_cvertices(self, vertex_d[:] vertices):
+        #print vertices.shape
         self._cvertices = &vertices[0]
 
     def _initialize_halfedges(self, vertices, faces):
@@ -571,6 +665,8 @@ cdef class TriangleMesh(TrianglesBase):
         else:
             raise ValueError('Mesh does not contain vertices and faces.')
 
+    @cython.boundscheck(False)  # Deactivate bounds checking
+    @cython.wraparound(False)
     def _update_face_normals(self, f_idxs):
         """
         Recompute len(f_idxs) face normals.
@@ -583,7 +679,10 @@ cdef class TriangleMesh(TrianglesBase):
 
         if isinstance(f_idxs, list):
             f_idxs = np.int32(f_idxs)
-        triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
+        #triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
+        cdef np.int32_t [:] idxs = f_idxs
+        
+        _update_face_normals(&(idxs[0]), self._chalfedges, self._cvertices, self._cfaces, idxs.shape[0])
 
     def _update_vertex_neighbors(self, v_idxs):
         """
@@ -781,7 +880,8 @@ cdef class TriangleMesh(TrianglesBase):
                 multiple, disjoint edges).
         """
 
-        cdef halfedge_d *curr_halfedge, *twin_halfedge
+        cdef halfedge_t *curr_halfedge
+        cdef halfedge_t *twin_halfedge
         cdef np.int32_t _prev, _twin, _next, _prev_twin, _prev_twin_vertex, _next_prev_twin, _next_prev_twin_vertex, _twin_next_vertex, _next_twin_twin_next, _next_twin_twin_next_vertex, vl, vd, _dead_vertex, _live_vertex, vn, vtn, face0, face1, face2, face3
         cdef bint fast_collapse_bool, interior
 
@@ -909,11 +1009,30 @@ cdef class TriangleMesh(TrianglesBase):
             if live_update:
                 if interior:
                     # Update faces
-                    self._update_face_normals([face0, face1, face2, face3])
-                    self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+                    #self._update_face_normals([face0, face1, face2, face3])
+                    #self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+                    
+                    update_face_normal(face0, self._chalfedges, self._cvertices, self._cfaces)
+                    update_face_normal(face1, self._chalfedges, self._cvertices, self._cfaces)
+                    update_face_normal(face2, self._chalfedges, self._cvertices, self._cfaces)
+                    update_face_normal(face3, self._chalfedges, self._cvertices, self._cfaces)
+                    
+                    update_single_vertex_neighbours(_live_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    update_single_vertex_neighbours(_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    update_single_vertex_neighbours(_next_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    update_single_vertex_neighbours(_twin_next_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    
                 else:
-                    self._update_face_normals([face0, face1])
-                    self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex])
+                    #self._update_face_normals([face0, face1])
+                    #self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex])
+                    
+                    update_face_normal(face0, self._chalfedges, self._cvertices, self._cfaces)
+                    update_face_normal(face1, self._chalfedges, self._cvertices, self._cfaces)
+                    
+                    update_single_vertex_neighbours(_live_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    update_single_vertex_neighbours(_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    update_single_vertex_neighbours(_next_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
+                    
                 self._faces_by_vertex = None
                 self._H = None
                 self._K = None
@@ -934,7 +1053,7 @@ cdef class TriangleMesh(TrianglesBase):
             edge : int
                 One self._halfedge index of the edge defining a face to delete.
         """
-        cdef halfedge_d *curr_edge
+        cdef halfedge_t *curr_edge
         
         if _edge == -1:
             return
@@ -1083,7 +1202,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return ed, idx
 
-    def _new_face(self, int _edge, bool compact=False, **kwargs):
+    def _new_face(self, int _edge, compact=False, **kwargs):
         """
         Create a new face based on edge _edge.
 
@@ -1159,7 +1278,8 @@ cdef class TriangleMesh(TrianglesBase):
                 incident on both a new vertex and an old verex that do not
                 split an existing edge.
         """
-        cdef halfedge_d *curr_edge, *twin_edge
+        cdef halfedge_t *curr_edge
+        cdef halfedge_t *twin_edge
         cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, _face_1_idx, _face_2_idx, _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx, _vertex_idx
         cdef bint interior
 
@@ -1259,11 +1379,33 @@ cdef class TriangleMesh(TrianglesBase):
 
         if live_update:
             if interior:
-                self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_1_idx].face, self._chalfedges[_he_2_idx].face, self._chalfedges[_he_4_idx].face])
-                self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_twin].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_2_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_1_idx].face, self._chalfedges[_he_2_idx].face, self._chalfedges[_he_4_idx].face])
+                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_twin].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_2_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+            
+                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_1_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_2_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                
+                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_2_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            
             else:
-                self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
-                self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
+                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+                
+                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                
+                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_prev].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            
+            
             self._faces_by_vertex = None
             self._H = None
             self._K = None
@@ -1282,7 +1424,7 @@ cdef class TriangleMesh(TrianglesBase):
                 disjoint edges).
         """
 
-        cdef halfedge_d *curr_edge, *twin_edge
+        cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1
         cdef bint fast_collapse_bool
 
@@ -1383,8 +1525,17 @@ cdef class TriangleMesh(TrianglesBase):
 
         if live_update:
             # Update face and vertex normals
-            self._update_face_normals([curr_edge.face, twin_edge.face])
-            self._update_vertex_neighbors([curr_edge.vertex, twin_edge.vertex, self._chalfedges[_next].vertex, self._chalfedges[_twin_next].vertex])
+            #self._update_face_normals([curr_edge.face, twin_edge.face])
+            #self._update_vertex_neighbors([curr_edge.vertex, twin_edge.vertex, self._chalfedges[_next].vertex, self._chalfedges[_twin_next].vertex])
+            
+            update_face_normal(curr_edge.face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(twin_edge.face, self._chalfedges, self._cvertices, self._cfaces)
+            
+            update_single_vertex_neighbours(curr_edge.vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(twin_edge.vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[_twin_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            
             self._faces_by_vertex = None
             self._H = None
             self._K = None
@@ -1475,10 +1626,22 @@ cdef class TriangleMesh(TrianglesBase):
         self._cvertices[_v1].halfedge = _t1
         self._cvertices[_v2].halfedge = _t2
 
-        self._update_face_normals([self._chalfedges[_t0].face,self._chalfedges[self._chalfedges[_t0].twin].face,
-                                   self._chalfedges[_t1].face,self._chalfedges[self._chalfedges[_t1].twin].face,
-                                   self._chalfedges[_t2].face,self._chalfedges[self._chalfedges[_t2].twin].face])
-        self._update_vertex_neighbors([_v0,_v1,_v2])
+        # self._update_face_normals([self._chalfedges[_t0].face,self._chalfedges[self._chalfedges[_t0].twin].face,
+        #                            self._chalfedges[_t1].face,self._chalfedges[self._chalfedges[_t1].twin].face,
+        #                            self._chalfedges[_t2].face,self._chalfedges[self._chalfedges[_t2].twin].face])
+        # self._update_vertex_neighbors([_v0,_v1,_v2])
+        
+        update_face_normal(self._chalfedges[_t0].face, self._chalfedges, self._cvertices, self._cfaces)
+        update_face_normal(self._chalfedges[self._chalfedges[_t0].twin].face, self._chalfedges, self._cvertices, self._cfaces)
+        update_face_normal(self._chalfedges[_t1].face, self._chalfedges, self._cvertices, self._cfaces)
+        update_face_normal(self._chalfedges[self._chalfedges[_t1].twin].face, self._chalfedges, self._cvertices, self._cfaces)
+        update_face_normal(self._chalfedges[_t2].face, self._chalfedges, self._cvertices, self._cfaces)
+        update_face_normal(self._chalfedges[self._chalfedges[_t2].twin].face, self._chalfedges, self._cvertices, self._cfaces)
+        
+        update_single_vertex_neighbours(_v0, self._chalfedges, self._cvertices, self._cfaces)
+        update_single_vertex_neighbours(_v1, self._chalfedges, self._cvertices, self._cfaces)
+        update_single_vertex_neighbours(_v2, self._chalfedges, self._cvertices, self._cfaces)
+        
         self._faces_by_vertex = None
 
     def _zipper(self, np.int32_t edge1, np.int32_t edge2):
@@ -1500,7 +1663,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
 
         cdef int flip_count, target_valence
-        cdef halfedge_d *curr_edge, *twin_edge
+        cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _twin, v1, v2, v3, v4, score_post, score_pre
 
         flip_count = 0
@@ -2100,8 +2263,16 @@ cdef class TriangleMesh(TrianglesBase):
                 polygon.append(self._halfedges['next'][_h0_twin])
 
             # Update faces and vertices
-            self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
-            self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
+            #self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
+            #self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
+            
+            update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._halfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
+            
+            update_single_vertex_neighbours(self._halfedges['vertex'][_h0_twin], self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._halfedges['vertex'][h0], self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._halfedges['vertex'][h1], self._chalfedges, self._cvertices, self._cfaces)
 
     def _zig_zag_triangulation(self, polygon):
         """
@@ -2147,8 +2318,16 @@ cdef class TriangleMesh(TrianglesBase):
                 odd = (not odd)
 
             # Update faces and vertices
-            self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
-            self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
+            #self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
+            #self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
+            
+            update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._chalfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
+            
+            update_single_vertex_neighbours(self._chalfedges[_h0_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h0].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h1].vertex, self._chalfedges, self._cvertices, self._cfaces)
 
     def _fill_holes(self, method='zig-zag'):
         """
