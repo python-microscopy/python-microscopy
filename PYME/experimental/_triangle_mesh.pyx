@@ -151,6 +151,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _singular_vertices
 
     cdef public object vertex_properties
+    cdef public object extra_vertex_data
     cdef object fix_boundary
     cdef object _manifold
 
@@ -232,6 +233,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         # Properties we can visualize
         self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'curvature_mean', 'curvature_gaussian']
+        
+        self.extra_vertex_data = {}
 
         self.fix_boundary = True  # Hold boundary edges in place
 
@@ -252,7 +255,10 @@ cdef class TriangleMesh(TrianglesBase):
         try:
             res = getattr(self, k)
         except AttributeError:
-            raise KeyError('Key %s not defined' % k)
+            try:
+                res = self.extra_vertex_data[k]
+            except KeyError:
+                raise KeyError('Key %s not defined' % k)
         
         return res
 
@@ -485,7 +491,7 @@ cdef class TriangleMesh(TrianglesBase):
         return self._manifold
 
     def keys(self):
-        return list(self.vertex_properties)
+        return list(self.vertex_properties) + list(self.extra_vertex_data.keys())
 
     def _set_chalfedges(self, halfedge_d[:] halfedges):
         self._chalfedges = &halfedges[0]
@@ -737,6 +743,28 @@ cdef class TriangleMesh(TrianglesBase):
             k_2 = 3.*l2 - l1 #e[1] - e[0]
             self._H[iv] = 0.5*(k_1 + k_2)
             self._K[iv] = k_1*k_2
+            
+        #self._H = self.smooth_per_vertex_data(self._H)
+        #self._K = self.smooth_per_vertex_data(self._K)
+        
+    def smooth_per_vertex_data(self, data):
+        # replace a vertex value with the average of that value and it's neighbours. TODO - add some form of weighting
+        out = np.zeros_like(data)
+        for iv in range(self._vertices.shape[0]):
+            # Vertex position
+            #vi = self._vertices['position'][iv,:]
+                
+            # vertex nearest neighbors
+            neighbors = self._vertices['neighbors'][iv]
+            neighbor_vertices = self._halfedges['vertex'][neighbors[neighbors != -1]]
+            
+            #vjs = self._vertices['position'][neighbor_vertices]
+            
+            #TODO add weightings ...
+            out[iv] = (data[iv] + data[neighbor_vertices].sum())/float(1 + len(neighbor_vertices))
+            
+        return out
+            
 
     def edge_collapse(self, np.int32_t _curr, bint live_update=1):
         """
@@ -1055,7 +1083,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return ed, idx
 
-    def _new_face(self, _edge, compact=False, **kwargs):
+    def _new_face(self, int _edge, bool compact=False, **kwargs):
         """
         Create a new face based on edge _edge.
 
@@ -1148,6 +1176,12 @@ cdef class TriangleMesh(TrianglesBase):
         x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
         n0 = self._vertices['normal'][curr_edge.vertex, :]
         n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+        
+        # x0 = self._cvertices['position'][curr_edge.vertex, :]
+        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+        # n0 = self._vertices['normal'][curr_edge.vertex, :]
+        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+        
         _vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
         _, _vertex_idx = self._new_vertex(_vertex)
 
@@ -1555,7 +1589,7 @@ cdef class TriangleMesh(TrianglesBase):
         self.face_normals
         self.vertex_normals
 
-    def remesh(self, n=5, target_edge_length=-1, l=0.5, n_relax=10):
+    def remesh(self, int n=5, float target_edge_length=-1, float l=0.5, int n_relax=10):
         """
         Produce a higher-quality mesh.
 
@@ -1575,24 +1609,38 @@ cdef class TriangleMesh(TrianglesBase):
                 Number of Lloyd relaxation (relax()) iterations to apply 
                 per remeshing iteration.
         """
+        cdef int k, i, split_count, collapse_count
+        #cdef float target_edge_length
+        
+        cdef int n_halfedges = self._halfedges.shape[0]
 
-        if (target_edge_length == -1):
+        if (target_edge_length < 0):
             # Guess edge_length
             target_edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
+            
+        #cdef float split_threshold = 1.33*target_edge_length
+        #cdef float collapse_threshold = 0.8*target_edge_length
+        
+        # modify cutoffs so we don't constantly undo ourselves ...
+        # TOD - should we regularize between split and collapse?
+        cdef float split_threshold = 1.41*target_edge_length
+        cdef float collapse_threshold = 0.7*target_edge_length
+        
+        #self.regularize()
 
         for k in range(n):
             # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
             split_count = 0
-            for i in np.arange(len(self._halfedges['length']), dtype=np.int32):
-                if (self._halfedges['vertex'][i] != -1) and (self._halfedges['length'][i] > 1.33*target_edge_length):
+            for i in range(n_halfedges):
+                if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
                     self.edge_split(i)
                     split_count += 1
             print('Split count: %d' % (split_count))
             
             # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
             collapse_count = 0
-            for i in np.arange(len(self._halfedges['length']), dtype=np.int32):
-                if (self._halfedges['vertex'][i] != -1) and (self._halfedges['length'][i] < 0.8*target_edge_length):
+            for i in range(n_halfedges):
+                if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
                     self.edge_collapse(i)
                     collapse_count += 1
             print('Collapse count: ' + str(collapse_count))
@@ -2306,7 +2354,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._singular_edges = None
         self._singular_vertices = None
 
-    def repair(self):
+    def repair(self, only_largest_component=False):
         """
         Repair the mesh so it's topologically manifold.
 
@@ -2320,7 +2368,8 @@ cdef class TriangleMesh(TrianglesBase):
         self._remove_singularities()
 
         # 2. Remove all connected components except the largest
-        self.keep_largest_connected_component()
+        if only_largest_component:
+            self.keep_largest_connected_component()
 
         # 3. Patch mesh holes with new triangles
         self._fill_holes()
