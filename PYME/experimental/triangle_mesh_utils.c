@@ -86,6 +86,7 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
 
     i = 0;
 
+    //zero out neighbours and normal
     for (k = 0; k < NEIGHBORSIZE; ++k)
         (curr_vertex->neighbors)[k] = -1;
 

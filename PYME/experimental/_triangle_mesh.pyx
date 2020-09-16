@@ -12,7 +12,7 @@ cdef extern from 'triangle_mesh_utils.h':
     const int NEIGHBORSIZE  # Note this must match NEIGHBORSIZE in triangle_mesh_utils.h
     const int VECTORSIZE
     
-    cdef packed struct halfedge_t:
+    cdef struct halfedge_t:
         np.int32_t vertex
         np.int32_t face
         np.int32_t twin
@@ -21,13 +21,13 @@ cdef extern from 'triangle_mesh_utils.h':
         np.float32_t length
         np.int32_t component
         
-    cdef packed struct face_t:
+    cdef struct face_t:
         np.int32_t halfedge
         float normal[VECTORSIZE]
         float area
         np.int32_t component
         
-    cdef packed struct face_d:
+    cdef struct face_d:
         np.int32_t halfedge
         np.float32_t normal0
         np.float32_t normal1
@@ -35,7 +35,7 @@ cdef extern from 'triangle_mesh_utils.h':
         np.float32_t area
         np.int32_t component
         
-    cdef packed struct vertex_t:
+    cdef struct vertex_t:
         float position[VECTORSIZE];
         float normal[VECTORSIZE];
         np.int32_t halfedge;
@@ -43,7 +43,7 @@ cdef extern from 'triangle_mesh_utils.h':
         np.int32_t neighbors[NEIGHBORSIZE];
         np.int32_t component;
         
-    cdef packed struct vertex_d:
+    cdef struct vertex_d:
         np.float32_t position0
         np.float32_t position1
         np.float32_t position2
@@ -79,11 +79,11 @@ from PYME.experimental import triangle_mesh_utils
 
 MAX_VERTEX_COUNT = 2**64
 
-HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')])
-FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')])
-FACE_DTYPE2 = np.dtype([('halfedge', 'i4'), ('normal0', 'f4'), ('normal1', 'f4'), ('normal2', 'f4'), ('area', 'f4'), ('component', 'i4')])
+HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')], align=True)
+FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')], align=True)
+FACE_DTYPE2 = np.dtype([('halfedge', 'i4'), ('normal0', 'f4'), ('normal1', 'f4'), ('normal2', 'f4'), ('area', 'f4'), ('component', 'i4')], align=True)
 # Note that VERTEX_DTYPE neighbors size must match NEIGHBORSIZE
-VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '20i4'), ('component', 'i4')])
+VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '20i4'), ('component', 'i4')], align=True)
 VERTEX_DTYPE2 = np.dtype([('position0', 'f4'), 
                           ('position1', 'f4'), 
                           ('position2', 'f4'), 
@@ -112,7 +112,7 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
                           ('neighbor17', 'i4'), 
                           ('neighbor18', 'i4'), 
                           ('neighbor19', 'i4'), 
-                          ('component', 'i4')])
+                          ('component', 'i4')], align=True)
 
 # cdef packed struct halfedge_d:
 #     np.int32_t vertex
@@ -228,9 +228,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef public object _vertex_vacancies
     cdef public object _face_vacancies
     cdef public object _halfedge_vacancies
-    cdef object _flat_halfedges
-    cdef object _flat_faces
-    cdef object _flat_vertices
+    #cdef object _flat_halfedges
+    #cdef object _flat_faces
+    #cdef object _flat_vertices
     cdef halfedge_t * _chalfedges
     cdef face_d * _cfaces
     cdef vertex_d * _cvertices
@@ -268,15 +268,15 @@ cdef class TriangleMesh(TrianglesBase):
             
             self._vertices = np.copy(mesh._vertices)
             # Flatten to address cython view problem
-            self._flat_vertices = self._vertices.view(VERTEX_DTYPE2)
+            _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
             # Set up c views to arrays
-            self._set_cvertices(self._flat_vertices)
+            self._set_cvertices(_flat_vertices)
             self._vertex_vacancies = copy.copy(mesh._vertex_vacancies)
 
             self._faces = np.copy(mesh._faces)
-            self._flat_faces = self._faces.view(FACE_DTYPE2)
+            _flat_faces = self._faces.view(FACE_DTYPE2)
             # Set up c views to arrays
-            self._set_cfaces(self._flat_faces)
+            self._set_cfaces(_flat_faces)
             self._face_vacancies = copy.copy(mesh._face_vacancies)
 
             self._halfedges = np.copy(mesh._halfedges)
@@ -285,10 +285,10 @@ cdef class TriangleMesh(TrianglesBase):
         else:
             self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
             # Flatten to address cython view problem
-            self._flat_vertices = self._vertices.view(VERTEX_DTYPE2)
+            _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
             # Set up c views to arrays
             #print self._flat_vertices.shape
-            self._set_cvertices(self._flat_vertices)
+            self._set_cvertices(_flat_vertices)
             self._vertices[:] = -1  # initialize everything to -1 to start with
             self._vertices['position'] = vertices
             self._vertex_vacancies = []
@@ -586,13 +586,20 @@ cdef class TriangleMesh(TrianglesBase):
     def keys(self):
         return list(self.vertex_properties) + list(self.extra_vertex_data.keys())
 
-    def _set_chalfedges(self, halfedge_t[:] halfedges):
+    
+    @cython.boundscheck(False)  # Deactivate bounds checking
+    @cython.wraparound(False)
+    cdef _set_chalfedges(self, halfedge_t[:] halfedges):
         self._chalfedges = &halfedges[0]
 
-    def _set_cfaces(self, face_d[:] faces):
+    @cython.boundscheck(False)  # Deactivate bounds checking
+    @cython.wraparound(False)
+    cdef _set_cfaces(self, face_d[:] faces):
         self._cfaces = &faces[0]
 
-    def _set_cvertices(self, vertex_d[:] vertices):
+    @cython.boundscheck(False)  # Deactivate bounds checking
+    @cython.wraparound(False)
+    cdef _set_cvertices(self, vertex_d[:] vertices):
         #print vertices.shape
         self._cvertices = &vertices[0]
 
@@ -628,9 +635,9 @@ cdef class TriangleMesh(TrianglesBase):
             
             self._faces = np.zeros(n_faces, dtype=FACE_DTYPE)
             # Flatten to address cython view problem
-            self._flat_faces = self._faces.view(FACE_DTYPE2)
+            _flat_faces = self._faces.view(FACE_DTYPE2)
             # Set up c views to arrays
-            self._set_cfaces(self._flat_faces)
+            self._set_cfaces(_flat_faces)
             self._faces[:] = -1  # initialize everything to -1 to start with
 
             # Sort the edges lo->hi so we can arrange them uniquely
@@ -865,6 +872,81 @@ cdef class TriangleMesh(TrianglesBase):
         return out
             
 
+    cdef bint _check_neighbour_twins(self, int vertex_id):
+        cdef int i
+        cdef np.int32_t *neighbours = &(self._cvertices[vertex_id].neighbor0)
+        for i in range(NEIGHBORSIZE):
+            nn = neighbours[i]
+            if (nn != -1) and (self._chalfedges[nn].twin == -1):
+                return 0
+            
+        return 1
+    
+    cdef bint _check_collapse_fast(self, int _live_vertex, int _dead_vertex):
+        cdef int i, j, ln, dn, lv
+        cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
+        cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
+        
+        cdef np.int32_t dead_vertex_neighbours[NEIGHBORSIZE]
+        cdef np.int32_t dead_halfedges[NEIGHBORSIZE]
+        
+        for i in range(NEIGHBORSIZE):
+            dn = dead_neighbours[i]
+                
+            if (dn != -1):
+                dead_halfedges[i] = dn
+                dead_vertex_neighbours[i] = self._chalfedges[dn].vertex
+                
+        cdef int shared_vertex_count = 0
+        
+        for i in range(NEIGHBORSIZE):
+            ln = live_neighbours[i]
+            lv =  self._chalfedges[ln].vertex
+            for h in range(NEIGHBORSIZE):
+                if (lv == dead_vertex_neighbours[j]):
+                    shared_vertex_count +=1
+                
+        if shared_vertex_count !=2:
+            return 0
+                
+        for dn in dead_halfedges:
+            self._chalfedges[dn].vertex = _live_vertex
+        
+        return 1
+    
+    cdef bint _check_collapse_slow(self, int _live_vertex, int _dead_vertex):
+        cdef int i, ln, dn, n_edges
+        #cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
+        #cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
+        
+        n_edges = self._halfedges.shape[0]
+        
+        dead_vertex_neighbours = []
+        dead_halfedges = []
+        
+        for i in range(n_edges):
+            if (self._chalfedges[i].vertex == _dead_vertex) and (self._chalfedges[i].twin != -1):
+                dead_halfedges.append(i)
+                dead_vertex_neighbours.append(self._chalfedges[i].twin)
+                
+        cdef int shared_vertex_count = 0
+        
+        for i in range(n_edges):
+            if (self._chalfedges[i].vertex == _live_vertex) and (self._chalfedges[i].twin != -1):
+                ln = self._chalfedges[self._chalfedges[i].twin].vertex
+                
+                if ln in dead_vertex_neighbours:
+                    shared_vertex_count +=1
+                
+                
+        if shared_vertex_count !=2:
+            return 0
+                
+        for dn in dead_halfedges:
+            self._chalfedges[dn].vertex = _live_vertex
+        
+        return 1
+    
     def edge_collapse(self, np.int32_t _curr, bint live_update=1):
         """
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr,
@@ -901,14 +983,20 @@ cdef class TriangleMesh(TrianglesBase):
         interior = (_twin != -1)  # Are we on a boundary?
 
         if interior:
-            nn = self._vertices['neighbors'][curr_halfedge.vertex]
-            nn_mask = (nn != -1)
-            if (-1 in self._halfedges['twin'][nn]*nn_mask):
+            #nn = self._vertices['neighbors'][curr_halfedge.vertex]
+            #nn_mask = (nn != -1)
+            #if (-1 in self._halfedges['twin'][nn]*nn_mask):
+            #    return
+            
+            if not self._check_neighbour_twins(curr_halfedge.vertex):
                 return
 
-            nn = self._vertices['neighbors'][self._halfedges['vertex'][_twin]]
-            nn_mask = (nn != -1)
-            if (-1 in self._halfedges['twin'][nn]*nn_mask):
+            #nn = self._vertices['neighbors'][self._halfedges['vertex'][_twin]]
+            #nn_mask = (nn != -1)
+            #if (-1 in self._halfedges['twin'][nn]*nn_mask):
+            #    return
+            
+            if not self._check_neighbour_twins(self._chalfedges[_twin].vertex):
                 return
 
             twin_halfedge = &self._chalfedges[_twin]
@@ -937,7 +1025,7 @@ cdef class TriangleMesh(TrianglesBase):
             return
 
         # Check for creation of multivalent edges and prevent this (manifoldness)
-        fast_collapse_bool = (self.manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
+        fast_collapse_bool = (self._manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
         if fast_collapse_bool:
             # Do it the fast way if we can
             live_nn = self._vertices['neighbors'][_live_vertex]
@@ -951,6 +1039,7 @@ cdef class TriangleMesh(TrianglesBase):
             dead_mask = (self._halfedges['vertex'] == _dead_vertex)
             dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
             live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
+
         twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
             return
@@ -960,6 +1049,14 @@ cdef class TriangleMesh(TrianglesBase):
             self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
         else:
             self._halfedges['vertex'][dead_mask] = _live_vertex
+        
+        # if fast_collapse_bool:
+        #     if not self._check_collapse_fast(_live_vertex, _dead_vertex):
+        #         return
+        # else:
+        #     if not self._check_collapse_slow(_live_vertex, _dead_vertex):
+        #         return
+        
         _live_pos = self._vertices['position'][_live_vertex]
         _dead_pos = self._vertices['position'][_dead_vertex]
         self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
@@ -1042,7 +1139,7 @@ cdef class TriangleMesh(TrianglesBase):
             print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
             raise e
 
-    def _face_delete(self, np.int32_t _edge):
+    cdef _face_delete(self, np.int32_t _edge):
         """
         Delete a face defined by the halfedge _edge.
 
@@ -1056,11 +1153,11 @@ cdef class TriangleMesh(TrianglesBase):
         cdef halfedge_t *curr_edge
         
         if _edge == -1:
-            return
+            return -1
         
         curr_edge = &self._chalfedges[_edge]
         if curr_edge.vertex == -1:
-            return
+            return -1
         
         self._cfaces[curr_edge.face].halfedge = -1
         self._cfaces[curr_edge.face].normal0 = -1
@@ -1075,7 +1172,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._edge_delete(curr_edge.prev)
         self._edge_delete(_edge)
 
-    def _edge_delete(self, np.int32_t _edge):
+    cdef _edge_delete(self, np.int32_t _edge):
         """
         Delete edge _edge in place from self._halfedges.
 
@@ -1087,7 +1184,7 @@ cdef class TriangleMesh(TrianglesBase):
                 One self._halfedge index of the edge to delete.
         """
         if (_edge == -1):
-            return
+            return -1
         
         self._chalfedges[_edge].vertex = -1
         self._chalfedges[_edge].face = -1
@@ -1202,7 +1299,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return ed, idx
 
-    def _new_face(self, int _edge, compact=False, **kwargs):
+    def _new_face(self, int _edge, bint compact=False, **kwargs):
         """
         Create a new face based on edge _edge.
 
@@ -1223,14 +1320,15 @@ cdef class TriangleMesh(TrianglesBase):
             idx : int
                 Index of the face in self._faces.
         """
-
+        cdef int idx
+        
         fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, 'halfedge', compact, None, **kwargs)
-        self._flat_faces = self._faces.view(FACE_DTYPE2)
-        self._set_cfaces(self._flat_faces)
+        _flat_faces = self._faces.view(FACE_DTYPE2)
+        self._set_cfaces(_flat_faces)
 
         return fa, idx
 
-    def _new_vertex(self, _vertex, compact=False, **kwargs):
+    def _new_vertex(self, _vertex, bint compact=False, **kwargs):
         """
         Insert a new vertex into the mesh.
 
@@ -1251,9 +1349,11 @@ cdef class TriangleMesh(TrianglesBase):
             idx : int
                 Index of the vertex in self._vertices.
         """
+        cdef int idx
+        
         vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, 'halfedge', compact, 'position', **kwargs)
-        self._flat_vertices = self._vertices.view(VERTEX_DTYPE2)
-        self._set_cvertices(self._flat_vertices)
+        _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
+        self._set_cvertices(_flat_vertices)
 
         self._faces_by_vertex = None  # Reset
         self._H = None
@@ -1323,15 +1423,15 @@ cdef class TriangleMesh(TrianglesBase):
         self._chalfedges[_next].face = _face_2_idx
 
         # Insert the new faces
-        _, _he_0_idx = self._new_edge(self._halfedges['vertex'][_next], prev=_curr, next=_prev, face=self._halfedges['face'][_curr])
+        _, _he_0_idx = self._new_edge(self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face)
         if interior:
-            _, _he_1_idx = self._new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._halfedges['face'][_twin])
+            _, _he_1_idx = self._new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face)
         
-            _, _he_2_idx = self._new_edge(self._halfedges['vertex'][_twin_next], next=_twin_prev, face=_face_1_idx)
+            _, _he_2_idx = self._new_edge(self._chalfedges[_twin_next].vertex, next=_twin_prev, face=_face_1_idx)
             _, _he_3_idx = self._new_edge(_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx)
             self._chalfedges[_he_2_idx].prev = _he_3_idx
 
-        _, _he_4_idx = self._new_edge(self._halfedges['vertex'][_curr], next=_next, face=_face_2_idx, twin=-1)
+        _, _he_4_idx = self._new_edge(self._chalfedges[_curr].vertex, next=_next, face=_face_2_idx, twin=-1)
         _, _he_5_idx = self._new_edge(_vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx)
         self._chalfedges[_he_4_idx].prev = _he_5_idx
 
@@ -1410,7 +1510,7 @@ cdef class TriangleMesh(TrianglesBase):
             self._H = None
             self._K = None
     
-    def edge_flip(self, np.int32_t _curr, bint live_update=1):
+    cdef edge_flip(self, np.int32_t _curr, bint live_update=1):
         """
         Flip an edge specified by halfedge index _curr.
 
@@ -1427,15 +1527,16 @@ cdef class TriangleMesh(TrianglesBase):
         cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1
         cdef bint fast_collapse_bool
+        cdef float flipped_dot
 
         if (_curr == -1):
-            return
+            return -1
 
         curr_edge = &self._chalfedges[_curr]
         _twin = curr_edge.twin
         if (_twin == -1):
             # This is a boundary edge
-            return
+            return -1
         _prev = curr_edge.prev
         _next = curr_edge.next
 
@@ -1446,7 +1547,7 @@ cdef class TriangleMesh(TrianglesBase):
         # Make sure both vertices have valence > 3 (preserve manifoldness)
         vc, vt = self._cvertices[curr_edge.vertex].valence, self._cvertices[twin_edge.vertex].valence
         if (vc < 4) or (vt < 4):
-            return
+            return -1
 
         # Calculate adjustments to the halfedges we're flipping
         new_v0 = self._chalfedges[_next].vertex
@@ -1460,10 +1561,10 @@ cdef class TriangleMesh(TrianglesBase):
         fast_collapse_bool = (self.manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
         if fast_collapse_bool:
             if new_v1 in self._vertices['neighbors'][new_v0]:
-                return
+                return -1
         else:
             if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-                return
+                return -1
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
@@ -1474,7 +1575,7 @@ cdef class TriangleMesh(TrianglesBase):
         if flipped_dot < 0:
             # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
             # concavity, so don't flip.
-            return
+            return -1
 
         # _next's next and prev must be adjusted
         self._chalfedges[_next].prev = _twin_prev
@@ -1644,7 +1745,7 @@ cdef class TriangleMesh(TrianglesBase):
         
         self._faces_by_vertex = None
 
-    def _zipper(self, np.int32_t edge1, np.int32_t edge2):
+    cdef _zipper(self, np.int32_t edge1, np.int32_t edge2):
         cdef np.int32_t t1, t2
 
         t1 = -1 if edge1 == -1 else self._chalfedges[edge1].twin
@@ -1704,7 +1805,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         print('Flip count: %d' % (flip_count))
 
-    def relax(self, l=1, n=1):
+    def relax(self, float l=1, int n=1):
         """
         Perform n iterations of Lloyd relaxation on the mesh.
 
@@ -1715,7 +1816,8 @@ cdef class TriangleMesh(TrianglesBase):
             n : int
                 Number of iterations to apply.
         """
-
+        cdef int k
+        
         for k in range(n):
             # Get vertex neighbors
             nn = self._vertices['neighbors']
