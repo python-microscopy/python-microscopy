@@ -131,3 +131,55 @@ comprehensible. My suggestions are thus:
   where they can get easily distributed, but which could have substantially laxer stringency on what we accept.
 
 Regardless of the approach taken, I'm keen to be involved as early in the process as possible.
+
+Managing multiple PRs / branches and PR review latency
+======================================================
+
+Generally if you are making a PR it's because it addresses a problem you want solved **now** and you're naturally
+impatient to have it in and use it. Unfortunately there is some inevitable latency in getting PRs reviewed and into the
+head but you'd want to use your changes in the meantime. You are probably going to also want to track the latest new
+features from upstream while you wait for your PR to be merged. You could always checkout the master and then locally
+merge your pending PRs, but this can get tedious fast, particularly if you have several outstanding PRs to re-merge
+every time you update. There's no really good solution to this, but the following strategy is the best I can think of. This
+assumes that the repository on your machine is a clone of a fork you have made on github (which you will need for submitting PRs in any case).
+
+- add the main python-microscopy repo as a remote ``git remote add upstream git@github.com:python-microscopy/python-microscopy.git``.
+  This allows you to pull the latest changes directly rather than having to update on github and then pull your clone.
+- make a new branch for each new feature / prospective PR. These should always be based on the latest repository head
+  (i.e. ``git  fetch upstream; git checkout -b somecoolfeature upstream/master``)
+- make a  "throwaway" ``working`` branch for your local use. ``git  fetch upstream; git checkout -b working upstream/master``.
+  This strategy relies on never needing to merge ``working`` into upstream, so do not ever commit directly to the
+  ``working`` branch - only ever merge into it (e.g. ``git checkout working; git merge somecoolfeature``)
+- you can update your ``working`` branch to the latest head without having to re-merge any outstanding PRs by running
+  ``git fetch upstream; git checkout working; git merge upstream/master``. This should keep any prior merges in place
+- If you want to add another feature, make a new branch for it based on ``upstream/master`` -
+  ``git  fetch upstream; git checkout -b anotherfeature upstream/master`` and then merge into your ``working`` branch
+
+NB - some of the checkout calls above are probably redundant and can be ommitted if you stay in the working branch.
+
+Never making any non-merge commits to the ``working`` branch is fundamental to this strategy and to ensuring that changes
+are eventually mergeable with upstream, and requires a bit of discipline as it is incredibly tempting to make quick tweaks
+to the code you are currently running. Luckily git typically lets you change branches after you have made the changes but
+before you commit. The no commits to ``working`` strategy can be further enforced, if desired, with a pre-commit hook script
+like the following.
+
+.. code-block:: bash
+
+    #!/bin/bash
+
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+    if [ "${BRANCH}" == "working" ]
+    then
+      if [ -e "${GIT_DIR}/MERGE_MODE" ]
+      then
+        echo "Merge to working is allowed."
+        exit 0
+      else
+        echo "Commit directly to working is not allowed."
+        exit 1
+      fi
+    fi
+
+Although new feature branches should generally be based off ``upstream/master``, if the feature depends heavily on an
+unmerged branch it might make more sense to use this as the base.
