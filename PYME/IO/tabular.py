@@ -118,7 +118,26 @@ class TabularBase(object):
         return records.fromarrays(cols, names=keys_, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None,
-               close_after=False):
+               force_close=True):
+        """
+        Writes data to a table in an HDF5 file
+        
+        Parameters
+        ----------
+        
+        filename: string
+            the name of the file to save to
+        tablename: string [optional]
+            the name of the table within the file to save to. Defaults to "Data"
+        keys: list [optional]
+            a list of column names to save (if keys == None, all columns are saved)
+        metadata: a MetaDataHandler instance [optional]
+            associated metadata to write to the file
+        force_close: Bool
+            force the file to close after writing. If false, the file is closed with a 20s timeout after no further writes. Setting force_close=False
+            results in better performance when making multiple writes to the same file.
+            
+        """
         from PYME.IO import h5rFile
 
         with h5rFile.openH5R(filename, 'a') as f:
@@ -130,7 +149,7 @@ class TabularBase(object):
             #wait until data is written
             f.flush()
             
-        if close_after:
+        if force_close:
             f.wait_close()
                 
     def keys(self):
