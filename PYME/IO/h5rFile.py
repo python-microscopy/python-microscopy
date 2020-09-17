@@ -17,7 +17,28 @@ file_cache = {}
 
 openLock = threading.Lock()
 
-def openH5R(filename, mode='r'):
+def openH5R(filename, mode='r', keep_alive_timeout=20.0):
+    """
+    Open an H5R file in a threadsafe and optimised way. Looks to see if the file is already open in our cache and
+    returns the open file if present, otherwise opens the file and adds to the cache. Files are kept open for ``keep_alive_timeout``
+    seconds after the last read or write operation to avoid IO overhead in repeatedly opening and closing a file for
+    many short writes (such as saving incoming localisation results during analysis) whilst also ensuring that
+    files do eventually get closed (the previous strategy had been to leave files open until program exit, but this
+    becomes problematic for long-running processes in a high-throughput scenario).
+    
+    Parameters
+    ----------
+    filename: string
+    mode: string, one of 'r', 'w', 'a'
+    keep_alive_timeout: float
+        a timeout hint for how long to keep the file open for after the last operation on the file. NOTE: this parameter
+        is only respected if the file is not already in the cache - if in the cache the timeout will be the timeout set
+        by the openH5R call that initially placed it there.
+
+    Returns
+    -------
+
+    """
     key = filename
     
     with openLock:
@@ -28,7 +49,7 @@ def openH5R(filename, mode='r'):
             else:
                 return f
         else:
-            file_cache[key] = H5RFile(filename, mode)
+            file_cache[key] = H5RFile(filename, mode, keep_alive_timeout=keep_alive_timeout)
             return file_cache[key]
 
 
@@ -36,7 +57,7 @@ class H5RFile(object):
     #KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
     FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
     
-    def __init__(self, filename, mode='r', keep_alive_timeout = 20):
+    def __init__(self, filename, mode='r', keep_alive_timeout = 20.0):
         self.filename = filename
         self.mode = mode
         

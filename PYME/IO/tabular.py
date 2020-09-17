@@ -118,7 +118,7 @@ class TabularBase(object):
         return records.fromarrays(cols, names=keys_, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None,
-               force_close=True):
+               keep_alive_timeout=0):
         """
         Writes data to a table in an HDF5 file
         
@@ -133,14 +133,17 @@ class TabularBase(object):
             a list of column names to save (if keys == None, all columns are saved)
         metadata: a MetaDataHandler instance [optional]
             associated metadata to write to the file
-        force_close: Bool
-            force the file to close after writing. If false, the file is closed with a 20s timeout after no further writes. Setting force_close=False
-            results in better performance when making multiple writes to the same file.
+        keep_alive_timeout: float
+            a timeout in seconds. If non-zero, the file is held open after we have finished writing to it until the
+            timeout elapses. Useful as a performance optimisation when making multiple writes to a single file,
+            potentially across multiple threads. NOTE: the keep_alive_timeout is not garuanteed to be observed - it
+            gets set by the first open call of a given session, so if the file is already open due to a previous openH5R
+            call, the timeout requested by that call will be used.
             
         """
         from PYME.IO import h5rFile
 
-        with h5rFile.openH5R(filename, 'a') as f:
+        with h5rFile.openH5R(filename, 'a', keep_alive_timeout=keep_alive_timeout) as f:
             f.appendToTable(tablename, self.to_recarray(keys))
 
             if metadata is not None:
@@ -149,8 +152,6 @@ class TabularBase(object):
             #wait until data is written
             f.flush()
             
-        if force_close:
-            f.wait_close()
                 
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
