@@ -33,12 +33,14 @@ def openH5R(filename, mode='r'):
 
 
 class H5RFile(object):
-    KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+    #KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
     FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
     
-    def __init__(self, filename, mode='r'):
+    def __init__(self, filename, mode='r', keep_alive_timeout = 20):
         self.filename = filename
         self.mode = mode
+        
+        self.KEEP_ALIVE_TIMEOUT = keep_alive_timeout
 
         logging.debug('pytables open call: %s' % filename)
         with tablesLock:
@@ -55,7 +57,7 @@ class H5RFile(object):
         self.appendQueues = {}
         #self.appendVLQueues = {}
 
-        self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
+        self.keepAliveTimeout = time.time() + min(self.KEEP_ALIVE_TIMEOUT, 0.1)
         self.useCount = 0
         self.is_alive = True
 
@@ -81,6 +83,10 @@ class H5RFile(object):
         with self.appendQueueLock:
             self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
             self.useCount -= 1
+            
+            if self.KEEP_ALIVE_TIMEOUT == 0:
+                #if we have no timeout, wait for data to be written and file closed before returning
+                self._pollThread.join(10)
 
 
     @property
