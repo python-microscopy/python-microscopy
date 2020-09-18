@@ -46,6 +46,7 @@ typedef struct vertex_t{
     int32_t valence;
     int32_t neighbors[NEIGHBORSIZE];
     int32_t component;
+    int32_t locally_manifold;
 } vertex_t;
 
 typedef struct vertex_d { //flat version of vertex_t
@@ -78,6 +79,7 @@ typedef struct vertex_d { //flat version of vertex_t
     int32_t neighbor18;
     int32_t neighbor19;
     int32_t component;
+    int32_t locally_manifold;
 } vertex_d;
 
 float norm(const float *vertex);

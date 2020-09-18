@@ -42,6 +42,7 @@ cdef extern from 'triangle_mesh_utils.h':
         np.int32_t valence;
         np.int32_t neighbors[NEIGHBORSIZE];
         np.int32_t component;
+        np.int32_t locally_manifold
         
     cdef struct vertex_d:
         np.float32_t position0
@@ -73,17 +74,18 @@ cdef extern from 'triangle_mesh_utils.h':
         np.int32_t neighbor18
         np.int32_t neighbor19
         np.int32_t component
+        np.int32_t locally_manifold
         
 
 from PYME.experimental import triangle_mesh_utils
 
-MAX_VERTEX_COUNT = 2**64
+MAX_VERTEX_COUNT = 2**63
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')], align=True)
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')], align=True)
 FACE_DTYPE2 = np.dtype([('halfedge', 'i4'), ('normal0', 'f4'), ('normal1', 'f4'), ('normal2', 'f4'), ('area', 'f4'), ('component', 'i4')], align=True)
 # Note that VERTEX_DTYPE neighbors size must match NEIGHBORSIZE
-VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '20i4'), ('component', 'i4')], align=True)
+VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '20i4'), ('component', 'i4'),('locally_manifold', 'i4')], align=True)
 VERTEX_DTYPE2 = np.dtype([('position0', 'f4'), 
                           ('position1', 'f4'), 
                           ('position2', 'f4'), 
@@ -112,7 +114,8 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
                           ('neighbor17', 'i4'), 
                           ('neighbor18', 'i4'), 
                           ('neighbor19', 'i4'), 
-                          ('component', 'i4')], align=True)
+                          ('component', 'i4'),
+                          ('locally_manifold', 'i4')], align=True)
 
 # cdef packed struct halfedge_d:
 #     np.int32_t vertex
@@ -321,8 +324,11 @@ cdef class TriangleMesh(TrianglesBase):
         self._singular_vertices = None
 
         # Populate the normals
+        #print('populating face normals')
         self.face_normals
+        #print('populating vertex normals')
         self.vertex_normals
+        #print('done populating normals')
 
         # Properties we can visualize
         self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'curvature_mean', 'curvature_gaussian']
@@ -490,13 +496,27 @@ cdef class TriangleMesh(TrianglesBase):
         edges, and isolated singular vertices. Isolated singular vertices
         have more than one 1-neighbor ring.
         """
+        cdef int _vertex, n_incident, n_neighbors, n_vertices, n_halfedges, j, v
+        cdef int [:] n_incident_v
+        
         if self._singular_vertices is None:
             # Mark vertices that are endpoints of these edges
             singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][self.singular_edges], self._halfedges['vertex'][self._halfedges['twin'][self.singular_edges]]]))))
             
             # Mark isolated singular vertices
-            for _vertex in np.arange(self._vertices.shape[0]):
-                if self._vertices['halfedge'][_vertex] == -1:
+            
+            # run through all the halfedges and compute a vertex incidence table
+            n_halfedges = self._halfedges.shape[0]
+            n_vertices = self._vertices.shape[0]
+            n_incident_v = np.zeros(n_vertices, 'i')
+            
+            for j in range(n_halfedges):
+                v = self._chalfedges[j].vertex
+                if v != -1:
+                    n_incident_v[v] += 1
+            
+            for _vertex in range(n_vertices):
+                if self._cvertices[_vertex].halfedge == -1:
                     continue
 
                 # If the number of elements in the 1-neighbor ring does not match 
@@ -504,8 +524,8 @@ cdef class TriangleMesh(TrianglesBase):
                 # singular vertex (note this requires the C code version of
                 # update_vertex_neighbors, which reverses direction upon hitting
                 # an edge to ensure a more accurate neighborhood)
-                n_incident = np.flatnonzero(self._halfedges['vertex'] == _vertex).size
-                n_neighbors = np.flatnonzero(self._vertices['neighbors'][_vertex] != -1).size
+                n_incident = n_incident_v[_vertex]
+                n_neighbors = np.count_nonzero(self._vertices['neighbors'][_vertex] != -1)
                 if n_neighbors != n_incident:
                     singular_vertices.append(_vertex)
 
@@ -902,7 +922,7 @@ cdef class TriangleMesh(TrianglesBase):
         for i in range(NEIGHBORSIZE):
             ln = live_neighbours[i]
             lv =  self._chalfedges[ln].vertex
-            for h in range(NEIGHBORSIZE):
+            for j in range(NEIGHBORSIZE):
                 if (lv == dead_vertex_neighbours[j]):
                     shared_vertex_count +=1
                 
@@ -925,9 +945,10 @@ cdef class TriangleMesh(TrianglesBase):
         dead_halfedges = []
         
         for i in range(n_edges):
-            if (self._chalfedges[i].vertex == _dead_vertex) and (self._chalfedges[i].twin != -1):
+            if (self._chalfedges[i].vertex == _dead_vertex):
                 dead_halfedges.append(i)
-                dead_vertex_neighbours.append(self._chalfedges[i].twin)
+                if (self._chalfedges[i].twin != -1):
+                    dead_vertex_neighbours.append(self._chalfedges[i].twin)
                 
         cdef int shared_vertex_count = 0
         
@@ -1023,9 +1044,11 @@ cdef class TriangleMesh(TrianglesBase):
         
         if ((vl + vd - 3) < 4):
             return
+        
+        cdef bint locally_manifold = self._cvertices[_live_vertex].locally_manifold and self._cvertices[_dead_vertex].locally_manifold
 
         # Check for creation of multivalent edges and prevent this (manifoldness)
-        fast_collapse_bool = (self._manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
+        fast_collapse_bool = (locally_manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
         if fast_collapse_bool:
             # Do it the fast way if we can
             live_nn = self._vertices['neighbors'][_live_vertex]
@@ -1558,7 +1581,8 @@ cdef class TriangleMesh(TrianglesBase):
         # check with the more expensive commented one below.
 
         # Check for creation of multivalent edges and prevent this (manifoldness)
-        fast_collapse_bool = (self.manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
+        cdef bint locally_manifold = self._cvertices[curr_edge.vertex].locally_manifold and self._cvertices[twin_edge.vertex].locally_manifold and self._cvertices[new_v0].locally_manifold and self._cvertices[new_v1].locally_manifold
+        fast_collapse_bool = (locally_manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
         if fast_collapse_bool:
             if new_v1 in self._vertices['neighbors'][new_v0]:
                 return -1
@@ -1763,7 +1787,7 @@ cdef class TriangleMesh(TrianglesBase):
         (or BOUNDARY_VALENCE for boundaries).
         """
 
-        cdef int flip_count, target_valence
+        cdef int i, flip_count, target_valence
         cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _twin, v1, v2, v3, v4, score_post, score_pre
 
@@ -1773,9 +1797,12 @@ cdef class TriangleMesh(TrianglesBase):
         # for i in np.arange(len(self._halfedges['vertex'])):
         #    if (self._halfedges['vertex'][i] < 0):
         #        continue
-        for i in np.flatnonzero(self._halfedges['vertex'] != -1).astype(np.int32):
-
+        for i in range(self._halfedges.shape[0]):# np.flatnonzero(self._halfedges['vertex'] != -1).astype(np.int32):
             curr_edge = &self._chalfedges[i]
+            
+            if curr_edge.vertex == -1:
+                continue
+            
             _twin = curr_edge.twin
             twin_edge = &self._chalfedges[_twin]
 
@@ -1794,8 +1821,11 @@ cdef class TriangleMesh(TrianglesBase):
 
             # Check valence deviation from VALENCE (or
             # BOUNDARY_VALENCE for boundaries) pre- and post-flip
-            score_pre = np.abs([v1,v2,v3,v4]).sum()
-            score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
+            #score_pre = abs([v1,v2,v3,v4]).sum()
+            #score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
+            
+            score_pre = abs(v1) + abs(v2) + abs(v3) + abs(v4)
+            score_post = abs(v1-1) + abs(v2-1) + abs(v3+1) + abs(v4+1)
 
             if score_post < score_pre:
                 # Flip minimizes deviation of vertex valences from VALENCE (or
@@ -1816,13 +1846,35 @@ cdef class TriangleMesh(TrianglesBase):
             n : int
                 Number of iterations to apply.
         """
-        cdef int k
+        cdef int k, i, j, v, n_vertices, n_idx
+        cdef float weight_sum, w
+        cdef np.int32_t *neighbours
+        cdef bint fix_boundary = self.fix_boundary
+        cdef vertex_t *verts = <vertex_t*> self._cvertices
+        cdef float [3] centroid = [0,0,0]
+        
+        n_vertices = self._vertices.shape[0]
+        
+        # Get vertex neighbors
+        nn = self._vertices['neighbors']
+        nn_mask = (self._vertices['neighbors'] != -1)
+        #print
+        #nn = nn[nn_mask]
+        vn_idx = self._halfedges['vertex'][nn]
+        
+        if self.fix_boundary:
+            # Don't move vertices on a boundary
+            boundary = self._halfedges[(self._halfedges['twin'] == -1)]
+            tn = np.hstack([boundary['vertex'], self._halfedges['vertex'][boundary['prev']]])
+        
+        bverts = np.zeros(n_vertices, 'i')
+        bverts[tn] = 1
+        cdef bint [:] boundary_mask = bverts
+
         
         for k in range(n):
-            # Get vertex neighbors
-            nn = self._vertices['neighbors']
-            nn_mask = (self._vertices['neighbors'] != -1)
-            vn = self._vertices['position'][self._halfedges['vertex'][nn]]
+            # Get vertex neighbor positions
+            vn = self._vertices['position'][vn_idx]
 
             # Weight by distance to neighors
             an = (1./self._halfedges['length'][nn])*nn_mask
@@ -1837,8 +1889,6 @@ cdef class TriangleMesh(TrianglesBase):
             c[A_mask] = self._vertices['position'][A_mask]
             if self.fix_boundary:
                 # Don't move vertices on a boundary
-                boundary = self._halfedges[(self._halfedges['twin'] == -1)]
-                tn = np.hstack([boundary['vertex'], self._halfedges['vertex'][boundary['prev']]])
                 c[tn] = self._vertices['position'][tn]
 
             # Construct projection vector into tangent plane
@@ -1847,6 +1897,41 @@ cdef class TriangleMesh(TrianglesBase):
 
             # Update vertex positions
             self._vertices['position'] = self._vertices['position'] + l*np.sum(p*((c-self._vertices['position'])[...,None]),axis=1)
+            
+        # First steps towards a non-vectorised version of the above. Currently much slower (needs vector operations ported to c rather than calling numpy functions).
+        # for k in range(n):
+        #     for v in range(n_vertices):
+        #         if fix_boundary and boundary_mask[v]:
+        #             # Don't move vertices on a boundary
+        #             continue
+        #
+        #         #neighbours = verts[v].neighbours
+        #         weight_sum = 0
+        #         pos = self._vertices['position'][v]
+        #         c = 0*pos
+        #         for j in range(NEIGHBORSIZE):
+        #             n_idx = verts[v].neighbors[j]
+        #             if (n_idx != -1) and (self._chalfedges[n_idx].length !=0):
+        #                 # Get vertex neighbor positions
+        #                 vn = self._vertices['position'][self._chalfedges[n_idx].vertex]
+        #
+        #                 # Weight by distance to neighbors
+        #                 w = (1./self._chalfedges[n_idx].length)
+        #                 weight_sum += w
+        #                 c += vn*w
+        #
+        #         if (weight_sum == 0):
+        #             continue
+        #
+        #         c /= weight_sum
+        #
+        #
+        #         # Construct projection vector into tangent plane
+        #         pn = self._vertices['normal'][v][:,None]*self._vertices['normal'][v][None,:]
+        #         p = np.eye(3)[None,:] - pn
+        #
+        #         # Update vertex positions
+        #         self._vertices['position'][v] = pos + l*np.sum(p*((c-pos)[:,None]),axis=1)
 
         # Now we gotta recalculate the normals
         self._faces['normal'][:] = -1
@@ -1878,6 +1963,7 @@ cdef class TriangleMesh(TrianglesBase):
         #cdef float target_edge_length
         
         cdef int n_halfedges = self._halfedges.shape[0]
+        cdef int n_vertices = self._vertices.shape[0]
 
         if (target_edge_length < 0):
             # Guess edge_length
@@ -1904,6 +1990,12 @@ cdef class TriangleMesh(TrianglesBase):
             
             # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
             collapse_count = 0
+            
+            #find which vertices are locally manifold
+            # TODO - move this to a helper function
+            self._vertices['locally_manifold'] = 1
+            self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+            
             for i in range(n_halfedges):
                 if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
                     self.edge_collapse(i)
@@ -1911,6 +2003,12 @@ cdef class TriangleMesh(TrianglesBase):
             print('Collapse count: ' + str(collapse_count))
 
             # 3. Flip edges in order to minimize deviation from VALENCE.
+            
+            # find which vertices are locally manifold
+            # TODO - move this to a helper function / make collapse update this so we don't need to recompute
+            self._vertices['locally_manifold'] = 1
+            self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+            
             self.regularize()
 
             # 4. Relocate vertices on the surface by tangential smoothing.
