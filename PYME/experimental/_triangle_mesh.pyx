@@ -5,8 +5,8 @@ import numpy as np
 cimport cython
 
 # Regular, boundary, and max vertex valences. These need tp be
-VALENCE = 6
-BOUNDARY_VALENCE = 4
+DEF VALENCE = 6
+DEF BOUNDARY_VALENCE = 4
 
 cdef extern from 'triangle_mesh_utils.h':
     const int NEIGHBORSIZE  # Note this must match NEIGHBORSIZE in triangle_mesh_utils.h
@@ -79,7 +79,7 @@ cdef extern from 'triangle_mesh_utils.h':
 
 from PYME.experimental import triangle_mesh_utils
 
-MAX_VERTEX_COUNT = 2**63
+DEF MAX_VERTEX_COUNT = 2**31
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')], align=True)
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')], align=True)
@@ -193,6 +193,13 @@ cdef extern from "triangle_mesh_utils.c":
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
+
+# string key arguments incur a lot of overhead - use index / enums
+__insertion_keys = ['vertex', 'halfedge']
+
+DEF INSERTION_KEY_VERTEX = 0
+DEF INSERTION_KEY_HALFEDGE = 1
+
 cdef class TrianglesBase(object):
     """
     Base class to let VisGUI layers detect objects which are a bunch of triangles
@@ -252,6 +259,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef object _H
     cdef object _K
+    
 
     def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
@@ -1223,7 +1231,37 @@ cdef class TriangleMesh(TrianglesBase):
         self._H = None
         self._K = None
 
-    def _insert(self, el, el_arr, el_vacancies, key, compact=False, insert_key=None, **kwargs):
+    def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
+        """ get an empty slot to insert into, resizing if needed"""
+        cdef int idx
+        
+        try:
+            idx = el_vacancies.pop(-1)
+        except IndexError:
+            # no vacant slot, resize
+            key = __insertion_keys[key_idx]
+            el_arr = self._resize(el_arr, skip_entries=compact, key=key)
+            #TODO - invalidate neighbours, vertex_halfedges etc ???
+            
+            # NOTE: If we search by a different key next time, el_vacancies will
+            # still contain the vacant positions when searching on the previous key.
+            if len(el_arr[key].shape) > 1:
+                # NOTE: If we search on self._vertices['position'] and one position is [-1,-1,-1],
+                # which is not unreasonable, this will replace that vertex. Hence we provide the
+                # option to search and insert on different keys.
+                el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
+            else:
+                # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+                el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
+
+            idx = el_vacancies.pop(-1)
+
+        if idx == -1:
+            raise ValueError('Index cannot be -1.')
+        
+        return idx, el_arr, el_vacancies
+    
+    def _insert(self, el, el_arr, el_vacancies, int key, bint compact=False, insert_key=None, **kwargs):
         """
         Insert an element into an array at the position of the smallest empty 
         entry when searching the array by key.
@@ -1259,32 +1297,12 @@ cdef class TriangleMesh(TrianglesBase):
             el_vacancies : list
                 Modified list of el_arr vacancies.
         """
-        try:
-            idx = el_vacancies.pop(0)
-        except IndexError:
-            # no vacant slot, resize
-            el_arr = self._resize(el_arr, skip_entries=compact, key=key)
-            #TODO - invalidate neighbours, vertex_halfedges etc ???
-            
-            # NOTE: If we search by a different key next time, el_vacancies will
-            # still contain the vacant positions when searching on the previous key.
-            if len(el_arr[key].shape) > 1:
-                # NOTE: If we search on self._vertices['position'] and one position is [-1,-1,-1],
-                # which is not unreasonable, this will replace that vertex. Hence we provide the
-                # option to search and insert on different keys.
-                el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
-            else:
-                # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
-                el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
-
-            idx = el_vacancies.pop(0)
-
-        if idx == -1:
-            raise ValueError('Index cannot be -1.')
+        
+        idx, el_arr, el_vacancies = self._get_insertion_slot(el_arr, el_vacancies, key, compact)
 
         if insert_key is None:
             # Default to searching and inserting on the same key
-            insert_key = key
+            insert_key = __insertion_keys[key]
 
         # Put el in el_arr
         ed = el_arr[idx]
@@ -1295,7 +1313,20 @@ cdef class TriangleMesh(TrianglesBase):
             
         return ed, idx, el_arr, el_vacancies
  
-    def _new_edge(self, vertex, compact=False, **kwargs):
+    def _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1):
+        cdef int idx
+        idx, self._halfedges, self._halfedge_vacancies = self._get_insertion_slot(self._halfedges, self._halfedge_vacancies, key_idx=INSERTION_KEY_VERTEX)
+        self._set_chalfedges(self._halfedges)
+        
+        self._chalfedges[idx].vertex = vertex
+        self._chalfedges[idx].prev = prev
+        self._chalfedges[idx].next = next
+        self._chalfedges[idx].face = face
+        self._chalfedges[idx].twin = twin
+        
+        return idx
+ 
+    def _new_edge(self, int vertex, compact=False, **kwargs):
         """
         Create a new edge.
 
@@ -1317,9 +1348,14 @@ cdef class TriangleMesh(TrianglesBase):
                 Index of the halfedge in self._halfedges.
         """
 
-        ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, None, **kwargs)
-        self._set_chalfedges(self._halfedges)
-
+        #ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, None, **kwargs)
+        #self._set_chalfedges(self._halfedges)
+        
+        cdef int idx
+        
+        idx = self._insert_new_edge(vertex, compact, **kwargs)
+        
+        ed = self._halfedges[idx]
         return ed, idx
 
     def _new_face(self, int _edge, bint compact=False, **kwargs):
@@ -1345,7 +1381,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         cdef int idx
         
-        fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, 'halfedge', compact, None, **kwargs)
+        fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, **kwargs)
         _flat_faces = self._faces.view(FACE_DTYPE2)
         self._set_cfaces(_flat_faces)
 
@@ -1374,7 +1410,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         cdef int idx
         
-        vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, 'halfedge', compact, 'position', **kwargs)
+        vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, insert_key='position', **kwargs)
         _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
         self._set_cvertices(_flat_vertices)
 
@@ -1446,16 +1482,16 @@ cdef class TriangleMesh(TrianglesBase):
         self._chalfedges[_next].face = _face_2_idx
 
         # Insert the new faces
-        _, _he_0_idx = self._new_edge(self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face)
+        _he_0_idx = self._insert_new_edge(self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face)
         if interior:
-            _, _he_1_idx = self._new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face)
+            _he_1_idx = self._insert_new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face)
         
-            _, _he_2_idx = self._new_edge(self._chalfedges[_twin_next].vertex, next=_twin_prev, face=_face_1_idx)
-            _, _he_3_idx = self._new_edge(_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx)
+            _he_2_idx = self._insert_new_edge(self._chalfedges[_twin_next].vertex, next=_twin_prev, face=_face_1_idx)
+            _he_3_idx = self._insert_new_edge(_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx)
             self._chalfedges[_he_2_idx].prev = _he_3_idx
 
-        _, _he_4_idx = self._new_edge(self._chalfedges[_curr].vertex, next=_next, face=_face_2_idx, twin=-1)
-        _, _he_5_idx = self._new_edge(_vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx)
+        _he_4_idx = self._insert_new_edge(self._chalfedges[_curr].vertex, next=_next, face=_face_2_idx, twin=-1)
+        _he_5_idx = self._insert_new_edge(_vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx)
         self._chalfedges[_he_4_idx].prev = _he_5_idx
 
         self._chalfedges[_he_0_idx].twin = _he_5_idx
@@ -1550,7 +1586,9 @@ cdef class TriangleMesh(TrianglesBase):
         cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1
         cdef bint fast_collapse_bool
-        cdef float flipped_dot
+        cdef float flipped_dot, fmx, fmy, fmz, pmx, pmy, pmz
+        cdef int i
+        cdef np.int32_t * neighbours
 
         if (_curr == -1):
             return -1
@@ -1584,22 +1622,47 @@ cdef class TriangleMesh(TrianglesBase):
         cdef bint locally_manifold = self._cvertices[curr_edge.vertex].locally_manifold and self._cvertices[twin_edge.vertex].locally_manifold and self._cvertices[new_v0].locally_manifold and self._cvertices[new_v1].locally_manifold
         fast_collapse_bool = (locally_manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
         if fast_collapse_bool:
-            if new_v1 in self._vertices['neighbors'][new_v0]:
-                return -1
+            #if new_v1 in self._vertices['neighbors'][new_v0]:
+            #    return -1
+            
+            neighbours = &self._cvertices[new_v0].neighbor0
+            for i in range(NEIGHBORSIZE):
+                if neighbours[i] == new_v1:
+                    return -1
         else:
             if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
                 return -1
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
-        flip_midpoint = 0.5*(self._vertices['position'][new_v0] + self._vertices['position'][new_v1])
-        plane_midpoint = (1./3)*(self._vertices['position'][curr_edge.vertex] + self._vertices['position'][self._chalfedges[curr_edge.next].vertex] + self._vertices['position'][self._chalfedges[curr_edge.prev].vertex])
-        flipped_dot = ((self._faces['normal'][curr_edge.face])*(flip_midpoint - plane_midpoint)).sum()
+        #flip_midpoint = 0.5*(self._vertices['position'][new_v0] + self._vertices['position'][new_v1])
+        #plane_midpoint = (1./3)*(self._vertices['position'][curr_edge.vertex] + self._vertices['position'][self._chalfedges[curr_edge.next].vertex] + self._vertices['position'][self._chalfedges[curr_edge.prev].vertex])
+        #flipped_dot = ((self._faces['normal'][curr_edge.face])*(flip_midpoint - plane_midpoint)).sum()
 
+        fmx = 0.5*(self._cvertices[new_v0].position0 + self._cvertices[new_v1].position0)
+        fmy = 0.5*(self._cvertices[new_v0].position1 + self._cvertices[new_v1].position1)
+        fmz = 0.5*(self._cvertices[new_v0].position2 + self._cvertices[new_v1].position2)
+        
+        pmx = 0.3333333333*(self._cvertices[curr_edge.vertex].position0 + self._cvertices[self._chalfedges[curr_edge.next].vertex].position0 + self._cvertices[self._chalfedges[curr_edge.prev].vertex].position0)
+        pmy = 0.3333333333*(self._cvertices[curr_edge.vertex].position1 + self._cvertices[self._chalfedges[curr_edge.next].vertex].position1 + self._cvertices[self._chalfedges[curr_edge.prev].vertex].position1)
+        pmz = 0.3333333333*(self._cvertices[curr_edge.vertex].position2 + self._cvertices[self._chalfedges[curr_edge.next].vertex].position2 + self._cvertices[self._chalfedges[curr_edge.prev].vertex].position2)
+        
+        flipped_dot = self._cfaces[curr_edge.face].normal0*(fmx - pmx) + \
+                      self._cfaces[curr_edge.face].normal1*(fmy - pmy) + \
+                      self._cfaces[curr_edge.face].normal2*(fmz - pmz)
+        
+        
         if flipped_dot < 0:
             # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
             # concavity, so don't flip.
             return -1
+        
+        #if we were not locally manifold, conservatively flag all vertices we touch as non-manifold
+        if not locally_manifold:
+            self._cvertices[curr_edge.vertex].locally_manifold = 0
+            self._cvertices[twin_edge.vertex].locally_manifold = 0
+            self._cvertices[new_v0].locally_manifold = 0
+            self._cvertices[new_v1].locally_manifold = 0
 
         # _next's next and prev must be adjusted
         self._chalfedges[_next].prev = _twin_prev
@@ -1835,6 +1898,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         print('Flip count: %d' % (flip_count))
 
+    @cython.cdivision(True)
+    @cython.boundscheck(False)
     def relax(self, float l=1, int n=1):
         """
         Perform n iterations of Lloyd relaxation on the mesh.
@@ -1847,11 +1912,13 @@ cdef class TriangleMesh(TrianglesBase):
                 Number of iterations to apply.
         """
         cdef int k, i, j, v, n_vertices, n_idx
-        cdef float weight_sum, w
+        cdef float weight_sum, w, dx, dy, dz
         cdef np.int32_t *neighbours
         cdef bint fix_boundary = self.fix_boundary
         cdef vertex_t *verts = <vertex_t*> self._cvertices
         cdef float [3] centroid = [0,0,0]
+        cdef float *pos
+        cdef float * normal
         
         n_vertices = self._vertices.shape[0]
         
@@ -1872,66 +1939,79 @@ cdef class TriangleMesh(TrianglesBase):
         cdef bint [:] boundary_mask = bverts
 
         
-        for k in range(n):
-            # Get vertex neighbor positions
-            vn = self._vertices['position'][vn_idx]
-
-            # Weight by distance to neighors
-            an = (1./self._halfedges['length'][nn])*nn_mask
-            an[self._halfedges['length'][nn] == 0] = 0
-
-            # Calculate gravity-weighted centroids
-            A = np.sum(an, axis=1)
-            c = 1./(A[...,None])*np.sum(an[...,None]*vn, axis=1)
-            # Don't get messed up by slivers. NOTE: This is a hack in case
-            # edge split/collapse don't do their jobs.
-            A_mask = (A == 0)
-            c[A_mask] = self._vertices['position'][A_mask]
-            if self.fix_boundary:
-                # Don't move vertices on a boundary
-                c[tn] = self._vertices['position'][tn]
-
-            # Construct projection vector into tangent plane
-            pn = self._vertices['normal'][...,None]*self._vertices['normal'][:,None,:]
-            p = np.eye(3)[None,:] - pn
-
-            # Update vertex positions
-            self._vertices['position'] = self._vertices['position'] + l*np.sum(p*((c-self._vertices['position'])[...,None]),axis=1)
+        # for k in range(n):
+        #     # Get vertex neighbor positions
+        #     vn = self._vertices['position'][vn_idx]
+        #
+        #     # Weight by distance to neighors
+        #     an = (1./self._halfedges['length'][nn])*nn_mask
+        #     an[self._halfedges['length'][nn] == 0] = 0
+        #
+        #     # Calculate gravity-weighted centroids
+        #     A = np.sum(an, axis=1)
+        #     c = 1./(A[...,None])*np.sum(an[...,None]*vn, axis=1)
+        #     # Don't get messed up by slivers. NOTE: This is a hack in case
+        #     # edge split/collapse don't do their jobs.
+        #     A_mask = (A == 0)
+        #     c[A_mask] = self._vertices['position'][A_mask]
+        #     if self.fix_boundary:
+        #         # Don't move vertices on a boundary
+        #         c[tn] = self._vertices['position'][tn]
+        #
+        #     # Construct projection vector into tangent plane
+        #     pn = self._vertices['normal'][...,None]*self._vertices['normal'][:,None,:]
+        #     p = np.eye(3)[None,:] - pn
+        #
+        #     # Update vertex positions
+        #     self._vertices['position'] = self._vertices['position'] + l*np.sum(p*((c-self._vertices['position'])[...,None]),axis=1)
             
         # First steps towards a non-vectorised version of the above. Currently much slower (needs vector operations ported to c rather than calling numpy functions).
-        # for k in range(n):
-        #     for v in range(n_vertices):
-        #         if fix_boundary and boundary_mask[v]:
-        #             # Don't move vertices on a boundary
-        #             continue
-        #
-        #         #neighbours = verts[v].neighbours
-        #         weight_sum = 0
-        #         pos = self._vertices['position'][v]
-        #         c = 0*pos
-        #         for j in range(NEIGHBORSIZE):
-        #             n_idx = verts[v].neighbors[j]
-        #             if (n_idx != -1) and (self._chalfedges[n_idx].length !=0):
-        #                 # Get vertex neighbor positions
-        #                 vn = self._vertices['position'][self._chalfedges[n_idx].vertex]
-        #
-        #                 # Weight by distance to neighbors
-        #                 w = (1./self._chalfedges[n_idx].length)
-        #                 weight_sum += w
-        #                 c += vn*w
-        #
-        #         if (weight_sum == 0):
-        #             continue
-        #
-        #         c /= weight_sum
-        #
-        #
-        #         # Construct projection vector into tangent plane
-        #         pn = self._vertices['normal'][v][:,None]*self._vertices['normal'][v][None,:]
-        #         p = np.eye(3)[None,:] - pn
-        #
-        #         # Update vertex positions
-        #         self._vertices['position'][v] = pos + l*np.sum(p*((c-pos)[:,None]),axis=1)
+        for k in range(n):
+            for v in range(n_vertices):
+                if fix_boundary and boundary_mask[v]:
+                    # Don't move vertices on a boundary
+                    continue
+
+                #neighbours = verts[v].neighbours
+                weight_sum = 0
+                pos = &self._cvertices[v].position0
+                normal = &self._cvertices[v].normal0
+                centroid[:] = [0,0,0]
+                
+                for j in range(NEIGHBORSIZE):
+                    n_idx = verts[v].neighbors[j]
+                    if (n_idx != -1) and (self._chalfedges[n_idx].length !=0):
+                        # Get vertex neighbor positions
+                        vn = self._cvertices[self._chalfedges[n_idx].vertex]
+
+                        # Weight by distance to neighbors
+                        w = (1./self._chalfedges[n_idx].length)
+                        weight_sum += w
+                        
+                        centroid[0] += vn.position0*w
+                        centroid[1] += vn.position1*w
+                        centroid[2] += vn.position2*w
+
+                if (weight_sum == 0):
+                    continue
+
+                centroid[0] /= weight_sum
+                centroid[1] /= weight_sum
+                centroid[2] /= weight_sum
+
+
+                # Construct projection vector into tangent plane
+                #pn = self._vertices['normal'][v][:,None]*self._vertices['normal'][v][None,:]
+                #p = np.eye(3)[None,:] - pn
+                
+                dx = centroid[0] - pos[0]
+                dy = centroid[1] - pos[1]
+                dz = centroid[2] - pos[2]
+
+                # Update vertex positions
+                self._cvertices[v].position0 = pos[0] + l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
+                self._cvertices[v].position1 = pos[1] + l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
+                self._cvertices[v].position2 = pos[2] + l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
 
         # Now we gotta recalculate the normals
         self._faces['normal'][:] = -1
@@ -1969,13 +2049,13 @@ cdef class TriangleMesh(TrianglesBase):
             # Guess edge_length
             target_edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
             
-        #cdef float split_threshold = 1.33*target_edge_length
-        #cdef float collapse_threshold = 0.8*target_edge_length
+        cdef float split_threshold = 1.33*target_edge_length
+        cdef float collapse_threshold = 0.8*target_edge_length
         
         # modify cutoffs so we don't constantly undo ourselves ...
         # TOD - should we regularize between split and collapse?
-        cdef float split_threshold = 1.41*target_edge_length
-        cdef float collapse_threshold = 0.7*target_edge_length
+        #cdef float split_threshold = 1.41*target_edge_length
+        #cdef float collapse_threshold = 0.7*target_edge_length
         
         #self.regularize()
 
@@ -2406,14 +2486,14 @@ cdef class TriangleMesh(TrianglesBase):
         """
 
         _h0_twin_vertex = self._halfedges['vertex'][h2]
-        _, _h0_twin = self._new_edge(_h0_twin_vertex, twin=h0)
+        _h0_twin = self._insert_new_edge(_h0_twin_vertex, twin=h0)
         _, _face = self._new_face(_h0_twin)
         _h1_twin_vertex = self._halfedges['vertex'][h0]
-        _, _h1_twin = self._new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
+        _h1_twin = self._insert_new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
         self._halfedges['face'][_h0_twin] = _face
         self._halfedges['prev'][_h0_twin] = _h1_twin
         _h2_twin_vertex = self._halfedges['vertex'][h1]
-        _, _h2_twin = self._new_edge(_h2_twin_vertex, twin=h2, face=_face, prev=_h0_twin, next=_h1_twin)
+        _h2_twin = self._insert_new_edge(_h2_twin_vertex, twin=h2, face=_face, prev=_h0_twin, next=_h1_twin)
         self._halfedges['next'][_h0_twin] = _h2_twin
         self._halfedges['prev'][_h1_twin] = _h2_twin
 
