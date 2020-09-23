@@ -72,6 +72,8 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
     vertex_t *vertices = (vertex_t*) vertices_;
     face_t *faces = (face_t*) faces_;
 
+    if (v_idx == -1) return;
+
     curr_vertex = &(vertices[v_idx]);
 
     curr_idx = curr_vertex->halfedge;
@@ -274,6 +276,8 @@ static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_
     halfedge_t *curr_edge, *prev_edge, *next_edge;
     face_t *curr_face;
     vertex_t *curr_vertex, *prev_vertex, *next_vertex;
+
+    if (f_idx == -1) return;
 
     curr_face = &(faces[f_idx]);
 
