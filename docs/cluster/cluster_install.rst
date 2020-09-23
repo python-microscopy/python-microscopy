@@ -100,7 +100,7 @@ On each node:
      ``dataserver-root`` should point to a directory which will be dedicated to cluster data (not ``home`` or similar)
      and which must be writeable by the PYME user. Anything in this directory will be made visible through the cluster
      file system. This should ideally be on a hard mount (not an auto-mount under ``/media/``) to ensure that permissions
-     don't get screwed up. For example, `drwxrwxrwx root   root  /data` is not suitable, but `drwxrwxr-x  ubuntu ubuntu  /data/PYMEData`
+     don't get screwed up. Note: It should be sufficient for the directory to be writeable by the user, but if in doubt, a directory *owned* by the user is arguably safer. 
      is (provided `ubuntu` is the PYME username).
 
      ``dataserver-filter`` lets you specify a filter that will allow multiple distinct clusters to run on the same network.
