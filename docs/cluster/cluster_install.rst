@@ -101,7 +101,6 @@ On each node:
      and which must be writeable by the PYME user. Anything in this directory will be made visible through the cluster
      file system. This should ideally be on a hard mount (not an auto-mount under ``/media/``) to ensure that permissions
      don't get screwed up. Note: It should be sufficient for the directory to be writeable by the user, but if in doubt, a directory *owned* by the user is arguably safer. 
-     is (provided `ubuntu` is the PYME username).
 
      ``dataserver-filter`` lets you specify a filter that will allow multiple distinct clusters to run on the same network.
      The default value of ``""`` will match all running servers. This is appropriate in the recommended case where the cluster
