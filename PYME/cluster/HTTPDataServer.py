@@ -707,6 +707,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # parse path
         ext = '.h5r' if '.h5r' in path else '.hdf'
+        # TODO - should we just use the the untranslated path?
         filename, details = path.split(ext + os.sep)
         filename = filename + ext  # path to file on dataserver disk
         query = urlparse.urlparse(details).query
