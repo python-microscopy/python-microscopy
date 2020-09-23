@@ -98,7 +98,7 @@ On each node:
    .. note::
 
      ``dataserver-root`` should point to a directory which will be dedicated to cluster data (not ``home`` or similar)
-     and which must be writeable and owned by the PYME user. Anything in this directory will be made visible through the cluster
+     and which must be writeable by the PYME user. Anything in this directory will be made visible through the cluster
      file system. This should ideally be on a hard mount (not an auto-mount under ``/media/``) to ensure that permissions
      don't get screwed up. For example, `drwxrwxrwx root   root  /data` is not suitable, but `drwxrwxr-x  ubuntu ubuntu  /data/PYMEData`
      is (provided `ubuntu` is the PYME username).
