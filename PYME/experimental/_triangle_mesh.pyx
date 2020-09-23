@@ -2074,8 +2074,9 @@ cdef class TriangleMesh(TrianglesBase):
             #find which vertices are locally manifold
             # TODO - move this to a helper function
             self._vertices['locally_manifold'] = 1
-            self._vertices['locally_manifold'][self._halfedges['vertex'][(self._halfedges['twin'] == -1) | (self._halfedges['vertex'] == -1)]] = 0
-            
+            self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+            self._vertices['locally_manifold'][-1] = (self._halfedges['vertex'][-1] != -1) and (self._halfedges['twin'][-1] != -1)
+
             for i in range(n_halfedges):
                 if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
                     self.edge_collapse(i)
@@ -2087,7 +2088,8 @@ cdef class TriangleMesh(TrianglesBase):
             # find which vertices are locally manifold
             # TODO - move this to a helper function / make collapse update this so we don't need to recompute
             self._vertices['locally_manifold'] = 1
-            self._vertices['locally_manifold'][self._halfedges['vertex'][(self._halfedges['twin'] == -1) | (self._halfedges['vertex'] == -1)]] = 0
+            self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+            self._vertices['locally_manifold'][-1] = (self._halfedges['vertex'][-1] != -1) and (self._halfedges['twin'][-1] != -1)
             
             self.regularize()
 
