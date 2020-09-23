@@ -133,11 +133,8 @@ def genClusterResultFileName(dataFileName, create=True):
         rel_name = fn.split('://%s/' % clusterfilter)[1]
     else:
         # special case for cluster of one uses where we didn't open file using a cluster URI
-        if not fn.startswith('/'):
-            # filename is relative to PYMEDATATDIR
-            # TODO - this looks really unsafe under windows!!! Filenames won't ever start with / even if fully resolved, which means that the PYMEDATADIR path will be prepended
-            # to the filename (and we might end up with something like C:\Users\foo\PYMEData\D:\Data\bar\seriesx.tif).
-            # is it possible that we get away with it because os.path.splitdrive (in posix_path() just truncates at the last : in the string?
+        if not os.path.isabs(fn):
+            # add the PYMEData dir path on if we weren't given an absolute path
             fn = getFullFilename(fn)
         
         try:
@@ -149,7 +146,7 @@ def genClusterResultFileName(dataFileName, create=True):
             # recreate the tree under PYMEData, dropping the drive letter or UNC
             rel_name = fn
             
-        rel_name = posix_path(rel_name)
+        rel_name = rel_path_as_posix(rel_name)
 
     dir_name = posixpath.dirname(rel_name)
     file_name = posixpath.basename(rel_name)
@@ -219,12 +216,11 @@ def translateSeparators(filename):
 
     return fn
 
-def posix_path(path):
+def rel_path_as_posix(path):
     """
     Translate any separators to '/' and drop drive letters
     
     #FIXME - do something sensible with drive letters?
-    #FIXME - rename? [as this is a relative path / not resolvable]
     """
     import posixpath
     # FIXME - just use pathlib.path().to_posix() when we drop py2

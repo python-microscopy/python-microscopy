@@ -690,10 +690,12 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         Parameters
         ----------
         path: str
-            path to an hdf or h5r file on the dataserver computer. Append the part of the file to read after the file
-            extension, e.g. .h5r/Events. Return format (for arrays) can additionally be specified, as can slices
-            using the following syntax: test.h5r/FitResults.json?from=0&to=100. Supported array formats include json and
-            npy.
+            OS-translated path to an hdf or h5r file on the dataserver computer. 
+            Append the part of the file to read after the file extension, e.g. 
+            .h5r/Events. Return format (for arrays) can additionally be 
+            specified, as can slices
+            using the following syntax: test.h5r/FitResults.json?from=0&to=100. 
+            Supported array formats include json and npy.
 
         Returns
         -------
@@ -705,7 +707,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # parse path
         ext = '.h5r' if '.h5r' in path else '.hdf'
-        filename, details = path.split(ext + '/')
+        # TODO - should we just use the the untranslated path?
+        filename, details = path.split(ext + os.sep)
         filename = filename + ext  # path to file on dataserver disk
         query = urlparse.urlparse(details).query
         details = details.strip('?' + query)
