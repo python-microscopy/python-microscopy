@@ -188,8 +188,8 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
 cdef extern from "triangle_mesh_utils.c":
     void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_d *vertices, face_d *faces, signed int n_idxs)
     
-    void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
-    void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
+    void update_face_normal(np.int32_t f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
+    void update_single_vertex_neighbours(np.int32_t v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
@@ -2075,8 +2075,7 @@ cdef class TriangleMesh(TrianglesBase):
             # TODO - move this to a helper function
             self._vertices['locally_manifold'] = 1
             self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
-            self._vertices['locally_manifold'][-1] = (self._halfedges['vertex'][-1] != -1) and (self._halfedges['twin'][-1] != -1)
-
+            
             for i in range(n_halfedges):
                 if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
                     self.edge_collapse(i)
@@ -2089,7 +2088,6 @@ cdef class TriangleMesh(TrianglesBase):
             # TODO - move this to a helper function / make collapse update this so we don't need to recompute
             self._vertices['locally_manifold'] = 1
             self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
-            self._vertices['locally_manifold'][-1] = (self._halfedges['vertex'][-1] != -1) and (self._halfedges['twin'][-1] != -1)
             
             self.regularize()
 
@@ -2550,11 +2548,11 @@ cdef class TriangleMesh(TrianglesBase):
             
             update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
             update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
-            update_face_normal(self._halfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._chalfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
             
-            update_single_vertex_neighbours(self._halfedges['vertex'][_h0_twin], self._chalfedges, self._cvertices, self._cfaces)
-            update_single_vertex_neighbours(self._halfedges['vertex'][h0], self._chalfedges, self._cvertices, self._cfaces)
-            update_single_vertex_neighbours(self._halfedges['vertex'][h1], self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[_h0_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h0].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h1].vertex, self._chalfedges, self._cvertices, self._cfaces)
 
     def _zig_zag_triangulation(self, polygon):
         """
