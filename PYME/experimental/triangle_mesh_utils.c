@@ -58,7 +58,7 @@ DB: Performance suggestions:
 
 */
 
-static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
+static void update_single_vertex_neighbours(int32_t v_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
     int32_t i, k, orig_idx, curr_idx, twin_idx, tmp;
     halfedge_t *curr_edge, *twin_edge;
@@ -264,9 +264,9 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 }
 
 
-static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
+static void update_face_normal(int32_t f_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
-    int k, curr_idx, prev_idx, next_idx;
+    int32_t k, curr_idx, prev_idx, next_idx;
 
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
 
@@ -319,7 +319,7 @@ static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_
 
 static void _update_face_normals(int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
 {
-    int f_idx;
+    int32_t f_idx;
     for (int j = 0; j < n_idxs; ++j)
     {
         f_idx = f_idxs[j];
