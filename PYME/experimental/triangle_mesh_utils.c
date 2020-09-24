@@ -277,7 +277,7 @@ static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_
     face_t *curr_face;
     vertex_t *curr_vertex, *prev_vertex, *next_vertex;
 
-    if (f_idxs == -1) return;
+    if (f_idx == -1) return;
 
     curr_face = &(faces[f_idx]);
 
