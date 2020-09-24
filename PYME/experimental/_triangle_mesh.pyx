@@ -36,12 +36,12 @@ cdef extern from 'triangle_mesh_utils.h':
         np.int32_t component
         
     cdef struct vertex_t:
-        float position[VECTORSIZE];
-        float normal[VECTORSIZE];
-        np.int32_t halfedge;
-        np.int32_t valence;
-        np.int32_t neighbors[NEIGHBORSIZE];
-        np.int32_t component;
+        float position[VECTORSIZE]
+        float normal[VECTORSIZE]
+        np.int32_t halfedge
+        np.int32_t valence
+        np.int32_t neighbors[NEIGHBORSIZE]
+        np.int32_t component
         np.int32_t locally_manifold
         
     cdef struct vertex_d:
