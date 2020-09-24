@@ -81,12 +81,14 @@ class H5RFile(object):
         self.keepAliveTimeout = time.time() + min(self.KEEP_ALIVE_TIMEOUT, 0.1)
         self.useCount = 0
         self.is_alive = True
+        
+        self._acquired_at_least_once = False
 
         #logging.debug('H5RFile - starting poll thread')
         self._lastFlushTime = 0
         self._flush_condition = threading.Condition()
         self._pollThread = threading.Thread(target=self._pollQueues)
-        self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
+        self._pollThread.daemon = False #make sure we finish and close the files properly on exit
         self._pollThread.start()
         
         self._pzf_index = None
@@ -97,6 +99,7 @@ class H5RFile(object):
         #logging.debug('entering H5RFile context manager')
         with self.appendQueueLock:
             self.useCount += 1
+            self._acquired_at_least_once = True
 
         return self
 
@@ -211,7 +214,7 @@ class H5RFile(object):
         # logging.debug('h5rfile - poll')
 
         try:
-            while self.useCount > 0 or queuesWithData or time.time() < self.keepAliveTimeout:
+            while self.useCount > 0 or queuesWithData or time.time() < self.keepAliveTimeout or not self._acquired_at_least_once:
                 #logging.debug('poll - %s' % time.time())
                 with self.appendQueueLock:
                     #find queues with stuff to save
