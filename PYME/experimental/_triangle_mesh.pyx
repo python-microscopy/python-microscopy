@@ -1236,6 +1236,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int idx
         
         try:
+            # TODO: This was originally set to pop(0). What was the reasoning?
             idx = el_vacancies.pop(-1)
         except IndexError:
             # no vacant slot, resize
@@ -1254,6 +1255,7 @@ cdef class TriangleMesh(TrianglesBase):
                 # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
                 el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
+            # TODO: This was originally set to pop(0). What was the reasoning?
             idx = el_vacancies.pop(-1)
 
         if idx == -1:
