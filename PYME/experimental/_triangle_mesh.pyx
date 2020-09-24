@@ -1236,7 +1236,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int idx
         
         try:
-            # TODO: This was originally set to pop(0). What was the reasoning?
+            # This was originally set to pop(0) to try to fill in early gaps in the array before later ones.
             idx = el_vacancies.pop(-1)
         except IndexError:
             # no vacant slot, resize
@@ -1255,7 +1255,7 @@ cdef class TriangleMesh(TrianglesBase):
                 # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
                 el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
-            # TODO: This was originally set to pop(0). What was the reasoning?
+            # This was originally set to pop(0) to try to fill in early gaps in the array before later ones.
             idx = el_vacancies.pop(-1)
 
         if idx == -1:
@@ -1355,7 +1355,7 @@ cdef class TriangleMesh(TrianglesBase):
         
         cdef int idx
         
-        idx = self._insert_new_edge(vertex, compact, **kwargs)
+        idx = self._insert_new_edge(vertex, **kwargs)
         
         ed = self._halfedges[idx]
         return ed, idx
