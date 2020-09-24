@@ -2550,11 +2550,11 @@ cdef class TriangleMesh(TrianglesBase):
             
             update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
             update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
-            update_face_normal(self._halfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
+            update_face_normal(self._chalfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
             
-            update_single_vertex_neighbours(self._halfedges['vertex'][_h0_twin], self._chalfedges, self._cvertices, self._cfaces)
-            update_single_vertex_neighbours(self._halfedges['vertex'][h0], self._chalfedges, self._cvertices, self._cfaces)
-            update_single_vertex_neighbours(self._halfedges['vertex'][h1], self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[_h0_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h0].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            update_single_vertex_neighbours(self._chalfedges[h1].vertex, self._chalfedges, self._cvertices, self._cfaces)
 
     def _zig_zag_triangulation(self, polygon):
         """
