@@ -20,7 +20,7 @@
 #
 ##################
 import os
-
+import posixpath
 import PYME.localization.FitFactories
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
@@ -93,17 +93,17 @@ def _verifyClusterResultsFilename(resultsFilename):
     resultsFilename = unifiedIO.verbose_fix_name(resultsFilename) # fix any spaces in the input filename
     
     if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
+        di, fn = posixpath.split(resultsFilename)
         i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+        stub = posixpath.splitext(fn)[0]
+        while clusterIO.exists(posixpath.join(di, stub + '_%d.h5r' % i)):
             i += 1
 
         fdialog = wx.TextEntryDialog(None, 'Analysis file already exists, please select a new filename')#,
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
+            resultsFilename = posixpath.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 

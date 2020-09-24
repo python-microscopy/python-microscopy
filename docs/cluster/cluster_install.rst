@@ -82,7 +82,7 @@ On each node:
 
 #. Create a user for PYME
 
-#. Install the python 2.7 version of anaconda
+#. Install the python 3.6 version of miniconda
 
 #. Add the ``david_baddeley`` conda channel
 
@@ -100,7 +100,7 @@ On each node:
      ``dataserver-root`` should point to a directory which will be dedicated to cluster data (not ``home`` or similar)
      and which must be writeable by the PYME user. Anything in this directory will be made visible through the cluster
      file system. This should ideally be on a hard mount (not an auto-mount under ``/media/``) to ensure that permissions
-     don't get screwed up.
+     don't get screwed up. Note: It should be sufficient for the directory to be writeable by the user, but if in doubt, a directory *owned* by the user is arguably safer. 
 
      ``dataserver-filter`` lets you specify a filter that will allow multiple distinct clusters to run on the same network.
      The default value of ``""`` will match all running servers. This is appropriate in the recommended case where the cluster
@@ -108,13 +108,11 @@ On each node:
      is recommended (the typical use case here would be a "Cluster of One" on an acquisition computer for standard low
      throughput analysis).
 
-     **Use with** ``dataserver-filter`` **set to anything other than** ``""`` **is not well tested.**
-
 #. *Optional, but strongly recommended for high-throughput - enable GPU fitting (PYME will allow CPU based fitting in the absence of these steps)*
 
    #. Install CUDA
 
-   #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
+   #. Install ``pyme-warp-drive`` following instructions on [github](https://github.com/python-microscopy/pyme-warp-drive)
 
    #. *Optional*, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
       package is hosted in the ``david_baddeley`` conda channel, and installable with :code:`conda install nvidia-ml-py`.
@@ -134,9 +132,9 @@ just running the extra processes but it could also be a standalone machine.
 
 9. Follow the individual node steps (optionally without configuring the data server if this is not also a storage node)
 
-#. Checkout the PYME source from bitbucket to get the ``clusterUI`` sources. ``clusterUI`` is a Django web app for browsing the cluster.
+#. Checkout the PYME source from [github](github.com/python-microscopy/python-microscopy) to get the ``clusterUI`` sources. ``clusterUI`` is a Django web app for browsing the cluster.
 
-#. ``conda install`` the ``django`` python module (tested for django=1.8.4, more recent versions might also work)
+#. ``conda install django=1.11``
 
 
 Running the software
@@ -216,27 +214,30 @@ Troubleshooting
 mDNS server advertisements point to loopback, rather than external interface
 ----------------------------------------------------------------------------
 
-This is usually the result of an incomplete configuration of your Ubuntu install. The PYME servers advertise themselves
-as being available on the IP that the computer hostname maps to. Some Ubuntu installs have an entry in ``/etc/hosts``
-mapping the computer hostname to the loopback address (127.0.0.1), which is generally unhelpful as it means that when we
-try and find out the IP address associated with the computer we are currently running on we get the loopback address. If
-we then use this to advertise, no-one can find us. I haven't worked out what causes this issue (and it's not universal),
-but it is likely to be something with either the dhcp client or DNS.
+Example symptom: running `PYMEDataServer` logs `INFO:root:Serving HTTP on 127.0.1.1 port 15348 ...` 
+rather than an IP address on the cluster network. 
 
-To fix this error, there are 2 options:
+PYME binds to the IP address associated with the host computer name. On linux this
+is association is set in the `/etc/hosts` file, which often defaults to
+
+.. code-block::
+    127.0.0.1	localhost
+    127.0.1.1	<hostname>
+
+This configuration is incomplete, and there are two ways to resolve it:
 
 **The right way:**
 
 * Make sure DNS (e.g. dnsmasq) and, optionally DHCP, are configured correctly within the cluster
 
-* Comment out / delete the ``<hostname> 127.0.0.1`` line in ``/etc/hosts``
+* Comment out / delete the ``127.0.1.1 <hostname>`` line in ``/etc/hosts``
 
 
 **The quick and dirty way:**
 
 **NOTE:** this only works if you have assigned static IPs to your nodes
 
-* Change the ``<hostname> 127.0.0.1`` line to map to your correct static IP
+* Change the ``127.0.1.1 <hostname>`` line to map to your correct static IP
 
 
 ClusterUI doesn't show files
@@ -248,6 +249,37 @@ ClusterUI doesn't show files
 * Check that the computer running the ``clusterUI`` app has an interface on the cluster subnet and an appropriate
   ``dataserver-filter`` entry in its ``config.yaml`` file.
 
+
+getdents: Bad file descriptor
+-----------------------------
+
+* We default to using a low-level directory counting function for a speed improvement. We have run
+into issues with it on later kernels (Ubuntu 16, 18), which can present as PYMEDataServer failing 
+(and e.g. clusterUI timing out when navigating to `<ip:port>/files`). The offending function call can
+be avoided by adding the following to ``.PYME/config.yaml``
+
+.. code-block::
+    cluster-listing-no-countdir: True
+
+
+Poor clusterIO performance
+--------------------------
+If you are seeing timeout or retry errors on `clusterIO.get_file` calls, consider 
+disabling the PYME hybrid nameserver (SQL and zeroconf) and using the PYME 
+zeroconf nameserver only by adding the following to ``.PYME/config.yaml``
+
+.. code-block::
+    clusterIO-hybridns: False
+
+If you are performing sliding-window background estimation during localization
+analysis, you may also want to play with the chunksize used in HTTPSpooler on 
+the instrument computer (or wherever you are spooling data from). It
+defaults to 50 frames; depending on the window sizes you use in analysis you may
+consider increasing this to increase data locality (and decrease network I/O).
+This can be done in ``.PYME/config.yaml``. For 100 frame chunks, you would have:
+
+.. code-block::
+    httpspooler-chunksize: 100
 
 
 .. rubric:: Footnotes
