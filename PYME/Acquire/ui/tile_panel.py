@@ -1,5 +1,7 @@
 import wx
 from PYME.Acquire.Utils import tiler
+import logging
+logger = logging.getLogger(__name__)
 
 class TilePanel(wx.Panel):
     def __init__(self, parent, scope):
@@ -93,7 +95,7 @@ class TilePanel(wx.Panel):
         self.scope.tiler.on_stop.disconnect(self._on_stop)
         self.scope.tiler.progress.disconnect(self._update)
         
-        wx.CallAfter(wx.CallLater,1e3, self._launch_viewer)
+        wx.CallAfter(wx.CallLater,1e4, self._launch_viewer)
         
         
     def _launch_viewer(self):
@@ -111,7 +113,7 @@ class TilePanel(wx.Panel):
         try:
             requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % self.scope.tiler._tiledir)
         except requests.ConnectionError:
-            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), shell=True)
+            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), creationflags=subprocess.CREATE_NEW_CONSOLE)
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')
