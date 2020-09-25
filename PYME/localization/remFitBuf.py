@@ -131,7 +131,8 @@ class CameraInfoManager(object):
     def __init__(self):
         self._cache = {}
 
-    def _parseROI(self, md):
+    @staticmethod
+    def _parseROI(md):
         """
         Extract ROI coordinates from metadata
 
