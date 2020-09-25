@@ -1,7 +1,5 @@
 import wx
 from PYME.Acquire.Utils import tiler
-import logging
-logger = logging.getLogger(__name__)
 
 class TilePanel(wx.Panel):
     def __init__(self, parent, scope):
