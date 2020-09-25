@@ -7,8 +7,7 @@ taskList = [
     T(0, scope.focus_lock.DisableLock),
     # T(8000, scope.l560.TurnOn),
     # T(maxint, scope.turnAllLasersOff),
-    T(maxint, scope.focus_lock.EnableLock),
-    T(maxint, scope.spoolController.LaunchAnalysis)  # todo - add this back in
+    T(maxint, scope.focus_lock.EnableLock)
 ]
 
 metaData = [
