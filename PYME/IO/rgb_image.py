@@ -26,6 +26,8 @@ def image_to_rgb(image, zoom=1.0, scaling='min-max', scaling_factor=0.99):
 
 def image_to_cmy(image, *args, **kwargs):
     data = image_to_rgb(image, *args, **kwargs)
+    if image.data.shape[3] == 1:
+        return data  # grayscale, can't convert to CMY (rather than CMYK)
     
     output = np.zeros_like(data)
     
