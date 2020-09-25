@@ -16,7 +16,7 @@ Recommended if you don't already have python on your computer and/or are unfamil
 Installing using conda
 ======================
 
-Download and install the python **2.7** version of `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
+Download and install the python 3.7 version of `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
 Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. code-block:: bash
@@ -27,7 +27,7 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. note::
 
-    **Which python version?** We are currently in the process of switching the default install from python 2.7 to python 3. As of 2020/8/6 the python 3 packages are not in the above conda channel, but that should change shortly. The python2.7 version is better tested, but most of the core functionality now runs on python 3 as well.
+    **Which Python version?** We are currently in the process of switching the default install from Python 2 to Python 3. As of 2020/09/25, we support both. Some parts of the Python 2 version are better tested, but the core functionality runs on Python 3. We aim to drop Python 2 support in January of 2021.
 
 
 Updating
