@@ -25,7 +25,7 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. note::
 
-    **Which Python version?** We are in the process of switching the default install from Python 2.7 to Python 3.6. As of 2020/09/25, we support python 2.7, 3.6 & 3.7. The Python 2 version is currently better tested, but the most of the core functionality runs on Python 3. Due to ongoing changes in the anaconda repositories, installation on Python 3 tends to be easier. We aim to drop Python 2 support in January of 2021.
+    **Which Python version?** We are in the process of switching the default install from Python 2.7 to Python 3.6. As of 2020/09/25, we support python 2.7, 3.6 & 3.7. The Python 2 version is currently better tested, but most of the core functionality runs on Python 3. Due to ongoing changes in the anaconda repositories, installation on Python 3 tends to be easier. We aim to drop Python 2 support in January of 2021.
 
 
 Updating
