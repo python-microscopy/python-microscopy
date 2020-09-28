@@ -5,12 +5,10 @@ Installation
 
 The best to install PYME will depend on your background and whether you are already using python on your computer.
 
-Executable installers (Windows-only)
-=====================================
+Executable installers (Windows and OSX)
+=======================================
 
 Recommended if you don't already have python on your computer and/or are unfamiliar with python. Download the latest installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions. 
-
-**Caveats:** The executable installers lag the conda packages so you're getting an older version. The installers give you a bunch of error messages which you can safely ignore.
 
 
 Installing using conda
@@ -27,7 +25,7 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
 .. note::
 
-    **Which Python version?** We are currently in the process of switching the default install from Python 2.7 to Python 3.7. As of 2020/09/25, we support both. Some parts of the Python 2 version are better tested, but the core functionality runs on Python 3. We aim to drop Python 2 support in January of 2021.
+    **Which Python version?** We are in the process of switching the default install from Python 2.7 to Python 3.6. As of 2020/09/25, we support python 2.7, 3.6 & 3.7. The Python 2 version is currently better tested, but the most of the core functionality runs on Python 3. Due to ongoing changes in the anaconda repositories, installation on Python 3 tends to be easier. We aim to drop Python 2 support in January of 2021.
 
 
 Updating
