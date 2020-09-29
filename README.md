@@ -11,7 +11,7 @@ PYME (the PYthon Microscopy Environment) is an open-source application suite for
 ![plat](https://img.shields.io/conda/pn/david_baddeley/python-microscopy.svg)-->
 
 - **Website:** https://www.python-microscopy.org
-- **Installation:** https://www.python-microscopy.org/doc/Installation/InstallationWithAnaconda.html
+- **Installation:** https://python-microscopy.org/doc/Installation/Installation.html
 - **Documentation:** https://python-microscopy.org/doc/
 - **Source code:** https://github.com/python-microscopy/python-microscopy/
 - **Contributing:** https://python-microscopy.org/doc/Contributing.html
@@ -20,4 +20,4 @@ PYME (the PYthon Microscopy Environment) is an open-source application suite for
 The documentation is also available in the *docs* subdirectory of the repository.
 
 **Have a question?** Get in touch! \
-You can email us on support@python-microscopy.org, or raise a [support issue](https://github.com/python-microscopy/python-microscopy/issues/new?assignees=&labels=support&template=support.md&title=%5BSUPPORT%5D). We are also active on the [image.sc forum](https://forum.image.sc/) - tag your post with `pyme` and we'll be happy to support you.
+You can email us at support@python-microscopy.org, or raise a [support issue](https://github.com/python-microscopy/python-microscopy/issues/new?assignees=&labels=support&template=support.md&title=%5BSUPPORT%5D). We are also active on the [image.sc forum](https://forum.image.sc/) - tag your post with `pyme` and we'll be happy to support you.
