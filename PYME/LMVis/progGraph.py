@@ -22,6 +22,7 @@
 ##################
 
 from PYME.contrib import wxPlotPanel
+from PYME.LMVis.Extras.dockedPanel import DockedPanel
 import numpy
 
 class progPanel(wxPlotPanel.PlotPanel):
@@ -57,3 +58,18 @@ class progPanel(wxPlotPanel.PlotPanel):
 
             self.canvas.draw()
 
+class DockedProgressPanel(DockedPanel):
+    def __init__(self, parent_panel, fit_results, **kwargs):
+        DockedPanel.__init__(self, parent_panel, **kwargs)
+        self.AddNewElement(progPanel(self, fit_results, size=(200, 250)))
+
+def Plug(vis_frame):
+    """
+    Parameters
+    ----------
+    vis_frame : PYME.LMVis.VisGUI.VisGUIFrame
+    """
+    # use the farthest upstream datasource to generate the plot
+    fit_results = vis_frame.pipeline.dataSources['Localizations']
+    docked = DockedProgressPanel(vis_frame, fit_results)
+    docked.show(vis_frame, docked, 'fit_progress_panel', 'Localization Progress')

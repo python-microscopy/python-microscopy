@@ -667,6 +667,11 @@ class VisGUICore(object):
             pass
         elif os.path.splitext(filename)[1] == '.hdf':
             pass
+        elif filename.endswith('/live'):
+            # select the live-updating datasource once we're done loading.
+            # FIXME - once pipeline mappings are done in the pipeline.recipe
+            # we can replace this with `pass` as MappingFilters etc. will then be rebuilt
+            wx.CallAfter(self.pipeline.selectDataSource, 'Localizations')
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
             from scipy.io import loadmat

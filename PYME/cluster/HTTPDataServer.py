@@ -714,6 +714,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         details = details.strip('?' + query)
         if '.' in details:
             part, return_type = details.split('.')
+            return_type = '.' + return_type
         else:
             part, return_type = details, ''
 
@@ -728,7 +729,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     start = int(query.get('from', [0])[0])
                     end = None if 'to' not in query.keys() else int(query['to'][0])
                     wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, slice(start, end)),
-                                                                             '.' + return_type)
+                                                                             return_type)
 
             f, length = self._string_to_file(wire_data)
             self.send_response(200)

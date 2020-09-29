@@ -680,7 +680,12 @@ class LMAnalyser2(Plugin):
         #auto load VisGUI display
         #from PYME.DSView import modules
         #modules.loadModule('LMDisplay', self.dsviewer)
-        self.dsviewer.LoadModule('LMDisplay')
+        if self.use_cluster:
+            import subprocess
+            uri = 'pyme-cluster:///' + self.analysisController.results_filename + '/live'
+            subprocess.Popen('visgui %s' % uri, shell=True)
+        else:
+            self.dsviewer.LoadModule('LMDisplay')
 
 
     def GenFitStatusPanel(self, _pnl):
@@ -709,7 +714,7 @@ class LMAnalyser2(Plugin):
 
     def refresh_analysis(self):
         if self.use_cluster:
-            self._refresh_analysis_cluster()
+            pass
         else:
             self._refresh_analysis_queue()
 
