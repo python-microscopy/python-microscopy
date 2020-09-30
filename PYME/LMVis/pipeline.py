@@ -683,7 +683,7 @@ class Pipeline:
                     tab = tabular.HDFSource(h5f, t.name)
                     self.addDataSource(t.name, tab)
                         
-                    if 'EventName' in t.description._v_names:
+                    if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
                         events = t[:]  # this does not handle multiple events tables per hdf file
 
             if 'MetaData' in h5f.root:
@@ -755,10 +755,9 @@ class Pipeline:
         if 'zm' in dir(self):
             del self.zm
         self.filter = None
-        # self.mapping = None
+        self.mapping = None
         self.colourFilter = None
         self.events = None
-        self.driftInputMapping = None
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.filename = filename
@@ -777,10 +776,10 @@ class Pipeline:
                 self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
-        self.dataSources['results_source'] = ds
+        self.dataSources['FitResults'] = ds
 
         add_pipeline_variables = Pipelineify(self.recipe, 
-            inputFitResults='results_source',
+            inputFitResults='FitResults',
             pixelSizeNM=1. if 'PixelSize' not in kwargs.keys() else kwargs['PixelSize'],
             outputLocalizations='Localizations')
         self.recipe.add_module(add_pipeline_variables)
@@ -858,8 +857,6 @@ class Pipeline:
         if ds is None:
             #load from file
             ds = self._ds_from_file(filename, **kwargs)
-            self.mdh.copyEntriesFrom(ds.mdh)
-            self.events = ds.events
     
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus
@@ -1097,7 +1094,6 @@ class Pipeline:
 
         
     
-
 
 
 

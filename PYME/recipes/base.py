@@ -946,7 +946,6 @@ class ModuleCollection(HasTraits):
         """
         Load input data from a file and inject into namespace
         """
-        #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
         import os
 
@@ -957,7 +956,7 @@ class ModuleCollection(HasTraits):
             try:
                 with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
                         self._inject_tables_from_hdf5(key, h5f, fn, extension)
-            except tables.exceptions.HDF5ExtError as e:  # access issue likely due to multiple processes
+            except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
                 if unifiedIO.is_cluster_uri(filename):
                     # try again, this time forcing access through the dataserver
                     # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
@@ -978,7 +977,7 @@ class ModuleCollection(HasTraits):
                         self._inject_tables_from_hdf5(key, h5f, filename, extension)
                 else:
                     #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
-                    raise e
+                    raise
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
