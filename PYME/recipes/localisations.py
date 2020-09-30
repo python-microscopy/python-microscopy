@@ -170,7 +170,7 @@ class Pipelineify(ModuleBase):
         #extract information from any events
         if self.inputEvents != '':
             logger.warn('Having Events in the recipe namespace is deprecated, they should be associated with datasources during load, or with PYME.recipes.fudges.AddEvents')
-            events = namespace[self.inputEvents]
+            events = namespace.get(self.inputEvents, None)
         else:
             try:
                 events = fitResults.events
