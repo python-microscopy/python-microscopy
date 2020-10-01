@@ -102,16 +102,27 @@ class TilePanel(wx.Panel):
         import webbrowser
         import time
         import requests
+        import os
 
         self.scope.tiler.P.update_pyramid()
         
         #if not self._gui_proc is None:
         #    self._gui_proc.kill()
+
+        # abs path the tile dir
+        tiledir = self.scope.tiler._tiledir
+        if not os.path.isabs(tiledir):
+            tiledir = os.path.join(os.getcwd(), tiledir)
         
-        try:
-            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % self.scope.tiler._tiledir)
-        except requests.ConnectionError:
-            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), creationflags=subprocess.CREATE_NEW_CONSOLE)
+        try:  # if we already have a tileviewer serving, change the directory
+            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % tiledir)
+        except requests.ConnectionError:  # start a new process
+            try:
+                pargs = {'creationflags': subprocess.CREATE_NEW_CONSOLE}
+            except AttributeError:  # not on windows
+                pargs = {'shell': True}
+            
+            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, tiledir), **pargs)
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')
