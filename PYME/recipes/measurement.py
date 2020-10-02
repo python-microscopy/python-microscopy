@@ -219,7 +219,7 @@ class FitPoints(ModuleBase):
         ps = img.pixelSize
         print('pixel size: %s' % ps)
 
-        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'].astype(int), range(len(inp['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
                 ff = fitMod.FitFactory(img.data[:, :, t, self.channel], md)
