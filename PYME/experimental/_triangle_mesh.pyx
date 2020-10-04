@@ -997,7 +997,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef bint fast_collapse_bool, interior
 
         if _curr == -1:
-            return
+            return 0
 
         # Create the pointers we need
         curr_halfedge = &self._chalfedges[_curr]
@@ -1007,7 +1007,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         if (self._chalfedges[_next].twin == -1) or (self._chalfedges[_prev].twin == -1):
             # Collapsing this edge will create another free edge
-            return
+            return 0
 
         interior = (_twin != -1)  # Are we on a boundary?
 
@@ -1018,7 +1018,7 @@ cdef class TriangleMesh(TrianglesBase):
             #    return
             
             if not self._check_neighbour_twins(curr_halfedge.vertex):
-                return
+                return 0
 
             #nn = self._vertices['neighbors'][self._halfedges['vertex'][_twin]]
             #nn_mask = (nn != -1)
@@ -1026,7 +1026,7 @@ cdef class TriangleMesh(TrianglesBase):
             #    return
             
             if not self._check_neighbour_twins(self._chalfedges[_twin].vertex):
-                return
+                return 0
 
             twin_halfedge = &self._chalfedges[_twin]
             _twin_prev = twin_halfedge.prev
@@ -1034,7 +1034,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             if (self._chalfedges[_twin_prev].twin == -1) or (self._chalfedges[_twin_next].twin == -1):
                 # Collapsing this edge will create another free edge
-                return 
+                return 0
 
         _dead_vertex = self._chalfedges[_prev].vertex
         _live_vertex = curr_halfedge.vertex
@@ -1046,12 +1046,12 @@ cdef class TriangleMesh(TrianglesBase):
             # Make sure we create no vertices of valence <3 (manifoldness)
             # ((vl + vd - 3) < 4) or 
             if (vn < 4) or (vtn < 4):
-                return
+                return 0
 
         vl, vd = self._cvertices[_live_vertex].valence, self._cvertices[_dead_vertex].valence
         
         if ((vl + vd - 3) < 4):
-            return
+            return 0
         
         cdef bint locally_manifold = self._cvertices[_live_vertex].locally_manifold and self._cvertices[_dead_vertex].locally_manifold
 
@@ -1073,7 +1073,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
-            return
+            return 0
 
         # Collapse to the midpoint of the original edge vertices
         if fast_collapse_bool:
@@ -1169,6 +1169,8 @@ cdef class TriangleMesh(TrianglesBase):
             print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
             print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
             raise e
+        
+        return 1
 
     cdef _face_delete(self, np.int32_t _edge):
         """
@@ -1236,7 +1238,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int idx
         
         try:
-            idx = el_vacancies.pop(-1)
+            #idx = el_vacancies.pop(-1)
+            idx = el_vacancies.pop(0)
         except IndexError:
             # no vacant slot, resize
             key = __insertion_keys[key_idx]
@@ -1254,7 +1257,8 @@ cdef class TriangleMesh(TrianglesBase):
                 # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
                 el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
-            idx = el_vacancies.pop(-1)
+            #idx = el_vacancies.pop(-1)
+            idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
@@ -1569,7 +1573,7 @@ cdef class TriangleMesh(TrianglesBase):
             self._H = None
             self._K = None
     
-    cdef edge_flip(self, np.int32_t _curr, bint live_update=1):
+    cpdef int edge_flip(self, np.int32_t _curr, bint live_update=1):
         """
         Flip an edge specified by halfedge index _curr.
 
@@ -1591,13 +1595,13 @@ cdef class TriangleMesh(TrianglesBase):
         cdef np.int32_t * neighbours
 
         if (_curr == -1):
-            return -1
+            return 0
 
         curr_edge = &self._chalfedges[_curr]
         _twin = curr_edge.twin
         if (_twin == -1):
             # This is a boundary edge
-            return -1
+            return 0
         _prev = curr_edge.prev
         _next = curr_edge.next
 
@@ -1608,7 +1612,7 @@ cdef class TriangleMesh(TrianglesBase):
         # Make sure both vertices have valence > 3 (preserve manifoldness)
         vc, vt = self._cvertices[curr_edge.vertex].valence, self._cvertices[twin_edge.vertex].valence
         if (vc < 4) or (vt < 4):
-            return -1
+            return 0
 
         # Calculate adjustments to the halfedges we're flipping
         new_v0 = self._chalfedges[_next].vertex
@@ -1628,10 +1632,10 @@ cdef class TriangleMesh(TrianglesBase):
             neighbours = &self._cvertices[new_v0].neighbor0
             for i in range(NEIGHBORSIZE):
                 if neighbours[i] == new_v1:
-                    return -1
+                    return 0
         else:
             if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-                return -1
+                return 0
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
@@ -1655,7 +1659,7 @@ cdef class TriangleMesh(TrianglesBase):
         if flipped_dot < 0:
             # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
             # concavity, so don't flip.
-            return -1
+            return 0
         
         #if we were not locally manifold, conservatively flag all vertices we touch as non-manifold
         if not locally_manifold:
@@ -1727,6 +1731,8 @@ cdef class TriangleMesh(TrianglesBase):
             self._faces_by_vertex = None
             self._H = None
             self._K = None
+            
+        return 1
 
     def _snap_faces(self, np.int32_t _h0, np.int32_t _h3):
         """
@@ -1850,11 +1856,12 @@ cdef class TriangleMesh(TrianglesBase):
         (or BOUNDARY_VALENCE for boundaries).
         """
 
-        cdef int i, flip_count, target_valence
+        cdef int i, flip_count, target_valence, r, failed_flip_count
         cdef halfedge_t *curr_edge, *twin_edge
         cdef np.int32_t _twin, v1, v2, v3, v4, score_post, score_pre
 
         flip_count = 0
+        failed_flip_count = 0
 
         # Do a single pass over all active edges and flip them if the flip minimizes the deviation of vertex valences
         # for i in np.arange(len(self._halfedges['vertex'])):
@@ -1893,10 +1900,12 @@ cdef class TriangleMesh(TrianglesBase):
             if score_post < score_pre:
                 # Flip minimizes deviation of vertex valences from VALENCE (or
                 # BOUNDARY_VALENCE for boundaries)
-                self.edge_flip(i)
-                flip_count += 1
+                r = self.edge_flip(i)
+                flip_count += r
+                failed_flip_count += (1-r)
 
-        print('Flip count: %d' % (flip_count))
+        print('Flip count: %d [%d failed]' % (flip_count, failed_flip_count))
+        return flip_count
 
     @cython.cdivision(True)
     @cython.boundscheck(False)
@@ -2018,6 +2027,39 @@ cdef class TriangleMesh(TrianglesBase):
         self._vertices['normal'][:] = -1
         self.face_normals
         self.vertex_normals
+        
+    def split_edges(self, float split_threshold):
+        cdef int split_count = 0
+        cdef int i
+        cdef int n_halfedges = self._halfedges.shape[0]
+        
+        for i in range(n_halfedges):
+            if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
+                self.edge_split(i)
+                split_count += 1
+                
+        print('Split count: %d' % (split_count))
+        return split_count
+    
+    def collapse_edges(self, float collapse_threshold):
+        cdef int collapse_count = 0
+        cdef int collapse_fails = 0
+        cdef int i
+        cdef int n_halfedges = self._halfedges.shape[0]
+        
+        #find which vertices are locally manifold
+        # TODO - move this to a helper function
+        self._vertices['locally_manifold'] = 1
+        self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+        
+        for i in range(n_halfedges):
+            if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
+                collapse_ret = self.edge_collapse(i)
+                collapse_count += collapse_ret
+                collapse_fails += (1-collapse_ret)
+        print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
+        
+        return collapse_count
 
     def remesh(self, int n=5, float target_edge_length=-1, float l=0.5, int n_relax=10):
         """
@@ -2039,7 +2081,7 @@ cdef class TriangleMesh(TrianglesBase):
                 Number of Lloyd relaxation (relax()) iterations to apply 
                 per remeshing iteration.
         """
-        cdef int k, i, split_count, collapse_count
+        cdef int k, i, split_count, collapse_count, collapse_ret, collapse_fails
         #cdef float target_edge_length
         
         cdef int n_halfedges = self._halfedges.shape[0]
@@ -2061,26 +2103,36 @@ cdef class TriangleMesh(TrianglesBase):
 
         for k in range(n):
             # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
-            split_count = 0
-            for i in range(n_halfedges):
-                if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
-                    self.edge_split(i)
-                    split_count += 1
-            print('Split count: %d' % (split_count))
+            # split_count = 0
+            # for i in range(n_halfedges):
+            #     if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
+            #         self.edge_split(i)
+            #         split_count += 1
+            # print('Split count: %d' % (split_count))
+            
+            ct = self.split_edges(split_threshold)
+            #while (ct > 0):
+            #    ct = self.split_edges(split_threshold)
             
             # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
-            collapse_count = 0
+            # collapse_count = 0
+            # collapse_fails = 0
+            #
+            # #find which vertices are locally manifold
+            # # TODO - move this to a helper function
+            # self._vertices['locally_manifold'] = 1
+            # self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
+            #
+            # for i in range(n_halfedges):
+            #     if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
+            #         collapse_ret = self.edge_collapse(i)
+            #         collapse_count += collapse_ret
+            #         collapse_fails += (1-collapse_ret)
+            # print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
             
-            #find which vertices are locally manifold
-            # TODO - move this to a helper function
-            self._vertices['locally_manifold'] = 1
-            self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
-            
-            for i in range(n_halfedges):
-                if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
-                    self.edge_collapse(i)
-                    collapse_count += 1
-            print('Collapse count: ' + str(collapse_count))
+            ct = self.collapse_edges(collapse_threshold)
+            #while (ct > 0):
+            #    ct = self.collapse_edges(collapse_threshold)
 
             # 3. Flip edges in order to minimize deviation from VALENCE.
             
@@ -2089,7 +2141,9 @@ cdef class TriangleMesh(TrianglesBase):
             self._vertices['locally_manifold'] = 1
             self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
             
-            self.regularize()
+            ct = self.regularize()
+            #while (ct > 0):
+            #    ct = self.regularize()
 
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
