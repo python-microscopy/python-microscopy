@@ -942,7 +942,7 @@ class ModuleCollection(HasTraits):
         from PYME.IO import unifiedIO
         import os
         extension = os.path.splitext(filename)[1]
-        if extension in ['.h5r', '.h5', '.hdf']:
+        if extension in ['.h5r', '.h5', '.hdf']: #TODO - should `.h5` be processed here, or via ImageStack
             import tables
             from PYME.IO import h5rFile
             try:
