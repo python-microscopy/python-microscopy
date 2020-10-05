@@ -114,7 +114,9 @@ class TilePanel(wx.Panel):
         # abs path the tile dir
         tiledir = self.scope.tiler._tiledir
         if not os.path.isabs(tiledir):
-            tiledir = os.path.join(os.getcwd(), tiledir)
+            # TODO - should we be doing the `.isabs()` check on the parent directory instead?
+            from PYME.IO.FileUtils import nameUtils
+            tiledir = nameUtils.getFullFilename(tiledir)
         
         try:  # if we already have a tileviewer serving, change the directory
             requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % tiledir)
