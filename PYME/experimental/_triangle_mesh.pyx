@@ -1238,8 +1238,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int idx
         
         try:
-            #idx = el_vacancies.pop(-1)
-            idx = el_vacancies.pop(0)
+            idx = el_vacancies.pop(-1)
+            #idx = el_vacancies.pop(0)
         except IndexError:
             # no vacant slot, resize
             key = __insertion_keys[key_idx]
@@ -1257,8 +1257,8 @@ cdef class TriangleMesh(TrianglesBase):
                 # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
                 el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
-            #idx = el_vacancies.pop(-1)
-            idx = el_vacancies.pop(0)
+            idx = el_vacancies.pop(-1)
+            #idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
@@ -1946,6 +1946,8 @@ cdef class TriangleMesh(TrianglesBase):
         bverts = np.zeros(n_vertices, 'i')
         bverts[tn] = 1
         cdef bint [:] boundary_mask = bverts
+        shifts = np.zeros([n_vertices, 3], 'f4')
+        cdef float [:,:] c_shifts = shifts
 
         
         # for k in range(n):
@@ -1979,6 +1981,9 @@ cdef class TriangleMesh(TrianglesBase):
             for v in range(n_vertices):
                 if fix_boundary and boundary_mask[v]:
                     # Don't move vertices on a boundary
+                    c_shifts[v,0] = 0
+                    c_shifts[v,1] = 0
+                    c_shifts[v,2] = 0
                     continue
 
                 #neighbours = verts[v].neighbours
@@ -2018,9 +2023,19 @@ cdef class TriangleMesh(TrianglesBase):
                 dz = centroid[2] - pos[2]
 
                 # Update vertex positions
-                self._cvertices[v].position0 = pos[0] + l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
-                self._cvertices[v].position1 = pos[1] + l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
-                self._cvertices[v].position2 = pos[2] + l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
+                c_shifts[v, 0] = l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
+                c_shifts[v, 1] = l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
+                c_shifts[v, 2] = l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
+                
+                #self._cvertices[v].position0 = pos[0] + l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
+                #self._cvertices[v].position1 = pos[1] + l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
+                #self._cvertices[v].position2 = pos[2] + l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
+                
+                #update_single_vertex_neighbours(v, self._chalfedges, self._cvertices, self._cfaces)
+                
+            self._vertices['position'] += shifts
+            triangle_mesh_utils.c_update_face_normals(list(np.arange(len(self._faces)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
 
         # Now we gotta recalculate the normals
         self._faces['normal'][:] = -1
@@ -2112,6 +2127,7 @@ cdef class TriangleMesh(TrianglesBase):
             
             ct = self.split_edges(split_threshold)
             #while (ct > 0):
+            #    # Keep spliting until we can't do any more splits (note - may be more effective to just run everything a couple more times)
             #    ct = self.split_edges(split_threshold)
             
             # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
@@ -2131,8 +2147,9 @@ cdef class TriangleMesh(TrianglesBase):
             # print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
             
             ct = self.collapse_edges(collapse_threshold)
-            #while (ct > 0):
-            #    ct = self.collapse_edges(collapse_threshold)
+            # while (ct > 0):
+            #     # Keep collapsing until we can't do any more splits (note - may be more effective to just run everything a couple more times)
+            #     ct = self.collapse_edges(collapse_threshold)
 
             # 3. Flip edges in order to minimize deviation from VALENCE.
             
@@ -2142,8 +2159,9 @@ cdef class TriangleMesh(TrianglesBase):
             self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['twin'] == -1]] = 0
             
             ct = self.regularize()
-            #while (ct > 0):
-            #    ct = self.regularize()
+            # while (ct > 0):
+            #     # Keep flipping until we can't do any more splits (note - may be more effective to just run everything a couple more times)
+            #     ct = self.regularize()
 
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
