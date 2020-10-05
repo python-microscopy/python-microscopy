@@ -727,7 +727,7 @@ class Pipeline:
 
         return ds
 
-    def OpenFile(self, filename= '', ds = None, **kwargs):
+    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
             
@@ -745,8 +745,16 @@ class Pipeline:
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
         
-        #clear our state
+        # clear our state
+        # nb - equivalent to clearing recipe namespace
         self.dataSources.clear()
+        
+        if clobber_recipe:
+            # clear any processing modules from the pipeline
+            # call with clobber_recipe = False in a 'Open a new file with the processing pipeline I've set up' use case
+            # TODO: Add an "File-->Open [preserving recipe]" menu option or similar
+            self.recipe.modules = []
+        
         if 'zm' in dir(self):
             del self.zm
         self.filter = None
