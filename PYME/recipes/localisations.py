@@ -132,14 +132,14 @@ class Pipelineify(ModuleBase):
 
     Parameters
     ----------
-    inputFitResults : tabular.TabularBase
+    inputFitResults : string - the name of a tabular.TabularBase object
         Typically the FitResults table of an h5r file
-    inputEvents : tabular.TabularBase
-        .. deprecated:: 20.06.26 - events separate from a datasource should no longer be in the recipe namespace. PYME generated
-        data should have events associated with each file, and external data wishing to spoof PYME events can use
-        PYME.recipes.fudges.AddEvents upstream of this module.
-    inputDriftResults : tabular.TabularBase
-        .. deprecated:: 20.06.26 - Currently does nothing. 
+    inputEvents : string - name of a tabular.TabularBase object containing acquisition events [optional]
+        This is not usually required as the IO methods attach `.events` as a datasource attribute. Use when events come
+        from a separate file or when there are intervening processing steps between IO and this module (the `.events`
+        attribute does not propagate through recipe modules).
+        TODO - do we really want to be attaching events as an attribute or should they be there own entry in the recipe namespace
+        TODO - should we change this to the processed events???
     pixelSizeNM : float
         Scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units. Defaults to 1.
     
@@ -150,10 +150,19 @@ class Pipelineify(ModuleBase):
     """
     inputFitResults = Input('FitResults')
     inputEvents = Input('')
-    inputDriftResults = Input('')
-    outputLocalizations = Output('localizations')
-    pixelSizeNM = Float(1, label='nanometer units', desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
+    
+    # Fiducial table input
+    # inputDriftResults = Input('')
+    # TODO - to replicate the pipeline input processing, we should take inputFitResults and inputDriftResults and output
+    # 'Localisations' and 'Fiducials' (the fiducials get some, but not all of the manipulations and extra columns). Should
+    # we expand this module, or pass the fiducials though in the same way as the fit results, living with the fact that
+    # there will be extra columns?
 
+    pixelSizeNM = Float(1, label='nanometer units',
+                        desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
+
+    outputLocalizations = Output('Localizations')
+    
     def execute(self, namespace):
         from PYME.LMVis import pipeline
         fitResults = namespace[self.inputFitResults]
@@ -169,7 +178,8 @@ class Pipelineify(ModuleBase):
 
         #extract information from any events
         if self.inputEvents != '':
-            logger.warn('Having Events in the recipe namespace is deprecated, they should be associated with datasources during load, or with PYME.recipes.fudges.AddEvents')
+            # Use specified table for events if given (otherwise look for a `.events` attribute on the input data
+            # TODO: resolve how best to handle events (i.e. should they be a separate table, or should they be attached to data tables)
             events = namespace.get(self.inputEvents, None)
         else:
             try:
@@ -189,6 +199,7 @@ class Pipelineify(ModuleBase):
             fitModule = mdh['Analysis.FitModule']
 
             if 'LatGaussFitFR' in fitModule:
+                # TODO - move getPhotonNums() out of pipeline
                 mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
             
             if 'SplitterFitFNR' in fitModule:
