@@ -721,7 +721,10 @@ class Pipeline:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
         
         ds.mdh = mdh
-        ds.events = events
+        if events is not None:
+            # only set the .events attribute if we actually have events.
+            ds.events = events
+            
         return ds
 
     def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
@@ -773,7 +776,7 @@ class Pipeline:
                 # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
                 # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
                 ds = self._ds_from_file(fn, **kwargs)
-                self.events = ds.events
+                self.events = getattr(ds, 'events', None)
                 self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
