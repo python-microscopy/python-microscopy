@@ -663,7 +663,7 @@ class Pipeline:
                 self.addDataSource('Fiducials', self.driftInputMapping)
                 #self.selectDataSource('Fiducials')
 
-            #catch really old files which don't have any metadata
+            # really old files might not have metadata, so test for it before assuming
             if 'MetaData' in h5f.root:
                 mdh = MetaDataHandler.HDFMDHandler(h5f)
             
@@ -675,19 +675,39 @@ class Pipeline:
             import tables
             h5f = tables.open_file(filename)
             self.filesToClose.append(h5f)
+            
+            # Handle a 'MetaData' group as a special case
+            # TODO - find/implement a more portable way of handling metadata in HDF (e.g. as .json in a blob) so that
+            # non-python exporters have a chance of adding metadata
+            if 'MetaData' in h5f.root:
+                mdh = MetaDataHandler.HDFMDHandler(h5f)
+            
+            # handle an 'Events' table as a special case (so that it can be attached to subsequently loaded tables)
+            # FIXME - this relies on a special /reserved table name and format and could raise name collision issues
+            # when importing 3rd party / generic HDF
+            if ('Events' in h5f.root):
+                if 'EventName' in h5f.root.Events.description._v_names:
+                    # check that the event table is formatted as we expect
+                    if ('StartTime' in mdh.keys()):
+                        events = h5f.root.Events[:]
+                    else:
+                        logger.warning('Acquisition events found in .hdf, but no "StartTime" in metadata')
+                else:
+                    logger.warning('Table called "Events" found in .hdf does not match the signature for acquisition events, ignoring')
 
             for t in h5f.list_nodes('/'):
                 if t.name == 'Events':
+                    # NB: This assumes we've handled this in the special case earlier, and blocks anything in a 3rd party
+                    # HDF events table from being seen.
+                    # TODO - do we really want to have so much special case stuff in our generic hdf handling? Are we sure
+                    # that events shouldn't be injected into the namespace (given that events do not propagate through recipe modules)?
                     continue
                 if isinstance(t, tables.table.Table):
                     tab = tabular.HDFSource(h5f, t.name)
+                    # TODO - attach metadata and/or events?
                     self.addDataSource(t.name, tab)
-                        
-                    if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
-                        events = t[:]  # this does not handle multiple events tables per hdf file
 
-            if 'MetaData' in h5f.root:
-                mdh = MetaDataHandler.HDFMDHandler(h5f)
+            
 
             for dsname, ds_ in self.dataSources.items():
                 #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
