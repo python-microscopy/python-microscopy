@@ -93,7 +93,9 @@ class TilePanel(wx.Panel):
         self.scope.tiler.on_stop.disconnect(self._on_stop)
         self.scope.tiler.progress.disconnect(self._update)
         
-        wx.CallAfter(wx.CallLater,1e3, self._launch_viewer)
+        # FIXME - previous delay was 1e3, which seems more reasonable. Do we need a config option (or heuristic) here ?
+        # assume this change was due to the time it takes to build a pyramid after tiling ends. Might ultimately be fixed when we revisit live tiling. 
+        wx.CallAfter(wx.CallLater,1e4, self._launch_viewer)
         
         
     def _launch_viewer(self):
@@ -102,16 +104,29 @@ class TilePanel(wx.Panel):
         import webbrowser
         import time
         import requests
+        import os
 
         self.scope.tiler.P.update_pyramid()
         
         #if not self._gui_proc is None:
         #    self._gui_proc.kill()
+
+        # abs path the tile dir
+        tiledir = self.scope.tiler._tiledir
+        if not os.path.isabs(tiledir):
+            # TODO - should we be doing the `.isabs()` check on the parent directory instead?
+            from PYME.IO.FileUtils import nameUtils
+            tiledir = nameUtils.getFullFilename(tiledir)
         
-        try:
-            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % self.scope.tiler._tiledir)
-        except requests.ConnectionError:
-            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), shell=True)
+        try:  # if we already have a tileviewer serving, change the directory
+            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % tiledir)
+        except requests.ConnectionError:  # start a new process
+            try:
+                pargs = {'creationflags': subprocess.CREATE_NEW_CONSOLE}
+            except AttributeError:  # not on windows
+                pargs = {'shell': True}
+            
+            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, tiledir), **pargs)
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')

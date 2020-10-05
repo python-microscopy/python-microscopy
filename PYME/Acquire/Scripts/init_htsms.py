@@ -50,7 +50,9 @@ def mz_stage(scope):
 def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
-    from PYME.Acquire import stage_leveling
+    from PYME.Acquire import stage_leveling, PYMEAcquire
+    import sys
+    import subprocess
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
     scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
@@ -60,6 +62,11 @@ def pz(scope):
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
     scope.focus_lock = RLPIDFocusLockClient()
+    
+    subprocess.Popen('%s "%s" -i init_htsms_focus_lock.py -t "Focus Lock"' % (sys.executable,
+                                                                              PYMEAcquire.__file__),
+                     creationflags=subprocess.CREATE_NEW_CONSOLE)
+    
     scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
 
 
@@ -132,28 +139,28 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=50)  # pin 9
+    # fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=50)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
-    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0, chained_devices=[fiber_shaker])
+    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0)  # , chained_devices=[fiber_shaker])
     scope.l405.register(scope)
 
     l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turn_on=False)
     scope.CleanupFunctions.append(l488.Close)
-    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1, chained_devices=[fiber_shaker])
+    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1)  # , chained_devices=[fiber_shaker])
     scope.l488.register(scope)
 
     l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', turn_on=True,
                             init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2, chained_devices=[fiber_shaker])
+    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2)  # ,  chained_devices=[fiber_shaker])
     scope.CleanupFunctions.append(scope.l560.Close)
     scope.l560.register(scope)
 
     l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', turn_on=True,
                             init_power=200)  # minimum power for our MPB lasers is 200 mW
     scope.CleanupFunctions.append(l642.Close)
-    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3, chained_devices=[fiber_shaker])
+    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3)  # ,  chained_devices=[fiber_shaker])
     scope.l642.register(scope)
 
 
