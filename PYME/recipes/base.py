@@ -899,16 +899,30 @@ class ModuleCollection(HasTraits):
 
         key_prefix = '' if key == 'input' else key + '_'
 
-        try:
+        # Handle a 'MetaData' group as a special case
+        # TODO - find/implement a more portable way of handling metadata in HDF (e.g. as .json in a blob) so that
+        # non-python exporters have a chance of adding metadata
+        if 'MetaData' in h5f.root:
             mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-        except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+        else:
             logger.warning('No metadata found, proceeding with empty metadata')
             mdh = MetaDataHandler.NestedClassMDHandler()
         
-        try:
-            events = h5f.root.Events[:]
-        except AttributeError:
-            events = None
+        events = None
+        # handle an 'Events' table as a special case (so that it can be attached to subsequently loaded tables)
+        # FIXME - this relies on a special /reserved table name and format and could raise name collision issues
+        # when importing 3rd party / generic HDF
+        # FIXME - do we really want to attach events (which will not get propagated through recipe modules)
+        if ('Events' in h5f.root):
+            if 'EventName' in h5f.root.Events.description._v_names:
+                # check that the event table is formatted as we expect
+                if ('StartTime' in mdh.keys()):
+                    events = h5f.root.Events[:]
+                else:
+                    logger.warning('Acquisition events found in .hdf, but no "StartTime" in metadata')
+            else:
+                logger.warning(
+                    'Table called "Events" found in .hdf does not match the signature for acquisition events, ignoring')
         
         for t in h5f.list_nodes('/'):
             # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
@@ -918,19 +932,30 @@ class ModuleCollection(HasTraits):
             # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
             # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
             # > 3D data?
+
+            if t.name == 'Events':
+                # NB: This assumes we've handled this in the special case earlier, and blocks anything in a 3rd party
+                # HDF events table from being seen.
+                # TODO - do we really want to have so much special case stuff in our generic hdf handling? Are we sure
+                # that events shouldn't be injected into the namespace (given that events do not propagate through recipe modules)?
+                continue
             
-            if isinstance(t, tables.VLArray):
+            elif isinstance(t, tables.VLArray):
                 from PYME.IO.ragged import RaggedVLArray
                 
                 rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                rag.mdh, rag.events = mdh, events
+                rag.mdh = mdh
+                if events is not None:
+                    rag.events = events
 
                 self.namespace[key_prefix + t.name] = rag
 
             elif isinstance(t, tables.table.Table):
                 #  pipe our table into h5r or hdf source depending on the extension
                 tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                tab.mdh, tab.events = mdh, events
+                tab.mdh = mdh
+                if events is not None:
+                    tab.events = events
 
                 self.namespace[key_prefix + t.name] = tab
 
