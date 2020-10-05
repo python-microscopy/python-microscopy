@@ -631,11 +631,12 @@ class Pipeline:
 
         Returns
         -------
-
-        ds : the dataset
+        ds : tabular.TabularBase
+            the datasource, complete with metadatahandler and events if found.
 
         """
-
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        events = None
         if os.path.splitext(filename)[1] == '.h5r':
             import tables
             h5f = tables.open_file(filename)
@@ -664,10 +665,10 @@ class Pipeline:
 
             #catch really old files which don't have any metadata
             if 'MetaData' in h5f.root:
-                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
-
-            if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = h5f.root.Events[:]
+                mdh = MetaDataHandler.HDFMDHandler(h5f)
+            
+            if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
+                events = h5f.root.Events[:]
 
         elif filename.endswith('.hdf'):
             #recipe output - handles generically formatted .h5
@@ -676,15 +677,17 @@ class Pipeline:
             self.filesToClose.append(h5f)
 
             for t in h5f.list_nodes('/'):
+                if t.name == 'Events':
+                    continue
                 if isinstance(t, tables.table.Table):
                     tab = tabular.HDFSource(h5f, t.name)
                     self.addDataSource(t.name, tab)
                         
                     if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
-                        self.events = t[:]  # this does not handle multiple events tables per hdf file
+                        events = t[:]  # this does not handle multiple events tables per hdf file
 
             if 'MetaData' in h5f.root:
-                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+                mdh = MetaDataHandler.HDFMDHandler(h5f)
 
             for dsname, ds_ in self.dataSources.items():
                 #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
@@ -722,9 +725,9 @@ class Pipeline:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
-
-
-
+        
+        ds.mdh = mdh
+        ds.events = events
         return ds
 
     def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
@@ -740,7 +743,9 @@ class Pipeline:
             PixelSize:  Pixel size if not in nm
             
         """
-        
+        from PYME.recipes.localisations import ProcessColour, Pipelineify
+        from PYME.recipes.tablefilters import FilterTable
+
         #close any files we had open previously
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
@@ -775,64 +780,49 @@ class Pipeline:
                 # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
                 # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
                 ds = self._ds_from_file(fn, **kwargs)
+                self.events = ds.events
+                self.mdh.copyEntriesFrom(ds.mdh)
 
-            
-        #wrap the data source with a mapping so we can fiddle with things
-        #e.g. combining z position and focus 
-        mapped_ds = tabular.MappingFilter(ds)
+        # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
+        self.dataSources['FitResults'] = ds
 
-        
-        if 'PixelSize' in kwargs.keys():
-            mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])
-            mapped_ds.setMapping('x', 'x*pixelSize')
-            mapped_ds.setMapping('y', 'y*pixelSize')
+        add_pipeline_variables = Pipelineify(self.recipe, 
+            inputFitResults='FitResults',
+            pixelSizeNM=1. if 'PixelSize' not in kwargs.keys() else kwargs['PixelSize'],
+            outputLocalizations='Localizations')
+        self.recipe.add_module(add_pipeline_variables)
 
-        #extract information from any events
-        self.ev_mappings, self.eventCharts = _processEvents(mapped_ds, self.events, self.mdh)
-
-
+        # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
+        self.ev_mappings, self.eventCharts = _processEvents(ds, self.events, self.mdh)  # extract information from any events
 
         #Fit module specific filter settings        
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
-            
-            #print 'fitModule = %s' % fitModule
-            
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
-            
-            if 'LatGaussFitFR' in fitModule:
-                mapped_ds.addColumn('nPhotons', getPhotonNums(mapped_ds, self.mdh))
-
-            if 'SplitterFitFNR' in fitModule:
-                mapped_ds.addColumn('nPhotonsg', getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
-                mapped_ds.addColumn('nPhotonsr', getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
-                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
-
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
         #self._get_dye_ratios_from_metadata()
 
-        self.addDataSource('Localizations', mapped_ds)
-
         # Retrieve or estimate image bounds
-        if False:  # 'imgBounds' in kwargs.keys():
-            self.imageBounds = kwargs['imgBounds']
-        elif (not (
-                'scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        if False:  # 'imgBounds' in kwargs.keys(): 
+            # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
+            # during real-time localization, to force image bounds to match raw data, but also potentially useful
+            # for other scenarios where metadata is not fully present.
+             self.imageBounds = kwargs['imgBounds']
+        elif ('scanx' not in ds.keys() or 'scany' not in ds.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
             self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
         else:
-            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
+            self.imageBounds = ImageBounds.estimateFromSource(ds)
 
-        from PYME.recipes.localisations import ProcessColour
-        from PYME.recipes.tablefilters import FilterTable
+        
         
         colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
         #we keep a copy of this so that the colour panel can find it.
         self.recipe.add_module(colour_mapper)
-        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
+        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
@@ -1112,8 +1102,6 @@ class Pipeline:
 
         
     
-
-
 
 
 

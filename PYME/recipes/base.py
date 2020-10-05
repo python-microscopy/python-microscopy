@@ -905,6 +905,11 @@ class ModuleCollection(HasTraits):
             logger.warning('No metadata found, proceeding with empty metadata')
             mdh = MetaDataHandler.NestedClassMDHandler()
         
+        try:
+            events = h5f.root.Events[:]
+        except AttributeError:
+            events = None
+        
         for t in h5f.list_nodes('/'):
             # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
             # PZF formatted image data, Image data which is not in an EArray, etc ...)
@@ -918,20 +923,22 @@ class ModuleCollection(HasTraits):
                 from PYME.IO.ragged import RaggedVLArray
                 
                 rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
-                rag.mdh = mdh
+                rag.mdh, rag.events = mdh, events
 
                 self.namespace[key_prefix + t.name] = rag
 
             elif isinstance(t, tables.table.Table):
                 #  pipe our table into h5r or hdf source depending on the extension
                 tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
-                tab.mdh = mdh
+                tab.mdh, tab.events = mdh, events
 
                 self.namespace[key_prefix + t.name] = tab
 
             elif isinstance(t, tables.EArray):
-                # load using ImageStack._loadh5, which finds metdata
-                im = ImageStack(filename=filename, haveGUI=False)
+                # load using ImageStack._loadh5
+                # FIXME - ._loadh5 will load events lazily, which isn't great if we got here after
+                # sending file over clusterIO inside of a context manager -> force it through since we already found it
+                im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
                 # assume image is the main table in the file and give it the named key
                 self.namespace[key] = im
 
@@ -941,6 +948,7 @@ class ModuleCollection(HasTraits):
         """
         from PYME.IO import unifiedIO
         import os
+
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.h5', '.hdf']: #TODO - should `.h5` be processed here, or via ImageStack
             import tables

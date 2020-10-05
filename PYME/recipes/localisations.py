@@ -4,6 +4,8 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 import numpy as np
 from PYME.IO import tabular
 from PYME.LMVis import renderers
+import logging
+logger = logging.getLogger(__name__)
 
 
 @register_module('ExtractTableChannel')
@@ -125,13 +127,32 @@ class DensityMapping(ModuleBase):
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
+    """
+    Perform standard mappings, including those derived from acquisition events.
+
+    Parameters
+    ----------
+    inputFitResults : tabular.TabularBase
+        Typically the FitResults table of an h5r file
+    inputEvents : tabular.TabularBase
+        .. deprecated:: 20.06.26 - events separate from a datasource should no longer be in the recipe namespace. PYME generated
+        data should have events associated with each file, and external data wishing to spoof PYME events can use
+        PYME.recipes.fudges.AddEvents upstream of this module.
+    inputDriftResults : tabular.TabularBase
+        .. deprecated:: 20.06.26 - Currently does nothing. 
+    pixelSizeNM : float
+        Scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units. Defaults to 1.
+    
+    Returns
+    -------
+    outputLocalizations : tabular.MappingFilter
+    
+    """
     inputFitResults = Input('FitResults')
-    inputDriftResults = Input('')
     inputEvents = Input('')
+    inputDriftResults = Input('')
     outputLocalizations = Output('localizations')
-
-    pixelSizeNM = Float(1)
-
+    pixelSizeNM = Float(1, label='nanometer units', desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
 
     def execute(self, namespace):
         from PYME.LMVis import pipeline
@@ -147,7 +168,16 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        events = namespace.get(self.inputEvents, None)
+        if self.inputEvents != '':
+            logger.warn('Having Events in the recipe namespace is deprecated, they should be associated with datasources during load, or with PYME.recipes.fudges.AddEvents')
+            events = namespace.get(self.inputEvents, None)
+        else:
+            try:
+                events = fitResults.events
+            except AttributeError:
+                logger.debug('no events found')
+                events = None
+        
         if isinstance(events, tabular.TabularBase):
             events = events.to_recarray()
 
@@ -160,6 +190,11 @@ class Pipelineify(ModuleBase):
 
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+            
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.addColumn('nPhotonsr', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
 
         mapped_ds.mdh = mdh
 
@@ -829,4 +864,3 @@ class AutocorrelationDriftCorrection(ModuleBase):
             pass
         
         namespace[self.outputName] = out
-
