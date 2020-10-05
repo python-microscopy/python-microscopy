@@ -805,20 +805,7 @@ class Pipeline:
                 self.filterKeys['fitError_dy'] = (0,10)
 
         #self._get_dye_ratios_from_metadata()
-
-        # Retrieve or estimate image bounds
-        if False:  # 'imgBounds' in kwargs.keys(): 
-            # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
-            # during real-time localization, to force image bounds to match raw data, but also potentially useful
-            # for other scenarios where metadata is not fully present.
-             self.imageBounds = kwargs['imgBounds']
-        elif ('scanx' not in ds.keys() or 'scany' not in ds.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
-            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
-        else:
-            self.imageBounds = ImageBounds.estimateFromSource(ds)
-
-        
-        
+               
         colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
         #we keep a copy of this so that the colour panel can find it.
         self.recipe.add_module(colour_mapper)
@@ -826,6 +813,17 @@ class Pipeline:
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+
+        # Retrieve or estimate image bounds
+        if False:  # 'imgBounds' in kwargs.keys():
+            # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
+            # during real-time localization, to force image bounds to match raw data, but also potentially useful
+            # for other scenarios where metadata is not fully present.
+            self.imageBounds = kwargs['imgBounds']
+        elif ('scanx' not in self.selectedDataSource.keys() or 'scany' not in self.selectedDataSource.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
+        else:
+            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         
         #self._process_colour()
         
