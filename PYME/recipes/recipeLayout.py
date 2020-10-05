@@ -194,7 +194,7 @@ def layout_vertical(dg, rdg):
             for child in sorted(children):
                 _descend(child, dg, rdg)
         else:
-            for child in sorted(children):
+            for child in sorted(children, key=lambda x: str(x)) :
                 if (not child in ordered) and (np.all([d in ordered for d in dg[child]])):
                     # are all the childs dependencies already in our list of nodes?
                     ordered.append(child)
