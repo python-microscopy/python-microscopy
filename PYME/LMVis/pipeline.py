@@ -743,8 +743,7 @@ class Pipeline:
             PixelSize:  Pixel size if not in nm
             
         """
-        from PYME.recipes.localisations import ProcessColour, Pipelineify
-        from PYME.recipes.tablefilters import FilterTable
+        
 
         #close any files we had open previously
         while len(self.filesToClose) > 0:
@@ -786,34 +785,43 @@ class Pipeline:
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
         self.dataSources['FitResults'] = ds
 
-        add_pipeline_variables = Pipelineify(self.recipe, 
-            inputFitResults='FitResults',
-            pixelSizeNM=1. if 'PixelSize' not in kwargs.keys() else kwargs['PixelSize'],
-            outputLocalizations='Localizations')
-        self.recipe.add_module(add_pipeline_variables)
-
-        # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
-        self.ev_mappings, self.eventCharts = _processEvents(ds, self.events, self.mdh)  # extract information from any events
-
-        #Fit module specific filter settings        
+        # Fit module specific filter settings
+        # TODO - put all the defaults here and use a local variable rather than in __init__ (self.filterKeys is largely an artifact of pre-recipe based pipeline)
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
             if fitModule == 'SplitterShiftEstFR':
-                self.filterKeys['fitError_dx'] = (0,10)
-                self.filterKeys['fitError_dy'] = (0,10)
+                self.filterKeys['fitError_dx'] = (0, 10)
+                self.filterKeys['fitError_dy'] = (0, 10)
 
-        #self._get_dye_ratios_from_metadata()
-               
-        colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
-        #we keep a copy of this so that the colour panel can find it.
-        self.recipe.add_module(colour_mapper)
-        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds.keys()}))
+        if clobber_recipe:
+            from PYME.recipes.localisations import ProcessColour, Pipelineify
+            from PYME.recipes.tablefilters import FilterTable
+            
+            add_pipeline_variables = Pipelineify(self.recipe,
+                inputFitResults='FitResults',
+                pixelSizeNM=kwargs.get('PixelSize', 1.),
+                outputLocalizations='Localizations')
+            self.recipe.add_module(add_pipeline_variables)
+          
+            #self._get_dye_ratios_from_metadata()
+                   
+            colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+            self.recipe.add_module(colour_mapper)
+            self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds.keys()}))
+        else:
+            logger.warn('Opening file without clobbering recipe, filter and ratiometric colour settings might not be handled properly')
+            # FIXME - should we update filter keys and/or make the filter more robust
+            # FIXME - do we need to do anything about colour settings?
+        
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
 
+        # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
+        self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
+                                                            self.mdh)  # extract information from any events
         # Retrieve or estimate image bounds
         if False:  # 'imgBounds' in kwargs.keys():
             # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
