@@ -18,17 +18,30 @@ strategy:
       #Python37:
       #  python.version: '3.7'
 
+variables:
+  PIP_CACHE_DIR: $(Pipeline.Workspace)/.pip
+
 steps:
 - task: UsePythonVersion@0
   inputs:
     versionSpec: '$(python.version)'
   displayName: 'Use Python $(python.version)'
+  
+- task: Cache@2
+  inputs:
+    key: 'python | "$(Agent.OS)" | requirements.txt'
+    restoreKeys: | 
+      python | "$(Agent.OS)"
+      python
+    path: $(PIP_CACHE_DIR)
+  displayName: Cache pip packages
 
 - script: |
     python -m pip install --upgrade pip
     pip install -r test_requirements.txt
     pip install git+https://github.com/olivierverdier/dispatch.git
     pip install git+https://github.com/python-microscopy/pymecompress
+    pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html flake8 diff-cover
   displayName: 'Install dependencies'
 
 - script: |
@@ -36,7 +49,6 @@ steps:
   displayName: 'build'
 
 - script: |
-    pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html flake8 diff-cover
     cd tests
     pytest -v --html=report.html . --cov ../PYME --cov-report xml
   displayName: 'pytest'
