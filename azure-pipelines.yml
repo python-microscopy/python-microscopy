@@ -55,6 +55,10 @@ steps:
   
 - script: |
     diff-cover tests/coverage.xml
-    diff-quality --violations=flake8
   condition: succeededOrFailed()
   displayName: 'diff-cover'
+
+- script: |
+    diff-quality --violations=flake8
+  condition: succeededOrFailed()
+  displayName: 'diff-quality'
