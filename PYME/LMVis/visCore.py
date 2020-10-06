@@ -310,7 +310,7 @@ class VisGUICore(object):
             pass
 
         if not subMenu:
-            self.AddMenuItem('Help', "&About",)
+            self.AddMenuItem('Help', "&About", self.OnAbout)
             
     def create_tool_bar(self, parent):
         from .displayPane import DisplayPaneHorizontal
