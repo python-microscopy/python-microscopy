@@ -217,7 +217,7 @@ class piezo_e816T(PiezoBase):
         # self.velocity = np.array([self.maxvelocity, self.maxvelocity])
 
         # self.targetPosition = np.array([200.])
-        self.targetPosition = np.array([(maxtravel / 2.0) + self.osen])
+        self.targetPosition = np.array([(maxtravel / 2.0)])
         # self.targetVelocity = self.velocity.copy()
 
         self.lastTargetPosition = self.position.copy()
