@@ -58,7 +58,7 @@ def run_template(request):
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
 
 
-    recipe_text = unifiedIO.read(recipeURI)
+    recipe_text = unifiedIO.read(recipeURI).decode()
     recipe = ModuleCollection.fromYAML(recipe_text)
     
     for file_input in recipe.file_inputs:
