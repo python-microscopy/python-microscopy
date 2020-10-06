@@ -933,7 +933,7 @@ class ModuleCollection(HasTraits):
             # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
             # > 3D data?
 
-            if t.name == 'Events':
+            if getattr(t, 'name', None) == 'Events':
                 # NB: This assumes we've handled this in the special case earlier, and blocks anything in a 3rd party
                 # HDF events table from being seen.
                 # TODO - do we really want to have so much special case stuff in our generic hdf handling? Are we sure
