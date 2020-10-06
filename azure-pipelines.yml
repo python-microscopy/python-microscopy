@@ -36,7 +36,11 @@ steps:
   displayName: 'build'
 
 - script: |
-    pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html
+    pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html flake8 diff-cover
     cd tests
     pytest -v --html=report.html . --cov ../PYME --cov-report xml
+    exit_code = $?
+    diff-cover coverage.xml
+    diff-quality --violations=flake8
+    exit $exit_code
   displayName: 'pytest'
