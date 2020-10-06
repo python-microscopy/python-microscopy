@@ -54,6 +54,10 @@ steps:
   displayName: 'pytest'
   
 - script: |
+    bash <(curl -s https://codecov.io/bash)
+  displayName: 'codecov upload'
+  
+- script: |
     diff-cover tests/coverage.xml
   condition: succeededOrFailed()
   displayName: 'diff-cover'
