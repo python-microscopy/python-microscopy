@@ -35,7 +35,7 @@ def template_fill(template, **kwargs):
     s = template
 
     for key, value in kwargs.items():
-        s = s.replace('{{%s}}' % key, '%s' % value)
+        s = s.replace('{{%s}}' % key, str(value))
     
     return s
 
@@ -66,16 +66,15 @@ class Rater(object):
             raise StopIteration
         
         #logger.debug('taskID: %s, taskInputs: %s' % (taskID, self.inputs.get(taskID)))
-        
-        task_inputs = self.inputs.get(taskID)
-        if not task_inputs is None:
-            task_inputs = json.dumps(task_inputs)
-        
-        filled_template = template_fill(self.template, taskID=taskID, taskInputs=task_inputs)
+        filled_template = template_fill(self.template, taskID=taskID)
         
         #logger.debug('filled template: %s' % filled_template)
         
         task = json.loads(filled_template)
+        # if we're relying on taskInputs / inputsByTask, take care of that here
+        task_inputs = self.inputs.get(taskID)
+        if task_inputs is not None:
+            task['inputs'] = task_inputs
         
         cost = 1.0
         try:
@@ -263,11 +262,14 @@ class NodeServer(object):
                     for taskID in bid['taskIDs']:
                         
                         logging.debug('taskID: ' + repr(taskID) )
-                        taskInputs = json.dumps(rule_inputs.get(u'%s' % taskID, {}))
-                        logging.debug('taskInputs:' + repr(taskInputs))
-                        
-                        self._tasks.put(json.loads(template_fill(template,taskID=taskID, ruleID=ruleID,
-                                                                 taskInputs=taskInputs)))
+                        task_inputs = rule_inputs.get(u'%s' % taskID, None)
+                        logging.debug('task_inputs:' + repr(task_inputs))
+                        task = json.loads(template_fill(template, taskID=taskID, 
+                                                        ruleID=ruleID))
+                        if task_inputs != None:
+                            task['inputs'] = task_inputs
+
+                        self._tasks.put(task)
                
                 
             except requests.Timeout:
