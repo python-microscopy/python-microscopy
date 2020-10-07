@@ -2,14 +2,20 @@
 from PYME.Analysis.points import coordinate_tools
 import numpy as np
 
-# Make a shell for coordinate testing
-from skimage import morphology
-r = 49
-ball = morphology.ball(r, dtype=int)
-SPHERICAL_SHELL = morphology.binary_dilation(ball) - ball
-X, Y, Z = np.where(SPHERICAL_SHELL)
-X_C, Y_C, Z_C = X - r, Y - r, Z - r
-R = np.sqrt(X_C**2 + Y_C**2 + Z_C**2)
+
+def setup_module():
+    global X_C, Y_C, Z_C, R
+    # make skimage import in setup function so as not to kill complete test suite on dodgy skimage
+    # FIXME - remove skimage dependency completely
+    
+    # Make a shell for coordinate testing
+    from skimage import morphology
+    r = 49
+    ball = morphology.ball(r, dtype=int)
+    SPHERICAL_SHELL = morphology.binary_dilation(ball) - ball
+    X, Y, Z = np.where(SPHERICAL_SHELL)
+    X_C, Y_C, Z_C = X - r, Y - r, Z - r
+    R = np.sqrt(X_C**2 + Y_C**2 + Z_C**2)
 
 def test_cart2sph():
     azi, zen, r = coordinate_tools.cart2sph(X_C, Y_C, Z_C)
