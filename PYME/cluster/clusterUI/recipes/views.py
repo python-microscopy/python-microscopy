@@ -49,26 +49,25 @@ def run_template(request):
     from PYME.recipes.modules import ModuleCollection
     
     
-    if config.get('PYMERuleserver-use', True):
-        from PYME.cluster.HTTPRulePusher import RecipePusher
-    else:
-        from PYME.cluster.HTTPTaskPusher import RecipePusher
+    from PYME.cluster._rules import RecipeRule
         
     recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').lstrip('/'))
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
 
-
-    recipe_text = unifiedIO.read(recipeURI)
+    recipe_text = unifiedIO.read(recipeURI).decode('utf-8')
+    
     recipe = ModuleCollection.fromYAML(recipe_text)
     
+
+    # handle templated userfile inputs - these will be loaded by e.g. unifiedIO later
     for file_input in recipe.file_inputs:
         input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).lstrip('/'))
         recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
-
-    pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
     
-    fileNames = request.POST.getlist('files', [])
-    pusher.fileTasksForInputs(input=fileNames)
+    inputs = [dict(input=f) for f in request.POST.getlist('files', [])]
+    
+    rule = RecipeRule(recipe_text, inputs, output_directory)
+    rule.post()
 
     return HttpResponseRedirect('/status/queues/')
 
