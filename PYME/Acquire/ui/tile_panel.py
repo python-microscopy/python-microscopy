@@ -142,7 +142,7 @@ class CircularTilePanel(TilePanel):
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer2.Add(wx.StaticText(self, -1, 'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        hsizer2.Add(wx.StaticText(self, -1, u'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
         self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
         hsizer2.Add(self.radius_um, 0, wx.ALL, 2)
         vsizer.Add(hsizer2)
@@ -211,7 +211,7 @@ class MultiwellTilePanel(TilePanel):
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Well Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, u'Well Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
         self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
         hsizer.Add(self.radius_um, 0, wx.ALL, 2)
         vsizer.Add(hsizer)

@@ -54,7 +54,9 @@ steps:
   displayName: 'pytest'
   
 - script: |
+    cd tests
     bash <(curl -s https://codecov.io/bash)
+  condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
   displayName: 'codecov upload'
   
 - script: |

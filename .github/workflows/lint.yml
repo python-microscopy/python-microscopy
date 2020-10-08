@@ -1,0 +1,20 @@
+name: Lint
+
+on: [pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: pip install flake8 lintly
+    - name: Lint with flake8
+      run: |
+        git diff master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
+      env:
+        LINTLY_API_KEY: ${{ secrets.GITHUB_TOKEN }}

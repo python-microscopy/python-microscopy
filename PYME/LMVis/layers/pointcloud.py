@@ -281,7 +281,7 @@ class PointCloudRenderLayer(EngineLayer):
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
                      Group(Item('cmap', label='LUT'),
                            Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']", editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
-                           Item('point_size', label='Point\u00A0size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
+                           Item('point_size', label=u'Point\u00A0size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):
