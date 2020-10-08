@@ -1,8 +1,12 @@
-#NB - this is the testing requirements - it omits some packages which are not covered by the tests
+# NB - this is the testing requirements - it omits some packages which are not covered by the tests
+# Some packages are pinned to old versions to be sure that the code runs against the old package versions (assuming forwards compatibility
+# will also let us use more recent packages). One of the main drivers for testing so far back is to be able to roll bugfixes
+# out rapidly to users where completely installing from scratch is not an option.
+# TODO - also test against bleeding edge (but only after we have current tests working reliably)
 
 numpy==1.14.*
 scipy
-matplotlib
+matplotlib<=3.2.* # matplotlib >=3.3.0 requires numpy >=1.15 (and pip isn't sensible enough to recognise this)
 #wxpython
 tables #<=3.4.2
 #pyopengl
