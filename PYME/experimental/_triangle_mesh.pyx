@@ -186,7 +186,7 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
 
     
 cdef extern from "triangle_mesh_utils.c":
-    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_d *vertices, face_d *faces, signed int n_idxs)
+    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
     
     void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
     void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
@@ -717,7 +717,7 @@ cdef class TriangleMesh(TrianglesBase):
         #triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
         cdef np.int32_t [:] idxs = f_idxs
         
-        _update_face_normals(&(idxs[0]), self._chalfedges, self._cvertices, self._cfaces, idxs.shape[0])
+        _update_face_normals(&(idxs[0]), self._chalfedges, <vertex_t *> self._cvertices, <face_t *> self._cfaces, idxs.shape[0])
 
     def _update_vertex_neighbors(self, v_idxs):
         """
