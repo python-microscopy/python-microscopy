@@ -25,7 +25,15 @@ from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
-from PYME.LMVis.triBlobs import BlobSettings
+
+try:
+    # make sure pipeline works when wx is not avalable
+    # TODO - move blob stuff into a recipe module and remove from pipeline.
+    from PYME.LMVis.triBlobs import BlobSettings
+except ImportError:
+    # create a dummy class
+    class BlobSettings:
+        pass
 
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
