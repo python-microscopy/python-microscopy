@@ -38,7 +38,7 @@ class ColumnMappingDialog(wx.Dialog):
                             't':'time [frames]',
                             'sig':'std. deviation of Gaussian [nm]',
                             'error_x':'fit error in x direction [nm]'}
-    niceVariables = {'error_y':'fit error in y direction [nm]'}
+    niceVariables = {'z':'z position [nm]', 'error_y':'fit error in y direction [nm]','error_z':'fit error in z direction [nm]'}
     fileType = 'column source'  # string to indicate file type in user dialog box
 
     def __init__(self, parent, fileName):
@@ -64,12 +64,25 @@ class ColumnMappingDialog(wx.Dialog):
         self.stRecommendedNotPresent = wx.StaticText(self, -1, 'Recommended variables not yet defined:\n')
         sizer2.Add(self.stRecommendedNotPresent, 1, wx.ALL, 5)
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
-        
+
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer2.Add(wx.StaticText(self, -1, 'Pixel size [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        self.rbLocsInNM = wx.RadioButton(self, -1, "x and y positions are in nm", style=wx.RB_GROUP)
+        self.rbLocsInNM.SetValue(True)
+        sizer1.Add(self.rbLocsInNM, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.EXPAND, 5)
+        self.rbLocsInPixels = wx.RadioButton(self, -1, "x and y positions are in pixels")
+        sizer1.Add(self.rbLocsInPixels, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.EXPAND, 5)
+        
+        
+        self.stPixelSize = wx.StaticText(self, -1, 'Pixel size [nm]:')
+        self.stPixelSize.Disable()
+        sizer2.Add(self.stPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.tPixelSize = wx.TextCtrl(self, -1, '1.0')
+        self.tPixelSize.Disable()
         sizer2.Add(self.tPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
+
+        self.rbLocsInPixels.Bind(wx.EVT_RADIOBUTTON, self.on_toggle_loc_units)
+        self.rbLocsInNM.Bind(wx.EVT_RADIOBUTTON, self.on_toggle_loc_units)
         
         btSizer = wx.StdDialogButtonSizer()
 
@@ -91,6 +104,16 @@ class ColumnMappingDialog(wx.Dialog):
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
+        
+    def on_toggle_loc_units(self, e):
+        #print('rbLocInPix:' + repr(self.rbLocsInPixels.GetValue()))
+        pix = self.rbLocsInPixels.GetValue()
+        self.tPixelSize.Enable(pix)
+        self.stPixelSize.Enable(pix)
+        
+        if not pix:
+            # reset pixel size to 1
+            self.tPixelSize.SetValue('1.0')
 
     def _parse_header(self, file):
         raise NotImplementedError('Implemented in a derived class.')
