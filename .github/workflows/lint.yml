@@ -1,6 +1,6 @@
 name: Lint
 
-on: [pull_request]
+on: [pull_request_target]
 
 jobs:
   lint:
@@ -18,4 +18,4 @@ jobs:
         git fetch origin master:master
         git diff master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
       env:
-        LINTLY_API_KEY: ${{ secrets.LINTLY_TOKEN }}
+        LINTLY_API_KEY: ${{ secrets.GITHUB_TOKEN }}
