@@ -73,7 +73,7 @@ class SupertileDataSource(BaseDataSource):
         
         p = create_pyramid_from_dataset(tile_base, TemporaryDirectory(), tile_size)
         
-        return DataSource(p, level, stride, overlap)
+        return SupertileDataSource(p, level, stride, overlap)
     
     @staticmethod
     def from_filename(filename):
@@ -90,7 +90,7 @@ class SupertileDataSource(BaseDataSource):
         # TODO - make the ImagePyramid read it's own metadata
         p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
         
-        return DataSource(p, level, stride, overlap)
+        return SupertileDataSource(p, level, stride, overlap)
 
     @property
     def tile_coords(self):
