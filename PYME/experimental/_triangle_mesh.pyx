@@ -259,6 +259,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef object _H
     cdef object _K
+    cdef public object smooth_curvature
     
 
     def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
@@ -351,6 +352,7 @@ cdef class TriangleMesh(TrianglesBase):
         # Curvatures
         self._H = None
         self._K = None
+        self.smooth_curvature = False
 
         # Set fix_boundary, etc.
         for key, value in kwargs.items():
@@ -877,9 +879,10 @@ cdef class TriangleMesh(TrianglesBase):
             k_2 = 3.*l2 - l1 #e[1] - e[0]
             self._H[iv] = 0.5*(k_1 + k_2)
             self._K[iv] = k_1*k_2
-            
-        #self._H = self.smooth_per_vertex_data(self._H)
-        #self._K = self.smooth_per_vertex_data(self._K)
+
+        if self.smooth_curvature:    
+            self._H = self.smooth_per_vertex_data(self._H)
+            self._K = self.smooth_per_vertex_data(self._K)
         
     def smooth_per_vertex_data(self, data):
         # replace a vertex value with the average of that value and it's neighbours. TODO - add some form of weighting
