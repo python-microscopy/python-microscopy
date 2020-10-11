@@ -73,12 +73,11 @@ class SupertileDataSource(BaseDataSource):
         
         p = create_pyramid_from_dataset(tile_base, TemporaryDirectory(), tile_size)
         
-        return DataSource(p, level, stride, overlap)
+        return SupertileDataSource(p, level, stride, overlap)
     
     @staticmethod
     def from_filename(filename):
         from PYME.Analysis.tile_pyramid import ImagePyramid
-        from tempfile import TemporaryDirectory
         
         tile_base, query = filename.split('?')
         qp = parse_qs(query)
@@ -86,11 +85,11 @@ class SupertileDataSource(BaseDataSource):
         stride = int(qp.get('stride', [3])[0])
         overlap = int(qp.get('overlap', [1])[0])
         
-        mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
+        mdh = MetaDataHandler.load_json(os.path.join(tile_base, 'metadata.json'))  # TODO - does this need to be posixpath?
         # TODO - make the ImagePyramid read it's own metadata
         p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
         
-        return DataSource(p, level, stride, overlap)
+        return SupertileDataSource(p, level, stride, overlap)
 
     @property
     def tile_coords(self):
