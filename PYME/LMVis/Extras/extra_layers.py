@@ -290,7 +290,7 @@ def gen_isosurface_from_tesselation(visFr):
     
     surf_count = 0
     oc_name = 'delaunay%d' % surf_count
-    surf_name, surf_count = visFr.pipeline.new_ds_name('surf')
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
     
     recipe = visFr.pipeline.recipe
     mt = MarchingTetrahedra(recipe, invalidate_parent=False, input=oc_name, output=surf_name)
