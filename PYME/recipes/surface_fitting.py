@@ -176,11 +176,15 @@ class MarchingTetrahedra(ModuleBase):
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
         from PYME.experimental import marching_tetrahedra
-        from PYME.experimental import triangle_mesh
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+        from PYME.experimental import delaunay_utils
         import time
 
-        vertices = namespace[self.input].T.points[namespace[self.input].T.simplices]
-        values = namespace[self.input].dn[namespace[self.input].T.simplices]
+        simplices = namespace[self.input].T.simplices
+        # ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
+        ord_simplices = simplices
+        vertices = namespace[self.input].T.points[ord_simplices]
+        values = namespace[self.input].dn[ord_simplices]
         
         
         mt = marching_tetrahedra.MarchingTetrahedra(vertices, values, self.threshold_density)
