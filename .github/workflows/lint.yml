@@ -17,7 +17,6 @@ jobs:
       run: pip install flake8 lintly
     - name: Lint with flake8
       run: |
-        git fetch origin master
-        git diff ${{ github.event.pull_request.head.sha }} master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
+        git diff ${{ github.event.pull_request.head.sha }}..origin/master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
       env:
         LINTLY_API_KEY: ${{ secrets.GITHUB_TOKEN }}
