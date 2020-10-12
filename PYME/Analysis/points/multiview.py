@@ -406,7 +406,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     return datasource
 
 def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
-    from PYME.IO.tabular import CachingResultsFilter, MappingFilter
+    from PYME.IO.tabular import DictSource
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
@@ -427,7 +427,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
-    return MappingFilter(grouped)
+    return DictSource(grouped)
 
 
 
