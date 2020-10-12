@@ -43,15 +43,25 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=No
     Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
     DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
 
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weights_by_key: dictionary of weights.
-
-    Returns:
-        fres: output dictionary containing the coalesced results
-
+    Parameters
+    ----------
+    inD : dict
+        input dictionary containing fit results
+    assigned : ndarray
+        clump assignments to be coalesced. Cluster assignment index can start at
+        0 or 1 (the latter following PYME cluster labeling convention), however
+        any index present will be coalesced (including the 0 cluster, if 
+        present).
+    keys : list 
+        elements are strings corresponding to keys to be copied from the input to output dictionaries
+    weights_by_key : dict
+        maps weighting keys to coalescing weights or coalescing style (mean, 
+        min, sum).
+    
+    Returns
+    -------
+    fres: dict
+        coalesced results
     """
     from PYME.Analysis.points.DeClump import deClump
 
