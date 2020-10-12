@@ -40,7 +40,7 @@ class MultifitBlobs(ModuleBase):
         for i in range(img.data.shape[2]):
             md = MetaDataHandler.NestedClassMDHandler(mdh)
             md['tIndex'] = i
-            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
+            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], md, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
             res.append(tabular.FitResultsSource(ff.FindAndFit(self.threshold)))
             
