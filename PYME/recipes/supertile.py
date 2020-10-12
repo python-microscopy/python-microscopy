@@ -110,7 +110,7 @@ class Supertile(ModuleBase):
     output_name = Output('supertile')
 
     def execute(self, namespace):
-        from PYME.IO.DataSources.SupertileDatasource import DataSource
+        from PYME.IO.DataSources.SupertileDatasource import SupertileDataSource
         from PYME.IO.image import ImageStack
         from PYME.Analysis import tile_pyramid
         from tempfile import TemporaryDirectory
@@ -123,7 +123,7 @@ class Supertile(ModuleBase):
                                       stack.mdh, 
                                       pyramid_tile_size=self.base_tile_size)
             
-        datasource = DataSource(p, self.level, self.stride, self.overlap)
+        datasource = SupertileDataSource(p, self.level, self.stride, self.overlap)
         
         namespace[self.output_name] = ImageStack(data=datasource, 
                                                  mdh=datasource.mdh, 

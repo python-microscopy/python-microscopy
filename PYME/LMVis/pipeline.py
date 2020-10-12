@@ -728,7 +728,8 @@ class Pipeline:
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
         
-        ds.mdh = mdh
+        # make sure mdh is writable (file-based might not be)
+        ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
             # only set the .events attribute if we actually have events.
             ds.events = events
