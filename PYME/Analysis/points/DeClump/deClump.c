@@ -489,7 +489,8 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
 
     int nPts = 0;
     int nClumps = 0;
-    int currentClump = -1;
+    int currentClump = 0;
+    int clump_0 = 0;
 
     int i=0;
     //int j=0;
@@ -575,22 +576,24 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
         outSig[i] = -1e4;
     }
     */
-
-
+    clump_0 = clumpIDs[0];
+    currentClump = clump_0;
+    weight_sum = 0;
+    var_sum = 0;
     //j = 0;
     for (i=0; i < nPts; i++)
     {
         if (currentClump != clumpIDs[i]){
             //We have moved on to the next clump
-            if (currentClump >= 0)
+            if (currentClump - clump_0 >= 0)  // FIXME - do we allow negative clumpIDs to get here?
             {
                 if (weight_sum == 0){
-                    outVar[currentClump] = 0;
-                    outSig[currentClump] = -1e4;
+                    outVar[currentClump - clump_0] = 0;
+                    outSig[currentClump - clump_0] = -1e4;
                 } else {
                     iws = 1.0/weight_sum;
-                    outVar[currentClump] = var_sum*iws;
-                    outSig[currentClump] = sqrtf(iws);
+                    outVar[currentClump - clump_0] = var_sum*iws;
+                    outSig[currentClump - clump_0] = sqrtf(iws);
                 }
             }
 
@@ -605,15 +608,15 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
         var_sum += w*vars[i];
     }
 
-    if (currentClump >= 0)
+    if (currentClump - clump_0 >= 0)
     {
         if (weight_sum == 0){
-            outVar[currentClump] = 0;
-            outSig[currentClump] = -1e4;
+            outVar[currentClump - clump_0] = 0;
+            outSig[currentClump - clump_0] = -1e4;
         } else {
             iws = 1.0/weight_sum;
-            outVar[currentClump] = var_sum*iws;
-            outSig[currentClump] = sqrtf(iws);
+            outVar[currentClump - clump_0] = var_sum*iws;
+            outSig[currentClump - clump_0] = sqrtf(iws);
         }
     }
 
@@ -734,9 +737,9 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
     //j = 0;
     for (i=0; i < nPts; i++)
     {
-        if (currentClump != clumpIDs[i]){  // FIXME - do we allow negative clumpIDs to get here?
+        if (currentClump != clumpIDs[i]){
             //We have moved on to the next clump
-            if (currentClump - clump_0 >= 0)
+            if (currentClump - clump_0 >= 0)  // FIXME - do we allow negative clumpIDs to get here?
             {
                 iws = 1.0/weight_sum;
                 outVar[currentClump - clump_0] = var_sum*iws;
@@ -800,7 +803,8 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
 
     int nPts = 0;
     int nClumps = 0;
-    int currentClump = -1;
+    int currentClump = 0;
+    int clump_0 = 0;
 
     int i=0;
     //int j=0;
@@ -863,16 +867,17 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
         outSig[i] = -1e4;
     }
     */
-
-
+    clump_0 = clumpIDs[0];
+    currentClump = clump_0;
+    var_min = 1e9;
     //j = 0;
     for (i=0; i < nPts; i++)
     {
         if (currentClump != clumpIDs[i]){
             //We have moved on to the next clump
-            if (currentClump >= 0)
+            if (currentClump - clump_0 >= 0) // FIXME - do we allow negative clumpIDs to get here?
             {
-                outVar[currentClump] = var_min;
+                outVar[currentClump - clump_0] = var_min;
             }
 
             var_min = 1e9;
@@ -883,9 +888,9 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
         var_min = MIN(var_min, vars[i]);
     }
 
-    if (currentClump >= 0)
+    if (currentClump - clump_0 >= 0)
     {
-        outVar[currentClump] = var_min;
+        outVar[currentClump - clump_0] = var_min;
     }
 
 
@@ -926,7 +931,8 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
 
     int nPts = 0;
     int nClumps = 0;
-    int currentClump = -1;
+    int currentClump = 0;
+    int clump_0 = 0;
 
     int i=0;
     //int j=0;
@@ -989,16 +995,17 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
         outSig[i] = -1e4;
     }
     */
-
-
+    clump_0 = clumpIDs[0];
+    currentClump = clump_0;
+    var_sum = 0;
     //j = 0;
     for (i=0; i < nPts; i++)
     {
         if (currentClump != clumpIDs[i]){
             //We have moved on to the next clump
-            if (currentClump >= 0)
+            if (currentClump - clump_0 >= 0) // FIXME - do we allow negative clumpIDs to get here?
             {
-                outVar[currentClump] = var_sum;
+                outVar[currentClump - clump_0] = var_sum;
             }
 
             var_sum = 0;
@@ -1009,9 +1016,9 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
         var_sum +=  vars[i];
     }
 
-    if (currentClump >= 0)
+    if (currentClump - clump_0 >= 0)
     {
-        outVar[currentClump] = var_sum;
+        outVar[currentClump - clump_0] = var_sum;
     }
 
 
