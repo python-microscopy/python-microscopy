@@ -36,7 +36,7 @@ def load_shiftmap(uri):
     return shift_map
 
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, 
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key,
                          discard_trivial=False):
     """
     Agregates clumps to a single event
@@ -46,10 +46,10 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key,
     inD : dict
         input dictionary containing fit results
     assigned : ndarray
-        clump assignments to be coalesced. Cluster assignment index can start at
-        0 or 1 (the latter following PYME cluster labeling convention), however
-        any index present will be coalesced (including the 0 cluster, if
-        present).
+        clump assignments to be coalesced. Cluster assignment index can start
+        at 0 or 1 (the latter following PYME cluster labeling convention),
+        however any index present will be coalesced (including the 0 cluster,
+        if present).
     keys : list
         elements are strings corresponding to keys to be copied from the input
         to output dictionaries
