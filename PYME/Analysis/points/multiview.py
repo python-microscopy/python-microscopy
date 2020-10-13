@@ -35,7 +35,7 @@ def load_shiftmap(uri):
 
     return shift_map
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):  # , notKosher=None):
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):
     """
     Agregates clumps to a single event
 
@@ -74,7 +74,7 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=Fa
     """
     from PYME.Analysis.points.DeClump import deClump
 
-    NClumps = int(np.max(assigned) + 1)  # len(np.unique(assigned))  #
+    NClumps = int(np.max(assigned) + 1)  # yes this is weird, but look at the C code
 
     clumped = {}
     
@@ -422,7 +422,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     return datasource
 
 def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
-    from PYME.IO.tabular import CachingResultsFilter, MappingFilter
+    from PYME.IO.tabular import DictSource
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
@@ -443,7 +443,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
-    return MappingFilter(grouped)
+    return DictSource(grouped)
 
 
 
