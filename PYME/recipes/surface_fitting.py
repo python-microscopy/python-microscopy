@@ -181,8 +181,8 @@ class MarchingTetrahedra(ModuleBase):
         import time
 
         simplices = namespace[self.input].T.simplices
-        # ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
-        ord_simplices = simplices
+        ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
+        # ord_simplices = simplices
         vertices = namespace[self.input].T.points[ord_simplices]
         values = namespace[self.input].dn[ord_simplices]
         

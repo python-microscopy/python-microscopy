@@ -16,11 +16,8 @@ import numpy as np
 #          \|/
 #           + 2
 
-
 INTERPOLATION_BITMASK = [1 << n for n in range(12)]
 TRI_BITMASK = INTERPOLATION_BITMASK[0:4]
-
-# TRI_CLASS = np.array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F])
 
 TRI_EDGES = np.array([
     [0,1],
@@ -33,20 +30,20 @@ TRI_EDGES = np.array([
 
 TRI_TRIANGLES = np.array([
     [-1, -1, -1, -1, -1, -1],
+    [3, 1, 5, -1, -1, -1],
+    [0, 3, 4, -1, -1, -1],
+    [1, 5, 4, 0, 1, 4],
+    [2, 4, 5, -1, -1, -1],
+    [3, 2, 4, 3, 1, 2],
+    [3, 2, 0, 3, 5, 2],
     [0, 1, 2, -1, -1, -1],
+    [2, 1, 0, -1, -1, -1],
+    [0, 2, 3, 2, 5, 3],
+    [4, 2, 3, 2, 1, 3],
+    [5, 4, 2, -1, -1, -1],
+    [1, 4, 5, 1, 0, 4],
     [0, 4, 3, -1, -1, -1],
-    [2, 1, 4, 4, 3, 1],
-    [1, 3, 5, -1, -1, -1],
-    [0, 5, 2, 0, 3, 5],
-    [0, 4, 5, 0, 1, 5],
-    [2, 5, 4, -1, -1, -1],
-    [2, 5, 4, -1, -1, -1],
-    [0, 4, 5, 0, 1, 5],
-    [0, 5, 2, 0, 3, 5],
-    [1, 3, 5, -1, -1, -1],
-    [2, 1, 4, 4, 3, 1],
-    [0, 4, 3, -1, -1, -1],
-    [0, 1, 2, -1, -1, -1],
+    [5, 1, 3, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1]
 ])
 
@@ -57,6 +54,7 @@ class MarchingTetrahedra(object):
     References
     ----------
         1. http://paulbourke.net/geometry/polygonise/
+        2. Jules Bloomenthal, An Implicit Surface Polygonizer, Graphics Gems IV, Paul Heckbert (editor), pages 324-349, Academic Press (Boston, Massachusetts), 1994
     """
 
     def __init__(self, vertices=None, values=None, isolevel=0):
@@ -79,7 +77,8 @@ class MarchingTetrahedra(object):
 
         # Are v0 and v1 the same vertex?
         # If so, choose v0 as the triangle vertex position.
-        idxs = (np.abs(v1_value - v0_value) < 1e-12)
+        eps = 1e-6
+        idxs = (np.abs(v1_value - v0_value) < eps) | (np.abs(v1_value - self._isolevel) < eps) | (np.abs(v0_value - self._isolevel) < eps)
         p[idxs, :] = v0[idxs, :]
 
         return p
