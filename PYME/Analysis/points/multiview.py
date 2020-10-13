@@ -64,7 +64,7 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=Fa
     clumped = {}
     
     if discard_trivial:
-        non_trivial = np.unique(assigned).astype('i')
+        non_trivial = np.unique(assigned[assigned >= 1]).astype('i')
 
     # loop through keys
     for rkey in keys:
