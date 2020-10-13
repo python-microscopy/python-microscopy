@@ -427,7 +427,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
-    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
     return MappingFilter(grouped)
 
 
