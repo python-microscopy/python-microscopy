@@ -81,7 +81,7 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=Fa
         else:
             # if weights is an array, take weighted average
             var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
-            clumped[weights] = errVec
+            clumped[weights] = errVec[non_trivial] if discard_trivial else errVec
 
         if discard_trivial:
             clumped[rkey] = var[non_trivial]
