@@ -35,7 +35,7 @@ def load_shiftmap(uri):
 
     return shift_map
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):  # , notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -48,6 +48,10 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=No
         assigned: clump assignments to be coalesced
         keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
         weights_by_key: dictionary of weights.
+        discard_trivial : Bool
+            by default, the output of aggregation/coalescing is indexable by the original clump ID and contains entries
+            for the unassigned (0) clump and any other clumps which might have been lost to filtering. Setting discard_trial
+            to true returns only those clumps for which idx >=1 and which contain at least 1 point.
 
     Returns:
         fres: output dictionary containing the coalesced results
@@ -58,6 +62,9 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=No
     NClumps = int(np.max(assigned) + 1)  # len(np.unique(assigned))  #
 
     clumped = {}
+    
+    if discard_trivial:
+        non_trivial = np.unique(assigned[assigned >= 1]).astype('i')
 
     # loop through keys
     for rkey in keys:
@@ -76,7 +83,11 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=No
             var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
             clumped[weights] = errVec
 
-        clumped[rkey] = var
+        if discard_trivial:
+            clumped[rkey] = var[non_trivial]
+        else:
+            #default
+            clumped[rkey] = var
 
     return clumped
 
@@ -416,7 +427,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
-    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
     return MappingFilter(grouped)
 
 
