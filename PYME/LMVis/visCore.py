@@ -431,7 +431,7 @@ class VisGUICore(object):
     def generate_test_object_layer(self, obj_type):
         vx, vy, vz = 0.1, 0.1, 0.1  # um
         density = 1.0/(vx*vy*vz)
-        if obj_type == '' or obj_type == 'sphere':
+        if obj_type == 'sphere':
             # Generate a Gaussian point cloud to approximate a sphere
             sigma_x, sigma_y, sigma_z = 1.5, 1.5, 1.5  # um
             sigma = sigma_x*sigma_y*sigma_z
