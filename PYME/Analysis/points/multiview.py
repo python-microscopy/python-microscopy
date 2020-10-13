@@ -38,23 +38,38 @@ def load_shiftmap(uri):
 def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):  # , notKosher=None):
     """
     Agregates clumps to a single event
-    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object.
-    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
-    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
 
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weights_by_key: dictionary of weights.
-        discard_trivial : Bool
-            by default, the output of aggregation/coalescing is indexable by the original clump ID and contains entries
-            for the unassigned (0) clump and any other clumps which might have been lost to filtering. Setting discard_trial
-            to true returns only those clumps for which idx >=1 and which contain at least 1 point.
-
-    Returns:
-        fres: output dictionary containing the coalesced results
+    Parameters
+    ----------
+    inD : dict
+        input dictionary containing fit results
+    assigned : ndarray
+        clump assignments to be coalesced. Cluster assignment index can start at
+        0 or 1 (the latter following PYME cluster labeling convention), however
+        any index present will be coalesced (including the 0 cluster, if 
+        present).
+    keys : list 
+        elements are strings corresponding to keys to be copied from the input 
+        to output dictionaries
+    weights_by_key : dict
+        maps weighting keys to coalescing weights or coalescing style (mean, 
+        min, sum).
+    discard_trivial : bool
+        by default, the output of aggregation/coalescing is indexable by the 
+        original clump ID and contains entries for the unassigned (0) clump 
+        and any other clumps which might have been lost to filtering. Setting 
+        discard_trial to true returns only those clumps for which  idx >=1 and 
+        which contain at least 1 point.
+    
+    Returns
+    -------
+    fres: dict
+        coalesced results
+    
+    Notes
+    -----
+    This will evaluate the lazy pipeline events and add them into the dict as 
+    an array, not a code object.
 
     """
     from PYME.Analysis.points.DeClump import deClump
