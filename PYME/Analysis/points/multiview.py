@@ -35,7 +35,9 @@ def load_shiftmap(uri):
 
     return shift_map
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):
+
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, 
+                         discard_trivial=False):
     """
     Agregates clumps to a single event
 
@@ -46,29 +48,29 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=Fa
     assigned : ndarray
         clump assignments to be coalesced. Cluster assignment index can start at
         0 or 1 (the latter following PYME cluster labeling convention), however
-        any index present will be coalesced (including the 0 cluster, if 
+        any index present will be coalesced (including the 0 cluster, if
         present).
-    keys : list 
-        elements are strings corresponding to keys to be copied from the input 
+    keys : list
+        elements are strings corresponding to keys to be copied from the input
         to output dictionaries
     weights_by_key : dict
-        maps weighting keys to coalescing weights or coalescing style (mean, 
+        maps weighting keys to coalescing weights or coalescing style (mean,
         min, sum).
     discard_trivial : bool
-        by default, the output of aggregation/coalescing is indexable by the 
-        original clump ID and contains entries for the unassigned (0) clump 
-        and any other clumps which might have been lost to filtering. Setting 
-        discard_trial to true returns only those clumps for which  idx >=1 and 
+        by default, the output of aggregation/coalescing is indexable by the
+        original clump ID and contains entries for the unassigned (0) clump
+        and any other clumps which might have been lost to filtering. Setting
+        discard_trial to true returns only those clumps for which  idx >=1 and
         which contain at least 1 point.
-    
+
     Returns
     -------
     fres: dict
         coalesced results
-    
+
     Notes
     -----
-    This will evaluate the lazy pipeline events and add them into the dict as 
+    This will evaluate the lazy pipeline events and add them into the dict as
     an array, not a code object.
 
     """
