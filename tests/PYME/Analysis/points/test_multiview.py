@@ -14,8 +14,10 @@ def test_merge_clumps():
         'A': np.arange(float(n)),
         # error_y of 0 works, but do we want divide by zero warnings in test?
         'error_y': np.arange(1, float(n + 1)),
-        'cluster_id': np.concatenate([np.zeros(half_n, int), 
-                                      np.ones(half_n, int)])
+        # PYME cluster convention: 0 is unclustered, and we dodge it in 
+        # multiview
+        'cluster_id': np.concatenate([np.ones(half_n, int), 
+                                      2 * np.ones(half_n, int)])
     })
 
     merged = multiview.merge_clumps(unmerged, 0, 'cluster_id')
