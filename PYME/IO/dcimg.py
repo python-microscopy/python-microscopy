@@ -92,7 +92,7 @@ class DCIMGFile(object):
         # so this might be an offset. That said, it could also be a version number or pretty much anything.
         # We have encountered two cases format_version = 0x7 or 0x1000000, which have differences in both session_head and frame data format
         # Could this be some form of "flags" register?
-        info['format_version'] = int(np.frombuffer(header[8:12], 'uint32'))
+        info['format_version'] = int(np.fromstring(header[8:12], 'uint32'))
 
         if not (info['format_version'] in [0x7, 0x1000000]):
             # in example data this is always 7. Warn if this is not the case, as further assumptions might be invalid
@@ -102,35 +102,35 @@ class DCIMGFile(object):
         # support multiple "sessions", each of which contains a series of frames. I have no multi-session data to test on, so cannot
         # ascertain exactly what this value means. Reasonable candidates are either the number of sessions, or the current/first session ID
 
-        info['num_sessions'] = int(np.frombuffer(header[32:36], 'uint32'))
+        info['num_sessions'] = int(np.fromstring(header[32:36], 'uint32'))
         if not info['num_sessions'] == 1:
             print("Warning: it appears that there are %d sessions. We only support one session" % info['num_sessions'])
 
         # the next entry is the number of frames, most likey in the first session. We do not attempt to support multiple sessions
-        info['num_frames'] = int(np.frombuffer(header[36:40], 'uint32'))
+        info['num_frames'] = int(np.fromstring(header[36:40], 'uint32'))
 
         # and the next entry is an offset to the beginning of what I'm guessing is the first session
-        info['session0_offset'] = int(np.frombuffer(header[40:44], 'uint32'))
+        info['session0_offset'] = int(np.fromstring(header[40:44], 'uint32'))
 
         # this is followed by the filesize in bytes
-        info['filesize'] = int(np.frombuffer(header[48:52], 'uint32'))
+        info['filesize'] = int(np.fromstring(header[48:52], 'uint32'))
 
         # NB because there is zero-padding after these offset and size values, it's possible they are long (64 bit) integers instead
         # of uint32. None of the example data breaks the 4GB limit that would require long offsets.
 
         # The filesize is repeated starting at byte 64, for unknown reasons
-        info['filesize2'] = int(np.frombuffer(header[64:68], 'uint32'))
+        info['filesize2'] = int(np.fromstring(header[64:68], 'uint32'))
 
         # the next non-zero value is at byte 84, and has the value 1024 in the example data. The meaning is unknown.
-        info['mystery1'] = int(np.frombuffer(header[84:88], 'uint32'))
+        info['mystery1'] = int(np.fromstring(header[84:88], 'uint32'))
 
         # read the 1st session header  - vormat varies depending on file format
         if info['format_version'] == 7: 
-            session_head = np.frombuffer(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES)],
+            session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES)], 
                                         dtype=SESSION_HEADER_DTYPE)[0]
 
         elif info['format_version'] == 0x1000000:
-            session_head = np.frombuffer(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES_INT2P24)],
+            session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES_INT2P24)],
                                     dtype=SESSION_HEADER_DTYPE_INT2P24)[0]
 
             # each image include data and 32 bytes footer
