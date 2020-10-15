@@ -166,7 +166,7 @@ class IntegerIDRule(Rule):
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
-        self._n_retries =  config.get('ruleserver-retries', 0)
+        self._n_retries = config.get('ruleserver-retries', 0)
         self._timeout = task_timeout
         
         self._rule_timeout = rule_timeout
