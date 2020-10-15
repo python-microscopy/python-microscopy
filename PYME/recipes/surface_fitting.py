@@ -156,15 +156,13 @@ class DualMarchingCubes(ModuleBase):
             surf.repair()
             
         if self.remesh:
-            #target_length = np.mean(surf._halfedges['length'][surf._halfedges['length'] != -1])
+            #target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
             surf.remesh(5, l=0.5, n_relax=10)
-            
-            
+                                                                                                                   
         namespace[self.output] = surf
         
-        
-@register_module('MarchingTetrahedra')
-class MarchingTetrahedra(ModuleBase):
+@register_module('DelaunayMarchingTetrahedra')
+class DelaunayMarchingTetrahedra(ModuleBase):
     input = Input('delaunay0')
     output = Output('mesh')
     
