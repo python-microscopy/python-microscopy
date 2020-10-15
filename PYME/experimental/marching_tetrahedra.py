@@ -113,3 +113,95 @@ class MarchingTetrahedra(object):
         
         if return_triangles:
             return self._triangles
+
+class RasterMarchingTetrahedra(MarchingTetrahedra):
+    def __init__(self, image, isolevel=0, voxelsize=(1., 1., 1.)):
+        """Marching tetrahedra on a regular grid. Splits the grid
+        into tetrahedron and then marches.
+
+        TODO: This is purposefully missing some obvious optimizations
+        for testing purposes. I wanted to check that the algorithm
+        works before putting optimizations in.
+
+        Parameters
+        ----------
+        image : np.array
+            3D array of regularly spaced voxels.
+        isolevel : int, optional
+            Threshold determining if vertex lies inside or outside the surface, by default 0
+        voxelsize : tuple, optional
+            Voxelsize of the image, by default (1., 1., 1.)
+        """
+
+        self.image = image.squeeze().astype('f')
+        self.voxelsize = voxelsize
+        MarchingTetrahedra.__init__(self, None, None, isolevel)
+        
+    def gen_vertices_and_vals(self):
+        # Below is a single voxel
+        #     z
+        #     ^
+        #     |
+        #    v4 ----------v6
+        #    /|           /|
+        #   / |          / |
+        #  v5----------v7  |
+        #  |  |    c    |  |
+        #  | v0---------|-v2
+        #  | /          | /
+        #  v1-----------v3---> y
+        #  /
+        # x
+        #
+        # Now note that the oriented tetrahedra are
+        #
+        # v0 v4 v6 v7
+        # v0 v5 v4 v7
+        # v0 v6 v2 v7
+        # v0 v2 v3 v7
+        # v0 v1 v5 v7
+        # v0 v3 v1 v7
+
+        # Set the offsets moving along the 3D grid from index 1 to -1
+        # on each axis
+        v_offsets = np.array([[0, 0, 0],
+                            [1, 0, 0],
+                            [0, 1, 0],
+                            [1, 1, 0],
+                            [0, 0, 1],
+                            [1, 0, 1],
+                            [0, 1, 1],
+                            [1, 1, 1]])
+
+        # Split each voxel into tetrahedron
+        ot_tets = np.array([
+            [0,4,6,7],
+            [0,5,4,7],
+            [0,6,2,7],
+            [0,2,3,7],
+            [0,1,5,7],
+            [0,3,1,7]
+        ])
+
+        xx, yy, zz = np.meshgrid(np.arange(self.image.shape[0]-1), 
+                                 np.arange(self.image.shape[1]-1), 
+                                 np.arange(self.image.shape[2]-1))
+
+        coords = np.vstack([xx.ravel(),yy.ravel(),zz.ravel()]).T[:, None, :] + v_offsets[None, :, :]
+
+        vertices = coords.astype('f') * np.array(self.voxelsize)[None, None, :]
+        
+        values = self.image[coords[:, :, 0], coords[:, :, 1], coords[:, :, 2]]
+        
+        print(coords.shape, values.shape)
+
+        vertices = vertices[:,ot_tets,:].reshape(-1,4,3)
+        values = values[:,ot_tets].reshape(-1,4)
+        
+        print(vertices.shape, values.shape)
+
+        return vertices, values
+
+    def march(self, return_triangles=True):        
+        self._vertices, self._values = self.gen_vertices_and_vals()
+        return MarchingTetrahedra.march(self, return_triangles)
