@@ -15,9 +15,23 @@ jobs:
         python-version: 3.6
     - name: Install dependencies
       run: pip install flake8 lintly
+    - name: Event info
+      run: |
+        echo ${{ github.event.pull_request.number }}
+        echo ${{ github.event }}
+    - name: Git info
+      run: |
+        # bunch of info commands to help us debug
+        git remote -v
+        git branch
+        git status
+        git log
+        git diff
+      
     - name: Lint with flake8
       run: |
-        git fetch origin master
-        git diff ${{ github.event.pull_request.head.sha }} master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
+        git fetch origin master:om
+        git diff om
+        git diff ${{ github.event.pull_request.head.sha }} om | flake8 --diff | lintly --pr=${{ github.event.pull_request.number }} --commit-sha=${{ github.event.pull_request.head.sha }}
       env:
         LINTLY_API_KEY: ${{ secrets.GITHUB_TOKEN }}
