@@ -60,7 +60,7 @@ steps:
   displayName: 'codecov upload'
   
 - script: |
-    diff-cover tests/coverage.xml
+    diff-cover coverage.xml
   condition: succeededOrFailed()
   displayName: 'diff-cover'
 

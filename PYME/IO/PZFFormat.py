@@ -94,10 +94,10 @@ def ChunkedHuffmanCompress_o(data):
 
 def _chunkDecompress(args):
     chunk, length = args
-    return bcl.HuffmanDecompress(np.fromstring(chunk, 'u1'), length)
+    return bcl.HuffmanDecompress(np.frombuffer(chunk, 'u1'), length)
     
 def ChunkedHuffmanDecompress(datastring):
-    num_chunks = np.fromstring(datastring[:2], 'u2')
+    num_chunks = np.frombuffer(datastring[:2], 'u2')
     
     #compPool = ThreadPool(NUM_COMP_THREADS)
     
@@ -105,7 +105,7 @@ def ChunkedHuffmanDecompress(datastring):
     
     comp_chunks = []
     for i in range(num_chunks):
-        chunk_len, raw_len = np.fromstring(datastring[sp:(sp+8)], 'u4')
+        chunk_len, raw_len = np.frombuffer(datastring[sp:(sp+8)], 'u4')
         sp += 8
         comp_chunks.append((datastring[sp:(sp+ chunk_len)], raw_len))
         sp += chunk_len
@@ -289,9 +289,9 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
 
 def load_header(datastring):
     if (_ord(datastring[2]) >= 3):
-        return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
+        return np.frombuffer(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
     else:
-        return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
+        return np.frombuffer(datastring[:HEADER_LENGTH], header_dtype)
 
    
 def loads(datastring):
@@ -348,10 +348,10 @@ def loads(datastring):
     
     if header['DataCompression'] == DATA_COMP_RAW:
         #no need to decompress
-        data = np.fromstring(data_s, 'u1')
+        data = np.frombuffer(data_s, 'u1')
     elif header['DataCompression'] == DATA_COMP_HUFFCODE:
         #logging.debug('Decompressing ...')
-        data = bcl.HuffmanDecompress(np.fromstring(data_s, 'u1'), outsize)
+        data = bcl.HuffmanDecompress(np.frombuffer(data_s, 'u1'), outsize)
     elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
         data = ChunkedHuffmanDecompress(data_s)
     else:
