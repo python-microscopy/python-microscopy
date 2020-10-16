@@ -55,7 +55,9 @@ class MarchingTetrahedra(object):
     References
     ----------
         1. http://paulbourke.net/geometry/polygonise/
-        2. Jules Bloomenthal, An Implicit Surface Polygonizer, Graphics Gems IV, Paul Heckbert (editor), pages 324-349, Academic Press (Boston, Massachusetts), 1994
+        2. Jules Bloomenthal, An Implicit Surface Polygonizer, 
+           Graphics Gems IV, Paul Heckbert (editor), pages 324-349, 
+           Academic Press (Boston, Massachusetts), 1994
     """
 
     def __init__(self, vertices=None, values=None, isolevel=0):
@@ -79,7 +81,9 @@ class MarchingTetrahedra(object):
         # Are v0 and v1 the same vertex?
         # If so, choose v0 as the triangle vertex position.
         eps = 1e-6
-        idxs = (np.abs(v1_value - v0_value) < eps) | (np.abs(v1_value - self._isolevel) < eps) | (np.abs(v0_value - self._isolevel) < eps)
+        idxs = (np.abs(v1_value - v0_value) < eps) | \
+                (np.abs(v1_value - self._isolevel) < eps) | \
+                (np.abs(v0_value - self._isolevel) < eps)
         p[idxs, :] = v0[idxs, :]
 
         return p

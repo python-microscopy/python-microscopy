@@ -287,13 +287,13 @@ def gen_isosurface_from_tesselation(visFr):
     from PYME.LMVis.layers.mesh import TriangleRenderLayer
     from PYME.recipes.surface_fitting import DelaunayMarchingTetrahedra
 
-    if not 'delaunay0' in visFr.pipeline.dataSources.keys():
+    if 'delaunay0' not in visFr.pipeline.dataSources.keys():
         del_name = add_tesselation(visFr)
     else:
         _, c = visFr.pipeline.new_ds_name('delaunay', return_count=True)
         del_name = 'delaunay{}'.format(c-1)
 
-    if not 'dn' in visFr.pipeline.dataSources[del_name].keys():
+    if 'dn' not in visFr.pipeline.dataSources[del_name].keys():
         # visFr.pipeline.selectDataSource(del_name)
         estimate_density(visFr)
     

@@ -426,7 +426,6 @@ class VisGUICore(object):
         self.glCanvas.refresh()
     
         self.layer_added.send(self)
-
     
     def generate_test_object_layer(self, obj_type):
         vx, vy, vz = 0.1, 0.1, 0.1  # um
@@ -469,7 +468,6 @@ class VisGUICore(object):
             print('Gui stuff done')
             
         self.SetFit()
-        
         
         wx.CallLater(100, self._create_base_layer)
 
