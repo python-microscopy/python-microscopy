@@ -23,7 +23,7 @@ def setup_module():
         shutil.rmtree(tmp_root)
         
     os.makedirs(tmp_root)
-    proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TEST'])
+    proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TEST', '-a', 'local'])
     
     time.sleep(3) #give time for the server to spin up
     
