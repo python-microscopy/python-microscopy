@@ -565,6 +565,10 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
         return NULL;
     }
 
+    //initialise memory in output arrays
+    PyArray_FILLWBYTE(outVarA, 0);
+    PyArray_FILLWBYTE(outSigA, 0);
+
     outVar = (float*)PyArray_DATA(outVarA);
     outSig = (float*)PyArray_DATA(outSigA);
 
@@ -719,6 +723,10 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
 
     outVar = (float*)PyArray_DATA(outVarA);
 
+    //initialise memory in output arrays
+    PyArray_FILLWBYTE(outVarA, 0);
+    //PyArray_FILLWBYTE(outSigA, 0);
+
     /*
     for (i=0; i < nPts; i++)
     {
@@ -853,6 +861,10 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
 
     outVar = (float*)PyArray_DATA(outVarA);
 
+        //initialise memory in output arrays
+    PyArray_FILLWBYTE(outVarA, 0);
+    //PyArray_FILLWBYTE(outSigA, 0);
+
     /*
     for (i=0; i < nPts; i++)
     {
@@ -976,6 +988,10 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for clumped output");
         return NULL;
     }
+
+        //initialise memory in output arrays
+    PyArray_FILLWBYTE(outVarA, 0);
+    //PyArray_FILLWBYTE(outSigA, 0);
 
     outVar = (float*)PyArray_DATA(outVarA);
 
