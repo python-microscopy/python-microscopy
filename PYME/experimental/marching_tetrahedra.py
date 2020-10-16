@@ -30,22 +30,23 @@ TRI_EDGES = np.array([
 
 TRI_TRIANGLES = np.array([
     [-1, -1, -1, -1, -1, -1],
-    [3, 1, 5, -1, -1, -1],
-    [0, 3, 4, -1, -1, -1],
-    [1, 5, 4, 0, 1, 4],
-    [2, 4, 5, -1, -1, -1],
-    [3, 2, 4, 3, 1, 2],
-    [3, 2, 0, 3, 5, 2],
     [0, 1, 2, -1, -1, -1],
-    [2, 1, 0, -1, -1, -1],
-    [0, 2, 3, 2, 5, 3],
-    [4, 2, 3, 2, 1, 3],
-    [5, 4, 2, -1, -1, -1],
-    [1, 4, 5, 1, 0, 4],
     [0, 4, 3, -1, -1, -1],
-    [5, 1, 3, -1, -1, -1],
+    [2, 1, 4, 4, 3, 1],
+    [1, 3, 5, -1, -1, -1],
+    [0, 5, 2, 0, 3, 5],
+    [0, 4, 5, 0, 1, 5],
+    [2, 5, 4, -1, -1, -1],
+    [2, 5, 4, -1, -1, -1],
+    [0, 4, 5, 0, 1, 5],
+    [0, 5, 2, 0, 3, 5],
+    [1, 3, 5, -1, -1, -1],
+    [2, 1, 4, 4, 3, 1],
+    [0, 4, 3, -1, -1, -1],
+    [0, 1, 2, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1]
 ])
+
 
 class MarchingTetrahedra(object):
     """
@@ -193,13 +194,11 @@ class RasterMarchingTetrahedra(MarchingTetrahedra):
         
         values = self.image[coords[:, :, 0], coords[:, :, 1], coords[:, :, 2]]
         
-        print(coords.shape, values.shape)
+        # print(coords.shape, values.shape)
 
-        vertices = vertices[:,ot_tets,:].reshape(-1,4,3)
-        values = values[:,ot_tets].reshape(-1,4)
+        vertices = vertices[:,ot_tets,:].reshape(-1,4,3,order='C')
+        values = values[:,ot_tets].reshape(-1,4,order='C')
         
-        print(vertices.shape, values.shape)
-
         return vertices, values
 
     def march(self, return_triangles=True):        
