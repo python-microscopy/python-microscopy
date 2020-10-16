@@ -190,6 +190,8 @@ class IntegerIDRule(Rule):
         self.nAvailable = 0
         self.nCompleted = 0
         self.nFailed = 0
+        self.n_returned_after_timeout = 0
+        self.n_timed_out = 0
         
         self._n_max = max_task_ID
         
@@ -349,12 +351,19 @@ class IntegerIDRule(Rule):
         status = np.array(info['status'], 'uint8')
         
         with self._info_lock:
+            old_status = self._task_info['status'][taskIDs]
             self._task_info['status'][taskIDs] = status
             
-            self.nCompleted += int((status ==STATUS_COMPLETE).sum())
-            self.nFailed += int((status == STATUS_FAILED).sum())
+            # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice
+            n_already_complete = int((old_status == STATUS_COMPLETE).sum())
+            n_already_failed = int((old_status == STATUS_FAILED).sum())
             
-            nTasks = len(taskIDs)
+            self.nCompleted += (int((status == STATUS_COMPLETE).sum()) - n_already_complete)
+            self.nFailed += (int((status == STATUS_FAILED).sum()) - n_already_failed)
+            
+            self.n_returned_after_timeout += (n_already_complete + n_already_failed)
+            
+            nTasks = len(taskIDs) - (n_already_complete + n_already_failed)
             self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
@@ -448,7 +457,9 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
-                  'active' : self._active
+                  'active' : self._active,
+                  'tasksTimedOut' : self.n_timed_out,
+                  'tasksCompleteAfterTimeout' : self.n_returned_after_timeout,
                 }
     
     def poll_timeouts(self):
@@ -465,6 +476,8 @@ class IntegerIDRule(Rule):
                 
                 self.nAssigned -= nTimedOut
                 self.nAvailable += nTimedOut
+                
+                self.n_timed_out += nTimedOut
     
                 retry_failed = self._task_info['nRetries'] > self._n_retries
                 self._task_info['status'][retry_failed] = STATUS_FAILED
