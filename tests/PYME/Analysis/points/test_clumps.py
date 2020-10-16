@@ -6,7 +6,7 @@ def test_coalesce():
     x_out = multiview.coalesce_dict_sorted({'x':x}, assigned, ['x',], {})['x']
     
     for j in np.unique(assigned):
-        assert (x_out[j] == np.mean(x[assigned==j]))
+        assert np.allclose(x_out[j] , np.mean(x[assigned==j]))
         
     assert len(x_out) == assigned.max() + 1
 
@@ -19,7 +19,7 @@ def test_coalesce_incomplete():
     x_out = multiview.coalesce_dict_sorted({'x': x}, assigned, ['x', ], {})['x']
     
     for j in np.unique(assigned):
-        assert (x_out[j] == np.mean(x[assigned == j]))
+        assert np.allclose(x_out[j] , np.mean(x[assigned == j]))
     
     assert len(x_out) == assigned.max() + 1
 

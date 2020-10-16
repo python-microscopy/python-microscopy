@@ -166,7 +166,19 @@ class IntegerIDRule(Rule):
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
-        self._n_retries =  config.get('ruleserver-retries', 3)
+        # Number of times to re-queue a task if it times out is set by the 'ruleserver-retries' config option
+        # Setting a value of 0 effectively disables re-trying and makes analysis less robust.
+        # Note that a timeout is different to a failure - failing tasks will be marked as having failed and will not be re-tried. Timeouts will
+        # occur in one of 4 scenarios:
+        # - a worker falls over completely or is disconnected from the network
+        # - an unhandled exception - e.g. due to an IO error connecting to the ruleserver in `taskWorkerHTTP.taskWorker._return_task_results()`
+        # - analysis is getting massively bogged down and nothing is keeping up
+        # - the task timeout is unrealistically short for a given processing task
+        # 
+        # In scenarios 1 & 2 it's reasonable to expect that retrying will result in success. In scenarios 3 & 4 it's a bit muddier, but seeing as a) these kind of
+        # failures tend to be a bit stochastic and b) the retries get punted to the back of the queue, when the load might have let up a bit, the odds are
+        # reasonably good.
+        self._n_retries = config.get('ruleserver-retries', 1)
         self._timeout = task_timeout
         
         self._rule_timeout = rule_timeout
@@ -178,6 +190,8 @@ class IntegerIDRule(Rule):
         self.nAvailable = 0
         self.nCompleted = 0
         self.nFailed = 0
+        self.n_returned_after_timeout = 0
+        self.n_timed_out = 0
         
         self._n_max = max_task_ID
         
@@ -337,12 +351,19 @@ class IntegerIDRule(Rule):
         status = np.array(info['status'], 'uint8')
         
         with self._info_lock:
+            old_status = self._task_info['status'][taskIDs]
             self._task_info['status'][taskIDs] = status
             
-            self.nCompleted += int((status ==STATUS_COMPLETE).sum())
-            self.nFailed += int((status == STATUS_FAILED).sum())
+            # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice
+            n_already_complete = int((old_status == STATUS_COMPLETE).sum())
+            n_already_failed = int((old_status == STATUS_FAILED).sum())
             
-            nTasks = len(taskIDs)
+            self.nCompleted += (int((status == STATUS_COMPLETE).sum()) - n_already_complete)
+            self.nFailed += (int((status == STATUS_FAILED).sum()) - n_already_failed)
+            
+            self.n_returned_after_timeout += (n_already_complete + n_already_failed)
+            
+            nTasks = len(taskIDs) - (n_already_complete + n_already_failed)
             self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
@@ -436,7 +457,9 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
-                  'active' : self._active
+                  'active' : self._active,
+                  'tasksTimedOut' : self.n_timed_out,
+                  'tasksCompleteAfterTimeout' : self.n_returned_after_timeout,
                 }
     
     def poll_timeouts(self):
@@ -453,6 +476,8 @@ class IntegerIDRule(Rule):
                 
                 self.nAssigned -= nTimedOut
                 self.nAvailable += nTimedOut
+                
+                self.n_timed_out += nTimedOut
     
                 retry_failed = self._task_info['nRetries'] > self._n_retries
                 self._task_info['status'][retry_failed] = STATUS_FAILED
