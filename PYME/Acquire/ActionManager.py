@@ -200,6 +200,10 @@ class ActionManagerWebWrapper(object):
                     A timeout in seconds from the current time at which the 
                     action becomes irrelevant and should be ignored. By default
                     1e6.
+                max_duration : float
+                    A generous estimate, in seconds, of how long the task might
+                    take, after which the lasers will be automatically turned 
+                    off and the action queue paused.
         """
         import json
         params = json.loads(body)
@@ -207,7 +211,10 @@ class ActionManagerWebWrapper(object):
         args = params.get('args', {})
         nice = params.get('nice', 10.)
         timeout = params.get('timeout', 1e6)
-        self.action_manager.QueueAction(function_name, args, nice, timeout)
+        max_duration = params.get('max_duration', np.finfo(float).max)
+
+        self.action_manager.QueueAction(function_name, args, nice, timeout,
+                                        max_duration)
 
 
 class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
