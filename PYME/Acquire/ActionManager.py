@@ -137,7 +137,11 @@ class ActionManager(object):
             if expiry > time.time():
                 print('%s, %s' % (self.currentTask, functionName))
                 fcn = eval('.'.join(['self.scope()', functionName]))
-                self.isLastTaskDone = fcn(**args)            
+                self.isLastTaskDone = fcn(**args)
+            else:
+                past_expire = time.time() - expiry
+                logger.debug('task expired %f s ago, ignoring %s' % (past_expire,
+                                                                     self.currentTask))
     
     def _monitor_defunct(self):
         """
