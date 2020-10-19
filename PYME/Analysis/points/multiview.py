@@ -126,7 +126,7 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     if not inject:
         datasource = tabular.MappingFilter(datasource)
 
-    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh.voxelsize_nm.x)  # voxelsize is in um
+    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh.voxelsize_nm.x)
 
     numChans = mdh.getOrDefault('Multiview.NumROIs', 1)
     color_chans = np.array(mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChans, 'i'))).astype('i')
@@ -134,8 +134,14 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     datasource.addVariable('roiSizeNM', roiSizeNM)
     datasource.addVariable('numChannels', numChans)
 
-    #FIXME - cast to int should probably happen when we use multiViewChannel, not here (because we might have saved and reloaded in between)
-    datasource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels - 1).astype(int)')
+    # NB - this assumes that 'Multiview.ActiveViews' is sorted the same way that the views are concatenated (probably a safe assumption)
+    active_rois = np.asarray(mdh.getOrDefault('Multiview.ActiveViews', 
+                                              list(range(numChans))))
+    multiview_channel = np.clip(np.floor(datasource['x'] / roiSizeNM), 
+                                0, numChans - 1)
+    multiview_channel = active_rois[multiview_channel.astype(int)]
+    datasource.addColumn('multiviewChannel', multiview_channel)
+    
     if chroma_mappings:
         datasource.addColumn('chromadx', 0 * datasource['x'])
         datasource.addColumn('chromady', 0 * datasource['y'])
@@ -446,7 +452,6 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
     return DictSource(grouped)
-
 
 
 
