@@ -125,3 +125,9 @@ class QueueAcquisitions(OutputModule):
                           headers={'Content-Type': 'application/json'})
             
             time.sleep(self.between_post_throttle)
+        
+        # queue a high-nice call to shut off all lasers when we're done
+        args = {'function_name': 'turnAllLasersOff',
+                    'timeout': self.timeout, 'nice': np.iinfo(int).max}
+        session.post(dest, data=json.dumps(args), 
+                          headers={'Content-Type': 'application/json'})
