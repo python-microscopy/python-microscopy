@@ -117,6 +117,7 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     datasource.addVariable('roiSizeNM', roiSizeNM)
     datasource.addVariable('numChannels', numChans)
 
+    # NB - this assumes that 'Multiview.ActiveViews' is sorted the same way that the views are concatenated (probably a safe assumption)
     active_rois = np.asarray(mdh.getOrDefault('Multiview.ActiveViews', 
                                               list(range(numChans))))
     multiview_channel = np.clip(np.floor(datasource['x'] / roiSizeNM), 
@@ -434,7 +435,6 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
     return MappingFilter(grouped)
-
 
 
 
