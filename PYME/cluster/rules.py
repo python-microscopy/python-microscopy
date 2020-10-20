@@ -29,13 +29,14 @@ or
 then:
 
 >>> def on_launch_analysis(context={'spool_dir': ..., 'series_stub': ...}):
->>>    RulePusher(step1.get_rule(context=context))
+>>>    step1.get_rule(context=context).push()
 
 """
 
 import six
 import json
 import threading
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,119 @@ class Rule(object):
 
         """
         raise NoNewTasks('get_new_tasks() called in base class which assumes all tasks are released on rule creation')
+    
+    @classmethod
+    def _getTaskQueueURI(cls, n_retries=2):
+        """Discover the distributors using zeroconf and choose one"""
+        from PYME.misc import hybrid_ns
+        import socket
+        import random
+        import time
+        from PYME.misc.computerName import GetComputerName
+        compName = GetComputerName()
+    
+        ns = hybrid_ns.getNS('_pyme-taskdist')
+    
+        queueURLs = {}
+    
+        def _search():
+            for name, info in ns.get_advertised_services():
+                if name.startswith('PYMERuleServer'):
+                    print(info, info.address)
+                    queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+    
+        _search()
+        while not queueURLs and (n_retries > 0):
+            logging.info('could not find a rule server, waiting 5s and trying again')
+            time.sleep(5)
+            n_retries -= 1
+            _search()
+    
+        try:
+            #try to grab the distributor on the local computer
+            local_queues = [q for q in queueURLs if compName in q]
+            logger.debug('local_queues: %s' % local_queues)
+            return queueURLs[local_queues[0]]
+        except (KeyError, IndexError):
+            #if there is no local distributor, choose one at random
+            logger.info('no local rule server, choosing one at random')
+            return random.choice(list(queueURLs.values()))
+    
+    def push(self):
+        self._ruleID = None
+        self.taskQueueURI = self._getTaskQueueURI()
+        self._current_task_num = 0
+    
+        #create any needed files - e.g. metadata
+        post_args = self.prepare()
+    
+        #post our rule
+        self._post_rule(**post_args)
+    
+        if not self.complete:
+            #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
+            self.doPoll = True
+            self.pollT = threading.Thread(target=self._poll_loop())
+            self.pollT.start()
+
+    def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
+        """ wrapper around add_integer_rule api endpoint"""
+        from PYME.IO import clusterIO
+    
+        s = clusterIO._getSession(self.taskQueueURI)
+        if release_start is None:
+            cmd = '%s/add_integer_id_rule?timeout=%d&max_tasks=%d' % (self.taskQueueURI, timeout, max_tasks)
+        else:
+            # TODO - can we get rid of this special casing?
+            cmd = '%s/add_integer_id_rule?timeout=%d&max_tasks=%d&release_start=%d&release_end=%d' % (
+            self.taskQueueURI, timeout, max_tasks, release_start, release_end)
+    
+        r = s.post(cmd,
+                   data=json.dumps(self.rule),
+                   headers={'Content-Type': 'application/json'})
+    
+        if r.status_code == 200:
+            resp = r.json()
+            self._ruleID = resp['ruleID']
+            logger.debug('Successfully created rule')
+        else:
+            logger.error('Failed creating rule with status code: %d' % r.status_code)
+
+    def _release_tasks(self, release_start, release_end):
+        """ Thin wrapper around release_rule_tasks api endpoint"""
+        from PYME.IO import clusterIO
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.get('%s/release_rule_tasks?ruleID=%s&release_start=%d&release_end=%d' % (
+            self.taskQueueURI, self._ruleID, release_start, release_start),
+                  data='',
+                  headers={'Content-Type': 'application/json'})
+    
+        if r.status_code == 200 and r.json()['ok']:
+            logging.debug('Successfully released tasks')
+        else:
+            logging.error('Failed on releasing tasks with status code: %d' % r.status_code)
+
+    def _poll_loop(self):
+        logging.debug('task pusher poll loop started')
+        # wait until clusterIO caches clear to avoid replicating the results file.
+        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
+        time.sleep(1.5)
+    
+        while (self.doPoll == True):
+            try:
+                rel_start, rel_end = self.get_new_tasks()
+                self._release_tasks(rel_start, rel_end)
+            except NoNewTasks:
+                pass
+        
+            if self.complete:
+                logging.debug('all tasks pushed, ending loop.')
+                self.doPoll = False
+            else:
+                time.sleep(1)
+
+    def cleanup(self):
+        self.doPoll = False
 
 
 class RecipeRule(Rule):
@@ -424,124 +538,3 @@ class LocalisationRuleFactory(RuleFactory):
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)
         
-
-
-
-import time
-class RulePusher(object):
-    def __init__(self, rule):
-        self._rule = rule
-        
-        self._ruleID = None
-        self.taskQueueURI = self._getTaskQueueURI()
-        
-        self._current_task_num = 0
-        #self._complete = False
-    
-        #create any needed files - e.g. metadata
-        post_args = self._rule.prepare()
-        
-        #post our rule
-        self._post_rule(**post_args)
-
-        if not self._rule.complete:
-            #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
-            self.doPoll = True
-            self.pollT = threading.Thread(target=self._poll_loop())
-            self.pollT.start()
-        
-    @classmethod
-    def _getTaskQueueURI(cls, n_retries=2):
-        """Discover the distributors using zeroconf and choose one"""
-        from PYME.misc import hybrid_ns
-        import socket
-        import random
-        import time
-        from PYME.misc.computerName import GetComputerName
-        compName = GetComputerName()
-    
-        ns = hybrid_ns.getNS('_pyme-taskdist')
-    
-        queueURLs = {}
-    
-        def _search():
-            for name, info in ns.get_advertised_services():
-                if name.startswith('PYMERuleServer'):
-                    print(info, info.address)
-                    queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
-    
-        _search()
-        while not queueURLs and (n_retries > 0):
-            logging.info('could not find a rule server, waiting 5s and trying again')
-            time.sleep(5)
-            n_retries -= 1
-            _search()
-    
-        try:
-            #try to grab the distributor on the local computer
-            local_queues = [q for q in queueURLs if compName in q]
-            logger.debug('local_queues: %s' % local_queues)
-            return queueURLs[local_queues[0]]
-        except (KeyError, IndexError):
-            #if there is no local distributor, choose one at random
-            logger.info('no local rule server, choosing one at random')
-            return random.choice(list(queueURLs.values()))
-
-    def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
-        """ wrapper around add_integer_rule api endpoint"""
-        from PYME.IO import clusterIO
-    
-        s = clusterIO._getSession(self.taskQueueURI)
-        if release_start is None:
-            cmd = '%s/add_integer_id_rule?timeout=%d&max_tasks=%d' % (self.taskQueueURI, timeout, max_tasks)
-        else:
-            # TODO - can we get rid of this special casing?
-            cmd = '%s/add_integer_id_rule?timeout=%d&max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI, timeout, max_tasks, release_start, release_end)
-            
-        r = s.post(cmd,
-                   data=json.dumps(self._rule.rule),
-                   headers={'Content-Type': 'application/json'})
-    
-        if r.status_code == 200:
-            resp = r.json()
-            self._ruleID = resp['ruleID']
-            logger.debug('Successfully created rule')
-        else:
-            logger.error('Failed creating rule with status code: %d' % r.status_code)
-            
-    def _release_tasks(self, release_start, release_end):
-        """ Thin wrapper around release_rule_tasks api endpoint"""
-        from PYME.IO import clusterIO
-        s = clusterIO._getSession(self.taskQueueURI)
-        r = s.get('%s/release_rule_tasks?ruleID=%s&release_start=%d&release_end=%d' % (
-        self.taskQueueURI, self._ruleID, release_start, release_start),
-                  data='',
-                  headers={'Content-Type': 'application/json'})
-    
-        if r.status_code == 200 and r.json()['ok']:
-            logging.debug('Successfully released tasks')
-        else:
-            logging.error('Failed on releasing tasks with status code: %d' % r.status_code)
-        
-            
-    def _poll_loop(self):
-        logging.debug('task pusher poll loop started')
-        # wait until clusterIO caches clear to avoid replicating the results file.
-        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
-        time.sleep(1.5)
-    
-        while (self.doPoll == True):
-            try:
-                rel_start, rel_end = self._rule.get_new_tasks()
-                self._release_tasks(rel_start, rel_end)
-            except NoNewTasks:
-                pass
-                
-            if self._rule.complete:
-                logging.debug('all tasks pushed, ending loop.')
-                self.doPoll = False
-            else:
-                time.sleep(1)
-
-    def cleanup(self):
-        self.doPoll = False
