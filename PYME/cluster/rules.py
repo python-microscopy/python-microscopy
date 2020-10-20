@@ -526,7 +526,8 @@ class RulePusher(object):
             
     def _poll_loop(self):
         logging.debug('task pusher poll loop started')
-        #wait until clusterIO caches clear to avoid replicating the results file.
+        # wait until clusterIO caches clear to avoid replicating the results file.
+        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
         time.sleep(1.5)
     
         while (self.doPoll == True):
