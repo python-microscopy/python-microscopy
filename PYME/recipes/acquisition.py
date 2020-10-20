@@ -57,6 +57,10 @@ class QueueAcquisitions(OutputModule):
         positions will be ignored/unqueued from the action manager.
     nice: Int
         priority at which acquisition tasks should execute (default=10)
+    max_duration : float
+        A generous estimate, in seconds, of how long the task might take, after
+        which the lasers will be automatically turned off and the action queue
+        paused.
     between_post_throttle : Float
         Time in seconds to sleep between posts to avoid bombarding the 
         microscope-side server. Can be set to zero for ~no throttling.
@@ -67,6 +71,7 @@ class QueueAcquisitions(OutputModule):
     lifo = Bool(True)
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)
+    max_duration = Float(np.finfo(float).max)
     nice = Int(10)
     between_post_throttle = Float(0.01)
 
@@ -105,7 +110,8 @@ class QueueAcquisitions(OutputModule):
         for ri in range(positions.shape[0]):
             args = {'function_name': 'centre_roi_on', 
             'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': self.nice}
+                    'timeout': self.timeout, 'nice': self.nice,
+                    'max_duration': self.max_duration}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
@@ -113,8 +119,15 @@ class QueueAcquisitions(OutputModule):
 
             args = {'function_name': 'spoolController.StartSpooling',
                     'args': self.spool_settings,
-                    'timeout': self.timeout, 'nice': self.nice}
+                    'timeout': self.timeout, 'nice': self.nice,
+                    'max_duration': self.max_duration}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
             time.sleep(self.between_post_throttle)
+        
+        # queue a high-nice call to shut off all lasers when we're done
+        args = {'function_name': 'turnAllLasersOff',
+                    'timeout': self.timeout, 'nice': np.iinfo(int).max}
+        session.post(dest, data=json.dumps(args), 
+                          headers={'Content-Type': 'application/json'})
