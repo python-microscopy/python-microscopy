@@ -26,36 +26,30 @@ class SphericalHarmonicShellManager(object):
         import PYME.experimental._triangle_mesh as triangle_mesh
         from PYME.LMVis.layers.mesh import TriangleRenderLayer
         recipe = self.pipeline.recipe
-        recipe.trait_set(execute_on_invalidation=False)
 
         shell_maker = surface_fitting.SphericalHarmonicShell(recipe, input_name=self.pipeline.selectedDataSourceKey,
                                                              output_name='harmonic_shell')
-        recipe.add_module(shell_maker)
-
-        if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
-            return
-
-        try:
-            recipe.execute()
-        finally:  # make sure we leave things as we found them
-            recipe.trait_set(execute_on_invalidation=True)
-        shell = recipe.namespace['harmonic_shell']
-
-        shell_mapped = recipe.namespace['shell_mapped']
-        self._shells.append(shell)
-
-        self.pipeline.addDataSource('shell_mapped', shell_mapped)
-        self.pipeline.selectDataSource('shell_mapped')
-
-        # Add a surface rendering
-        v, f = shell.get_mesh_vertices_faces(self.d_angle)        
-        surf = triangle_mesh.TriangleMesh(v, f)
-        self.pipeline.dataSources['shell_surface'] = surf
-
-        layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
-        self.vis_frame.add_layer(layer)
-
-        self.vis_frame.RefreshView()
+        
+        if shell_maker.configure_traits(view=shell_maker.pipeline_view_min, kind='modal'):
+            recipe.add_modules_and_execute([shell_maker,])
+        
+            shell = recipe.namespace['harmonic_shell']
+    
+            shell_mapped = recipe.namespace['shell_mapped']
+            self._shells.append(shell)
+    
+            self.pipeline.addDataSource('shell_mapped', shell_mapped)
+            self.pipeline.selectDataSource('shell_mapped')
+    
+            # Add a surface rendering
+            v, f = shell.get_mesh_vertices_faces(self.d_angle)
+            surf = triangle_mesh.TriangleMesh(v, f)
+            self.pipeline.dataSources['shell_surface'] = surf
+    
+            layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
+            self.vis_frame.add_layer(layer)
+    
+            self.vis_frame.RefreshView()
 
     def OnLoadHarmonicRepresentation(self, wx_event):
         import wx

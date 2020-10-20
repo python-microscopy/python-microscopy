@@ -73,12 +73,11 @@ class ParticleTracker:
             from PYME.recipes import tracking
             recipe = self.visFr.pipeline.recipe
     
-            recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
+            recipe.add_modules_and_execute([tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
                                                   timeWindow=dlg.GetClumpTimeWindow(),
                                                   clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
-                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
+                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()),])
     
-            recipe.execute()
             self.visFr.pipeline.selectDataSource('with_clumps')
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
@@ -120,13 +119,13 @@ class ParticleTracker:
     
         if tracking_module.configure_traits(kind='modal'):
             self._mol_tracking_module = tracking_module
-            recipe.add_module(tracking_module)
-            # Add dynamic filtering on track length, etc.
-            recipe.add_module(FilterTable(recipe, 
-                                          inputName=tracking_module.outputName, 
-                                          outputName='filtered_{}'.format(tracking_module.outputName), 
-                                          filters={'clumpSize':[tracking_module.minClumpSize, 1e6]}))
-            recipe.execute()
+            recipe.add_modules_and_execute([tracking_module,
+                                            # Add dynamic filtering on track length, etc.
+                                            FilterTable(recipe,
+                                                inputName=tracking_module.outputName,
+                                                outputName='filtered_{}'.format(tracking_module.outputName),
+                                                filters={'clumpSize':[tracking_module.minClumpSize, 1e6]})])
+            
             self.visFr.pipeline.selectDataSource('filtered_{}'.format(tracking_module.outputName))
             #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
             layer = TrackRenderLayer(pipeline, dsname='filtered_{}'.format(tracking_module.outputName), method='tracks')
@@ -222,9 +221,8 @@ class ParticleTracker:
         from PYME.recipes import localisations
         recipe = self.visFr.pipeline.recipe
         
-        recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+        recipe.add_modules_and_execute([localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'),])
     
-        recipe.execute()
         self.visFr.pipeline.selectDataSource('coalesced')
         #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 

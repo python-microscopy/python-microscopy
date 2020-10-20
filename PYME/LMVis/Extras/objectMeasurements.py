@@ -72,8 +72,7 @@ class ObjectMeasurer:
             
             output_name = recipe.new_output_name('labels_from_img')
             mod = LabelsFromImage(recipe, inputName=pipeline.selectedDataSourceKey,inputImage=img_name, outputName=output_name)
-            recipe.add_module(mod)
-            recipe.execute()
+            recipe.add_modules_and_execute([mod,])
 
             pipeline.selectDataSource(mod.outputName)
 
@@ -121,8 +120,7 @@ class ObjectMeasurer:
             m = machine_learning.PointFeaturesPairwiseDist(pipeline.recipe, inputLocalisations=pipeline.selectedDataSourceKey, outputName=pipeline.new_ds_name('features'))
             m.edit_no_invalidate()
        
-            pipeline.recipe.add_module(m)
-            pipeline.recipe.execute()
+            pipeline.recipe.add_modules_and_execute([m,])
             
             pipeline.selectDataSource(m.outputName)
             
