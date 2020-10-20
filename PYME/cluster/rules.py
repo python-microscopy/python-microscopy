@@ -1,3 +1,38 @@
+"""
+Refactored rule pushing. Introduces rule classes which act as a python proxy for the JSON rule objects, and rule
+factories for use when constructing equivalent rules (or chains of rules) for multiple series.
+
+Design principles as follows:
+- a `Rule` object is a 1:1 mapping with rules on the ruleserver
+- you create a new `Rule` object for each rule you push to the server
+- a pattern for rule creation is expressed using a `RuleFactory`
+- calling `.get_rule() on the first step returns you a fully linked rule suitable for submitting
+- very limited inference of inputs etc ... between steps - rely on specifying inputs and outputs using patterns instead
+
+Examples
+--------
+
+>>> step1 = LocalisationRuleFactory(analysisMetadata=mdh)
+>>> step2 = RecipeRuleFactory(recipeURI='PYME-CLUSTER///RECIPES/render_image.yaml', input_patterns={'input':'{{spool_dir}}/analysis/{{series_stub}}.h5r'})
+>>> step1.chain(step2)
+>>> step3 = RecipeRuleFactory(recipeURI='PYME-CLUSTER///RECIPES/measure_blobs.yaml', input_patterns={'input':'{{spool_dir}}/analysis/{{series_stub}}.tif'})
+>>> step2.chain(step3)
+
+or
+
+>>> step1 = LocalisationRuleFactory(analysisMetadata=mdh,
+>>>                                 on_completion=RecipeRuleFactory(recipeURI='PYME-CLUSTER///RECIPES/render_image.yaml',
+>>>                                                                 input_patterns={'input':'{{spool_dir}}/analysis/{{series_stub}}.h5r'},
+>>>                                                                 on_completion=RecipeRuleFactory(recipeURI='PYME-CLUSTER///RECIPES/measure_blobs.yaml',
+>>>                                                                                                 input_patterns={'input':'{{spool_dir}}/analysis/{{series_stub}}.tif'})))
+
+then:
+
+>>> def on_launch_analysis(context={'spool_dir': ..., 'series_stub': ...}):
+>>>    RulePusher(step1.get_rule(context=context))
+
+"""
+
 import six
 import json
 import threading
