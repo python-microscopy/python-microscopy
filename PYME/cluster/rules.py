@@ -40,6 +40,8 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
+from PYME.IO import DataSources, clusterIO, clusterResults
+
 class NoNewTasks(Exception):
     pass
 
@@ -158,7 +160,7 @@ class Rule(object):
     
     def get_new_tasks(self):
         """
-        Over-ridden in rules where all the data is not gauranteed to be present when the rule is created
+        Over-ridden in rules where all the data is not guaranteed to be present when the rule is created
         
         Returns
         -------
@@ -319,9 +321,34 @@ class RecipeRule(Rule):
     def _populate_rule(self, context, on_completion=None):
         #over-ride here because we need to add input info
         rule = Rule._populate_rule(self, context, on_completion=on_completion)
+        
+        inputs = context.get('inputs', None)
+        
+        if inputs is None:
+            input_templates = context.get('input_templates', None)
+            if input_templates is None:
+                raise RuntimeError('one of "inputs" or "input_templates" must be present in context')
+            
+            inputs = {k : v.format(context) for k, v in input_templates.items()}
+
+        input_names = inputs.keys()
+        inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
+                  in input_names}
+        
+        self._num_recipe_tasks = len(list(inputs.values())[0])
+
+        logger.debug('numTotalFrames = %d' % self._num_recipe_tasks)
+        logger.debug('inputs = %s' % inputs)
+
+        inputs_by_task = {frameNum: {k: inputs[k][frameNum] for k in inputs.keys()} for frameNum in
+                          range(self._num_recipe_tasks)}
+        
         rule['inputsByTask'] = inputs_by_task
         
         return rule
+    
+    def prepare(self):
+        return dict(max_tasks=self._num_recipe_tasks, release_start=0, release_end=self._num_recipe_tasks)
     
     def _task_template(self, context):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
@@ -344,7 +371,7 @@ class RecipeRule(Rule):
         return task
 
 
-from PYME.IO import DataSources, clusterIO, clusterResults
+
 class LocalisationRule(Rule):
     def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
         from PYME.IO import MetaDataHandler
