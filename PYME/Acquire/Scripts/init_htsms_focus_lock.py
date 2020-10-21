@@ -114,7 +114,7 @@ def focus_lock(MainFrame, scope):
     # panel to log focus to file at set intervals
     focus_logger = FocusLogger(scope.focus_lock.GetPeakPosition)
     focus_log_panel = FocusLogPanel(MainFrame, focus_logger)
-    MainFrame.camPanels.append((panel, 'Focus Logger'))
+    MainFrame.camPanels.append((focus_log_panel, 'Focus Logger'))
 
 
 #must be here!!!
