@@ -146,6 +146,18 @@ class Rule(object):
         
         return {}
     
+    def _output_files(self):
+        """ Return a dictionary of output cluster URIs.
+        The principle output (if it makes sense to define one) should be under the 'output' key
+        
+        Over-ride in derived rule classes
+        """
+        return {}
+    
+    @property
+    def output_files(self):
+        return self._output_files()
+    
     @property
     def complete(self):
         """
@@ -400,13 +412,22 @@ class LocalisationRule(Rule):
         self._setup(seriesName, resultsMdh, resultsFilename, startAt, dataSourceModule, serverfilter)
         
         Rule.__init__(self, **kwargs)
+        
+    def _output_files(self):
+        return {'output' : self.resultsURI}
     
     def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
     
-        self.resultsURI = clusterResults.pickResultsServer('__aggregate_h5r/%s' % resultsFilename, serverfilter)
+        
+        #where the results are when we want to read them
+        self.resultsURI = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsFilename)
+        
+        # it's faster (and safer for race condition avoidance) to pick a server in advance and give workers the direct
+        # HTTP endpoint to write to. This should also be an aggregate endpoint, as multiple writes are needed.
+        self.worker_resultsURI = clusterResults.pickResultsServer('__aggregate_h5r/%s' % resultsFilename, serverfilter)
     
         self.resultsMDFilename = resultsFilename + '.json'
         self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, self.resultsMDFilename)
@@ -431,8 +452,8 @@ class LocalisationRule(Rule):
               'type': 'localization',
               'taskdef': {'frameIndex': '{{taskID}}', 'metadata': self.results_md_uri},
               'inputs': {'frames': self.dataSourceID},
-              'outputs': {'fitResults': self.resultsURI + '/FitResults',
-                          'driftResults': self.resultsURI + '/DriftResults'}
+              'outputs': {'fitResults': self.worker_resultsURI + '/FitResults',
+                          'driftResults': self.worker_resultsURI + '/DriftResults'}
               }
         return json.dumps(tt)
 
@@ -448,9 +469,9 @@ class LocalisationRule(Rule):
 
         """
         #set up results file:
-        logging.debug('resultsURI: ' + self.resultsURI)
-        clusterResults.fileResults(self.resultsURI + '/MetaData', self.mdh)
-        clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
+        logging.debug('resultsURI: ' + self.worker_resultsURI)
+        clusterResults.fileResults(self.worker_resultsURI + '/MetaData', self.mdh)
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.put_file(self.resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=self.serverfilter)

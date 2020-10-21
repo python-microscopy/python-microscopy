@@ -740,6 +740,8 @@ class RuleServer(object):
             # take out the lock in case the rule is still being added in another
             # request and we are already trying to release tasks
             rule = self._rules[ruleID]
+            
+        logger.debug('release_rule_tasks(ruleID = %s, release_start=%d, release_end=%d)' % (ruleID, int(release_start), int(release_end )))
         
         rule.make_range_available(int(release_start), int(release_end))
     
