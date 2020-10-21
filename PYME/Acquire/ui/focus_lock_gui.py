@@ -81,12 +81,11 @@ class FocusLogPanel(wx.Panel):
         """
         Parameters
         ----------
-        focus_logger : fixme
-            fixme
+        focus_logger : PYME.Acquire.Hardware.reflection_focus_lock.FocusLogger
+            Instance of focus logger
         """
         wx.Panel.__init__(self, parent, winid)
-        self.servo = focus_PID
-        self.offset_piezo = offset_piezo
+        self.focus_logger = focus_logger
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -111,7 +110,24 @@ class FocusLogPanel(wx.Panel):
 
         self.stop_button = wx.Button(self, -1, 'Stop')
         hsizer.Add(self.stop_button, 0, wx.ALL, 2)
+        self.stop_button.Disable()
         self.stop_button.Bind(wx.EVT_BUTTON, self.OnStop)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         
         self.SetSizerAndFit(vsizer)
+    
+    def OnStart(self, wx_event=None):
+        self.start_button.Disable()
+        try:
+            self.focus_logger.start_logging(self.t_destination.GetValue(),
+                                            float(self.t_interval.GetValue()))
+            self.stop_button.Enable()
+        except Exception as e:
+            self.stop_button.Disable()
+            self.start_button.Enable()
+            raise e
+    
+    def OnStop(self, wx_event=None):
+        self.stop_button.Disable()
+        self.focus_logger.ensure_stopped()
+        self.start_button.Enable()
