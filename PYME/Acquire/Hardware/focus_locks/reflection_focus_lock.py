@@ -392,6 +392,7 @@ class FocusLogger(object):
         self._log_interval = log_interval
         self._poll_thread = None
         self._logging = False
+        self._start_time = 0
     
     def set_interval(self, log_interval):
         self._log_interval = log_interval
@@ -437,11 +438,13 @@ class FocusLogger(object):
         self._logging = True
         self._poll_thread = threading.Thread(target=self._poll)
         logger.debug('starting focus logger')
+        self._start_time = _current_time()
         self._poll_thread.start()
     
     def _poll(self):
         while self._logging:
-            d = np.array([(time.time(), self._position_handle())], 
+            d = np.array([(_current_time() - self._start_time, 
+                           self._position_handle())],
                          dtype=self._dtype)
             
             self._log_file.appendToTable('focus_log', d)
