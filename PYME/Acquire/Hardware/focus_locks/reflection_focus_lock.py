@@ -391,12 +391,6 @@ class FocusLogger(object):
             self._poll_thread.join()
         except AttributeError:
             pass
-        finally:
-            try:
-                self._log_file.wait_close()
-            except Exception as e:
-                logger.error('Failed to close log file')
-                logger.error(e)
     
     def start_logging(self, log_file, log_interval=None):
         from PYME.IO.h5rFile import H5RFile
