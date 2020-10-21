@@ -1,6 +1,7 @@
 
 # This file is for focus locks which involve some sort of reflection off of the coverslip.
 from simple_pid import PID
+import os
 import numpy as np
 from scipy import optimize
 from PYME.util import webframework
@@ -369,3 +370,59 @@ class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock
             logger.info('Shutting down ...')
             self.shutdown()
             self.server_close()
+
+
+class FocusLogger(object):
+    _dtype = [('time', '<f4'), ('focus', '<f4')]
+
+    def __init__(self, position_handle, log_interval=1.0):
+        self._position_handle = position_handle
+        self._log_file = None
+        self.log_interval = log_interval
+        self._poll_thread = None
+        self._logging = False
+    
+    @property
+    def logging(self):
+        return self._logging
+    
+    def ensure_stopped(self):
+        self._logging = False
+        try:
+            self._poll_thread.join()
+        except AttributeError:
+            pass
+        finally:
+            try:
+                self._log_file.wait_close()
+            except Exception as e:
+                logger.error('Failed to close log file')
+                logger.error(e)
+    
+    def start_logging(self, log_file):
+        from PYME.IO.h5rFile import H5RFile
+
+        self.ensure_stopped()
+            
+        log_dir, log_stub = os.path.split(log_file)
+        os.makedirs(log_dir)
+        log_stub, ext = os.path.splitext(log_file)
+        if ext != '.hdf':
+            log_file = os.path.join(log_dir, log_stub + '.hdf')
+        
+        self._log_file = H5RFile(log_file, mode='a', 
+                                 keep_alive_timeout=max(20.0, 
+                                                        self.log_interval))
+        self._logging = True
+        self._poll_thread = threading.Thread(target=self._poll)
+        logger.debug('starting focus logger')
+        self._poll_thread.start()
+    
+    def _poll(self):
+        while self._logging:
+            d = np.array((time.time(), self._position_handle()), 
+                         dtype=self._dtype)
+            
+            self._log_file.appendToTable('focus_log', d)
+
+            time.sleep(self.log_interval)
