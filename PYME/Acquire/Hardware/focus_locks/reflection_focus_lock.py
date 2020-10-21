@@ -378,13 +378,12 @@ class FocusLogger(object):
     def __init__(self, position_handle, log_interval=1.0):
         self._position_handle = position_handle
         self._log_file = None
-        self.log_interval = log_interval
+        self._log_interval = log_interval
         self._poll_thread = None
         self._logging = False
     
-    @property
-    def logging(self):
-        return self._logging
+    def set_interval(self, log_interval):
+        self._log_interval = log_interval
     
     def ensure_stopped(self):
         self._logging = False
@@ -399,10 +398,12 @@ class FocusLogger(object):
                 logger.error('Failed to close log file')
                 logger.error(e)
     
-    def start_logging(self, log_file):
+    def start_logging(self, log_file, log_interval=None):
         from PYME.IO.h5rFile import H5RFile
 
         self.ensure_stopped()
+        if log_interval != None:
+            self.set_interval(log_interval)
             
         log_dir, log_stub = os.path.split(log_file)
         os.makedirs(log_dir)
@@ -412,7 +413,7 @@ class FocusLogger(object):
         
         self._log_file = H5RFile(log_file, mode='a', 
                                  keep_alive_timeout=max(20.0, 
-                                                        self.log_interval))
+                                                        self._log_interval))
         self._logging = True
         self._poll_thread = threading.Thread(target=self._poll)
         logger.debug('starting focus logger')
@@ -425,4 +426,4 @@ class FocusLogger(object):
             
             self._log_file.appendToTable('focus_log', d)
 
-            time.sleep(self.log_interval)
+            time.sleep(self._log_interval)
