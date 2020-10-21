@@ -1,6 +1,7 @@
 
 # This file is for focus locks which involve some sort of reflection off of the coverslip.
 from simple_pid import PID
+import os
 import numpy as np
 from scipy import optimize
 from PYME.util import webframework
@@ -369,3 +370,83 @@ class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock
             logger.info('Shutting down ...')
             self.shutdown()
             self.server_close()
+
+
+class FocusLogger(object):
+    _dtype = [('time', '<f4'), ('focus', '<f4')]
+
+    def __init__(self, position_handle, log_interval=1.0):
+        """
+        Logs focus position (or really any float return by the function passed
+        to this initialization) to and hdf file at a specified interval.
+
+        Parameters
+        ----------
+        position_handle : function
+            function handle to call to get position to log.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.0
+        """
+        self._position_handle = position_handle
+        self._log_file = None
+        self._log_interval = log_interval
+        self._poll_thread = None
+        self._logging = False
+        self._start_time = 0
+    
+    def set_interval(self, log_interval):
+        self._log_interval = log_interval
+    
+    def ensure_stopped(self):
+        """
+        Stop any current logging. Note that we let the h5rFile poll thread
+        do the hdf file closing
+        """
+        self._logging = False
+        try:
+            self._poll_thread.join()
+        except AttributeError:
+            pass
+    
+    def start_logging(self, log_file, log_interval=None):
+        """
+        Create a log file and start storing focus position values at a set time
+        interval.
+
+        Parameters
+        ----------
+        log_file : str
+            path to create hdf file storing contents in `focus_log` table.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.
+        """
+        from PYME.IO.h5rFile import H5RFile
+
+        self.ensure_stopped()
+        if log_interval != None:
+            self.set_interval(log_interval)
+            
+        log_dir, log_stub = os.path.split(log_file)
+        os.makedirs(log_dir, exist_ok=True)
+        log_stub, ext = os.path.splitext(log_file)
+        if ext != '.hdf':
+            log_file = os.path.join(log_dir, log_stub + '.hdf')
+        
+        self._log_file = H5RFile(log_file, mode='a', 
+                                 keep_alive_timeout=max(20.0, 
+                                                        self._log_interval))
+        self._logging = True
+        self._poll_thread = threading.Thread(target=self._poll)
+        logger.debug('starting focus logger')
+        self._start_time = _current_time()
+        self._poll_thread.start()
+    
+    def _poll(self):
+        while self._logging:
+            d = np.array([(_current_time() - self._start_time, 
+                           self._position_handle())],
+                         dtype=self._dtype)
+            
+            self._log_file.appendToTable('focus_log', d)
+
+            time.sleep(self._log_interval)
