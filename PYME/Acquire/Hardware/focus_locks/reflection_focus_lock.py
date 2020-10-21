@@ -406,7 +406,7 @@ class FocusLogger(object):
             self.set_interval(log_interval)
             
         log_dir, log_stub = os.path.split(log_file)
-        os.makedirs(log_dir)
+        os.makedirs(log_dir, exist_ok=True)
         log_stub, ext = os.path.splitext(log_file)
         if ext != '.hdf':
             log_file = os.path.join(log_dir, log_stub + '.hdf')
@@ -421,7 +421,7 @@ class FocusLogger(object):
     
     def _poll(self):
         while self._logging:
-            d = np.array((time.time(), self._position_handle()), 
+            d = np.array([(time.time(), self._position_handle())], 
                          dtype=self._dtype)
             
             self._log_file.appendToTable('focus_log', d)
