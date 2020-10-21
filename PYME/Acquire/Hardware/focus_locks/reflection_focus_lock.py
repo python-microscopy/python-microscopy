@@ -376,6 +376,17 @@ class FocusLogger(object):
     _dtype = [('time', '<f4'), ('focus', '<f4')]
 
     def __init__(self, position_handle, log_interval=1.0):
+        """
+        Logs focus position (or really any float return by the function passed
+        to this initialization) to and hdf file at a specified interval.
+
+        Parameters
+        ----------
+        position_handle : function
+            function handle to call to get position to log.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.0
+        """
         self._position_handle = position_handle
         self._log_file = None
         self._log_interval = log_interval
@@ -386,6 +397,10 @@ class FocusLogger(object):
         self._log_interval = log_interval
     
     def ensure_stopped(self):
+        """
+        Stop any current logging. Note that we let the h5rFile poll thread
+        do the hdf file closing
+        """
         self._logging = False
         try:
             self._poll_thread.join()
@@ -393,6 +408,17 @@ class FocusLogger(object):
             pass
     
     def start_logging(self, log_file, log_interval=None):
+        """
+        Create a log file and start storing focus position values at a set time
+        interval.
+
+        Parameters
+        ----------
+        log_file : str
+            path to create hdf file storing contents in `focus_log` table.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.
+        """
         from PYME.IO.h5rFile import H5RFile
 
         self.ensure_stopped()
