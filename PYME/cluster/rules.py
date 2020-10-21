@@ -252,12 +252,12 @@ class Rule(object):
         from PYME.IO import clusterIO
         s = clusterIO._getSession(self.taskQueueURI)
         r = s.get('%s/release_rule_tasks?ruleID=%s&release_start=%d&release_end=%d' % (
-            self.taskQueueURI, self._ruleID, release_start, release_start),
+            self.taskQueueURI, self._ruleID, release_start, release_end),
                   data='',
                   headers={'Content-Type': 'application/json'})
     
         if r.status_code == 200 and r.json()['ok']:
-            logging.debug('Successfully released tasks')
+            logging.debug('Successfully released tasks (%d:%d)' % (release_start, release_end))
         else:
             logging.error('Failed on releasing tasks with status code: %d' % r.status_code)
 
@@ -426,7 +426,7 @@ class LocalisationRule(Rule):
     
         logger.debug('DataSource.__class__: %s' % self.ds.__class__)
     
-    def task_template(self, context):
+    def _task_template(self, context):
         tt = {'id': '{{ruleID}}~{{taskID}}',
               'type': 'localization',
               'taskdef': {'frameIndex': '{{taskID}}', 'metadata': self.results_md_uri},
@@ -434,7 +434,7 @@ class LocalisationRule(Rule):
               'outputs': {'fitResults': self.resultsURI + '/FitResults',
                           'driftResults': self.resultsURI + '/DriftResults'}
               }
-        self._task_template = json.dumps(tt)
+        return json.dumps(tt)
 
     def prepare(self):
         """
@@ -498,7 +498,7 @@ class LocalisationRule(Rule):
             self.currentFrameNum = newFrameNum
             self.frames_outstanding = numTotalFrames - 1 - self.currentFrameNum
             
-            return cur_frame, newFrameNum
+            return cur_frame, newFrameNum +1
         
         
         
