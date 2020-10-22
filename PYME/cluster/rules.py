@@ -111,7 +111,9 @@ class Rule(object):
         rule = {'template': self._task_template(context)}
         
         if on_completion:
-            rule['on_completion'] = on_completion.get_rule(context).rule
+            chained_context = dict(**context)
+            chained_context['rule_outputs'] = self.output_files
+            rule['on_completion'] = on_completion.get_rule(chained_context).rule
         
         return rule
     
@@ -148,7 +150,10 @@ class Rule(object):
     
     def _output_files(self):
         """ Return a dictionary of output cluster URIs.
-        The principle output (if it makes sense to define one) should be under the 'output' key
+        The principle output (if it makes sense to define one) should be under the 'results' key. Each entry should be a list
+        of outputs (or a cluster glob):
+        
+        For a single output, the dictionary should look like: {'results' : [results_URI,]}
         
         Over-ride in derived rule classes
         """
@@ -313,7 +318,6 @@ class RecipeRule(Rule):
 
         TODO - support for templated recipes? Subclass?
         """
-        Rule.__init__(**kwargs)
         
         if recipe:
             if isinstance(recipe, six.string_types):
@@ -329,24 +333,30 @@ class RecipeRule(Rule):
                 self.recipeURI = recipeURI
         
         self.output_dir = output_dir
+
+        Rule.__init__(self, **kwargs)
     
     def _populate_rule(self, context, on_completion=None):
-        #over-ride here because we need to add input info
-        rule = Rule._populate_rule(self, context, on_completion=on_completion)
+        # over-ride here because we need to add input info
         
-        inputs = context.get('inputs', None)
+        # try (in order of increasing precedence):
+        # - output of previous rule in the chain
+        # - an `input_templates` variable in the context
+        # - hard coded `inputs` in the context
+        inputs = context.get('rule_outputs', {})
+        input_templates = context.get('input_templates', None)
+        if input_templates is not None:
+            inputs.update({k: v.format(context) for k, v in input_templates.items()})
         
-        if inputs is None:
-            input_templates = context.get('input_templates', None)
-            if input_templates is None:
-                raise RuntimeError('one of "inputs" or "input_templates" must be present in context')
-            
-            inputs = {k : v.format(context) for k, v in input_templates.items()}
+        inputs.update(context.get('inputs', {}))
 
+        if not inputs:
+            raise RuntimeError('No inputs found, one of "inputs", "input_templates", or "rule_outputs" must be present in context')
+        
         input_names = inputs.keys()
         inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
                   in input_names}
-        
+
         self._num_recipe_tasks = len(list(inputs.values())[0])
 
         logger.debug('numTotalFrames = %d' % self._num_recipe_tasks)
@@ -355,6 +365,8 @@ class RecipeRule(Rule):
         inputs_by_task = {frameNum: {k: inputs[k][frameNum] for k in inputs.keys()} for frameNum in
                           range(self._num_recipe_tasks)}
         
+        
+        rule = Rule._populate_rule(self, context, on_completion=on_completion)
         rule['inputsByTask'] = inputs_by_task
         
         return rule
@@ -414,7 +426,7 @@ class LocalisationRule(Rule):
         Rule.__init__(self, **kwargs)
         
     def _output_files(self):
-        return {'output' : self.resultsURI}
+        return {'results' : [self.resultsURI,]}
     
     def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
