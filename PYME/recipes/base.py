@@ -813,6 +813,43 @@ class ModuleCollection(HasTraits):
         self.modules.append(module)
         self.recipe_changed.send_robust(self)
         
+    def add_modules_and_execute(self, modules, rollback_on_failure=True):
+        """
+        Adds modules to the recipe and then execute the recipe. Added to make UI interaction in PYMEVis a bit nicer when
+        modules added from the menu fail, this function gives the option (enabled by default) of rolling back the
+        additions should execute fail.
+        
+        Parameters
+        ----------
+        modules : list
+            a list of modules to add
+        rollback_on_failure : bool
+            rollback and remove modules (and their outputs) if .execute() fails
+
+        """
+        
+        try:
+            for m in modules:
+                self.modules.append(m)
+            
+            self.execute()
+        except:
+            if rollback_on_failure:
+                #do cleanup
+                
+                #remove any outputs
+                for m in modules:
+                    self.prune_dependencies_from_namespace(m.outputs)
+                    
+                #remove the modules themselves
+                for m in modules:
+                    self.modules.remove(m)
+                
+            raise
+
+        self.recipe_changed.send_robust(self)
+            
+        
     @property
     def inputs(self):
         ip = set()
