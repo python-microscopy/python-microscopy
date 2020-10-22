@@ -432,7 +432,7 @@ class IntegerIDRule(Rule):
         # To fix: Potentially replace with `np.all(self._task_info['status']>=STATUS_COMPLETE)` (although this would need to be cached and refreshed - property access should be cheap). 
         # combined with a new enum value STATUS_INVALID==6 -  `self.mark_release_complete()` could be re-written as `self._task_info['status'][self._task_info['status'] == 0] = STATUS_INVALID`
         
-        return (self.nCompleted >= self._n_max)
+        return (self.nAvailable == 0) and ((self.nCompleted + self.nFailed) >= self._n_max)
     
     def inactivate(self):
         """
@@ -479,9 +479,10 @@ class IntegerIDRule(Rule):
                 
                 self.n_timed_out += nTimedOut
     
-                retry_failed = self._task_info['nRetries'] > self._n_retries
-                self._task_info['status'][retry_failed] = STATUS_FAILED
+                retry_failed = self._task_info['nRetries'][timed_out] > self._n_retries
+                self._task_info['status'][timed_out[retry_failed]] = STATUS_FAILED
                 self.nAvailable -= int(retry_failed.sum())
+                self.nFailed += int(retry_failed.sum())
                 
                 #self._update_nums()
             
