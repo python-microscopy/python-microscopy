@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe editor</title>
+
+    <style>
+        .recipe_module {
+            background-color: LightSteelBlue;
+            border-style: solid;
+            border-width: 1px;
+            border-color: steelblue;
+            border-radius: 5px;
+            box-shadow: 2px 2px darkgrey;
+            width: fit-content;
+            padding-left: 10px;
+            padding-right: 5px;
+            padding-bottom: 5px;
+            margin: 10px;
+        }
+
+        .module_name {
+            margin-block-start: .7em;
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .col0 {
+
+        }
+
+        .connecting_line {
+            stroke: ;
+        }
+
+    </style>
+
+    <!-- Load the jigna-vue script. The location of jigna-vue script file
+    will always be '/jigna/jigna-vue.js' -->
+    <script type='text/javascript' src='/jigna/jigna-vue.js'></script>
+
+    <!-- Once jigna is loaded, initialize it. -->
+    <script type='text/javascript'>
+        jigna.initialize();
+    </script>
+</head>
+<body>
+
+<div style="overflow: scroll">
+      Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>
+
+      <!--<div v-html="recipe.to_svg()"></div> -->
+
+      <svg viewBox="0, -1, 7, 2" width="4000px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+      <g v-for="line in recipe.layout().connecting_lines">
+        <polyline :points="line_fmt(line)" style="stroke:grey;stroke-width: .005;fill:none"></polyline>
+      </g>
+          <g v-for="node in recipe.layout().node_positions">                                                                                                    <!--<text v-if="node.key.__type__" :x="node.pos[0]" :y="node.pos[1]" style="font-size: 0.1px">{{ node.key.get_name() }}</text>-->
+          <svg v-if="node.key.__type__" :x="2*node.pos[0]/3 " :y="node.pos[1]-0.375" width="1" height="0.75" viewBox="0,0,400,300">
+          <foreignObject  x="0" y="0" width="400" height="300">
+            <!--<div xmlns="http://www.w3.org/1999/xhtml">-->
+            <xhtml:div class="container">
+            <div class="recipe_module">
+                <h4 class="module_name">{{node.key.get_name()}}</h4>
+            <table>
+            <tr v-for="param in node.key.get_params()[2]">
+            <td>{{param}}:</td><td><input v-model="node.key[param]"></td>
+            </tr>
+            </table>
+            </div>
+                </xhtml:div>
+            <!--</div> -->
+        </foreignObject>
+              </svg>
+          <text v-else :x="2*node.pos[0]/3 + 0.33" :y="node.pos[1]" style="font-size: 0.05px">{{ node.key }}</text>
+      </g>
+
+
+
+
+      </svg>
+
+      <!--<div v-for="module in recipe.modules" class="recipe_module">
+            <h4 class="module_name">{{module.get_name()}}</h4>
+            <table>
+            <tr v-for="param in module.get_params()[2]">
+            <td>{{param}}:</td><td><input v-model="module[param]"></td>
+            </tr>
+            </table>
+      </div> -->
+
+    </div>
+"""
+
+<script>
+    const zip = (arr1, arr2) => arr1.map((k, i) => [2*k/3, arr2[i]]);
+
+    var vm = undefined;
+    // jigna.models are ready only when the deferred called ready is done.
+    Vue.config.devtools = true;
+    //Vue.config.debug = true;
+    jigna.ready.done(function() {
+       vm = new Vue({
+           el: 'body',
+           data: jigna.models, // Attach to the body tag.
+           methods: {
+               threaded: function(obj, method_name, args) {
+                   jigna.threaded.apply(jigna, arguments);
+               },
+               line_fmt: function (line) {
+                   return zip(line[0], line[1]).join(' ');
+
+               }
+           },
+       });
+    });
+  </script>
+</body>
+</html>

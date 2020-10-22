@@ -1033,6 +1033,17 @@ class ModuleCollection(HasTraits):
         from . import recipeLayout
         return recipeLayout.to_svg(self.dependancyGraph())
     
+    def layout(self):
+        from . import recipeLayout
+        from collections import namedtuple
+        layout_info = namedtuple('layout', ['node_positions', 'connecting_lines'])
+        node = namedtuple('node', ['key', 'pos'])
+        
+        node_positions, connecting_lines = recipeLayout.layout(self.dependancyGraph())
+        ret =   layout_info([node(k, v) for k, v in node_positions.items()], [(a.tolist(), b.tolist(), c) for a,b,c in connecting_lines])
+        print (ret)
+        return ret
+    
     def _repr_svg_(self):
         """ Make us look pretty in Jupyter"""
         return self.to_svg()

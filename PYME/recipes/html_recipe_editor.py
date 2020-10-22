@@ -4,9 +4,11 @@
 from tornado.ioloop import IOLoop
 from .traits import HasTraits, Int, Str
 from jigna.web_app import WebApp
-from jigna.template import Template
+#from jigna.template import Template
+from jigna.vue_template import VueTemplate
 
 import sys
+import os
 from PYME.recipes import modules #force modules to load
 from PYME.recipes.base import ModuleCollection
 
@@ -18,26 +20,28 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-body_html = """
-    <div>
-      Execute on invalidation: <input ng-model="recipe.execute_on_invalidation" type='checkbox'><br>
-      
-      <div innerHTML="raw recipe.to_svg()"></div>
-      <div id='img'></div>
-      
-      <div ng-repeat="module in recipe.modules">
-            <h4>{{module.get_name()}}</h4>
-            <table>
-            <tr ng-repeat="param in module.get_params()[2]">
-            <td>{{param}}:</td><td><input ng-model="module[param]"></td>
-            </tr>
-            </table>
-      </div>
-      
-    </div>
-"""
+# body_html = """
+#     <div>
+#       Execute on invalidation: <input ng-model="recipe.execute_on_invalidation" type='checkbox'><br>
+#
+#       <div innerHTML="raw recipe.to_svg()"></div>
+#       <div id='img'></div>
+#
+#       <div ng-repeat="module in recipe.modules">
+#             <h4>{{module.get_name()}}</h4>
+#             <table>
+#             <tr ng-repeat="param in module.get_params()[2]">
+#             <td>{{param}}:</td><td><input ng-model="module[param]"></td>
+#             </tr>
+#             </table>
+#       </div>
+#
+#     </div>
+# """
 
-template = Template(body_html=body_html)
+#template = Template(body_html=body_html)
+
+template = VueTemplate(html_file=os.path.join(os.path.dirname(__file__), 'recipe_editor.html'))
 
 #### Entry point ####
 
