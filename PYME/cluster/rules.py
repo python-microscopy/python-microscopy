@@ -278,6 +278,20 @@ class Rule(object):
         else:
             logging.error('Failed on releasing tasks with status code: %d' % r.status_code)
 
+    def _mark_complete(self):
+        """ Thin wrapper around release_rule_tasks api endpoint"""
+        from PYME.IO import clusterIO
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.get('%s/mark_release_complete?ruleID=%s' % (
+            self.taskQueueURI, self._ruleID),
+                  data='',
+                  headers={'Content-Type': 'application/json'})
+    
+        if r.status_code == 200 and r.json()['ok']:
+            logging.debug('Successfully marked rule as complete')
+        else:
+            logging.error('Failed to mark rule complete with status code: %d' % r.status_code)
+
     def _poll_loop(self):
         logging.debug('task pusher poll loop started')
         # wait until clusterIO caches clear to avoid replicating the results file.
@@ -292,7 +306,9 @@ class Rule(object):
                 pass
         
             if self.complete:
-                logging.debug('all tasks pushed, ending loop.')
+                logging.debug('input data complete and all tasks pushed, marking rule as complete')
+                self._mark_complete()
+                logging.debug('ending polling loop.')
                 self.doPoll = False
             else:
                 time.sleep(1)

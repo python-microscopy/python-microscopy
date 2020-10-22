@@ -795,7 +795,7 @@ class RuleServer(object):
             return json.dumps({'ok': 'False', 'error': str(expired_rules)})
     
     @webframework.register_endpoint('/mark_release_complete')
-    def mark_release_complete(self, rule_id, n_tasks=None):
+    def mark_release_complete(self, ruleID, n_tasks=None):
         """
         
         HTTP Endpoint (POST) to signal that no more tasks will be released for a rule and the rule can be regarded as finished once the previously released
@@ -828,7 +828,7 @@ class RuleServer(object):
         # take out the rule lock in case we are still creating the rule and the
         # client POSTs this (e.g. if a series is started/stopped quickly)
         with self._rule_lock:
-            self._rules[rule_id].mark_release_complete(n_tasks)
+            self._rules[ruleID].mark_release_complete(n_tasks)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')
