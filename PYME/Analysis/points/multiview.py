@@ -35,31 +35,48 @@ def load_shiftmap(uri):
 
     return shift_map
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=False):  # , notKosher=None):
+
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key,
+                         discard_trivial=False):
     """
     Agregates clumps to a single event
-    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object.
-    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
-    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
 
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weights_by_key: dictionary of weights.
-        discard_trivial : Bool
-            by default, the output of aggregation/coalescing is indexable by the original clump ID and contains entries
-            for the unassigned (0) clump and any other clumps which might have been lost to filtering. Setting discard_trial
-            to true returns only those clumps for which idx >=1 and which contain at least 1 point.
+    Parameters
+    ----------
+    inD : dict
+        input dictionary containing fit results
+    assigned : ndarray
+        clump assignments to be coalesced. Cluster assignment index can start
+        at 0 or 1 (the latter following PYME cluster labeling convention),
+        however any index present will be coalesced (including the 0 cluster,
+        if present).
+    keys : list
+        elements are strings corresponding to keys to be copied from the input
+        to output dictionaries
+    weights_by_key : dict
+        maps weighting keys to coalescing weights or coalescing style (mean,
+        min, sum).
+    discard_trivial : bool
+        by default, the output of aggregation/coalescing is indexable by the
+        original clump ID and contains entries for the unassigned (0) clump
+        and any other clumps which might have been lost to filtering. Setting
+        discard_trial to true returns only those clumps for which  idx >=1 and
+        which contain at least 1 point.
 
-    Returns:
-        fres: output dictionary containing the coalesced results
+    Returns
+    -------
+    fres: dict
+        coalesced results
+
+    Notes
+    -----
+    This will evaluate the lazy pipeline events and add them into the dict as
+    an array, not a code object.
 
     """
     from PYME.Analysis.points.DeClump import deClump
 
-    NClumps = int(np.max(assigned) + 1)  # len(np.unique(assigned))  #
+    NClumps = int(np.max(assigned) + 1)  # yes this is weird, but look at the C code
 
     clumped = {}
     
@@ -81,7 +98,7 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, discard_trivial=Fa
         else:
             # if weights is an array, take weighted average
             var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
-            clumped[weights] = errVec
+            clumped[weights] = errVec[non_trivial] if discard_trivial else errVec
 
         if discard_trivial:
             clumped[rkey] = var[non_trivial]
@@ -109,7 +126,7 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     if not inject:
         datasource = tabular.MappingFilter(datasource)
 
-    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh.voxelsize_nm.x)  # voxelsize is in um
+    roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh.voxelsize_nm.x)
 
     numChans = mdh.getOrDefault('Multiview.NumROIs', 1)
     color_chans = np.array(mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChans, 'i'))).astype('i')
@@ -117,8 +134,14 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     datasource.addVariable('roiSizeNM', roiSizeNM)
     datasource.addVariable('numChannels', numChans)
 
-    #FIXME - cast to int should probably happen when we use multiViewChannel, not here (because we might have saved and reloaded in between)
-    datasource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels - 1).astype(int)')
+    # NB - this assumes that 'Multiview.ActiveViews' is sorted the same way that the views are concatenated (probably a safe assumption)
+    active_rois = np.asarray(mdh.getOrDefault('Multiview.ActiveViews', 
+                                              list(range(numChans))))
+    multiview_channel = np.clip(np.floor(datasource['x'] / roiSizeNM), 
+                                0, numChans - 1)
+    multiview_channel = active_rois[multiview_channel.astype(int)]
+    datasource.addColumn('multiviewChannel', multiview_channel)
+    
     if chroma_mappings:
         datasource.addColumn('chromadx', 0 * datasource['x'])
         datasource.addColumn('chromady', 0 * datasource['y'])
@@ -407,7 +430,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     return datasource
 
 def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
-    from PYME.IO.tabular import CachingResultsFilter, MappingFilter
+    from PYME.IO.tabular import DictSource
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
@@ -428,8 +451,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights, discard_trivial=True)
-    return MappingFilter(grouped)
-
+    return DictSource(grouped)
 
 
 

@@ -48,11 +48,11 @@ def drift_correct(pipeline):
     
     filt_fiducials.configure_traits(kind='modal')
     #print('Adding fiducial filter module')
-    recipe.add_module(filt_fiducials)
+    #recipe.add_module(filt_fiducials)
     
-    recipe.add_module(DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
-                                       searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID'))
-    recipe.execute()
+    dbs = DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
+                                       searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID')
+    recipe.add_modules_and_execute([filt_fiducials, dbs])
     
     
     fids = recipe.namespace['clumped_fiducials']
@@ -62,13 +62,13 @@ def drift_correct(pipeline):
     id_filter = FilterTableByIDs(recipe, inputName='clumped_fiducials', outputName='selected_fiducials',
                       idColumnName='fiducialID', ids = fid_ids)
     
-    recipe.add_module(id_filter)
+    #recipe.add_module(id_filter)
     
-    recipe.add_module(FiducialCorrection(recipe, inputLocalizations=pipeline.selectedDataSourceKey,
+    fc = FiducialCorrection(recipe, inputLocalizations=pipeline.selectedDataSourceKey,
                                          inputFiducials='selected_fiducials',
-                                         outputName='corrected_localizations', outputFiducials='corrected_fiducials'))
+                                         outputName='corrected_localizations', outputFiducials='corrected_fiducials')
     
-    recipe.execute()
+    recipe.add_modules_and_execute([id_filter, fc])
     pipeline.selectDataSource('corrected_localizations')
     
 
@@ -212,9 +212,8 @@ def drift_auto_corr(visFr):
                                                      outputName='corrected_localizations')
     
     if m.configure_traits(kind='modal'):
-        recipe.add_module(m)
+        recipe.add_modules_and_execute([m,])
         
-        recipe.execute()
         pipeline.selectDataSource('corrected_localizations')
         #visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
