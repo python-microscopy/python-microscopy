@@ -26,8 +26,11 @@
         .container {
             display: flex;
             align-items: center;
+            justify-content: center;
             width: 100%;
             height: 100%;
+            /*background-color: lightgrey;*/
+            border: 1px soild red;
         }
 
         .col0 {
@@ -43,8 +46,16 @@
         }
 
         #editor {
-            width: 100%;
+            width: 600px;
             height:500px;
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        #recipe {
+            display: inline-block;
+            width: auto;
+            overflow: scroll
         }
 
     </style>
@@ -62,17 +73,17 @@
 <body>
 
 <div id="app" fullwidth>
-<div id="recipe" style="overflow: scroll">
-      Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>
+<div id="recipe">
+      <!--Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>-->
 
       <!--<div v-html="recipe.to_svg()"></div> -->
 
-      <svg viewBox="0, -.875, 7, 1.75" width="2800px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+      <svg viewBox="-1,0, 2, 7" width="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
       <g v-for="line in recipe.layout().connecting_lines">
         <polyline :points="line_fmt(line)" style="stroke:grey;stroke-width: .005;fill:none"></polyline>
       </g>
           <g v-for="node in recipe.layout().node_positions">                                                                                                    <!--<text v-if="node.key.__type__" :x="node.pos[0]" :y="node.pos[1]" style="font-size: 0.1px">{{ node.key.get_name() }}</text>-->
-          <svg v-if="node.key.__type__" :x="2*node.pos[0]/3 " :y="node.pos[1]-0.375" width="1" height="0.75" viewBox="0,0,400,300">
+          <svg v-if="node.key.__type__" :y="cond(node.pos[0])-0.375 " :x="node.pos[1]-0.5" width="1" height="0.75" viewBox="0,0,400,300">
           <foreignObject  x="0" y="0" width="400" height="300">
             <!--<div xmlns="http://www.w3.org/1999/xhtml">-->
             <div class="container">
@@ -88,7 +99,7 @@
             <!--</div> -->
         </foreignObject>
               </svg>
-          <text v-else :x="2*node.pos[0]/3 + 0.33" :y="node.pos[1]" style="font-size: 0.05px">{{ node.key }}</text>
+          <text v-else :y="cond(node.pos[0])" :x="node.pos[1]" style="font-size: 0.05px">{{ node.key }}</text>
       </g>
 
 
@@ -116,7 +127,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
 
 <script>
-    const zip = (arr1, arr2) => arr1.map((k, i) => [2*k/3, arr2[i]]);
+    condense=function(y){
+        var f = Math.floor(y);
+        var g = y-f;
+
+        return 5/8*(f/2) + g/4;
+    };
+
+    const zip = (arr2, arr1) => arr1.map((k, i) => [k, condense(arr2[i])]);
     const input_type_mappings = {string : 'text', number : 'number', boolean : 'checkbox'};
 
     var vm = undefined;
@@ -127,17 +145,20 @@
     Vue.component('trait-input',{
        props: ['value', 'type'],
        template: `
-            <input :value="value" :type="input_type(type)" v-on:input="$emit('input', format_value($event.target.value))">`,
+            <input :value="value" :checked="value" :type="input_type(type)" v-on:input="$emit('input', format_value($event))">`,
        methods: {
            input_type: function(type){return input_type_mappings[type];},
-           format_value: function(value){
+           format_value: function(event){
+               var val = event.target.value;
                switch(this.type){
                    case 'number':
-                       return parseFloat(value);
+                       return parseFloat(val);
                    case 'boolean':
-                       return (value == 'true');
+                       val = event.target.checked;
+                       console.log(val, typeof(val));
+                       return val;
                    default:
-                       return value;
+                       return val;
                }
            }
        }
@@ -163,7 +184,8 @@
                input_type: function (param, module) {
                    // take module argument for an improved future version which gets more trait info
                    return input_type_mappings[typeof(param)];
-               }
+               },
+               cond: function(y){return condense(y);}
            },
            watch: {
                recipe: function(new_data, old_data){
@@ -177,7 +199,10 @@
        editor.setTheme("ace/theme/monokai");
        editor.session.setMode("ace/mode/yaml");
        editor.setValue(vm.recipe.toYAML());
+       editor.clearSelection();
        editor.on('blur', function(){vm.recipe.update_from_yaml(editor.getValue());});
+
+       jigna.add_listener('jigna', 'object_changed', function(event){editor.setValue(vm.recipe.toYAML());editor.clearSelection();});
     });
   </script>
 </body>
