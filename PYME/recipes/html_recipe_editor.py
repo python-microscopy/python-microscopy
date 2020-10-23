@@ -7,6 +7,10 @@ from jigna.web_app import WebApp
 #from jigna.template import Template
 from jigna.vue_template import VueTemplate
 
+import jigna.web_server
+# monkey-patch the js file location
+jigna.web_server.JIGNA_JS_FILE='/Users/david/dev/jigna/jigna/js/dist/jigna.js'
+
 import sys
 import os
 from PYME.recipes import modules #force modules to load

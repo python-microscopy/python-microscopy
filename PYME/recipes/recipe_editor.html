@@ -34,15 +34,25 @@
 
         }
 
+        .fullwidth {
+            width:100%;
+        }
+
         .connecting_line {
-            stroke: ;
+            stroke: grey;
+        }
+
+        #editor {
+            width: 100%;
+            height:500px;
         }
 
     </style>
 
     <!-- Load the jigna-vue script. The location of jigna-vue script file
     will always be '/jigna/jigna-vue.js' -->
-    <script type='text/javascript' src='/jigna/jigna-vue.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script type='text/javascript' src='/jigna/jigna-vue-bare.js'></script>
 
     <!-- Once jigna is loaded, initialize it. -->
     <script type='text/javascript'>
@@ -51,12 +61,13 @@
 </head>
 <body>
 
-<div style="overflow: scroll">
+<div id="app" fullwidth>
+<div id="recipe" style="overflow: scroll">
       Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>
 
       <!--<div v-html="recipe.to_svg()"></div> -->
 
-      <svg viewBox="0, -1, 7, 2" width="4000px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+      <svg viewBox="0, -.875, 7, 1.75" width="2800px" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
       <g v-for="line in recipe.layout().connecting_lines">
         <polyline :points="line_fmt(line)" style="stroke:grey;stroke-width: .005;fill:none"></polyline>
       </g>
@@ -64,16 +75,16 @@
           <svg v-if="node.key.__type__" :x="2*node.pos[0]/3 " :y="node.pos[1]-0.375" width="1" height="0.75" viewBox="0,0,400,300">
           <foreignObject  x="0" y="0" width="400" height="300">
             <!--<div xmlns="http://www.w3.org/1999/xhtml">-->
-            <xhtml:div class="container">
+            <div class="container">
             <div class="recipe_module">
                 <h4 class="module_name">{{node.key.get_name()}}</h4>
             <table>
             <tr v-for="param in node.key.get_params()[2]">
-            <td>{{param}}:</td><td><input v-model="node.key[param]"></td>
+                <td>{{param}}:</td><td><trait-input v-model="node.key[param]" :type="typeof(node.key[param])"></trait-input></td>
             </tr>
             </table>
             </div>
-                </xhtml:div>
+                </div>
             <!--</div> -->
         </foreignObject>
               </svg>
@@ -95,18 +106,51 @@
       </div> -->
 
     </div>
-"""
+    <div id="editor">function foo(items) {
+    var x = "All this is syntax highlighted";
+    return x;
+    }
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
 
 <script>
     const zip = (arr1, arr2) => arr1.map((k, i) => [2*k/3, arr2[i]]);
+    const input_type_mappings = {string : 'text', number : 'number', boolean : 'checkbox'};
 
     var vm = undefined;
     // jigna.models are ready only when the deferred called ready is done.
     Vue.config.devtools = true;
     //Vue.config.debug = true;
+
+    Vue.component('trait-input',{
+       props: ['value', 'type'],
+       template: `
+            <input :value="value" :type="input_type(type)" v-on:input="$emit('input', format_value($event.target.value))">`,
+       methods: {
+           input_type: function(type){return input_type_mappings[type];},
+           format_value: function(value){
+               switch(this.type){
+                   case 'number':
+                       return parseFloat(value);
+                   case 'boolean':
+                       return (value == 'true');
+                   default:
+                       return value;
+               }
+           }
+       }
+
+    });
+
+
+    var editor;
+
+
     jigna.ready.done(function() {
        vm = new Vue({
-           el: 'body',
+           el: '#app',
            data: jigna.models, // Attach to the body tag.
            methods: {
                threaded: function(obj, method_name, args) {
@@ -115,9 +159,25 @@
                line_fmt: function (line) {
                    return zip(line[0], line[1]).join(' ');
 
+               } ,
+               input_type: function (param, module) {
+                   // take module argument for an improved future version which gets more trait info
+                   return input_type_mappings[typeof(param)];
                }
            },
+           watch: {
+               recipe: function(new_data, old_data){
+                   console.log('Model changed');
+               }
+           }
        });
+
+       ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/");
+       editor = ace.edit("editor");
+       editor.setTheme("ace/theme/monokai");
+       editor.session.setMode("ace/mode/yaml");
+       editor.setValue(vm.recipe.toYAML());
+       editor.on('blur', function(){vm.recipe.update_from_yaml(editor.getValue());});
     });
   </script>
 </body>
