@@ -9,6 +9,9 @@ from jigna.vue_template import VueTemplate
 
 import jigna.web_server
 # monkey-patch the js file location
+# The reason we do this is so we can use a more recent version of vuejs. By default, jigna ships with a jigna-vue.js
+# which contains a concatenation of jquery, vue=1.x, and jigna. In recipe_editor.html, we load a modified version of
+# jigna-vue.js, jigna-vue-bare WITHOUT vue which lets us separately load a recent version of vue
 jigna.web_server.JIGNA_JS_FILE='/Users/david/dev/jigna/jigna/js/dist/jigna.js'
 
 import sys
