@@ -72,7 +72,8 @@ def pz(scope):
         subprocess.Popen('%s %s' % (sys.executable, fl_command),
                         creationflags=subprocess.CREATE_NEW_CONSOLE)
     
-    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
+    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc,
+                                                       focus_lock=scope.focus_lock)
 
 
 @init_hardware('HamamatsuORCA')

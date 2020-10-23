@@ -24,6 +24,7 @@ class StageLeveler(object):
         offset_piezo: PYME.Acquire.Hardware.offsetPiezoREST.OffsetPiezo
         pause_on_relocate: float
             [optional] time to pause during measure loop after moving to a new location and before measuring offset.
+        focus_lock : PYME.Acquire.Hardware.focus_locks
 
         Notes
         -----
@@ -41,6 +42,11 @@ class StageLeveler(object):
         self._scope = scope
         self._offset_piezo = offset_piezo
         self._focus_lock = focus_lock
+        if self._focus_lock == None:
+            try:
+                self._focus_lock = scope.focus_lock
+            except AttributeError:
+                pass
         self._positions = []
         self._scans = []
         self._pause_on_relocate = pause_on_relocate
@@ -141,9 +147,12 @@ class StageLeveler(object):
             offset[ind] = self._offset_piezo.GetOffset()
             try:
                 lock_ok[ind] = self._focus_lock.LockOK()
+                logger.debug('lock OK %s, x %.1f, y %.1f, offset %.1f' % (lock_ok[ind],
+                                                                            x[ind], y[ind],
+                                                                            offset[ind]))
             except AttributeError:
-                pass
-
+                logger.debug('x %.1f, y %.1f, offset %.1f' % (x[ind], y[ind], 
+                                                              offset[ind]))
 
         self._scans.append({
             'x': x[lock_ok], 'y': y[lock_ok], 'offset': offset[lock_ok]
