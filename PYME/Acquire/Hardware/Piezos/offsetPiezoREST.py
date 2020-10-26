@@ -69,22 +69,24 @@ class OffsetPiezo(PiezoBase):
     @webframework.register_endpoint('/SetOffset', output_is_json=False)
     def SetOffset(self, offset):
         # both gettarget and moveto account for offset, so make sure we only apply the change once
-        pos = self.GetTargetPos()
-        self.offset = float(offset)
-        self.MoveTo(0, pos)
+        with self._offset_lock:
+            pos = self.GetTargetPos(0)
+            self.offset = float(offset)
+            self.MoveTo(0, pos)
 
     @webframework.register_endpoint('/CorrectOffset', output_is_json=False)
     def CorrectOffset(self, correction):
         # both gettarget and moveto account for offset, so make sure we only apply the change once
-        target = self.GetTargetPos(0)
-        self.offset += float(correction)  # correct the offset; positive means push base pos higher than offsetpiezo pos
-        # make sure we don't go out of bounds for our base piezo
-        # the actual base position is the largest possible offset without dipping below 0. Base target is target + offset
-        # self.offset = min(self.offset, target + self.offset)
-        # should the offset be negative, the most we can hit is max travel - target position
-        # self.offset = max(self.offset, target + self.offset - self.basePiezo.max_travel)
-        self.offset = max(min(self.offset, target + self.offset), target + self.offset - self.basePiezo.max_travel)
-        self.MoveTo(0, target)  # move the base piezo to correct position
+        with self._offset_lock:
+            target = self.GetTargetPos(0)
+            self.offset += float(correction)  # correct the offset; positive means push base pos higher than offsetpiezo pos
+            # make sure we don't go out of bounds for our base piezo
+            # the actual base position is the largest possible offset without dipping below 0. Base target is target + offset
+            # self.offset = min(self.offset, target + self.offset)
+            # should the offset be negative, the most we can hit is max travel - target position
+            # self.offset = max(self.offset, target + self.offset - self.basePiezo.max_travel)
+            self.offset = max(min(self.offset, target + self.offset), target + self.offset - self.basePiezo.max_travel)
+            self.MoveTo(0, target)  # move the base piezo to correct position
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):
