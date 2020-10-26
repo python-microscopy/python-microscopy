@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
+import threading
 
 class OffsetPiezo(PiezoBase):
     """
@@ -24,6 +25,8 @@ class OffsetPiezo(PiezoBase):
     def __init__(self, basePiezo):
         self.basePiezo = basePiezo
         self.offset = 0
+        # webframework.APIHTTPServer handles requests in separate threads
+        self._offset_lock = threading.Lock()
         
     @property
     def units_um(self):
@@ -66,9 +69,9 @@ class OffsetPiezo(PiezoBase):
     @webframework.register_endpoint('/SetOffset', output_is_json=False)
     def SetOffset(self, offset):
         # both gettarget and moveto account for offset, so make sure we only apply the change once
-        pos = self.GetPos()
+        pos = self.GetTargetPos()
         self.offset = float(offset)
-        self.MoveTo(pos)
+        self.MoveTo(0, pos)
 
     @webframework.register_endpoint('/CorrectOffset', output_is_json=False)
     def CorrectOffset(self, correction):
