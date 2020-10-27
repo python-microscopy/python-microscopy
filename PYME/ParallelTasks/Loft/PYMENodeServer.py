@@ -100,7 +100,8 @@ def main():
     t_log_stdout.setDaemon(False)
     t_log_stdout.start()
 
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
+    service_name = ns.register_service('PYMENodeServer: ' + GetComputerName(), 
+                                       externalAddr, int(serverPort))
 
     time.sleep(2)
     logging.debug('Launching worker processors')
@@ -127,7 +128,7 @@ def main():
         LOG_STREAMS = False
         logging.info('Shutting down workers')
         try:
-            ns.unregister('PYMENodeServer: ' + GetComputerName())
+            ns.unregister(service_name)
         except:
             pass
 

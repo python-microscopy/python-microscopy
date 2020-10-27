@@ -922,7 +922,7 @@ def main(protocol="HTTP/1.0"):
     #get the actual adress (port) we bound to
     sa = httpd.socket.getsockname()
     service_name = 'PYMEDataServer [%s]: ' % options.server_filter + procName
-    ns.register_service(service_name, ip_addr, sa[1])
+    service_name = ns.register_service(service_name, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address
