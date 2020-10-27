@@ -140,6 +140,8 @@ class ReflectedLinePIDFocusLock(PID):
         self.piezo = piezo
         # self._last_offset = self.piezo.GetOffset()
 
+        self._lock_ok = False
+
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
         
@@ -249,6 +251,10 @@ class ReflectedLinePIDFocusLock(PID):
     def fit_roi_size(self, roi_size):
         self._fit_roi_size = roi_size
         self._roi_position = np.arange(roi_size)
+    
+    @webframework.register_endpoint('/LockOK', output_is_json=False)
+    def LockOK(self):
+        return self.LockEnabled() and self._lock_ok
 
     def find_peak(self, profile):
         """
@@ -283,12 +289,14 @@ class ReflectedLinePIDFocusLock(PID):
             peak_position, success = self.find_peak(profile)
 
         if not success:
+            self._lock_ok = False
             # restart the integration / derivatives so we don't go wild when we
             # eventually get a good fit again
             self.reset()
             return
         
         self.peak_position = peak_position
+        self._lock_ok = True
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
@@ -315,6 +323,10 @@ class RLPIDFocusLockClient(object):
 
     def LockEnabled(self):
         response = self._session.get(self.base_url + '/LockEnabled')
+        return bool(response.json())
+    
+    def LockOK(self):
+        response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
     def EnableLock(self):

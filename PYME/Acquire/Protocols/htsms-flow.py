@@ -3,9 +3,9 @@ from PYME.Acquire.protocol import *
 # T(when, what, *args) creates a new task. "when" is the frame number, "what" is a function to
 # be called, and *args are any additional arguments.
 taskList = [
-    # T(-1, scope.l642.TurnOn),
     T(0, scope.focus_lock.DisableLock),
-    # T(8000, scope.l560.TurnOn),
+    T(0, scope.l642.TurnOn),
+    T(0, scope.l560.TurnOn),
     # T(maxint, scope.turnAllLasersOff),
     T(maxint, scope.focus_lock.EnableLock)
 ]
