@@ -43,6 +43,10 @@ class QueueAcquisitions(OutputModule):
                 see PYME.Acquire.HTTPSpooler
             protocol_name : str
                 filename of the acquisition protocol to follow while spooling
+            subdirectory : str
+                firectory within current SpoolController set directory to spool
+                a given series. The directory will be created if it doesn't 
+                already exist.
     lifo: Bool
         last-in first-out behavior (True) starts at the last position in 
         `input_positions`, False starts with the 0th. Useful in instances where
