@@ -103,7 +103,8 @@ def main():
     time.sleep(0.5)
     sa = proc.nodeserver.socket.getsockname()
     serverPort = int(sa[1])
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, serverPort)
+    serivce_name = ns.register_service('PYMENodeServer: ' + GetComputerName(), 
+                                       externalAddr, serverPort)
 
     time.sleep(2)
     nodeserverLog.debug('Launching worker processors')
@@ -125,7 +126,7 @@ def main():
         logger.info('Shutting down workers')
         
         try:
-            ns.unregister('PYMENodeServer: ' + GetComputerName())
+            ns.unregister(service_name)
         except:
             pass
 

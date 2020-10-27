@@ -83,7 +83,8 @@ def main():
     time.sleep(0.5)
     #get the actual adress (port) we bound to
     sa = proc.distributor.socket.getsockname()
-    ns.register_service('PYMERuleServer: ' + GetComputerName(), proc.externalAddr, int(sa[1]))
+    service_name = ns.register_service('PYMERuleServer: ' + GetComputerName(), 
+                                       proc.externalAddr, int(sa[1]))
 
     try:
         while proc.is_alive():
@@ -92,7 +93,7 @@ def main():
     finally:
         logger.debug('trying to shut down server')
         proc.shutdown()
-        ns.unregister('PYMERuleServer: ' + GetComputerName())
+        ns.unregister(service_name)
         #try and shut down the distributor cleanly
         
         #time.sleep(2)
