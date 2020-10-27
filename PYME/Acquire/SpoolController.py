@@ -221,7 +221,7 @@ class SpoolController(object):
         dir = self._dirname if self.spoolType != 'Cluster' else self._cluster_dirname
 
         if subdirectory != None:
-            dir = dir + self._sep + subdirectory
+            dir = dir + self._sep + subdirectory.replace(os.sep, self._sep)
         
         if config.get('acquire-spool_subdirectories', False):
             # limit single directory size for (cluster) IO performance
