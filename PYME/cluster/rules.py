@@ -507,9 +507,9 @@ class LocalisationRule(Rule):
         #wait until clusterIO caches clear to avoid replicating the results file.
         #time.sleep(1.5) #moved inside polling thread so launches will run quicker
 
-        self.currentFrameNum = self.start_at
+        self._next_release_start = self.start_at
         numTotalFrames = self.ds.getNumSlices()
-        self.frames_outstanding=numTotalFrames - 1 - self.currentFrameNum
+        self.frames_outstanding=numTotalFrames - self._next_release_start
         
         return {}
 
@@ -536,18 +536,18 @@ class LocalisationRule(Rule):
 
         """
         numTotalFrames = self.ds.getNumSlices()
-        logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
+        logging.debug('numTotalFrames: %s, _next_release_start: %d' % (numTotalFrames, self._next_release_start))
 
-        if numTotalFrames <= (self.currentFrameNum + 1):
+        if numTotalFrames <= self._next_release_start:
             raise NoNewTasks('not new localisation tasks available at this time')
         else:
             logging.debug('we have unpublished frames - push them')
-            newFrameNum = min(self.currentFrameNum + 100000, numTotalFrames - 1)
-            cur_frame = self.currentFrameNum
-            self.currentFrameNum = newFrameNum
-            self.frames_outstanding = numTotalFrames - 1 - self.currentFrameNum
+            release_end = min(self._next_release_start + 100000, numTotalFrames)
+            release_start = self._next_release_start
+            self._next_release_start = release_end #note - we use standard slice indexing where release_end = last_frame_idx +1 = the start idx of the next release
+            self.frames_outstanding = numTotalFrames - self._next_release_start
             
-            return cur_frame, newFrameNum +1
+            return release_start, release_end
         
         
         
