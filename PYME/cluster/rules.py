@@ -150,10 +150,10 @@ class Rule(object):
     
     def _output_files(self):
         """ Return a dictionary of output cluster URIs.
-        The principle output (if it makes sense to define one) should be under the 'results' key. Each entry should be a list
-        of outputs (or a cluster glob):
+        The principle output (if it makes sense to define one) should be under the 'results' key. Each entry should be a
+        single output as this gets substituted into the recipe before submission (not in the ruleserver):
         
-        For a single output, the dictionary should look like: {'results' : [results_URI,]}
+        For a single output, the dictionary should look like: {'results' : results_URI}
         
         Over-ride in derived rule classes
         """
@@ -356,10 +356,10 @@ class RecipeRule(Rule):
         # over-ride here because we need to add input info
         
         # try (in order of increasing precedence):
-        # - output of previous rule in the chain
+        #
         # - an `input_templates` variable in the context
         # - hard coded `inputs` in the context
-        inputs = context.get('rule_outputs', {})
+        inputs = {} # = context.get('rule_outputs', {})
         input_templates = context.get('input_templates', None)
         if input_templates is not None:
             inputs.update({k: v.format(context) for k, v in input_templates.items()})
@@ -367,23 +367,27 @@ class RecipeRule(Rule):
         inputs.update(context.get('inputs', {}))
 
         if not inputs:
-            raise RuntimeError('No inputs found, one of "inputs", "input_templates", or "rule_outputs" must be present in context')
-        
-        input_names = inputs.keys()
-        inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
-                  in input_names}
-
-        self._num_recipe_tasks = len(list(inputs.values())[0])
-
-        logger.debug('numTotalFrames = %d' % self._num_recipe_tasks)
-        logger.debug('inputs = %s' % inputs)
-
-        inputs_by_task = {frameNum: {k: inputs[k][frameNum] for k in inputs.keys()} for frameNum in
-                          range(self._num_recipe_tasks)}
-        
-        
+            if not context.get('rule_outputs', False):
+                raise RuntimeError('No inputs found, one of "inputs", "input_templates", or "rule_outputs" must be present in context')
+            inputs_by_task = None
+        else:
+            input_names = inputs.keys()
+            inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
+                      in input_names}
+    
+            self._num_recipe_tasks = len(list(inputs.values())[0])
+    
+            logger.debug('numTotalFrames = %d' % self._num_recipe_tasks)
+            logger.debug('inputs = %s' % inputs)
+    
+            inputs_by_task = {frameNum: {k: inputs[k][frameNum] for k in inputs.keys()} for frameNum in
+                              range(self._num_recipe_tasks)}
+            
+            
         rule = Rule._populate_rule(self, context, on_completion=on_completion)
-        rule['inputsByTask'] = inputs_by_task
+        
+        if inputs_by_task:
+            rule['inputsByTask'] = inputs_by_task
         
         return rule
     
@@ -407,6 +411,11 @@ class RecipeRule(Rule):
             task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
         else:
             task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text, output_dir_n)
+            
+        #if we are a chained rule, hard-code inputs
+        rule_outputs = context.get('rule_outputs', None)
+        if rule_outputs:
+            task.replace('{{taskInputs}}', json.dumps(rule_outputs))
         
         return task
 
@@ -442,7 +451,7 @@ class LocalisationRule(Rule):
         Rule.__init__(self, **kwargs)
         
     def _output_files(self):
-        return {'results' : [self.resultsURI,]}
+        return {'results' : self.resultsURI}
     
     def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
