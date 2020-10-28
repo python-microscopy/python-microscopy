@@ -414,8 +414,10 @@ class RecipeRule(Rule):
             
         #if we are a chained rule, hard-code inputs
         rule_outputs = context.get('rule_outputs', None)
-        if rule_outputs:
-            task.replace('{{taskInputs}}', json.dumps(rule_outputs))
+        if rule_outputs is not None:
+            #logger.debug(rule_outputs)
+            task = task.replace('{{taskInputs}}', json.dumps(rule_outputs))
+            logger.debug(task)
         
         return task
 
