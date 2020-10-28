@@ -142,6 +142,11 @@ class StageLeveler(object):
             self._scope.SetPos(x=positions[ind, 0], y=positions[ind, 1])
             
             time.sleep(self._pause_on_relocate)
+            if hasattr(self, '_focus_lock') and not self._focus_lock.LockOK():
+                logger.debug('focus lock not OK, scanning offset')
+                self.scan_offset_until_ok()
+                if self._focus_lock.LockOK():
+                    time.sleep(1.)
             actual = self._scope.GetPos()
             x[ind], y[ind] = actual['x'], actual['y']
             offset[ind] = self._offset_piezo.GetOffset()
@@ -157,6 +162,27 @@ class StageLeveler(object):
         self._scans.append({
             'x': x[lock_ok], 'y': y[lock_ok], 'offset': offset[lock_ok]
         })
+    
+    def scan_offset_until_ok(self, step_size=5.):
+        done=False
+        min_offset = self._offset_piezo.GetMinOffset() + 1e-6
+        max_offset = self._offset_piezo.GetMaxOffset() - 1e-6
+        scan_positions = np.arange(min_offset, max_offset + step_size, 
+                                   step_size)
+        for pos in scan_positions:
+            logger.debug('looking for focus, offset: %.1f' % pos)
+            # self._focus_lock.DisableLock()
+            self._offset_piezo.SetOffset(pos)
+            # self._focus_lock.EnableLock()
+            time.sleep(0.5)
+            done = self._focus_lock.LockOK()
+            if done:
+                logger.debug('found focus, offset %.1f' % pos)
+                break
+        
+        if not done:
+            logger.debug('failed to find focus, lowering objective')
+            self._offset_piezo.SetOffset(min_offset)
 
     @staticmethod
     def plot_scan(scan, interpolation_factor=50):

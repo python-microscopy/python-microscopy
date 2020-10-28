@@ -141,6 +141,7 @@ class ReflectedLinePIDFocusLock(PID):
         # self._last_offset = self.piezo.GetOffset()
 
         self._lock_ok = False
+        self._ok_tolerance = 5
 
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
@@ -254,7 +255,7 @@ class ReflectedLinePIDFocusLock(PID):
     
     @webframework.register_endpoint('/LockOK', output_is_json=False)
     def LockOK(self):
-        return self.LockEnabled() and self._lock_ok
+        return self.LockEnabled() and self._lock_ok and bool(abs(self.peak_position - self.setpoint) < self._ok_tolerance)
 
     def find_peak(self, profile):
         """
