@@ -180,10 +180,10 @@ class DelaunayMarchingTetrahedra(ModuleBase):
         import time
 
         simplices = namespace[self.input].T.simplices
-        ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
+        # ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
         # ord_simplices = simplices
-        vertices = namespace[self.input].T.points[ord_simplices]
-        values = namespace[self.input].dn[ord_simplices]
+        vertices = namespace[self.input].T.points[simplices]
+        values = namespace[self.input].dn[simplices]
         
         
         mt = marching_tetrahedra.MarchingTetrahedra(vertices, values, self.threshold_density)
