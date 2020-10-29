@@ -1,5 +1,5 @@
 import numpy as np
-from PYME.experimental.modified_marching_cubes import RasterMarchingCubes
+# from PYME.experimental.modified_marching_cubes import RasterMarchingCubes
 
 #           + 0
 #          /|\
