@@ -176,12 +176,9 @@ class DelaunayMarchingTetrahedra(ModuleBase):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
         from PYME.experimental import marching_tetrahedra
         from PYME.experimental import _triangle_mesh as triangle_mesh
-        from PYME.experimental import delaunay_utils
         import time
 
         simplices = namespace[self.input].T.simplices
-        # ord_simplices = delaunay_utils.orient_simps(simplices, namespace[self.input].T.points)
-        # ord_simplices = simplices
         vertices = namespace[self.input].T.points[simplices]
         values = namespace[self.input].dn[simplices]
         

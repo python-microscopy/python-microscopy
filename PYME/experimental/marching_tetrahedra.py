@@ -293,8 +293,6 @@ class RasterMarchingTetrahedra(MarchingTetrahedra):
         MarchingTetrahedra.__init__(self, None, None, isolevel)
         
     def gen_vertices_and_vals(self):
-        from PYME.experimental import delaunay_utils
-
         xx, yy, zz = np.meshgrid(np.arange(self.image.shape[0]-1), 
                                  np.arange(self.image.shape[1]-1), 
                                  np.arange(self.image.shape[2]-1))
