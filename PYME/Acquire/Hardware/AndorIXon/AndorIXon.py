@@ -688,7 +688,7 @@ class iXonCamera(Camera):
         self.__selectCamera()
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
-        return hm.value
+        return hm.value.decode()
     
     @property
     def noise_properties(self):
