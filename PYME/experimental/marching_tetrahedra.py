@@ -150,9 +150,16 @@ class MarchingTetrahedra(object):
         return ((values < self._isolevel) * TRI_BITMASK).sum(1)
 
     def interpolate_vertex(self, v0, v1, v0_value, v1_value, i=None, j0=None, j1=None):
+        # Consistently sort
+        switch = v0_value > v1_value
+
         # Interpolate along the edge v0 -> v1
-        mu = 1.*(self._isolevel - v0_value) / (v1_value - v0_value)
-        p = v0 + mu[..., None]*(v1-v0)
+        mu0 = 1.*(self._isolevel - v0_value) / (v1_value - v0_value)
+        mu1 = 1.*(self._isolevel - v1_value) / (v0_value - v1_value)
+        p0 = v0 + mu0[..., None]*(v1-v0)
+        p1 = v1 + mu1[..., None]*(v0-v1)
+
+        p = switch[...,None]*p0 + (1-switch[...,None])*p1
 
         # Are v0 and v1 the same vertex?
         # If so, choose v0 as the triangle vertex position.
