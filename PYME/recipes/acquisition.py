@@ -101,7 +101,7 @@ class QueueAcquisitions(OutputModule):
         spool_settings = self.spool_settings.copy()
         for k in spool_settings.keys():
             if isinstance(spool_settings[k], str):
-                spool_settings[k].format(**context)
+                spool_settings[k] = spool_settings[k].format(**context)
         
         try:  # get positions in units of micrometers
             positions = np.stack((namespace[self.input_positions]['x_um'], 
