@@ -358,6 +358,8 @@ class MarzhauserTango(PiezoBase):
         
         self.c_limits_active = ctypes.c_bool(False)
 
+        # use dict-lookup for limits as PYME axes are 0-indexed and tango's are
+        # 1-indexed
         self._c_limits = {
             'axis': {
                 0: ctypes.c_int(1),  # X
@@ -504,22 +506,66 @@ class MarzhauserTango(PiezoBase):
         GetEncoder(self.lsid, *self._c_encoder_positions_ref)
         return [p.value for p in self._c_encoder_positions]
     
-    def get_axis_limits(self, axis=0):
+    def get_axis_limits(self, axis):
+        """get min/max position limits for a given axes (software limits)
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+
+        Returns
+        -------
+        range : list
+            min [0] and max [1] limits for `axis`
+        """
         GetLimit(self.lsid, self._c_limits['axis'][axis],
                  *self._c_limits['ref'][axis])
         return [p.value for p in self._c_limits['ref'][axis]]
     
     def set_axis_limits(self, axis, min_value, max_value):
+        """set min/max position limits for a given axis (software limits)
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        min_value : float
+            lower limit for `axis`
+        max_value : float
+            upper limit for `axis`
+        """
         self._c_limits['ref'][axis][0].value = min_value
         self._c_limits['ref'][axis][1].value = max_value
         SetLimit(self.lsid, self._c_limits['axis'][axis],
                  *self._c_limits['ref'][axis])
     
     def get_software_limit_state(self, axis):
+        """check if software limits are enabled or disabled for a given axis
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        
+        Returns
+        -------
+        bool : enabled (True), or disabled (False)
+        """
         GetLimitControl(self.lsid, self._c_limits['axis'][axis],
                         self._c_limits['active_ref'][axis])
+        return self._c_limits['active_ref'][axis].value
     
     def set_software_limit_state(self, axis, state):
+        """activate/inactivate software limits for a given axis
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        state : bool
+            enable (True), disable (False)
+        """
         self._c_limits['active_ref'][axis].value = state
         SetLimitControl(self.lsid, self._c_limits['axis'][axis],
                         self._c_limits['active'][axis])
