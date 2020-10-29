@@ -81,9 +81,9 @@ class PhoxxLaser(Laser):
             raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
         
-        p = 0xFFF*power
+        p = int(0xFFF*power)
         
-        ps = '%03X' %p
+        ps = '%03X' % p
         
         ret, = self._query('SLP', ps)
         if not ret == '>':

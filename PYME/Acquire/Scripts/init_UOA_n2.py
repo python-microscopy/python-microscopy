@@ -104,20 +104,20 @@ def samp_db(MainFrame, scope):
 #     from PYME.Acquire.ui import AnalysisSettingsUI
 #     AnalysisSettingsUI.Plug(scope, MainFrame)
 
-@init_gui('Filter Wheel')
-def filter_wheel(MainFrame, scope):
-    from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
-    filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
-                WFilter(2, 'ND.5', 'UVND 0.5', 0.5),
-                WFilter(3, 'ND1', 'UVND 1', 1),
-                WFilter(4, 'EMPTY', 'EMPTY', 0),
-                WFilter(5, 'ND2', 'UVND 2', 2),
-                WFilter(6, 'ND4.5', 'UVND 4.5', 4.5)]
+# @init_gui('Filter Wheel')
+# def filter_wheel(MainFrame, scope):
+#     from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
+#     filtList = [WFilter(1, 'EMPTY', 'EMPTY', 0),
+#                 WFilter(2, 'ND.5', 'UVND 0.5', 0.5),
+#                 WFilter(3, 'ND1', 'UVND 1', 1),
+#                 WFilter(4, 'EMPTY', 'EMPTY', 0),
+#                 WFilter(5, 'ND2', 'UVND 2', 2),
+#                 WFilter(6, 'ND4.5', 'UVND 4.5', 4.5)]
 
-    scope.filterWheel = FiltWheel(filtList, 'COM5', dichroic=None)
-    fpan = FiltFrame(MainFrame, scope.filterWheel)
-    scope.filterWheel.SetFilterPos("ND4.5")
-    MainFrame.toolPanels.append((fpan, 'Filter Wheel', False, False))
+#     scope.filterWheel = FiltWheel(filtList, 'COM5', dichroic=None)
+#     fpan = FiltFrame(MainFrame, scope.filterWheel)
+#     scope.filterWheel.SetFilterPos("ND4.5")
+#     MainFrame.toolPanels.append((fpan, 'Filter Wheel', False, False))
 
 @init_hardware('Power Meter')
 def power_meter(scope):
@@ -155,12 +155,12 @@ def lasers(scope):
     from PYME.Acquire.Hardware import ioslave
     from PYME.Acquire.Hardware import phoxxLaser
 
-    slave = ioslave.IOSlave('COM3')
-    scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
+    #slave = ioslave.IOSlave('COM3')
+    #scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
 
     scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM4', scopeState=scope.state)
     scope.CleanupFunctions.append(scope.l642.Close)
-    scope.lasers = [scope.l642, scope.l671]
+    scope.lasers = [scope.l642, ]#scope.l671]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
