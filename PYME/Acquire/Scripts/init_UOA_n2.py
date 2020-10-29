@@ -158,7 +158,7 @@ def lasers(scope):
     #slave = ioslave.IOSlave('COM3')
     #scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
 
-    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM4', scopeState=scope.state)
+    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM4', scopeState=scope.state, power_fudge=0.98)
     scope.CleanupFunctions.append(scope.l642.Close)
     scope.lasers = [scope.l642, ]#scope.l671]
 
@@ -235,7 +235,7 @@ def drift_tracking(MainFrame, scope):
 
     def _drift_init():
         #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
-        scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+        scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     time.sleep(15)
     #_drift_init()
