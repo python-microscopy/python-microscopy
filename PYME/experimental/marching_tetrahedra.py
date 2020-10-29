@@ -1,4 +1,5 @@
 import numpy as np
+from PYME.experimental.modified_marching_cubes import RasterMarchingCubes
 
 #           + 0
 #          /|\
@@ -25,28 +26,103 @@ TRI_EDGES = np.array([
     [0,3],
     [1,2],
     [1,3],
-    [2,3]
+    [2,3],
 ])
 
 TRI_TRIANGLES = np.array([
     [-1, -1, -1, -1, -1, -1],
     [0, 1, 2, -1, -1, -1],
     [0, 4, 3, -1, -1, -1],
-    [2, 1, 4, 4, 3, 1],
+    [1, 2, 4, 1, 4, 3],
     [1, 3, 5, -1, -1, -1],
     [0, 5, 2, 0, 3, 5],
-    [0, 4, 5, 0, 1, 5],
+    [0, 4, 5, 0, 5, 1],
+    [2, 4, 5, -1, -1, -1],
     [2, 5, 4, -1, -1, -1],
-    [2, 5, 4, -1, -1, -1],
-    [0, 4, 5, 0, 1, 5],
-    [0, 5, 2, 0, 3, 5],
-    [1, 3, 5, -1, -1, -1],
-    [2, 1, 4, 4, 3, 1],
-    [0, 4, 3, -1, -1, -1],
-    [0, 1, 2, -1, -1, -1],
+    [0, 5, 4, 0, 1, 5],
+    [0, 2, 5, 0, 5, 3],
+    [1, 5, 3, -1, -1, -1],
+    [1, 4, 2, 1, 3, 4],
+    [0, 3, 4, -1, -1, -1],
+    [0, 2, 1, -1, -1, -1],
     [-1, -1, -1, -1, -1, -1]
 ])
 
+# TRI_TRIANGLES = np.array([
+#     [-1, -1, -1, -1, -1, -1],
+#     [0, 2, 1, -1, -1, -1],
+#     [0, 3, 4, -1, -1, -1],
+#     [1, 4, 2, 1, 3, 4],
+#     [1, 5, 3, -1, -1, -1],
+#     [0, 2, 5, 0, 5, 3],
+#     [0, 5, 4, 0, 1, 5],
+#     [2, 5, 4, -1, -1, -1],
+#     [2, 4, 5, -1, -1, -1],
+#     [0, 4, 5, 0, 5, 1],
+#     [0, 5, 2, 0, 3, 5],
+#     [1, 3, 5, -1, -1, -1],
+#     [1, 2, 4, 1, 4, 3],
+#     [0, 4, 3, -1, -1, -1],
+#     [1, 2, 0, -1, -1, -1],
+#     [-1, -1, -1, -1, -1, -1]
+# ])
+
+# TRI_TRIANGLES = np.array([
+#     [-1, -1, -1, -1, -1, -1],
+#     [0, 1, 2, -1, -1, -1],
+#     [0, 4, 3, -1, -1, -1],
+#     [2, 1, 4, 4, 3, 1],
+#     [1, 3, 5, -1, -1, -1],
+#     [0, 5, 2, 0, 3, 5],
+#     [0, 4, 5, 0, 1, 5],
+#     [2, 5, 4, -1, -1, -1],
+#     [2, 5, 4, -1, -1, -1],
+#     [0, 4, 5, 0, 1, 5],
+#     [0, 5, 2, 0, 3, 5],
+#     [1, 3, 5, -1, -1, -1],
+#     [2, 1, 4, 4, 3, 1],
+#     [0, 4, 3, -1, -1, -1],
+#     [0, 1, 2, -1, -1, -1],
+#     [-1, -1, -1, -1, -1, -1]
+# ])
+
+# TRI_EDGES = np.array([
+#     [0,0], # 0
+#     [0,1], # 1
+#     [0,2], # 2
+#     [0,3], # 3
+#     [1,0], # 4
+#     [1,1], # 5
+#     [1,2], # 6
+#     [1,3], # 7
+#     [2,0], # 8
+#     [2,1], # 9
+#     [2,2], # 10
+#     [2,3], # 11
+#     [3,0], # 12
+#     [3,1], # 13
+#     [3,2], # 14
+#     [3,3]  # 15
+# ])
+
+# TRI_TRIANGLES = np.array([
+#     [-1, -1, -1, -1, -1, -1],
+#     [1, 2, 3, -1, -1, -1],
+#     [4, 7, 6, -1, -1, -1],
+#     [3, 2, 7, 7, 6, 2],
+#     [8, 9, 11, -1, -1, -1],
+#     [1, 11, 3, 1, 6, 11],
+#     [1, 7, 11, 1, 2, 11],
+#     [12, 14, 13, -1, -1, -1],
+#     [12, 14, 13, -1, -1, -1],
+#     [1, 7, 11, 1, 2, 11],
+#     [1, 11, 3, 1, 6, 11],
+#     [8, 9, 11, -1, -1, -1],
+#     [3, 2, 7, 7, 6, 2],
+#     [4, 7, 6, -1, -1, -1],
+#     [1, 2, 3, -1, -1, -1],
+#     [-1, -1, -1, -1, -1, -1]
+# ])
 
 class MarchingTetrahedra(object):
     """
@@ -86,6 +162,8 @@ class MarchingTetrahedra(object):
                 (np.abs(v0_value - self._isolevel) < eps)
         p[idxs, :] = v0[idxs, :]
 
+        # p = v0
+
         return p
 
     def march(self, return_triangles=True):
@@ -119,6 +197,71 @@ class MarchingTetrahedra(object):
         if return_triangles:
             return self._triangles
 
+
+# Below is a single voxel
+#     z
+#     ^
+#     |
+#    v4 ----------v6
+#    /|           /|
+#   / |          / |
+#  v5----------v7  |
+#  |  |    c    |  |
+#  | v0---------|-v2
+#  | /          | /
+#  v1-----------v3---> y
+#  /
+# x
+#
+# Now note that the oriented tetrahedra are
+#
+# v0 v4 v6 v7
+# v0 v5 v4 v7
+# v0 v6 v2 v7
+# v0 v2 v3 v7
+# v0 v1 v5 v7
+# v0 v3 v1 v7
+
+# Set the offsets moving along the 3D grid from index 1 to -1
+# on each axis
+V_OFFSETS = np.array([[0, 0, 0],
+                    [1, 0, 0],
+                    [0, 1, 0],
+                    [1, 1, 0],
+                    [0, 0, 1],
+                    [1, 0, 1],
+                    [0, 1, 1],
+                    [1, 1, 1]])
+
+# Split each voxel into tetrahedron
+
+# VOX_TETS = np.array([
+#     [0,4,6,7],
+#     [0,5,4,7],
+#     [0,6,2,7],
+#     [0,2,3,7],
+#     [0,1,5,7],
+#     [0,3,1,7]
+# ])
+
+# VOX_TETS = np.array([
+#     [0,3,2,6],
+#     [0,3,7,6],
+#     [0,4,7,6],
+#     [0,7,1,3],
+#     [0,7,1,4],
+#     [5,7,1,4]
+# ])
+
+VOX_TETS = np.array([
+    [0,3,6,2],
+    [0,3,7,6],
+    [0,4,6,7],
+    [0,7,3,1],
+    [0,7,1,4],
+    [5,7,4,1]
+])
+
 class RasterMarchingTetrahedra(MarchingTetrahedra):
     def __init__(self, image, isolevel=0, voxelsize=(1., 1., 1.)):
         """Marching tetrahedra on a regular grid. Splits the grid
@@ -143,56 +286,13 @@ class RasterMarchingTetrahedra(MarchingTetrahedra):
         MarchingTetrahedra.__init__(self, None, None, isolevel)
         
     def gen_vertices_and_vals(self):
-        # Below is a single voxel
-        #     z
-        #     ^
-        #     |
-        #    v4 ----------v6
-        #    /|           /|
-        #   / |          / |
-        #  v5----------v7  |
-        #  |  |    c    |  |
-        #  | v0---------|-v2
-        #  | /          | /
-        #  v1-----------v3---> y
-        #  /
-        # x
-        #
-        # Now note that the oriented tetrahedra are
-        #
-        # v0 v4 v6 v7
-        # v0 v5 v4 v7
-        # v0 v6 v2 v7
-        # v0 v2 v3 v7
-        # v0 v1 v5 v7
-        # v0 v3 v1 v7
-
-        # Set the offsets moving along the 3D grid from index 1 to -1
-        # on each axis
-        v_offsets = np.array([[0, 0, 0],
-                            [1, 0, 0],
-                            [0, 1, 0],
-                            [1, 1, 0],
-                            [0, 0, 1],
-                            [1, 0, 1],
-                            [0, 1, 1],
-                            [1, 1, 1]])
-
-        # Split each voxel into tetrahedron
-        ot_tets = np.array([
-            [0,4,6,7],
-            [0,5,4,7],
-            [0,6,2,7],
-            [0,2,3,7],
-            [0,1,5,7],
-            [0,3,1,7]
-        ])
+        from PYME.experimental import delaunay_utils
 
         xx, yy, zz = np.meshgrid(np.arange(self.image.shape[0]-1), 
                                  np.arange(self.image.shape[1]-1), 
                                  np.arange(self.image.shape[2]-1))
 
-        coords = np.vstack([xx.ravel(),yy.ravel(),zz.ravel()]).T[:, None, :] + v_offsets[None, :, :]
+        coords = np.vstack([xx.ravel(),yy.ravel(),zz.ravel()]).T[:, None, :] + V_OFFSETS[None, :, :]
 
         vertices = coords.astype('f') * np.array(self.voxelsize)[None, None, :]
         
@@ -200,11 +300,39 @@ class RasterMarchingTetrahedra(MarchingTetrahedra):
         
         # print(coords.shape, values.shape)
 
-        vertices = vertices[:,ot_tets,:].reshape(-1,4,3,order='C')
-        values = values[:,ot_tets].reshape(-1,4,order='C')
+        vertices = vertices[:,VOX_TETS,:].reshape(-1,4,3,order='C')
+        values = values[:,VOX_TETS].reshape(-1,4,order='C')
         
         return vertices, values
 
     def march(self, return_triangles=True):        
         self._vertices, self._values = self.gen_vertices_and_vals()
         return MarchingTetrahedra.march(self, return_triangles)
+
+# class RasterMarchingTetrahedraCubes(RasterMarchingCubes):
+#     def gen_vertices_and_vals(self, cube_mask):
+
+#         # Transform from voxels to tetrahedron
+#         xx, yy, zz = np.meshgrid(np.arange(self.image.shape[0]-1), 
+#                                  np.arange(self.image.shape[1]-1), 
+#                                  np.arange(self.image.shape[2]-1))
+
+#         coords = np.vstack([xx.ravel(),yy.ravel(),zz.ravel()]).T[:, None, :] + V_OFFSETS[None, :, :]
+
+#         vertices = coords.astype('f') * np.array(self.voxelsize)[None, None, :]
+        
+#         values = self.image[coords[:, :, 0], coords[:, :, 1], coords[:, :, 2]]
+        
+#         # print(coords.shape, values.shape)
+
+#         vertices = vertices[:,VOX_TETS,:].reshape(-1,4,3,order='C')
+#         values = values[:,VOX_TETS].reshape(-1,4,order='C')
+
+#         # Now transform back into degenerate voxels
+#         TET_TO_VOX = np.array([0, 0, 1, 1, 2, 3, 2, 3])
+
+#         vertices = vertices[:,TET_TO_VOX]
+#         values = values[:,TET_TO_VOX]
+        
+#         return vertices, values
+        
