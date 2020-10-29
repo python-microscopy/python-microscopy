@@ -122,10 +122,10 @@ class PhoxxLaser(Laser):
     
     def _readline(self, ser):
         s = []
-        c = ser.read()
+        c = ser.read().decode()
         while not c in ['', '\r']:
             s.append(c)
-            c = ser.read()
+            c = ser.read().decode()
             
         return ''.join(s)
         
@@ -136,7 +136,7 @@ class PhoxxLaser(Laser):
                 try:
                     cmd = self.commandQueue.get(False)
                     #print cmd
-                    ser.write(cmd)
+                    ser.write(cmd.encode())
                     ser.flush()
                     
                 except Queue.Empty:
@@ -145,6 +145,7 @@ class PhoxxLaser(Laser):
                 #wait a little for reply                
                 time.sleep(.1)
                 ret = self._readline(ser)
+                #print(ret)
                 
                 if not ret == '':
                     #print ret
