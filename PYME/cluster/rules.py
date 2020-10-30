@@ -330,8 +330,21 @@ class RecipeRule(Rule):
             A cluster URI for the recipe text (if `recipe` not provided directly)
         output_dir : str
             The directory to put the recipe output TODO: should this be templated based on context?
-        kwargs : any additional args to get passed to base class - e.g. on_completion
-
+        kwargs : dict
+            any additional args to get passed to base class 
+            One of the following must be present, in order of precedence:
+                rule_outputs : not currently implemented
+                input_templates : 
+                inputs : dict
+                    keys are recipe namespace keys, values are lists of file 
+                    URIs.
+            Other potential keys include: 
+                on_completion : RuleFactory
+                    A rule to run after this one has completed (also setable 
+                    using the `.chain()` method)
+                serverfilter : str
+                    name of the cluster. Optional, only used if `inputs` key is
+                    in kwargs corresponding list of URIs is not fully resolved
         TODO - support for templated recipes? Subclass?
         """
         
@@ -372,7 +385,8 @@ class RecipeRule(Rule):
             inputs_by_task = None
         else:
             input_names = inputs.keys()
-            inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
+            serverfilter = context.get('serverfilter', clusterIO.local_serverfilter)
+            inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], serverfilter) for k
                       in input_names}
     
             self._num_recipe_tasks = len(list(inputs.values())[0])
