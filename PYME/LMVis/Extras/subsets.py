@@ -6,8 +6,7 @@ def time_block_subset(pipeline):
     clumper = localisations.TimeBlocks(recipe, input=pipeline.selectedDataSourceKey,
                                              output='time_blocked')
     if clumper.configure_traits(kind='modal'):
-        recipe.add_module(clumper)
-        recipe.execute()
+        recipe.add_modules_and_execute([clumper,])
         
         pipeline.selectDataSource(clumper.output)
         

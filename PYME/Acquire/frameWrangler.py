@@ -236,6 +236,19 @@ class FrameWrangler(object):
         except:
             import traceback
             traceback.print_exc()
+
+            # If we are running in software trigger mode and fail to get a
+            # frame we may need a another software trigger to e.g. Tick over
+            # the rest of a protocol. See https://github.com/python-microscopy/python-microscopy/issues/517
+            # This is not an ideal addition to frameWrangler, and will
+            # hopefully be removed in the future.
+            try:  # as of 2020/10 a couple cameras don't use the base class
+                if self.cam.GetAcquisitionMode() == self.cam.MODE_SOFTWARE_TRIGGER:
+                    logger.debug('retrying software trigger')
+                    self.cam.FireSoftwareTrigger()
+            except AttributeError:
+                pass
+
         finally:       
             if not contMode:
                 #flag the need to start a new exposure

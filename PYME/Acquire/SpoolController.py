@@ -201,7 +201,28 @@ class SpoolController(object):
         
     @property
     def dirname(self):
+        return self.get_dirname()
+    
+    def get_dirname(self, subdirectory=None):
+        """ Get the current directory name, including any subdirectories from
+        chunking or additional spec.
+
+        Parameters
+        ----------
+        subdirectory : str, optional
+            Directory within current set directory to spool this series. The
+            directory will be created if it doesn't already exist.
+
+        Returns
+        -------
+        str
+            spool directory name
+        """
         dir = self._dirname if self.spoolType != 'Cluster' else self._cluster_dirname
+
+        if subdirectory != None:
+            dir = dir + self._sep + subdirectory.replace(os.sep, self._sep)
+        
         if config.get('acquire-spool_subdirectories', False):
             # limit single directory size for (cluster) IO performance
             subdir = '%03d' % int(self.seriesCounter/100)
@@ -290,19 +311,37 @@ class SpoolController(object):
             
         self.onSpoolProgress.send(self)
         
-    def _get_queue_name(self, fn, pcs=False):
+    def _get_queue_name(self, fn, pcs=False, subdirectory=None):
+        """ Get fully resolved uri to spool to
+
+        Parameters
+        ----------
+        fn : str
+            file stub of the series
+        pcs : bool, optional
+            sets extension to PYME Cluster Series (pcs) if spooling series as
+            plurality of pcs files, by default False (spooling to h5 file)
+        subdirectory : str, optional
+            Directory within current set directory to spool this series. The
+            directory will be created if it doesn't already exist.
+
+        Returns
+        -------
+        str
+            fully resolved uri to spool to
+        """
         if pcs:
             ext = '.pcs'
         else:
             ext = '.h5'
         
-        return self._sep.join([self.dirname, fn + ext])
+        return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
 
     def StartSpooling(self, fn=None, stack=None, compLevel=None, 
                       zDwellTime=None, doPreflightCheck=True, 
                       maxFrames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None):
+                      cluster_h5=None, protocol=None, subdirectory=None):
         """
 
         Parameters
@@ -338,6 +377,9 @@ class SpoolController(object):
         protocol : str, optional
             path to acquisition protocol. By default None which differs to 
             current `SpoolController` state.
+        subdirectory : str, optional
+            Directory within current set directory to spool this series. The
+            directory will be created if it doesn't already exist.
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -354,8 +396,8 @@ class SpoolController(object):
             protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
 
         # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
-        if (self.spoolType != 'Cluster') and (not os.path.exists(self.dirname)):
-                os.makedirs(self.dirname)
+        if (self.spoolType != 'Cluster') and (not os.path.exists(self.get_dirname(subdirectory))):
+                os.makedirs(self.get_dirname(subdirectory))
 
         if self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
@@ -384,14 +426,15 @@ class SpoolController(object):
         
         if self.spoolType == 'Queue':
             from PYME.Acquire import QueueSpooler
-            self.queueName = getRelFilename(self._get_queue_name(fn))
+            self.queueName = getRelFilename(self._get_queue_name(fn, subdirectory=subdirectory))
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
-            self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
+            self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
+                                                  subdirectory=subdirectory)
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
                                                frameShape = frameShape, protocol=protocol,
                                                guiUpdateCallback=self._ProgressUpate,
@@ -400,7 +443,8 @@ class SpoolController(object):
            
         else:
             from PYME.Acquire import HDFSpooler
-            self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn), self.scope.frameWrangler.onFrame,
+            self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn, subdirectory=subdirectory),
+                                              self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
@@ -579,7 +623,7 @@ class SpoolControllerWrapper(object):
     def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
                       z_dwell=None, preflight_check=True, 
                       max_frames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None):
+                      cluster_h5=None, protocol=None, subdirectory=None):
         """
 
         Parameters
@@ -615,10 +659,13 @@ class SpoolControllerWrapper(object):
         protocol : str, optional
             path to acquisition protocol. By default None which differs to 
             current `SpoolController` state.
+        subdirectory : str, optional
+            Directory within current set directory to spool this series. The
+            directory will be created if it doesn't already exist.
         """
         self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
                                             z_dwell, preflight_check,
                                             max_frames, 
                                             pzf_compression_settings, 
-                                            cluster_h5, protocol)
+                                            cluster_h5, protocol, subdirectory)
         return 'OK'

@@ -134,6 +134,7 @@ class DualMarchingCubes(ModuleBase):
     threshold_density = Float(2e-5)
     n_points_min = Int(50) # lets us truncate on SNR
     
+    smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
     repair = Bool(False)
     remesh = Bool(False)
     
@@ -148,7 +149,7 @@ class DualMarchingCubes(ModuleBase):
         tris = dmc.march(dual_march=False)
 
         print('Generating TriangularMesh object')
-        surf = triangle_mesh.TriangleMesh.from_np_stl(tris)
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=self.smooth_curvature)
         
         print('Generated TriangularMesh object')
         

@@ -58,7 +58,7 @@ def run_template(request):
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
 
 
-    recipe_text = unifiedIO.read(recipeURI)
+    recipe_text = unifiedIO.read(recipeURI).decode('utf-8')
     recipe = ModuleCollection.fromYAML(recipe_text)
     
     for file_input in recipe.file_inputs:
@@ -95,6 +95,5 @@ def extra_inputs(request):
     recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
     
     return render(request, 'recipes/extra_inputs.html', {'file_inputs': recipe.file_inputs, 'serverfilter' : server_filter})
-
 
 

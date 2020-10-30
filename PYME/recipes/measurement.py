@@ -32,20 +32,21 @@ class MultifitBlobs(ModuleBase):
         
         img = namespace[self.inputImage]
         
-        img.mdh['Analysis.PSFSigma'] = self.blobSigma
+        mdh = MetaDataHandler.NestedClassMDHandler(img.mdh)
+        mdh['Analysis.PSFSigma'] = self.blobSigma
         
         res = []
         
         for i in range(img.data.shape[2]):
-            md = MetaDataHandler.NestedClassMDHandler(img.mdh)
+            md = MetaDataHandler.NestedClassMDHandler(mdh)
             md['tIndex'] = i
-            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
+            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], md, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
             res.append(tabular.FitResultsSource(ff.FindAndFit(self.threshold)))
             
         #FIXME - this shouldn't be a DataFrame
         res = pd.DataFrame(np.vstack(res))
-        res.mdh = img.mdh
+        res.mdh = mdh
         
         namespace[self.outputName] = res
 

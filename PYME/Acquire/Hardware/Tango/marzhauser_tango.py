@@ -236,6 +236,58 @@ StopAxes = mazlib.LSX_StopAxes
 # int LSX_StopAxes (int lLSID);
 StopAxes.argtypes = [ctypes.c_int]
 
+# --- limits
+
+GetLimit = mazlib.LSX_GetLimit
+GetLimit.argtypes = [ctypes.c_int, ctypes.c_int, 
+                     ctypes.POINTER(ctypes.c_double), 
+                     ctypes.POINTER(ctypes.c_double)]
+GetLimit.__doc__ = """Provides soft travel range limits
+Parameters 
+    Axis: Axis from which travel range limits are to be retrieved
+    (X, Y, Z, A numbered from 1=X to 4=A)
+    MinRange: lower travel range limit, unit depends on dimension
+    MaxRange: upper travel range limit, unit depends on dimension
+Example
+GetLimit(1, &MinRange, &MaxRange);"""
+
+SetLimit = mazlib.LSX_SetLimit
+SetLimit.argtypes = [ctypes.c_int, ctypes.c_int, 
+                     ctypes.c_double, ctypes.c_double]
+SetLimit.__doc__ = """ Set soft travel range limits
+Parameters
+Axis: Axis from which travel range limits are to be retrieved
+(X, Y, Z, A numbered from 1=X to 4=A)
+MinRange: lower travel range limit, unit depends on dimension
+MaxRange: upper travel range limit, unit depends on dimension
+Example 
+SetLimit(1, 1, -10.0, 20.0);
+// assign X-Axis –10 as lower and 20 as upper travel range limits"""
+
+GetLimitControl = mazlib.LSX_GetLimitControl
+GetLimitControl.argtypes = [ctypes.c_int, ctypes.c_int,
+                            ctypes.POINTER(ctypes.c_bool)]
+GetLimitControl.__doc__ = """ Retrieves, whether area control (limits) is 
+switched on or off.
+Parameters
+    Axis: X, Y, Z and A, numbered from 1=X to 4=A
+    Active: TRUE = area control of corresponding axis is active
+            FALSE = area control of corresponding axis is deactivated
+Example 
+GetLimitControl(1, 2, &Active);
+"""
+
+SetLimitControl = mazlib.LSX_GetLimitControl
+SetLimitControl.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_bool]
+SetLimitControl.__doc__ = """ Retrieves, whether area control (limits) is 
+switched on or off.
+Parameters
+    Axis: X, Y, Z and A, numbered from 1=X to 4=A
+    Active: TRUE = activate area control of corresponding axis
+            FALSE = disable area control of corresponding axis
+Example 
+SetLimitControl(1, 2, TRUE); // Area control of Y-Axis is active
+"""
 
 
 class MarzHauserJoystick(object):
@@ -303,6 +355,41 @@ class MarzhauserTango(PiezoBase):
                                 ctypes.c_double(0),  # Z, [mm / r]
                                 ctypes.c_double(0))  # A, [mm / r]
         self._c_pitch_ref = tuple(ctypes.byref(p) for p in self._c_pitch)
+        
+        self.c_limits_active = ctypes.c_bool(False)
+
+        # use dict-lookup for limits as PYME axes are 0-indexed and tango's are
+        # 1-indexed
+        self._c_limits = {
+            'axis': {
+                0: ctypes.c_int(1),  # X
+                1: ctypes.c_int(2),  # Y
+                2: ctypes.c_int(3),  # Z
+                3: ctypes.c_int(4),  # A
+            },
+            'active': {
+                0: ctypes.c_bool(0),  # X
+                1: ctypes.c_bool(0),  # Y
+                2: ctypes.c_bool(0),  # Z
+                3: ctypes.c_bool(0)  # A
+            },
+            'active_ref': {
+                0: '',
+                1: '',
+                2: '',
+                3: ''
+            },
+            0: (ctypes.c_double(0),  ctypes.c_double(0)),  # X min-max [um]
+            1: (ctypes.c_double(0),  ctypes.c_double(0)),  # Y min-max [um]
+            2: (ctypes.c_double(0),  ctypes.c_double(0)),  # Z min-max [um]
+            3: (ctypes.c_double(0),  ctypes.c_double(0)),  # A min-max [um]
+        }
+        for ind in range(4):
+            self._c_limits['ref'] = {
+                ind: (ctypes.byref(self._c_limits[ind][0]),
+                      ctypes.byref(self._c_limits[ind][1]))
+            }
+            self._c_limits['active_ref'][ind] = ctypes.byref(self._c_limits['active'][0])
 
     def __del__(self):
         self.close()
@@ -418,6 +505,70 @@ class MarzhauserTango(PiezoBase):
     def get_encoder_positions(self):
         GetEncoder(self.lsid, *self._c_encoder_positions_ref)
         return [p.value for p in self._c_encoder_positions]
+    
+    def get_axis_limits(self, axis):
+        """get min/max position limits for a given axes (software limits)
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+
+        Returns
+        -------
+        range : list
+            min [0] and max [1] limits for `axis`
+        """
+        GetLimit(self.lsid, self._c_limits['axis'][axis],
+                 *self._c_limits['ref'][axis])
+        return [p.value for p in self._c_limits['ref'][axis]]
+    
+    def set_axis_limits(self, axis, min_value, max_value):
+        """set min/max position limits for a given axis (software limits)
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        min_value : float
+            lower limit for `axis`
+        max_value : float
+            upper limit for `axis`
+        """
+        self._c_limits['ref'][axis][0].value = min_value
+        self._c_limits['ref'][axis][1].value = max_value
+        SetLimit(self.lsid, self._c_limits['axis'][axis],
+                 *self._c_limits['ref'][axis])
+    
+    def get_software_limit_state(self, axis):
+        """check if software limits are enabled or disabled for a given axis
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        
+        Returns
+        -------
+        bool : enabled (True), or disabled (False)
+        """
+        GetLimitControl(self.lsid, self._c_limits['axis'][axis],
+                        self._c_limits['active_ref'][axis])
+        return self._c_limits['active_ref'][axis].value
+    
+    def set_software_limit_state(self, axis, state):
+        """activate/inactivate software limits for a given axis
+
+        Parameters
+        ----------
+        axis : int
+            0 - x, 1 - y, 2 - z, 3 - a
+        state : bool
+            enable (True), disable (False)
+        """
+        self._c_limits['active_ref'][axis].value = state
+        SetLimitControl(self.lsid, self._c_limits['axis'][axis],
+                        self._c_limits['active'][axis])
 
 
 class MarzhauserTangoXY(MarzhauserTango):

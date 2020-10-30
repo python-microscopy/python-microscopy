@@ -18,3 +18,6 @@ def get_web_static_dir():
 
 def get_web_dir():
 	return os.path.join(dirname, 'web')
+
+def get_test_data_dir():
+	return os.path.join(dirname, 'test_datasets')

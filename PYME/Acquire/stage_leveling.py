@@ -1,9 +1,13 @@
 
 import numpy as np
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StageLeveler(object):
-    def __init__(self, scope, offset_piezo, pause_on_relocate=0.25):
+    def __init__(self, scope, offset_piezo, pause_on_relocate=0.25, 
+                 focus_lock=None):
         """
         Allows semi-automated mapping of coverslip positions are various lateral positions using a focus lock/offset
         piezo to determine the offset.
@@ -20,6 +24,7 @@ class StageLeveler(object):
         offset_piezo: PYME.Acquire.Hardware.offsetPiezoREST.OffsetPiezo
         pause_on_relocate: float
             [optional] time to pause during measure loop after moving to a new location and before measuring offset.
+        focus_lock : PYME.Acquire.Hardware.focus_locks
 
         Notes
         -----
@@ -36,6 +41,12 @@ class StageLeveler(object):
         """
         self._scope = scope
         self._offset_piezo = offset_piezo
+        self._focus_lock = focus_lock
+        if self._focus_lock == None:
+            try:
+                self._focus_lock = scope.focus_lock
+            except AttributeError:
+                pass
         self._positions = []
         self._scans = []
         self._pause_on_relocate = pause_on_relocate
@@ -85,6 +96,23 @@ class StageLeveler(object):
         x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
 
         self._positions.extend([{'x': xi, 'y': yi} for xi, yi in zip(x_grid.ravel(), y_grid.ravel())])
+    
+    def add_96wp_positions(self, short='x'):
+        """Shortcut for queueing center positions on a 96-well plate from 
+        minimum x, y well. x (8 well) should be short axis, y (12 well) long
+
+        Parameters
+        ----------
+        short: str
+            stage dimension of the short axis (8 wells) of the plate. Defaults
+            to x.
+        """
+        if short=='x':
+            self.add_grid(9000 * 8, 9000 * 12, 9000, 9000, center=False)
+        elif short=='y':
+            self.add_grid(9000 * 12, 9000 * 8, 9000, 9000, center=False)
+        else:
+            logger.error('short axes must be "x" or "y"')
 
     def measure_offsets(self, optimize_path=True):
         """
@@ -100,6 +128,7 @@ class StageLeveler(object):
         from PYME.Analysis.points.traveling_salesperson import sort
         n_positions = len(self._positions)
         offset = np.zeros(len(self._positions), dtype=float)
+        lock_ok = np.ones(len(self._positions), dtype=bool)
         x, y = np.zeros_like(offset), np.zeros_like(offset)
         positions = np.zeros((n_positions, 2), dtype=float)
         for ind in range(n_positions):
@@ -111,14 +140,49 @@ class StageLeveler(object):
 
         for ind in range(n_positions):
             self._scope.SetPos(x=positions[ind, 0], y=positions[ind, 1])
+            
             time.sleep(self._pause_on_relocate)
+            if hasattr(self, '_focus_lock') and not self._focus_lock.LockOK():
+                logger.debug('focus lock not OK, scanning offset')
+                self.scan_offset_until_ok()
+                if self._focus_lock.LockOK():
+                    time.sleep(1.)
             actual = self._scope.GetPos()
             x[ind], y[ind] = actual['x'], actual['y']
             offset[ind] = self._offset_piezo.GetOffset()
+            try:
+                lock_ok[ind] = self._focus_lock.LockOK()
+                logger.debug('lock OK %s, x %.1f, y %.1f, offset %.1f' % (lock_ok[ind],
+                                                                            x[ind], y[ind],
+                                                                            offset[ind]))
+            except AttributeError:
+                logger.debug('x %.1f, y %.1f, offset %.1f' % (x[ind], y[ind], 
+                                                              offset[ind]))
 
         self._scans.append({
-            'x': x, 'y': y, 'offset': offset
+            'x': x[lock_ok], 'y': y[lock_ok], 'offset': offset[lock_ok]
         })
+    
+    def scan_offset_until_ok(self, step_size=5.):
+        done=False
+        min_offset = self._offset_piezo.GetMinOffset() + 1e-6
+        max_offset = self._offset_piezo.GetMaxOffset() - 1e-6
+        scan_positions = np.arange(min_offset, max_offset + step_size, 
+                                   step_size)
+        for pos in scan_positions:
+            logger.debug('looking for focus, offset: %.1f' % pos)
+            # self._focus_lock.DisableLock()
+            self._offset_piezo.SetOffset(pos)
+            # self._focus_lock.EnableLock()
+            time.sleep(0.5)
+            done = self._focus_lock.LockOK()
+            if done:
+                logger.debug('found focus, offset %.1f' % pos)
+                break
+        
+        if not done:
+            logger.debug('failed to find focus, lowering objective')
+            self._offset_piezo.SetOffset(min_offset)
 
     @staticmethod
     def plot_scan(scan, interpolation_factor=50):
@@ -152,9 +216,11 @@ class StageLeveler(object):
                                                                               x_min - 0.5 * x_spacing, x_max + 0.5 * x_spacing))
         cbar = plt.colorbar()
         cbar.ax.set_ylabel('Offset [um]')
+        plt.plot(scan['y'], scan['x'], 'k--')
         plt.scatter(scan['y'], scan['x'], marker='x', label='measured')
         plt.xlabel('y [um]')
         plt.ylabel('x [um]')
+        plt.title('basePiezo position - offset = OffsetPiezo position')
         plt.legend()
         plt.axes().set_aspect('equal', 'box')
         plt.tight_layout()

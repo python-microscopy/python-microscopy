@@ -53,6 +53,7 @@ def pz(scope):
     from PYME.Acquire import stage_leveling, PYMEAcquire
     import sys
     import subprocess
+    import requests
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
     scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
@@ -63,11 +64,16 @@ def pz(scope):
 
     scope.focus_lock = RLPIDFocusLockClient()
     
-    subprocess.Popen('%s "%s" -i init_htsms_focus_lock.py -t "Focus Lock"' % (sys.executable,
-                                                                              PYMEAcquire.__file__),
-                     creationflags=subprocess.CREATE_NEW_CONSOLE)
+    try:  # check if we've got a focus lock PYMEAcquire instance up already
+        requests.get('http://127.0.0.1:9798/LockEnabled')
+    except requests.exceptions.ConnectionError:
+        fl_command = "%s" % PYMEAcquire.__file__
+        fl_command += ' -i init_htsms_focus_lock.py -t "Focus Lock"'
+        subprocess.Popen('%s %s' % (sys.executable, fl_command),
+                        creationflags=subprocess.CREATE_NEW_CONSOLE)
     
-    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
+    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc,
+                                                       focus_lock=scope.focus_lock)
 
 
 @init_hardware('HamamatsuORCA')
