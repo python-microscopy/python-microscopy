@@ -923,7 +923,9 @@ class LMAnalyser2(Plugin):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
+        mdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+        mdh['Analysis.StartAt'] = min(mdh['Analysis.StartAt'], zp)
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
@@ -979,8 +981,6 @@ class LMAnalyser2(Plugin):
                     # 
                     # TODO - document GPU background interface via creating a base class in PYME.IO.buffers
                     d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
-                else:
-                    raise RuntimeError('Background format not understood')
                     
                 plt.imshow(d, cmap=plt.cm.jet, interpolation='nearest', clim = [0, d.max()])
                 plt.xlim(0, d.shape[1])
