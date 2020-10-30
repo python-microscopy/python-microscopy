@@ -981,6 +981,8 @@ class LMAnalyser2(Plugin):
                     # 
                     # TODO - document GPU background interface via creating a base class in PYME.IO.buffers
                     d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
+                else:
+                    raise RuntimeError('Background format not understood')
                     
                 plt.imshow(d, cmap=plt.cm.jet, interpolation='nearest', clim = [0, d.max()])
                 plt.xlim(0, d.shape[1])
