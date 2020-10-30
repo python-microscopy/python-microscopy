@@ -360,7 +360,7 @@ class RecipePusher(object):
         inputs_by_task = {frameNum: {k : inputs[k][frameNum] for k in inputs.keys()} for frameNum in range(numTotalFrames)}
 
         rule = {'template': self._taskTemplate, 'inputsByTask' : inputs_by_task}
-        print('intputs by task %s' % inputs_by_task)
+        
         s = clusterIO._getSession(self.taskQueueURI)
         r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames), data=json.dumps(rule),
                         headers = {'Content-Type': 'application/json'})
