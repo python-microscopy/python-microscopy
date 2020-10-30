@@ -1,9 +1,10 @@
 from PYME import config
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
-
+import logging
 from PYME.misc.computerName import GetComputerName
 server_filter = config.get('dataserver-filter', GetComputerName())
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -29,11 +30,20 @@ def get_input_glob(request):
 def run(request):
     from PYME import config
     from PYME.cluster.rules import RecipeRule
+    import posixpath
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').lstrip('/')
-
-    rule = RecipeRule(recipeURI=recipeURI, 
-                      inputs={'input': request.POST.getlist('files', [])})
+    input_list = request.POST.getlist('files', [])
+    try:
+        # put outputs in the same directory as selected files, under 'analysis'
+        output_dir = posixpath.join(posixpath.split(input_list[0])[0], 
+                                    'analysis')
+    except IndexError:
+        logger.error('no inputs selected')
+        return
+    
+    rule = RecipeRule(recipeURI=recipeURI, output_dir=output_dir,
+                      inputs={'input': input_list})
     rule.push()
 
     return HttpResponseRedirect('/status/queues/')
