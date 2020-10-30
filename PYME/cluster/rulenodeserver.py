@@ -37,7 +37,25 @@ def template_fill(template, **kwargs):
     for key, value in kwargs.items():
         s = s.replace('{{%s}}' % key, str(value))
     
+    # if taskInputs is still present, substitute it with something we can
+    # load with strict ujson.loads
+    if '{{taskInputs}}' in s:
+        s = s.replace('{{taskInputs}}', 'task_inputs')
     return s
+
+def complete_task(task, task_inputs):
+    """Finish the inputsByTask substitution if task does not already have
+    inputs set
+
+    Parameters
+    ----------
+    task : dict
+        loaded version of the rule template
+    task_inputs : dict
+        dictionary mapping recipe namespace keys to task inputs
+    """
+    if task['inputs'] == 'task_inputs' and task_inputs != None:
+        task['inputs'] = task_inputs
 
 class Rater(object):
     def __init__(self, rule):
@@ -72,9 +90,7 @@ class Rater(object):
         
         task = json.loads(filled_template)
         # if we're relying on taskInputs / inputsByTask, take care of that here
-        task_inputs = self.inputs.get(taskID)
-        if task_inputs is not None:
-            task['inputs'] = task_inputs
+        complete_task(task, self.inputs.get(taskID))
         
         cost = 1.0
         try:
@@ -266,8 +282,7 @@ class NodeServer(object):
                         logging.debug('task_inputs:' + repr(task_inputs))
                         task = json.loads(template_fill(template, taskID=taskID, 
                                                         ruleID=ruleID))
-                        if task_inputs != None:
-                            task['inputs'] = task_inputs
+                        complete_task(task, task_inputs)
 
                         self._tasks.put(task)
                
