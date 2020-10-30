@@ -395,22 +395,21 @@ class RecipeRule(Rule):
         return dict(max_tasks=self._num_recipe_tasks, release_start=0, release_end=self._num_recipe_tasks)
     
     def _task_template(self, context):
-        task = '''{"id": "{{ruleID}}~{{taskID}}",
-                      "type": "recipe",
-                      "inputs" : {{taskInputs}},
-                      %s,
-                      %s
-                      }'''
-        
-        if self.output_dir is None:
-            output_dir_n = ''
-        else:
-            output_dir_n = '"output_dir": "%s",' % self.output_dir
-        
+        task = {
+            'id': '{{ruleID}}~{{taskID}}',
+            'type':'recipe',
+            'inputs': '{{taskInputs}}',
+        }
+
+        if self.output_dir != None:
+            task['output_dir'] = self.output_dir
+
         if self.recipeURI:
-            task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
+            task['taskdefRef'] = self.recipeURI
         else:
-            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text, output_dir_n)
+            task['taskdef'] = '"taskdef" : {"recipe": "%s"}' % self.recipe_text
+        
+        task = json.dumps(task)
             
         #if we are a chained rule, hard-code inputs
         rule_outputs = context.get('rule_outputs', None)
