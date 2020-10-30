@@ -28,18 +28,13 @@ def get_input_glob(request):
 
 def run(request):
     from PYME import config
-    if config.get('PYMERuleserver-use', True):
-        from PYME.cluster.HTTPRulePusher import RecipePusher
-    else:
-        from PYME.cluster.HTTPTaskPusher import RecipePusher
+    from PYME.cluster.rules import RecipeRule
+
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').lstrip('/')
 
-    pusher = RecipePusher(recipeURI=recipeURI)
-
-
-    fileNames = request.POST.getlist('files', [])
-    pusher.fileTasksForInputs(input=fileNames)
-
+    rule = RecipeRule(recipeURI=recipeURI, 
+                      inputs={'input': request.POST.getlist('files', [])})
+    rule.push()
 
     return HttpResponseRedirect('/status/queues/')
 
@@ -47,9 +42,7 @@ def run_template(request):
     from PYME import config
     from PYME.IO import unifiedIO
     from PYME.recipes.modules import ModuleCollection
-    
-    
-    from PYME.cluster._rules import RecipeRule
+    from PYME.cluster.rules import RecipeRule
         
     recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').lstrip('/'))
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
@@ -64,10 +57,9 @@ def run_template(request):
         input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).lstrip('/'))
         recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
     
-    inputs = [dict(input=f) for f in request.POST.getlist('files', [])]
-    
-    rule = RecipeRule(recipe_text, inputs, output_directory)
-    rule.post()
+    rule = RecipeRule(recipe=recipe_text, output_dir=output_directory, 
+                      inputs={'input': request.POST.getlist('files', [])})
+    rule.push()
 
     return HttpResponseRedirect('/status/queues/')
 
