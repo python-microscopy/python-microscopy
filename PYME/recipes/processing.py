@@ -18,6 +18,7 @@ import numpy as np
 from scipy import ndimage
 from PYME.IO.image import ImageStack
 from PYME.IO import tabular
+from PYME.IO import MetaDataHandler
 
 import logging
 logger=logging.getLogger(__name__)
@@ -1779,7 +1780,7 @@ class AverageFramesByZStep(ModuleBase):
             new_stack.append(data_avg / count[None, None, :])
 
         fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
-        averaged = ImageStack(new_stack, mdh=image_stack.mdh, events=fudged_events)
+        averaged = ImageStack(new_stack, mdh=MetaDataHandler.NestedClassMDHandler(image_stack.mdh), events=fudged_events)
 
         # fudge metadata, leaving breadcrumbs
         averaged.mdh['Camera.CycleTime'] = cycle_time
@@ -1841,7 +1842,7 @@ class ResampleZ(ModuleBase):
             interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
-        regular_stack = ImageStack(regular, mdh=stack.mdh)
+        regular_stack = ImageStack(regular, mdh=MetaDataHandler.NestedClassMDHandler(stack.mdh))
 
         regular_stack.mdh['RegularizedStack'] = True
         regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
@@ -1887,7 +1888,7 @@ class BackgroundSubtractionMovingAverage(ModuleBase):
         bgs = BGSDataSource.DataSource(series.data, bgRange=self.window)
         bgs.setBackgroundBufferPCT(self.percentile)
 
-        background = ImageStack(data=bgs, mdh=series.mdh)
+        background = ImageStack(data=bgs, mdh=MetaDataHandler.NestedClassMDHandler(series.mdh))
 
         background.mdh['Parent'] = series.filename
         background.mdh['Processing.SlidingWindowBackground.Percentile'] = self.percentile

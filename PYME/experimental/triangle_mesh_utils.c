@@ -315,8 +315,8 @@ static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_
 
 static void _update_face_normals(int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
 {
-    int f_idx;
-    for (int j = 0; j < n_idxs; ++j)
+    int f_idx, j;
+    for (j = 0; j < n_idxs; ++j)
     {
         f_idx = f_idxs[j];
         if (f_idx == -1)

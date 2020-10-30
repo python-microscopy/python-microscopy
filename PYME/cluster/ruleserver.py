@@ -166,7 +166,19 @@ class IntegerIDRule(Rule):
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
-        self._n_retries =  config.get('ruleserver-retries', 3)
+        # Number of times to re-queue a task if it times out is set by the 'ruleserver-retries' config option
+        # Setting a value of 0 effectively disables re-trying and makes analysis less robust.
+        # Note that a timeout is different to a failure - failing tasks will be marked as having failed and will not be re-tried. Timeouts will
+        # occur in one of 4 scenarios:
+        # - a worker falls over completely or is disconnected from the network
+        # - an unhandled exception - e.g. due to an IO error connecting to the ruleserver in `taskWorkerHTTP.taskWorker._return_task_results()`
+        # - analysis is getting massively bogged down and nothing is keeping up
+        # - the task timeout is unrealistically short for a given processing task
+        # 
+        # In scenarios 1 & 2 it's reasonable to expect that retrying will result in success. In scenarios 3 & 4 it's a bit muddier, but seeing as a) these kind of
+        # failures tend to be a bit stochastic and b) the retries get punted to the back of the queue, when the load might have let up a bit, the odds are
+        # reasonably good.
+        self._n_retries = config.get('ruleserver-retries', 1)
         self._timeout = task_timeout
         
         self._rule_timeout = rule_timeout
@@ -178,6 +190,8 @@ class IntegerIDRule(Rule):
         self.nAvailable = 0
         self.nCompleted = 0
         self.nFailed = 0
+        self.n_returned_after_timeout = 0
+        self.n_timed_out = 0
         
         self._n_max = max_task_ID
         
@@ -337,12 +351,19 @@ class IntegerIDRule(Rule):
         status = np.array(info['status'], 'uint8')
         
         with self._info_lock:
+            old_status = self._task_info['status'][taskIDs]
             self._task_info['status'][taskIDs] = status
             
-            self.nCompleted += int((status ==STATUS_COMPLETE).sum())
-            self.nFailed += int((status == STATUS_FAILED).sum())
+            # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice
+            n_already_complete = int((old_status == STATUS_COMPLETE).sum())
+            n_already_failed = int((old_status == STATUS_FAILED).sum())
             
-            nTasks = len(taskIDs)
+            self.nCompleted += (int((status == STATUS_COMPLETE).sum()) - n_already_complete)
+            self.nFailed += (int((status == STATUS_FAILED).sum()) - n_already_failed)
+            
+            self.n_returned_after_timeout += (n_already_complete + n_already_failed)
+            
+            nTasks = len(taskIDs) - (n_already_complete + n_already_failed)
             self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
@@ -411,7 +432,7 @@ class IntegerIDRule(Rule):
         # To fix: Potentially replace with `np.all(self._task_info['status']>=STATUS_COMPLETE)` (although this would need to be cached and refreshed - property access should be cheap). 
         # combined with a new enum value STATUS_INVALID==6 -  `self.mark_release_complete()` could be re-written as `self._task_info['status'][self._task_info['status'] == 0] = STATUS_INVALID`
         
-        return (self.nCompleted >= self._n_max)
+        return (self.nAvailable == 0) and ((self.nCompleted + self.nFailed) >= self._n_max)
     
     def inactivate(self):
         """
@@ -436,7 +457,9 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
-                  'active' : self._active
+                  'active' : self._active,
+                  'tasksTimedOut' : self.n_timed_out,
+                  'tasksCompleteAfterTimeout' : self.n_returned_after_timeout,
                 }
     
     def poll_timeouts(self):
@@ -453,10 +476,13 @@ class IntegerIDRule(Rule):
                 
                 self.nAssigned -= nTimedOut
                 self.nAvailable += nTimedOut
+                
+                self.n_timed_out += nTimedOut
     
-                retry_failed = self._task_info['nRetries'] > self._n_retries
-                self._task_info['status'][retry_failed] = STATUS_FAILED
+                retry_failed = self._task_info['nRetries'][timed_out] > self._n_retries
+                self._task_info['status'][timed_out[retry_failed]] = STATUS_FAILED
                 self.nAvailable -= int(retry_failed.sum())
+                self.nFailed += int(retry_failed.sum())
                 
                 #self._update_nums()
             
@@ -715,6 +741,8 @@ class RuleServer(object):
             # take out the lock in case the rule is still being added in another
             # request and we are already trying to release tasks
             rule = self._rules[ruleID]
+            
+        logger.debug('release_rule_tasks(ruleID = %s, release_start=%d, release_end=%d)' % (ruleID, int(release_start), int(release_end )))
         
         rule.make_range_available(int(release_start), int(release_end))
     
@@ -768,7 +796,7 @@ class RuleServer(object):
             return json.dumps({'ok': 'False', 'error': str(expired_rules)})
     
     @webframework.register_endpoint('/mark_release_complete')
-    def mark_release_complete(self, rule_id, n_tasks=None):
+    def mark_release_complete(self, ruleID, n_tasks=None):
         """
         
         HTTP Endpoint (POST) to signal that no more tasks will be released for a rule and the rule can be regarded as finished once the previously released
@@ -801,7 +829,7 @@ class RuleServer(object):
         # take out the rule lock in case we are still creating the rule and the
         # client POSTs this (e.g. if a series is started/stopped quickly)
         with self._rule_lock:
-            self._rules[rule_id].mark_release_complete(n_tasks)
+            self._rules[ruleID].mark_release_complete(n_tasks)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')

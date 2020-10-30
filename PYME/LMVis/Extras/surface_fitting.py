@@ -35,8 +35,8 @@ class SurfaceFitter(object):
         if not fit_module.configure_traits(kind='modal'):
             return
 
-        pipeline.recipe.add_module(fit_module)
-        pipeline.recipe.execute()
+        pipeline.recipe.add_modules_and_exeute([fit_module,])
+        
         pipeline.addDataSource(raw_key, pipeline.recipe.namespace[raw_key], False)
         pipeline.addDataSource(filtered_key, pipeline.recipe.namespace[filtered_key], False)
         pipeline.addDataSource(reconstruction_key, pipeline.recipe.namespace[reconstruction_key], False)

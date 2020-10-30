@@ -84,8 +84,7 @@ def gen_isosurface(visFr):
     dmc = DualMarchingCubes(recipe, invalidate_parent=False, input=oc_name,output=surf_name)
     
     if dmc.configure_traits(kind='modal'):
-        recipe.add_module(dmc)
-        recipe.execute()
+        recipe.add_modules_and_execute([dmc,])
 
         print('Isosurface generated, adding layer')
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
@@ -197,8 +196,7 @@ def distance_to_surface(visFr):
     recipe = visFr.pipeline.recipe
     dts = DistanceToMesh(recipe, input_mesh=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)
 
-    recipe.add_module(dts)
-    recipe.execute()
+    recipe.add_modules_and_execute([dts,])
     visFr.pipeline.selectDataSource(dist_name)
  
 def estimate_density(visFr):
@@ -209,8 +207,7 @@ def estimate_density(visFr):
     dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, output=dens_name)
 
     if dmc.configure_traits(kind='modal'):
-        recipe.add_module(dmc)
-        recipe.execute()
+        recipe.add_modules_and_execute([dmc,])
         dmc._invalidate_parent = True
         visFr.pipeline.selectDataSource(dens_name)
         
@@ -226,14 +223,15 @@ def estimate_circumcentre_densities(visFr):
         
     cc_name = visFr.pipeline.new_ds_name('circumcentres')
     cc = DelaunayCircumcentres(recipe, input=tess_name, output=cc_name)
-    recipe.add_module(cc)
+    #recipe.add_module(cc)
     
     dens_name = visFr.pipeline.new_ds_name('dense')
     dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, input_sample_locations=cc_name, output=dens_name)
 
     if dmc.configure_traits(kind='modal'):
-        recipe.add_module(dmc)
-        recipe.execute()
+        #recipe.add_module(dmc)
+        #recipe.execute()
+        recipe.add_modules_and_execute([cc, dmc])
         dmc._invalidate_parent = True
         visFr.pipeline.selectDataSource(dens_name)
     
@@ -296,8 +294,7 @@ def gen_isosurface_from_tesselation(visFr):
     mt = MarchingTetrahedra(recipe, invalidate_parent=False, input=oc_name, output=surf_name)
     
     if mt.configure_traits(kind='modal'):
-        recipe.add_module(mt)
-        recipe.execute()
+        recipe.add_modules_and_execute([mt,])
 
         print('Isosurface generated, adding layer')
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])

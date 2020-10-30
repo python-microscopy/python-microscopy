@@ -23,11 +23,11 @@
     <h3>Active analysis queues</h3>
 
     <table class="table table-striped">
-        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th><th></th></tr>
+        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Timed out</th><th>Returned after timeout</th><th>Avg Cost</th><th></th></tr>
 
         <tr v-for="(queueStats, queueName)  in queues" :class="queueStats.active ? 'active' : 'inactive'">
             <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
-                <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td><td>
+                <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.tasksTimedOut }}</td><td>{{ queueStats.tasksCompleteAfterTimeout }}</td><td>{{ queueStats.averageExecutionCost }}</td><td>
             <button v-if="queueStats.active" v-on:click="inactivate_rule(queueName );">Abort</button></td>
         </tr>
 

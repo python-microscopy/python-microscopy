@@ -1,20 +1,37 @@
 name: Lint
 
-on: [pull_request]
+on: [pull_request_target]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with: 
+        ref: refs/pull/${{ github.event.pull_request.number }}/head
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
         python-version: 3.6
     - name: Install dependencies
       run: pip install flake8 lintly
+    - name: Event info
+      run: |
+        echo ${{ github.event.pull_request.number }}
+        echo ${{ github.event }}
+    - name: Git info
+      run: |
+        # bunch of info commands to help us debug
+        git remote -v
+        git branch
+        git status
+        git log
+        git diff
+      
     - name: Lint with flake8
       run: |
-        git diff master | flake8 --diff | lintly --commit-sha=${{ github.event.pull_request.head.sha }}
+        git fetch origin master:om
+        git diff om
+        git diff ${{ github.event.pull_request.head.sha }} om | flake8 --diff | lintly --pr=${{ github.event.pull_request.number }} --commit-sha=${{ github.event.pull_request.head.sha }}
       env:
         LINTLY_API_KEY: ${{ secrets.GITHUB_TOKEN }}

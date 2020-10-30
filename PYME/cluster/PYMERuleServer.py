@@ -52,6 +52,12 @@ def main():
     data_root = config.get('dataserver-root')
     if data_root:
         distr_log_dir = '%s/LOGS' % data_root
+        try:  # make sure the directory exists
+            os.makedirs(distr_log_dir)  # exist_ok flag not present on py2
+        except OSError as e:
+            import errno
+            if e.errno != errno.EEXIST:
+                raise e
 
         dist_log_err_file = os.path.join(distr_log_dir, 'distributor.log')
         if os.path.exists(dist_log_err_file):

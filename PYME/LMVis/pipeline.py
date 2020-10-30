@@ -25,7 +25,15 @@ from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
-from PYME.LMVis.triBlobs import BlobSettings
+
+try:
+    # make sure pipeline works when wx is not avalable
+    # TODO - move blob stuff into a recipe module and remove from pipeline.
+    from PYME.LMVis.triBlobs import BlobSettings
+except ImportError:
+    # create a dummy class
+    class BlobSettings:
+        pass
 
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
@@ -720,7 +728,8 @@ class Pipeline:
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
         
-        ds.mdh = mdh
+        # make sure mdh is writable (file-based might not be)
+        ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
             # only set the .events attribute if we actually have events.
             ds.events = events

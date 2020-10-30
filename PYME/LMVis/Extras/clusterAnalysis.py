@@ -90,8 +90,7 @@ class ClusterAnalyser:
 
         clumper = localisations.DBSCANClustering(recipe, inputName=pipeline.selectedDataSourceKey,outputName='dbscanClumped')
         if clumper.configure_traits(kind='modal'):
-            recipe.add_module(clumper)
-            recipe.execute()
+            recipe.add_modules_and_execute([clumper,])
 
             pipeline.selectDataSource(clumper.outputName)
 

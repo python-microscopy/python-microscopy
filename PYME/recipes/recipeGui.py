@@ -352,6 +352,9 @@ class RecipeView(wx.Panel):
         self.SetSizerAndFit(hsizer1)
         
         self.recipes.LoadRecipeText('')
+
+        recipes.activeRecipe.recipe_changed.connect(self.update)
+        recipes.activeRecipe.recipe_executed.connect(self.update)
         
     def _set_text_styling(self):
         from wx import stc
@@ -485,12 +488,12 @@ class RecipeView(wx.Panel):
     def update_recipe_text(self):
         self.set_recipe_text(self.recipes.activeRecipe.toYAML())
     
-    def update(self):
+    def update(self, *args, **kwargs):
         self.recipePlot.draw()
         self.update_recipe_text()
         
     def OnApplyText(self, event):
-        self.recipes.LoadRecipeText(self.tRecipeText.GetValue())
+        self.recipes.UpdateRecipeText(self.tRecipeText.GetValue())
         
     def OnNewRecipe(self, event):
         if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
@@ -520,7 +523,7 @@ class RecipeView(wx.Panel):
             if c.configure_traits(kind='modal'):
                 self.recipes.activeRecipe.add_module(c)
                 self.recipes.activeRecipe.invalidate_data()
-                wx.CallLater(10, self.update)
+                #wx.CallLater(10, self.update)
                 
         dlg.Destroy()
         
@@ -592,9 +595,15 @@ class RecipeManager(object):
         #self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
 
         try:        
+            self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_executed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass
+        
+    def UpdateRecipeText(self, s):
+        #update (rather than replace) the current recipe based on text)
+        self.activeRecipe.update_from_yaml(s)
 
 class PipelineRecipeManager(RecipeManager):
     """Version of recipe manager for use with the VisGUI pipeline. Updates the existing recipe rather than replacing
@@ -609,6 +618,8 @@ class PipelineRecipeManager(RecipeManager):
     def LoadRecipeText(self, s, filename=''):
         self.pipeline.recipe.update_from_yaml(s)
         try:
+            #self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            #self.activeRecipe.recipe_executed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass

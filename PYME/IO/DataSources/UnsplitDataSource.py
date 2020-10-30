@@ -34,7 +34,7 @@ class DataSource(BaseDataSource):
         
         self._raw_w, self._raw_h = self.dataSource.shape[:2]
         
-        self.sliceShape[1]/=2
+        self.sliceShape[1] = int(self.sliceShape[1] / 2)
         
         if not chanROIs is None:
             x, y, w, h = chanROIs[0]
@@ -119,9 +119,9 @@ class DataSource(BaseDataSource):
             w, h = self.sliceShape
         else:
             if self.chan == 0:
-                x, y, w, h = 0,0, dsa.shape[0], dsa.shape[1]/2
+                x, y, w, h = 0,0, dsa.shape[0], int(dsa.shape[1] / 2)
             else:
-                x, y, w, h = 0, dsa.shape[1] / 2, dsa.shape[0], dsa.shape[1] / 2
+                x, y, w, h = 0, int(dsa.shape[1] / 2), dsa.shape[0], int(dsa.shape[1] / 2)
                 #print x, y
                 return dsa[x:(x+w), y:(y+h)]
         

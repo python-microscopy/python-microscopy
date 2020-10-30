@@ -1,6 +1,7 @@
 
 # This file is for focus locks which involve some sort of reflection off of the coverslip.
 from simple_pid import PID
+import os
 import numpy as np
 from scipy import optimize
 from PYME.util import webframework
@@ -139,6 +140,9 @@ class ReflectedLinePIDFocusLock(PID):
         self.piezo = piezo
         # self._last_offset = self.piezo.GetOffset()
 
+        self._lock_ok = False
+        self._ok_tolerance = 5
+
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
         
@@ -248,6 +252,10 @@ class ReflectedLinePIDFocusLock(PID):
     def fit_roi_size(self, roi_size):
         self._fit_roi_size = roi_size
         self._roi_position = np.arange(roi_size)
+    
+    @webframework.register_endpoint('/LockOK', output_is_json=False)
+    def LockOK(self):
+        return self.LockEnabled() and self._lock_ok and bool(abs(self.peak_position - self.setpoint) < self._ok_tolerance)
 
     def find_peak(self, profile):
         """
@@ -282,12 +290,14 @@ class ReflectedLinePIDFocusLock(PID):
             peak_position, success = self.find_peak(profile)
 
         if not success:
+            self._lock_ok = False
             # restart the integration / derivatives so we don't go wild when we
             # eventually get a good fit again
             self.reset()
             return
         
         self.peak_position = peak_position
+        self._lock_ok = True
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
@@ -314,6 +324,10 @@ class RLPIDFocusLockClient(object):
 
     def LockEnabled(self):
         response = self._session.get(self.base_url + '/LockEnabled')
+        return bool(response.json())
+    
+    def LockOK(self):
+        response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
     def EnableLock(self):
@@ -369,3 +383,83 @@ class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock
             logger.info('Shutting down ...')
             self.shutdown()
             self.server_close()
+
+
+class FocusLogger(object):
+    _dtype = [('time', '<f4'), ('focus', '<f4')]
+
+    def __init__(self, position_handle, log_interval=1.0):
+        """
+        Logs focus position (or really any float return by the function passed
+        to this initialization) to and hdf file at a specified interval.
+
+        Parameters
+        ----------
+        position_handle : function
+            function handle to call to get position to log.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.0
+        """
+        self._position_handle = position_handle
+        self._log_file = None
+        self._log_interval = log_interval
+        self._poll_thread = None
+        self._logging = False
+        self._start_time = 0
+    
+    def set_interval(self, log_interval):
+        self._log_interval = log_interval
+    
+    def ensure_stopped(self):
+        """
+        Stop any current logging. Note that we let the h5rFile poll thread
+        do the hdf file closing
+        """
+        self._logging = False
+        try:
+            self._poll_thread.join()
+        except AttributeError:
+            pass
+    
+    def start_logging(self, log_file, log_interval=None):
+        """
+        Create a log file and start storing focus position values at a set time
+        interval.
+
+        Parameters
+        ----------
+        log_file : str
+            path to create hdf file storing contents in `focus_log` table.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.
+        """
+        from PYME.IO.h5rFile import H5RFile
+
+        self.ensure_stopped()
+        if log_interval != None:
+            self.set_interval(log_interval)
+            
+        log_dir, log_stub = os.path.split(log_file)
+        os.makedirs(log_dir, exist_ok=True)
+        log_stub, ext = os.path.splitext(log_file)
+        if ext != '.hdf':
+            log_file = os.path.join(log_dir, log_stub + '.hdf')
+        
+        self._log_file = H5RFile(log_file, mode='a', 
+                                 keep_alive_timeout=max(20.0, 
+                                                        self._log_interval))
+        self._logging = True
+        self._poll_thread = threading.Thread(target=self._poll)
+        logger.debug('starting focus logger')
+        self._start_time = _current_time()
+        self._poll_thread.start()
+    
+    def _poll(self):
+        while self._logging:
+            d = np.array([(_current_time() - self._start_time, 
+                           self._position_handle())],
+                         dtype=self._dtype)
+            
+            self._log_file.appendToTable('focus_log', d)
+
+            time.sleep(self._log_interval)
