@@ -109,6 +109,17 @@
     color: #FFFFFF;
 }
 
+.subnav {
+   list-style: none;
+}
+
+.subnav>li>a {
+    position: relative;
+    display: block;
+    padding: 2px;
+    padding-left: 10px;
+}
+
 /*
 circle {
 

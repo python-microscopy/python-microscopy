@@ -14,7 +14,7 @@ var vm = undefined;
 Vue.config.devtools = true;
 //Vue.config.debug = true;
 
-
+const cols = ['turquoise', 'emerald', 'peter-river', 'amethyst', 'wet-asphalt', 'sunflower', 'carrot', 'alizarin'];
 
 
 
@@ -81,7 +81,8 @@ jigna.ready.done(function() {
                // take module argument for an improved future version which gets more trait info
                return input_type_mappings[typeof(param)];
            },
-           cond: function(y){return condense(y);}
+           cond: function(y){return condense(y);},
+           get_colour: function(index) {return cols[index % 8]},
        },
        watch: {
            recipe: function(new_data, old_data){

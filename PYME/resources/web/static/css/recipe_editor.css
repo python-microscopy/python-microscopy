@@ -50,8 +50,17 @@ html, body {
     height:100%;
 }
 
-.connecting_line {
-    stroke: grey;
+.connecting-line {
+    stroke-width: .005;
+    fill:none;
+}
+
+.link-label {
+    font-size: 0.04px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    background-color: rgb(245,245,245);
+    /*stroke-width: 0.002;*/
 }
 
 .main, .cont0, .row0{

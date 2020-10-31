@@ -11,16 +11,16 @@
       <!--<div v-html="recipe.to_svg()"></div> -->
 
       <svg viewBox="-1,0, 2, 7" width="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-      <g v-for="line in recipe.layout().connecting_lines">
-        <polyline :points="line_fmt(line)" style="stroke:grey;stroke-width: .005;fill:none"></polyline>
+      <g v-for="(line, index) in recipe.layout().connecting_lines">
+        <polyline :points="line_fmt(line)" :class="[get_colour(index), 'connecting-line']" ></polyline>
       </g>
-          <g v-for="node in recipe.layout().node_positions">                                                                                                    <!--<text v-if="node.key.__type__" :x="node.pos[0]" :y="node.pos[1]" style="font-size: 0.1px">{{ node.key.get_name() }}</text>-->
+          <g v-for="(node, index) in recipe.layout().node_positions">                                                                                                    <!--<text v-if="node.key.__type__" :x="node.pos[0]" :y="node.pos[1]" style="font-size: 0.1px">{{ node.key.get_name() }}</text>-->
           <svg v-if="node.key.__type__" :y="cond(node.pos[0])-0.375 " :x="node.pos[1]-0.5" width="1" height="0.75" viewBox="0,0,400,300">
           <foreignObject  x="0" y="0" width="400" height="300">
               <rec-module :module="node.key"></rec-module>
         </foreignObject>
               </svg>
-          <text v-else :y="cond(node.pos[0])" :x="node.pos[1]" style="font-size: 0.05px">{{ node.key }}</text>
+          <text v-else :y="cond(node.pos[0])" :x="node.pos[1]" :class="['link-label', ]">{{ node.key }}</text>
       </g>
 
       </svg>
