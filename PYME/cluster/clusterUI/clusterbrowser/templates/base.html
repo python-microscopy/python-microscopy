@@ -75,8 +75,9 @@
                 <li class="{% block files_active_class %}{% endblock %}"><a href="/files/"><span class="glyphicon glyphicon-floppy-disk"></span>&nbsp;&nbsp;Files</a></li>
                 <li class="dropdown {% block recipe_active_class %}{% endblock %}"><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" ><span class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Recipes <span class="caret"></span></a>
                     <ul class="dropdown-menu">
-                        <li class="{% block standalone_recipe_active_class %}{% endblock %}"><a href="/recipes/standalone/">&nbsp;&nbsp;Standalone</a></li>
-                        <li class="{% block recipe_template_active_class %}{% endblock %}"><a href="/recipes/template/">&nbsp;&nbsp;Templated</a></li>
+                        <li class="{% block standalone_recipe_active_class %}{% endblock %}"><a href="/recipes/standalone/">&nbsp;&nbsp; Run</a></li>
+                        <li class="{% block editrun_recipe_active_class %}{% endblock %}"><a href="/recipes/editrun/">&nbsp;&nbsp; Edit and run</a></li>
+                        <li class="{% block recipe_template_active_class %}{% endblock %}"><a href="/recipes/template/">&nbsp;&nbsp;Run templated</a></li>
                     </ul>
                 </li>
             </ul>

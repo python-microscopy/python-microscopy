@@ -99,7 +99,7 @@ def main():
     tornado_app = JignaWebApp(handlers=[
         (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': PYME.resources.get_web_static_dir()}),
         #(r'/media/(.*)', tornado.web.StaticFileHandler, {'path': MEDIA_URL}),
-        (r'/recipe_editor/(.*)', tornado.web.StaticFileHandler, {'path': os.path.dirname(html_recipe_editor.__file__)}),
+        #(r'/recipe_editor/(.*)', tornado.web.StaticFileHandler, {'path': os.path.dirname(html_recipe_editor.__file__)}),
         (r'.*', tornado.web.FallbackHandler, dict(fallback=django_app)),
         
         ], template=html_recipe_editor.template, context={'recipe': ModuleCollection.fromYAML(rec_text)})

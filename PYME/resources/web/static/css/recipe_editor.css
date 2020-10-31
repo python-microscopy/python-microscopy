@@ -66,6 +66,11 @@ html, body {
     vertical-align: top;
 }
 
+#form_recipe {
+    height: 25%;
+    overflow: scroll;
+}
+
 #recipe {
     display: inline-block;
     width: auto;

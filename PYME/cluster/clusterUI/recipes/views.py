@@ -19,6 +19,10 @@ def recipe_editor(request):
     """User interface for editing recipes"""
     return render(request, 'recipes/recipe_editor.html', {'serverfilter' : server_filter})
 
+def recipe_editrun(request):
+    """User interface for editing recipes"""
+    return render(request, 'recipes/recipe_editrun.html', {'serverfilter' : server_filter})
+
 
 def recipe_template(request):
     """This allows file selection with globs like bakeshop"""
@@ -37,10 +41,15 @@ def run(request):
         from PYME.cluster.HTTPRulePusher import RecipePusher
     else:
         from PYME.cluster.HTTPTaskPusher import RecipePusher
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').lstrip('/')
+    
+    recipe_url = request.POST.get('recipeURL')
+    if recipe_url is not None:
+        recipeURI = ('pyme-cluster://%s/' % server_filter) + recipe_url.lstrip('/')
 
-    pusher = RecipePusher(recipeURI=recipeURI)
-
+        pusher = RecipePusher(recipeURI=recipeURI)
+    else:
+        recipe_text = request.POST.get('recipe_text')
+        pusher = RecipePusher(recipe=recipe_text)
 
     fileNames = request.POST.getlist('files', [])
     pusher.fileTasksForInputs(input=fileNames)
