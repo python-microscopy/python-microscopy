@@ -116,36 +116,12 @@
 <script src={% static "jquery.min.js" %}></script>
 <script src={% static "bootstrap.min.js" %} crossorigin="anonymous"></script>
 <script src={% static "jstree.min.js" %}></script>
+<script src={% static "fileselector.js" %}></script>
+
 {% block scripts %}
 {% endblock %}
 <script>
-    function select_file(callback, message='Select a file', basedir=''){
-        $('#file_select_modal').modal('show');
 
-        $('#file_select_label').html(message);
-
-        var tree = $('#file_selector_tree').jstree({
-          'core' : {
-            'data' : {
-              'url' : '/files/_lite/',
-              'data' : function (node) {
-                  //console.log(node);
-                  try{ return { 'path' : node.data.path };}
-                  catch (err) { return {'path' : ''}}
-
-              }
-            }
-          }
-        });
-
-        $('#file_select_ok').click(function(){
-            $('#file_select_modal').modal('hide');
-            $('#file_select_ok').off('click');
-            var path = $('#file_selector_tree').jstree(true).get_selected(true)[0].data.path;
-            callback(path);
-        })
-
-    }
 
     function loadclusterload(){
         //console.log('about to reload')

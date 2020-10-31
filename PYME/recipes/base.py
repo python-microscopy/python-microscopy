@@ -714,6 +714,11 @@ class ModuleCollection(HasTraits):
                 return super(MyDumper, self).represent_mapping(tag, value, False)
             
         return yaml.dump(self.get_cleaned_module_list(), Dumper=MyDumper)
+    
+    def save_yaml(self, uri):
+        from PYME.IO import unifiedIO
+        
+        unifiedIO.write(uri, self.toYAML().encode())
         
     def toJSON(self):
         import json
@@ -802,6 +807,11 @@ class ModuleCollection(HasTraits):
         l = yaml.safe_load(data)
 
         return self._update_from_module_list(l)
+    
+    def update_from_file(self, filename):
+        from PYME.IO import unifiedIO
+        
+        self.update_from_yaml(unifiedIO.read(filename).decode())
 
     @classmethod
     def fromJSON(cls, data):
@@ -1041,7 +1051,7 @@ class ModuleCollection(HasTraits):
         
         node_positions, connecting_lines = recipeLayout.layout(self.dependancyGraph())
         ret =   layout_info([node(k, v) for k, v in node_positions.items()], [(a.tolist(), b.tolist(), c) for a,b,c in connecting_lines])
-        print (ret)
+        #print (ret)
         return ret
     
     def _repr_svg_(self):

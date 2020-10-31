@@ -32,11 +32,26 @@
             width: 100%;
             height: 100%;
             /*background-color: lightgrey;*/
-            border: 1px solid red;
+            /*border: 1px solid red;*/
         }
 
         .col0 {
 
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .fullheight{
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .vertscroll{
+            height: 100%;
+            overflow: scroll;
         }
 
         .fullwidth {
@@ -58,13 +73,33 @@
         #recipe {
             display: inline-block;
             width: auto;
+            height:100%
             overflow: scroll
         }
+
+        #editor-buttons {
+            width: 100%;
+            display: inline-block;
+            margin:10px;
+            text-align: right;
+        }
+
+/*        ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, .5);
+  box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+}*/
 
     </style>
 
     <!-- Load the jigna-vue script. The location of jigna-vue script file
     will always be '/jigna/jigna-vue.js' -->
+    <script src="/static/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
     <script type='text/javascript' src='/static/jigna-vue-bare.js'></script>
 
@@ -75,7 +110,29 @@
 </head>
 <body>
 
-<div id="app" fullwidth>
+<div id="app" class="container-fluid fullheight">
+    <div class="row fullheight">
+
+        <!-- Modal dialog for file selection-->
+            <div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="file_select_label">Select a file</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div id="file_selector_tree" data-path=""></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+        <div class="col-md-7 vertscroll">
 <div id="recipe">
       <!--Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>-->
 
@@ -120,14 +177,27 @@
       </div> -->
 
     </div>
-    <div id="editor">function foo(items) {
+        </div><div class="col-md-5">
+            <div id="editor">function foo(items) {
     var x = "All this is syntax highlighted";
     return x;
     }
     </div>
+        <div id="editor-buttons">
+        <button type="button" class="btn btn-default" onclick="load_recipe()">Load</button>
+        <button type="button" class="btn btn-primary" onclick="save_recipe()">Save</button>
+        <button type="button" class="btn btn-danger" onclick="vm.recipe.update_from_yaml('')">Clear</button>
+            </div>
+    </div>
+
+
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
+<script src="/static/bootstrap.min.js" crossorigin="anonymous"></script>
+<script src="/static/jstree.min.js"></script>
+<script src="/static/fileselector.js"></script>
 
 <script>
     condense=function(y){
@@ -207,6 +277,22 @@
 
        jigna.add_listener('jigna', 'object_changed', function(event){editor.setValue(vm.recipe.toYAML());editor.clearSelection();});
     });
+
+    load_recipe = function(){
+        console.log('clicked load recipe');
+        select_file(function(path){
+         console.log('Selected: ', path);
+         vm.recipe.update_from_file('PYME-CLUSTER:///' + path)
+        }, 'Select a file');
+    };
+
+    save_recipe = function(){
+        console.log('clicked save recipe');
+        select_file_save(function(path){
+         console.log('Selected: ', path);
+         vm.recipe.save_yaml('PYME-CLUSTER:///' + path)
+        }, 'Save as', '', 'RECIPES/');
+    };
   </script>
 </body>
 </html>
