@@ -15,6 +15,11 @@ def recipe_standalone(request):
     """This allows file selection with globs like bakeshop"""
     return render(request, 'recipes/recipe_standalone.html', {'serverfilter' : server_filter})
 
+def recipe_editor(request):
+    """User interface for editing recipes"""
+    return render(request, 'recipes/recipe_editor.html', {'serverfilter' : server_filter})
+
+
 def recipe_template(request):
     """This allows file selection with globs like bakeshop"""
     return render(request, 'recipes/recipe_template.html', {'serverfilter' : server_filter})

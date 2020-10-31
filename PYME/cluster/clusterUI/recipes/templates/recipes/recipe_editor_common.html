@@ -1,15 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Recipe editor</title>
-
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/css/recipe_editor.css">
-
-
-</head>
-<body>
+{% verbatim %}
 
 <div id="app" class="container-fluid fullheight">
     <div class="row fullheight">
@@ -54,20 +43,4 @@
     </div>
 </div>
 
-<script src="/static/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
-<script type='text/javascript' src='/static/jigna-vue-bare.js'></script>
-
-<!-- Once jigna is loaded, initialize it. -->
-<script type='text/javascript'>
-    jigna.initialize();
-</script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
-<script src="/static/bootstrap.min.js" crossorigin="anonymous"></script>
-<script src="/static/jstree.min.js"></script>
-<script src="/static/fileselector.js"></script>
-
-<script src="/static/recipe_editor.js"></script>
-</body>
-</html>
+{% endverbatim %}

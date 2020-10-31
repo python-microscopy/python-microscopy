@@ -1,4 +1,27 @@
+const dlg = `
+<!-- Modal dialog for file selection-->
+<div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="file_select_label">Select a file</h4>
+      </div>
+      <div class="modal-body">
+        <div id="file_selector_tree" data-path=""></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+
 function select_file(callback, message='Select a file', basedir=''){
+    $('#dlg-placeholder').html(dlg);
     $('#file_select_modal').modal('show');
 
     $('#file_select_label').html(message);
@@ -29,8 +52,8 @@ function select_file(callback, message='Select a file', basedir=''){
 
 function select_file_save(callback, message='Save as', clusterfilter='', basedir=''){
     // NOTE: basedir MUST have a trailing / if not empty
+    $('#dlg-placeholder').html(dlg);
     $('#file_select_modal').modal('show');
-
     $('#file_select_label').html(message);
 
     $('#file_selector_tree').html(`

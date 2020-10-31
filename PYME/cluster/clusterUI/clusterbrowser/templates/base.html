@@ -66,8 +66,8 @@
 
 </nav>
 
-<div class="container-fluid">
-    <div class="row">
+<div class="container-fluid cont0">
+    <div class="row row0">
         <div class="col-sm-3 col-md-3 sidebar">
             <ul class="nav nav-sidebar">
                 <li class="{% block status_active_class %}{% endblock %}"><a href="/status/"><span class="glyphicon glyphicon-signal"></span>&nbsp;&nbsp;Cluster Status</a></li>
@@ -88,24 +88,7 @@
         </div>
 
         <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
-            <!-- Modal dialog for file selection-->
-            <div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
-              <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="file_select_label">Select a file</h4>
-                  </div>
-                  <div class="modal-body">
-                    <div id="file_selector_tree" data-path=""></div>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div id="dlg-placeholder"></div>
 
             {% block content %}
             {% endblock %}
