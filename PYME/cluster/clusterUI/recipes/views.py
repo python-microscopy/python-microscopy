@@ -20,7 +20,7 @@ def recipe_editor(request):
     return render(request, 'recipes/recipe_editor.html', {'serverfilter' : server_filter})
 
 def recipe_editrun(request):
-    """User interface for editing recipes"""
+    """Edit then run a recipe (effectively a composition of recipe_editor and recipe_standalone)"""
     return render(request, 'recipes/recipe_editrun.html', {'serverfilter' : server_filter})
 
 

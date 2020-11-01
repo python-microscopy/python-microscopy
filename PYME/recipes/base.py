@@ -716,6 +716,24 @@ class ModuleCollection(HasTraits):
         return yaml.dump(self.get_cleaned_module_list(), Dumper=MyDumper)
     
     def save_yaml(self, uri):
+        """
+        Save the recipe text to .yaml using the cluster-aware unified IO library
+        
+        WARNING: Experimental - this was added as a quick hack to get web-based recipe editing working, and WILL LIKELY
+        BE REMOVED without deprecation once that moves to using a recipe-manager. Whilst arguably the least contentious
+        of the web-editor additions, it is unclear whether the saving logic (past dumping to YAML in the toYAML()
+        method) should reside within the recipe itself. As the recipe class is proxied into the browser, there are also
+        potential security implications here, particularly as this accepts both filenames and clusterURIs. As a
+        consequence, saving should probably be factored out into something which can operate in an appropriate sandbox
+        (the other option is to sandbox unifiedIO).
+        
+        Parameters
+        ----------
+        uri: str
+            A filename or PYME-CLUSTER:// URI
+
+
+        """
         from PYME.IO import unifiedIO
         
         unifiedIO.write(uri, self.toYAML().encode())
@@ -809,6 +827,21 @@ class ModuleCollection(HasTraits):
         return self._update_from_module_list(l)
     
     def update_from_file(self, filename):
+        """
+        Update the contents of the recipe from a .yaml file
+        
+        WARNING: This function will likely be REMOVED WITHOUT NOTICE. It is a quick hack to get the prototype web-based
+        recipe editor working, but will be surplus to requirements once we have a proper recipe manager in the web based
+        editor. It's logically obtuse to consider something the same recipe once you've completely replaced it with a
+        recipe that has been loaded from file. It is much more sensible to create a new recipe instance when loading
+        a recipe from file, and this is the recommended approach.
+        
+        Parameters
+        ----------
+        filename: str
+            filename or PYME-CLUSTER:// URI
+
+        """
         from PYME.IO import unifiedIO
         
         self.update_from_yaml(unifiedIO.read(filename).decode())
@@ -1044,6 +1077,13 @@ class ModuleCollection(HasTraits):
         return recipeLayout.to_svg(self.dependancyGraph())
     
     def layout(self):
+        """ Added as a visualisation aid for the web-based recipe editor. Very much a work in progress and not
+        guaranteed to remain in it's current form.
+        
+        TODO - does this logic belong here????
+        TODO - rename?? (potentially make it webui specific)???
+        TODO - potential issues on Py3 with how jigna treats namedtuple?
+        """
         from . import recipeLayout
         from collections import namedtuple
         layout_info = namedtuple('layout', ['node_positions', 'connecting_lines'])

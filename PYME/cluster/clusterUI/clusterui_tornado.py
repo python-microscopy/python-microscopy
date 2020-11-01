@@ -1,5 +1,8 @@
 """
 A quick attempt to run both clusterUI and the recipe editor under tornado so that they can talk to each other.
+
+NOTE/FIXME: This uses a single, global, recipe instance for recipe editing which means that things will go very wrong
+if editing recipes in separate sessions. This is a major limitation which should be fixed..
 """
 
 import os
