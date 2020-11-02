@@ -335,7 +335,7 @@ class RecipePusher(object):
             'inputs': '{{taskInputs}}',
         }
 
-        if self.output_dir != None:
+        if self.output_dir is not None:
             task['output_dir'] = self.output_dir
 
         if self.recipeURI:
@@ -373,6 +373,5 @@ class RecipePusher(object):
             logging.error('Failed creating rule with status code: %d' % r.status_code)
 
         
-
 
 

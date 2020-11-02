@@ -404,7 +404,7 @@ class RecipeRule(Rule):
             'inputs': '{{taskInputs}}',
         }
 
-        if self.output_dir != None:
+        if self.output_dir is not None:
             task['output_dir'] = self.output_dir
 
         if self.recipeURI:
