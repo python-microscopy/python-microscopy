@@ -238,14 +238,13 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
     except (KeyError, RuntimeError):
         #logger.debug('dir cache miss')
         # t = time.time()
-        url = dirurl.encode()
         haveResult = False
         nTries = 0
         while nTries < nRetries and not haveResult:
             try:
                 nTries += 1
-                s = _getSession(url)
-                r = s.get(url, timeout=timeout)
+                s = _getSession(dirurl)
+                r = s.get(dirurl, timeout=timeout)
                 haveResult = True
             except (requests.Timeout, requests.ConnectionError) as e:
                 # s.get sometimes raises ConnectionError instead of ReadTimeoutError
@@ -257,7 +256,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
 
         dt = time.time() - t
         if not r.status_code == 200:
-            logger.debug('Request for %s failed with error: %d' % (url, r.status_code))
+            logger.debug('Request for %s failed with error: %d' % (dirurl, r.status_code))
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
