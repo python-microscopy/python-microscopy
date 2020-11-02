@@ -40,7 +40,7 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-from PYME.IO import DataSources, clusterIO, clusterResults
+from PYME.IO import DataSources, clusterIO, clusterResults, unifiedIO
 
 class NoNewTasks(Exception):
     pass
@@ -87,7 +87,7 @@ class Rule(object):
         on_completion : RuleFactory instance
             A rule to run after this one has completed (also setable using the `.chain()` method)
 
-        kwargs : any additional arguments (ignored in base class)
+        kwargs : any additional arguments, available in the context used when creating the rule template
 
         """
         
@@ -331,20 +331,22 @@ class RecipeRule(Rule):
         output_dir : str
             The directory to put the recipe output TODO: should this be templated based on context?
         kwargs : dict
-            any additional args to get passed to base class 
-            One of the following must be present, in order of precedence:
-                rule_outputs : not currently implemented
-                input_templates : 
+            Parameters for the base `Rule` class (notably `on_completion`, which, if provided, should be a RuleFactory instance).
+            Additional parameters, not consumed by `Rule` are accessible in the context used for creating rule templates.  
+            
+            One (and only one) of the following keyword parameters should be provided to specify the recipe inputs:
                 inputs : dict
-                    keys are recipe namespace keys, values are lists of file 
-                    URIs.
-            Other potential keys include: 
-                on_completion : RuleFactory
-                    A rule to run after this one has completed (also setable 
-                    using the `.chain()` method)
-                serverfilter : str
-                    name of the cluster. Optional, only used if `inputs` key is
-                    in kwargs corresponding list of URIs is not fully resolved
+                    keys are recipe namespace keys, values are either lists of file URIs, or globs which will be expanded 
+                    to a list of URIs. Corresponds to the `inputsByTask` property in the recipe description (see `ruleserver` docs).
+                    `inputsByTask` will be used by the server to populate the inputs for individual tasks 
+                input_templates : dict
+                    simplar to inputs, except that dictionary substitution with the rule context is perfromed on the values before
+                    they are written to `inputsByTasks`
+                rule_outputs :  dict
+                    used with chained recipes, this is the outputs of the previous recipe step. Unlike `inputs` and `input_templates`
+                    this is a dict of str, rather than of list (or glob-implied list) and is written directly to the `"inputs"` section
+                    of the template, rather than to the `inputsByTask` property of the rule, short-circuiting server side input filling.
+        
         TODO - support for templated recipes? Subclass?
         """
         
@@ -381,13 +383,22 @@ class RecipeRule(Rule):
 
         if not inputs:
             if not context.get('rule_outputs', False):
+                # NOTE - rule_outputs is handled in _task_template.
                 raise RuntimeError('No inputs found, one of "inputs", "input_templates", or "rule_outputs" must be present in context')
             inputs_by_task = None
         else:
             input_names = inputs.keys()
-            serverfilter = context.get('serverfilter', clusterIO.local_serverfilter)
-            inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], serverfilter) for k
-                      in input_names}
+            
+            def _to_input_list(v):
+                # TODO - move this fcn definition??
+                if isinstance(v, list):
+                    return v
+                else:
+                    # value is a string glob
+                    name, serverfilter = unifiedIO.split_cluster_URI(v)
+                    return clusterIO.cglob(name, serverfilter)
+                    
+            inputs = {k: _to_input_list(inputs[k] for k in input_names}
     
             self._num_recipe_tasks = len(list(inputs.values())[0])
     
