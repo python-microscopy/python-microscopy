@@ -228,6 +228,18 @@ def _getSession(url):
 
 
 def _listSingleDir(dirurl, nRetries=1, timeout=5):
+    """ get a list of files/directories in a directory
+
+    Parameters
+    ----------
+    dirurl : str
+        url of the directory to list
+    nRetries : int, optional
+        number of times to try again if we timeout, by default 1
+    timeout : int, optional
+        number of seconds on the request for the directory listing, by default
+        5
+    """
     t = time.time()
 
     try:
