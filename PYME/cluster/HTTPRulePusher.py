@@ -341,7 +341,7 @@ class RecipePusher(object):
         if self.recipeURI:
             task['taskdefRef'] = self.recipeURI
         else:
-            task['taskdef'] = '"taskdef" : {"recipe": "%s"}' % self.recipe_text
+            task['taskdef'] = {'recipe':  self.recipe_text}
         
         return json.dumps(task)
 
