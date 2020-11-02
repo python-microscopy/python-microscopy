@@ -395,6 +395,9 @@ class RecipeRule(Rule):
         return dict(max_tasks=self._num_recipe_tasks, release_start=0, release_end=self._num_recipe_tasks)
     
     def _task_template(self, context):
+        # FIXME - task templates should ideally be a .json formatted string. Generating them from dictionarie
+        # as done here is not ideal as it limits templating to within string entries (and is potentially less
+        # less readable / incurs extra overhead in dumps.
         task = {
             'id': '{{ruleID}}~{{taskID}}',
             'type':'recipe',
@@ -407,7 +410,7 @@ class RecipeRule(Rule):
         if self.recipeURI:
             task['taskdefRef'] = self.recipeURI
         else:
-            task['taskdef'] = '"taskdef" : {"recipe": "%s"}' % self.recipe_text
+            task['taskdef'] = {'recipe': self.recipe_text}
         
         task = json.dumps(task)
             
