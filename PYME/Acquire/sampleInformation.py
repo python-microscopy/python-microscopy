@@ -528,6 +528,12 @@ class SimpleSampleInfoPanel(wx.Panel):
         """Simple sample info panel to tide over until the SampleInfoDialog is
         refactored to work independently of a sampleDB database.
 
+TODOS/LIMITATIONS: potentially better addressed by the full refactor rather than by modifying this class, but included here for information / to reinforce that this should ideally be replaced at some point in the future.
+
+ - auto-populate and/or hide acquiring user using logon name on multi-user systems (preference would be to have a config option which can be set on a single user system, but which defaults to false)
+ - include info on what is labelled (i.e. Sample.Labelling entries). This is super,super useful to have in the metadata
+ - because there is no sanity checking / database backend etc ... you will likely get subtly differing values for acquiring user and creator which will make it hard to search on these if the data ever gets ingested into a database in the future.
+ 
         Parameters
         ----------
         parent : wx parent
