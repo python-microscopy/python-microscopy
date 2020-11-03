@@ -91,7 +91,17 @@ class QueueAcquisitions(OutputModule):
             resolved directory name in which the input file resides) and 
             'filestub' (which is the filename without any extension) should be 
             resolved.
+        
+        Notes
+        -----
+        str spool_settings values can context-substitute templated parameters,
+        e.g. spool_settings = {'subdirectory': '{filestub}'}
         """
+        # substitute spool settings
+        spool_settings = self.spool_settings.copy()
+        for k in spool_settings.keys():
+            if isinstance(spool_settings[k], str):
+                spool_settings[k] = spool_settings[k].format(**context)
         
         try:  # get positions in units of micrometers
             positions = np.stack((namespace[self.input_positions]['x_um'], 
@@ -122,7 +132,7 @@ class QueueAcquisitions(OutputModule):
             time.sleep(self.between_post_throttle)
 
             args = {'function_name': 'spoolController.StartSpooling',
-                    'args': self.spool_settings,
+                    'args': spool_settings,
                     'timeout': self.timeout, 'nice': self.nice,
                     'max_duration': self.max_duration}
             session.post(dest, data=json.dumps(args), 

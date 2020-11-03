@@ -287,7 +287,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, '# wells x:'), 0, wx.ALL, 2)
-        self.n_x = wx.TextCtrl(self, -1, value='%d' % 3)
+        self.n_x = wx.TextCtrl(self, -1, value='%d' % 8)
         hsizer.Add(self.n_x, 0, wx.ALL, 2)
         vsizer.Add(hsizer)
 
@@ -299,7 +299,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, '# wells y:'), 0, wx.ALL, 2)
-        self.n_y = wx.TextCtrl(self, -1, value='%d' % 3)
+        self.n_y = wx.TextCtrl(self, -1, value='%d' % 12)
         hsizer.Add(self.n_y, 0, wx.ALL, 2)
         vsizer.Add(hsizer)
 
@@ -352,17 +352,23 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         curr_pos = self.scope.GetPos()
 
+        xind_names = np.array([chr(ord('@') + n) for n in range(1, n_x + 1)])   # TODO - make this work for e.g. 384 wp, and configurable from a dialog
+        yind_names = np.arange(1, n_y + 1).astype(str)
+
         x_w = np.arange(0, n_x * x_spacing, x_spacing)
         y_w = np.arange(0, n_y * y_spacing, y_spacing)
 
         x_wells = []
         y_wells = np.repeat(y_w, n_x)
+        names = []
         # zig-zag with turns along x
         for xi in range(n_y):
             if xi % 2:
                 x_wells.extend(x_w[::-1])
+                names.extend([xi_name + yind_names[xi] for xi_name in xind_names[::-1]])
             else:
                 x_wells.extend(x_w)
+                names.extend([xi_name + yind_names[xi] for xi_name in xind_names])
         x_wells = np.asarray(x_wells)
 
         # add the current scope position offset
@@ -370,11 +376,11 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         y_wells += curr_pos['y']
 
         # queue them all
-        for x, y in zip(x_wells, y_wells):
+        for x, y, filename in zip(x_wells, y_wells, names):
             args = {'state': {'Positioning.x': x, 'Positioning.y': y}}
             self.scope.actions.QueueAction('state.update', args, nice)
             args = {'protocol': protocol_name, 'stack': False, 
-                    'doPreflightCheck':False}
+                    'doPreflightCheck':False, 'fn': filename}
             self.scope.actions.QueueAction('spoolController.StartSpooling', 
                                             args, nice)
         self.scope.actions.QueueAction('turnAllLasersOff', 
