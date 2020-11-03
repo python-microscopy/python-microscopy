@@ -329,21 +329,23 @@ class RecipePusher(object):
 
     @property
     def _taskTemplate(self):
-        task = {
-            'id': '{{ruleID}}~{{taskID}}',
-            'type':'recipe',
-            'inputs': '{{taskInputs}}',
-        }
-
-        if self.output_dir is not None:
-            task['output_dir'] = self.output_dir
-
-        if self.recipeURI:
-            task['taskdefRef'] = self.recipeURI
+        task = '''{"id": "{{ruleID}}~{{taskID}}",
+                            "type": "recipe",
+                            "inputs" : {{taskInputs}},
+                            %s
+                        }'''
+    
+        if self.output_dir is None:
+            output_dir_n = ''
         else:
-            task['taskdef'] = {'recipe':  self.recipe_text}
-        
-        return json.dumps(task)
+            output_dir_n = '"output_dir": "%s",\n    ' % self.output_dir
+    
+        if self.recipeURI:
+            task = task % (output_dir_n + '"taskdefRef" : "%s"' % self.recipeURI)
+        else:
+            task = task % (output_dir_n + '"taskdef" : {"recipe": "%s"}' % self.recipe_text)
+            
+        return task
 
 
     def fileTasksForInputs(self, **kwargs):
