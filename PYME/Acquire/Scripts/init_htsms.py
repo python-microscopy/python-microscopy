@@ -128,6 +128,12 @@ def orca_cam_controls(MainFrame, scope):
     MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
 
+@init_gui('Sample Metadata')
+def sample_metadata(main_frame, scope):
+    from PYME.Acquire.sampleInformation import SimpleSampleInfoPanel
+    sampanel = SimpleSampleInfoPanel(main_frame)
+    main_frame.camPanels.append((sampanel, 'Sample Metadata'))
+
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware.Coherent import OBIS
