@@ -175,6 +175,14 @@ class OffsetPiezoClient(PiezoBase):
 
     def LogFocusCorrection(self, offset):
         self._session.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
+    
+    def GetMaxOffset(self):
+        res = self._session.get(self.urlbase + '/GetMaxOffset')
+        return float(res.json())
+    
+    def GetMinOffset(self):
+        res = self._session.get(self.urlbase + '/GetMinOffset')
+        return float(res.json())
 
 def generate_offset_piezo_server(offset_piezo_base_class):
     """
