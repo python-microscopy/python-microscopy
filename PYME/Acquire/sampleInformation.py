@@ -582,3 +582,4 @@ class SimpleSampleInfoPanel(wx.Panel):
             mdh['Sample.SlideRef'] = self.slide.GetValue()
             mdh['Sample.Creator'] = self.creator.GetValue()
             mdh['Sample.Notes'] = self.notes.GetValue()
+            mdh['AcquiringUser'] = self.imager.GetValue()
