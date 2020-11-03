@@ -1122,10 +1122,19 @@ class ModuleCollection(HasTraits):
         TODO - potential issues on Py3 with how jigna treats namedtuple?
         """
         from . import recipeLayout
-        from collections import namedtuple
-        layout_info = namedtuple('layout', ['node_positions', 'connecting_lines'])
-        node = namedtuple('node', ['key', 'pos'])
-        
+        #from collections import namedtuple
+        #layout_info = namedtuple('layout', ['node_positions', 'connecting_lines'])
+        #node = namedtuple('node', ['key', 'pos'])
+        class layout_info(object):
+            def __init__(self, node_positions, connecting_lines):
+                self.node_positions = node_positions
+                self.connecting_lines = connecting_lines
+
+        class node(object):
+            def __init__(self, key, pos):
+                self.key = key
+                self.pos = pos
+
         node_positions, connecting_lines = recipeLayout.layout(self.dependancyGraph())
         ret =   layout_info([node(k, v) for k, v in node_positions.items()], [(a.tolist(), b.tolist(), c) for a,b,c in connecting_lines])
         #print (ret)
