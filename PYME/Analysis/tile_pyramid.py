@@ -256,6 +256,20 @@ class SqliteTileIO(TileIO):
         self._conn.close()
     
 
+def tile_init_ref(base_dir, map_type_tile):
+    file_type = None
+    for root,dirs,files in os.walk(self.base_dir):
+        for file in files:
+            _, file_extension = os.path.splitext(file)
+            if file_extension in map_type_tile:
+                if file_type is None:
+                    file_type = file_extension
+        if file_type is not None:
+            break
+    if file_type is None:
+        raise Exception("No files found for loading ImagePyramid.")
+    return map_type_tile[file_type]
+
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
@@ -291,15 +305,17 @@ class ImagePyramid(object):
             os.makedirs(self.base_dir)
             
         #self._tilecache = TileCache()
-            
-        self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
-        self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
-        self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
-
-        # self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
-        # self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
-        # self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
-    
+        
+        map_type_tile = {
+            ".pzf": PZFTileIO,
+            ".npy": NumpyTileIO,
+            ".db": SqliteTileIO,
+        }
+        tile_init_ref = get_tile_init_ref(self.base_dir, map_type_tile)
+        self._imgs = tile_init_ref[file_type](base_dir=self.base_dir, suff='img')
+        self._acc = tile_init_ref[file_type](base_dir=self.base_dir, suff='acc')
+        self._occ = tile_init_ref[file_type](base_dir=self.base_dir, suff='occ')
+        
     def __del__(self):
         try:
             self._temp_directory.cleanup()
