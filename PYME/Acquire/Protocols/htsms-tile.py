@@ -43,6 +43,14 @@ class Scanner(CircularPointScanner):
         scope.cam.SetIntegTime(integration_time)
         scope.frameWrangler.Prepare()
         scope.frameWrangler.start()
+    
+    def check_focus_lock_ok(self):
+        if not scope.focus_lock.LockOK():
+            import time
+            logger.debug('lock not OK, pausing for 10 s')
+            time.sleep(10)
+            logger.debug('starting reacquire sequence')
+            scope.focus_lock.ReacquireLock()
 
 
 scanner = Scanner(scan_radius_um=500)
@@ -53,6 +61,7 @@ taskList = [
     T(-1, scope.l405.SetPower, 1),
     T(-1, scanner.set_state, [1], (256, 256), 0.005),
     T(-1, scope.focus_lock.EnableLock),  # should already be enabled, but just in case
+    T(-1, scanner.check_focus_lock_ok),
     T(-1, scope.l405.TurnOn),
     T(-1, scanner.genCoords),
     T(0, scanner.start),
