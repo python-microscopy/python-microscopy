@@ -1067,3 +1067,19 @@ class MultiviewCameraMixin(object):
                 mdh.setEntry('Multiview.ActiveViews', self.active_views)
                 for ind in range(self.n_views):
                     mdh.setEntry('Multiview.ROI%dOrigin' % ind, self.view_origins[ind])
+
+        def register_state_handlers(self, state_manager):
+            """ Allow key multiview settings to be updated easily through
+            the microscope state handler
+
+            Parameters
+            ----------
+            state_manager : PYME.Acquire.microscope.State
+            """
+            state_manager.registerHandler('Multiview.ActiveViews', 
+                                          lambda : self.active_views, 
+                                          self.enable_multiview, True)
+            state_manager.registerHandler('Multiview.ROISize', 
+                                          lambda : [self.size_x, self.size_y],
+                                          lambda x, y : self.ChangeMultiviewROISize(x, y),
+                                          True)
