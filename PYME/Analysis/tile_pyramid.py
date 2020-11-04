@@ -255,14 +255,14 @@ class SqliteTileIO(TileIO):
         self._cur.close()
         self._conn.close()
 
+
 def tile_init_ref(base_dir, map_type_tile):
     file_type = None
     for root, dirs, files in os.walk(base_dir):
         for file in files:
             _, file_extension = os.path.splitext(file)
-            if file_extension in map_type_tile:
-                if file_type is None:
-                    file_type = file_extension
+            if file_extension in map_type_tile and file_type is None:
+                file_type = file_extension
         if file_type is not None:
             break
     if file_type is None:
