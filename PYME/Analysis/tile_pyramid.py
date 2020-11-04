@@ -256,18 +256,37 @@ class SqliteTileIO(TileIO):
         self._conn.close()
 
 
-def tile_init_ref(base_dir, map_type_tile):
-    file_type = None
-    for root, dirs, files in os.walk(base_dir):
+TILEIO_EXT = {
+    '.pzf': PZFTileIO,
+    '.npy': NumpyTileIO,
+    '.db': SqliteTileIO,
+}
+
+def get_tileio_backend(base_directory):
+    """ find TileIO backend for a given ImagePyramid
+    
+    Parameters
+    ----------
+    base_directory : str
+        root directory of an ImagePyramid instance
+    
+    Returns
+    -------
+    class
+        which TileIO derived class the ImagePyramid can be
+        built with.
+    
+    Raises
+    ------
+    IOError
+        If no file with an extension in TILEIO_EXT is found.
+    """
+    for root, dirs, files in os.walk(base_directory):
         for file in files:
-            _, file_extension = os.path.splitext(file)
-            if file_extension in map_type_tile and file_type is None:
-                file_type = file_extension
-        if file_type is not None:
-            break
-    if file_type is None:
-        raise Exception("No files found for loading ImagePyramid.")
-    return map_type_tile[file_type]
+            file_extension = os.path.splitext(file)[-1]
+            if file_extension in TILEIO_EXT.keys():
+                return TILEIO_EXT[file_extension]
+    raise IOError("No files found for loading ImagePyramid.")
 
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
