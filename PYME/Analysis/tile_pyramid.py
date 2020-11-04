@@ -254,7 +254,6 @@ class SqliteTileIO(TileIO):
     def __del__(self):
         self._cur.close()
         self._conn.close()
-    
 
 def tile_init_ref(base_dir, map_type_tile):
     file_type = None
@@ -292,7 +291,7 @@ class ImagePyramid(object):
         self.n_tiles_x = n_tiles_x
         self.n_tiles_y = n_tiles_y
         self.depth = depth
-        
+
         self.x0 = x0
         self.y0 = y0
         self.pixel_size=pixel_size
@@ -300,12 +299,12 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
-        
+
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
-            
+
         #self._tilecache = TileCache()
-        
+
         map_type_tile = {
             ".pzf": PZFTileIO,
             ".npy": NumpyTileIO,
@@ -315,7 +314,7 @@ class ImagePyramid(object):
         self._imgs = tile_init_ref[file_type](base_dir=self.base_dir, suff='img')
         self._acc = tile_init_ref[file_type](base_dir=self.base_dir, suff='acc')
         self._occ = tile_init_ref[file_type](base_dir=self.base_dir, suff='occ')
-        
+
     def __del__(self):
         try:
             self._temp_directory.cleanup()
