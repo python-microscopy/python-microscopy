@@ -947,6 +947,15 @@ class MultiviewCameraMixin(object):
                 return self._current_pic_height
             else:
                 return self.camera_class.GetPicHeight(self)
+        
+        def set_active_views(self, views):
+            if len(views) == 0:
+                self.disable_multiview()
+            elif sorted(views) == self.active_views:
+                pass
+            else:
+                self.enable_multiview(views)
+            
 
         def enable_multiview(self, views):
             """
@@ -965,7 +974,7 @@ class MultiviewCameraMixin(object):
             again. This is not special to this function, but rather anytime SetROI gets called.
 
             """
-            views = list(views)  # tuple(int) isn't iterable, make sure we avoid it
+            views = sorted(list(views))  # tuple(int) isn't iterable, make sure we avoid it
             # set the camera FOV to be just large enough so we do most of the cropping where it is already optimized
             self.x_origins, self.y_origins = zip(*[self.view_origins[view] for view in views])
             chip_x_min, chip_x_max = min(self.x_origins), max(self.x_origins)
@@ -1078,7 +1087,7 @@ class MultiviewCameraMixin(object):
             """
             state_manager.registerHandler('Multiview.ActiveViews', 
                                           lambda : self.active_views, 
-                                          self.enable_multiview, True)
+                                          self.set_active_views, True)
             state_manager.registerHandler('Multiview.ROISize', 
                                           lambda : [self.size_x, self.size_y],
                                           lambda x, y : self.ChangeMultiviewROISize(x, y),
