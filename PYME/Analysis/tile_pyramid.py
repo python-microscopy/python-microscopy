@@ -1,5 +1,5 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler, load_json
 import os
 import glob
 import collections
@@ -262,20 +262,20 @@ TILEIO_EXT = {
     '.db': SqliteTileIO,
 }
 
-def get_tileio_backend(base_directory):
+def infer_tileio_backend(base_directory):
     """ find TileIO backend for a given ImagePyramid
-    
+
     Parameters
     ----------
     base_directory : str
         root directory of an ImagePyramid instance
-    
+
     Returns
     -------
     class
         which TileIO derived class the ImagePyramid can be
         built with.
-    
+
     Raises
     ------
     IOError
@@ -291,7 +291,7 @@ def get_tileio_backend(base_directory):
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1):
+                 pixel_size=1, backend=".pzf"):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -324,15 +324,44 @@ class ImagePyramid(object):
 
         #self._tilecache = TileCache()
 
-        map_type_tile = {
-            ".pzf": PZFTileIO,
-            ".npy": NumpyTileIO,
-            ".db": SqliteTileIO,
-        }
-        tile_init_ref = get_tile_init_ref(self.base_dir, map_type_tile)
-        self._imgs = tile_init_ref[file_type](base_dir=self.base_dir, suff='img')
-        self._acc = tile_init_ref[file_type](base_dir=self.base_dir, suff='acc')
-        self._occ = tile_init_ref[file_type](base_dir=self.base_dir, suff='occ')
+        if backend is None:
+            backend = infer_tileio_backend(self.base_dir)
+        else:
+            backend = TILEIO_EXT[backend]
+
+        self._imgs = backend(base_dir=self.base_dir, suff='img')
+        self._acc = backend(base_dir=self.base_dir, suff='acc')
+        self._occ = backend(base_dir=self.base_dir, suff='occ')
+
+    @classmethod
+    def load_exiting(cls, storage_directory):
+        """ loads an ImagePyramid from a given directory.
+
+        Parameters
+        ----------
+        storage_directory : str
+            root directory of an ImagePyramid instance.
+
+        Returns
+        -------
+        ImagePyramid
+            based on storage_directory contents.
+        """
+
+        mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+
+        return ImagePyramid(
+            tile_base,
+            pyramid_tile_size=mdh['Pyramid.TileSize'],
+            mdh=mdh,
+            n_tiles_x=mdh["Pyramid.NTilesX"],
+            n_tiles_y=mdh["Pyramid.NTilesY"],
+            depth=mdh["Pyramid.Depth"],
+            x0=mdh['Pyramid.x0'],
+            y0=mdh['Pyramid.y0'],
+            pixel_size=mdh["Pyramid.PixelSize"],
+            backend=mdh["Pyramid.Backend"],
+        )
 
     def __del__(self):
         try:
