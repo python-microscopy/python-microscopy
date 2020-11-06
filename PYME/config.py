@@ -540,12 +540,12 @@ def update_yaml_keys(fn, d):
 
     # Update the appropriate keys
     for k, v in d.items():
-        x = re.search("\n{}\s*:\s*([^(#|\n|\s)]*)".format(k),data)
+        x = re.search('^{}\s*:\s*([^(#|\n|\s)]*)'.format(k),data,flags=re.MULTILINE)
         if x is None:
             data += '\n{}: {}'.format(k, v)
         else:
-            data = re.sub("\n{}\s*:\s*([^(#|\n|\s)]*)".format(k),
-                          "\n{}: {}".format(k,v),data)
+            data = re.sub('^{}\s*:\s*([^(#|\n|\s)]*)'.format(k),
+                          '\n{}: {}'.format(k,v),data,flags=re.MULTILINE)
 
     # Update the yaml file
     with open(fn, 'w') as f:
@@ -576,8 +576,10 @@ def update_config(d, config='user', config_fn='config.yaml'):
     # Open and edit the file
     update_yaml_keys(os.path.join(base,config_fn),d)
 
-    # # Reload config
-    # if sys.version_info.major == 3:
-    #     from importlib import reload
-    # reload(PYME.config)
-    
+    # Reload config
+    if sys.version_info.major == 3:
+        from importlib import reload
+    try:
+        reload(sys.modules['config'])
+    except(KeyError):
+        reload(sys.modules['PYME.config'])
