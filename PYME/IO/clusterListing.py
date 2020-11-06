@@ -1,5 +1,6 @@
 """
-This file provides utility functions for creating and interpreting clusterIO directory listings.
+This file provides utility functions for creating and interpreting clusterIO directory listings. Predominately
+server-side functionality, but the FileInfo and aggregate_dirlisting() are used from the client too.
 """
 from collections import namedtuple
 import os
