@@ -545,7 +545,7 @@ def update_yaml_keys(fn, d):
             data += '\n{}: {}'.format(k, v)
         else:
             data = re.sub('^{}\s*:\s*([^(#|\n|\s)]*)'.format(k),
-                          '\n{}: {}'.format(k,v),data,flags=re.MULTILINE)
+                          '{}: {}'.format(k,v),data,flags=re.MULTILINE)
 
     # Update the yaml file
     with open(fn, 'w') as f:
