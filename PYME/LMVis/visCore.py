@@ -319,7 +319,7 @@ class VisGUICore(object):
     def create_tool_bar(self, parent):
         from .displayPane import DisplayPaneHorizontal
         
-        return DisplayPaneHorizontal(parent, self.glCanvas, None)
+        return DisplayPaneHorizontal(parent, self.glCanvas, self)
         
         
     def OnViewPoints(self,event):
