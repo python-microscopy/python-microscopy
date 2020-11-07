@@ -234,7 +234,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
         hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
 
-        self.stModuleHelp = wx.html.HtmlWindow(self, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
+        self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
         hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
 
         vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
