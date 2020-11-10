@@ -120,11 +120,10 @@ class MultiviewMapper:
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
-        #TODO - move me to building the pipeline
-        recipe.add_modules_and_execute([FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                                    outputName='filtered_input', filters={'error_x':[0, 30.], 'error_y':[0,30.]}),
-                                        Fold(recipe, input_name='filtered_input', output_name='folded')
-                                        ])
+        
+        recipe.add_modules_and_execute([Fold(recipe,
+                                             input_name=self.pipeline.selectedDataSourceKey, 
+                                             output_name='folded')])
         
         self.pipeline.selectDataSource('folded')
 
