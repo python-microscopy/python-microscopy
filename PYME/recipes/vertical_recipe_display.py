@@ -47,6 +47,7 @@ class RecipeDisplayPanel(wx.Panel):
         self.recipe = recipe
         self.recipe.recipe_changed.connect(self._layout)
         self._layout()
+        self.recipe.recipe_executed.connect(self._update_n_events)
 
     def _refr(self, **kwargs):
         #print 'p_'
@@ -57,7 +58,21 @@ class RecipeDisplayPanel(wx.Panel):
         self.GetParent().Layout()
         self.GetParent().GetParent().Layout()
         self.Refresh()
-        
+
+    def _set_n_events(self, node, st):
+        node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
+
+        evts = ''
+        data = self.recipe.namespace.get(node, None)
+        if isinstance(data, tabular.TabularBase):
+            evts = ' [%d evts]' % len(data)
+                
+        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s%s</span>" % (node_col + (node,evts)))
+
+    def _update_n_events(self, *args, **kwargs):
+        for node, t in self.data_panes.items():
+            self._set_n_events(node, t[1])
+
     def _layout(self, *args, **kwargs):
         print('RecipeView._layout')
         if self.fp:
@@ -162,14 +177,7 @@ class RecipeDisplayPanel(wx.Panel):
                         item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0, style=0)
                         st = wx.StaticText(item, -1, node)
                         
-                        node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
-
-                        evts = ''
-                        data = self.recipe.namespace.get(node, None)
-                        if isinstance(data, tabular.TabularBase):
-                            evts = ' [%d evts]' % len(data)
-                                
-                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s%s</span>" % (node_col + (node,evts)))
+                        self._set_n_events(node, st)
                             
                         item.AddNewElement(st, foldable=False)
                         self.fp.AddPane(item)
