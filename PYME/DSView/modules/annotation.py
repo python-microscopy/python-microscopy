@@ -162,6 +162,10 @@ class Annotater(Plugin):
     def add_curved_line(self, event=None):
         if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
+            if len(l) < 1:
+                print('Line must have at least 1 point')
+                return
+                
             if isinstance(l, np.ndarray):
                 l = l.tolist()
             self._annotations.append({'type' : 'curve', 'points' : l,
