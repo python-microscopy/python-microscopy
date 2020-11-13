@@ -533,6 +533,7 @@ def update_yaml_keys(fn, d):
         end of the file
     """
     import re
+    import json
 
     # Read the yaml file
     with open(fn) as f:
@@ -540,12 +541,12 @@ def update_yaml_keys(fn, d):
 
     # Update the appropriate keys
     for k, v in d.items():
-        x = re.search('^{}\s*:\s*([^(#|\n|\s)]*)'.format(k),data,flags=re.MULTILINE)
+        x = re.search(r'^{}\s*:.*$'.format(k),data,flags=re.MULTILINE)
         if x is None:
             data += '\n{}: {}'.format(k, v)
         else:
-            data = re.sub('^{}\s*:\s*([^(#|\n|\s)]*)'.format(k),
-                          '{}: {}'.format(k,v),data,flags=re.MULTILINE)
+            data = re.sub(r'^{}\s*:.*$'.format(k),
+                          '{}: {}'.format(json.dumps(k),json.dumps(v)),data,flags=re.MULTILINE)
 
     # Update the yaml file
     with open(fn, 'w') as f:
