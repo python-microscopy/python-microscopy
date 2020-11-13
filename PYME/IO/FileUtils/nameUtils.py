@@ -273,3 +273,34 @@ def getRelFilename(filename, datadir=datadir):
         return filename[len(dataDir):]
 
     return filename
+
+def verify_cluster_results_filename(resultsFilename):
+    """
+    Checks whether a results file already exists on the cluster, and returns an
+    available version of the results filename. Should be called before writing
+    a new results file.
+
+    Parameters
+    ----------
+    resultsFilename : str
+        cluster path, e.g. pyme-cluster:///example_folder/name.h5r
+    Returns
+    -------
+    resultsFilename : str
+        cluster path which may have _# appended to it if the input 
+        resultsFileName is already in use, e.g. 
+        pyme-cluster:///example_folder/name_1.h5r
+
+    """
+    from PYME.IO import clusterIO
+    import os
+    if clusterIO.exists(resultsFilename):
+        di, fn = os.path.split(resultsFilename)
+        i = 1
+        stub = os.path.splitext(fn)[0]
+        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+            i += 1
+
+        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
+
+    return resultsFilename

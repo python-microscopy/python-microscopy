@@ -56,36 +56,6 @@ def _getTaskQueueURI(n_retries=2):
         logger.info('no local rule server, choosing one at random')
         return random.choice(list(queueURLs.values()))
 
-def verify_cluster_results_filename(resultsFilename):
-    """
-    Checks whether a results file already exists on the cluster, and returns an available version of the results
-    filename. Should be called before writing a new results file.
-
-    Parameters
-    ----------
-    resultsFilename : str
-        cluster path, e.g. pyme-cluster:///example_folder/name.h5r
-    Returns
-    -------
-    resultsFilename : str
-        cluster path which may have _# appended to it if the input resultsFileName is already in use, e.g.
-        pyme-cluster:///example_folder/name_1.h5r
-
-    """
-    from PYME.IO import clusterIO
-    import os
-    if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
-        i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
-            i += 1
-
-        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
-
-    return resultsFilename
-
-
 def launch_localize(analysisMDH, seriesName):
     """
     Pushes an analysis task for a given series to the distributor
@@ -105,7 +75,7 @@ def launch_localize(analysisMDH, seriesName):
     #from PYME.ParallelTasks import HTTPTaskPusher
     from PYME.IO import MetaDataHandler
     from PYME.Analysis import MetaData
-    from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
+    from PYME.IO.FileUtils.nameUtils import genClusterResultFileName, verify_cluster_results_filename
     from PYME.IO import unifiedIO
 
     unifiedIO.assert_uri_ok(seriesName)

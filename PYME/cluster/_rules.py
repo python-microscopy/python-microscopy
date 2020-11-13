@@ -176,8 +176,8 @@ class LocalizationRule(Rule):
         import json
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
-        from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-        from PYME.cluster.HTTPRulePusher import verify_cluster_results_filename  # TODO - David if you like maybe we move this function to clusterResults?
+        from PYME.IO.FileUtils.nameUtils import genClusterResultFileName, verify_cluster_results_filename
+        
         unifiedIO.assert_uri_ok(series_uri)
         self.results_filename = verify_cluster_results_filename(genClusterResultFileName(series_uri))
         if '~' in series_uri or '~' in self.results_filename:
