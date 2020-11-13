@@ -509,7 +509,7 @@ def get_init_filename(filename, legacy_scripts_directory=None):
         
     return None
 
-def update_yaml_keys(fn, d):
+def update_yaml_keys(fn, d, create_backup=False):
     """ 
     Update the keys in a YAML file without destroying comments.
 
@@ -531,9 +531,15 @@ def update_yaml_keys(fn, d):
     d : dict
         key, value pairs of keys/values to update or append to the
         end of the file
+    create_backup : bool
+        Make a backup of the YAML file before updating the keys
     """
     import re
     import json
+
+    if create_backup:
+        import shutil
+        shutil.copy(fn, fn+'.bak')
 
     # Read the yaml file
     with open(fn) as f:
@@ -552,7 +558,7 @@ def update_yaml_keys(fn, d):
     with open(fn, 'w') as f:
         f.write(data)
 
-def update_config(d, config='user', config_fn='config.yaml'):
+def update_config(d, config='user', config_fn='config.yaml', create_backup=False):
     """
     Updates PYME configuration files.
 
@@ -564,6 +570,8 @@ def update_config(d, config='user', config_fn='config.yaml'):
         PYME configuration type, one of ['user','site','dist'], by default 'user'
     config_fn : str, optional
         Name of the configuration file within the type, by default 'config.yaml'
+    create_backup : bool
+        Create a backup of the configuration file before updating.
     """
     
     # Choose where to look for the configuration file based
@@ -575,7 +583,7 @@ def update_config(d, config='user', config_fn='config.yaml'):
         base = dist_config_directory
     
     # Open and edit the file
-    update_yaml_keys(os.path.join(base,config_fn),d)
+    update_yaml_keys(os.path.join(base,config_fn),d,create_backup=create_backup)
 
     # Reload config
     if sys.version_info.major == 3:
