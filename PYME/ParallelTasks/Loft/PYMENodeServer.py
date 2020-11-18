@@ -7,7 +7,7 @@ import socket
 import subprocess
 import tempfile
 import time
-
+from PYME.IO.FileUtils.nameUtils import get_service_name
 import yaml
 from PYME import config as conf
 from PYME.misc import pyme_zeroconf
@@ -100,8 +100,8 @@ def main():
     t_log_stdout.setDaemon(False)
     t_log_stdout.start()
 
-    service_name = ns.register_service('PYMENodeServer: ' + GetComputerName(), 
-                                       externalAddr, int(serverPort))
+    service_name = get_service_name('PYMENodeServer')
+    ns.register_service(service_name, externalAddr, int(serverPort))
 
     time.sleep(2)
     logging.debug('Launching worker processors')

@@ -67,10 +67,7 @@ import socket
 import threading
 import datetime
 import time
-
-
-compName = GetComputerName()
-procName = compName + ' - PID:%d' % os.getpid()
+from PYME.IO.FileUtils.nameUtils import get_service_name
 
 LOG_REQUESTS = False#True
 
@@ -581,7 +578,8 @@ def main(protocol="HTTP/1.0"):
     global_status['ComputerName'] = GetComputerName()
 
     ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, ip_addr, int(options.port))
+    service_name = get_service_name('PYMEDataServer')
+    ns.register_service(service_name, ip_addr, int(options.port))
 
     print("Serving HTTP on %s port %d ..." % (ip_addr, options.port))
 
