@@ -109,6 +109,14 @@ class OffsetPiezo(PiezoBase):
     def LogFocusCorrection(self, offset):
         import wx
         wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset))
+    
+    @webframework.register_endpoint('/GetMaxOffset', output_is_json=False)
+    def GetMaxOffset(self):
+        return self.basePiezo.max_travel - self.GetTargetPos()
+    
+    @webframework.register_endpoint('/GetMinOffset', output_is_json=False)
+    def GetMinOffset(self):
+        return - self.GetTargetPos()
 
 
 import requests
@@ -167,6 +175,14 @@ class OffsetPiezoClient(PiezoBase):
 
     def LogFocusCorrection(self, offset):
         self._session.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
+    
+    def GetMaxOffset(self):
+        res = self._session.get(self.urlbase + '/GetMaxOffset')
+        return float(res.json())
+    
+    def GetMinOffset(self):
+        res = self._session.get(self.urlbase + '/GetMinOffset')
+        return float(res.json())
 
 def generate_offset_piezo_server(offset_piezo_base_class):
     """

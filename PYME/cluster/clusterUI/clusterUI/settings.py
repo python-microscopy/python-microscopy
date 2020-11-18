@@ -76,6 +76,11 @@ TEMPLATES = [
             ],
         },
     },
+    # {
+    #     'BACKEND': 'django.template.backends.jinja2.Jinja2',
+    #     'DIRS': [],
+    #     'APP_DIRS': True,
+    # }
 ]
 
 WSGI_APPLICATION = 'clusterUI.wsgi.application'

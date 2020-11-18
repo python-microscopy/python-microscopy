@@ -30,7 +30,7 @@ class SphericalHarmonicShellManager(object):
         shell_maker = surface_fitting.SphericalHarmonicShell(recipe, input_name=self.pipeline.selectedDataSourceKey,
                                                              output_name='harmonic_shell')
         
-        if shell_maker.configure_traits(view=shell_maker.pipeline_view_min, kind='modal'):
+        if shell_maker.configure_traits(kind='modal'):
             recipe.add_modules_and_execute([shell_maker,])
         
             shell = recipe.namespace['harmonic_shell']

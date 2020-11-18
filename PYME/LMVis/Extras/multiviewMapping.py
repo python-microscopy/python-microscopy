@@ -120,11 +120,10 @@ class MultiviewMapper:
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
-        #TODO - move me to building the pipeline
-        recipe.add_modules_and_execute([FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                                    outputName='filtered_input', filters={'error_x':[0, 30.], 'error_y':[0,30.]}),
-                                        Fold(recipe, input_name='filtered_input', output_name='folded')
-                                        ])
+        
+        recipe.add_modules_and_execute([Fold(recipe,
+                                             input_name=self.pipeline.selectedDataSourceKey, 
+                                             output_name='folded')])
         
         self.pipeline.selectDataSource('folded')
 
@@ -200,7 +199,7 @@ class MultiviewMapper:
 
 
         calibration_module = CalibrateShifts()
-        if not calibration_module.configure_traits(view=calibration_module.pipeline_view_min, kind='modal'):
+        if not calibration_module.configure_traits(kind='modal'):
             return
         
         sm = calibration_module.apply_simple(self.pipeline.selectedDataSource)
@@ -387,7 +386,7 @@ class MultiviewMapper:
         mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
                                    astigmatism_calibration_location=pathToMap, output_name='z_mapped')
 
-        if mapping_module.configure_traits(view=mapping_module.pipeline_view_min, kind='modal'):
+        if mapping_module.configure_traits(kind='modal'):
             recipe.add_modules_and_execute([mapping_module,])
             
             self.pipeline.selectDataSource('z_mapped')

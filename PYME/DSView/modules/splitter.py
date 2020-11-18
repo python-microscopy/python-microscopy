@@ -150,7 +150,7 @@ class Unmixer(Plugin):
             
         fns = os.path.split(self.image.filename)[1]
 
-        zm = usds[0].shape[2]/2
+        zm = int(usds[0].shape[2]/2)
 
         maxs = [u[:,:,zm].max() for u in usds]
         im = ImageStack(usds[np.argmax(maxs)], titleStub = '%s - unsplit' % fns)

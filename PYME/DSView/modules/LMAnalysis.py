@@ -723,6 +723,7 @@ class LMAnalyser2(Plugin):
             if len(self.fitResults) == 0:
                 self.fitResults = newResults
                 self.ds = tabular.FitResultsSource(self.fitResults)
+                self.ds.mdh = self.resultsMdh
                 self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
                 self.dsviewer.pipeline.mdh = self.resultsMdh
                 try:

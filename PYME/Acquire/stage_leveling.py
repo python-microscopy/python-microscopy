@@ -142,6 +142,14 @@ class StageLeveler(object):
             self._scope.SetPos(x=positions[ind, 0], y=positions[ind, 1])
             
             time.sleep(self._pause_on_relocate)
+            if hasattr(self, '_focus_lock') and not self._focus_lock.LockOK():
+                logger.debug('focus lock not OK, scanning offset')
+                # self.scan_offset_until_ok()
+                self._focus_lock.ReacquireLock()
+                time.sleep(1.)
+
+                if self._focus_lock.LockOK():
+                    time.sleep(1.)
             actual = self._scope.GetPos()
             x[ind], y[ind] = actual['x'], actual['y']
             offset[ind] = self._offset_piezo.GetOffset()
