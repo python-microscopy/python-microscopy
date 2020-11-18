@@ -331,9 +331,12 @@ class ChainedAnalysisPanel(wx.Panel):
             present here to allow us to call this method through a dispatch.Signal.send
         """
         
+        prot_filename = self._spool_controller.spooler.protocol.filename
+        prot_filename = '' if prot_filename is None else prot_filename
+        protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
+        logger.info('protocol name : %s' % protocol_name)
+
         try:
-            protocol_name = os.path.splitext(os.path.split(self._spool_controller.spooler.protocol.filename)[-1])[0]
-            logger.debug(protocol_name)
             rule_factory_chain = self._protocol_rules[protocol_name]
         except KeyError:
             rule_factory_chain = self._protocol_rules['default']
