@@ -398,7 +398,7 @@ class RecipeRule(Rule):
                     name, serverfilter = unifiedIO.split_cluster_URI(v)
                     return clusterIO.cglob(name, serverfilter)
                     
-            inputs = {k: _to_input_list(inputs[k] for k in input_names}
+            inputs = {k: _to_input_list(inputs[k] for k in input_names)}
     
             self._num_recipe_tasks = len(list(inputs.values())[0])
     
