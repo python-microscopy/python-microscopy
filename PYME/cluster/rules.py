@@ -642,12 +642,10 @@ class RuleFactory(object):
         
 
 class RecipeRuleFactory(RuleFactory):
-    _type = 'recipe'
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=RecipeRule, **kwargs)
         
 class LocalisationRuleFactory(RuleFactory):
-    _type = 'localization'
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)
         
