@@ -12,16 +12,20 @@ class BaseNS(object):
         Parameters
         ----------
         name : str
-            information about the process, typically including OS process ID.
+            should be generated using the process name and 
+            PYME.IO.FileUtils.nameUtils.get_service_name
 
-        Returns
-        ------
-        str
-            service_name, as registered
         """
         raise NotImplementedError
         
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+        """
         raise NotImplementedError
 
     def get_advertised_services(self):

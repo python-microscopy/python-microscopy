@@ -137,15 +137,7 @@ class ZeroConfNS(BaseNS):
         self.listener = ZCListener(self._protocol)
         
         self.browser = zeroconf.ServiceBrowser(self.zc, "%s._tcp.local." % self._protocol,
-                                         self.listener)
-    @staticmethod
-    def fix_service_name(name):
-        # max of 63 characters for zeroconf compat. Keep PID if present
-        if 'PID' in name:
-            base_name, pid = name.split('PID')
-            base_name = base_name[:(63 - 3 - len(pid))]
-            name = base_name + 'PID' + pid
-        return name[:63]
+                                               self.listener) 
                               
     def register(self, name, URI):
         desc = {'URI': str(URI)}
@@ -165,7 +157,6 @@ class ZeroConfNS(BaseNS):
         return svcs
         
     def register_service(self, name, address, port, desc={}):
-        name = self.fix_service_name(name)
 
         if name in self.listener.advertised_services.keys():
             raise RuntimeError('Name "%s" already exists' %name)
