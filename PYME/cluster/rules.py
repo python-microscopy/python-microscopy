@@ -479,7 +479,7 @@ class LocalisationRule(Rule):
     def _output_files(self):
         return {'results' : self.resultsURI}
     
-    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
+    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
@@ -588,6 +588,7 @@ class LocalisationRule(Rule):
         
 
 class RuleFactory(object):
+    _type = ''
     def __init__(self, on_completion=None, rule_class = Rule, **kwargs):
         """
         Create a new rule factory. Sub-classed for specific rule types
@@ -639,13 +640,18 @@ class RuleFactory(object):
         """
         assert(isinstance(on_completion, RuleFactory))
         self._on_completion = on_completion
-        
+
+    @property
+    def rule_type(self):
+        return self._type
+
 
 class RecipeRuleFactory(RuleFactory):
+    _type = 'recipe'
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=RecipeRule, **kwargs)
         
 class LocalisationRuleFactory(RuleFactory):
+    _type = 'localization'
     def __init__(self, **kwargs):
-        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)
-        
+        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   

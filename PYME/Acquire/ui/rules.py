@@ -1,10 +1,11 @@
 
 import wx
 from  PYME.ui import manualFoldPanel
-from PYME.cluster._rules import LocalizationRule
+from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
 from collections import OrderedDict
 import queue
 import os
+import posixpath
 import logging
 logger = logging.getLogger(__name__)
 
@@ -21,24 +22,25 @@ class ProtocolRules(OrderedDict):
             have time to execute, by default 5. .. seealso:: modules :py:mod:`PYME.cluster.rules`
         """
         import queue
-        from PYME.cluster._rules import RuleChain
+
         OrderedDict.__init__(self)
 
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
-        self['default'] = RuleChain(self.posting_thread_queue)
+        
+        self['default'] = []
 
 
-class RuleChainListCtrl(wx.ListCtrl):
-    def __init__(self, rule_chain, wx_parent):
+class RuleFactoryListCtrl(wx.ListCtrl):
+    def __init__(self, rule_factory_chain, wx_parent):
         """
         Parameters
         ----------
-        rule_chain: PYME.cluster.rules.RuleChain
+        rule_factory_chain : list
         wx_parent
         """
 
         wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
-        self._rule_chain = rule_chain
+        self._rule_factory_chain = rule_factory_chain
 
         self.InsertColumn(0, 'Type', width=125)
         self.InsertColumn(1, 'ID', width=75)
@@ -47,25 +49,25 @@ class RuleChainListCtrl(wx.ListCtrl):
 
     @property
     def localization_rule_indices(self):
-        return [ind for ind, rule in enumerate(self._rule_chain) if rule.template['type'] == 'localization']
+        return [ind for ind, rf in enumerate(self._rule_factory_chain) if isinstance(rf, LocalizationRuleFactory)]
 
-    def add_rule(self, rule, index=None):
+    def add_rule_factory(self, rule_factory, index=None):
         """
         Parameters
         ----------
-        rule: PYME.cluster.rules.Rule
+        rule_factory : PYME.cluster.rules.RuleFactory
         Returns
         -------
         """
         if index is None:
-            self._rule_chain.append(rule)
+            self._rule_factory_chain.append(rule_factory)
         else:
-            self._rule_chain.insert(rule, index)
+            self._rule_factory_chain.insert(rule_factory, index)
 
         self.update_list()
 
-    def replace_rule(self, rule, index):
-        self._rule_chain[index] = rule
+    def replace_rule_factory(self, rule_factory, index):
+        self._rule_factory_chain[index] = rule_factory
 
     def OnGetItemText(self, item, col):
         """
@@ -83,7 +85,7 @@ class RuleChainListCtrl(wx.ListCtrl):
         """
         try:
             if col == 0:
-                return self._rule_chain[item].template['type']
+                return self._rule_factory_chain[item]._type
             if col == 1:
                 return str(item)
         except:
@@ -92,7 +94,11 @@ class RuleChainListCtrl(wx.ListCtrl):
             return ''
 
     def update_list(self, sender=None, **kwargs):
-        self.SetItemCount(len(self._rule_chain))
+        n_rules = len(self._rule_factory_chain)
+        for s_ind, f_ind in enumerate(range(1, n_rules)):
+            self._rule_factory_chain[s_ind].chain(self._rule_factory_chain[f_ind])
+        
+        self.SetItemCount(n_rules)
         self.Update()
         self.Refresh()
 
@@ -100,7 +106,7 @@ class RuleChainListCtrl(wx.ListCtrl):
         selected_indices = self.get_selected_items() if indices is None else indices
 
         for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
-            self._rule_chain.pop(ind)
+            self._rule_factory_chain.pop(ind)
             self.DeleteItem(ind)
 
         self.update_list()
@@ -123,13 +129,14 @@ class RuleChainListCtrl(wx.ListCtrl):
         self.delete_rules(self.localization_rule_indices)
 
 
-class ProtocolRulesListCtrl(wx.ListCtrl):
+class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
     def __init__(self, protocol_rules, wx_parent):
         """
         Parameters
         ----------
         protocol_rules: dict
-            acquisition protocols (keys) and their associated rule chains
+            acquisition protocols (keys) and their associated rule factory 
+            chains
         wx_parent
         """
         wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
@@ -202,12 +209,17 @@ class ChainedAnalysisPanel(wx.Panel):
     _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
     def __init__(self, parent, protocol_rules, recipe_manager, spool_controller):
         """
+
         Parameters
         ----------
-        parent:
-        rule_chain: PYME.cluster.rules.RuleChain
-        recipe_manager: PYME.recipes.recipeGui.RecipeManager
-        spool_controller: PYME.Acquire.SpoolController.SpoolController
+        parent : wx something
+        protocol_rules : dict
+            [description]
+        recipe_manager : PYME.recipes.recipeGui.RecipeManager
+            [description]
+        spool_controller : PYME.Acquire.SpoolController.SpoolController
+            microscope's spool controller instance, so we can launch on spool
+            start/stop
         """
         from PYME.contrib import dispatch
 
@@ -234,7 +246,7 @@ class ChainedAnalysisPanel(wx.Panel):
         v_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 2)
 
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._rule_list = RuleChainListCtrl(self._rule_chain, self)
+        self._rule_list = RuleFactoryListCtrl(self._rule_chain, self)
         h_sizer.Add(self._rule_list)
         v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
 
@@ -255,7 +267,7 @@ class ChainedAnalysisPanel(wx.Panel):
         v_sizer.Add(h_sizer)
 
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._protocol_rules_list = ProtocolRulesListCtrl(self._protocol_rules, self)
+        self._protocol_rules_list = ProtocolRuleFactoryListCtrl(self._protocol_rules, self)
         h_sizer.Add(self._protocol_rules_list)
         v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
 
@@ -318,17 +330,22 @@ class ChainedAnalysisPanel(wx.Panel):
         kwargs: dict
             present here to allow us to call this method through a dispatch.Signal.send
         """
-        # pipe the input series name into the rule list
-        series_uri = self._spool_controller.spooler.getURL()
+        
         try:
             protocol_name = os.path.splitext(os.path.split(self._spool_controller.spooler.protocol.filename)[-1])[0]
             logger.debug(protocol_name)
-            rule_chain = self._protocol_rules[protocol_name]
+            rule_factory_chain = self._protocol_rules[protocol_name]
         except KeyError:
-            rule_chain = self._protocol_rules['default']
+            rule_factory_chain = self._protocol_rules['default']
+        
+        # set the context based on the input series
+        series_uri = self._spool_controller.spooler.getURL()
+        spool_dir, series_stub = posixpath.split(series_uri)
+        series_stub = posixpath.splitext(series_stub)[0]
+        context = {'spool_dir': spool_dir, 'series_stub': series_stub}
 
-        rule_chain.set_chain_input([{'input': series_uri}])
-        rule_chain.post()
+        # rule chain is alreayd linked, add context and push
+        rule_factory_chain[0].get_rule(context=context).push()
 
     @staticmethod
     def plug(main_frame, scope):
@@ -417,7 +434,11 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         if self.checkbox_propagate.GetValue():
             loc_rule_indices = self._rule_list_ctrl.localization_rule_indices
             if len(loc_rule_indices) < 1:
-                self._rule_list_ctrl.add_rule(LocalizationRule(self._localization_settings.analysisMDH))
+                self._rule_list_ctrl.add_rule_factory(
+                    LocalizationRuleFactory(
+                        analysisMetadata=self._localization_settings.analysisMDH
+                        )
+                    )
             self.checkbox_view_live.Enable()
         else:
             self._rule_list_ctrl.clear_localization_rules()
@@ -435,8 +456,8 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
     def update_localization_rule(self):
         # NB - panel will only modify first localization rule in the chain
         if self.checkbox_propagate.GetValue():
-            rule = LocalizationRule(self._localization_settings.analysisMDH)
-            self._rule_list_ctrl.replace_rule(rule, self._rule_list_ctrl.localization_rule_indices[0])
+            rule = LocalizationRuleFactory(analysisMetadata=self._localization_settings.analysisMDH)
+            self._rule_list_ctrl.replace_rule_factory(rule, self._rule_list_ctrl.localization_rule_indices[0])
 
     def _open_live_view(self, **kwargs):
         """
