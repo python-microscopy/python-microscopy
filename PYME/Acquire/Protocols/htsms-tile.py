@@ -12,16 +12,7 @@ class Scanner(CircularPointScanner):
         self.enabled_views = []
         self.scan_radius_um = scan_radius_um
     
-    def set_state(self, views=(1), size=(256, 256), integration_time=0.004):
-        logger.debug('CAMERA SETTINGS - views %s, size %s, integration time %f [s]' % (views, size, integration_time))
-        scope.frameWrangler.stop()
-        scope.cam.disable_multiview()
-        scope.cam.enable_multiview(views)
-        scope.cam.ChangeMultiviewROISize(size[0], size[1])
-        scope.cam.SetIntegTime(integration_time)
-        scope.frameWrangler.Prepare()
-        scope.frameWrangler.start()
-
+    def setup(self):
         fs = np.array((scope.cam.size_x, scope.cam.size_y))
         # calculate tile spacing such that there is ~30% overlap.
         tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
@@ -33,16 +24,19 @@ class Scanner(CircularPointScanner):
                                             1, 0, False, True, trigger=True, 
                                             stop_on_complete=True, return_to_start=False)
         self.on_stop.connect(scope.spoolController.StopSpooling)
+        
+        self.genCoords()
+
+        self.check_focus_lock_ok()
     
-    def return_state(self, views=(0), size=(256, 256), integration_time=0.004):
-        logger.debug('returning camera state')
-        scope.frameWrangler.stop()
-        scope.cam.disable_multiview()
-        scope.cam.enable_multiview(views)
-        scope.cam.ChangeMultiviewROISize(size[0], size[1])
-        scope.cam.SetIntegTime(integration_time)
-        scope.frameWrangler.Prepare()
-        scope.frameWrangler.start()
+    def check_focus_lock_ok(self):
+        scope.focus_lock.EnableLock()  # make sure we have the lock on
+        if not scope.focus_lock.LockOK():
+            import time
+            logger.debug('lock not OK, pausing for 10 s')
+            time.sleep(10)
+            logger.debug('starting reacquire sequence')
+            scope.focus_lock.ReacquireLock()
 
 
 scanner = Scanner(scan_radius_um=500)
@@ -50,14 +44,16 @@ scanner = Scanner(scan_radius_um=500)
 # T(frame, function, *args) creates a new task
 taskList = [
     T(-1, scope.turnAllLasersOff),
-    T(-1, scope.l405.SetPower, 1),
-    T(-1, scanner.set_state, [1], (256, 256), 0.005),
-    T(-1, scope.focus_lock.EnableLock),  # should already be enabled, but just in case
+    T(-1, scope.state.update, {
+        'Lasers.OBIS405.Power': 1.0,
+        'Multiview.ActiveViews': [1],
+        'Multiview.ROISize': [256, 256],
+        'Camera.IntegrationTime': 0.005,
+    }),
+    T(-1, scanner.setup),
     T(-1, scope.l405.TurnOn),
-    T(-1, scanner.genCoords),
     T(0, scanner.start),
     T(maxint, scope.turnAllLasersOff),
-    T(maxint, scanner.return_state, [0, 1, 2, 3], (256, 256), 0.00125)
 ]
 
 #optional - metadata entries
