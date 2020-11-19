@@ -608,7 +608,10 @@ class RuleFactory(object):
         
     def get_rule(self, context):
         """
-        Populate a rule using series specific info from context
+        Populate a rule using series specific info from context. Note that
+        the the rule class initialization arguments should be passed in the
+        RuleFactory initialization as kwargs, but can also be passed here in
+        context if, e.g. the series name is not known when creating the 
         
         Parameters
         ----------
@@ -617,8 +620,9 @@ class RuleFactory(object):
 
         Returns
         -------
-        
-        a rule suitable for submitting to the ruleserver `/add_integer_id_rule` endpoint
+        Rule
+            a rule suitable for submitting to the ruleserver `/add_integer_id_rule`
+            endpoint
 
         """
         
@@ -654,4 +658,10 @@ class RecipeRuleFactory(RuleFactory):
 class LocalisationRuleFactory(RuleFactory):
     _type = 'localization'
     def __init__(self, **kwargs):
+        """
+        See `LocalisationRule` for full initialization arguments. Required 
+        kwargs are
+            seriesName : str
+            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   

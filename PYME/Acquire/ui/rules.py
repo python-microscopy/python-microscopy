@@ -280,10 +280,10 @@ class ChainedAnalysisPanel(wx.Panel):
         self.SetSizerAndFit(v_sizer)
 
     def OnAddFromRecipePanel(self, wx_event=None):
-        from PYME.cluster._rules import RecipeRule
+        from PYME.cluster.rules import RecipeRuleFactory
         if len(self._recipe_manager.activeRecipe.modules) > 0:
-            rule = RecipeRule(self._recipe_manager.activeRecipe.toYAML())
-            self._rule_list.add_rule(rule)
+            rule_factory = RecipeRuleFactory(recipe=self._recipe_manager.activeRecipe.toYAML())
+            self._rule_list.add_rule_factory(rule_factory)
 
     def OnRemoveRules(self, wx_event=None):
         self._rule_list.delete_rules()
@@ -293,8 +293,9 @@ class ChainedAnalysisPanel(wx.Panel):
 
     def OnPairWithProtocol(self, wx_event=None):
         from PYME.Acquire import protocol
-        from PYME.cluster._rules import RuleChain
-        dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocol.get_protocol_list())
+
+        dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', 
+                                       protocol.get_protocol_list())
 
         ret = dialog.ShowModal()
 
@@ -302,7 +303,7 @@ class ChainedAnalysisPanel(wx.Panel):
             protocol_name = os.path.splitext(dialog.GetStringSelection())[0]
             self._protocol_rules[protocol_name] = self._rule_chain
             # replace the gui-editable chain with a new one
-            self._rule_chain = RuleChain(thread_queue=self._rule_chain.thread_queue)
+            self._rule_chain = []
             self._rule_list._rule_chain = self._rule_chain
             self._rule_list.update_list()
             self._protocol_rules['default'] = self._rule_chain
@@ -345,7 +346,8 @@ class ChainedAnalysisPanel(wx.Panel):
         series_uri = self._spool_controller.spooler.getURL()
         spool_dir, series_stub = posixpath.split(series_uri)
         series_stub = posixpath.splitext(series_stub)[0]
-        context = {'spool_dir': spool_dir, 'series_stub': series_stub}
+        context = {'spool_dir': spool_dir, 'series_stub': series_stub,
+                   'seriesName': series_uri}
 
         # rule chain is alreayd linked, add context and push
         rule_factory_chain[0].get_rule(context=context).push()
