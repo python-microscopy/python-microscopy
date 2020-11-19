@@ -76,8 +76,13 @@ class RecipeDisplayPanel(wx.Panel):
     def _layout(self, *args, **kwargs):
         print('RecipeView._layout')
         if self.fp:
-             self.fp.elements = []
-             self.fp.DestroyChildren()
+            self.fp.elements = []
+            # Wrap this in a try block to prevent an error when using OutputModules
+            # TODO: Figure out why this is necessary.
+            try:
+                self.fp.DestroyChildren()
+            except:
+                pass
         self.fp = None
         #print('destroyed fold panel children')
         
