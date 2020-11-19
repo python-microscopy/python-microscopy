@@ -508,3 +508,87 @@ def get_init_filename(filename, legacy_scripts_directory=None):
             return fnp
         
     return None
+
+def update_yaml_keys(fn, d, create_backup=False):
+    """ 
+    Update the keys in a YAML file without destroying comments.
+
+    TODO: Plays it fast and lose with regex and won't work for many 
+    situations. Currently only works in the case we have a line
+
+    key : value  # optional comment, optional number of spaces
+                 # around the colon, no option for a space at
+                 # the beginning of the line
+    
+    To make this work well, we'll need a full YAML parser 
+    that handles comments. We could either use ruamel.yaml 
+    (https://pypi.org/project/ruamel.yaml/) or write our own.
+
+    Parameters
+    ----------
+    fn : string
+        Path to a yaml file.
+    d : dict
+        key, value pairs of keys/values to update or append to the
+        end of the file
+    create_backup : bool
+        Make a backup of the YAML file before updating the keys
+    """
+    import re
+    import json
+
+    if create_backup:
+        import shutil
+        shutil.copy(fn, fn+'.bak')
+
+    # Read the yaml file
+    with open(fn) as f:
+        data = f.read()
+
+    # Update the appropriate keys
+    for k, v in d.items():
+        x = re.search(r'^{}\s*:.*$'.format(k),data,flags=re.MULTILINE)
+        if x is None:
+            data += '\n{}: {}'.format(k, json.dumps(v))
+        else:
+            data = re.sub(r'^{}\s*:.*$'.format(k),
+                          '{}: {}'.format(k,json.dumps(v)),data,flags=re.MULTILINE)
+
+    # Update the yaml file
+    with open(fn, 'w') as f:
+        f.write(data)
+
+def update_config(d, config='user', config_fn='config.yaml', create_backup=False):
+    """
+    Updates PYME configuration files.
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary of configuration keys to update
+    config : str, optional
+        PYME configuration type, one of ['user','site','dist'], by default 'user'
+    config_fn : str, optional
+        Name of the configuration file within the type, by default 'config.yaml'
+    create_backup : bool
+        Create a backup of the configuration file before updating.
+    """
+    
+    # Choose where to look for the configuration file based
+    # on the configuration type
+    base = user_config_dir
+    if config == 'site':
+        base = site_config_directory
+    elif config == 'dist':
+        base = dist_config_directory
+    
+    # Open and edit the file
+    update_yaml_keys(os.path.join(base,config_fn),d,create_backup=create_backup)
+
+    # Reload config
+    if sys.version_info.major == 3:
+        from importlib import reload
+    try:
+        reload(sys.modules['config'])
+    except(KeyError):
+        reload(sys.modules['PYME.config'])
