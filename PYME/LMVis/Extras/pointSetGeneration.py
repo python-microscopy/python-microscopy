@@ -148,6 +148,7 @@ class Generator(HasTraits):
     meanEventNumber = Float(2)
     scaleFactor = Float(2)
     meanTime= Float(2000)
+    mode = Enum(['STORM','PAINT'])
 
     sources = List([WormlikeSource(), ImageSource(), FileSource()])
 
@@ -162,12 +163,15 @@ class Generator(HasTraits):
                                 editable = True),
                                 ),
                         Item('_'),
-                        Item('meanIntensity'),
-                        Item('meanDuration'),
-                        Item('meanEventNumber'),
-                        Item('meanTime'),
+                        Item('meanIntensity',tooltip='Specify the mean photon number of events (typical range 1e2 to 1e4)'),
+                        Item('meanDuration',tooltip='mean duration of events in units of frames'),
+                        Item('meanEventNumber',tooltip='mean number of times an event occurs at a single marker location'),
+                        Item('meanTime',tooltip='the mean time of the series, often easier to think of this as roughly related to series duration, in frame units'),
+                        Item('scaleFactor',tooltip='unsure about this parameter'),
                         Item('_'),
-                        Item('backgroundIntensity'),
+                        Item('backgroundIntensity',tooltip='specify the background intensity in units of photons'),
+                        Item('_'),
+                        Item('mode',tooltip='STORM or PAINT mode which effects how event rate changes with time'),  
                         
                         buttons = ['OK'])
         
@@ -210,8 +214,12 @@ class Generator(HasTraits):
         if isinstance(self.source, WormlikeSource):
             plt.plot(self.xp, self.yp, lw=2)
 
-        res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity,
-                              self.meanEventNumber, self.scaleFactor, self.meanTime, z=self.zp)
+        if self.mode == 'STORM':
+            res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity,
+                                  self.meanEventNumber, self.scaleFactor, self.meanTime, z=self.zp)
+        else:
+            res = locify.eventify2(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity,
+                                  self.meanEventNumber, self.scaleFactor, self.meanTime, z=self.zp)
         
         plt.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
