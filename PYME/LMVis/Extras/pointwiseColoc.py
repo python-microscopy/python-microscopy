@@ -21,8 +21,18 @@ class PointwiseColocaliser:
         #from PYME import mProfile
         #mProfile.profileOn(['distColoc.py'])
         from PYME.Analysis.Colocalisation import distColoc
+        from PYME.DSView.modules.coloc import ColocSettingsDialog
+
+        chans = self.visFr.pipeline.colourFilter.getColourChans()[::1]
+
+        dlg = ColocSettingsDialog(self.visFr, names=chans, show_bins=False)
+        dlg.ShowModal()
+
+        selected_chans = [chans[int(x)] for x in dlg.GetChans()]  # re-index into chans b/c calcDistCorr expects full channel names
+        dlg.Destroy()
+
         #A vs B
-        distColoc.calcDistCorr(self.visFr.pipeline.colourFilter, *(self.visFr.pipeline.colourFilter.getColourChans()[::1]))
+        distColoc.calcDistCorr(self.visFr.pipeline.colourFilter, *selected_chans)
         #B vs A
         #distColoc.calcDistCorr(self.visFr.colourFilter, *(self.visFr.colourFilter.getColourChans()[::-1]))
         #mProfile.report()
