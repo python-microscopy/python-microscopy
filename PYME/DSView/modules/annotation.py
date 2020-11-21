@@ -141,6 +141,12 @@ class Annotater(Plugin):
         dsviewer.AddMenuItem('Annotation', "Train SVM Classifier", self.train_svm)
         dsviewer.AddMenuItem('Annotation', "Train Naive Bayes Classifier", self.train_naive_bayes)
         
+        self._mi_save = dsviewer.AddMenuItem('Segmentation', 'Save Classifier', self.OnSaveClassifier)
+        self._mi_save.Enable(False)
+        dsviewer.AddMenuItem('Segmentation', 'Load Classifier', self.OnLoadClassifier)
+        self._mi_run = dsviewer.AddMenuItem('Segmentation', "Run Classifier", self.svm_segment)
+        self._mi_run.Enable(False)
+        
         self.do.on_selection_end.connect(self.snake_refine_trace)
         self.do.overlays.append(self.DrawOverlays)
 
@@ -156,6 +162,10 @@ class Annotater(Plugin):
     def add_curved_line(self, event=None):
         if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
             l = self.do.selection_trace
+            if len(l) < 1:
+                print('Line must have at least 1 point')
+                return
+                
             if isinstance(l, np.ndarray):
                 l = l.tolist()
             self._annotations.append({'type' : 'curve', 'points' : l,
@@ -395,10 +405,10 @@ class Annotater(Plugin):
     
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier()
-            
-    
         self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
-        
+
+        self._mi_save.Enable(True)
+        self._mi_run.Enable(True)
         self.svm_segment()
 
     def train_naive_bayes(self, event=None):
@@ -415,10 +425,11 @@ class Annotater(Plugin):
         self.cf = svmSegment.svmClassifier(clf=clf)
     
         self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
-    
+        self._mi_save.Enable(True)
+        self._mi_run.Enable(True)
         self.svm_segment()
 
-    def svm_segment(self):
+    def svm_segment(self, event=None):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         # import pylab
@@ -450,6 +461,18 @@ class Annotater(Plugin):
     
         self.dv.Refresh()
         self.dv.Update()
+
+    def OnSaveClassifier(self, event=None):
+        filename = wx.FileSelector("Save classifier as:", wildcard="*.pkl", flags=wx.FD_SAVE)
+        if not filename == '':
+            self.cf.save(filename)
+
+    def OnLoadClassifier(self, event=None):
+        from PYME.Analysis import svmSegment
+        filename = wx.FileSelector("Load Classifier:", wildcard="*.pkl", flags=wx.FD_OPEN)
+        if not filename == '':
+            self.cf = svmSegment.svmClassifier(filename=filename)
+            self._mi_run.Enable(True)
                     
 
 def Plug(dsviewer):
