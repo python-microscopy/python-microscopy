@@ -105,6 +105,37 @@ class ImageSource(PointSource):
     #name = Str('Density Image')
     #foo = Enum([1,2,3,4])
 
+    helpInfo = {
+        'points_per_pixel' : '''
+Select average number of points (dye molecules or docking sites) per pixel in the image mask.
+The number can be a floating point fraction, e.g. 0.1 or 3.7, a suitable choice will depend
+on the pixel size of your mask image.
+''',
+        'image' : '''
+Select an image from the list of open images.
+Note that you need to open or generate the mask image you want to use so that this
+list is not empty. The mask image will be normalised for the purpose of the simulation,
+with its maximum set to 1.
+''',
+    }
+    
+    def helpStr(self, name):
+        def cleanupHelpStr(str):
+            return str.strip().replace('\n', ' ').replace('\r', '')
+        
+        return cleanupHelpStr(self.helpInfo[name])
+
+    def default_traits_view( self ):
+        from traitsui.api import View, Item, EnumEditor, InstanceEditor
+
+        traits_view = View(Item('points_per_pixel',help=self.helpStr('points_per_pixel'),
+                                tooltip='mean number of marker points per pixel'),
+                           Item('image',help=self.helpStr('image'),
+                                tooltip='select the mask image from the list of open images'),
+                           buttons = ['OK', 'Help'])
+        
+        return traits_view
+                           
     def getPoints(self):
         from PYME.simulation import locify
         print((self.image))
@@ -139,8 +170,6 @@ class ImageSource(PointSource):
 
 
 
-
-
 class Generator(HasTraits):
     meanIntensity = Float(500)
     meanDuration = Float(3)
@@ -153,27 +182,71 @@ class Generator(HasTraits):
     sources = List([WormlikeSource(), ImageSource(), FileSource()])
 
     source = Instance(PointSource)
-    
+
+    helpInfo = {
+        'source' : '''
+Select the type of point source to generate points.
+A wormlike source, an image based source and a file based source are supported.
+''',
+        'meanIntensity' : '''
+This parameter specifies the mean number of photons in an event.
+Typically values are in the range from 100 to several 10000.
+''',
+        'meanDuration' : '''
+The mean duration of events which is specified in units of frames.
+''',
+        'meanTime' : '''
+This parameter, the mean time of the series in frame units, is related to the series duration.
+For PAINT mode this is half the duration of the series, for STORM simulation mode the relationship is a little more complex.
+There it has something to do with the time where most of the events are occuring. 
+''',
+        'meanEventNumber' : '''
+This parameter specifies the mean number of times an event occurs at a single marker location.
+''',
+        'backgroundIntensity' : '''
+The background intensity in units of photons, typically in the range from a few tens to hundreds of photons.
+''',
+        'mode' : '''
+With the simulation mode you can choose between STORM or PAINT mode. 
+This parameter effects how event rate changes with time (it stays constant in PAINT mode).
+It has little effect otherwise.
+'''
+    }
+
+    def helpStr(self, name):
+        def cleanupHelpStr(str):
+            return str.strip().replace('\n', ' ').replace('\r', '')
+        
+        return cleanupHelpStr(self.helpInfo[name])
+        
     def default_traits_view( self ):
         from traitsui.api import View, Item, EnumEditor, InstanceEditor
+
         traits_view = View( Item( 'source',
                             label= 'Point source',
                             editor =
                             InstanceEditor(name = 'sources',
                                 editable = True),
+                            help=self.helpStr('source'),
                                 ),
                         Item('_'),
-                        Item('meanIntensity',tooltip='Specify the mean photon number of events (typical range 1e2 to 1e4)'),
-                        Item('meanDuration',tooltip='mean duration of events in units of frames'),
-                        Item('meanEventNumber',tooltip='mean number of times an event occurs at a single marker location'),
-                        Item('meanTime',tooltip='the mean time of the series, often easier to think of this as roughly related to series duration, in frame units'),
+                        Item('meanIntensity',tooltip='mean photon number of events',
+                             help=self.helpStr('meanIntensity')),
+                        Item('meanDuration',tooltip='mean duration of events in units of frames',
+                             help=self.helpStr('meanDuration')),
+                        Item('meanEventNumber',tooltip='mean number of times events occurs at a single marker location',
+                             help=self.helpStr('meanEventNumber')),
+                        Item('meanTime',tooltip='mean time of the series, roughly related to series duration, in frame units',
+                             help=self.helpStr('meanTime')),
                         Item('scaleFactor',tooltip='unsure about this parameter'),
                         Item('_'),
-                        Item('backgroundIntensity',tooltip='specify the background intensity in units of photons'),
+                        Item('backgroundIntensity',tooltip='background intensity in units of photons',
+                             help=self.helpStr('backgroundIntensity')),
                         Item('_'),
-                        Item('mode',tooltip='STORM or PAINT mode which effects how event rate changes with time'),  
+                        Item('mode',tooltip='STORM or PAINT mode, effects how event rate changes with time',
+                             help=self.helpStr('mode')),  
                         
-                        buttons = ['OK'])
+                        buttons = ['OK', 'Help'])
         
         return traits_view
 
