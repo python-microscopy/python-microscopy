@@ -288,12 +288,16 @@ class VisGUICore(object):
     
             self.AddMenuItem('View', itemType='separator')
         
-        self.AddMenuItem('View', '&Fit', self.SetFit)
-        self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
+        self.AddMenuItem('View', '&Home\tAlt-H', self.OnHome)
+        self.AddMenuItem('View', '&Fit\tAlt-F', self.SetFit)
+        self.AddMenuItem('View', 'Fit ROI\tAlt-8', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
+
+        self.AddMenuItem('View', 'Re&center\tAlt-C', self.OnRecenter)
+        self.AddMenuItem('View', 'Reset &rotation\tAlt-R', self.OnResetRotation)
 
         self.AddMenuItem('View', itemType='separator')
         
@@ -315,7 +319,7 @@ class VisGUICore(object):
     def create_tool_bar(self, parent):
         from .displayPane import DisplayPaneHorizontal
         
-        return DisplayPaneHorizontal(parent, self.glCanvas, None)
+        return DisplayPaneHorizontal(parent, self.glCanvas, self)
         
         
     def OnViewPoints(self,event):
@@ -621,6 +625,17 @@ class VisGUICore(object):
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
                                   ybounds[0], ybounds[1])
 
+    def OnRecenter(self, event=None):
+        self.glCanvas.recenter_bbox()
+        self.glCanvas.Refresh()
+
+    def OnResetRotation(self, event=None):
+        self.glCanvas.ResetView()
+        self.glCanvas.Refresh()
+
+    def OnHome(self, event=None):
+        self.OnResetRotation(event)
+        self.SetFit(event)
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)

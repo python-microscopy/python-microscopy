@@ -226,7 +226,8 @@ class LMGLShaderCanvas(GLCanvas):
         nLayers = 0
         
         for l in self.layers:
-            if getattr(l, 'visible', True):
+            # if getattr(l, 'visible', True):
+            if True:
                 bbl = l.bbox
                 
                 if not bbl is None:
