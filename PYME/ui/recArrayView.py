@@ -82,7 +82,7 @@ class ArrayTableGrid(gridlib.Grid):
 
     def SetData(self, data):
         if isinstance(data, tabular.TabularBase):
-            table = TabularTable(data)
+            table = TabularTable(tabular.CachingResultsFilter(data))
         else:
             table = RecArrayTable(data)
 
