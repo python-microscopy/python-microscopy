@@ -22,7 +22,8 @@
 ##################
 
 import numpy as np
-from matplotlib import tri
+# from matplotlib import tri
+from scipy.spatial import Delaunay
 from PYME.Analysis.points import gen3DTriangs
 from PYME.Analysis.points import moments
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
@@ -80,7 +81,8 @@ def measure(object, sizeCutoff, measurements = np.zeros(1, dtype=measureDType)):
     measurements['yPos'] = object[:,1].mean()
 
     if object.shape[0] > 3:
-        T = tri.Triangulation(object.ravel(),2)
+        # T = tri.Triangulation(object.ravel(),2)
+        T = Delaunay(object)
         P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
 
         if not len(P) == 0:
@@ -115,10 +117,11 @@ def measureObjects(objects, sizeCutoff):
 
     return measurements
 
-def measureObjectsByID(filter, sizeCutoff, ids):
+def measureObjectsByID(filter, sizeCutoff, ids, key='objectID'):
     x = filter['x'] #+ 0.1*random.randn(filter['x'].size)
     y = filter['y'] #+ 0.1*random.randn(x.size)
-    id = filter['objectID'].astype('i')
+    # id = filter['objectID'].astype('i')
+    id = filter[key].astype('i')
 
     #ids = set(ids)
 
