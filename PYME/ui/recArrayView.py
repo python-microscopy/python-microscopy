@@ -22,32 +22,14 @@
 ##################
 
 import wx
-import wx.grid as  gridlib
+import wx.grid as gridlib
 import numpy as np
 from PYME.IO import tabular
 
 class RecArrayTable(gridlib.PyGridTableBase):
-
     def __init__(self, recarray):
         gridlib.PyGridTableBase.__init__(self)
         self.recarray = recarray
-
-#        self.odd=gridlib.GridCellAttr()
-#        self.odd.SetBackgroundColour("sky blue")
-#        self.even=gridlib.GridCellAttr()
-#        self.even.SetBackgroundColour("sea green")
-#
-#    def GetAttr(self, row, col, kind):
-#        attr = [self.even, self.odd][row % 2]
-#        attr.IncRef()
-#        return attr
-
-
-
-    # This is all it takes to make a custom data table to plug into a
-    # wxGrid.  There are many more methods that can be overridden, but
-    # the ones shown below are the required ones.  This table simply
-    # provides strings containing the row and column values.
 
     def GetNumberRows(self):
         return len(self.recarray)
@@ -59,38 +41,19 @@ class RecArrayTable(gridlib.PyGridTableBase):
         return False
 
     def GetValue(self, row, col):
-        return str( self.recarray[row][col] )
+        return str(self.recarray[row][col] )
 
     def SetValue(self, row, col, value):
         pass
-        #self.log.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
 
     def GetColLabelValue(self, col):
         return self.recarray.dtype.names[col]
 
 
 class TabularTable(gridlib.PyGridTableBase):
-
     def __init__(self, tabular):
         gridlib.PyGridTableBase.__init__(self)
         self._tabular = tabular
-
-#        self.odd=gridlib.GridCellAttr()
-#        self.odd.SetBackgroundColour("sky blue")
-#        self.even=gridlib.GridCellAttr()
-#        self.even.SetBackgroundColour("sea green")
-#
-#    def GetAttr(self, row, col, kind):
-#        attr = [self.even, self.odd][row % 2]
-#        attr.IncRef()
-#        return attr
-
-
-
-    # This is all it takes to make a custom data table to plug into a
-    # wxGrid.  There are many more methods that can be overridden, but
-    # the ones shown below are the required ones.  This table simply
-    # provides strings containing the row and column values.
 
     def GetNumberRows(self):
         return len(self._tabular)
@@ -102,14 +65,14 @@ class TabularTable(gridlib.PyGridTableBase):
         return False
 
     def GetValue(self, row, col):
-        return str( self._tabular[self._tabular.keys()[col]][row])
+        return str(self._tabular[self._tabular.keys()[col]][row])
 
     def SetValue(self, row, col, value):
         pass
-        #self.log.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
 
     def GetColLabelValue(self, col):
         return self._tabular.keys()[col]
+
 
 class ArrayTableGrid(gridlib.Grid):
     def __init__(self, parent, data):
@@ -127,8 +90,6 @@ class ArrayTableGrid(gridlib.Grid):
         # table and will destroy it when done.  Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
-    
-
 
 
 class ArrayPanel(wx.Panel):
@@ -172,6 +133,7 @@ class ArrayPanel(wx.Panel):
                 data.to_hdf(filename)
             else:
                 data.to_csv(filename)
+
                 
 class ArrayFrame(wx.Frame):
     def __init__(self, data, title='Data table', parent=-1):
