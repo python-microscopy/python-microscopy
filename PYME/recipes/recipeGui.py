@@ -342,7 +342,7 @@ class RecipeView(wx.Panel):
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
-        vsizer.Add(self.bApply, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
                                        
         hsizer1.Add(vsizer, 0, wx.EXPAND|wx.ALL, 2)
@@ -529,6 +529,7 @@ class RecipeView(wx.Panel):
         
         
     def OnPick(self, event):
+        from PYME.IO import tabular
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
             self.configureModule(k)
@@ -544,6 +545,11 @@ class RecipeView(wx.Panel):
                         mode = 'lite'
                                    
                     dv = ViewIm3D(outp, mode=mode, glCanvas=self.recipes.dsviewer.glCanvas)
+                    
+            elif isinstance(outp, tabular.TabularBase):
+                from PYME.ui import recArrayView
+                f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
+                f.Show()
     
     
     def configureModule(self, k):

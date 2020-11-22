@@ -151,6 +151,26 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
+
+    def to_csv(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+    
+        if keys is None:
+            keys = self.keys()
+    
+        #nRecords = len(ds[keys[0]])
+    
+        of = open(outFile, 'w')
+    
+        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
+    
+        for row in zip(*[self[k] for k in keys]):
+            of.write(delim.join(['%e' % c for c in row]) + '\n')
+    
+        of.close()
             
                 
     def keys(self):
