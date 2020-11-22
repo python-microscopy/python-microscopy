@@ -175,9 +175,9 @@ class ArrayPanel(wx.Panel):
                 
 class ArrayFrame(wx.Frame):
     def __init__(self, data, title='Data table', parent=-1):
-        wx.Frame.__init__(self, parent, title=title, size=(600,600))
+        wx.Frame.__init__(self, parent, title=title, size=(800,600))
         
         sizer = wx.BoxSizer(wx.VERTICAL)
         self._array_pan = ArrayPanel(self, data)
         sizer.Add(self._array_pan, 1, wx.EXPAND, 0)
-        self.SetSizerAndFit(sizer)
+        self.SetSizer(sizer)

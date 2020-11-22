@@ -548,7 +548,7 @@ class RecipeView(wx.Panel):
                     
             elif isinstance(outp, tabular.TabularBase):
                 from PYME.ui import recArrayView
-                f = recArrayView.ArrayFrame(outp, parent=self)
+                f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
                 f.Show()
     
     
