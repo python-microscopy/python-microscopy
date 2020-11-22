@@ -27,7 +27,8 @@ class PointwiseColocaliser:
         chans = self.visFr.pipeline.colourFilter.getColourChans()
 
         if len(chans) == 0:
-            md = wx.MessageDialog(self.visFr, 'Not enough colour channels', 'Pointwise colocalization requires 2 colour channels', wx.OK)
+            md = wx.MessageDialog(self.visFr, 'Not enough colour channels', 
+                                  'Pointwise colocalization requires 2 colour channels', wx.OK)
             md.ShowModal()
             return
 
