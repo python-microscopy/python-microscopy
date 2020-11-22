@@ -85,11 +85,23 @@ class ObjectMeasurer:
 
         chans = pipeline.colourFilter.getColourChans()
 
-        ids = set(pipeline.mapping['objectID'].astype('i'))
+        # If we're not using objectIDs from an image, look for other clustering labels
+        keys = ['objectID', 'dbscanClumpID', 'clumpIndex']
+        key = 'objectID'
+
+        for k in keys:
+            try:
+                ids = set(pipeline.mapping[k].astype('i'))
+                key = k
+                break
+            except(KeyError):
+                continue
+        # ids = set(pipeline.mapping['objectID'].astype('i'))
+
         pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids,key)
         else:
             curChan = pipeline.colourFilter.currentColour
 
@@ -105,7 +117,7 @@ class ObjectMeasurer:
             for ch, i in zip(chans, range(len(chans))):
                 pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids,key)
             
             pipeline.colourFilter.setColour(curChan)
             
