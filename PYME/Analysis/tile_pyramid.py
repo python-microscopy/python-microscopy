@@ -585,9 +585,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
     
     if dark is None:
-        offset = float(mdh.getEntry('Camera.ADOffset'))
-    else:
-        offset = 0.
+        dark = float(mdh.getOrDefault('Camera.ADOffset', 0))
 
     P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, 
                      pixel_size=mdh.getEntry('voxelsize.x'))
@@ -599,12 +597,12 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
             y_i = ydp[i]
-            d = ds[:, :, i].astype('f') - offset
+            d = ds[:, :, i].astype('f') - dark
             if not flat is None:
                 d = d * flat
             
             if split:
-                d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
+                d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
             d_weighted = weights * d
 
