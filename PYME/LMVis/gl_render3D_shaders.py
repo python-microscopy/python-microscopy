@@ -60,12 +60,13 @@ logger = logging.getLogger(__name__)
 
 import sys
 
-if sys.platform == 'darwin':
-    # osx gives us LOTS of scroll events
-    # ajust the mag in smaller increments
-    ZOOM_FACTOR = 1.1
-else:
-    ZOOM_FACTOR = 2.0
+# if sys.platform == 'darwin':
+#     # osx gives us LOTS of scroll events
+#     # ajust the mag in smaller increments
+#     ZOOM_FACTOR = 1.1
+# else:
+#     ZOOM_FACTOR = 2.0
+ZOOM_FACTOR = config.get('zoom_factor', 1.1)
 
 # import statusLog
 
