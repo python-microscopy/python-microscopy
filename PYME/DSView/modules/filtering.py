@@ -46,7 +46,11 @@ class Filterer(Plugin):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+        filter_size = '[1,1,1]'
+        if self.image.data.shape[2] == 1:
+            filter_size = '[1,1]'
+
+        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', filter_size)
 
         if dlg.ShowModal() == wx.ID_OK:
             sigmas = eval(dlg.GetValue())

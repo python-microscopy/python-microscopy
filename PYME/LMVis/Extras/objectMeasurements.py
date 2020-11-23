@@ -60,7 +60,7 @@ class ObjectMeasurer:
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
-                image.openImages.keys(),
+                list(image.openImages.keys()),
                 wx.CHOICEDLG_STYLE
                 )
 
