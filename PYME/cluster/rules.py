@@ -117,7 +117,7 @@ class Rule(object):
             out_files = self.output_files
             if 'results' in out_files.keys() and 'input' not in out_files.keys():
                 out_files = out_files.copy()
-                out_files['input'] = out_files['results']
+                out_files['input'] = out_files.pop('results')
             chained_context['rule_outputs'] = out_files
             rule['on_completion'] = on_completion.get_rule(chained_context).rule
         
