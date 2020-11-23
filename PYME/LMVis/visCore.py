@@ -732,8 +732,12 @@ class VisGUICore(object):
         if filename is not None:
             args = self._populate_open_args(filename)
 
-            if ds is not None:
+        if ds is not None:
+            if filename is None:
                 filename = str(ds)
+            else:
+                # File supercedes datasource
+                ds = None
 
         print('Creating Pipeline')
         self.pipeline.OpenFile(filename=filename, ds=ds, **args)
