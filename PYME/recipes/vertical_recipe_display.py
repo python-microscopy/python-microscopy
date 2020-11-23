@@ -41,7 +41,14 @@ class RecipeDisplayPanel(wx.Panel):
         if not node in self.cols.keys():
             self.cols[node] = 0.7 * np.array(plt.cm.hsv(np.random.rand()))
             #cols[node] = 0.7 * np.array(plt.cm.hsv((_col.n_col % len(data_nodes)) / float(len(data_nodes))))
-        return self.cols[node]
+        #return self.cols[node]
+
+        c = self.cols[node]
+        if self.recipe.failed and not node in self.recipe.namespace.keys():
+            c = 0.2 * c + 0.8 * 0.5
+            return np.array([.9,.6,.6,1.])
+            
+        return c
         
     def SetRecipe(self, recipe):
         self.recipe = recipe
@@ -122,6 +129,11 @@ class RecipeDisplayPanel(wx.Panel):
                 pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
+                if getattr(node, '_last_error', None):
+                    # error on this node, turn background red
+                    # TODO - this is a rather hacky
+                    item.stCaption.style.update({'BACKGROUND_COLOUR_1': (220, 198, 198), #default AUI caption colours
+                                               'BACKGROUND_COLOUR_2': (255, 226, 226)})
                 self.fp.AddPane(item)
                 
                 #p = pan.control

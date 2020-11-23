@@ -483,6 +483,8 @@ class ModuleCollection(HasTraits):
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
         
+        self.failed = False
+        
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
@@ -649,11 +651,13 @@ class ModuleCollection(HasTraits):
                     
                     #record our error so that we can associate it with a module
                     m._last_error = traceback.format_exc()
+                    self.failed = True
                     
                     # make sure we didn't leave any partial results
                     self.prune_dependencies_from_namespace(m.outputs)
                     raise
         
+        self.failed = False
         self.recipe_executed.send_robust(self)
         
         if 'output' in self.namespace.keys():
