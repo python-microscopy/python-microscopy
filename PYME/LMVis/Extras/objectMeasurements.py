@@ -86,6 +86,10 @@ class ObjectMeasurer:
         chans = pipeline.colourFilter.getColourChans()
 
         # If we're not using objectIDs from an image, look for other clustering labels
+        # TODO - rather than trying a few pre-set objectID alternatives, make this a dialog instead
+        # - look for objectID and carry on if present
+        # - if not present, display a dialog "No objectID found - did you segment objects? Either cancel, 
+        # segment, and come back, or choose an alternative column to use as an ID.
         keys = ['objectID', 'dbscanClumpID', 'clumpIndex']
         key = 'objectID'
 
