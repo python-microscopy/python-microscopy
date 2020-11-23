@@ -108,7 +108,7 @@ class ImageSource(PointSource):
     helpInfo = {
         'points_per_pixel' : '''
 Select average number of points (dye molecules or docking sites) per pixel in the image mask.
-The number can be a floating point fraction, e.g. 0.1 or 3.7, a suitable choice will depend
+The number is a floating point fraction, e.g. 0.1, and shouldn't exceed 1. It is used for Monte-Carlo rejection of positions and larger values (>~0.2) will result in images which have visible pixel-grid structure because the Monte-Carlo sampling is no longer a good approximation to random sampling over the grid. If this is a problem for your application / you can't get high enough density without a high acceptance fraction, use an up-sampled source image with a smaller pixel size. 
 on the pixel size of your mask image.
 ''',
         'image' : '''
@@ -209,7 +209,6 @@ The background intensity in units of photons, typically in the range from a few 
         'mode' : '''
 With the simulation mode you can choose between STORM or PAINT mode. 
 This parameter effects how event rate changes with time (it stays constant in PAINT mode).
-It has little effect otherwise.
 '''
     }
 
@@ -329,7 +328,6 @@ It has little effect otherwise.
 def Plug(visFr):
     """Plugs this module into the gui"""
     visFr.pt_generator = Generator(visFr)
-
 
 
 
