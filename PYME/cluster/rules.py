@@ -112,7 +112,13 @@ class Rule(object):
         
         if on_completion:
             chained_context = dict(**context)
-            chained_context['rule_outputs'] = self.output_files
+            # standard recipe single-input key is 'input'. Set up 'results'
+            # as alt key so we can use the same recipe in clusterUI views
+            out_files = self.output_files
+            if 'results' in out_files.keys() and 'input' not in out_files.keys():
+                out_files = out_files.copy()
+                out_files['input'] = out_files['results']
+            chained_context['rule_outputs'] = out_files
             rule['on_completion'] = on_completion.get_rule(chained_context).rule
         
         return rule
@@ -238,7 +244,7 @@ class Rule(object):
         if not self.complete:
             #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
             self.doPoll = True
-            self.pollT = threading.Thread(target=self._poll_loop())
+            self.pollT = threading.Thread(target=self._poll_loop)
             self.pollT.start()
 
     def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
@@ -448,7 +454,7 @@ class RecipeRule(Rule):
 
 
 class LocalisationRule(Rule):
-    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
+    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName

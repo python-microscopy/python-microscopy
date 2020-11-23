@@ -349,7 +349,7 @@ class ChainedAnalysisPanel(wx.Panel):
         context = {'spool_dir': spool_dir, 'series_stub': series_stub,
                    'seriesName': series_uri}
 
-        # rule chain is alreayd linked, add context and push
+        # rule chain is already linked, add context and push
         rule_factory_chain[0].get_rule(context=context).push()
 
     @staticmethod
