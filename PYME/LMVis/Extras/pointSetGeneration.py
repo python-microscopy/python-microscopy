@@ -106,16 +106,18 @@ class ImageSource(PointSource):
     #foo = Enum([1,2,3,4])
 
     helpInfo = {
-        'points_per_pixel' : '''
-Select average number of points (dye molecules or docking sites) per pixel in the image mask.
-The number is a floating point fraction, e.g. 0.1, and shouldn't exceed 1. It is used for Monte-Carlo rejection of positions and larger values (>~0.2) will result in images which have visible pixel-grid structure because the Monte-Carlo sampling is no longer a good approximation to random sampling over the grid. If this is a problem for your application / you can't get high enough density without a high acceptance fraction, use an up-sampled source image with a smaller pixel size. 
-on the pixel size of your mask image.
+        'points_per_pixel': '''
+Select average number of points (dye molecules or docking sites) per pixel in image regions where the density values are 1.
+The number is a floating point fraction, e.g. 0.1, and shouldn't exceed 1. It is used for Monte-Carlo rejection of positions and larger values (>~0.2) will result in images which have visible pixel-grid structure because the Monte-Carlo sampling is no longer a good approximation to random sampling over the grid. If this is a problem for your application / you can't get high enough density without a high acceptance fraction, use an up-sampled source image with a smaller pixel size.
 ''',
-        'image' : '''
+        'image': '''
 Select an image from the list of open images.
-Note that you need to open or generate the mask image you want to use so that this
-list is not empty. The mask image will be normalised for the purpose of the simulation,
-with its maximum set to 1.
+Note that you need to open or generate the source image you want to use so that this
+list is not empty. The image will be normalised for the purpose of the simulation,
+with its maximum set to 1. It describes the density of markers in the simulated sample,
+where values of 1 have a density of markers as given by the `points per pixel` parameter, i.e.
+in the Monte-Carlo sampling the acceptance probability = image*points_per_pixel. Smaller
+density values therefore give rise to proportionally fewer markers per pixel.
 ''',
     }
     
@@ -131,7 +133,7 @@ with its maximum set to 1.
         traits_view = View(Item('points_per_pixel',help=self.helpStr('points_per_pixel'),
                                 tooltip='mean number of marker points per pixel'),
                            Item('image',help=self.helpStr('image'),
-                                tooltip='select the mask image from the list of open images'),
+                                tooltip='select the marker density image from the list of open images'),
                            buttons = ['OK', 'Help'])
         
         return traits_view
@@ -175,7 +177,7 @@ class Generator(HasTraits):
     meanDuration = Float(3)
     backgroundIntensity = Float(300)
     meanEventNumber = Float(2)
-    scaleFactor = Float(2)
+    scaleFactor = Float(2) # Note: we don't expose the scale factor in the view
     meanTime= Float(2000)
     mode = Enum(['STORM','PAINT'])
 
@@ -184,32 +186,41 @@ class Generator(HasTraits):
     source = Instance(PointSource)
 
     helpInfo = {
-        'source' : '''
+        'source': '''
 Select the type of point source to generate points.
 A wormlike source, an image based source and a file based source are supported.
 ''',
-        'meanIntensity' : '''
+        'meanIntensity': '''
 This parameter specifies the mean number of photons in an event.
 Typically values are in the range from 100 to several 10000.
 ''',
-        'meanDuration' : '''
+        'meanDuration': '''
 The mean duration of events which is specified in units of frames.
 ''',
-        'meanTime' : '''
-This parameter, the mean time of the series in frame units, is related to the series duration.
-For PAINT mode this is half the duration of the series, for STORM simulation mode the relationship is a little more complex.
-There it has something to do with the time where most of the events are occuring. 
+        'meanTime': '''
+This parameter, the mean time of the series in frame units, is the average time at which you expect to get events
+(i.e. the value of np.mean(pipeline['t']) for the simulated set of events). Since STORM mode draws event times from
+an exponential distribution, PAINT from a uniform one, it can also be related to the resulting apparent series duration,
+which may be more familar to experimentally minded users. For PAINT mode it works out as half the duration of the series,
+for STORM simulation mode the relationship is a little more complex,
+you can work it out from the decay time of an exponential distribution.
 ''',
-        'meanEventNumber' : '''
+        'meanEventNumber': '''
 This parameter specifies the mean number of times an event occurs at a single marker location.
 ''',
         'backgroundIntensity' : '''
-The background intensity in units of photons, typically in the range from a few tens to hundreds of photons.
+The background intensity per pixel in units of photons, typically in the range from a few tens to hundreds of photons.
 ''',
-        'mode' : '''
-With the simulation mode you can choose between STORM or PAINT mode. 
+        'mode': '''
+With the simulation mode you can choose between STORM or PAINT mode.
 This parameter effects how event rate changes with time (it stays constant in PAINT mode).
-'''
+''',
+        'scaleFactor': '''
+This parameter is related to the size of the PSF for purposes of thresholding
+(used in combination with the background intensity, which is per pixel).
+There should be no need to modify this from the default and it is accordingly not exposed in the view.
+ 
+''',
     }
 
     def helpStr(self, name):
@@ -237,7 +248,6 @@ This parameter effects how event rate changes with time (it stays constant in PA
                              help=self.helpStr('meanEventNumber')),
                         Item('meanTime',tooltip='mean time of the series, roughly related to series duration, in frame units',
                              help=self.helpStr('meanTime')),
-                        Item('scaleFactor',tooltip='unsure about this parameter'),
                         Item('_'),
                         Item('backgroundIntensity',tooltip='background intensity in units of photons',
                              help=self.helpStr('backgroundIntensity')),
