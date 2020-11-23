@@ -426,50 +426,6 @@ class VisGUICore(object):
         self.glCanvas.refresh()
     
         self.layer_added.send(self)
-    
-    def generate_test_object_layer(self, obj_type):
-        vx, vy, vz = 0.1, 0.1, 0.1  # um
-        density = 1.0/(vx*vy*vz)
-        if obj_type == 'sphere':
-            # Generate a Gaussian point cloud to approximate a sphere
-            sigma_x, sigma_y, sigma_z = 1.5, 1.5, 1.5  # um
-            sigma = sigma_x*sigma_y*sigma_z
-            n_points = np.round(density*sigma/0.314432).astype(int)  # 0.314432 = 0.68^3
-            x = np.random.randn(n_points) * sigma_x * 1e3  # nm
-            y = np.random.randn(n_points) * sigma_y * 1e3  # nm
-            z = np.random.randn(n_points) * sigma_z * 1e3  # nm
-            t = (np.random.rand(n_points)*n_points).astype(int)  # dummy
-        else:
-            raise ValueError('Unknown object type passed: {}'.format(obj_type))
-
-        from PYME.IO.tabular import DictSource
-        from PYME.IO.MetaDataHandler import CachingMDHandler
-
-        points = DictSource({'x':x,'y':y,'z':z,'t':t})
-        points.mdh = CachingMDHandler({'voxelsize.x': vx, 'voxelsize.y': vy, 'voxelsize.z': vz,
-                                   'voxelsize.units': 'um'})
-
-        print('Creating Pipeline')
-        self.pipeline.OpenFile(ds=points)
-        print('Pipeline Created')
-        
-        #############################
-        #now do all the gui stuff
-        self.recipeView._layout()
-        self.update_datasource_panel()
-        
-        if isinstance(self, wx.Frame):
-            #run this if only we are the main frame
-            self.SetTitle('PYME Visualise - Test ' + obj_type)
-            self._removeOldTabs()
-            self._createNewTabs()
-            
-            #self.CreateFoldPanel()
-            print('Gui stuff done')
-            
-        self.SetFit()
-        
-        wx.CallLater(100, self._create_base_layer)
 
     @property
     def layers(self):
@@ -772,11 +728,15 @@ class VisGUICore(object):
             
         return args
 
-    def OpenFile(self, filename, recipe_callback=None):
-        args = self._populate_open_args(filename)
+    def OpenFile(self, filename=None, recipe_callback=None, ds=None):
+        if filename is not None:
+            args = self._populate_open_args(filename)
+
+            if ds is not None:
+                filename = str(ds)
 
         print('Creating Pipeline')
-        self.pipeline.OpenFile(filename, **args)
+        self.pipeline.OpenFile(filename=filename, ds=ds, **args)
         print('Pipeline Created')
         
         #############################

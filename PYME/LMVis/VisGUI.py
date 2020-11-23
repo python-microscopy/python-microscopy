@@ -189,9 +189,6 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.AddMenuItem('Recipe', 'Reconstruct from open image', self.reconstruct_pipeline_from_open_image)
         self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
-        # Check to see if we specified a test object
-        test_object = getattr(self.cmd_args, 'test', None)
-
         if not filename is None:
             def _recipe_callback():
                 recipe = getattr(self.cmd_args, 'recipe', None)
@@ -206,8 +203,6 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
-        elif test_object:
-            self.generate_test_object_layer(test_object)
         
         wx.CallAfter(self.RefreshView)
 
@@ -467,7 +462,6 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
-    parser.add_argument('-t', '--test', dest='test', help='Generate a test point cloud', const='sphere', nargs='?', default=None)
     args = parser.parse_args()
     return args
     
