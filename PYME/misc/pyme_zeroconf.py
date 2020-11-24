@@ -110,14 +110,16 @@ class ZCListener(object):
             pass
         
     def add_service(self, zc, _type, name):
+        from PYME.misc.sqlite_ns import is_port_open
         #print _type, name
         nm = name.split('.' + self._protocol)[0]
-        
-        with self._lock:
-            #info = zc.get_service_info(_type, name)
-            info = PatchedServiceInfo(_type, name)
-            if info.request(zc, 5000):
-                self.advertised_services[nm] = info
+
+        info = PatchedServiceInfo(_type, name)
+        if info.request(zc, 5000):
+            if is_port_open(socket.inet_ntoa(info.address), info.port):
+                with self._lock:
+                    #info = zc.get_service_info(_type, name)
+                    self.advertised_services[nm] = info
 
     def list(self, filterby):
         with self._lock:
@@ -152,7 +154,7 @@ class ZCListener(object):
                         if self.advertised_services[name] is info:
                             # remove dead service
                             self.advertised_services.pop(name)
-                    except KeyError: # service has been removed while we had released the lock
+                    except KeyError:  # service has been removed while we had released the lock
                         pass
                     
             # wait 10 seconds before polling again
