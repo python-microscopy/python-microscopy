@@ -212,7 +212,7 @@ httpspooler-chunksize : default=50, how many frames we spool in each chunk
     to. Increasing the chunksize can increase data-locality for faster analysis,
     but has spooling/writing bandwidth implications.
 
-zoom_factor : default = 1.1, adjusts zoom sensitivity by adjusting magnification factor per scroll event
+pymevis-zoom-factor : default = 1.1, adjusts zoom sensitivity by adjusting magnification factor per scroll event
 
 
 Deprecated config options
