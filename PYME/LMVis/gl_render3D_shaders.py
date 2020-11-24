@@ -66,7 +66,7 @@ import sys
 #     ZOOM_FACTOR = 1.1
 # else:
 #     ZOOM_FACTOR = 2.0
-ZOOM_FACTOR = config.get('zoom_factor', 1.1)
+ZOOM_FACTOR = config.get('pymevis-zoom-factor', 1.1)
 
 # import statusLog
 
