@@ -1085,10 +1085,12 @@ class MultiviewCameraMixin(object):
             ----------
             state_manager : PYME.Acquire.microscope.State
             """
+            logger.debug('registering multiview camera state handlers')
+            
             state_manager.registerHandler('Multiview.ActiveViews', 
                                           lambda : self.active_views, 
                                           self.set_active_views, True)
             state_manager.registerHandler('Multiview.ROISize', 
                                           lambda : [self.size_x, self.size_y],
-                                          lambda x, y : self.ChangeMultiviewROISize(x, y),
+                                          lambda p : self.ChangeMultiviewROISize(p[0], p[1]),
                                           True)

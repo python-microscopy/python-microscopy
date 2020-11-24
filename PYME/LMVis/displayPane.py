@@ -389,7 +389,9 @@ class DisplayPaneHorizontal(wx.Panel):
         bRight = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-right.png')), style=wx.NO_BORDER|wx.BU_AUTODRAW, name='Right')
         bRight.Bind(wx.EVT_BUTTON, self.OnViewRight)
         hsizer.Add(bRight, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        
+        bHome = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-home.png')), style=wx.NO_BORDER | wx.BU_AUTODRAW, name='Home')
+        bHome.Bind(wx.EVT_BUTTON, self.visFr.OnHome)
+        hsizer.Add(bHome, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         
         hsizer.AddSpacer(10)
         

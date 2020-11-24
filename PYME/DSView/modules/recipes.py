@@ -244,7 +244,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
 
 
 def Plug(dsviewer):
-    dsviewer.create_overlay_panel()
+    # dsviewer.create_overlay_panel()
     return RecipePlugin(dsviewer)
     
 

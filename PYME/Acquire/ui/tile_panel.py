@@ -352,7 +352,9 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         curr_pos = self.scope.GetPos()
 
-        xind_names = np.array([chr(ord('@') + n) for n in range(1, n_x + 1)])   # TODO - make this work for e.g. 384 wp, and configurable from a dialog
+        # TODO - making this more flexible orientation wise, numbering for e.g.
+        # 384wp, etc.. This puts H1 of a 96er at the min x, min y well.
+        xind_names = np.array([chr(ord('@') + n) for n in range(1, n_x + 1)[::-1]])
         yind_names = np.arange(1, n_y + 1).astype(str)
 
         x_w = np.arange(0, n_x * x_spacing, x_spacing)

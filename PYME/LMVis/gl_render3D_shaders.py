@@ -60,12 +60,13 @@ logger = logging.getLogger(__name__)
 
 import sys
 
-if sys.platform == 'darwin':
-    # osx gives us LOTS of scroll events
-    # ajust the mag in smaller increments
-    ZOOM_FACTOR = 1.1
-else:
-    ZOOM_FACTOR = 2.0
+# if sys.platform == 'darwin':
+#     # osx gives us LOTS of scroll events
+#     # ajust the mag in smaller increments
+#     ZOOM_FACTOR = 1.1
+# else:
+#     ZOOM_FACTOR = 2.0
+ZOOM_FACTOR = config.get('pymevis-zoom-factor', 1.1)
 
 # import statusLog
 
@@ -226,7 +227,8 @@ class LMGLShaderCanvas(GLCanvas):
         nLayers = 0
         
         for l in self.layers:
-            if getattr(l, 'visible', True):
+            # if getattr(l, 'visible', True):
+            if True:
                 bbl = l.bbox
                 
                 if not bbl is None:

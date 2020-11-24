@@ -395,10 +395,10 @@ class RecipeRule(Rule):
                     return v
                 else:
                     # value is a string glob
-                    name, serverfilter = unifiedIO.split_cluster_URI(v)
+                    name, serverfilter = unifiedIO.split_cluster_url(v)
                     return clusterIO.cglob(name, serverfilter)
                     
-            inputs = {k: _to_input_list(inputs[k] for k in input_names}
+            inputs = {k: _to_input_list(inputs[k]) for k in input_names}
     
             self._num_recipe_tasks = len(list(inputs.values())[0])
     

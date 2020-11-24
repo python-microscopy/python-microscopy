@@ -25,6 +25,9 @@ class Points3DEngine(BaseEngine):
     
         with self.shader_program:
             vertices = layer.get_vertices()
+            if vertices is None:
+                return False
+            
             n_vertices = vertices.shape[0]
         
             glVertexPointerf(vertices)
@@ -39,6 +42,7 @@ class Points3DEngine(BaseEngine):
             else:
                 glPointSize(layer.point_size*self.point_scale_correction)
             glDrawArrays(GL_POINTS, 0, n_vertices)
+            
 
 
 class PointSpritesEngine(Points3DEngine):
