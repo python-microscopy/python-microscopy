@@ -221,9 +221,9 @@ def chained_analysis(main_frame, scope):
 
     tilerec = os.path.join(rec_dir, 'tile_detect_filter_queue.yaml')
     with open(tilerec) as f:
-        tilerec = yaml.safe_load(f.read())
+        tilerec = f.read()
     defaults['htsms-tile'] = [RecipeRuleFactory(recipe=tilerec)]
-    
+
     SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
 @init_hardware('tweeter')
