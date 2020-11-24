@@ -207,7 +207,8 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
 
 class ChainedAnalysisPanel(wx.Panel):
     _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
-    def __init__(self, parent, protocol_rules, recipe_manager, spool_controller):
+    def __init__(self, parent, protocol_rules, recipe_manager, spool_controller,
+                 default_pairings=None):
         """
 
         Parameters
@@ -220,6 +221,9 @@ class ChainedAnalysisPanel(wx.Panel):
         spool_controller : PYME.Acquire.SpoolController.SpoolController
             microscope's spool controller instance, so we can launch on spool
             start/stop
+        default_pairings : dict
+            protocol keys with lists of RuleFactorys as values to prepopulate
+            panel on start up
         """
         from PYME.contrib import dispatch
 
@@ -278,6 +282,23 @@ class ChainedAnalysisPanel(wx.Panel):
         v_sizer.Add(h_sizer)
 
         self.SetSizerAndFit(v_sizer)
+
+        if default_pairings is not None:
+            self._set_up_defaults(default_pairings)
+    
+    def _set_up_defaults(self, pairings):
+        for protocol_name, rule_factory_list in pairings.items():
+            # make sure we've chained the rules
+            n_rules = len(rule_factory_list)
+            for s_ind, f_ind in enumerate(range(1, n_rules)):
+                rule_factory_list[s_ind].chain(rule_factory_list[f_ind])
+
+            # add them to the protocol rules dict
+            self._protocol_rules[protocol_name] = rule_factory_list
+        
+        # update the GUI
+        self._protocol_rules_list.update_list()
+        self._protocol_rules_updated.send(self)
 
     def OnAddFromRecipePanel(self, wx_event=None):
         from PYME.cluster.rules import RecipeRuleFactory
@@ -353,7 +374,7 @@ class ChainedAnalysisPanel(wx.Panel):
         rule_factory_chain[0].get_rule(context=context).push()
 
     @staticmethod
-    def plug(main_frame, scope):
+    def plug(main_frame, scope, default_pairings=None):
         """
         Adds a ChainedAnalysisPanel to a microscope gui during start-up
         Parameters
@@ -362,6 +383,9 @@ class ChainedAnalysisPanel(wx.Panel):
             microscope gui application
         scope : PYME.Acquire.microscope.microscope
             the microscope itself
+        default_pairings : dict
+            [optional] protocol keys with lists of RuleFactorys as values to
+            prepopulate panel on start up. By default, None
         """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
 
@@ -374,18 +398,26 @@ class ChainedAnalysisPanel(wx.Panel):
         scope.protocol_rules = ProtocolRules()
 
         # add this panel
-        chained_analysis = ChainedAnalysisPanel(main_frame, scope.protocol_rules, scope._recipe_manager, scope.spoolController)
+        chained_analysis = ChainedAnalysisPanel(main_frame, scope.protocol_rules,
+                                                scope._recipe_manager, 
+                                                scope.spoolController,
+                                                default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))
 
 
 class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
-    def __init__(self, wx_parent, protocol_rules, recipe_manager, localization_settings, spool_controller):
+    def __init__(self, wx_parent, protocol_rules, recipe_manager, 
+                 localization_settings, spool_controller, 
+                 default_pairings=None):
         """
         Parameters
         ----------
         wx_parent
         localization_settings: PYME.ui.AnalysisSettingsUI.AnalysisSettings
         rule_list_ctrl: RuleChainListCtrl
+        default_pairings : dict
+            [optional] protocol keys with lists of RuleFactorys as values to
+            prepopulate panel on start up. By default, None
         """
         from PYME.ui.autoFoldPanel import collapsingPane
         from PYME.Acquire.ui import AnalysisSettingsUI
@@ -422,7 +454,9 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         self._localization_settings = localization_settings
         self._localization_settings.onMetadataChanged.connect(self.update_localization_rule)
 
-        self.rule_panel = ChainedAnalysisPanel(self, protocol_rules, recipe_manager, spool_controller)
+        self.rule_panel = ChainedAnalysisPanel(self, protocol_rules, 
+                                               recipe_manager, spool_controller,
+                                               default_pairings)
         self.AddNewElement(self.rule_panel)
         self._rule_list_ctrl = self.rule_panel._rule_list
         self.rule_panel._protocol_rules_updated.connect(self.reset)
@@ -478,7 +512,7 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         subprocess.Popen('visgui %s' % uri, shell=True)
 
     @staticmethod
-    def plug(main_frame, scope):
+    def plug(main_frame, scope, default_pairings=None):
         """
         Adds a SMLMChainedAnalysisPanel to a microscope gui during start-up
         Parameters
@@ -487,6 +521,9 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
             microscope gui application
         scope : PYME.Acquire.microscope.microscope
             the microscope itself
+        default_pairings : dict
+            [optional] protocol keys with lists of RuleFactorys as values to
+            prepopulate panel on start up. By default, None
         """
         from PYME.recipes.recipeGui import RecipeView, RecipeManager
         from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
@@ -499,5 +536,6 @@ class SMLMChainedAnalysisPanel(manualFoldPanel.foldingPane):
         scope._localization_settings = AnalysisSettings()
 
         chained_analysis = SMLMChainedAnalysisPanel(main_frame, scope.protocol_rules, scope._recipe_manager,
-                                                    scope._localization_settings, scope.spoolController)
+                                                    scope._localization_settings, scope.spoolController,
+                                                    default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', True))
