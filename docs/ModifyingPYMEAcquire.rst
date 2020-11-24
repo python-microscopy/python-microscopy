@@ -18,15 +18,12 @@ Initial setup
 Making a camera driver
 ======================
 
-This can be a little involved, and is not as 'nice' as it could be due to how the camera support evolved (we started out
-with a driver for the PCO Sensicam and then made other camera drivers look like this one).
+This can be a little involved
 
-- Copy PYME/Acquire/Hardware/CameraSkeleton.py. This gives stubs for the most important functions a camera class should
-  provide, and some minimal (poor) documentation of the camera interface. Making this cleaner and making all cameras
-  inherit from a common base class is fairly high on our wishlist, but it's hard to know when that will happen.
+- Subclass `PYME.Acquire.Hardware.Camera.Camera` and implement the methods for your camera.
 
-- Modify the camera skeleton, filling in implementation details for each of the functions. Also look at the implemented
-  camera drivers, particularly for similar classes of camera (e.g. sCMOS).
+- In the same file as your new camera, also add a class which inherits from both PYME.Acquire.Hardware.Camera.MultiviewMixIn
+  and your new class (see other camera classes for examples).
 
 - change your `init_XXX.py` script to initialize your new camera class instead of the fake camera. Make sure to both
   assign to `scope.cam` and add to `scope.cameras`. [NOTE: this is a horrible way of initializing things, and should
