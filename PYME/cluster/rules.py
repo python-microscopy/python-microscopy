@@ -112,7 +112,13 @@ class Rule(object):
         
         if on_completion:
             chained_context = dict(**context)
-            chained_context['rule_outputs'] = self.output_files
+            # standard recipe single-input key is 'input'. Set up 'results'
+            # as alt key so we can use the same recipe in clusterUI views
+            out_files = self.output_files
+            if 'results' in out_files.keys() and 'input' not in out_files.keys():
+                out_files = out_files.copy()
+                out_files['input'] = out_files.pop('results')
+            chained_context['rule_outputs'] = out_files
             rule['on_completion'] = on_completion.get_rule(chained_context).rule
         
         return rule
@@ -238,7 +244,7 @@ class Rule(object):
         if not self.complete:
             #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
             self.doPoll = True
-            self.pollT = threading.Thread(target=self._poll_loop())
+            self.pollT = threading.Thread(target=self._poll_loop)
             self.pollT.start()
 
     def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
@@ -448,7 +454,7 @@ class RecipeRule(Rule):
 
 
 class LocalisationRule(Rule):
-    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
+    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
@@ -479,7 +485,7 @@ class LocalisationRule(Rule):
     def _output_files(self):
         return {'results' : self.resultsURI}
     
-    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
+    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
@@ -588,6 +594,7 @@ class LocalisationRule(Rule):
         
 
 class RuleFactory(object):
+    _type = ''
     def __init__(self, on_completion=None, rule_class = Rule, **kwargs):
         """
         Create a new rule factory. Sub-classed for specific rule types
@@ -607,7 +614,10 @@ class RuleFactory(object):
         
     def get_rule(self, context):
         """
-        Populate a rule using series specific info from context
+        Populate a rule using series specific info from context. Note that
+        the the rule class initialization arguments should be passed in the
+        RuleFactory initialization as kwargs, but can also be passed here in
+        context if, e.g. the series name is not known when creating the 
         
         Parameters
         ----------
@@ -616,8 +626,9 @@ class RuleFactory(object):
 
         Returns
         -------
-        
-        a rule suitable for submitting to the ruleserver `/add_integer_id_rule` endpoint
+        Rule
+            a rule suitable for submitting to the ruleserver `/add_integer_id_rule`
+            endpoint
 
         """
         
@@ -639,13 +650,26 @@ class RuleFactory(object):
         """
         assert(isinstance(on_completion, RuleFactory))
         self._on_completion = on_completion
-        
+
+    @property
+    def rule_type(self):
+        # TODO - rename to something like `display_name` of `display_type` to indicate that this is a UI helper function.
+        # TODO - do we need a function for this, or can we just have a property?
+        return self._type
+
 
 class RecipeRuleFactory(RuleFactory):
+    _type = 'recipe'
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=RecipeRule, **kwargs)
         
 class LocalisationRuleFactory(RuleFactory):
+    _type = 'localization'
     def __init__(self, **kwargs):
-        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)
-        
+        """
+        See `LocalisationRule` for full initialization arguments. Required 
+        kwargs are
+            seriesName : str
+            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
+        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   

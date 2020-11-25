@@ -211,7 +211,20 @@ def action_manager(MainFrame, scope):
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
-    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+    from PYME.cluster.rules import RecipeRuleFactory
+    import yaml
+    import os
+
+    # add some default pairings
+    defaults = {}
+    rec_dir = 'C:\\Users\\Bergamot\\PYMEData\\recipes'
+
+    tilerec = os.path.join(rec_dir, 'tile_detect_filter_queue.yaml')
+    with open(tilerec) as f:
+        tilerec = f.read()
+    defaults['htsms-tile'] = [RecipeRuleFactory(recipe=tilerec)]
+
+    SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
 @init_hardware('tweeter')
 def tweeter(scope):
