@@ -20,14 +20,14 @@ Making a camera driver
 
 This can be a little involved
 
-- Subclass `PYME.Acquire.Hardware.Camera.Camera` and implement the methods for your camera.
+- Subclass `PYME.Acquire.Hardware.Camera.Camera` and implement the methods for your camera. It will probably be hepful to refer
+  the drivers of other similar cameras when doing this. Note that for most sCMOS cameras it is the drivers responsibility to
+  handle circular buffers and the like. The Zyla code might be a good place to go for inspiration here.
 
-- In the same file as your new camera, also add a class which inherits from both PYME.Acquire.Hardware.Camera.MultiviewMixIn
-  and your new class (see other camera classes for examples).
+- [optional] In the same file as your new camera, also add a class which inherits from both PYME.Acquire.Hardware.Camera.MultiviewMixIn.
 
-- change your `init_XXX.py` script to initialize your new camera class instead of the fake camera. Make sure to both
-  assign to `scope.cam` and add to `scope.cameras`. [NOTE: this is a horrible way of initializing things, and should
-  probably be replaced by a `scope.add_camera(...)` function call or similar at some point in the future].
+- change your `init_XXX.py` script to initialize your new camera class instead of the fake camera. Register the camera with the microscope
+  using `scope.register_camera()`.
 
 Making a driver for a stage / piezo
 ===================================
