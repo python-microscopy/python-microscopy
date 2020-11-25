@@ -209,7 +209,8 @@ class PointCloudRenderLayer(EngineLayer):
         self._color_map = None
         self._color_limit = 0
         self._alpha = 0
-        if x is not None and y is not None and z is not None:
+        
+        if x is not None and y is not None and z is not None and len(x) > 0:
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             
@@ -231,14 +232,11 @@ class PointCloudRenderLayer(EngineLayer):
             
             cs = cs.ravel().reshape(len(colors), 4)
         else:
-            #cs = None
             if not vertices is None:
                 cs = np.ones((vertices.shape[0], 4), 'f')
             else:
                 cs = None
-            color_map = None
-            color_limit = None
-        
+
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
