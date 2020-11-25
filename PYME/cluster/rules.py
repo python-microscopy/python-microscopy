@@ -653,6 +653,8 @@ class RuleFactory(object):
 
     @property
     def rule_type(self):
+        # TODO - rename to something like `display_name` of `display_type` to indicate that this is a UI helper function.
+        # TODO - do we need a function for this, or can we just have a property?
         return self._type
 
 
