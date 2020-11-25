@@ -368,7 +368,8 @@ class ChainedAnalysisPanel(wx.Panel):
         spool_dir, series_stub = posixpath.split(series_uri)
         series_stub = posixpath.splitext(series_stub)[0]
         context = {'spool_dir': spool_dir, 'series_stub': series_stub,
-                   'seriesName': series_uri}
+                   'seriesName': series_uri, 'inputs': {'input': [series_uri]},
+                   'output_dir': posixpath.join(spool_dir, 'analysis')}
 
         # rule chain is already linked, add context and push
         rule_factory_chain[0].get_rule(context=context).push()
