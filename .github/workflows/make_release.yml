@@ -1,7 +1,7 @@
 name: Make release
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   release:
@@ -21,7 +21,7 @@ jobs:
         #python -m pip install --upgrade pip
         #pip install setuptools wheel twine cython numpy==1.14 pyyaml
         python PYME/update_version.py >> $GITHUB_ENV
-   - name: Commit files
+    - name: Commit files
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
