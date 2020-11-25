@@ -1,18 +1,44 @@
 Contributing to PYME
 ********************
 
-We welcome contributions of bug reports, new features, bug fixes, and especially documentation. The process is similar to contributing
-to other open source projects - in general your patch is likely to face robust criticism, comments, and requests for change
-or justification. None of this should be taken personally and this does not mean that your contribution is not valued.
-Patches may take some time to be reviewed, as this takes place during the gaps in a busy academic schedule. In general I
-aim to provide some feedback within a week of a PR or issue being submitted, but this will not always happen, particularly
-around grant submission deadlines etc ... It's entirely possible that a PR might get lost in noise - if you haven't heard
-**anything** in a couple of weeks, don't be afraid to comment on the PR to bump it back into my attention.
+We welcome contributions of bug reports, new features, bug fixes, and especially documentation. The process is similar
+to contributing to other open source projects - in general your patch is likely to face robust criticism, comments, and
+requests for change or justification. None of this should be taken personally and this does not mean that your
+contribution is not valued. Getting stuff into the PYME core has a fairly high bar, as a) we have a variety of different
+users we need to support, including a bunch of legacy workflows we can't afford to break and b) inclusion in the core
+means that we take on at least some responsibility for maintaining the code (although we hope you will still contribute
+to it's maintenance, we feel obliged to understand the code well enough that we can jump in if needed).
 
 When considering adding a feature, or re-working parts of the code please reach out in advance,
 either by email, or by raising a feature request or proposal issue in our issue tracker. This will both serve to head off
 potential points for friction (see below), and should also allow us to provide additional information which may be helpful
 when dealing with some of the hairier and less well documented bits of the codebase.
+
+When to include code in core PYME and when to write a plugin?
+=============================================================
+
+PYME now has a reasonably usable plugin system by which modules for VisGUI, dh5view, and recipes can live outside the
+main repository and yet still be discovered and used by the core components. We're slowly trying to move some of the
+existing core code out into plugins. Developing plugins outside of the core repository has a number of advantages:
+
+- you don't need to wait on review
+- it helps keep the core more comprehensible and maintainable.
+- you have clear ownership of it (useful in an academic context)
+- it removes the maintenance burden from us
+
+My suggestions are thus:
+
+- If the new functionality can stand alone and only uses established plugin interfaces it is likely to be easier to
+  develop outside the core codebase. Should this be something of wider interest moving it to the
+  core can be done at a later stage.
+- If the new functionality requires modification to any of the core components, it should either be developed within
+  the PYME codebase, or split into the development of a new interface within the core code, and a standalone component.
+- I want to discourage long lasting 'forks' - i.e. if it affects the core, we should hopefully be able to merge
+  relatively quickly so everyone is using the same core.
+
+Regardless of the approach taken, we're keen to be involved as early in the process as possible. Please let us know if
+you develop a plugin! We're working on a way of having, e.g. a 'PYME-plugins', repository which would put plugins in a
+place where they can get easily distributed, but which could have substantially laxer stringency on what we accept.
 
 Versioning and Releases
 =======================
@@ -34,19 +60,20 @@ this will hopefully change to an automated weekly build in the near future.
 Roadmap / Future directions
 ===========================
 
-**PYME is a moving target**. It has grown to be a rather large project with a huge number of dependencies. This is starting to make maintenance
-time consuming and makes it hard to quickly merge new functionality. We intend to split the project into a GUI
-independent core, and have the various GUIs interface with this. We also envisage splitting off some of the functionally
-distinct modules. The exact restructuring has yet to be decided, but at this point we encourage separation of GUI and
-logic to the extent possible. To facilitate this separation, we strongly suggest that new processing functionality for
-either `dh5view` or `VisGUI` be implemented in the form of 'recipe' modules using `traits` to define parameters.
+**PYME is a moving target**. It has grown to be a rather large project with a huge number of dependencies. This is
+starting to make maintenance time consuming and makes it hard to quickly merge new functionality. We intend to split the
+project into a GUI independent core, and have the various GUIs interface with this. We also envisage splitting off some
+of the functionally distinct modules. The exact restructuring has yet to be decided, but at this point we encourage
+separation of GUI and logic to the extent possible. To facilitate this separation, we strongly suggest that new
+processing functionality for either `dh5view` or `VisGUI` be implemented in the form of 'recipe' modules using `traits`
+to define parameters.
 
 Python 3 Migration
 ==================
 
 Python 3 migration is now mostly complete, although there are still a few corners of the code base and a couple of dependencies
 which might have issues. For that reason we will continue to support python 2.7 until at least the end of 2020. As a result,
-contributions should be written to be compatible with both python 2.7 and python 3.6, using modules such as six where appropriate.
+contributions should be written to be compatible with both python 2.7 and python >=3.6, using modules such as six where appropriate.
 
 Coding style
 ============
@@ -97,7 +124,6 @@ your submitted code to be released under that license. We additionally want to k
 under a more permissive BSD license in the future. If you are not willing for your submitted code to be re-licensed as BSD
 you must indicate this in your PR, and in comments in your code.
 
-
 Pull requests
 =============
 
@@ -112,28 +138,13 @@ Pull requests are always welcomed, but to increase the chances of speedy review 
 Pull requests which change existing variable names for the hell of it (see above) are likely to be rejected even if they
 include useful new functionality or bugfixes as the maintenance burden of such changes is high.
 
-When to include code in PYME and when to write an extension module?
-===================================================================
-
-PYME now has a reasonably usable plugin system by which modules for VisGUI, dh5view, and recipes can live outside the
-main repository and yet still be discovered and used by the core components. Developing plugins outside of the core
-repository has the advantage that you don't need to wait on me, and also helps keep the overall codebase more
-comprehensible. My suggestions are thus:
-
-- If the new functionality can stand alone and only uses established plugin interfaces it is likely to be easier to
-  develop outside the core codebase, at least initially. Should this be something of wider interest moving it to the
-  core can be done at a later stage.
-- If the new functionality requires modification to any of the core components, it should either be developed within
-  the PYME codebase, or split into the development of a new interface within the core code, and a standalone component.
-- I want to discourage long lasting 'forks' - i.e. if it affects the core, we should hopefully be able to merge
-  relatively quickly so everyone is using the same core.
-- One potentially attractive option would be to have an official 'PYME-plugins' repository which put plugins in a place
-  where they can get easily distributed, but which could have substantially laxer stringency on what we accept.
-
-Regardless of the approach taken, I'm keen to be involved as early in the process as possible.
-
 Managing multiple PRs / branches and PR review latency
 ======================================================
+
+Patches may take some time to be reviewed, as this takes place during the gaps in a busy academic schedule. In general I
+aim to provide some feedback within a week of a PR or issue being submitted, but this will not always happen, particularly
+around grant submission deadlines etc ... It's entirely possible that a PR might get lost in noise - if you haven't heard
+**anything** in a couple of weeks, don't be afraid to comment on the PR to bump it back into my attention.
 
 Generally if you are making a PR it's because it addresses a problem you want solved **now** and you're naturally
 impatient to have it in and use it. Unfortunately there is some inevitable latency in getting PRs reviewed and into the
