@@ -492,12 +492,6 @@ class ModuleCollection(HasTraits):
         if self.execute_on_invalidation:
             self.execute()
             
-        # detect changes in recipe wiring
-        dg_sig = str(self.dependancyGraph())
-        if not self._dg_sig == dg_sig:
-            self._dg_sig = dg_sig
-            self.recipe_changed.send_robust(self)
-            
     def clear(self):
         self.namespace.clear()
         
@@ -688,8 +682,22 @@ class ModuleCollection(HasTraits):
                     self.recipe_failed.send_robust(self)
                     raise
         
+        if self.failed:
+            # make sure we update the GUI if we've fixed a broken recipe
+            # TODO - make make this a bit lighter weight - we shouldn't need to redraw the whole recipe just to change
+            # the shading of the module caption
+            self.recipe_changed.send_robust(self)
+            
         self.failed = False
         self.recipe_executed.send_robust(self)
+
+        # detect changes in recipe wiring
+        dg_sig = str(self.dependancyGraph())
+        if not self._dg_sig == dg_sig:
+            print(dg_sig)
+            print(self._dg_sig)
+            self._dg_sig = dg_sig
+            self.recipe_changed.send_robust(self)
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
@@ -924,8 +932,8 @@ class ModuleCollection(HasTraits):
                     self.modules.remove(m)
                 
             raise
-
-        self.recipe_changed.send_robust(self)
+        finally:
+            self.recipe_changed.send_robust(self)
             
         
     @property
