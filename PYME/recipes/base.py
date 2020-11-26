@@ -694,8 +694,8 @@ class ModuleCollection(HasTraits):
         # detect changes in recipe wiring
         dg_sig = str(self.dependancyGraph())
         if not self._dg_sig == dg_sig:
-            print(dg_sig)
-            print(self._dg_sig)
+            #print(dg_sig)
+            #print(self._dg_sig)
             self._dg_sig = dg_sig
             self.recipe_changed.send_robust(self)
         
