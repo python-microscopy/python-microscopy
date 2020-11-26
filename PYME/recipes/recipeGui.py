@@ -52,7 +52,17 @@ logger = logging.getLogger(__name__)
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
+_cols = {}
+def get_line_colour(key, recipe):
+    #choose a colour at random for this input
+    if not key in _cols.keys():
+        _cols[key] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
     
+    c = _cols[key]
+    if recipe.failed and not key in recipe.namespace.keys():
+        c = 0.2 * c + 0.8*0.5
+        
+    return c
 class RecipePlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, recipes, **kwargs):
         self.recipes = recipes
@@ -71,7 +81,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         self.ax.cla()
 
-        dg = self.recipes.activeRecipe.dependancyGraph()
+        recipe = self.recipes.activeRecipe
+        dg = recipe.dependancyGraph()
 
         #Find the connecting lines
         node_positions, connecting_lines = recipeLayout.layout(dg)
@@ -92,11 +103,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         #Plot the connecting lines
         for xv, yv, e in connecting_lines:
-            #choose a colour at random for this input
-            if not e in cols.keys():
-                cols[e] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
-
-            self.ax.plot(xv, yv, c=cols[e], lw=2)
+            self.ax.plot(xv, yv, c=get_line_colour(e, recipe), lw=2)
                 
         #plot the boxes and the labels
         for k, v in node_positions.items():
@@ -150,13 +157,12 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
             else:
                 #line - draw an output dot, and a text label 
                 s = k
-                if not k in cols.keys():
-                    cols[k] = 0.7*np.array(matplotlib.cm.hsv(np.random.rand()))
-                self.ax.plot(v[0], v[1], 'o', color=cols[k])
+                c = get_line_colour(k, recipe)
+                self.ax.plot(v[0], v[1], 'o', color=c)
                 if k.startswith('out'):
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
                 else:
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True)
                 t._data = k
                 
                 
@@ -603,6 +609,7 @@ class RecipeManager(object):
         try:        
             self.activeRecipe.recipe_changed.connect(self.recipeView.update)
             self.activeRecipe.recipe_executed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_failed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass
