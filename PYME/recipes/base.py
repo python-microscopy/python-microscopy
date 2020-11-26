@@ -486,9 +486,17 @@ class ModuleCollection(HasTraits):
         
         self.failed = False
         
+        self._dg_sig = None
+        
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
+            
+        # detect changes in recipe wiring
+        dg_sig = str(self.dependancyGraph())
+        if not self._dg_sig == dg_sig:
+            self._dg_sig = dg_sig
+            self.recipe_changed.send_robust(self)
             
     def clear(self):
         self.namespace.clear()

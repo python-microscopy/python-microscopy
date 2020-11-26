@@ -227,6 +227,7 @@ class RecipeDisplayPanel(wx.Panel):
         
         self.fp.fold_signal.connect(self._refr)
         self.SetSizerAndFit(hsizer)
+        self.Layout()
         
     def _input_position(self, key):
         item, ip_y = self.input_target_panes[key]
