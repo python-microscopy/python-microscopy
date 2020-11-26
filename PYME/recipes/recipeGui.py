@@ -609,6 +609,7 @@ class RecipeManager(object):
         try:        
             self.activeRecipe.recipe_changed.connect(self.recipeView.update)
             self.activeRecipe.recipe_executed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_failed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass

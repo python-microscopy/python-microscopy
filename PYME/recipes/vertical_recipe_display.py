@@ -53,6 +53,7 @@ class RecipeDisplayPanel(wx.Panel):
     def SetRecipe(self, recipe):
         self.recipe = recipe
         self.recipe.recipe_changed.connect(self._layout)
+        self.recipe.recipe_failed.connect(self._layout)
         self._layout()
 
     def _refr(self, **kwargs):

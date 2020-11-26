@@ -482,6 +482,7 @@ class ModuleCollection(HasTraits):
         
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
+        self.recipe_failed = dispatch.Signal()
         
         self.failed = False
         
@@ -562,6 +563,25 @@ class ModuleCollection(HasTraits):
             downstream.update(self._getAllDownstream(rdg, list(next_level)))
         
         return downstream
+    
+    def upstream_inputs(self, keys):
+        dg = self.dependancyGraph()
+        
+        def walk_upstream(keys):
+            upstream = set()
+            for k in keys:
+                u = dg.get(k, None)
+                if u is not None:
+                    upstream.update(walk_upstream(list(u)))
+                    
+            return upstream
+                
+        return list(walk_upstream(keys))
+            
+    
+    def downstream_outputs(self, keys):
+        rdg = self.reverseDependancyGraph()
+        return list(self._getAllDownstream(rdg, list(keys)))
         
         
     def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
@@ -654,7 +674,10 @@ class ModuleCollection(HasTraits):
                     self.failed = True
                     
                     # make sure we didn't leave any partial results
+                    logger.debug('removing failed module dependencies')
                     self.prune_dependencies_from_namespace(m.outputs)
+                    logger.debug('notifying failure')
+                    self.recipe_failed.send_robust(self)
                     raise
         
         self.failed = False
