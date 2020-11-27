@@ -307,8 +307,12 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangles]  # x posititions of vertices [nm], dimensions (# triangles, 3)
-    ys = T.y[T.triangles]  # y posititions of vertices [nm], dimensions (# triangles, 3)
+    #xs = T.x[T.triangles]  # x posititions of vertices [nm], dimensions (# triangles, 3)
+    #ys = T.y[T.triangles]  # y posititions of vertices [nm], dimensions (# triangles, 3)
+    
+    verts = T.points[T.simplices]
+    xs = verts[:,:,0]
+    ys = verts[:,:,1]
 
     if c is None:
         # We didn't pass anything in for c - use 1/ area of triangle
@@ -358,7 +362,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
 
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
-    from matplotlib import tri
+    from scipy.spatial import Delaunay
     np.random.seed(seed)
     
     for i in range(int(n)):
@@ -369,7 +373,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
-        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = Delaunay(np.vstack([x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum())]).T)
 
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=False)
         
@@ -380,7 +384,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
 
 
 def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
-    from matplotlib import tri
+    from scipy.spatial import Delaunay
     np.random.seed(seed)
 
     #im_ = numpy.zeros(im.shape, 'f')
@@ -395,7 +399,7 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
-        T = tri.Triangulation(x[Imc] + jsig2 * scipy.randn(Imc.sum()), y[Imc] + jsig2 * scipy.randn(Imc.sum()))
+        T = Delaunay(np.vstack([x[Imc] + jsig2 * scipy.randn(Imc.sum()), y[Imc] + jsig2 * scipy.randn(Imc.sum())]).T)
         
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=True)
         
@@ -541,8 +545,11 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric
 
 def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangles]
-    ys = T.y[T.triangles]
+    #xs = T.x[T.triangles]
+    #ys = T.y[T.triangles]
+    verts = T.points[T.simplices]
+    xs = verts[:,:,0]
+    ys = verts[:,:,1]
     
     a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
     b = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
@@ -589,7 +596,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     return im, im1
 
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
-    from matplotlib import tri
+    from scipy.spatial import Delaunay
     scipy.random.seed()
     
     for i in range(n):
@@ -601,7 +608,7 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         else:
             jsig2 = float(jsig)
             
-        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = Delaunay(np.vstack([x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum())]).T)
 
         rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
 
