@@ -4,7 +4,6 @@ import tempfile
 import os
 import collections
 import socket
-from PYME.misc.pyme_nameserver import BaseNS
 
 NSInfo = collections.namedtuple('NSInfo', ('name', 'address', 'port', 'creation_time', 'URI'))
 def make_info(info):
@@ -26,14 +25,14 @@ def is_port_open(ip, port):
         s.close()
 
 
-class SQLiteNS(BaseNS):
+class SQLiteNS(object):
     """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver using a locally held sqlite database
     
     In this case we are simply using sqlite as a key-value store which handles concurrent access across processes.
     """
     
     def __init__(self, protocol='_pyme-sql'):
-        BaseNS.__init__(self, protocol)
+        self._protocol = protocol
         self._dbname = os.path.join(tempfile.gettempdir(), '%s.sqlite' %self._protocol)
         self._conn = sqlite3.connect(self._dbname)
 
@@ -67,11 +66,27 @@ class SQLiteNS(BaseNS):
         return services
     
     def register_service(self, name, address, port, desc={}, URI=''):
+        """
+
+        Parameters
+        ----------
+        name : str
+            should be generated using the process name and 
+            PYME.IO.FileUtils.nameUtils.get_service_name
+
+        """
         self._conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, address, port, time.time(), URI))
         self._conn.commit()
-        return name
     
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+
+        """
         self._conn.execute("DELETE FROM dns WHERE name=? ", (name,))
         self._conn.commit()
     
