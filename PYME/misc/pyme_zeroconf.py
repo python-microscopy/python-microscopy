@@ -161,8 +161,8 @@ class ZeroConfNS(object):
         Parameters
         ----------
         name : str
-            should be generated using the process name and 
-            PYME.IO.FileUtils.nameUtils.get_service_name
+            Max 63 chars long. PYME.IO.FileUtils.nameUtils.get_service_name can be used to get a suitable (truncated if necessary)
+            name.
 
         """
         if name in self.listener.advertised_services.keys():
