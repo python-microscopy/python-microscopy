@@ -71,9 +71,7 @@ class SQLiteNS(object):
         Parameters
         ----------
         name : str
-            should be generated using the process name and 
-            PYME.IO.FileUtils.nameUtils.get_service_name
-
+            
         """
         self._conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, address, port, time.time(), URI))
         self._conn.commit()
