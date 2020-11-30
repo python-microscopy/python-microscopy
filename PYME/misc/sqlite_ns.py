@@ -14,7 +14,7 @@ def make_info(info):
 
 def is_port_open(ip, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(1)
+    s.settimeout(10)
     try:
         s.connect((ip, int(port)))
         s.shutdown(socket.SHUT_RDWR)
