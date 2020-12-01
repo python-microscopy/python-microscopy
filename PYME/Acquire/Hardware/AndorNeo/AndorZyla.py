@@ -126,6 +126,25 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                 'SaturationThreshold' : (2**16 -1)
             }}}
 
+    # this class is compatible with the ATEnum object properties that are used in ZylaControlPanel
+    # we use it as a higher level alternative to setting gainmode and encoding directly
+    class SimpleGainEnum(object):
+        def __init__(self, cam):
+            self.cam = cam
+            self.gainmodes = cam.PixelEncodingForGain.keys()
+            self.propertyName = 'SimpleGainMode'
+            
+        def getAvailableValues(self):
+            return self.gainmodes
+
+        def setString(self,str):
+            self.cam.SetSimpleGainMode(str)
+
+        def getString(self):
+            return self.cam.GetSimpleGainMode()
+
+
+    
     @property
     def noise_properties(self):
         """return the noise properties for a the given camera
@@ -743,6 +762,11 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         #return self.FrameRate.getValue()
         return self._frameRate
 
+    def TemperatureStatusText(self):
+        return "Zyla target T %s - %s" % (self.TemperatureControl.getString(),
+                                          self.TemperatureStatus.getString())
+
+
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True
@@ -766,7 +790,8 @@ class AndorZyla(AndorBase):
         self.TemperatureControl = ATEnum()
         self.TemperatureStatus = ATEnum()
         self.SimplePreAmpGainControl = ATEnum()
-
+        # this instance is compatible with use in Zylacontrolpanel
+        self.SimpleGainEnumInstance = self.SimpleGainEnum(self)
         self.BitDepth = ATEnum()
         
         self.ActualExposureTime = ATFloat()

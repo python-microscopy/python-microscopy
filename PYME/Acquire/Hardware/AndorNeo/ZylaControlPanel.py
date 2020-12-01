@@ -84,14 +84,14 @@ class ZylaControl(wx.Panel):
         self.cam = cam
         self.scope = scope
         
-        self.ctrls = [EnumControl(self, cam.SimplePreAmpGainControl, targetPropertyName='SimpleGainMode'),
+        self.ctrls = [EnumControl(self, cam.SimpleGainEnumInstance), # use enum class as it also sets pixel encoding
                       EnumControl(self, cam.PixelReadoutRate),
                       BoolControl(self, cam.SpuriousNoiseFilter),
                       BoolControl(self, cam.StaticBlemishCorrection),
-                      EnumControl(self, cam.CycleMode),
-                      EnumControl(self, cam.TemperatureStatus),]
+                      EnumControl(self, cam.CycleMode),]
 
-        if len(cam.TemperatureControl.getAvailableValues()) > 0: # need to check that Zyla has at least one mode
+
+        if len(cam.TemperatureControl.getAvailableValues()) > 1: # we only add this if there is a real choice
             self.ctrls.append(EnumControl(self, cam.TemperatureControl))
 
         self._init_ctrls()
