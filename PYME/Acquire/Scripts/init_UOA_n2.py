@@ -45,7 +45,7 @@ def pz(scope):
 @init_hardware('XY Stage')
 def stage(scope):
     from PYME.Acquire.Hardware.Mercury import mercuryStepper
-    scope.stage = mercuryStepper.mercuryStepper(comPort=5, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+    scope.stage = mercuryStepper.mercuryStepper(comPort=6, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
     scope.stage.SetSoftLimits(0, [1.06, 20.7])
     scope.stage.SetSoftLimits(1, [.8, 17.6])
 
@@ -57,18 +57,18 @@ def stage(scope):
     
     scope.CleanupFunctions.append(scope.stage.Cleanup)
 
-@init_hardware('sCMOS Camera')
-def sCMOS_cam(scope):
-    from PYME.Acquire.Hardware.AndorNeo import AndorZyla
+# @init_hardware('sCMOS Camera')
+# def sCMOS_cam(scope):
+#     from PYME.Acquire.Hardware.AndorNeo import AndorZyla
 
-    cam = AndorZyla.AndorZyla(0)
-    cam.Init()
-    cam.port = 'R100'
-    #cam.SetActive(False)
-    cam.orientation = dict(rotate=True, flipx=True, flipy=False)
-    cam.DefaultEMGain = 0  # hack to make camera work with standard protocols
+#     cam = AndorZyla.AndorZyla(0)
+#     cam.Init()
+#     cam.port = 'R100'
+#     #cam.SetActive(False)
+#     cam.orientation = dict(rotate=True, flipx=True, flipy=False)
+#     cam.DefaultEMGain = 0  # hack to make camera work with standard protocols
 
-    scope.register_camera(cam, 'sCMOS')
+#     scope.register_camera(cam, 'sCMOS')
 
 @init_hardware('EMCCD Camera')
 def EMCCD_cam(scope):
@@ -81,11 +81,11 @@ def EMCCD_cam(scope):
 
 #scope.EnableJoystick = 'foo'
 
-@init_gui('sCMOS Camera controls')
-def cam_controls(MainFrame, scope):
-    from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
-    scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
-    MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties', False, False))
+# @init_gui('sCMOS Camera controls')
+# def cam_controls(MainFrame, scope):
+#     from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
+#     scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
+#     MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties', False, False))
 
 @init_gui('EMCCD Camera controls')
 def cam_controls1(MainFrame, scope):
@@ -119,16 +119,16 @@ def samp_db(MainFrame, scope):
 #     scope.filterWheel.SetFilterPos("ND4.5")
 #     MainFrame.toolPanels.append((fpan, 'Filter Wheel', False, False))
 
-@init_hardware('Power Meter')
-def power_meter(scope):
-    from PYME.Acquire.Hardware import PM100USB
+# @init_hardware('Power Meter')
+# def power_meter(scope):
+#     from PYME.Acquire.Hardware import PM100USB
 
-    try:
-        scope.powerMeter = PM100USB.PowerMeter()
-        scope.powerMeter.SetWavelength(671)
-        scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
-    except:
-        pass
+#     try:
+#         scope.powerMeter = PM100USB.PowerMeter()
+#         scope.powerMeter.SetWavelength(671)
+#         scope.StatusCallbacks.append(scope.powerMeter.GetStatusText)
+#     except:
+#         pass
 
 
 #InitGUI("""
@@ -244,12 +244,6 @@ def drift_tracking(MainFrame, scope):
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
-
-#import numpy
-#psf = numpy.load(r'd:\psf647.npy')
-#psf = numpy.maximum(psf, 0.)
-#from PYME.Analysis import MetaData
-#fakeCam.rend_im.setModel(psf, MetaData.TIRFDefault)
 
 #time.sleep(.5)
 scope.initDone = True
