@@ -14,7 +14,7 @@ def make_info(info):
 
 def is_port_open(ip, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(1)
+    s.settimeout(10)
     try:
         s.connect((ip, int(port)))
         s.shutdown(socket.SHUT_RDWR)
@@ -34,53 +34,60 @@ class SQLiteNS(object):
     def __init__(self, protocol='_pyme-sql'):
         self._protocol = protocol
         self._dbname = os.path.join(tempfile.gettempdir(), '%s.sqlite' %self._protocol)
-        self._conn = sqlite3.connect(self._dbname)
+        with sqlite3.connect(self._dbname) as conn:
 
-        tableNames = [a[0] for a in self._conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
-        if not 'dns' in tableNames:
-            try:
-                self._conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
-            except sqlite3.OperationalError as e:
-                # catch race condition where table is created in another process
-                if 'table dns already exists' in str(e):
-                    pass
-                else:
-                    raise
-            
+            tableNames = [a[0] for a in conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
+            if not 'dns' in tableNames:
+                try:
+                    conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
+                except sqlite3.OperationalError as e:
+                    # catch race condition where table is created in another process
+                    if 'table dns already exists' in str(e):
+                        pass
+                    else:
+                        raise
+                
         self.remove_inactive_services()
     
     def register(self, name, URI):
         """ This only exists for principally for pyro compatibility - use register_service for non pyro uses
         Takes a Pyro URI object
         """
-        self._conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, URI.address, URI.port, time.time(), str(URI)))
-        self._conn.commit()
+        with sqlite3.connect(self._dbname) as conn:
+            conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, URI.address, URI.port, time.time(), str(URI)))
+            conn.commit()
     
     # @property
     # def advertised_services(self):
     #     return self.listener.advertised_services
     
     def get_advertised_services(self):
-        names = [r[0] for r in self._conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
-        services = [(n, make_info(self._conn.execute("SELECT * FROM dns WHERE name=? ORDER BY creation_time DESC ", (n,)).fetchone())) for n in names]
+        with sqlite3.connect(self._dbname) as conn:
+            names = [r[0] for r in conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
+            services = [(n, make_info(conn.execute("SELECT * FROM dns WHERE name=? ORDER BY creation_time DESC ", (n,)).fetchone())) for n in names]
+        
         return services
     
     def register_service(self, name, address, port, desc={}, URI=''):
-        self._conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, address, port, time.time(), URI))
-        self._conn.commit()
+        with sqlite3.connect(self._dbname) as conn:
+            conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, address, port, time.time(), URI))
+            conn.commit()
     
     def unregister(self, name):
-        self._conn.execute("DELETE FROM dns WHERE name=? ", (name,))
-        self._conn.commit()
+        with sqlite3.connect(self._dbname) as conn:
+            conn.execute("DELETE FROM dns WHERE name=? ", (name,))
+            conn.commit()
     
     def resolve(self, name):
         """ mainly for PYRO compatibility - returns a string version of the URI"""
-        uri = self._conn.execute("SELECT URI FROM dns WHERE name=? ORDER BY creation_time DESC ", (name,)).fetchone()
+        with sqlite3.connect(self._dbname) as conn:
+            uri = conn.execute("SELECT URI FROM dns WHERE name=? ORDER BY creation_time DESC ", (name,)).fetchone()
         
         return uri[0]
     
     def list(self, filterby=''):
-        return [r[0] for r in self._conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
+        with sqlite3.connect(self._dbname) as conn:
+            return [r[0] for r in conn.execute("SELECT DISTINCT name FROM dns").fetchall()]
     
     def remove_inactive_services(self):
         #test to see if we can open the port, if not, remove
@@ -88,12 +95,6 @@ class SQLiteNS(object):
             if not is_port_open(socket.inet_ntoa(info.address), info.port):
                 self.unregister(name)
             
-    
-    def __del__(self):
-        try:
-            self._conn.close()
-        except:
-            pass
 
 
 nsd = {}
@@ -103,14 +104,13 @@ import threading
 sqlite_ns_lock = threading.Lock()
 
 def getNS(protocol='_pyme-pyro'):
-    #TODO - is it better to do this, or to open and close the connection around each call?
-    thread_id = threading.current_thread().ident
+    #TODO - cache connections per thread?
     with sqlite_ns_lock:
         try:
-            ns = nsd[(protocol, thread_id)]
+            ns = nsd[protocol]
         except KeyError:
             ns = SQLiteNS(protocol)
-            nsd[(protocol, thread_id)] = ns
+            nsd[protocol] = ns
             #time.sleep(1) #wait for the services to come up
     
     return ns

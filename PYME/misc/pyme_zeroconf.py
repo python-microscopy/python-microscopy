@@ -221,7 +221,12 @@ class ZeroConfNS(object):
         from PYME.misc.sqlite_ns import is_port_open
         for name, info in self.get_advertised_services():
             if not is_port_open(socket.inet_ntoa(info.address), info.port):
-                self.unregister(name)
+                # try 3 times before actually giving up on the service as dead
+                n_failures = getattr(info, 'n_failures', 0)
+                if n_failures >= 3:
+                    self.unregister(name)
+                else:
+                    info.n_failures = n_failures + 1
         
             
     def __del__(self):
