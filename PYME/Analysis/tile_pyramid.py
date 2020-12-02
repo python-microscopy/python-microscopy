@@ -1,5 +1,5 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_physical_roi_origin, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, NestedClassMDHandler
 import os
 import glob
 import collections
@@ -581,7 +581,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
     weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
     
-    roi_x0, roi_y0 = get_camera_physical_roi_origin(mdh)
+    roi_x0, roi_y0 = get_camera_roi_origin(mdh)
     
     ROIX1 = roi_x0 + 1
     ROIY1 = roi_y0 + 1
