@@ -41,7 +41,9 @@ from ._base import Plugin
 class RecipePlugin(recipeGui.RecipeManager, Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
-        
+        recipeGui.RecipeManager.__init__(self)
+        dsviewer.active_recipe = lambda : getattr(self, 'activeRecipe')
+
         self.cannedIDs = {}
         
 
