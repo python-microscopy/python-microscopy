@@ -136,6 +136,8 @@ class CameraInfoManager(object):
         """
         Extract ROI coordinates from metadata
 
+        TODO - refactor out of here as it is being used in non-fitting code
+
         Parameters
         ----------
         md: dict-like
