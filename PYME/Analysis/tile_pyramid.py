@@ -1,5 +1,5 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, NestedClassMDHandler
 import os
 import glob
 import collections
@@ -470,6 +470,9 @@ class ImagePyramid(object):
 
 
 def get_position_from_events(events, mdh):
+    """Use acquisition events to create a mapping between frame number and
+    stage position
+    """
     from PYME.Analysis import piecewiseMapping
     x0 = mdh.getOrDefault('Positioning.x', 0)
     y0 = mdh.getOrDefault('Positioning.y', 0)
@@ -555,8 +558,10 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         bufSize = 300
     
 
-    x0 = xps.min()
-    y0 = yps.min()
+    # make our x0, y0 independent of the camera ROI setting
+    x0_cam, y0_cam = get_camera_physical_roi_origin(mdh)
+    x0 = xps.min() + mdh.voxelsize_nm.x * 1e3 * x0_cam
+    y0 = yps.min() + mdh.voxelsize_nm.y * 1e3 * y0_cam
     xps -= x0
     yps -= y0
 
