@@ -149,7 +149,7 @@ class DespeckleFilter(Filter):
     nPix = Int(3)
     
     def _filt(self, data):
-        v = data[data.size/2]
+        v = data[int(data.size / 2)]
         
         dv = np.abs(data - v)
         
