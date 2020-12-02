@@ -1491,3 +1491,19 @@ def _issubclass(cl, c):
         return issubclass(cl, c)
     except TypeError:
         return False
+
+
+@register_module('SwapColorAndSlice')    
+class SwapColorAndSlice(ModuleBase):
+    """swap slice (z/t) with color"""
+    input_name = Input('input')
+    output_name = Output('swapped')
+    
+    def execute(self, namespace):
+        from PYME.IO.DataSources.SwapColorAndSliceDataSource import DataSource
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        im = namespace[self.input_name]
+        mdh = DictMDHandler()
+        mdh.copyEntriesFrom(im.mdh)
+        mdh['SwapColorAndSlice'] = True
+        namespace[self.output_name] = ImageStack(DataSource(im.data), mdh=mdh)
