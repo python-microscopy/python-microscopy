@@ -1541,7 +1541,10 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         from PYME.IO.image import ImageStack
         image = namespace[self.inputImage]
         
-        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        if self.flatfieldFilename != '':
+            flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        else:
+            flat = None
         
         if not self.darkFilename == '':
             dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
