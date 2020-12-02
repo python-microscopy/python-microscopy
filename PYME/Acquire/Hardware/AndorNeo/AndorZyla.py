@@ -131,7 +131,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     class SimpleGainEnum(object):
         def __init__(self, cam):
             self.cam = cam
-            self.gainmodes = cam.PixelEncodingForGain.keys()
+            self.gainmodes = cam.SimplePreAmpGainControl.getAvailableValues()
             self.propertyName = 'SimpleGainMode'
             
         def getAvailableValues(self):
@@ -256,6 +256,11 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                     raise RuntimeError('PixelEncodingForGain mode "%s" unknown bit depth (neither 12 nor 16 bit)' % (mode))
         else:
             self.PixelEncodingForGain = self.DefaultPixelEncodingForGain
+
+        # this instance is compatible with use in Zylacontrolpanel
+        # note we make this only once the camera has been initialised and PixelEncodingForGain been made
+        self.SimpleGainEnumInstance = self.SimpleGainEnum(self)
+
 
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
@@ -790,8 +795,7 @@ class AndorZyla(AndorBase):
         self.TemperatureControl = ATEnum()
         self.TemperatureStatus = ATEnum()
         self.SimplePreAmpGainControl = ATEnum()
-        # this instance is compatible with use in Zylacontrolpanel
-        self.SimpleGainEnumInstance = self.SimpleGainEnum(self)
+
         self.BitDepth = ATEnum()
         
         self.ActualExposureTime = ATFloat()
