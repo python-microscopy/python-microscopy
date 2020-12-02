@@ -483,6 +483,50 @@ def get_position_from_events(events, mdh):
 def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False, shiftfield=None,
                  mixmatrix=[[1., 0.], [0., 1.]],
                  correlate=False, dark=None, flat=None, pyramid_tile_size=256):
+    """Create a tile pyramid from which an ImagePyramid can be created
+
+    Parameters
+    ----------
+    out_folder : str
+        directory to save pyramid tiles(/directories)
+    ds : PYME.IO.DataSources.BaseDataSource, np.ndarray
+        array-like image
+    xm : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
+        x positions of frames in ds
+    ym : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
+        y positions of frames in ds
+    mdh : PYME.IO.MetaDataHandler.MDataHandlerBase
+        metadata for ds
+    split : bool, optional
+        whether this is a splitter datasource and should be treated like one,
+        by default False
+    skipMoveFrames : bool, optional
+        flag to drop frames which are the first frame acquired at a given
+        position, by default False
+    shiftfield : [type], optional
+        required for splitter data, see PYME.Acquire.Hardware.splitter, by 
+        default None
+    mixmatrix : list, optional
+        for splitter data, see PYME.Acquire.Hardware.splitter, by 
+        default [[1., 0.], [0., 1.]]
+    correlate : bool, optional
+        whether to add a 300 pixel padding to the edges, by default False
+    dark : ndarray, float, optional
+        (appropriately-cropped or scalar) dark frame (analog-digital offset)
+        calibration to subtract when adding frames to the pyramid, by default
+        None, in which case Camera.ADOffset from metadata will be used, if 
+        available
+    flat : ndarray, optional
+        (appropriately-cropped or scalar) flatfield calibration to apply to 
+        frames when adding them to the pyramid, by default None
+    pyramid_tile_size : int, optional
+        base tile size, by default 256 pixels
+
+    Returns
+    -------
+    ImagePyramid
+        coalesced/averaged/etc multilevel ImagePyramid instance
+    """
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
     
     if split:
@@ -494,8 +538,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         nchans = 1
     
     #x & y positions of each frame
-    xps = xm(np.arange(numFrames))
-    yps = ym(np.arange(numFrames))
+    xps = xm(np.arange(numFrames)) if not isinstance(xm, np.ndarray) else xm
+    yps = ym(np.arange(numFrames)) if not isinstance(ym, np.ndarray) else ym
 
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
@@ -541,9 +585,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
     
     if dark is None:
-        offset = float(mdh.getEntry('Camera.ADOffset'))
-    else:
-        offset = 0.
+        dark = float(mdh.getOrDefault('Camera.ADOffset', 0))
 
     P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, 
                      pixel_size=mdh.getEntry('voxelsize.x'))
@@ -555,14 +597,12 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
             y_i = ydp[i]
-            d = ds[:, :, i].astype('f')
-            if not dark is None:
-                d = d - dark
+            d = ds[:, :, i].astype('f') - dark
             if not flat is None:
                 d = d * flat
             
             if split:
-                d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
+                d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
             d_weighted = weights * d
 

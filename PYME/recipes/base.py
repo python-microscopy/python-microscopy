@@ -482,6 +482,11 @@ class ModuleCollection(HasTraits):
         
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
+        self.recipe_failed = dispatch.Signal()
+        
+        self.failed = False
+        
+        self._dg_sig = None
         
     def invalidate_data(self):
         if self.execute_on_invalidation:
@@ -560,6 +565,25 @@ class ModuleCollection(HasTraits):
             downstream.update(self._getAllDownstream(rdg, list(next_level)))
         
         return downstream
+    
+    def upstream_inputs(self, keys):
+        dg = self.dependancyGraph()
+        
+        def walk_upstream(keys):
+            upstream = set()
+            for k in keys:
+                u = dg.get(k, None)
+                if u is not None:
+                    upstream.update(walk_upstream(list(u)))
+                    
+            return upstream
+                
+        return list(walk_upstream(keys))
+            
+    
+    def downstream_outputs(self, keys):
+        rdg = self.reverseDependancyGraph()
+        return list(self._getAllDownstream(rdg, list(keys)))
         
         
     def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
@@ -649,12 +673,31 @@ class ModuleCollection(HasTraits):
                     
                     #record our error so that we can associate it with a module
                     m._last_error = traceback.format_exc()
+                    self.failed = True
                     
                     # make sure we didn't leave any partial results
+                    logger.debug('removing failed module dependencies')
                     self.prune_dependencies_from_namespace(m.outputs)
+                    logger.debug('notifying failure')
+                    self.recipe_failed.send_robust(self)
                     raise
         
+        if self.failed:
+            # make sure we update the GUI if we've fixed a broken recipe
+            # TODO - make make this a bit lighter weight - we shouldn't need to redraw the whole recipe just to change
+            # the shading of the module caption
+            self.recipe_changed.send_robust(self)
+            
+        self.failed = False
         self.recipe_executed.send_robust(self)
+
+        # detect changes in recipe wiring
+        dg_sig = str(self.dependancyGraph())
+        if not self._dg_sig == dg_sig:
+            #print(dg_sig)
+            #print(self._dg_sig)
+            self._dg_sig = dg_sig
+            self.recipe_changed.send_robust(self)
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
@@ -889,8 +932,8 @@ class ModuleCollection(HasTraits):
                     self.modules.remove(m)
                 
             raise
-
-        self.recipe_changed.send_robust(self)
+        finally:
+            self.recipe_changed.send_robust(self)
             
         
     @property

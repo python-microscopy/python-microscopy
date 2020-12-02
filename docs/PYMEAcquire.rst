@@ -25,6 +25,6 @@ further description:
    Simple dSTORM/RPM walkthrough <BasicAcquisition>
    Simulator
    Protocols
-
+   Supported Hardware <supported_hardware>
 
 

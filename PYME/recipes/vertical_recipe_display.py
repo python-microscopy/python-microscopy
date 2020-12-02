@@ -41,11 +41,19 @@ class RecipeDisplayPanel(wx.Panel):
         if not node in self.cols.keys():
             self.cols[node] = 0.7 * np.array(plt.cm.hsv(np.random.rand()))
             #cols[node] = 0.7 * np.array(plt.cm.hsv((_col.n_col % len(data_nodes)) / float(len(data_nodes))))
-        return self.cols[node]
+        #return self.cols[node]
+
+        c = self.cols[node]
+        if self.recipe.failed and not node in self.recipe.namespace.keys():
+            c = 0.2 * c + 0.8 * 0.5
+            return np.array([.9,.6,.6,1.])
+            
+        return c
         
     def SetRecipe(self, recipe):
         self.recipe = recipe
         self.recipe.recipe_changed.connect(self._layout)
+        self.recipe.recipe_failed.connect(self._layout)
         self._layout()
         self.recipe.recipe_executed.connect(self._update_n_events)
 
@@ -76,8 +84,13 @@ class RecipeDisplayPanel(wx.Panel):
     def _layout(self, *args, **kwargs):
         print('RecipeView._layout')
         if self.fp:
-             self.fp.elements = []
-             self.fp.DestroyChildren()
+            self.fp.elements = []
+            # Wrap this in a try block to prevent an error when using OutputModules
+            # TODO: Figure out why this is necessary.
+            try:
+                self.fp.DestroyChildren()
+            except:
+                pass
         self.fp = None
         #print('destroyed fold panel children')
         
@@ -137,6 +150,11 @@ class RecipeDisplayPanel(wx.Panel):
                 pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
+                if getattr(node, '_last_error', None):
+                    # error on this node, turn background red
+                    # TODO - this is a rather hacky
+                    item.stCaption.style.update({'BACKGROUND_COLOUR_1': (220, 198, 198), #default AUI caption colours
+                                               'BACKGROUND_COLOUR_2': (255, 226, 226)})
                 self.fp.AddPane(item)
                 
                 #p = pan.control
@@ -222,6 +240,7 @@ class RecipeDisplayPanel(wx.Panel):
         
         self.fp.fold_signal.connect(self._refr)
         self.SetSizerAndFit(hsizer)
+        self.Layout()
         
     def _input_position(self, key):
         item, ip_y = self.input_target_panes[key]

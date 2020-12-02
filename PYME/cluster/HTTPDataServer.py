@@ -897,7 +897,14 @@ def main(protocol="HTTP/1.0"):
     os.chdir(options.root)
 
     if options.advertisements == 'local':
-        ns = sqlite_ns.getNS('_pyme-http')
+        # preference is to avoid zeroconf on clusterofone due to poor
+        # performance on crowded networks
+        if config.get('clusterIO-hybridns', True):
+            ns = sqlite_ns.getNS('_pyme-http')
+        else:
+            # if we aren't using the hybridns, we are using zeroconf in clusterIO
+            # TODO - warn that we might run into performance issues???
+            ns = pzc.getNS('_pyme-http')
         server_address = ('127.0.0.1', int(options.port))
         ip_addr = '127.0.0.1'
     else:

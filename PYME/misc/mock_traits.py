@@ -10,8 +10,10 @@ class CStr(object):
     def __init__(self, *args, **kwargs):
         pass
 
-Float = CStr
-List = CStr
+class Float(HasTraits):
+    pass
+class List(HasTraits):
+    pass
 Int = CStr
 Bool = CStr
 Str = CStr
@@ -20,11 +22,15 @@ DictStrFloat = CStr
 DictStrStr = CStr
 DictStrBool = CStr
 DictStrList = CStr
+DictStrAny = CStr
 Instance = CStr
 File = CStr
 ListFloat = CStr
 ListStr = CStr
 ListInt = CStr
+BaseFloat = CStr
+class BaseEnum(HasTraits):
+    pass
 
 
 from functools import wraps

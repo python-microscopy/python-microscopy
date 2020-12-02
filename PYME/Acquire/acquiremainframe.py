@@ -106,7 +106,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.snapNum = 0
 
-        wx.EVT_CLOSE(self, self.OnCloseWindow)        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)        
         
         self.MainFrame = self #reference to this window for use in scripts etc...
         protocol.MainFrame = self
