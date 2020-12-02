@@ -12,6 +12,7 @@ import yaml
 from PYME import config as conf
 from PYME.misc import pyme_zeroconf, sqlite_ns
 from PYME.misc.computerName import GetComputerName
+from PYME.IO.FileUtils.nameUtils import get_service_name
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -103,7 +104,8 @@ def main():
     time.sleep(0.5)
     sa = proc.nodeserver.socket.getsockname()
     serverPort = int(sa[1])
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, serverPort)
+    service_name = get_service_name('PYMENodeServer')
+    ns.register_service(service_name, externalAddr, serverPort)
 
     time.sleep(2)
     nodeserverLog.debug('Launching worker processors')
@@ -125,7 +127,7 @@ def main():
         logger.info('Shutting down workers')
         
         try:
-            ns.unregister('PYMENodeServer: ' + GetComputerName())
+            ns.unregister(service_name)
         except:
             pass
 

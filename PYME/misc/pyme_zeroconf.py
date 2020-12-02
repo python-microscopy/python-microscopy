@@ -20,7 +20,6 @@ import zeroconf
 import socket
 import time
 #import Pyro.core
-
 import threading
 
 class PatchedServiceInfo(zeroconf.ServiceInfo):
@@ -167,14 +166,14 @@ class ZCListener(object):
 class ZeroConfNS(object):
     """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver"""
     def __init__(self, protocol = '_pyme-pyro'):
-        self._services = {}
         self._protocol = protocol
+        self._services = {}
         self.zc = zeroconf.Zeroconf()
         self.listener = ZCListener(self._protocol)
         
         self.browser = zeroconf.ServiceBrowser(self.zc, "%s._tcp.local." % self._protocol,
-                                         self.listener)
-                                        
+                                               self.listener) 
+                              
     def register(self, name, URI):
         desc = {'URI': str(URI)}
         
@@ -190,6 +189,15 @@ class ZeroConfNS(object):
         return svcs
         
     def register_service(self, name, address, port, desc={}):
+        """
+
+        Parameters
+        ----------
+        name : str
+            Max 63 chars long. PYME.IO.FileUtils.nameUtils.get_service_name can be used to get a suitable (truncated if necessary)
+            name.
+
+        """
         if name in self.listener.advertised_services.keys():
             raise RuntimeError('Name "%s" already exists' %name)
         
@@ -202,6 +210,14 @@ class ZeroConfNS(object):
         self.zc.register_service(info)
         
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+
+        """
         try:
             info = self._services[name]
             self.zc.unregister_service(info)

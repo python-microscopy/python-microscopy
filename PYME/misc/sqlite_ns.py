@@ -69,11 +69,26 @@ class SQLiteNS(object):
         return services
     
     def register_service(self, name, address, port, desc={}, URI=''):
+        """
+
+        Parameters
+        ----------
+        name : str
+            
+        """
         with sqlite3.connect(self._dbname) as conn:
             conn.execute("INSERT INTO dns VALUES(?, ?, ?, ?, ?)", (name, address, port, time.time(), URI))
             conn.commit()
     
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+
+        """
         with sqlite3.connect(self._dbname) as conn:
             conn.execute("DELETE FROM dns WHERE name=? ", (name,))
             conn.commit()

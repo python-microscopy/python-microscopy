@@ -103,7 +103,7 @@ import threading
 import datetime
 import time
 from PYME.IO import h5File
-
+from PYME.IO.FileUtils.nameUtils import get_service_name
 #GPU status functions
 try:
     import pynvml
@@ -928,7 +928,7 @@ def main(protocol="HTTP/1.0"):
 
     #get the actual adress (port) we bound to
     sa = httpd.socket.getsockname()
-    service_name = 'PYMEDataServer [%s]: ' % options.server_filter + procName
+    service_name = get_service_name('PYMEDataServer [%s]' % options.server_filter)
     ns.register_service(service_name, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
