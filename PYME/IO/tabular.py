@@ -162,13 +162,19 @@ class TabularBase(object):
             keys = self.keys()
     
         #nRecords = len(ds[keys[0]])
+        
+        def fmt(d):
+            if np.isscalar(d):
+                return '%e' % d
+            else:
+                return '"%s"' % str(d)
     
         of = open(outFile, 'w')
     
         of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
     
         for row in zip(*[self[k] for k in keys]):
-            of.write(delim.join(['%e' % c for c in row]) + '\n')
+            of.write(delim.join([fmt(c) for c in row]) + '\n')
     
         of.close()
             
