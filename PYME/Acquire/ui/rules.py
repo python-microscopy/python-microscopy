@@ -363,6 +363,10 @@ class ChainedAnalysisPanel(wx.Panel):
         except KeyError:
             rule_factory_chain = self._protocol_rules['default']
         
+        if len(rule_factory_chain) == 0:
+            logger.info('no rules in chain')
+            return
+        
         # set the context based on the input series
         series_uri = self._spool_controller.spooler.getURL()
         spool_dir, series_stub = posixpath.split(series_uri)
