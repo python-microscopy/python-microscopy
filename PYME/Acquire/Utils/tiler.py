@@ -116,7 +116,7 @@ class CircularTiler(Tiler, pointScanner.CircularPointScanner):
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
         """
         if tile_spacing is None:
-            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+            fs = np.array([scope.cam.size_x, scope.cam.size_y])
             # calculate tile spacing such that there is ~30% overlap.
             tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
         # take the pixel size to be the same or at least similar in both directions
