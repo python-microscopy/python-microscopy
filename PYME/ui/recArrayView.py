@@ -65,13 +65,13 @@ class TabularTable(gridlib.PyGridTableBase):
         return False
 
     def GetValue(self, row, col):
-        return str(self._tabular[self._tabular.keys()[col]][row])
+        return str(self._tabular[list(self._tabular.keys())[col]][row])
 
     def SetValue(self, row, col, value):
         pass
 
     def GetColLabelValue(self, col):
-        return self._tabular.keys()[col]
+        return list(self._tabular.keys())[col]
 
 
 class ArrayTableGrid(gridlib.Grid):
