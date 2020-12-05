@@ -669,7 +669,7 @@ class RecArraySource(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
-        self._keys = self.recArray.dtype.names
+        self._keys = list(self.recArray.dtype.names)
 
     def keys(self):
         return self._keys
@@ -712,7 +712,7 @@ class DictSource(TabularBase):
                 raise ValueError('Columns are different lengths')
         
     def keys(self):
-        return self._source.keys()
+        return list(self._source.keys())
     
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -749,7 +749,7 @@ class SelectionFilter(TabularBase):
         return self.resultsSource[key][self.Index][sl]
     
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
 @deprecated_name('resultsFilter')
 class ResultsFilter(SelectionFilter):
@@ -907,7 +907,7 @@ class CachingResultsFilter(TabularBase):
             return res[sl]
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
 @deprecated_name('mappingFilter')
 class MappingFilter(TabularBase):
@@ -1043,7 +1043,7 @@ class _ChannelFilter(TabularBase):
         return self.colour_filter.get_channel_column(self.channel, keys)
     
     def keys(self):
-        return self.colour_filter.keys()
+        return list(self.colour_filter.keys())
 
 @deprecated_name('colourFilter')
 class ColourFilter(TabularBase):
@@ -1120,7 +1120,7 @@ class ColourFilter(TabularBase):
         self.currentColour = colour
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
     
 @deprecated_name('cloneSource')
@@ -1146,5 +1146,5 @@ class CloneSource(TabularBase):
         return self.cache[key][sl]
 
     def keys(self):
-        return self.cache.keys()
+        return list(self.cache.keys())
 
