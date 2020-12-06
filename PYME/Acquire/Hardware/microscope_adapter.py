@@ -84,4 +84,4 @@ class MicroscopeFilterWheel(PYME.Acquire.Hardware.FilterWheel.FilterWheelBase):
         self._fw.set_position(pos)
 
     def _get_physical_position(self):
-        return self._fw.get_position(pos)
+        return self._fw.get_position()
