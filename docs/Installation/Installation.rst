@@ -21,11 +21,17 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 	
     conda config --append channels anaconda
     conda config --add channels david_baddeley
-    conda install python-microscopy
+    conda install python=3.7 python-microscopy
 
 .. note::
 
-    **Which Python version?** We are in the process of switching the default install from Python 2.7 to Python 3.6. As of 2020/09/25, we support python 2.7, 3.6 & 3.7. The Python 2 version is currently better tested, but most of the core functionality runs on Python 3. Due to ongoing changes in the anaconda repositories, installation on Python 3 tends to be easier. We aim to drop Python 2 support in January of 2021.
+    **Which Python version?** As of 2020/12/07, we recommend python 3.6 or 3.7 for new installs. We plan to add support for
+    python=3.8 (as installed by default in miniconda) in the near future, but until such time downgrading to either 3.6 or 3.7
+    with and explicit python=3.x argument to conda install is required.
+
+    Having recently made the py2-> py3 transition, there are a still few components which might work better / are better tested on python 2.7
+    (likely to only effect instrument control). As we are no longer building updated packages on 2.7 we recommend a source
+    install in this case.
 
 
 Updating
