@@ -740,7 +740,11 @@ class VisGUICore(object):
                 ds = None
 
         print('Creating Pipeline')
-        self.pipeline.OpenFile(filename=filename, ds=ds, **args)
+       if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds)
+       else:
+           args = self._populate_open_args(filename)
+           self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
         #############################
