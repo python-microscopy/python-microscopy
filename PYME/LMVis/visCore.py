@@ -729,22 +729,12 @@ class VisGUICore(object):
         return args
 
     def OpenFile(self, filename=None, recipe_callback=None, ds=None):
-        if filename is not None:
-            args = self._populate_open_args(filename)
-
-        if ds is not None:
-            if filename is None:
-                filename = str(ds)
-            else:
-                # File supercedes datasource
-                ds = None
-
         print('Creating Pipeline')
-       if filename is None and not ds is None:
+        if filename is None and not ds is None:
             self.pipeline.OpenFile(ds=ds)
-       else:
-           args = self._populate_open_args(filename)
-           self.pipeline.OpenFile(filename, **args)
+        else:
+            args = self._populate_open_args(filename)
+            self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
         #############################
