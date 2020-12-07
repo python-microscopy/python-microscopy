@@ -420,7 +420,21 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        #print('add_base_tile(%d, %d)' % (x, y))
+        """add tile to the pyramid
+
+        Parameters
+        ----------
+        x : int
+            x origin of the tile (`frame`), relative to minimum x position of
+            all tiles, in units of pixels
+        y : int
+            y origin of the tile (`frame`), relative to minimum y position of
+            all tiles, in units of pixels
+        frame : ndarray
+            the tile frame to add
+        weights : ndarray
+            weights for averaging with overlapping base tiles
+        """
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
@@ -562,13 +576,17 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     if correlate:
         bufSize = 300
     
+    # to avoid building extra, empty tiles, the pyramid origin is the minimum
+    # x and y position present in the tiles
+    x0_pyramid, y0_pyramid = xps.min(), yps.min()
+    xps -= x0_pyramid
+    yps -= y0_pyramid
 
-    # make our x0, y0 independent of the camera ROI setting
+    # calculate origin independent of the camera ROI setting to store in
+    # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
     x0_cam, y0_cam = get_camera_physical_roi_origin(mdh)
-    x0 = xps.min() + mdh.voxelsize_nm.x / 1e3 * x0_cam
-    y0 = yps.min() + mdh.voxelsize_nm.y / 1e3 * y0_cam
-    xps -= x0
-    yps -= y0
+    x0 = x0_pyramid + mdh.voxelsize_nm.x / 1e3 * x0_cam
+    y0 = y0_pyramid + mdh.voxelsize_nm.y / 1e3 * y0_cam
 
     #convert to pixels
     xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
