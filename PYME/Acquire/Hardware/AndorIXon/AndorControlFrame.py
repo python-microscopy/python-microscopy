@@ -182,7 +182,7 @@ class AndorPanel(afp.foldingPane):
         self.cbShutter = wx.CheckBox(pan, -1, u'Camera Shutter Open')
         self.cbShutter.SetValue(True)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
-        vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+        vsizer.Add(self.cbShutter, 0, wx.TOP, 5)
 
         #self.cp = self._createCollapsingPane(self)
 
