@@ -72,8 +72,27 @@ Python 3 Migration
 ==================
 
 Python 3 migration is now mostly complete, although there are still a few corners of the code base and a couple of dependencies
-which might have issues. For that reason we will continue to support python 2.7 until at least the end of 2020. As a result,
-contributions should be written to be compatible with both python 2.7 and python >=3.6, using modules such as six where appropriate.
+which might have issues. For that reason we will continue to support python 2.7 until at least the end of 2020
+(now extended to March 2021). As a result, contributions should be written to be compatible with both python 2.7 and
+python >=3.6, using modules such as six where appropriate.
+
+wxpython 4 Migration
+====================
+
+We recommend wxpython 4.0.x for new installs, but have a few systems that we support which are stuck on wxpython=3.x.
+As a result, we are trying to keep the code backwards compatible with wx3 until around March 2021. This results in a few
+deprecation warnings when running under wx4.0.x and some errors under 4.1.x.
+
+We can break wx4 issues into 3 classes:
+
+1. was wrong on wx3 (if silently ignored), and is still wrong on wx4 (e.g. wx.ALIGN_CENTRE_VERTICAL in a vertical BoxSizer).
+2. OK on wx3, broken on wx4, but with a simple backwards compatible fix
+3. Correct on wx3, deprecated in wx4.0.x, broken in wx4.1.x with no backwards compatible fix (e.g. wx.EmptyBitmap() -> wx.Bitmap())
+
+Categories 1 & 2 should be fixed immediately (PRs welcome), and we're collecting but not yet merging PRs for category 3 (e.g. #207).
+We're considering a separate branch containing all category 3 fixes so they can be simply merged with the mainstream in,
+e.g., development installs. To make this easier, it would be good if category 3 fixes came in separate PRs which only
+deal with the wx changes and don't effect anything else (such that logic changes can be merged sooner).
 
 Coding style
 ============
