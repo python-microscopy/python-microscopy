@@ -212,24 +212,18 @@ def pixel_index_of_points_in_image(image, points):
         z pixel index in image for each point
 
     """
-    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+    from PYME.IO.MetaDataHandler import origin_nm
 
     x0, y0, z0 = image.origin
 
     # account for point data ROIs
-    try:
-        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
-
-        p_ox = roi_x0 * points.mdh.voxelsize_nm.x
-        p_oy = roi_y0 * points.mdh.voxelsize_nm.y
-    except AttributeError:
-        raise RuntimeError('metadata specifying ROI position and voxelsize are missing')
+    p_ox, p_oy, p_oz = origin_nm(points.mdh)
 
     # Image origin is referenced to top-left corner of pixelated image.
     # FIXME - localisations are currently referenced to centre of raw pixels
     x_index = np.floor((points['x'] + p_ox - x0) / image.voxelsize_nm.x).astype('i')
     y_index = np.floor((points['y'] + p_oy - y0) / image.voxelsize_nm.y).astype('i')
-    z_index = np.floor((points['z'] - z0) / image.voxelsize_nm.z).astype('i')
+    z_index = np.floor((points['z'] + p_oz - z0) / image.voxelsize_nm.z).astype('i')
 
     return x_index, y_index, z_index
 
