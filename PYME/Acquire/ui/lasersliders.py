@@ -85,7 +85,7 @@ class LaserSliders(wx.Panel):
                 #FIXME for wx >= 4
                 sl.SetTickFreq(10,1)
             
-            sz.Add(sl, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
+            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
             self.sliders.append(sl)
 
             l = wx.StaticText(self, -1, '100.0')

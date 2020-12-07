@@ -172,7 +172,7 @@ class dispSettingsPanel2(wx.Panel):
         self.hlDispMapping = histLimits.HistLimitPanel(self, -1, self.dsa, self.do.Offs[0], self.do.Offs[0] + 255./self.do.Gains[0], True, size=(100, 80))
         self.hlDispMapping.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnMappingChange)
 
-        hsizer.Add(self.hlDispMapping, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        hsizer.Add(self.hlDispMapping, 1, wx.EXPAND|wx.ALL, 5)
 
         vsizer2 = wx.BoxSizer(wx.VERTICAL)
         self.bOptimise = wx.Button(self, -1, 'Optimise', style=wx.BU_EXACTFIT)
@@ -198,9 +198,9 @@ class dispSettingsPanel2(wx.Panel):
 
         #scaleSizer.Add(self.cbScale, 0, wx.ALL, 5)
         #hsizer.Add(wx.StaticText(self, -1, 'Scale: '), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-        vsizer2.Add(self.cbScale, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.EXPAND, 5)
+        vsizer2.Add(self.cbScale, 0, wx.EXPAND, 5)
 
-        hsizer.Add(vsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        hsizer.Add(vsizer2, 0, wx.EXPAND|wx.ALL, 5)
 
         #vsizer.Add(hsizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
