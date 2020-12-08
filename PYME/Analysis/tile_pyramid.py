@@ -442,6 +442,9 @@ class ImagePyramid(object):
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
         
+        if (x < 0) or (y < 0):
+            raise ValueError('base tile origin positions must be >=0')
+        
         tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
         tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
         
@@ -509,13 +512,14 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ds : PYME.IO.DataSources.BaseDataSource, np.ndarray
         array-like image
     xm : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
-        x positions of frames in ds. Raw stage positions in [um] - we will
-        subtract off camera ROI origin to make the pyramid positions relative
+        x positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum x, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
         to the camera chip origin.
     ym : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
-        y positions of frames in ds. Raw stage positions in [um] - we will
-        subtract off camera ROI origin to make the pyramid positions relative
-        to the camera chip origin.
+        y positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum y, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
     mdh : PYME.IO.MetaDataHandler.MDataHandlerBase
         metadata for ds
     split : bool, optional
