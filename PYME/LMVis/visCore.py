@@ -430,7 +430,6 @@ class VisGUICore(object):
     
         self.layer_added.send(self)
 
-    
     @property
     def layers(self):
         return self.glCanvas.layers
@@ -748,10 +747,12 @@ class VisGUICore(object):
         while len(self.layers) > 0:
             self.layers.pop()
         
-        args = self._populate_open_args(filename)
-
         print('Creating Pipeline')
-        self.pipeline.OpenFile(filename, **args)
+        if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds)
+        else:
+            args = self._populate_open_args(filename)
+            self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
         #############################
