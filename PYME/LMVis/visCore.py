@@ -744,6 +744,10 @@ class VisGUICore(object):
         return args
 
     def OpenFile(self, filename, recipe_callback=None):
+        # get rid of any old layers
+        while len(self.layers) > 0:
+            self.layers.pop()
+        
         args = self._populate_open_args(filename)
 
         print('Creating Pipeline')
