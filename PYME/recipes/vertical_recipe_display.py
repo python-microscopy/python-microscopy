@@ -41,12 +41,21 @@ class RecipeDisplayPanel(wx.Panel):
         if not node in self.cols.keys():
             self.cols[node] = 0.7 * np.array(plt.cm.hsv(np.random.rand()))
             #cols[node] = 0.7 * np.array(plt.cm.hsv((_col.n_col % len(data_nodes)) / float(len(data_nodes))))
-        return self.cols[node]
+        #return self.cols[node]
+
+        c = self.cols[node]
+        if self.recipe.failed and not node in self.recipe.namespace.keys():
+            c = 0.2 * c + 0.8 * 0.5
+            return np.array([.9,.6,.6,1.])
+            
+        return c
         
     def SetRecipe(self, recipe):
         self.recipe = recipe
         self.recipe.recipe_changed.connect(self._layout)
+        self.recipe.recipe_failed.connect(self._layout)
         self._layout()
+        self.recipe.recipe_executed.connect(self._update_n_events)
 
     def _refr(self, **kwargs):
         #print 'p_'
@@ -57,12 +66,31 @@ class RecipeDisplayPanel(wx.Panel):
         self.GetParent().Layout()
         self.GetParent().GetParent().Layout()
         self.Refresh()
-        
+
+    def _set_n_events(self, node, st):
+        node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
+
+        evts = ''
+        data = self.recipe.namespace.get(node, None)
+        if isinstance(data, tabular.TabularBase):
+            evts = ' [%d evts]' % len(data)
+                
+        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s%s</span>" % (node_col + (node,evts)))
+
+    def _update_n_events(self, *args, **kwargs):
+        for node, t in self.data_panes.items():
+            self._set_n_events(node, t[1])
+
     def _layout(self, *args, **kwargs):
         print('RecipeView._layout')
         if self.fp:
-             self.fp.elements = []
-             self.fp.DestroyChildren()
+            self.fp.elements = []
+            # Wrap this in a try block to prevent an error when using OutputModules
+            # TODO: Figure out why this is necessary.
+            try:
+                self.fp.DestroyChildren()
+            except:
+                pass
         self.fp = None
         #print('destroyed fold panel children')
         
@@ -122,6 +150,11 @@ class RecipeDisplayPanel(wx.Panel):
                 pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
+                if getattr(node, '_last_error', None):
+                    # error on this node, turn background red
+                    # TODO - this is a rather hacky
+                    item.stCaption.style.update({'BACKGROUND_COLOUR_1': (220, 198, 198), #default AUI caption colours
+                                               'BACKGROUND_COLOUR_2': (255, 226, 226)})
                 self.fp.AddPane(item)
                 
                 #p = pan.control
@@ -162,14 +195,7 @@ class RecipeDisplayPanel(wx.Panel):
                         item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0, style=0)
                         st = wx.StaticText(item, -1, node)
                         
-                        node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
-
-                        evts = ''
-                        data = self.recipe.namespace.get(node, None)
-                        if isinstance(data, tabular.TabularBase):
-                            evts = ' [%d evts]' % len(data)
-                                
-                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s%s</span>" % (node_col + (node,evts)))
+                        self._set_n_events(node, st)
                             
                         item.AddNewElement(st, foldable=False)
                         self.fp.AddPane(item)
@@ -214,6 +240,7 @@ class RecipeDisplayPanel(wx.Panel):
         
         self.fp.fold_signal.connect(self._refr)
         self.SetSizerAndFit(hsizer)
+        self.Layout()
         
     def _input_position(self, key):
         item, ip_y = self.input_target_panes[key]

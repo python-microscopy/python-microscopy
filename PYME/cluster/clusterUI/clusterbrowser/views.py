@@ -138,6 +138,6 @@ def mkdir(request, basedir):
     if clusterIO.exists(newDirectory) or clusterIO.exists(newDirectory[:-1]):
         return HttpResponseForbidden('Directory already exists')
 
-    clusterIO.put_file(newDirectory, '')
+    clusterIO.put_file(newDirectory, bytes('', 'utf-8'))
 
     return HttpResponse(newDirectory)

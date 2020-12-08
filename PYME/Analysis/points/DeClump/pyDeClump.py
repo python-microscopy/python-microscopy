@@ -243,9 +243,10 @@ def mergeClumps(datasource, labelKey='clumpIndex'):
     aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
     all_keys += aggregation_weights.values()
 
-    #aggregation_weights['A'] = 'sum'
-    #aggregation_weights['Ag'] = 'sum'
-    #aggregation_weights['Ar'] = 'sum'
+    for k in ('A', 'Ag', 'Ar', 'nPhotons'):
+        # aggregation_weights only get queried in coalesce if keys are present
+        # so we can add them all
+        aggregation_weights[k] = 'sum'
 
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}

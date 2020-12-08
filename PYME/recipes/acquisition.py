@@ -43,6 +43,10 @@ class QueueAcquisitions(OutputModule):
                 see PYME.Acquire.HTTPSpooler
             protocol_name : str
                 filename of the acquisition protocol to follow while spooling
+            subdirectory : str
+                firectory within current SpoolController set directory to spool
+                a given series. The directory will be created if it doesn't 
+                already exist.
     lifo: Bool
         last-in first-out behavior (True) starts at the last position in 
         `input_positions`, False starts with the 0th. Useful in instances where
@@ -57,6 +61,10 @@ class QueueAcquisitions(OutputModule):
         positions will be ignored/unqueued from the action manager.
     nice: Int
         priority at which acquisition tasks should execute (default=10)
+    max_duration : float
+        A generous estimate, in seconds, of how long the task might take, after
+        which the lasers will be automatically turned off and the action queue
+        paused.
     between_post_throttle : Float
         Time in seconds to sleep between posts to avoid bombarding the 
         microscope-side server. Can be set to zero for ~no throttling.
@@ -67,6 +75,7 @@ class QueueAcquisitions(OutputModule):
     lifo = Bool(True)
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)
+    max_duration = Float(np.finfo(float).max)
     nice = Int(10)
     between_post_throttle = Float(0.01)
 
@@ -82,7 +91,17 @@ class QueueAcquisitions(OutputModule):
             resolved directory name in which the input file resides) and 
             'filestub' (which is the filename without any extension) should be 
             resolved.
+        
+        Notes
+        -----
+        str spool_settings values can context-substitute templated parameters,
+        e.g. spool_settings = {'subdirectory': '{filestub}'}
         """
+        # substitute spool settings
+        spool_settings = self.spool_settings.copy()
+        for k in spool_settings.keys():
+            if isinstance(spool_settings[k], str):
+                spool_settings[k] = spool_settings[k].format(**context)
         
         try:  # get positions in units of micrometers
             positions = np.stack((namespace[self.input_positions]['x_um'], 
@@ -105,16 +124,24 @@ class QueueAcquisitions(OutputModule):
         for ri in range(positions.shape[0]):
             args = {'function_name': 'centre_roi_on', 
             'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': self.nice}
+                    'timeout': self.timeout, 'nice': self.nice,
+                    'max_duration': self.max_duration}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
             time.sleep(self.between_post_throttle)
 
             args = {'function_name': 'spoolController.StartSpooling',
-                    'args': self.spool_settings,
-                    'timeout': self.timeout, 'nice': self.nice}
+                    'args': spool_settings,
+                    'timeout': self.timeout, 'nice': self.nice,
+                    'max_duration': self.max_duration}
             session.post(dest, data=json.dumps(args), 
                           headers={'Content-Type': 'application/json'})
             
             time.sleep(self.between_post_throttle)
+        
+        # queue a high-nice call to shut off all lasers when we're done
+        args = {'function_name': 'turnAllLasersOff',
+                    'timeout': self.timeout, 'nice': np.iinfo(int).max}
+        session.post(dest, data=json.dumps(args), 
+                          headers={'Content-Type': 'application/json'})

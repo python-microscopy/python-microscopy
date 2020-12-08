@@ -62,8 +62,8 @@ def pifoc(scope):
 def focus_lock(MainFrame, scope):
     import numpy as np
     from PYME.ui import fastGraph
-    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
-    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer, FocusLogger
+    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel, FocusLogPanel
     ku = -1.2  # ziegler-nichols 'ultimate' gain for my system
     tu = 7  # [frames], roughly the period, when we're running camera/frameWrangler polling at 3.5 ms
     # Stick with a PI tune for now
@@ -71,8 +71,8 @@ def focus_lock(MainFrame, scope):
     ki = 0.54 * ku / tu
     scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=kp, i=ki, d=0,
                                             sample_time=0.0035, 
-                                            min_amp=10**5,
-                                            max_sigma=20.)
+                                            min_amp=0.5 * 10**5,
+                                            max_sigma=14.5)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
@@ -110,6 +110,11 @@ def focus_lock(MainFrame, scope):
         position_plot.SetData(time, position)
 
     MainFrame.time1.WantNotification.append(refresh_position)
+
+    # panel to log focus to file at set intervals
+    focus_logger = FocusLogger(scope.focus_lock.GetPeakPosition)
+    focus_log_panel = FocusLogPanel(MainFrame, focus_logger)
+    MainFrame.camPanels.append((focus_log_panel, 'Focus Logger'))
 
 
 #must be here!!!

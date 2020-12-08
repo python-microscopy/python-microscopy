@@ -53,6 +53,7 @@ def pz(scope):
     from PYME.Acquire import stage_leveling, PYMEAcquire
     import sys
     import subprocess
+    import requests
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
     scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
@@ -63,11 +64,16 @@ def pz(scope):
 
     scope.focus_lock = RLPIDFocusLockClient()
     
-    subprocess.Popen('%s "%s" -i init_htsms_focus_lock.py -t "Focus Lock"' % (sys.executable,
-                                                                              PYMEAcquire.__file__),
-                     creationflags=subprocess.CREATE_NEW_CONSOLE)
+    try:  # check if we've got a focus lock PYMEAcquire instance up already
+        requests.get('http://127.0.0.1:9798/LockEnabled')
+    except requests.exceptions.ConnectionError:
+        fl_command = "%s" % PYMEAcquire.__file__
+        fl_command += ' -i init_htsms_focus_lock.py -t "Focus Lock"'
+        subprocess.Popen('%s %s' % (sys.executable, fl_command),
+                        creationflags=subprocess.CREATE_NEW_CONSOLE)
     
-    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc)
+    scope._stage_leveler = stage_leveling.StageLeveler(scope, scope.piFoc,
+                                                       focus_lock=scope.focus_lock)
 
 
 @init_hardware('HamamatsuORCA')
@@ -100,14 +106,7 @@ def orca_cam(scope):
     # as it's much easier
     # TODO - make flip, rotate etc actually work for tiling in case we have two cameras
     scope.register_camera(cam, 'HamamatsuORCA', rotate=False, flipx=False, flipy=False)
-
-    def set_camera_views(views):
-        if (views is None) or (len(views) == 0):
-            cam.disable_multiview()
-        else:
-            cam.enable_multiview(views)
-
-    scope.state.registerHandler('Camera.Views', lambda: cam.active_views, set_camera_views, True)
+    cam.register_state_handlers(scope.state)
 
 
 @init_gui('sCMOS Camera controls')
@@ -119,8 +118,16 @@ def orca_cam_controls(MainFrame, scope):
     scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
 
-    MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
-    MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
+    MainFrame.AddMenuItem('Camera', 'Set Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', [0, 1, 2, 3]))
+    MainFrame.AddMenuItem('Camera', 'Clear Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', []))
+
+@init_gui('Sample Metadata')
+def sample_metadata(main_frame, scope):
+    from PYME.Acquire.sampleInformation import SimpleSampleInfoPanel
+    sampanel = SimpleSampleInfoPanel(main_frame)
+    main_frame.camPanels.append((sampanel, 'Sample Metadata'))
 
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
@@ -204,7 +211,20 @@ def action_manager(MainFrame, scope):
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
-    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+    from PYME.cluster.rules import RecipeRuleFactory
+    import yaml
+    import os
+
+    # add some default pairings
+    defaults = {}
+    rec_dir = 'C:\\Users\\Bergamot\\PYMEData\\recipes'
+
+    tilerec = os.path.join(rec_dir, 'tile_detect_filter_queue.yaml')
+    with open(tilerec) as f:
+        tilerec = f.read()
+    defaults['htsms-tile'] = [RecipeRuleFactory(recipe=tilerec)]
+
+    SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
 @init_hardware('tweeter')
 def tweeter(scope):

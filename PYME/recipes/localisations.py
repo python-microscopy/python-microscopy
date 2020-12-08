@@ -401,22 +401,25 @@ class DBSCANClustering(ModuleBase):
 
     Parameters
     ----------
-
-        searchRadius: search radius for clustering
-        minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
+    searchRadius : float
+        search radius for clustering [nm]
+    minPtsForCore : int
+        number of points within SearchRadius required for a given point to be 
+        considered a core point
 
     Notes
     -----
 
-    See `sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
+    See `sklearn.cluster.dbscan` for more details about the underlying 
+    algorithm and parameter meanings.
 
     """
     import multiprocessing
     inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
-    searchRadius = Float()
-    minClumpSize = Int()
+    searchRadius = Float(10)
+    minClumpSize = Int(1)
     
     #exposes sklearn parallelism. Recipe modules are generally assumed
     #to be single-threaded. Enable at your own risk

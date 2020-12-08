@@ -151,6 +151,32 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
+
+    def to_csv(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+    
+        if keys is None:
+            keys = self.keys()
+    
+        #nRecords = len(ds[keys[0]])
+        
+        def fmt(d):
+            if np.isscalar(d):
+                return '%e' % d
+            else:
+                return '"%s"' % str(d)
+    
+        of = open(outFile, 'w')
+    
+        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
+    
+        for row in zip(*[self[k] for k in keys]):
+            of.write(delim.join([fmt(c) for c in row]) + '\n')
+    
+        of.close()
             
                 
     def keys(self):
@@ -643,7 +669,7 @@ class RecArraySource(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
-        self._keys = self.recArray.dtype.names
+        self._keys = list(self.recArray.dtype.names)
 
     def keys(self):
         return self._keys
@@ -686,7 +712,7 @@ class DictSource(TabularBase):
                 raise ValueError('Columns are different lengths')
         
     def keys(self):
-        return self._source.keys()
+        return list(self._source.keys())
     
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -723,7 +749,7 @@ class SelectionFilter(TabularBase):
         return self.resultsSource[key][self.Index][sl]
     
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
 @deprecated_name('resultsFilter')
 class ResultsFilter(SelectionFilter):
@@ -881,7 +907,7 @@ class CachingResultsFilter(TabularBase):
             return res[sl]
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
 @deprecated_name('mappingFilter')
 class MappingFilter(TabularBase):
@@ -1017,7 +1043,7 @@ class _ChannelFilter(TabularBase):
         return self.colour_filter.get_channel_column(self.channel, keys)
     
     def keys(self):
-        return self.colour_filter.keys()
+        return list(self.colour_filter.keys())
 
 @deprecated_name('colourFilter')
 class ColourFilter(TabularBase):
@@ -1094,7 +1120,7 @@ class ColourFilter(TabularBase):
         self.currentColour = colour
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
     
 @deprecated_name('cloneSource')
@@ -1120,5 +1146,5 @@ class CloneSource(TabularBase):
         return self.cache[key][sl]
 
     def keys(self):
-        return self.cache.keys()
+        return list(self.cache.keys())
 

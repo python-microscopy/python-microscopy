@@ -157,7 +157,7 @@ class IntegrationSliders(wx.Panel):
         else:
             sz = wx.BoxSizer(wx.HORIZONTAL)
 
-        sz.Add(sl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
+        sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
         sz.Add(sl_val, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         sz.Add(wx.StaticText(self, -1, 'ms'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         sizer_2.Add(sz,1,wx.EXPAND,0)

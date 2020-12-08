@@ -101,6 +101,7 @@ class IntegerIDRule(Rule):
                       "driftResults" : "PYME-CLUSTER://__aggregate_h5r/path/to/analysis.h5r/DriftResults"}
         }
     
+    
     **Recipes**
     The recipe can either be specified inline:
     
@@ -113,6 +114,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+    
         
     or using a cluster URI:
     
@@ -125,6 +127,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+     
         
     The rule will substitute ``{{taskInputs}}`` with a dictionary mapping integer task IDs to recipe input files, e.g.
     
@@ -134,6 +137,7 @@ class IntegerIDRule(Rule):
          1 : {"recipe_input_0" : "input_0_URI_1","recipe_input_1" : "input_1_URI_1"},
          2 : {"recipe_input_0" : "input_0_URI_2","recipe_input_1" : "input_1_URI_2"},
          }
+       
          
     Alternatively the inputs dictionary can be supplied directly (without relying on the taskInputs substitution).
     
@@ -432,7 +436,7 @@ class IntegerIDRule(Rule):
         # To fix: Potentially replace with `np.all(self._task_info['status']>=STATUS_COMPLETE)` (although this would need to be cached and refreshed - property access should be cheap). 
         # combined with a new enum value STATUS_INVALID==6 -  `self.mark_release_complete()` could be re-written as `self._task_info['status'][self._task_info['status'] == 0] = STATUS_INVALID`
         
-        return (self.nCompleted >= self._n_max)
+        return (self.nAvailable == 0) and ((self.nCompleted + self.nFailed) >= self._n_max)
     
     def inactivate(self):
         """
@@ -479,9 +483,10 @@ class IntegerIDRule(Rule):
                 
                 self.n_timed_out += nTimedOut
     
-                retry_failed = self._task_info['nRetries'] > self._n_retries
-                self._task_info['status'][retry_failed] = STATUS_FAILED
+                retry_failed = self._task_info['nRetries'][timed_out] > self._n_retries
+                self._task_info['status'][timed_out[retry_failed]] = STATUS_FAILED
                 self.nAvailable -= int(retry_failed.sum())
+                self.nFailed += int(retry_failed.sum())
                 
                 #self._update_nums()
             
@@ -740,6 +745,8 @@ class RuleServer(object):
             # take out the lock in case the rule is still being added in another
             # request and we are already trying to release tasks
             rule = self._rules[ruleID]
+            
+        logger.debug('release_rule_tasks(ruleID = %s, release_start=%d, release_end=%d)' % (ruleID, int(release_start), int(release_end )))
         
         rule.make_range_available(int(release_start), int(release_end))
     
@@ -793,7 +800,7 @@ class RuleServer(object):
             return json.dumps({'ok': 'False', 'error': str(expired_rules)})
     
     @webframework.register_endpoint('/mark_release_complete')
-    def mark_release_complete(self, rule_id, n_tasks=None):
+    def mark_release_complete(self, ruleID, n_tasks=None):
         """
         
         HTTP Endpoint (POST) to signal that no more tasks will be released for a rule and the rule can be regarded as finished once the previously released
@@ -826,7 +833,7 @@ class RuleServer(object):
         # take out the rule lock in case we are still creating the rule and the
         # client POSTs this (e.g. if a series is started/stopped quickly)
         with self._rule_lock:
-            self._rules[rule_id].mark_release_complete(n_tasks)
+            self._rules[ruleID].mark_release_complete(n_tasks)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')

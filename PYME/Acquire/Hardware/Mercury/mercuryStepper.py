@@ -74,23 +74,23 @@ class mercuryStepper(base_piezo.PiezoBase):
             raise RuntimeError('Could not connect to Mercury controller')
 
         #tell the controller which stepper motors it's driving
-        m.CST(self.connID, ''.join(self.axes), '\n'.join(self.steppers))
+        m.CST(self.connID, (''.join(self.axes)).encode(), ('\n'.join(self.steppers)).encode())
 
         #initialise axes
-        m.INI(self.connID, ''.join(self.axes))
+        m.INI(self.connID, (''.join(self.axes)).encode())
 
         #callibrate axes using reference switch
-        m.REF(self.connID, ''.join(self.axes))
+        m.REF(self.connID, (''.join(self.axes)).encode())
 
-        while sum(m.IsReferencing(self.connID, ''.join(self.axes)))>0:
+        while sum(m.IsReferencing(self.connID, (''.join(self.axes)).encode()))>0:
             time.sleep(.5)
 
-        self.minTravel = m.qTMN(self.connID, ''.join(self.axes))
-        self.maxTravel = m.qTMX(self.connID, ''.join(self.axes))
+        self.minTravel = m.qTMN(self.connID, (''.join(self.axes)).encode())
+        self.maxTravel = m.qTMX(self.connID, (''.join(self.axes)).encode())
 
-        self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
-        self.moving = m.IsMoving(self.connID, ''.join(self.axes))
-        self.onTarget = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
+        self.last_poss = m.qPOS(self.connID, (''.join(self.axes)).encode())
+        self.moving = m.IsMoving(self.connID, (''.join(self.axes)).encode())
+        self.onTarget = sum(m.qONT(self.connID, (''.join(self.axes)).encode())) == len(self.axes)
 
         self.lock.release()
 
@@ -100,7 +100,7 @@ class mercuryStepper(base_piezo.PiezoBase):
 
     def SetSoftLimits(self, axis, lims):
         self.lock.acquire()
-        m.SPA(self.connID, self.axes[axis], [48, 21], lims, self.steppers[axis])
+        m.SPA(self.connID, self.axes[axis].encode(), [48, 21], lims, self.steppers[axis])
         self.lock.release()
 
     def ReInit(self):
@@ -119,7 +119,7 @@ class mercuryStepper(base_piezo.PiezoBase):
             tgt = self.minTravel[iChan]
 
         self.onTarget = False
-        m.MOV(self.connID, self.axes[iChan], [tgt])
+        m.MOV(self.connID, self.axes[iChan].encode(), [tgt])
         #self.last_poss[iChan] = tgt
 
         self._pause_joystick(True)
@@ -134,21 +134,21 @@ class mercuryStepper(base_piezo.PiezoBase):
 
     def IsMoving(self, iChan=0):
         self.lock.acquire()
-        ret = m.IsMoving(self.connID, self.axes[iChan])[0]
+        ret = m.IsMoving(self.connID, self.axes[iChan].encode())[0]
         self.lock.release()
         return ret
 
     def IsOnTarget(self):
         self.lock.acquire()
-        ret = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
+        ret = sum(m.qONT(self.connID, (''.join(self.axes)).encode())) == len(self.axes)
         self.lock.release()
         return ret
 
     def RefreshPos(self):
         self.lock.acquire()
-        self.last_poss = m.qPOS(self.connID, ''.join(self.axes))
-        self.moving = m.IsMoving(self.connID, ''.join(self.axes))
-        self.onTarget = sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)
+        self.last_poss = m.qPOS(self.connID, (''.join(self.axes)).encode())
+        self.moving = m.IsMoving(self.connID, (''.join(self.axes)).encode())
+        self.onTarget = sum(m.qONT(self.connID, (''.join(self.axes)).encode())) == len(self.axes)
         self.lock.release()
 
     def GetLastPos(self, iChan=0):
@@ -159,7 +159,7 @@ class mercuryStepper(base_piezo.PiezoBase):
             if on:
                 #wait until our previous move is finished
                 timeout = time.time()+ 10
-                while (not sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)) and time.time() < timeout:
+                while (not sum(m.qONT(self.connID, (''.join(self.axes)).encode())) == len(self.axes)) and time.time() < timeout:
                     time.sleep(0.5)
             jv = [on for c in chans]
             m.JON(self.connID, [c + 1 for c in chans], jv)
@@ -173,13 +173,13 @@ class mercuryStepper(base_piezo.PiezoBase):
 
     def GetVelocity(self, iChan=0):
         self.lock.acquire()
-        ret = m.qVEL(self.connID, self.axes[iChan])[0]
+        ret = m.qVEL(self.connID, self.axes[iChan].encode())[0]
         self.lock.release()
         return ret
 
     def SetVelocity(self, iChan, velocity):
         self.lock.acquire()
-        ret = m.VEL(self.connID, self.axes[iChan], [velocity])
+        ret = m.VEL(self.connID, self.axes[iChan].encode(), [velocity])
         self.lock.release()
         return ret
 

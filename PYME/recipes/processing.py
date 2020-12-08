@@ -1541,7 +1541,10 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         from PYME.IO.image import ImageStack
         image = namespace[self.inputImage]
         
-        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        if self.flatfieldFilename != '':
+            flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        else:
+            flat = None
         
         if not self.darkFilename == '':
             dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
@@ -1762,7 +1765,8 @@ class AverageFramesByZStep(ModuleBase):
         logger.debug('Averaged stack size: %d' % n_steps)
 
         new_stack = []
-        t = time.time()
+       # TODO - should we default to zero or abort?
+        t = image_stack.mdh.getOrDefault('StartTime', 0)
         fudged_events = []
         cycle_time = image_stack.mdh.getOrDefault('Camera.CycleTime', 1.0)
         for ci in range(image_stack.data.shape[3]):

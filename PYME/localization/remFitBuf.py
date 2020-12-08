@@ -115,8 +115,9 @@ class BufferManager(object):
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
-                # we already have a percentile buffer - just change the settings. TODO - Does this need to change to reflect introduction of GPU based buffering?
-                self.bBuffer.pctile = md['Analysis.PCTBackground']
+                # we already have a percentile buffer - just change the settings
+                self.bBuffer.refresh_settings(md['Analysis.PCTBackground'],
+                                              bufferLen)
         else:
             if not isinstance(self.bBuffer, buffers.backgroundBuffer):
                 self.bBuffer = buffers.backgroundBuffer(self.dBuffer)
@@ -131,9 +132,12 @@ class CameraInfoManager(object):
     def __init__(self):
         self._cache = {}
 
-    def _parseROI(self, md):
+    @staticmethod
+    def _parseROI(md):
         """
         Extract ROI coordinates from metadata
+
+        TODO - refactor out of here as it is being used in non-fitting code
 
         Parameters
         ----------
