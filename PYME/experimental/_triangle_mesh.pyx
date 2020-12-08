@@ -295,29 +295,7 @@ cdef class TriangleMesh(TrianglesBase):
             self._set_chalfedges(self._halfedges)
             self._halfedge_vacancies = copy.copy(mesh._halfedge_vacancies)
         else:
-            self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
-            # Flatten to address cython view problem
-            _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
-            # Set up c views to arrays
-            #print self._flat_vertices.shape
-            self._set_cvertices(_flat_vertices)
-            self._vertices[:] = -1  # initialize everything to -1 to start with
-            self._vertices['position'] = vertices
-            self._vertex_vacancies = []
-
-            self._faces = None  # Contains a pointer to one halfedge associated with each face
-            self._face_vacancies = []
-
-            # Halfedges
-            self._halfedges = None
-            self._halfedge_vacancies = []
-            
-            print('initializing halfedges ...')
-            print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
-            if vertices.shape[0] >= MAX_VERTEX_COUNT:
-                raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
-            self._initialize_halfedges(vertices, faces)
-            print('done initializing halfedges')
+            self.build_from_verts_faces(vertices, faces)
 
         # Representation of faces by triplets of vertices
         self._faces_by_vertex = None
@@ -701,6 +679,46 @@ cdef class TriangleMesh(TrianglesBase):
             self._faces['halfedge'] = j  # Faces are defined by associated halfedges
         else:
             raise ValueError('Mesh does not contain vertices and faces.')
+
+    def build_from_verts_faces(self, vertices, faces, clear=False):
+        """
+        Construct mesh from vertices and faces.
+        """
+        self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
+        # Flatten to address cython view problem
+        _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
+        # Set up c views to arrays
+        #print self._flat_vertices.shape
+        self._set_cvertices(_flat_vertices)
+        self._vertices[:] = -1  # initialize everything to -1 to start with
+        self._vertices['position'] = vertices
+        self._vertex_vacancies = []
+
+        self._faces = None  # Contains a pointer to one halfedge associated with each face
+        self._face_vacancies = []
+
+        # Halfedges
+        self._halfedges = None
+        self._halfedge_vacancies = []
+        
+        print('initializing halfedges ...')
+        print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
+        if vertices.shape[0] >= MAX_VERTEX_COUNT:
+            raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
+        self._initialize_halfedges(vertices, faces)
+        print('done initializing halfedges')
+
+        if clear:
+            self._faces_by_vertex = None
+            self._manifold = None
+            self._singular_edges = None
+            self._singular_vertices = None
+            self.face_normals
+            self.vertex_neighbors
+            self._H = None
+            self._K = None
+            self._E = None
+            self._pE = None
 
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
