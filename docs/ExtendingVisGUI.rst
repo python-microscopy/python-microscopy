@@ -162,10 +162,18 @@ The core column names that should be defined in VisGUI and you can rely on in th
 
 
 
-New Rendering Modules
-=====================
+.. New Rendering Modules
+.. =====================
 
+Porting code written in another language to PYMEVisualise
+=========================================================
 
+When possible, we recommend rewriting existing code in Python for maximum reusability. This
+is quite easy to do for MATLAB code (see `numpy documentation <https://numpy.org/doc/stable/user/numpy-for-matlab-users.html>`_.
+It is also possible to call MATLAB functions directly from Python using `MATLAB's engine 
+library <https://www.mathworks.com/help/matlab/matlab_external/call-matlab-functions-from-python.html>`_.
+Code written in R is more difficult to translate directly into Python, and we recommend using the 
+`rpy2 package <https://rpy2.github.io/>`_ to call R functions.
 
 .. rubric:: Footnotes
 
