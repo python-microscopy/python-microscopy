@@ -1,7 +1,7 @@
 .. _extendingvisgui:
 
-Extending VisGUI
-****************
+Extending PYMEVisualise (VisGUI)
+********************************
 
 
 The VisGUI pipeline
