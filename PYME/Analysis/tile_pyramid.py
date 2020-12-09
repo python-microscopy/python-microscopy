@@ -420,13 +420,30 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        #print('add_base_tile(%d, %d)' % (x, y))
+        """add tile to the pyramid
+
+        Parameters
+        ----------
+        x : int
+            x origin of the tile (`frame`), relative to minimum x position of
+            all tiles, in units of pixels
+        y : int
+            y origin of the tile (`frame`), relative to minimum y position of
+            all tiles, in units of pixels
+        frame : ndarray
+            the tile frame to add
+        weights : ndarray
+            weights for averaging with overlapping base tiles
+        """
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
         out_folder = os.path.join(self.base_dir, '0')
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
+        
+        if (x < 0) or (y < 0):
+            raise ValueError('base tile origin positions must be >=0')
         
         tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
         tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
@@ -495,9 +512,14 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ds : PYME.IO.DataSources.BaseDataSource, np.ndarray
         array-like image
     xm : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
-        x positions of frames in ds
+        x positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum x, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
+        to the camera chip origin.
     ym : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
-        y positions of frames in ds
+        y positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum y, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
     mdh : PYME.IO.MetaDataHandler.MDataHandlerBase
         metadata for ds
     split : bool, optional
@@ -529,6 +551,15 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     -------
     ImagePyramid
         coalesced/averaged/etc multilevel ImagePyramid instance
+    
+    Notes
+    -----
+    Code is currently somewhat alpha in that the splitter functionality is 
+    more or less untested, and we only get tile orientations right for primary
+    cameras (i.e. when the stage is registered with multipliers to match the
+    camera, rather than camera registered with orientation metadata to match it
+    to the stage)
+
     """
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
     
@@ -544,26 +575,22 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     xps = xm(np.arange(numFrames)) if not isinstance(xm, np.ndarray) else xm
     yps = ym(np.arange(numFrames)) if not isinstance(ym, np.ndarray) else ym
 
-    if mdh.getOrDefault('CameraOrientation.FlipX', False):
-        xps = -xps
-    
-    if mdh.getOrDefault('CameraOrientation.FlipY', False):
-        yps = -yps
-
-    rotate_cam = mdh.getOrDefault('CameraOrientation.Rotate', False)
-
     #give some room at the edges
     bufSize = 0
     if correlate:
         bufSize = 300
     
+    # to avoid building extra, empty tiles, the pyramid origin is the minimum
+    # x and y position present in the tiles
+    x0_pyramid, y0_pyramid = xps.min(), yps.min()
+    xps -= x0_pyramid
+    yps -= y0_pyramid
 
-    # make our x0, y0 independent of the camera ROI setting
+    # calculate origin independent of the camera ROI setting to store in
+    # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
     x0_cam, y0_cam = get_camera_physical_roi_origin(mdh)
-    x0 = xps.min() + mdh.voxelsize_nm.x / 1e3 * x0_cam
-    y0 = yps.min() + mdh.voxelsize_nm.y / 1e3 * y0_cam
-    xps -= x0
-    yps -= y0
+    x0 = x0_pyramid + mdh.voxelsize_nm.x / 1e3 * x0_cam
+    y0 = y0_pyramid + mdh.voxelsize_nm.y / 1e3 * y0_cam
 
     #convert to pixels
     xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
@@ -581,11 +608,9 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
     weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
     
-    roi_x0, roi_y0 = get_camera_roi_origin(mdh)
-    
-    ROIX1 = roi_x0 + 1
-    ROIY1 = roi_y0 + 1
-    
+    # get splitter ROI coordinates in units of pixels
+    ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
+    ROIY1 = y0_cam + 1
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
     
@@ -610,15 +635,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
             d_weighted = weights * d
-
-
-            # orient frame - TODO - check if we need to flip x and y?!
-            if rotate_cam:
-                #print('adding base tile from frame %d [transposed]' % i)
-                P.add_base_tile(x_i, y_i, d_weighted.T.squeeze(), weights.T.squeeze())
-            else:
-                #print('adding base tile from frame %d' % i)
-                P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            # TODO - account for orientation so this works for non-primary cams
+            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
                 
     
     t2 = time.time()

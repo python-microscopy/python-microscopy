@@ -64,10 +64,11 @@ class Tiler(pointScanner.PointScanner):
         self._pixel_size = self.mdh.getEntry('voxelsize.x')
         self.background = self.mdh.getOrDefault('Camera.ADOffset', self.background)
         
-        # make our x0, y0 independent of the camera ROI setting
+        # calculate origin independent of the camera ROI setting to store in
+        # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
         x0_cam, y0_cam = MetaDataHandler.get_camera_physical_roi_origin(self.mdh)
             
-        x0 = self._x0 + self._pixel_size*x0_cam
+        x0 = self._x0 + self._pixel_size*x0_cam  # offset in [um]
         y0 = self._y0 + self._pixel_size*y0_cam
         
         self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
