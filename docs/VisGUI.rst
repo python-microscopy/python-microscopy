@@ -1,7 +1,7 @@
 .. _visgui:
 
-**VisGUI** - Visualising Localization Data Sets
-***********************************************
+**PYMEVisualise (VisGUI)** - Visualising Localization Data Sets
+***************************************************************
 
 Installing the standalone viewer
 ================================
