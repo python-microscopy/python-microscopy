@@ -719,15 +719,16 @@ class Gradient2D(ModuleBase):
     ----------
     inputName : PYME.IO.image.ImageStack
         input image
-    physical_units : Bool
-        Flag to return gradient in units of input data intensity per micrometer
-        [True] or leave in units of input data intensity per pixel [False,
-        default].
+    units : Enum
+        specify whether to return gradient in units of intensity/pixel or
+        intensity/um. Note that intensity/um will account for anisotropic 
+        voxels, while the per pixel in intensity/pixel can be direction 
+        dependent.
     """
     inputName = Input('input')
     outputNameX = Output('grad_x')
     outputNameY = Output('grad_y')
-    physical_units = Bool(False)
+    units = Enum(['intensity/pixel', 'intensity/um'])
     
     def calc_grad(self, data, chanNum):
         grad_x = []
@@ -747,7 +748,7 @@ class Gradient2D(ModuleBase):
         grad_y = []
         for chanNum in range(image.data.shape[3]):
             fx, fy = self.calc_grad(image.data, chanNum)
-            if self.physical_units:
+            if self.units == 'intensity/um':
                 fx /= (image.voxelsize_nm.x / 1e3)  # [data/pix] -> [data/um]
                 fy /= (image.voxelsize_nm.y / 1e3)
             grad_x.append(fx)
@@ -777,16 +778,17 @@ class Gradient3D(ModuleBase):
     ----------
     inputName : PYME.IO.image.ImageStack
         input image
-    physical_units : Bool
-        Flag to return gradient in units of input data intensity per micrometer
-        [True] or leave in units of input data intensity per pixel [False,
-        default].
+    units : Enum
+        specify whether to return gradient in units of intensity/pixel or
+        intensity/um. Note that intensity/um will account for anisotropic 
+        voxels, while the per pixel in intensity/pixel can be direction 
+        dependent.
     """
     inputName = Input('input')
     outputNameX = Output('grad_x')
     outputNameY = Output('grad_y')
     outputNameZ = Output('grad_z')
-    physical_units = Bool(False)
+    units = Enum(['intensity/pixel', 'intensity/um'])
 
     def calc_grad(self, data, chanNum):
         dx, dy, dz = np.gradient(np.atleast_3d(data[:,:,:,chanNum].squeeze()))
@@ -801,7 +803,7 @@ class Gradient3D(ModuleBase):
 
         for chanNum in range(image.data.shape[3]):
             fx, fy, fz = self.calc_grad(image.data, chanNum)
-            if self.physical_units:
+            if self.units == 'intensity/um':
                 fx /= (image.voxelsize_nm.x / 1e3)  # [data/pix] -> [data/um]
                 fy /= (image.voxelsize_nm.y / 1e3)
                 fz /= (image.voxelsize_nm.z / 1e3)
