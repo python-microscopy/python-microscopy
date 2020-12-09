@@ -165,15 +165,20 @@ The core column names that should be defined in VisGUI and you can rely on in th
 .. New Rendering Modules
 .. =====================
 
-Porting code written in another language to PYMEVisualise
-=========================================================
+I've got a neat algorithm in another language, can I use it in PYME?
+====================================================================
 
-When possible, we recommend rewriting existing code in Python for maximum reusability. This
-is quite easy to do for MATLAB code (see `numpy documentation <https://numpy.org/doc/stable/user/numpy-for-matlab-users.html>`_.
-It is also possible to call MATLAB functions directly from Python using `MATLAB's engine 
-library <https://www.mathworks.com/help/matlab/matlab_external/call-matlab-functions-from-python.html>`_.
-Code written in R is more difficult to translate directly into Python, and we recommend using the 
-`rpy2 package <https://rpy2.github.io/>`_ to call R functions.
+The answer to this question is almost certainly yes, with the best solution depending on what language the original
+algorithm is written in. Algorithms written in low level languages such as c are comparatively easy to interface, 
+using tools such as cython and ctypes. Interfaces from python to high level languages, such as R and MATLAB are also 
+available (e.g. the `rpy2 package <https://rpy2.github.io/>`_  and `MATLAB's engine 
+library <https://www.mathworks.com/help/matlab/matlab_external/call-matlab-functions-from-python.html>`_ ) but these
+typically require the installation of large additional software packages on the users computer with potential dependency
+and licensing issues. As a result, whilst the r2py and matlab engine interfaces are appropriate for testing and
+internal use, it is generally advisable to translate the code to either python, c, or a standalone DLL before trying to
+share the code with others. Translating MATLAB code to python is quite easy (see, e.g., `the numpy 
+documentation for MATLAB users <https://numpy.org/doc/stable/user/numpy-for-matlab-users.html>`_).
+
 
 .. rubric:: Footnotes
 
