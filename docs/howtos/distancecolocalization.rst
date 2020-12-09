@@ -96,8 +96,8 @@ mask, and Manders and Pearson coefficients are displayed at the top of
 the figure. The *50% of X within Ynm* metric is my candidate for a new
 colocalization metric which will still work for super-resolution methods
 where nothing really colocalizes. The dotted line shows a comparison of
-raw label itensity (from the original image) at a given distance from it’s 
-own mask (generated via thresholding the original image), and essentially 
+same analysis performed on the raw intensities in the channel used to 
+generate the mask, and essentially 
 functions as a control for how good the thresholding is. The second window 
 is a repeat of the first with the labels switched, and the 3\ :sup:`rd` 
 window just displays the raw histogram data. The 3\ :sup:`rd` window is 
