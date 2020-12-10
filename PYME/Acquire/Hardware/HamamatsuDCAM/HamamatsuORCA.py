@@ -231,17 +231,12 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         y1 = 4*np.floor(y1/4)
         w = 4*np.floor((x2-x1)/4)
         h = 4*np.floor((y2-y1)/4)
-
+        self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
         self.setCamPropValue('SUBARRAY HPOS', x1)
         self.setCamPropValue('SUBARRAY HSIZE', w)
         self.setCamPropValue('SUBARRAY VPOS', y1)
         self.setCamPropValue('SUBARRAY VSIZE', h)
-
-        # If our ROI doesn't span the whole CCD, turn on subarray mode
-        if w == self.GetCCDWidth() and h == self.GetCCDHeight():
-            self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
-        else:
-            self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
+        self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
 
         logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x1, y1, w, h))
 
