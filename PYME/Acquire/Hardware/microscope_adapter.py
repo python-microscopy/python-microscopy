@@ -46,8 +46,19 @@ class MicroscopeLaser(PYME.Acquire.Hardware.lasers.Laser):
         # may try to call self.TurnOn().
         self._laser = laser
         self.powerControlable = True
-        self.MIN_POWER = self._laser.get_min_power_mw()
-        self.MAX_POWER = self._laser.get_max_power_mw()
+
+        # During development of microscope 0.6.0, this changed.  Power
+        # of lasers used to be set in milliwats and now it is set with
+        # fractions of 1.
+        self._uses_mw = hasattr(self._laser, 'set_power_mw')
+        if self._uses_mw:
+            self.MIN_POWER = self._laser.get_min_power_mw()
+            self.MAX_POWER = self._laser.get_max_power_mw()
+            self.units = 'mW'
+        else:
+            self.MIN_POWER = 0.0
+            self.MAX_POWER = 1.0
+            self.units = '%'
         super().__init__(*args, **kwargs)
 
     def IsOn(self):
@@ -60,10 +71,16 @@ class MicroscopeLaser(PYME.Acquire.Hardware.lasers.Laser):
         self._laser.disable()
 
     def SetPower(self, power):
-        self._laser.set_power_mw(power)
+        if self._uses_mw:
+            self._laser.set_power_mw(power)
+        else:
+            self._laser.power = power
 
     def GetPower(self):
-        return self._laser.get_power_mw()
+        if self._uses_mw:
+            return self._laser.get_power_mw()
+        else:
+            return self._laser.power
 
 
 class MicroscopeFilterWheel(PYME.Acquire.Hardware.FilterWheel.FilterWheelBase):
@@ -84,4 +101,4 @@ class MicroscopeFilterWheel(PYME.Acquire.Hardware.FilterWheel.FilterWheelBase):
         self._fw.set_position(pos)
 
     def _get_physical_position(self):
-        return self._fw.get_position(pos)
+        return self._fw.get_position()
