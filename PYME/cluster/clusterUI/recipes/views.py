@@ -43,13 +43,16 @@ def run(request):
         from PYME.cluster.HTTPTaskPusher import RecipePusher
     
     recipe_url = request.POST.get('recipeURL')
+    output_directory = 'pyme-cluster://%s/%s' % (server_filter, 
+                                                 request.POST.get('recipeOutputPath').lstrip('/'))
+    
     if recipe_url is not None:
         recipeURI = ('pyme-cluster://%s/' % server_filter) + recipe_url.lstrip('/')
 
-        pusher = RecipePusher(recipeURI=recipeURI)
+        pusher = RecipePusher(recipeURI=recipeURI, output_dir=output_directory)
     else:
         recipe_text = request.POST.get('recipe_text')
-        pusher = RecipePusher(recipe=recipe_text)
+        pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
 
     fileNames = request.POST.getlist('files', [])
     pusher.fileTasksForInputs(input=fileNames)
