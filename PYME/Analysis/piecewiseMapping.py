@@ -77,7 +77,7 @@ def times_to_frames(t, events, mdh):
     #fr = np.zeros_like(t)
     
     
-    fr = sfr[si-1] + ((t - startEvents['Time'][si-1]) / cycTime)
+    fr = sfr[si-1] + ((t - startEvents['Time'][si-1]) / cycTime).astype(int)
     
     if np.isscalar(fr):
         if si < len(sfr):

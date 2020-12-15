@@ -128,7 +128,6 @@ class H5File(h5rFile.H5RFile):
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
             self.addEvents(event_array_from_list(json.loads(data)))
-        
         elif filename.startswith('frame'):
             #FIXME - this will not preserve ordering
             frame_num = int(filename[5:10])

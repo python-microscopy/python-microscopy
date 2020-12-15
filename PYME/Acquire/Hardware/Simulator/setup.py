@@ -25,7 +25,7 @@
 
 import sys
 if sys.platform == 'darwin':#MacOS
-    linkArgs = []
+    linkArgs = ['-headerpad_max_install_names']
 else:
     linkArgs = ['-static-libgcc']
 

@@ -76,8 +76,6 @@ class EventLogger:
         return json.dumps(self._events)
           
 
-CLUSTERID=''  
-
 def genSequenceID(filename=''):
     return  int(time.time()) & random.randint(0, 2**31) << 31 
     
@@ -123,10 +121,11 @@ class Spooler(sp.Spooler):
         #print filename, self.seriesName
         self._aggregate_h5 = kwargs.get('aggregate_h5', False)
         
-        self.clusterFilter = kwargs.get('serverfilter', CLUSTERID)
+        self.clusterFilter = kwargs.get('serverfilter', 
+                                        config.get('dataserver-filter', ''))
         self._buffer = []
         
-        self.buflen = 50
+        self.buflen = config.get('httpspooler-chunksize', 50)
         
         self._postQueue = Queue.Queue(QUEUE_MAX_SIZE)
         self._dPoll = True

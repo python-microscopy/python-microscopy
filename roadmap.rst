@@ -31,6 +31,12 @@ The exact nature of this split is unclear, but could look something like core, c
 and VisGUI), and PYMEAcquire. Relatively self-contained analysis features such as the meshing functions could also be
 split out.
 
+Define what is API and what is internal
+---------------------------------------
+
+Decide what is likely to be used from external code / plugins / contributions. Annotate and document what constitutes the
+API. Make this API more consistent and more clearly structured.
+
 
 New features / Improvements
 ===========================
@@ -43,34 +49,88 @@ UI
 UI alignment between VisGUI and dh5view
 '''''''''''''''''''''''''''''''''''''''
 
+With the goal of promoting a more seamless user-experience and reducing the amount of stuff to be learnt by a new user.
+Goal is that if you can use PYMEImage you have a head-start on PYMEVisualise and vice versa. Should also help code re-use
+by allowing us to remove quite a lot of duplicated code (e.g. pixel -> nm translations etc ...) Includes:
 
-Web UI
-''''''
+- Making display settings / layers appear in the same place in PYMEImage and PYMEVisualise (maybe right hand sidebar)
+- Making overlays and scaling work the same in both
+- Allowing easier overlaying of image and localisation data.
 
-
-Better logging / error reporting in UI apps
-'''''''''''''''''''''''''''''''''''''''''''
-
-
-Recipe error handling
-'''''''''''''''''''''
-
-Cleanup of VisGUI shader related code
-'''''''''''''''''''''''''''''''''''''
-
-Standardised UI components for tabular data and "reports"
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+And lays the framework for having things like annotation modules which can work on both image and point data.
 
 OpenGL based replacement for dh5view image display
 ''''''''''''''''''''''''''''''''''''''''''''''''''
 
-With support for large, tiled, datasets.
+With support for large, tiled, datasets and tile pyramids. Should improve viewer performance. Potentially a part of UI alignment above.
 
 
-IO / Analysis
--------------
+Standardised UI components for tabular data and "reports"
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+This would take the form of a spreadsheet type view for tabular results in recipes, and a viewer for HTML reports generated
+by recipes in dh5view/visgui. Longer term it would involve porting many of the current analysis tasks that display matplotlib
+windows to producing html reports.
+
+Better logging / error reporting in UI apps
+'''''''''''''''''''''''''''''''''''''''''''
+
+Largely addressed with error context manager on menu items, but doesn't capture everything.
+
+Web UI
+''''''
+
+Would allow:
+- the use of a hosted version of PYME without installation
+- quick exploration of cluster data
+- more platforms (e.g. phones & tablets)
+- reduced dependence on traitsui
+
+General housekeeping
+''''''''''''''''''''
+
+- tidy up shader code (which currently has at least one too many layers of abstraction)
+- tidy/sort menus
+- tidy/sort plugins
+- unified splashscreens when loading (and update institutional icons etc ...)
+- better support for associating files with UI components
+- single UI entry point??
+- make windows use non-generic icons in taskbar
+- improve PYMEImage opening speed (currently limited by clusterIO name resolution)
 
 
+IO
+--
+
+- more support for tiled/chunked image formats (e.g. zarr)
+- move to a true 5D data model
+- better OME interop
+  - get PYME formats into bioformats
+  - access files from OMERO
+  - push stuff to OMERO
+
+Localisation Analysis
+---------------------
+
+- Make it easy to plug custom localisation routines
+- 3D multi-emitter fitting
+- Refresh / fix fitInfo localisation inspection
+- Other sample quality stuff?
+
+Acquisition
+-----------
+
+- add support for using micromanager hardware drivers
+- expand and better document hardware base classes
+- clearly document how new hardware types (e.g. Adaptive optics, FPGAs etc) should interface with PYMEAcquire
+- write an initialisation script wizard to lower the barrier to setting up PYMEAcquire on new microscopes
+
+Recipes
+-------
+
+- add support for parallelism on a per-chunk rather than per image basis
+- deprecate the `processFramesIndividually` option in favour of separate minumum chunk size and
+- re-organise modules to make them easier to find. Potentially push some of the more esoteric stuff out into plugins
 
 Planned Deprecations
 ====================
@@ -80,16 +140,24 @@ Library support
 
 Ultimately we would like to drop support for both python <3.6 and wxpython <4. There are a number of things we need to
 address first. Several bits of the GUI are still broken on wx4 (most notably anything which uses TraitsUI, but also some
-of the less used bits of our GUI code). We also rely on python 2.7 libraries for spooling and localisation analysis on
-windows - we are pretty close to having an alternative, but are not quite there yet. There also needs to be a lot more
-testing on Py3.
+of the less used bits of our GUI code).
 
-A tentative timeline would see us shifting the default install to py3 around 1 Sept 2020 and ceasing python 2 & wx3
-support around 1 Feb 2021. Note that these dates are targets, not deadlines, and will be extended if things are not fully
-functional by that time.
+We are currently around 98% done with the transition, with [3.6 <= python <= 3.7] and wx=4.0.x recommended for new installs,
+but maintaining code compatibility with existing python 2.7 and wx3 installs for another few months
+(targeting end of March 2021, extended from Feb 1 2021). There are a bunch of deprecation warnings on wx4.0.x which
+become errors on 4.1.x which need addressing once we drop wx3 support.
 
 Documentation
 =============
+
+Both the user facing and api documentation need a **lot** of work. An incomplete list of items
+
+- Much of the existing end user documentation is out of date. Refresh this.
+- Write more user documentation where needed. This should be a combination of general overviews (what are the components
+and what are they good for) as well as task-specific walk-throughs, HOWTOs, tutorials etc ...
+- Document recipes better
+- Make sure functions which are likely to be called from plugin code (the API) all have docstrings (ideally all functions
+should have docstrings, but this is a realistic starting point).
 
 
 Packaging / Distribution
@@ -98,19 +166,31 @@ Packaging / Distribution
 Continuous Integration & Testing
 --------------------------------
 
+We currently have some CI based testing, but this is pretty limited. Packaging etc is done manually.
+
+Testing:
+''''''''
+
+- fix failing tests
+- improve test coverage
+- run coverage checks on newly submitted PRs (and get this summarized nicely / with a bot etc ... so we can see if a given PR improves coverage)
+
+Packaging:
+''''''''''
+
+- set up automatic package builds (conda, pip)
+- set up automatic builds of executable installers
+
+
 Conda packages & dependencies
 -----------------------------
 
-Py3
-'''
+There are still a few holes in our default conda based packaging:
 
-
-Streamlined bioformats installation / packaging
-'''''''''''''''''''''''''''''''''''''''''''''''
-
-Shapely?
-''''''''
-
+- start building conda packages for python-microscopy for py3
+- ensure all dependencies are being built for py3.6 and 3.7
+- make it easy to install bioformats (this might mean maintaining conda packages for both bioformats and a JVM)
+- consider packaging shapely (not available across platforms from the core conda channels)
 
 Pip-installable packages (wheels)
 ---------------------------------
@@ -135,6 +215,7 @@ The other arguments for conda over pip are:
 - conda has a nice way of installing menu items/ shortcuts. If you 'conda install python-microscopy' on windows you now get links to the component programs in your start menu. This is not possible using pip.
 - conda constructor offers a reasonably simple way of creating an executable installer for windows and OSX.
 
-Stacked against this is the pain that is conda dependency management. My gut feeling is to stick with conda as the default install route, but to offer pip as an option for people with a little move technical expertise.
+Stacked against this is the pain that is conda dependency management. My gut feeling is to stick with conda as the default
+install route, but to offer pip as an option for people with a little move technical expertise.
 
 

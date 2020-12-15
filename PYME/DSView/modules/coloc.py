@@ -89,7 +89,7 @@ class ColocSettingsDialog(wx.Dialog):
             sizer1.Add(hsizer, 0, wx.EXPAND)
             
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hsizer.Add(wx.StaticText(self, -1, '2st Channel:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+            hsizer.Add(wx.StaticText(self, -1, '2nd Channel:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
             self.cChan2 = wx.Choice(self, -1, choices=names)
             self.cChan2.SetSelection(1)
             hsizer.Add(self.cChan2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -133,12 +133,10 @@ class ColocSettingsDialog(wx.Dialog):
             ze = zs+1 # it is still possible that ze now greater than max size
         return (zs,ze)
 
-class colocaliser:
+from ._base import Plugin
+class Colocaliser(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
-
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.mProcessing.AppendSeparator()
         dsviewer.AddMenuItem('Processing', "&Colocalisation", self.OnColocBasic)
@@ -406,7 +404,7 @@ class colocaliser:
 
 
 def Plug(dsviewer):
-    dsviewer.coloc = colocaliser(dsviewer)
+    return Colocaliser(dsviewer)
 
 
 

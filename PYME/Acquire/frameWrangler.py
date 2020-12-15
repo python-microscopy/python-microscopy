@@ -46,7 +46,7 @@ else: #linux
 import time
 import traceback
 
-import dispatch
+from PYME.contrib import dispatch
 import warnings
 
 from PYME.Acquire import eventLog
@@ -54,6 +54,29 @@ import threading
 #sfrom PYME.ui import mytimer
 
 class FrameWrangler(object):
+    """
+    Grabs frames from the camera buffers
+
+    Notes
+    -----
+    dispatch Signals are used to allow other files to listen to key events 
+    happinging within the acquisition.
+
+    Attributes
+    ----------
+    onFrame : dispatch.Signal
+        Called once per new-frame appearing in our buffer; used to pass
+        frame data to e.g. spoolers. Note that while onFrame gets called once
+        per new frame, the new frames are only checked for once per polling
+        cycle, meaning that this event will be fired N-times for each 
+        `onFrameGroup` event.
+    onFrameGroup : dispatch.Signal
+        Called on each new frame group (once per polling interval) - use for 
+        updateing GUIs etc.
+    onStop : dispatch.Signal
+        Called when acquisition stops.
+
+    """
     def __init__(self, _cam, _ds = None, event_loop=None):
         #wx.EvtHandler.__init__(self)
         #self.timer = wx.Timer(self)
@@ -105,7 +128,7 @@ class FrameWrangler(object):
 
         self._current_frame_lock = threading.Lock()
         self._poll_lock = threading.Lock()
-        
+        self._polling_interval = 0.01  # time between calls to poll the camera [s]
         self._poll_thread = threading.Thread(target=self._poll_loop)
         self._poll_thread.start()
         
@@ -213,6 +236,7 @@ class FrameWrangler(object):
         except:
             import traceback
             traceback.print_exc()
+
         finally:       
             if not contMode:
                 #flag the need to start a new exposure
@@ -221,18 +245,11 @@ class FrameWrangler(object):
                 #signal complete 
                 self.needExposureStart = True
 
-    def _poll_loop(self, sleep_interval=.01):
+    def _poll_loop(self):
         """
-        This loop runs in a background thread to continuously poll the camera and deal with frames as they arrive.
-
-        Parameters
-        ----------
-        sleep_interval : float
-            length of time to sleep within the polling thread
-
-        Returns
-        -------
-
+        This loop runs in a background thread to continuously poll the camera 
+        and deal with frames as they arrive. `FrameWrangler._polling_interval`
+        is used to set the delay between loops.
         """
         while (self._poll_camera):
             if (not self.cam.CamReady()):# and self.piezoReady())):
@@ -266,7 +283,7 @@ class FrameWrangler(object):
                     self.onExpReady()
                     self.n_frames_in_group += 1
         
-            time.sleep(sleep_interval)
+            time.sleep(self._polling_interval)
 
 
 

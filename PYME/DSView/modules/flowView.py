@@ -18,6 +18,7 @@ import numpy as np
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
     
+import weakref
 
 class FlowView(HasTraits):    
     showFlow = Bool(True)
@@ -45,12 +46,19 @@ class FlowView(HasTraits):
         
         return traits_view
     
+    #property proxies for do and view
+    @property
+    def _do(self):
+        return self._dsviewer.do
+    
+    @property
+    def _view(self):
+        return self._dsviewer.view
+    
     def __init__(self, dsviewer):
         HasTraits.__init__(self)
+        self._dsviewer = weakref.proxy(dsviewer)
         
-        self._dsviewer = dsviewer
-        self._view = dsviewer.view
-        self._do = dsviewer.do
         #self.image = dsviewer.image
         
         #self._penCols = [wx.Colour(*pylab.cm.hsv(v, bytes=True)) for v in np.linspace(0, 1, 16)]
@@ -251,7 +259,7 @@ class FlowView(HasTraits):
 
 def Plug(dsviewer):
     #from PYME.DSView import htmlServe #ensure that our local cherrypy server is running
-    dsviewer.flowView = FlowView(dsviewer)
+    return FlowView(dsviewer)
     #cherrypy.tree.mount(dsviewer.tracker, '/tracks')
     #dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')
     

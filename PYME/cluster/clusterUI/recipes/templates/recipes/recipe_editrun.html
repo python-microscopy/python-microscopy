@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Run recipe{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="/static/css/recipe_editor.css">
+    <link rel="stylesheet" href="/static/css/flat_design_colors_full.css">
+    <style>
+    #app {
+        height: 75%;
+    }
+    </style>
+{% endblock %}
+{% block meta %}
+{#<meta http-equiv="refresh" content="2">#}
+{% endblock %}
+{% block recipe_active_class %}active{% endblock %}
+{% block content %}
+    {% include 'recipes/recipe_editor_common.html' %}
+
+    <form class="form" id="form_recipe" action="/recipes/run/" method="post">
+
+        {% csrf_token %}
+
+
+        <div class="form-group">
+            <label class="control-label" for="inputFileGlob">Input glob</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster://{{ clusterfilter }}/</span>
+                <input type="text" class="form-control" id="inputFileGlob" name="inputGlob">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="inputGlob">find matching files</button>
+                </span>
+            </div>
+        </div>
+
+
+        <div id="recipe_input_list"></div>
+
+{#        <div class="form-group">#}
+{#            <label class="control-label" for="recipeOutputPath">Output path</label>#}
+{#            <div class="input-group">#}
+{#                <span class="input-group-addon">pyme-cluster:///</span>#}
+{#                <input type="text" class="form-control" id="recipeOutputPAth" name="recipeOutputPath">#}
+{#                <span class="input-group-btn">#}
+{#                    <button class="btn btn-default" type="button" id="select_output">select</button>#}
+{#                </span>#}
+{#            </div>#}
+{#        </div>#}
+
+        <input name="recipe_text" class="cu-hidden-text" type="hidden" value="">
+
+        <div class="form-group pull-right">
+            <input type="button" value="Launch recipe" class="btn btn-primary" id="launch-recipe"/>
+        </div>
+    </form>
+
+    <script>
+
+    </script>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script type='text/javascript' src='/static/jigna-vue-bare.js'></script>
+
+    <!-- Once jigna is loaded, initialize it. -->
+    <script type='text/javascript'>
+        jigna.initialize();
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q==" crossorigin="anonymous"></script>
+    <!--<script src="/static/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script src="/static/jstree.min.js"></script>
+    <script src="/static/fileselector.js"></script>-->
+
+    <script src="/static/recipe_editor.js"></script>
+<script>
+
+
+var find_files_matching_glob = function () {
+    var glob =  $('#inputFileGlob').val();
+
+    $('#recipe_input_list').load('/recipes/find_inputs?glob=' + glob)
+};
+
+$('#inputGlob').click(find_files_matching_glob);
+
+
+$('#launch-recipe').click(function(){
+    $('input[name="recipe_text"]').val(vm.recipe.getYAML());
+    $('#form_recipe').submit();
+});
+</script>
+{% endblock %}

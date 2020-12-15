@@ -1,0 +1,106 @@
+.recipe_module {
+    background-color: LightSteelBlue;
+    border-style: solid;
+    border-width: 1px;
+    border-color: steelblue;
+    border-radius: 5px;
+    box-shadow: 2px 2px darkgrey;
+    width: fit-content;
+    padding-left: 10px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    margin: 10px;
+}
+
+.module_name {
+    margin-block-start: .7em;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    /*background-color: lightgrey;*/
+    /*border: 1px solid red;*/
+}
+
+.col0 {
+
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+.fullheight{
+    height: 100%;
+    overflow: hidden;
+}
+
+.vertscroll{
+    height: 100%;
+    overflow: scroll;
+}
+
+.fullwidth {
+    width:100%;
+    height:100%;
+}
+
+.connecting-line {
+    stroke-width: .005;
+    fill:none;
+}
+
+.link-label {
+    font-size: 0.04px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    background-color: rgb(245,245,245);
+    /*stroke-width: 0.002;*/
+}
+
+.main, .cont0, .row0{
+    height:100%;
+}
+
+
+#editor {
+    width: 600px;
+    height:500px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+#form_recipe {
+    height: 25%;
+    overflow: scroll;
+}
+
+#recipe {
+    display: inline-block;
+    width: auto;
+    height:100%
+    overflow: scroll
+}
+
+#editor-buttons {
+    width: 100%;
+    display: inline-block;
+    margin:10px;
+    text-align: right;
+}
+
+/*        ::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, .5);
+  box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+}*/

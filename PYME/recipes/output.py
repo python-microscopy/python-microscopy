@@ -343,19 +343,21 @@ class HDFOutput(OutputModule):
                 v = namespace[name]
                 v.to_hdf(out_filename, tablename=h5_name, metadata=getattr(v, 'mdh', None))
 
-    # @property
-    # def default_view(self):
-    #     from traitsui.api import View, Item, Group
-    #     from PYME.ui.custom_traits_editors import CBEditor
-    #
-    #     editable = self.class_editable_traits()
-    #     inputs = [tn for tn in editable if tn.startswith('input')]
-    #     outputs = [tn for tn in editable if tn.startswith('output')]
-    #     params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
-    #
-    #     return View([Item(tn) for tn in inputs] + [Item('_'), ] +
-    #                 [Item(tn) for tn in params] + [Item('_'), ] +
-    #                 [Item(tn) for tn in outputs], buttons=['OK', 'Cancel'])
+    @property
+    def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
+        from traitsui.api import View, Item
+        from PYME.ui.custom_traits_editors import DictChoiceStrEditor
+
+        inputs, outputs, params = self.get_params()
+        
+        return View([Item(tn, editor=DictChoiceStrEditor(choices=self._namespace_keys)) for tn in inputs] +
+                    [Item('_'),] +
+                    self._view_items(params), buttons=['OK', 'Cancel'])
+
 
 
 @register_module('ReportOutput')

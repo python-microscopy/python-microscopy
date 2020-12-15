@@ -179,9 +179,15 @@ dataserver-filter : default = '', multi-cluster support. Specifies a cluster nam
 
 dataserver-port : default=8080, what port to run the PYMEDataServer on. Overridden by the --port command line option (e.g. if you want to run multiple servers on one machine).
 
-cluster-listing-no-countdir : default=False, hack to disable the loading of the low-level countdir module which allows rapid
+cluster-listing-no-countdir : default=False, hack to disable (True) the loading of the low-level countdir module which allows rapid
     directory statistics on posix systems. Needed on OSX if `dataserver-root` is a mapped network drive rather than a
     physical disk
+
+clusterIO-hybridns : default=True, toggles whether a protocol compatibility 
+    nameserver (True) or zeroconf only (False) is used in clusterIO. The hybrid
+    nameserver offers greater protocol/version compatibility but is effectively
+    two nameservers, which has performance implications on very high bandwidth 
+    systems.
 
 h5r-flush_interval : default=1, how often (in s) should we call the .flush() method and write records from the HDF/pytables
     caches to disk when writing h5r files.
@@ -200,6 +206,13 @@ nodeserver-worker-get-timeout : default=60, a timeout (in s). When the worker as
 nodeserver-num_workers : default= CPU count. Number of workers to launch on an individual node.
 
 ruleserver-retries : default = 3. [new-style task distribution]. The number of times to retry a given task before it is deemed to have failed.
+
+httpspooler-chunksize : default=50, how many frames we spool in each chunk 
+    before (potentially) switching which PYMEDataServer we send the next chunk
+    to. Increasing the chunksize can increase data-locality for faster analysis,
+    but has spooling/writing bandwidth implications.
+
+pymevis-zoom-factor : default = 1.1, adjusts zoom sensitivity by adjusting magnification factor per scroll event
 
 
 Deprecated config options
@@ -497,3 +510,87 @@ def get_init_filename(filename, legacy_scripts_directory=None):
             return fnp
         
     return None
+
+def update_yaml_keys(fn, d, create_backup=False):
+    """ 
+    Update the keys in a YAML file without destroying comments.
+
+    TODO: Plays it fast and lose with regex and won't work for many 
+    situations. Currently only works in the case we have a line
+
+    key : value  # optional comment, optional number of spaces
+                 # around the colon, no option for a space at
+                 # the beginning of the line
+    
+    To make this work well, we'll need a full YAML parser 
+    that handles comments. We could either use ruamel.yaml 
+    (https://pypi.org/project/ruamel.yaml/) or write our own.
+
+    Parameters
+    ----------
+    fn : string
+        Path to a yaml file.
+    d : dict
+        key, value pairs of keys/values to update or append to the
+        end of the file
+    create_backup : bool
+        Make a backup of the YAML file before updating the keys
+    """
+    import re
+    import json
+
+    if create_backup:
+        import shutil
+        shutil.copy(fn, fn+'.bak')
+
+    # Read the yaml file
+    with open(fn) as f:
+        data = f.read()
+
+    # Update the appropriate keys
+    for k, v in d.items():
+        x = re.search(r'^{}\s*:.*$'.format(k),data,flags=re.MULTILINE)
+        if x is None:
+            data += '\n{}: {}'.format(k, json.dumps(v))
+        else:
+            data = re.sub(r'^{}\s*:.*$'.format(k),
+                          '{}: {}'.format(k,json.dumps(v)),data,flags=re.MULTILINE)
+
+    # Update the yaml file
+    with open(fn, 'w') as f:
+        f.write(data)
+
+def update_config(d, config='user', config_fn='config.yaml', create_backup=False):
+    """
+    Updates PYME configuration files.
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary of configuration keys to update
+    config : str, optional
+        PYME configuration type, one of ['user','site','dist'], by default 'user'
+    config_fn : str, optional
+        Name of the configuration file within the type, by default 'config.yaml'
+    create_backup : bool
+        Create a backup of the configuration file before updating.
+    """
+    
+    # Choose where to look for the configuration file based
+    # on the configuration type
+    base = user_config_dir
+    if config == 'site':
+        base = site_config_directory
+    elif config == 'dist':
+        base = dist_config_directory
+    
+    # Open and edit the file
+    update_yaml_keys(os.path.join(base,config_fn),d,create_backup=create_backup)
+
+    # Reload config
+    if sys.version_info.major == 3:
+        from importlib import reload
+    try:
+        reload(sys.modules['config'])
+    except(KeyError):
+        reload(sys.modules['PYME.config'])

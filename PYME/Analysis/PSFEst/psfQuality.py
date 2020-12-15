@@ -146,7 +146,7 @@ def noise(image, psft):
     """This test looks at a region to the side of the in-focus plane to assess
     noise levels. Noise can be improved by using a longer integration time when
     acquiring the bead images or by averaging more beads."""
-    n = image.data[:,:,image.data.shape[2]/2][:5,:5].std()
+    n = image.data[:,:, int(image.data.shape[2] / 2)][:5,:5].std()
     merit = n/.0005    
     return n, merit
     

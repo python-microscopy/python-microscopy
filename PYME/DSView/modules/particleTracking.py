@@ -57,8 +57,10 @@ class TrackList(wx.ListCtrl):
         # for wxGTK
         self.Bind(wx.EVT_RIGHT_UP, self.OnListRightClick)
 
-        self._attr_disabled = wx.ListItemAttr(wx.LIGHT_GREY)
-        self._attr_enabled = wx.ListItemAttr(wx.BLACK)
+        self._attr_disabled = wx.ListItemAttr()
+        self._attr_disabled.SetTextColour(wx.LIGHT_GREY)
+        self._attr_enabled = wx.ListItemAttr()
+        self._attr_enabled.SetTextColour(wx.BLACK)
 
         
         #self.SetItemCount(100)
@@ -68,9 +70,9 @@ class TrackList(wx.ListCtrl):
         
     def OnGetItemText(self, item, col):
         if col == 0:
-            return self.clumps[item].clumpID
+            return str(self.clumps[item].clumpID)
         if col == 1:
-            return self.clumps[item].nEvents
+            return str(self.clumps[item].nEvents)
         elif col == 2:
             return str(self.clumps[item].enabled)
         else:
@@ -136,8 +138,8 @@ class TrackList(wx.ListCtrl):
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
 
-
-class ParticleTrackingView(HasTraits):
+from ._base import Plugin
+class ParticleTrackingView(HasTraits, Plugin):
     #features = CStr('x, y')    
     #pNew = Float(0.2)
     #r0 = Float(500)
@@ -188,10 +190,7 @@ class ParticleTrackingView(HasTraits):
         
         self.clumps = []
         
-        self.dsviewer = dsviewer
-        self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         #self.tracker = None
         self.selectedTrack = None
@@ -263,10 +262,10 @@ class ParticleTrackingView(HasTraits):
         self.list.SetClumps(self.clumps)
         
     def OnSelectTrack(self, event):
-        self.selectedTrack = self.clumps[event.m_itemIndex]
+        self.selectedTrack = self.clumps[event.GetIndex()]
         #template = env.get_template('trackView.html')
         #self.trackview.SetPage(template.render(clump=self.selectedTrack, img=self.dsviewer.image), '')
-        self.trackview.LoadURL(htmlServe.getURL() + 'tracks/trackDetail?trackNum=%d' % event.m_itemIndex)
+        self.trackview.LoadURL(htmlServe.getURL() + 'tracks/trackDetail?trackNum=%d' % event.GetIndex())
         #self.trackview.SetPage(self.trackDetail(event.m_itemIndex), '')
 
     @cherrypy.expose
@@ -457,6 +456,8 @@ def Plug(dsviewer):
      #ensure that our local cherrypy server is running
     htmlServe.StartServing()
     
-    dsviewer.tracker = ParticleTrackingView(dsviewer)
-    htmlServe.mount(dsviewer.tracker, '/tracks')
-    dsviewer.tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')
+    tracker = ParticleTrackingView(dsviewer)
+    htmlServe.mount(tracker, '/tracks')
+    tracker.trackview.LoadURL(htmlServe.getURL() + 'tracks/')
+     
+    return tracker

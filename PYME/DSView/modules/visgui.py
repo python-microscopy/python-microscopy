@@ -65,7 +65,7 @@ class visGuiExtras:
     def OnExport(self, event):
         #ivp = self.notebook.GetPage(self.notebook.GetSelection())
         ivp = self.dsviewer.GetSelectedPage()
-        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif;*.bmp;*.gif;*.jpg;*.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 
         if not fname == "":
             ext = os.path.splitext(fname)[-1]
@@ -99,6 +99,7 @@ class GLImageView(LMGLShaderCanvas):
         
     def _add_layers(self):
         from PYME.LMVis.layers import image_layer
+        self.SetCurrent(self.gl_context)
         for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
             l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
         

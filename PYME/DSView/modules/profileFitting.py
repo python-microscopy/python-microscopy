@@ -30,13 +30,10 @@ import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
-class fitter:
+from ._base import Plugin
+class Fitter(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        #self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Fitting', "Raw Intensity Decay", self.OnRawDecay)
         dsviewer.AddMenuItem('Fitting', "Simple Decay", self.OnRawDecaySimp)
@@ -137,5 +134,5 @@ class fitter:
 
 
 def Plug(dsviewer):
-    dsviewer.fitter = fitter(dsviewer)
+    return Fitter(dsviewer)
     

@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-alpha_regex = re.compile(r'^[\w/\.]+$')
+alpha_regex = re.compile(r'^[\w/\.\-]+$')
 
 def check_name(name):
     """
@@ -227,3 +227,13 @@ def read(filename):
         return s
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)
+    
+def write(filename, data):
+    if is_cluster_uri(filename):
+        from . import clusterIO
+        sequenceName, clusterfilter = split_cluster_url(filename)
+        clusterIO.put_file(sequenceName, data, serverfilter=clusterfilter)
+    else:
+        with open(filename, 'wb') as f:
+            f.write(data)
+    

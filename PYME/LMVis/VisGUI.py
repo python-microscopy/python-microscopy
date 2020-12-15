@@ -57,6 +57,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
+logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+logging.getLogger('PIL.PngImagePlugin').setLevel(logging.ERROR)
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
@@ -114,7 +116,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
-              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
+              introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
@@ -246,13 +248,29 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
 
     def OnAbout(self, event):
-        msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
+        from PYME.version import version
+        from PYME.resources import getIconPath
+        import wx.adv
+        # msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
               
-        dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
-                               wx.OK | wx.ICON_INFORMATION)
-        dlg.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL, False, "Verdana"))
-        dlg.ShowModal()
-        dlg.Destroy()
+        # dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
+        #                        wx.OK | wx.ICON_INFORMATION)
+        # dlg.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL, False, "Verdana"))
+        # dlg.ShowModal()
+        # dlg.Destroy()
+
+        dlg = wx.adv.AboutDialogInfo()
+        dlg.SetName("PYME Visualise")
+        dlg.SetVersion(version)
+        dlg.SetDescription("Visualisation of localisation microscopy data.")
+        dlg.SetCopyright("(C)2009-2020")
+        dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
+        #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
+        # TODO: should this be the issues page or the website
+        dlg.SetWebSite("https://github.com/python-microscopy/python-microscopy/issues", desc="Report an issue")        
+        #dlg.AddDeveloper("David Baddeley") #should probably be all or none here, punting full list for now
+
+        wx.adv.AboutBox(dlg)
 
 #    def OnToggleWindow(self, event):
 #        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
@@ -487,7 +505,6 @@ if __name__ == '__main__':
     main()
     mProfile.report()
 
-
 def ipython_visgui(filename=None, **kwargs):
     import PYME.config
     
@@ -500,4 +517,5 @@ def ipython_visgui(filename=None, **kwargs):
     visFr.Show()
     return visFr
     
-    
+def ipython_pymevisualize(filename=None, **kwargs):
+    return ipython_visgui(filename, **kwargs)

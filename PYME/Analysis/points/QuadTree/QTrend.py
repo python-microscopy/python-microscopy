@@ -83,8 +83,8 @@ def rendQTa(ar, qt, maxDepth=100):
         dx = l.x1 - l.x0
         #if dx < dX:
         #    print dx
-        ar[round((l.x0 - qt.x0)/dX):round((l.x1 - qt.x0)/dX),
-       round((l.y0 - qt.y0)/dY):round((l.y1 - qt.y0)/dY)] = \
+        ar[int(round((l.x0 - qt.x0)/dX)):int(round((l.x1 - qt.x0)/dX)),
+       int(round((l.y0 - qt.y0)/dY)):int(round((l.y1 - qt.y0)/dY))] = \
        (float(l.numRecords)*2**(2*(l.depth - maxDepth)))
 
     #return ar

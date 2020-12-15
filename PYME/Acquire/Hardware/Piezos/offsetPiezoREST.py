@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
+import threading
 
 class OffsetPiezo(PiezoBase):
     """
@@ -24,6 +25,8 @@ class OffsetPiezo(PiezoBase):
     def __init__(self, basePiezo):
         self.basePiezo = basePiezo
         self.offset = 0
+        # webframework.APIHTTPServer handles requests in separate threads
+        self._move_lock = threading.Lock()
         
     @property
     def units_um(self):
@@ -34,11 +37,17 @@ class OffsetPiezo(PiezoBase):
         
     @webframework.register_endpoint('/MoveTo', output_is_json=False)
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        return self.basePiezo.MoveTo(int(iChannel), float(fPos) + self.offset, bool(bTimeOut))
+        with self._move_lock:
+            p = self.basePiezo.MoveTo(int(iChannel), float(fPos) + self.offset, 
+                                      bool(bTimeOut))
+        return p
 
     @webframework.register_endpoint('/MoveRel', output_is_json=False)
     def MoveRel(self, iChannel, incr, bTimeOut=True):
-        return self.basePiezo.MoveRel(int(iChannel), float(incr), bool(bTimeOut))
+        with self._move_lock:
+            p = self.basePiezo.MoveRel(int(iChannel), float(incr), 
+                                       bool(bTimeOut))
+        return p
 
     @webframework.register_endpoint('/GetPos', output_is_json=False)
     def GetPos(self, iChannel=0):
@@ -66,22 +75,24 @@ class OffsetPiezo(PiezoBase):
     @webframework.register_endpoint('/SetOffset', output_is_json=False)
     def SetOffset(self, offset):
         # both gettarget and moveto account for offset, so make sure we only apply the change once
-        pos = self.GetPos()
-        self.offset = float(offset)
-        self.MoveTo(pos)
+        with self._move_lock:
+            pos = self.GetTargetPos(0)
+            self.offset = float(offset)
+            # self.MoveTo(0, pos)
+            self.basePiezo.MoveTo(0, pos + self.offset, True)
 
     @webframework.register_endpoint('/CorrectOffset', output_is_json=False)
     def CorrectOffset(self, correction):
         # both gettarget and moveto account for offset, so make sure we only apply the change once
-        target = self.GetTargetPos(0)
-        self.offset += float(correction)  # correct the offset; positive means push base pos higher than offsetpiezo pos
-        # make sure we don't go out of bounds for our base piezo
-        # the actual base position is the largest possible offset without dipping below 0. Base target is target + offset
-        # self.offset = min(self.offset, target + self.offset)
-        # should the offset be negative, the most we can hit is max travel - target position
-        # self.offset = max(self.offset, target + self.offset - self.basePiezo.max_travel)
-        self.offset = max(min(self.offset, target + self.offset), target + self.offset - self.basePiezo.max_travel)
-        self.MoveTo(0, target)  # move the base piezo to correct position
+        correction = float(correction)
+        with self._move_lock:
+            target = self.GetTargetPos(0)
+            # correct the offset; positive means push base pos higher than offsetpiezo pos
+            correction = max(min(self.basePiezo.max_travel - (target + self.offset), 
+                                 correction), -(target + self.offset))
+            self.offset += correction
+            # self.MoveTo(0, target)  # move the base piezo to correct position
+            self.basePiezo.MoveTo(0, target + self.offset, True)
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):
@@ -98,6 +109,14 @@ class OffsetPiezo(PiezoBase):
     def LogFocusCorrection(self, offset):
         import wx
         wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset))
+    
+    @webframework.register_endpoint('/GetMaxOffset', output_is_json=False)
+    def GetMaxOffset(self):
+        return self.basePiezo.max_travel - self.GetTargetPos()
+    
+    @webframework.register_endpoint('/GetMinOffset', output_is_json=False)
+    def GetMinOffset(self):
+        return - self.GetTargetPos()
 
 
 import requests
@@ -108,53 +127,62 @@ class OffsetPiezoClient(PiezoBase):
         self.name = name
         
         self.urlbase = 'http://%s:%d' % (host, port)#,self.name)
+        self._session = requests.Session()
 
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        return requests.get(self.urlbase + '/MoveTo?iChannel=%d&fPos=%3.3f' % (iChannel, fPos))
+        return self._session.get(self.urlbase + '/MoveTo?iChannel=%d&fPos=%3.3f' % (iChannel, fPos))
 
     def MoveRel(self, iChannel, incr, bTimeOut=True):
-        return requests.get(self.urlbase + '/MoveRel?iChannel=%d&incr=%3.3f' % (iChannel, incr))
+        return self._session.get(self.urlbase + '/MoveRel?iChannel=%d&incr=%3.3f' % (iChannel, incr))
 
     def GetPos(self, iChannel=0):
-        res = requests.get(self.urlbase + '/GetPos?iChannel=%d' % (iChannel, ))
+        res = self._session.get(self.urlbase + '/GetPos?iChannel=%d' % (iChannel, ))
         return float(res.json())
 
     def GetTargetPos(self, iChannel=0):
-        res = requests.get(self.urlbase + '/GetTargetPos?iChannel=%d' % (iChannel,))
+        res = self._session.get(self.urlbase + '/GetTargetPos?iChannel=%d' % (iChannel,))
         return float(res.json())
 
     def GetMin(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMin?iChan=%d' % (iChan,))
+        res = self._session.get(self.urlbase + '/GetMin?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetMax(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMax?iChan=%d' % (iChan,))
+        res = self._session.get(self.urlbase + '/GetMax?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetFirmwareVersion(self):
-        res = requests.get(self.urlbase + '/GetFirmwareVersion')
+        res = self._session.get(self.urlbase + '/GetFirmwareVersion')
         return str(res.json())
 
     def GetOffset(self):
-        res = requests.get(self.urlbase + '/GetOffset')
+        res = self._session.get(self.urlbase + '/GetOffset')
         return float(res.json())
 
     def SetOffset(self, offset):
-        return requests.get(self.urlbase + '/SetOffset?offset=%3.3f' % (offset))
+        return self._session.get(self.urlbase + '/SetOffset?offset=%3.3f' % (offset))
 
     def CorrectOffset(self, shim):
-        return requests.get(self.urlbase + '/CorrectOffset?correction=%3.3f' % (shim))
+        return self._session.get(self.urlbase + '/CorrectOffset?correction=%3.3f' % (shim))
 
     def LogShifts(self, dx, dy, dz, active=True):
-        res = requests.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
+        res = self._session.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
         return float(res.json())
 
     def OnTarget(self):
-        res = requests.get(self.urlbase + '/OnTarget')
+        res = self._session.get(self.urlbase + '/OnTarget')
         return bool(res.json())
 
     def LogFocusCorrection(self, offset):
-        res = requests.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
+        self._session.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
+    
+    def GetMaxOffset(self):
+        res = self._session.get(self.urlbase + '/GetMaxOffset')
+        return float(res.json())
+    
+    def GetMinOffset(self):
+        res = self._session.get(self.urlbase + '/GetMinOffset')
+        return float(res.json())
 
 def generate_offset_piezo_server(offset_piezo_base_class):
     """
@@ -218,15 +246,23 @@ class TargetOwningOffsetPiezo(OffsetPiezo):
 
     @webframework.register_endpoint('/MoveTo', output_is_json=False)
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        self._target_position = float(fPos)
-        return self.basePiezo.MoveTo(int(iChannel), self._target_position + self.offset, bool(bTimeOut))
+        with self._move_lock:
+            self._target_position = float(fPos)
+            p = self.basePiezo.MoveTo(int(iChannel), 
+                                      self._target_position + self.offset, 
+                                      bool(bTimeOut))
+            return p
 
     @webframework.register_endpoint('/MoveRel', output_is_json=False)
     def MoveRel(self, iChannel, incr, bTimeOut=True):
-        self._target_position += float(incr)
-        print('here - moving to %f' % self._target_position)
-        return self.basePiezo.MoveTo(int(iChannel), self._target_position + self.offset, bool(bTimeOut))
-
+        with self._move_lock:
+            self._target_position += float(incr)
+            print('here - moving to %f' % self._target_position)
+            p = self.basePiezo.MoveTo(int(iChannel), 
+                                      self._target_position + self.offset, 
+                                      bool(bTimeOut))
+            return p
+    
     @webframework.register_endpoint('/GetPos', output_is_json=False)
     def GetPos(self, iChannel=0):
         return self.basePiezo.GetPos(int(iChannel)) - self.offset

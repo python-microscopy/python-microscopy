@@ -235,6 +235,19 @@ class backgroundBufferM:
 
         return self.curBG
     
+    def refresh_settings(self, percentile, buffer_length):
+        """Change percentile.
+
+        Parameters
+        ----------
+        percentile : float
+            fractional index to grab at each pixel (i.e. 0.5 corresponds to the
+            median)
+        buffer_length : int
+            ignored, as this buffer grows itself as needed.
+        """
+        self.pctile = percentile
+    
 class backgroundBufferMC(backgroundBufferM):
     def __init__(self, *args, **kwargs):
         backgroundBufferM.__init__(self, *args, **kwargs)

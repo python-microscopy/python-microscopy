@@ -29,7 +29,7 @@ import numpy as np
 import time
 import traceback
 
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.Acquire import eventLog
 

@@ -106,7 +106,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.snapNum = 0
 
-        wx.EVT_CLOSE(self, self.OnCloseWindow)        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)        
         
         self.MainFrame = self #reference to this window for use in scripts etc...
         protocol.MainFrame = self
@@ -127,8 +127,8 @@ class PYMEMainFrame(AUIFrame):
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='PYMEAcquire - note that help, license etc below is for Python, not PYME\n\n')
-        self.AddPage(self.sh, caption='Console')
+              introText='PYMEAcquire - note that help, license, etc. below is for Python, not PYME\n\n')
+        self.AddPage(self.sh, caption='Shell')
 
         self.CreateToolPanel(getattr(options, 'gui_mode', 'default'))
 

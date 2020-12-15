@@ -1,6 +1,7 @@
 
 # This file is for focus locks which involve some sort of reflection off of the coverslip.
 from simple_pid import PID
+import os
 import numpy as np
 from scipy import optimize
 from PYME.util import webframework
@@ -22,15 +23,23 @@ class GaussFitter1D(object):
     1D gaussian fitter for use with focus locks which either have line-cameras, or whose frames are summed alone one
     direction to create a line profile, the peak position of which indicates the current focal position.
     """
-    def __init__(self, maxfev=200):
+    def __init__(self, maxfev=200, min_amp=0, max_sigma=np.finfo(float).max):
         """
 
         Parameters
         ----------
         maxfev: int
             see scipy.optimize.leastsq argument by the same name
+        min_amp : float
+            minimum fit result amplitude which we are willing to accept as a
+            successful fit.
+        max_sigma : float
+            maximum fit result sigma which we are willing to accept as a
+            successful fit.
         """
         self.maxfev = maxfev
+        self._min_amp = min_amp
+        self._max_sigma = max_sigma
 
     def _model_function(self, parameters, position):
         """
@@ -67,16 +76,9 @@ class GaussFitter1D(object):
         (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
                                                                  full_output=True, maxfev=self.maxfev)
 
-        # logger.debug('%d iterations' % infodict['nfev'])
-        # if res_code < 1 or res_code > 4:
-        #     # fit error
-        #     logger.debug('Focus lock fit error')
-        #     return tuple(np.zeros(5)), tuple(np.zeros(5))
-
-        success = res_code > 0 and res_code < 5
-        if success:
-            return tuple(res.astype('f')), success
-        return tuple(np.zeros(5)), success
+        success = res_code > 0 and res_code < 5 and res[0] > self._min_amp and res[2] < self._max_sigma
+        return tuple(res.astype('f')), success
+        
         # # estimate uncertainties
         # residuals = infodict['fvec']  # note that fvec is error function evaluation, or (data - model_function)
         # try:
@@ -106,7 +108,9 @@ class ReflectedLinePIDFocusLock(PID):
     of view with axial coordinates relative to the coverslip rather than absolute axial position (which is influenced by
     coverslips sagging from media, etc.).
     """
-    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, mode='frame'):
+    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
+                 mode='frame', fit_roi_size=75, min_amp=0, 
+                 max_sigma=np.finfo(float).max):
         """
 
         Parameters
@@ -121,16 +125,28 @@ class ReflectedLinePIDFocusLock(PID):
             of-sorts by only updating at ~regular time intervals. The correction is only changed once per sample_time.
         mode: str
             flag, where 'frame' queries on each frame and 'time' queries at fixed times by polling at sample_time
+        fit_roi_size : int
+            size of profile to crop about the peak for actual fitting, allowing
+            us to fit partial profiles and save some time
+        min_amp : float
+            minimum fit result amplitude which we are willing to accept as a
+            valid peak measurement we can use to correct the focus.
+        max_sigma : float
+            maximum fit result sigma which we are willing to accept as a valid
+            peak measurement we can use to correct the focus.
+        
         """
         self.scope = scope
         self.piezo = piezo
         # self._last_offset = self.piezo.GetOffset()
 
-        self._fitter = GaussFitter1D()
-        self.fit_roi_size = 75
+        self._lock_ok = False
+        self._ok_tolerance = 5
 
-
-        self.peak_position = 512  # default to half of the camera size
+        self.fit_roi_size = fit_roi_size
+        self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
+        
+        self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
@@ -182,9 +198,11 @@ class ReflectedLinePIDFocusLock(PID):
         off the setpoint, and then slam it on again. This just makes the slam small.
         """
         # make sure piezo is ready
-        while not self.piezo.OnTarget():
+        retry = 0
+        while not self.piezo.OnTarget() and retry < 3:
             logger.debug('waiting for piezo to stop moving')
-            time.sleep(0.01)
+            time.sleep(0.1)
+            retry += 1
         logger.debug('Enabling focus lock')
         self.set_auto_mode(True)
 
@@ -198,13 +216,13 @@ class ReflectedLinePIDFocusLock(PID):
         if self.mode == 'time':
             self.StartPolling()
         else:
-            self.scope.frameWrangler.onFrame.connect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
 
     def deregister(self):
         if self.mode == 'time':
             self.StopPolling()
         else:
-            self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
+            self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
@@ -236,6 +254,121 @@ class ReflectedLinePIDFocusLock(PID):
     def fit_roi_size(self, roi_size):
         self._fit_roi_size = roi_size
         self._roi_position = np.arange(roi_size)
+    
+    @webframework.register_endpoint('/LockOK', output_is_json=False)
+    def LockOK(self):
+        """Check whether the lock is enabled, and the lock is on target
+
+        Returns
+        -------
+        bool
+            lock is enabled and on-target
+        """
+        return self.LockEnabled() and self.lockable()
+    
+    def lockable(self, tolerance=None):
+        """check whether the profile is being fit OK and within tolerance of the
+        setpoint
+
+        Parameters
+        ----------
+        tolerance : float, optional
+            maximum deviation, in pixels, to be considered 'lockable', by 
+            default None
+
+        Returns
+        -------
+        bool
+            whether the focus lock _could_ lock easily if we enabled it
+        """
+        return self._lock_ok and self.on_target(tolerance)
+    
+    def on_target(self, tolerance=None):
+        """check whether the focus lock profile is within a target tolerance of
+        the setpoint
+
+        Parameters
+        ----------
+        tolerance : float, optional
+            maximum deviation, in pixels, to be considered 'lockable', by 
+            default None
+
+        Returns
+        -------
+        bool
+            whether the last-updated focus lock profile was sufficiently close 
+            to where we want it
+        """
+        if tolerance == None:
+            tolerance = self._ok_tolerance
+        return bool(abs(self.peak_position - self.setpoint) < tolerance)
+    
+    @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
+    def ReacquireLock(self, step_size=3.):
+        """Routine to call if we've lost the lock. The lock is disabled,
+        objective is moved to its lowest position, and we step upwards gradually
+        until we get decent fits on the profile and the profile is sufficiently
+        close to where we think it should be, then we renabled. Objective will
+        be sent back to its lowest position if we cannot reacquire the lock.
+
+        Parameters
+        ----------
+        step_size : float, optional
+            number of microns to step the objective position by when searching, 
+            by default 3.
+        """
+        step_size = float(step_size)
+        logger.debug('reacquiring lock')
+        self.DisableLock()
+
+        min_offset = self.piezo.GetMinOffset()
+        max_offset = self.piezo.GetMaxOffset()
+
+        scan_positions = np.arange(min_offset, max_offset + step_size, 
+                                   step_size)
+        assert len(scan_positions) > 0
+
+        for pos in scan_positions:
+            logger.debug('looking for focus, offset: %.1f' % pos)
+            
+            self.piezo.SetOffset(pos)
+            
+            time.sleep(0.3)
+            if self.lockable(self._ok_tolerance):
+                logger.debug('found focus, offset %.1f' % pos)
+                self.EnableLock()
+                return
+        
+        logger.debug('failed to find focus, lowering objective')
+        self.piezo.SetOffset(min_offset)
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiring', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiring(self):
+        self.EnableLock()  # make sure we have the lock on
+        if not self.LockOK():
+            import time
+            logger.debug('lock not OK, pausing for 5 s')
+            time.sleep(5)
+            if not self.LockOK():
+                logger.debug('still not OK, starting pause/reacquire sequence')
+                time.sleep(5)
+                self.ReacquireLock()
+            else:
+                logger.debug('lock OK')
+        
+        self.DisableLock()
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiringIfEnabled', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiringIfEnabled(self):
+        """
+        Helper function to allow protocols used in automated workflows to make 
+        sure they have the right focal plane without barring that protocols
+        use for manual imaging without the focus lock on/set up
+        """
+        if self.LockEnabled():
+            self.DisableLockAfterAcquiring()
 
     def find_peak(self, profile):
         """
@@ -248,26 +381,34 @@ class ReflectedLinePIDFocusLock(PID):
 
         Returns
         -------
+        success : bool
+            Whether the fit converged
+        peak_position : float
+            center position of the reflection on the camera [pix]
 
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
         start, stop = max(crop_start, 0), min(crop_start + self.fit_roi_size, profile.shape[0])
-        results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
-        if not success:
-            logger.debug('Focus lock fit error')
-            return np.nan
-        return results[1] + start
+        self._fit_results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
+        return self._fit_results[1] + start, success
 
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
         if self.subtraction_profile is not None:
-            self.peak_position = self.find_peak(profile - self.subtraction_profile)
+            peak_position, success = self.find_peak(profile - self.subtraction_profile)
         else:
-            self.peak_position = self.find_peak(profile)
+            peak_position, success = self.find_peak(profile)
 
-        if self.peak_position == np.nan:
+        if not success:
+            self._lock_ok = False
+            # restart the integration / derivatives so we don't go wild when we
+            # eventually get a good fit again
+            self.reset()
             return
+        
+        self.peak_position = peak_position
+        self._lock_ok = True
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
@@ -286,29 +427,34 @@ class RLPIDFocusLockClient(object):
         self.name = name
 
         self.base_url = 'http://%s:%d' % (host, port)
+        self._session = requests.Session()
 
     @property
     def lock_enabled(self):
         return self.LockEnabled()
 
     def LockEnabled(self):
-        response = requests.get(self.base_url + '/LockEnabled')
+        response = self._session.get(self.base_url + '/LockEnabled')
+        return bool(response.json())
+    
+    def LockOK(self):
+        response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
     def EnableLock(self):
-        return requests.get(self.base_url + '/EnableLock')
+        return self._session.get(self.base_url + '/EnableLock')
 
     def DisableLock(self):
-        return requests.get(self.base_url + '/DisableLock')
+        return self._session.get(self.base_url + '/DisableLock')
 
     def GetPeakPosition(self):
-        response = requests.get(self.base_url + '/GetPeakPosition')
+        response = self._session.get(self.base_url + '/GetPeakPosition')
         return float(response.json())
 
     def ChangeSetpoint(self, setpoint=None):
         if setpoint is None:
             setpoint = self.GetPeakPosition()
-        return requests.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+        return self._session.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
 
     def ToggleLock(self):
         if self.lock_enabled:
@@ -317,7 +463,17 @@ class RLPIDFocusLockClient(object):
             self.EnableLock()
 
     def SetSubtractionProfile(self):
-        return requests.get(self.base_url + '/SetSubtractionProfile')
+        return self._session.get(self.base_url + '/SetSubtractionProfile')
+    
+    @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
+    def ReacquireLock(self, step_size=3.):
+        return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f' % (step_size,))
+    
+    def DisableLockAfterAcquiring(self):
+        return self._session.get(self.base_url + '/DisableLockAfterAcquiring')
+    
+    def DisableLockAfterAcquiringIfEnabled(self):
+        return self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled')
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):
@@ -348,3 +504,83 @@ class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock
             logger.info('Shutting down ...')
             self.shutdown()
             self.server_close()
+
+
+class FocusLogger(object):
+    _dtype = [('time', '<f4'), ('focus', '<f4')]
+
+    def __init__(self, position_handle, log_interval=1.0):
+        """
+        Logs focus position (or really any float return by the function passed
+        to this initialization) to and hdf file at a specified interval.
+
+        Parameters
+        ----------
+        position_handle : function
+            function handle to call to get position to log.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.0
+        """
+        self._position_handle = position_handle
+        self._log_file = None
+        self._log_interval = log_interval
+        self._poll_thread = None
+        self._logging = False
+        self._start_time = 0
+    
+    def set_interval(self, log_interval):
+        self._log_interval = log_interval
+    
+    def ensure_stopped(self):
+        """
+        Stop any current logging. Note that we let the h5rFile poll thread
+        do the hdf file closing
+        """
+        self._logging = False
+        try:
+            self._poll_thread.join()
+        except AttributeError:
+            pass
+    
+    def start_logging(self, log_file, log_interval=None):
+        """
+        Create a log file and start storing focus position values at a set time
+        interval.
+
+        Parameters
+        ----------
+        log_file : str
+            path to create hdf file storing contents in `focus_log` table.
+        log_interval : float, optional
+            approximate time between successive logs, in seconds, by default 1.
+        """
+        from PYME.IO.h5rFile import H5RFile
+
+        self.ensure_stopped()
+        if log_interval != None:
+            self.set_interval(log_interval)
+            
+        log_dir, log_stub = os.path.split(log_file)
+        os.makedirs(log_dir, exist_ok=True)
+        log_stub, ext = os.path.splitext(log_file)
+        if ext != '.hdf':
+            log_file = os.path.join(log_dir, log_stub + '.hdf')
+        
+        self._log_file = H5RFile(log_file, mode='a', 
+                                 keep_alive_timeout=max(20.0, 
+                                                        self._log_interval))
+        self._logging = True
+        self._poll_thread = threading.Thread(target=self._poll)
+        logger.debug('starting focus logger')
+        self._start_time = _current_time()
+        self._poll_thread.start()
+    
+    def _poll(self):
+        while self._logging:
+            d = np.array([(_current_time() - self._start_time, 
+                           self._position_handle())],
+                         dtype=self._dtype)
+            
+            self._log_file.appendToTable('focus_log', d)
+
+            time.sleep(self._log_interval)

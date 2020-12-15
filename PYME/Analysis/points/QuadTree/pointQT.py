@@ -38,7 +38,7 @@ class qtNode:
         self.numRecords = 0
         
 
-    def insert(self,obj, x, y):
+    def insert(self,rec, max_records=QT_MAXRECORDS):
         return self
 
     #def get(self,x0, x1,y0, y1):
@@ -74,16 +74,16 @@ class qtLeafNode(qtNode):
         #self.y1 = y1
         self.records = []
     
-    def insert(self, rec):
-        if len(self.records) < QT_MAXRECORDS or self.depth >= QT_MAXDEPTH: #don't need to subdivide
+    def insert(self, rec, max_records=QT_MAXRECORDS):
+        if len(self.records) < max_records or self.depth >= QT_MAXDEPTH: #don't need to subdivide
             self.records.append(rec)
             self.numRecords += 1
             return self
         else: #subdivide 
             newBranch = qtBranchNode(self.x0,self.x1, self.y0, self.y1, self.depth)
             for r in self.records: #copy records
-                   newBranch.insert(r)
-            newBranch.insert(rec)
+                   newBranch.insert(r, max_records)
+            newBranch.insert(rec, max_records)
             return newBranch
 
     def get(self,x0,x1, y0, y1):
@@ -121,20 +121,20 @@ class qtBranchNode(qtNode):
         self.SE = qtLeafNode(xc,x1, yc, y1, depth+1)
         self.SW = qtLeafNode(x0,xc, yc, y1, depth+1)
 
-    def insert(self, rec):
+    def insert(self, rec, max_records=QT_MAXRECORDS):
         xc = (self.x0 + self.x1)/2
         yc = (self.y0 + self.y1)/2
 
         if rec.x < xc:
             if rec.y < yc:
-                self.NW = self.NW.insert(rec)
+                self.NW = self.NW.insert(rec, max_records)
             else:
-                self.SW = self.SW.insert(rec)
+                self.SW = self.SW.insert(rec, max_records)
         else:
             if rec.y < yc:
-                self.NE = self.NE.insert(rec)
+                self.NE = self.NE.insert(rec, max_records)
             else:
-                self.SE = self.SE.insert(rec)
+                self.SE = self.SE.insert(rec, max_records)
 
         self.numRecords += 1
         return self
@@ -192,8 +192,8 @@ class qtRoot(qtNode):
         qtNode.__init__(self,x0,x1, y0, y1)
         self.root = qtLeafNode(x0,x1,y0,y1)
 
-    def insert(self,rec):
-        self.root = self.root.insert(rec)
+    def insert(self,rec, max_records=QT_MAXRECORDS):
+        self.root = self.root.insert(rec, max_records)
         self.numRecords += 1
 
     #def get(self,x0, x1,y0, y1):

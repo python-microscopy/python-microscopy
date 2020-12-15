@@ -2,6 +2,7 @@ from .base import register_module, ModuleBase, Filter
 from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
 import numpy as np
 from PYME.IO import tabular
+from PYME.IO import MetaDataHandler
 from PYME.Analysis.points import multiview
 
 
@@ -88,7 +89,7 @@ class ShiftCorrect(ModuleBase):
 
         multiview.apply_shifts_to_points(mapped, shift_map)
         # propagate metadata
-        mapped.mdh = inp.mdh
+        mapped.mdh = MetaDataHandler.NestedClassMDHandler(inp.mdh) #copy as we are going to modify
         mapped.mdh['Multiview.shift_map.location'] = loc
 
         namespace[self.output_name] = mapped
@@ -250,7 +251,7 @@ class MapAstigZ(ModuleBase):
         mapped.addColumn('astigmatic_z_lookup_error', zerr)
         mapped.setMapping('z', 'astigmatic_z + z')
 
-        mapped.mdh = inp.mdh
+        mapped.mdh = MetaDataHandler.NestedClassMDHandler(inp.mdh)
         mapped.mdh['Analysis.astigmatism_calibration_used'] = calibration_location
 
         namespace[self.output_name] = mapped

@@ -39,14 +39,14 @@ class ClusterOfOne(object):
             self._kill_procs([self._data_server,])
             
         logger.info('Launching data server: root=%s' % self._root_dir)
-        self._data_server = subprocess.Popen('%s -m PYME.cluster.HTTPDataServer -a local -p 0 -r %s' % (sys.executable, self._root_dir), shell=True)
+        self._data_server = subprocess.Popen('"%s" -m PYME.cluster.HTTPDataServer -a local -p 0 -r "%s"' % (sys.executable, self._root_dir), shell=True)
         
     def _launch_rule_server(self):
         if not self._rule_server is None:
             self._kill_procs([self._rule_server, ])
 
         logger.info('Launching rule server')
-        self._rule_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleServer -a local -p 0'
+        self._rule_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleServer -a local -p 0'
                                              '' % sys.executable, shell=True)
         
     def _launch_node_server(self):
@@ -54,7 +54,7 @@ class ClusterOfOne(object):
             self._kill_procs([self._node_server, ])
 
         logger.info('Launching node server')
-        self._node_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
+        self._node_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
         
     def _launch_cluster_ui(self, gui=False):
         if not self._cluster_ui is None:
@@ -62,7 +62,7 @@ class ClusterOfOne(object):
 
         logger.info('Launching clusterUI')
         self._cluster_ui_stderr = open('clusterui.log', 'w')
-        self._cluster_ui = subprocess.Popen('%s %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), stderr=self._cluster_ui_stderr, shell=True)
+        self._cluster_ui = subprocess.Popen('"%s" %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), stderr=self._cluster_ui_stderr, shell=True)
         
         if gui:
             #launch a web-browser to view clusterUI
@@ -127,7 +127,8 @@ def main():
                   help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % default_root,
                   default=default_root)
     op.add_option('--ui', dest='ui', help='launch web based ui', default=True)
-    op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', default=False)
+    op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', 
+                  action='store_true', default=False)
 
     options, args = op.parse_args()
     

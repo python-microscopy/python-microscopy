@@ -51,7 +51,7 @@ def _getTaskQueueURI(n_retries=2):
         local_queues = [q for q in queueURLs if compName in q]
         logger.debug('local_queues: %s' % local_queues)
         return queueURLs[local_queues[0]]
-    except KeyError:
+    except (KeyError, IndexError):
         #if there is no local distributor, choose one at random
         logger.info('no local rule server, choosing one at random')
         return random.choice(list(queueURLs.values()))
@@ -317,33 +317,35 @@ class RecipePusher(object):
         self.taskQueueURI = _getTaskQueueURI()
 
         #generate a queue ID as a hash of the recipe and the current time
-        h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
-        h.update('%s' % time.time())
-        self.queueID = h.hexdigest()
+        to_hash = self.recipeURI if self.recipeURI else self.recipe_text
+        try:  # hashlib requires bytes on py3
+            to_hash = to_hash.encode()
+        except TypeError:  # encoding without a string argument, i.e. already bytes
+            pass
+        h = hashlib.md5(to_hash)
+        h.update(str(time.time()).encode())
+        self.queueID = h.hexdigest()  # hexdigest returns str
 
 
     @property
     def _taskTemplate(self):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
-              "type": "recipe",
-              "inputs" : {{taskInputs}},
-              %s,
-              %s
-              }'''
-
+                            "type": "recipe",
+                            "inputs" : {{taskInputs}},
+                            %s
+                        }'''
+    
         if self.output_dir is None:
             output_dir_n = ''
         else:
-            output_dir_n = '"output_dir": "%s",' % self.output_dir
-        
+            output_dir_n = '"output_dir": "%s",\n    ' % self.output_dir
+    
         if self.recipeURI:
-            task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
+            task = task % (output_dir_n + '"taskdefRef" : "%s"' % self.recipeURI)
         else:
-            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text, output_dir_n)
+            task = task % (output_dir_n + '"taskdef" : {"recipe": "%s"}' % self.recipe_text)
             
-
         return task
-
 
 
     def fileTasksForInputs(self, **kwargs):
@@ -360,7 +362,7 @@ class RecipePusher(object):
         inputs_by_task = {frameNum: {k : inputs[k][frameNum] for k in inputs.keys()} for frameNum in range(numTotalFrames)}
 
         rule = {'template': self._taskTemplate, 'inputsByTask' : inputs_by_task}
-
+        
         s = clusterIO._getSession(self.taskQueueURI)
         r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames), data=json.dumps(rule),
                         headers = {'Content-Type': 'application/json'})
@@ -373,6 +375,5 @@ class RecipePusher(object):
             logging.error('Failed creating rule with status code: %d' % r.status_code)
 
         
-
 
 

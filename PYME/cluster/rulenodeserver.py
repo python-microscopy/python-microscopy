@@ -78,25 +78,28 @@ class Rater(object):
         task = json.loads(filled_template)
         
         cost = 1.0
-        if task['type'] == 'localization':
-            series_name = task['inputs']['frames']
-            if os.path.exists(series_name):
-                # cluster of one special case
-                cost = 0.01
-            else:
-                filename, serverfilter = clusterIO.parseURL(series_name)
-                filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
-            
-                if clusterIO.is_local(filename, serverfilter):
-                    cost = .01
-    
-        elif task['type'] == 'recipe':
-            for URL in task['inputs'].values():
-                if os.path.exists(URL):
-                    #cluster of one special case
-                    cost *= .2
-                elif clusterIO.is_local(*clusterIO.parseURL(URL)):
-                    cost *= .2
+        try:
+            if task['type'] == 'localization':
+                series_name = task['inputs']['frames']
+                if os.path.exists(series_name):
+                    # cluster of one special case
+                    cost = 0.01
+                else:
+                    filename, serverfilter = clusterIO.parseURL(series_name)
+                    filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
+                
+                    if clusterIO.is_local(filename, serverfilter):
+                        cost = .01
+        
+            elif task['type'] == 'recipe':
+                for URL in task['inputs'].values():
+                    if os.path.exists(URL):
+                        #cluster of one special case
+                        cost *= .2
+                    elif clusterIO.is_local(*clusterIO.parseURL(URL)):
+                        cost *= .2
+        except:
+            logger.exception('Error rating task (%s)' % task)
                     
         return taskID, cost
     

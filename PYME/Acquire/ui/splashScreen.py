@@ -46,7 +46,7 @@ class SplashPanel(wx.Panel):
         for ti in tims:
             self.times[ti[0]] = ti[1]
         
-        wx.EVT_PAINT(self, self.OnPaint)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
 
         logofilename = resources.getIconPath('logo_fmhs.png')
 

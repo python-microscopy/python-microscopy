@@ -43,6 +43,12 @@
                     fileNames.push(sn);
                     f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
                 }
+                // Also check for series, e.g. pcs extensions
+                var sn = item.getAttribute('data-cu-seriesname');
+                if (sn != null) {
+                    fileNames.push(sn);
+                    f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                }
             });
             console.log(fileNames);
         };

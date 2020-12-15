@@ -10,7 +10,7 @@ from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 # from pylab import cm
 from matplotlib import cm
 import numpy as np
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.Analysis.Tracking.trackUtils import ClumpManager
 
@@ -131,7 +131,7 @@ class TrackRenderLayer(EngineLayer):
     
     def _update(self, *args, **kwargs):
         cdata = self._get_cdata()
-        self.clim = [float(cdata.min()), float(cdata.max())]
+        self.clim = [float(np.nanmin(cdata)), float(np.nanmax(cdata))]
         #self.update(*args, **kwargs)
     
     def update(self, *args, **kwargs):

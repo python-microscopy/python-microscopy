@@ -20,16 +20,16 @@
 #
 ##################
 import os
-
+import posixpath
 import PYME.localization.FitFactories
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
-import dispatch
+from PYME.contrib import dispatch
 import numpy as np
 import wx
 import wx.lib.agw.aui as aui
 from PYME.DSView import fitInfo
-from PYME.DSView.OverlaysPanel import OverlayPanel
+#from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO import MetaDataHandler
 from PYME.IO import tabular
 from PYME.IO.FileUtils import fileID
@@ -88,19 +88,22 @@ def _verifyResultsFilename(resultsFilename):
 
 
 def _verifyClusterResultsFilename(resultsFilename):
-    from PYME.IO import clusterIO
+    from PYME.IO import clusterIO, unifiedIO
+    
+    resultsFilename = unifiedIO.verbose_fix_name(resultsFilename) # fix any spaces in the input filename
+    
     if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
+        di, fn = posixpath.split(resultsFilename)
         i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+        stub = posixpath.splitext(fn)[0]
+        while clusterIO.exists(posixpath.join(di, stub + '_%d.h5r' % i)):
             i += 1
 
         fdialog = wx.TextEntryDialog(None, 'Analysis file already exists, please select a new filename')#,
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
+            resultsFilename = posixpath.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 
@@ -298,7 +301,7 @@ class AnalysisSettingsView(object):
         
 class AnalysisController(object):
     def __init__(self, imageMdh=None, tq = None):
-        self.analysisMDH = MetaDataHandler.NestedClassMDHandler(imageMdh)
+        self.analysisMDH = MetaDataHandler.CopyOnWriteMDHandler(imageMdh) #MetaDataHandler.NestedClassMDHandler(imageMdh)
         self.onImagesPushed = dispatch.Signal()
         self.onMetaDataChange = dispatch.Signal()
 
@@ -523,12 +526,10 @@ def _check_complete_mdh(mdh):
     en = mdh.getEntryNames()
     return all(x in en for x in ['Camera.TrueEMGain', 'Camera.NoiseFactor', 'Camera.ElectronsPerCount', 'Camera.ReadNoise', 'Camera.ADOffset'])
 
-class LMAnalyser2(object):
+from ._base import Plugin
+class LMAnalyser2(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.image = dsviewer.image
-        self.view = dsviewer.view
-        self.do = dsviewer.do
+        Plugin.__init__(self, dsviewer)
         
         if not _check_complete_mdh(self.image.mdh):
            logger.warning('Series does not seem to have metadata needed for localization analysis')
@@ -722,6 +723,7 @@ class LMAnalyser2(object):
             if len(self.fitResults) == 0:
                 self.fitResults = newResults
                 self.ds = tabular.FitResultsSource(self.fitResults)
+                self.ds.mdh = self.resultsMdh
                 self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
                 self.dsviewer.pipeline.mdh = self.resultsMdh
                 try:
@@ -921,7 +923,18 @@ class LMAnalyser2(object):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
+        mdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+        if zp < mdh['Analysis.StartAt']:
+            # check to see if we're analysing a frame that would not normally be analysed and complain
+            if wx.MessageBox('Testing a frame that would not normally be analysed (before StartAt)\n'
+                             'This may not work properly and will not be representative of how a frame in the middle of the series'
+                             'would behave. Continue anyway?','Warning', style=wx.OK | wx.CANCEL |wx.ICON_ERROR) != wx.OK:
+                return #get out of here
+            else:
+                # fudge it and continue, reluctantly
+                mdh['Analysis.StartAt'] = zp
+            
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
@@ -998,13 +1011,8 @@ class LMAnalyser2(object):
 
 
 def Plug(dsviewer):
-    dsviewer.LMAnalyser = LMAnalyser2(dsviewer)
-
-    if not 'overlaypanel' in dir(dsviewer):    
-        dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
-        dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
-        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
+    LMAnalyser = LMAnalyser2(dsviewer)
+    dsviewer.create_overlay_panel()
     
-        dsviewer.panesToMinimise.append(pinfo2)
+    return {'LMAnalyser':LMAnalyser}
 

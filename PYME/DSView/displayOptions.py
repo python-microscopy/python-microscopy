@@ -25,7 +25,7 @@ from matplotlib import cm
 import numpy as np
 #import tables
 
-import dispatch
+from PYME.contrib import dispatch
 
 from PYME.IO import dataWrap
 
@@ -56,7 +56,7 @@ class DisplayOpts(object):
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
 
     ACTION_POSITION, ACTION_SELECTION = range(2)
-    SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGLE = range(3)
+    SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGGLE = range(3)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
         self.WantChangeNotification = []# MyWeakSet() #[]

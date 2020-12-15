@@ -30,13 +30,10 @@ import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
-class ProfilePlotter:
+from ._base import Plugin
+class ProfilePlotter(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        #self.view = dsviewer.view
-        self.do = dsviewer.do # type: PYME.DSView.displayOptions.DisplayOpts
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Processing', "Plot &Profile\tCtrl-K", self.OnProfile)
         dsviewer.AddMenuItem('Processing', "Plot Axial Profile\tCtrl-Shift-K", self.OnPlotAxialProfile)
@@ -403,5 +400,5 @@ class ProfilePlotter:
 
 
 def Plug(dsviewer):
-    dsviewer.profilePlotter = ProfilePlotter(dsviewer)
+    return ProfilePlotter(dsviewer)
     

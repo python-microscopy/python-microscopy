@@ -34,9 +34,8 @@ def cam(scope):
     scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
     scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
     scope.cam.SetROI(289, 827, 1080, 1008)
-    # With our laser at a stable operating current we saturate easily, set integ low. Can't get frame rate higher than
-    # 300 Hz, so try and get a low integ and 250 frame rate
-    scope.cam.SetIntegTime(0.005)
+    # Can't get frame rate higher than ~297 Hz for the current ROI, so default to just under that
+    scope.cam.SetIntegTime(0.0035)  # [s]
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -63,13 +62,23 @@ def pifoc(scope):
 def focus_lock(MainFrame, scope):
     import numpy as np
     from PYME.ui import fastGraph
-    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
-    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.075, i=-0.0025, d=-0.002, sample_time=0.005)
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer, FocusLogger
+    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel, FocusLogPanel
+    ku = -1.2  # ziegler-nichols 'ultimate' gain for my system
+    tu = 7  # [frames], roughly the period, when we're running camera/frameWrangler polling at 3.5 ms
+    # Stick with a PI tune for now
+    kp = 0.45 * ku
+    ki = 0.54 * ku / tu
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=kp, i=ki, d=0,
+                                            sample_time=0.0035, 
+                                            min_amp=0.5 * 10**5,
+                                            max_sigma=14.5)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
+    # we don't benefit at all from multiple frames piling up in a polling interval, so try and match the camera cycle
+    scope.frameWrangler._polling_interval = 0.0035
 
     # # display dark-subtracted profile
     # fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
@@ -84,23 +93,28 @@ def focus_lock(MainFrame, scope):
     # MainFrame.time1.WantNotification.append(refresh_profile)
 
     # # display setpoint / error over time
-    # n = 500
-    # # setpoint = np.zeros(n)
-    # position = np.ones(n) * scope.focus_lock.peak_position
-    # time = np.arange(n)
+    n = 500
+    # setpoint = np.zeros(n)
+    position = np.ones(n) * scope.focus_lock.peak_position
+    time = np.arange(n)
+
+    position_plot = fastGraph.FastGraphPanel(MainFrame, -1, time, position)
+    MainFrame.AddPage(page=position_plot, select=False, caption='Position')
     #
-    # position_plot = fastGraph.FastGraphPanel(MainFrame, -1, time, position)
-    # MainFrame.AddPage(page=position_plot, select=False, caption='Position')
-    #
-    # def refresh_position(*args, **kwargs):
-    #     position[:-1] = position[1:]
-    #     # if the position can't be found, replace nan with zero
-    #     position[-1] = np.nan_to_num(scope.focus_lock.peak_position)
-    #     time[:-1] = time[1:]
-    #     time[-1] = scope.focus_lock._last_time
-    #     position_plot.SetData(time, position)
-    #
-    # MainFrame.time1.WantNotification.append(refresh_position)
+    def refresh_position(*args, **kwargs):
+        position[:-1] = position[1:]
+        # if the position can't be found, replace nan with zero
+        position[-1] = np.nan_to_num(scope.focus_lock.peak_position)
+        # time[:-1] = time[1:]  # commenting out to leave time in units of frameWrangler.onFrameGroups for readability
+        # time[-1] = scope.focus_lock._last_time
+        position_plot.SetData(time, position)
+
+    MainFrame.time1.WantNotification.append(refresh_position)
+
+    # panel to log focus to file at set intervals
+    focus_logger = FocusLogger(scope.focus_lock.GetPeakPosition)
+    focus_log_panel = FocusLogPanel(MainFrame, focus_logger)
+    MainFrame.camPanels.append((focus_log_panel, 'Focus Logger'))
 
 
 #must be here!!!

@@ -863,10 +863,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             
         #patch up old data which doesn't have BGRange in metadata
         if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                nBGFrames = self.metaData.Analysis.NumBGFrames
-            else:
-                nBGFrames = 10
+            nBGFrames = self.metaData.getOrDefault('Analysis.NumBGFrames', 10)
 
             self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
         

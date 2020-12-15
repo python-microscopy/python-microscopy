@@ -53,7 +53,7 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 bufferMisses = 0
 nTasksProcessed = 0
 
-splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR',
+splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR', 'SplitterFitScavNR',
                       'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterFitFusionR',
                       'SplitterObjFindR', 'SplitterFitInterpR', 'SplitterFitInterpQR', 'SplitterFitInterpNR', 'SplitterFitInterpBNR', 'SplitterROIExtractNR']
 
@@ -115,8 +115,9 @@ class BufferManager(object):
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
-                # we already have a percentile buffer - just change the settings. TODO - Does this need to change to reflect introduction of GPU based buffering?
-                self.bBuffer.pctile = md['Analysis.PCTBackground']
+                # we already have a percentile buffer - just change the settings
+                self.bBuffer.refresh_settings(md['Analysis.PCTBackground'],
+                                              bufferLen)
         else:
             if not isinstance(self.bBuffer, buffers.backgroundBuffer):
                 self.bBuffer = buffers.backgroundBuffer(self.dBuffer)
@@ -131,9 +132,12 @@ class CameraInfoManager(object):
     def __init__(self):
         self._cache = {}
 
-    def _parseROI(self, md):
+    @staticmethod
+    def _parseROI(md):
         """
         Extract ROI coordinates from metadata
+
+        TODO - refactor out of here as it is being used in non-fitting code
 
         Parameters
         ----------
@@ -151,14 +155,14 @@ class CameraInfoManager(object):
             #special case handling for multiview ROIs
             origins = [md['Multiview.ROI%dOrigin' % ind] for ind in md['Multiview.ActiveViews']]
             size_x, size_y = md['Multiview.ROISize']
-            return [(slice(ox, ox + size_x), slice(oy, oy + size_y)) for ox, oy in origins]
+            return [(slice(int(ox), int(ox + size_x)), slice(int(oy), int(oy + size_y))) for ox, oy in origins]
         
         x0, y0 = get_camera_roi_origin(md)
 
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
-        return [(slice(x0, x1), slice(y0, y1))]
+        return [(slice(int(x0), int(x1)), slice(int(y0), int(y1)))]
 
     def _fetchMap(self, md, mapName):
         """retrive a map, with a given name. First try and get it from the Queue,
@@ -395,6 +399,12 @@ class fitTask(taskDef.Task):
 
     def __call__(self, gui=False, taskQueue=None):
         global dBuffer, bBuffer, dataSourceID, nTasksProcessed
+        
+        # short-circuit if a task is generated for a frame pre-StartAt
+        # FIXME - we should never generate tasks for these frames.
+        if self.index < self.md.get('Analysis.StartAt', 0):
+            logger.error("Frame index is less than 'Analysis.StartAt', frame should not have been released for analysis. Skipping to avoid potential buffer errors.")
+            return fitResult(self, [], [])
         
         #create a local copy of the metadata        
         md = copy.copy(self.md)

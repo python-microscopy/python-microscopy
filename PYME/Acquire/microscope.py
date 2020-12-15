@@ -44,7 +44,7 @@ import os
 import datetime
 
 import warnings
-import dispatch
+from PYME.contrib import dispatch
 
 #register handlers for ndarrays
 from PYME.misc import sqlitendarray
@@ -313,6 +313,14 @@ class StateManager(object):
     
 
 class microscope(object):
+    """
+
+    Attributes
+    ----------
+    frameWrangler : PYME.Acquire.frameWrangler.FrameWrangler
+        Initialized in between hardware initializations and gui initializations.
+    
+    """
     def __init__(self):
         #list of tuples  of form (class, chan, name) describing the instaled piezo channels
         self.piezos = []
@@ -451,7 +459,7 @@ class microscope(object):
                 logger.info('Reading voxel size directly from simulated camera')
                 vx_um = (self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
                 vy_um = (self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
-                return vy_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
+                return vx_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
                     
 
     def GenStartMetadata(self, mdh):

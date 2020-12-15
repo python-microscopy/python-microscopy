@@ -466,7 +466,7 @@ class OutputModule(ModuleBase):
         """
         pass
 
-import dispatch
+from PYME.contrib import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
@@ -482,6 +482,11 @@ class ModuleCollection(HasTraits):
         
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
+        self.recipe_failed = dispatch.Signal()
+        
+        self.failed = False
+        
+        self._dg_sig = None
         
     def invalidate_data(self):
         if self.execute_on_invalidation:
@@ -560,6 +565,25 @@ class ModuleCollection(HasTraits):
             downstream.update(self._getAllDownstream(rdg, list(next_level)))
         
         return downstream
+    
+    def upstream_inputs(self, keys):
+        dg = self.dependancyGraph()
+        
+        def walk_upstream(keys):
+            upstream = set()
+            for k in keys:
+                u = dg.get(k, None)
+                if u is not None:
+                    upstream.update(walk_upstream(list(u)))
+                    
+            return upstream
+                
+        return list(walk_upstream(keys))
+            
+    
+    def downstream_outputs(self, keys):
+        rdg = self.reverseDependancyGraph()
+        return list(self._getAllDownstream(rdg, list(keys)))
         
         
     def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
@@ -649,12 +673,31 @@ class ModuleCollection(HasTraits):
                     
                     #record our error so that we can associate it with a module
                     m._last_error = traceback.format_exc()
+                    self.failed = True
                     
                     # make sure we didn't leave any partial results
+                    logger.debug('removing failed module dependencies')
                     self.prune_dependencies_from_namespace(m.outputs)
+                    logger.debug('notifying failure')
+                    self.recipe_failed.send_robust(self)
                     raise
         
+        if self.failed:
+            # make sure we update the GUI if we've fixed a broken recipe
+            # TODO - make make this a bit lighter weight - we shouldn't need to redraw the whole recipe just to change
+            # the shading of the module caption
+            self.recipe_changed.send_robust(self)
+            
+        self.failed = False
         self.recipe_executed.send_robust(self)
+
+        # detect changes in recipe wiring
+        dg_sig = str(self.dependancyGraph())
+        if not self._dg_sig == dg_sig:
+            #print(dg_sig)
+            #print(self._dg_sig)
+            self._dg_sig = dg_sig
+            self.recipe_changed.send_robust(self)
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
@@ -714,6 +757,29 @@ class ModuleCollection(HasTraits):
                 return super(MyDumper, self).represent_mapping(tag, value, False)
             
         return yaml.dump(self.get_cleaned_module_list(), Dumper=MyDumper)
+    
+    def save_yaml(self, uri):
+        """
+        Save the recipe text to .yaml using the cluster-aware unified IO library
+        
+        WARNING: Experimental - this was added as a quick hack to get web-based recipe editing working, and WILL LIKELY
+        BE REMOVED without deprecation once that moves to using a recipe-manager. Whilst arguably the least contentious
+        of the web-editor additions, it is unclear whether the saving logic (past dumping to YAML in the toYAML()
+        method) should reside within the recipe itself. As the recipe class is proxied into the browser, there are also
+        potential security implications here, particularly as this accepts both filenames and clusterURIs. As a
+        consequence, saving should probably be factored out into something which can operate in an appropriate sandbox
+        (the other option is to sandbox unifiedIO).
+        
+        Parameters
+        ----------
+        uri: str
+            A filename or PYME-CLUSTER:// URI
+
+
+        """
+        from PYME.IO import unifiedIO
+        
+        unifiedIO.write(uri, self.toYAML().encode())
         
     def toJSON(self):
         import json
@@ -802,6 +868,26 @@ class ModuleCollection(HasTraits):
         l = yaml.safe_load(data)
 
         return self._update_from_module_list(l)
+    
+    def update_from_file(self, filename):
+        """
+        Update the contents of the recipe from a .yaml file
+        
+        WARNING: This function will likely be REMOVED WITHOUT NOTICE. It is a quick hack to get the prototype web-based
+        recipe editor working, but will be surplus to requirements once we have a proper recipe manager in the web based
+        editor. It's logically obtuse to consider something the same recipe once you've completely replaced it with a
+        recipe that has been loaded from file. It is much more sensible to create a new recipe instance when loading
+        a recipe from file, and this is the recommended approach.
+        
+        Parameters
+        ----------
+        filename: str
+            filename or PYME-CLUSTER:// URI
+
+        """
+        from PYME.IO import unifiedIO
+        
+        self.update_from_yaml(unifiedIO.read(filename).decode())
 
     @classmethod
     def fromJSON(cls, data):
@@ -812,6 +898,43 @@ class ModuleCollection(HasTraits):
     def add_module(self, module):
         self.modules.append(module)
         self.recipe_changed.send_robust(self)
+        
+    def add_modules_and_execute(self, modules, rollback_on_failure=True):
+        """
+        Adds modules to the recipe and then execute the recipe. Added to make UI interaction in PYMEVis a bit nicer when
+        modules added from the menu fail, this function gives the option (enabled by default) of rolling back the
+        additions should execute fail.
+        
+        Parameters
+        ----------
+        modules : list
+            a list of modules to add
+        rollback_on_failure : bool
+            rollback and remove modules (and their outputs) if .execute() fails
+
+        """
+        
+        try:
+            for m in modules:
+                self.modules.append(m)
+            
+            self.execute()
+        except:
+            if rollback_on_failure:
+                #do cleanup
+                
+                #remove any outputs
+                for m in modules:
+                    self.prune_dependencies_from_namespace(m.outputs)
+                    
+                #remove the modules themselves
+                for m in modules:
+                    self.modules.remove(m)
+                
+            raise
+        finally:
+            self.recipe_changed.send_robust(self)
+            
         
     @property
     def inputs(self):
@@ -899,11 +1022,30 @@ class ModuleCollection(HasTraits):
 
         key_prefix = '' if key == 'input' else key + '_'
 
-        try:
+        # Handle a 'MetaData' group as a special case
+        # TODO - find/implement a more portable way of handling metadata in HDF (e.g. as .json in a blob) so that
+        # non-python exporters have a chance of adding metadata
+        if 'MetaData' in h5f.root:
             mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-        except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+        else:
             logger.warning('No metadata found, proceeding with empty metadata')
             mdh = MetaDataHandler.NestedClassMDHandler()
+        
+        events = None
+        # handle an 'Events' table as a special case (so that it can be attached to subsequently loaded tables)
+        # FIXME - this relies on a special /reserved table name and format and could raise name collision issues
+        # when importing 3rd party / generic HDF
+        # FIXME - do we really want to attach events (which will not get propagated through recipe modules)
+        if ('Events' in h5f.root):
+            if 'EventName' in h5f.root.Events.description._v_names:
+                # check that the event table is formatted as we expect
+                if ('StartTime' in mdh.keys()):
+                    events = h5f.root.Events[:]
+                else:
+                    logger.warning('Acquisition events found in .hdf, but no "StartTime" in metadata')
+            else:
+                logger.warning(
+                    'Table called "Events" found in .hdf does not match the signature for acquisition events, ignoring')
         
         for t in h5f.list_nodes('/'):
             # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
@@ -913,12 +1055,21 @@ class ModuleCollection(HasTraits):
             # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
             # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
             # > 3D data?
+
+            if getattr(t, 'name', None) == 'Events':
+                # NB: This assumes we've handled this in the special case earlier, and blocks anything in a 3rd party
+                # HDF events table from being seen.
+                # TODO - do we really want to have so much special case stuff in our generic hdf handling? Are we sure
+                # that events shouldn't be injected into the namespace (given that events do not propagate through recipe modules)?
+                continue
             
-            if isinstance(t, tables.VLArray):
+            elif isinstance(t, tables.VLArray):
                 from PYME.IO.ragged import RaggedVLArray
                 
                 rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
                 rag.mdh = mdh
+                if events is not None:
+                    rag.events = events
 
                 self.namespace[key_prefix + t.name] = rag
 
@@ -926,12 +1077,16 @@ class ModuleCollection(HasTraits):
                 #  pipe our table into h5r or hdf source depending on the extension
                 tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
                 tab.mdh = mdh
+                if events is not None:
+                    tab.events = events
 
                 self.namespace[key_prefix + t.name] = tab
 
             elif isinstance(t, tables.EArray):
-                # load using ImageStack._loadh5, which finds metdata
-                im = ImageStack(filename=filename, haveGUI=False)
+                # load using ImageStack._loadh5
+                # FIXME - ._loadh5 will load events lazily, which isn't great if we got here after
+                # sending file over clusterIO inside of a context manager -> force it through since we already found it
+                im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
                 # assume image is the main table in the file and give it the named key
                 self.namespace[key] = im
 
@@ -941,8 +1096,9 @@ class ModuleCollection(HasTraits):
         """
         from PYME.IO import unifiedIO
         import os
+
         extension = os.path.splitext(filename)[1]
-        if extension in ['.h5r', '.h5', '.hdf']:
+        if extension in ['.h5r', '.h5', '.hdf']: #TODO - should `.h5` be processed here, or via ImageStack
             import tables
             from PYME.IO import h5rFile
             try:
@@ -999,6 +1155,33 @@ class ModuleCollection(HasTraits):
     def to_svg(self):
         from . import recipeLayout
         return recipeLayout.to_svg(self.dependancyGraph())
+    
+    def layout(self):
+        """ Added as a visualisation aid for the web-based recipe editor. Very much a work in progress and not
+        guaranteed to remain in it's current form.
+        
+        TODO - does this logic belong here????
+        TODO - rename?? (potentially make it webui specific)???
+        TODO - potential issues on Py3 with how jigna treats namedtuple?
+        """
+        from . import recipeLayout
+        #from collections import namedtuple
+        #layout_info = namedtuple('layout', ['node_positions', 'connecting_lines'])
+        #node = namedtuple('node', ['key', 'pos'])
+        class layout_info(object):
+            def __init__(self, node_positions, connecting_lines):
+                self.node_positions = node_positions
+                self.connecting_lines = connecting_lines
+
+        class node(object):
+            def __init__(self, key, pos):
+                self.key = key
+                self.pos = pos
+
+        node_positions, connecting_lines = recipeLayout.layout(self.dependancyGraph())
+        ret =   layout_info([node(k, v) for k, v in node_positions.items()], [(a.tolist(), b.tolist(), c) for a,b,c in connecting_lines])
+        #print (ret)
+        return ret
     
     def _repr_svg_(self):
         """ Make us look pretty in Jupyter"""

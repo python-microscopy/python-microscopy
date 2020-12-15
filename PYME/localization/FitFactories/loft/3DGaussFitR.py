@@ -103,7 +103,7 @@ def GaussFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr
 
 class PSFFitFactory:
     def __init__(self, data, metadata, background=None):
-        self.data = data - metadata.Camera.ADOffset
+        self.data = data - metadata['Camera.ADOffset']
         self.metadata = metadata
         self.background = background
 
@@ -115,9 +115,10 @@ class PSFFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #generate grid to evaluate function on
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[zslice]
+        vx, vy, vz = self.metadata.voxelsize_nm
+        X = vx*scipy.mgrid[xslice]
+        Y = vy*scipy.mgrid[yslice]
+        Z = vz*scipy.mgrid[zslice]
         P = scipy.arange(0,1.01,.01)
 
         #imshow(dataROI[:,:,0])
@@ -136,7 +137,7 @@ class PSFFitFactory:
 
         #estimate errors in data
         #sigma = (4 + scipy.sqrt(2*dataROI)/2)
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(dataROI, 1))/self.metadata['Camera.ElectronsPerCount']
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #print X

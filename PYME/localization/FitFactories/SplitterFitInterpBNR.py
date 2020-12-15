@@ -261,7 +261,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
 
         Xr = Xg - dx_
         Yr = Yg - dy_
-        Zr = Zg + self.metadata.Analysis.AxialShift
+        Zr = Zg + self.metadata['Analysis.AxialShift']
                 
 
         #estimate some start parameters...
@@ -281,7 +281,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,:1], X_, Y_)
             else:
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
-                z0 = self.metadata.Analysis.AxialShift
+                z0 = self.metadata['Analysis.AxialShift']
 
         fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
         fitShifts = self.metadata.getOrDefault('Analysis.FitShifts', False)
@@ -307,8 +307,8 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         ratio = None
         nchi2_m = None
         
-        for r in self.metadata.chroma.ChannelRatios:
-            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift,r)
+        for r in self.metadata['chroma.ChannelRatios']:
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift'],r)
 
             fitErrors=None
             try:       

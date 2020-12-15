@@ -30,12 +30,12 @@ import wx.lib.agw.aui as aui
 import os
 import six
 
-class blobFinder:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
 
-        self.image = dsviewer.image
-        self.do = dsviewer.do
+from ._base import Plugin
+
+class BlobFinder(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
 
         self.vObjPos = None
         self.vObjFit = None
@@ -175,7 +175,7 @@ class blobFinder:
         self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
         if self.vObjPos is None:
-            self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
+            self.vObjPos = recArrayView.ArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
@@ -244,7 +244,7 @@ class blobFinder:
             #if self.nObjFit == None:
                 
                 
-            vObjFit = recArrayView.recArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
+            vObjFit = recArrayView.ArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
             self.dsviewer.AddPage(vObjFit, caption = 'Fitted Positions %d - %d' % (chnum, self.nObjFit))
         self.nObjFit += 1
         #else:
@@ -365,7 +365,7 @@ class blobFinder:
 
 
 def Plug(dsviewer):
-    dsviewer.blobFinder = blobFinder(dsviewer)
+    blobFinder = BlobFinder(dsviewer)
     
     if not 'overlaypanel' in dir(dsviewer):    
         dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
@@ -374,4 +374,6 @@ def Plug(dsviewer):
         dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
     
         dsviewer.panesToMinimise.append(pinfo2)
+        
+    return blobFinder
     

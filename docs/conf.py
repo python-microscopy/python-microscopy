@@ -15,6 +15,11 @@ import sys, os
 
 import mock
 import numpy
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+sys.path.append(os.path.abspath('..'))
 import PYME.version
  
 #MOCK_MODULES = ['numpy', 'tables', 'scipy', 'scipy.interpolate', 'scipy.special', 'scipy.io', 
@@ -44,9 +49,58 @@ sys.modules['skimage'] = mock.Mock()
 sys.modules['pyfftw'] = mock.Mock()
 sys.modules['quaternion'] = mock.Mock()
     
+sys.modules['wx'] = mock.Mock()
+sys.modules['wx.aui'] = mock.Mock()
+sys.modules['wx.lib'] = mock.Mock()
+sys.modules['wx.lib.newevent'] = mock.Mock()
+sys.modules['wx.lib.mixins'] = mock.Mock()
+sys.modules['wx.lib.dialogs'] = mock.Mock()
+sys.modules['wx.lib.agw'] = mock.Mock()
+sys.modules['wx.lib.agw.aui'] = mock.Mock()
+sys.modules['wx.gizmos'] = mock.Mock()
+sys.modules['wx.grid'] = mock.Mock()
+sys.modules['wx.lib.agw.aui.aui_utilities'] = mock.Mock()
+sys.modules['wx.py.shell'] = mock.Mock()
+sys.modules['wx.glcanvas'] = mock.Mock()
+
+sys.modules['OpenGL'] = mock.Mock()
+sys.modules['OpenGL.GL'] = mock.Mock()
+
+sys.modules['scipy'] = mock.Mock()
+sys.modules['scipy.ndimage'] = mock.Mock()
+sys.modules['scipy.ndimage.interpolation'] = mock.Mock()
+sys.modules['scipy.fftpack'] = mock.Mock()
+sys.modules['scipy.optimize'] = mock.Mock()
+sys.modules['scipy.signal'] = mock.Mock()
+sys.modules['scipy.spatial'] = mock.Mock()
+sys.modules['scipy.interpolate'] = mock.Mock()
+sys.modules['scipy.special'] = mock.Mock()
+sys.modules['scipy.stats'] = mock.Mock()
+sys.modules['scipy.misc'] = mock.Mock()
+sys.modules['scipy.integrate'] = mock.Mock()
+
+sys.modules['skimage.filters'] = mock.Mock()
+sys.modules['sklearn'] = mock.Mock()
+
+sys.modules['matplotlib'] = mock.Mock()
+sys.modules['matplotlib.cm'] = mock.Mock()
+sys.modules['matplotlib.colors'] = mock.Mock()
+
+sys.modules['tables'] = mock.Mock()
+sys.modules['yaml'] = mock.Mock()
+sys.modules['toposort'] = mock.Mock()
+sys.modules['matplotlib.pyplot'] = mock.Mock()
+sys.modules['cherrypy'] = mock.Mock()
+sys.modules['pandas'] = mock.Mock()
+sys.modules['zeroconf'] = mock.Mock()
+sys.modules['django'] = mock.Mock()
+sys.modules['pandas'] = mock.Mock()
+sys.modules['Pyro'] = mock.Mock()
+sys.modules['ujson'] = mock.Mock()
+
 import wx
-import wx.py.shell
-from wx.lib.agw.aui.aui_utilities import BitmapFromBits
+#import wx.py.shell
+#from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 
 class mClass:
     pass
@@ -54,10 +108,13 @@ class mClass:
 wx.Frame = mClass
 wx.Panel = mClass
 wx.Dialog = mClass
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
+
+import wx.lib.newevent
+wx.lib.newevent.NewCommandEvent = lambda : (None,None)
+
+import matplotlib.cm
+matplotlib.cm.cmapnames = []
+
 
 # -- General configuration -----------------------------------------------------
 
@@ -79,7 +136,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PYME'
-copyright = u'2016, David Baddeley'
+copyright = u'2020, PYME Developer Community'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

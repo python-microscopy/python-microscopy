@@ -45,6 +45,10 @@ except ImportError:
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
+logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
 
 #import PYME.ui.autoFoldPanel as afp
 
@@ -83,6 +87,9 @@ class DSViewFrame(AUIFrame):
         self.updateHooks = []
         self.statusHooks = []
         self.installedModules = []
+        
+        # will store weakrefs to things that modules previously injected into our namespace
+        #self._module_injections = weakref.WeakValueDictionary()
         
         self.dataChangeHooks = []
 
@@ -265,9 +272,17 @@ class DSViewFrame(AUIFrame):
         return currPage
 
     
-
-
-
+    def create_overlay_panel(self):
+        from PYME.DSView.OverlaysPanel import OverlayPanel
+        if not 'overlaypanel' in dir(self):
+            self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
+            self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+            pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(
+                False).MinimizeButton(True).MinimizeMode(
+                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.overlaypanel, pinfo2)
+        
+            self.panesToMinimise.append(pinfo2)
     
 
 
