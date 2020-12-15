@@ -65,5 +65,3 @@ def test_extract_channel():
 
     np.testing.assert_equal(out.getSlice(0).squeeze(), 1)
     np.testing.assert_equal(roi_size, out.shape[:2])
-
-test_extract_channel()
