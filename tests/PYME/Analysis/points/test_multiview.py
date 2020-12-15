@@ -49,6 +49,8 @@ def test_extract_channel():
     from PYME.recipes.multiview import ExtractMultiviewChannel
     from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
     from PYME.IO.MetaDataHandler import DictMDHandler
+    from PYME.IO.image import ImageStack
+
     roi_size = [123, 456]
     mdh = DictMDHandler()
     mdh['Multiview.ActiveViews'] = [0, 1]
@@ -58,7 +60,7 @@ def test_extract_channel():
                   roi_size[1], 1, 1))
     d[roi_size[0]:, :] = 1
     d = ArrayDataSource(d)
-    d.mdh = mdh
+    d = ImageStack(data=d, mdh=mdh)
     out = ExtractMultiviewChannel(view_number=1).apply_simple(input_name=d)
 
     np.testing.assert_equal(out.getSlice(0).squeeze(), 1)
