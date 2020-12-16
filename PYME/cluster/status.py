@@ -2,11 +2,7 @@
 import threading
 from PYME.IO.clusterIO import get_status, local_serverfilter
 
-_INFO = {
-    local_serverfilter: {
-        'lock': threading.Lock(),
-    }
-}
+_INFO = dict()
 
 def get_polled_status(serverfilter=local_serverfilter, poll_wait=3):
     """ Polled version of PYME.IO.clusterIO.get_status
@@ -19,7 +15,8 @@ def get_polled_status(serverfilter=local_serverfilter, poll_wait=3):
         the cluster name (optional), to select a specific cluster
     poll_wait: float
         number of seconds for polling thread to wait before updating the
-        status again.
+        status again. Only has an effect if this is the first call for
+        a given `serverfilter`.
 
     Returns
     -------
