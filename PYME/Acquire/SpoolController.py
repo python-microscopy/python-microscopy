@@ -281,8 +281,8 @@ class SpoolController(object):
 
         """
         if self.spoolType == 'Cluster':
-            from PYME.IO import clusterIO
-            nodes = clusterIO.get_status()
+            from PYME.cluster import status
+            nodes = status.get_polled_status()
             free_storage = sum([n['Disk']['free'] for n in nodes])
             return free_storage / 1e9
         else:
