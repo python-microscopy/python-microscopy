@@ -1634,7 +1634,7 @@ cdef class TriangleMesh(TrianglesBase):
             
             neighbours = &self._cvertices[new_v0].neighbor0
             for i in range(NEIGHBORSIZE):
-                if neighbours[i] == new_v1:
+                if self._chalfedges[neighbours[i]].vertex == new_v1:
                     return 0
         else:
             if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
