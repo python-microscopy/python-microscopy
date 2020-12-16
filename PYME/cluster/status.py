@@ -1,8 +1,25 @@
 
 import threading
 from PYME.IO.clusterIO import get_status, local_serverfilter
+import logging
 
-_INFO = dict()
+logger = logging.getLogger(__name__)
+
+class StatusInfo(dict):
+    def __del__(self):
+        for k in self.keys():
+            try:
+                self[k]['polling'] = False
+            except Exception as e:
+                logger.error(str(e))
+        
+        for k in self.keys():
+            try:
+                self[k]['thread'].join()
+            except Exception as e:
+                logger.error(str(e))
+
+_INFO = StatusInfo()
 
 def get_polled_status(serverfilter=local_serverfilter, poll_wait=3):
     """ Polled version of PYME.IO.clusterIO.get_status
@@ -64,7 +81,8 @@ def get_polled_status(serverfilter=local_serverfilter, poll_wait=3):
             'lock': threading.Lock(),
             'status': get_status(serverfilter),
             'thread': threading.Thread(target=_poll_status, 
-                                       args=(serverfilter, poll_wait))
+                                       args=(serverfilter, poll_wait)),
+            'polling': True 
         }
         _INFO[serverfilter]['thread'].start()
     
@@ -76,7 +94,7 @@ def _poll_status(serverfilter, poll_wait):
 
     global _INFO
 
-    while True:
+    while (serverfilter in _INFO.keys()) and _INFO[serverfilter]['polling']:
         status = get_status(serverfilter)
         with _INFO[serverfilter]['lock']:
             _INFO[serverfilter]['status'] = status
