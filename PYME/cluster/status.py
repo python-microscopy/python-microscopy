@@ -21,7 +21,7 @@ class StatusInfo(dict):
 
 _INFO = StatusInfo()
 
-def get_polled_status(serverfilter=local_serverfilter, poll_wait=3):
+def get_polled_status(serverfilter=local_serverfilter, poll_wait=1):
     """ Polled version of PYME.IO.clusterIO.get_status
     Get status of cluster servers (currently only used in the clusterIO web 
     service)
