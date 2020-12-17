@@ -2,16 +2,60 @@
 import wx
 from  PYME.ui import manualFoldPanel
 from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
+from PYME.cluster.rules import RecipeRuleFactory
 from collections import OrderedDict
 import queue
 import os
 import posixpath
 import logging
+from PYME.recipes.traits import HasTraits, Enum, Float, CStr
+
 logger = logging.getLogger(__name__)
+
+
+class RuleTile(HasTraits):
+    task_timeout = Float(60 * 10)
+    rule_timeout = Float(60 * 10)
+
+    def get_params(self):
+        editable = self.class_editable_traits()
+        return editable 
+
+    @property
+    def default_view(self):
+        if wx.GetApp() is None:
+            return None
+        from traitsui.api import View, Item
+
+        return View([Item(tn) for tn in self.get_params()], buttons=['OK'])
+
+    def default_traits_view(self):
+        """ This is the traits stock method to specify the default view"""
+        return self.default_view
+
+def get_rule_tile(rule_factory_class):
+    class _RuleTile(RuleTile, rule_factory_class):
+        def __init__(self, *args, **kwargs):
+            RuleTile.__init__()
+            rule_factory_class.__init__(*args, **kwargs)
+    return RuleTile
+
+
+class RuleChain(HasTraits):
+    post_on = Enum(['off', 'spool start', 'spool stop'])
+    protocol = CStr('')
+    
+    def __init__(self, rule_factories=None, *args, **kwargs):
+        if rule_factories is None:
+            rule_factories = list()
+        self.rule_factories = rule_factories
+        HasTraits.__init__(self, *args, **kwargs)
+
 
 class ProtocolRules(OrderedDict):
     """
-    Container for associating sets of analysis rules with specific acquisition protocols
+    Container for associating sets of analysis rules with specific acquisition
+    protocols
     """
     def __init__(self, posting_thread_queue_size=5):
         """[summary]
@@ -27,106 +71,7 @@ class ProtocolRules(OrderedDict):
 
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
         
-        self['default'] = []
-
-
-class RuleFactoryListCtrl(wx.ListCtrl):
-    def __init__(self, rule_factory_chain, wx_parent):
-        """
-        Parameters
-        ----------
-        rule_factory_chain : list
-        wx_parent
-        """
-
-        wx.ListCtrl.__init__(self, wx_parent, style=wx.LC_REPORT | wx.BORDER_SUNKEN | wx.LC_VIRTUAL | wx.LC_VRULES)
-        self._rule_factory_chain = rule_factory_chain
-
-        self.InsertColumn(0, 'Type', width=125)
-        self.InsertColumn(1, 'ID', width=75)
-
-        self.update_list()
-
-    @property
-    def localization_rule_indices(self):
-        return [ind for ind, rf in enumerate(self._rule_factory_chain) if isinstance(rf, LocalizationRuleFactory)]
-
-    def add_rule_factory(self, rule_factory, index=None):
-        """
-        Parameters
-        ----------
-        rule_factory : PYME.cluster.rules.RuleFactory
-        Returns
-        -------
-        """
-        if index is None:
-            self._rule_factory_chain.append(rule_factory)
-        else:
-            self._rule_factory_chain.insert(rule_factory, index)
-
-        self.update_list()
-
-    def replace_rule_factory(self, rule_factory, index):
-        self._rule_factory_chain[index] = rule_factory
-
-    def OnGetItemText(self, item, col):
-        """
-        Note that this is overriding the wxListCtrl method as required for wxLC_VIRTUAL style
-        
-        Parameters
-        ----------
-        item : long
-            wx list item
-        col : long
-            column specifier for wxListCtrl
-        Returns
-        -------
-        str : Returns string of column 'col' for item 'item'
-        """
-        try:
-            if col == 0:
-                return self._rule_factory_chain[item]._type
-            if col == 1:
-                return str(item)
-        except:
-            return ''
-        else:
-            return ''
-
-    def update_list(self, sender=None, **kwargs):
-        n_rules = len(self._rule_factory_chain)
-        for s_ind, f_ind in enumerate(range(1, n_rules)):
-            self._rule_factory_chain[s_ind].chain(self._rule_factory_chain[f_ind])
-        
-        self.SetItemCount(n_rules)
-        self.Update()
-        self.Refresh()
-
-    def delete_rules(self, indices=None):
-        selected_indices = self.get_selected_items() if indices is None else indices
-
-        for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
-            self._rule_factory_chain.pop(ind)
-            self.DeleteItem(ind)
-
-        self.update_list()
-
-    def get_selected_items(self):
-        selection = []
-        current = -1
-        next = 0
-        while next != -1:
-            next = self.get_next_selected(current)
-            if next != -1:
-                selection.append(next)
-                current = next
-        return selection
-
-    def get_next_selected(self, current):
-        return self.GetNextItem(current, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
-
-    def clear_localization_rules(self):
-        self.delete_rules(self.localization_rule_indices)
+        self['default'] = RuleChain()
 
 
 class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
@@ -143,8 +88,9 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
 
         self._protocol_rules = protocol_rules
 
-        self.InsertColumn(0, 'Protocol', width=125)
-        self.InsertColumn(1, '# Rules', width=75)
+        self.InsertColumn(0, 'Protocol', width=75)
+        self.InsertColumn(1, '# Rules', width=50)
+        self.InsertColumn(2, 'Post', width=75)
 
         self.update_list()
 
@@ -166,8 +112,12 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
             if col == 0:
                 return list(self._protocol_rules.keys())[item]
             if col == 1:
-                print(list(self._protocol_rules.items()))
-                return str(len(list(self._protocol_rules.values())[item]))
+                chains = list(self._protocol_rules.rule_factories.values())
+                return str(len(chains[item]))
+            if col == 2:
+                chains = list(self._protocol_rules.rule_factories.values())
+                print('here, %s' % chains[item].post_on)
+                return chains[item].post_on
         except:
             return ''
         else:
@@ -206,9 +156,8 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
 
 
 class ChainedAnalysisPanel(wx.Panel):
-    _RULE_LAUNCH_MODES = ['off', 'spool start', 'spool stop']
-    def __init__(self, parent, protocol_rules, recipe_manager, spool_controller,
-                 default_pairings=None):
+    def __init__(self, parent, protocol_rules, recipe_manager, 
+                 spool_controller, default_pairings=None):
         """
 
         Parameters
@@ -236,41 +185,11 @@ class ChainedAnalysisPanel(wx.Panel):
         self._recipe_manager = recipe_manager
         self._spool_controller = spool_controller
 
-        # self._rule_chain_updated = dispatch.Signal()
         self._protocol_rules_updated = dispatch.Signal()
 
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        h_sizer.Add(wx.StaticText(self, -1, 'Post automatically: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
-        self.choice_launch = wx.Choice(self, -1, choices=self._RULE_LAUNCH_MODES)
-        self.choice_launch.SetSelection(0)
-        self.choice_launch.Bind(wx.EVT_CHOICE, self.OnToggleAuto)
-        h_sizer.Add(self.choice_launch, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        v_sizer.Add(h_sizer, 0, wx.ALL | wx.EXPAND, 2)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._rule_list = RuleFactoryListCtrl(self._rule_chain, self)
-        h_sizer.Add(self._rule_list)
-        v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_add = wx.Button(self, -1, 'Add from Recipe Panel')
-        self.button_add.Bind(wx.EVT_BUTTON, self.OnAddFromRecipePanel)
-        h_sizer.Add(self.button_add, 0, wx.ALL, 2)  # todo - (disable until activeRecipe.modules) > 0
-
-        self.button_del = wx.Button(self, -1, 'Delete')
-        self.button_del.Bind(wx.EVT_BUTTON, self.OnRemoveRules)
-        h_sizer.Add(self.button_del, 0, wx.ALL, 2)
-        v_sizer.Add(h_sizer)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_pair_protocol = wx.Button(self, -1, 'Pair with protocol')
-        self.button_pair_protocol.Bind(wx.EVT_BUTTON, self.OnPairWithProtocol)
-        h_sizer.Add(self.button_pair_protocol, 0, wx.ALL, 2)
-        v_sizer.Add(h_sizer)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._protocol_rules_list = ProtocolRuleFactoryListCtrl(self._protocol_rules, self)
         h_sizer.Add(self._protocol_rules_list)
         v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
@@ -300,49 +219,8 @@ class ChainedAnalysisPanel(wx.Panel):
         self._protocol_rules_list.update_list()
         self._protocol_rules_updated.send(self)
 
-    def OnAddFromRecipePanel(self, wx_event=None):
-        from PYME.cluster.rules import RecipeRuleFactory
-        if len(self._recipe_manager.activeRecipe.modules) > 0:
-            rule_factory = RecipeRuleFactory(recipe=self._recipe_manager.activeRecipe.toYAML())
-            self._rule_list.add_rule_factory(rule_factory)
-
-    def OnRemoveRules(self, wx_event=None):
-        self._rule_list.delete_rules()
-
     def OnRemoveProtocolRule(self, wx_event=None):
         self._protocol_rules_list.delete_rule_chains()
-
-    def OnPairWithProtocol(self, wx_event=None):
-        from PYME.Acquire import protocol
-
-        dialog = wx.SingleChoiceDialog(self, '', 'Select Protocol', 
-                                       protocol.get_protocol_list())
-
-        ret = dialog.ShowModal()
-
-        if ret == wx.ID_OK:
-            protocol_name = os.path.splitext(dialog.GetStringSelection())[0]
-            self._protocol_rules[protocol_name] = self._rule_chain
-            # replace the gui-editable chain with a new one
-            self._rule_chain = []
-            self._rule_list._rule_chain = self._rule_chain
-            self._rule_list.update_list()
-            self._protocol_rules['default'] = self._rule_chain
-
-        dialog.Destroy()
-        self._protocol_rules_list.update_list()
-        self._protocol_rules_updated.send(self)
-
-    def OnToggleAuto(self, wx_event=None):
-        mode = self.choice_launch.GetSelection()
-
-        self._spool_controller.onSpoolStart.disconnect(self.post_rules)
-        self._spool_controller.onSpoolStop.disconnect(self.post_rules)
-
-        if mode == 1:  # series start
-            self._spool_controller.onSpoolStart.connect(self.post_rules)
-        elif mode == 2:  # series stop
-            self._spool_controller.onSpoolStop.connect(self.post_rules)
 
     def post_rules(self, **kwargs):
         """
@@ -376,7 +254,7 @@ class ChainedAnalysisPanel(wx.Panel):
                    'output_dir': posixpath.join(spool_dir, 'analysis')}
 
         # rule chain is already linked, add context and push
-        rule_factory_chain[0].get_rule(context=context).push()
+        rule_factory_chain.rule_factories[0].get_rule(context=context).push()
 
     @staticmethod
     def plug(main_frame, scope, default_pairings=None):
