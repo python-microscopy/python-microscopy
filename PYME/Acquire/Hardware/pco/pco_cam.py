@@ -50,10 +50,12 @@ class PcoCam(Camera):
         self.n_read = 0
         self.initalized = True
         self._roi = None
-        self.SetROI(0, 0, self.GetCCDWidth(), self.GetCCDHeight())
+        self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
         self._ccd_temp = 0  # Store the sensor temperature
         self.__temp_timeout = -1  # only update the temp every n calls
         self._cycle_time = 0
+        self.recording = False
+        self.__image_frame_bytes = 0
 
     @property
     def noise_properties(self):
@@ -74,7 +76,8 @@ class PcoCam(Camera):
 
     def ExtractColor(self, chSlice, mode):
         # Somehow this check matters... shouldn't this be taken care of by ExpReady???
-        if self.GetNumImsBuffered() < 1:
+        # if self.GetNumImsBuffered() < 1:
+        if (not self.recording) or (self.GetNumImsBuffered() < 1):
             return True
 
         if self.n_read < self.buffer_size:
@@ -87,10 +90,12 @@ class PcoCam(Camera):
         # Grab the image (unused metadata _)
         image, _ = self.cam.image(curr_frame)
 
+        # print('image dtype: {}'.format(image.dtype))
         # print('curr_frame: {}, recorder_image_number: {}, num_ims_buffered: {}, num_ims_read: {}'.format(curr_frame, meta['recorder image number'], self.cam.rec.get_status()['dwProcImgCount'], self.n_read))
 
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
-                   image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), chSlice.nbytes)
+                   image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), 
+                   self.__image_frame_bytes)
 
         self.n_read += 1
 
@@ -280,25 +285,30 @@ class PcoCam(Camera):
         self.n_read = 0
         d = self.cam.sdk.get_delay_exposure_time()
         self._cycle_time = d['exposure']*timebase[d['exposure timebase']] + d['delay']*timebase[d['delay timebase']]
+        self.__image_frame_bytes = ctypes.c_ssize_t(int(self.GetPicWidth()*self.GetPicHeight()*ctypes.sizeof(ctypes.c_uint16)))
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
         elif self._mode == self.MODE_CONTINUOUS:
             # Allocate buffer (2 seconds of buffer)
             self.buffer_size = int(max(int(2.0*self.GetFPS()), 1))
             self.cam.record(number_of_images=self.buffer_size, mode='ring buffer')
+        self.recording = True
 
         eventLog.logEvent('StartAq', '')
 
         return 0
 
     def StopAq(self):
+        self.recording = False
         self.cam.stop()
 
     def GetNumImsBuffered(self):
-        try:
-            n_buf = max(self.cam.rec.get_status()['dwProcImgCount'] - self.n_read, 0)
-        except:
+        if self.recording:
+            # FIXME: dwProcImgCount is an unsigned 32-bit integer, so this will fail after 2**32 images
+            n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.n_read
+        else:
             n_buf = 0
+        # print(n_buf+self.n_read, self.n_read)
         return n_buf
 
     def GetBufferSize(self):
