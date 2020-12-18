@@ -1884,11 +1884,11 @@ cdef class TriangleMesh(TrianglesBase):
                 target_valence = BOUNDARY_VALENCE
             else:
                 twin_edge = &self._chalfedges[_twin]
-                v2 = self._cvertices[twin_edge.vertex].valence - target_valence
-                v4 = self._cvertices[self._chalfedges[twin_edge.next].vertex].valence - target_valence
+                v2 = self._cvertices[twin_edge.vertex].valence - target_valence  # pre-flip 
+                v4 = self._cvertices[self._chalfedges[twin_edge.next].vertex].valence - target_valence  # post-flip
 
-            v1 = self._cvertices[curr_edge.vertex].valence - target_valence
-            v3 = self._cvertices[self._chalfedges[curr_edge.next].vertex].valence - target_valence
+            v1 = self._cvertices[curr_edge.vertex].valence - target_valence  # pre-flip
+            v3 = self._cvertices[self._chalfedges[curr_edge.next].vertex].valence - target_valence  # post-flip
 
             # Check valence deviation from VALENCE (or
             # BOUNDARY_VALENCE for boundaries) pre- and post-flip
