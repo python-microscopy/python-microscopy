@@ -48,7 +48,11 @@ class PcoCam(Camera):
         self.buffer_size = 0
         self.n_read = 0
         self.initalized = True
-        self.__roi = None
+        self._roi = None
+        self.SetROI(0, 0, self.GetCCDWidth(), self.GetCCDHeight())
+        self._ccd_temp = 0  # Store the sensor temperature
+        self.__temp_timeout = -1  # only update the temp every n calls
+        self._cycle_time = 0
 
     @property
     def noise_properties(self):
@@ -117,14 +121,13 @@ class PcoCam(Camera):
         return d['exposure']*timebase[d['exposure timebase']] 
 
     def GetCycleTime(self):
-        d = self.cam.sdk.get_delay_exposure_time()
-        return d['exposure']*timebase[d['exposure timebase']] + d['delay']*timebase[d['delay timebase']]
+       return self._cycle_time
 
     def GetCCDWidth(self):
-        return self.desc['max. horizontal resolution standard']
+        return int(self.desc['max. horizontal resolution standard'])
 
     def GetCCDHeight(self):
-        return self.desc['max. vertical resolution standard']
+        return int(self.desc['max. vertical resolution standard'])
 
     def GetPicWidth(self):
         return self.GetROI()[2] - self.GetROI()[0] + 1
@@ -197,8 +200,8 @@ class PcoCam(Camera):
         x1 = int(np.floor(x1/dx)*dx)
         y1 = int(np.floor(y1/dy)*dy)
 
-        lx_max = self.desc['max. horizontal resolution standard']
-        ly_max = self.desc['max. vertical resolution standard']
+        lx_max = self.GetCCDWidth()
+        ly_max = self.GetCCDHeight()
         lx_min = self.desc['min size horz']
         ly_min = self.desc['min size vert']
 
@@ -232,24 +235,26 @@ class PcoCam(Camera):
                 y0 = y1-ly_min
 
         self.cam.sdk.set_roi(x0, y0, x1, y1)
+        self._roi = [x0, y0, x1, y1]
 
         logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x0, y0, x1-x0+1, y1-y0+1))
 
         # Recording state is reset, so set to 0
         self.n_read = 0
-        self.GetROI()
 
     def GetROI(self):
-        if self.n_read == 0:
-            # We reset, check the ROI again
-            self.__roi = self.cam.sdk.get_roi()
-        return self.__roi['x0'], self.__roi['y0'], self.__roi['x1'], self.__roi['y1']
+        return self._roi
     
     def GetElectrTemp(self):
         return self.cam.sdk.get_temperature()['camera temperature']  # FIXME: should this be 'power temperature'?
 
     def GetCCDTemp(self):
-        return self.cam.sdk.get_temperature()['sensor temperature']
+        self.__temp_timeout += 1
+        if (self.__temp_timeout % 10) == 0:
+            self._ccd_temp = self.cam.sdk.get_temperature()['sensor temperature']
+            self.__temp_timeout = -1
+        return self._ccd_temp
+        # return self.cam.sdk.get_temperature()['sensor temperature']
 
     def GetCCDTempSetPoint(self):
         return self.cam.sdk.get_cooling_setpoint_temperature()['cooling setpoint temperature']
@@ -271,7 +276,10 @@ class PcoCam(Camera):
             raise RuntimeError('Mode %d not supported' % mode)
 
     def StartExposure(self):
-        self.StopAq()
+        # self.StopAq()
+        self.n_read = 0
+        d = self.cam.sdk.get_delay_exposure_time()
+        self._cycle_time = d['exposure']*timebase[d['exposure timebase']] + d['delay']*timebase[d['delay timebase']]
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
         elif self._mode == self.MODE_CONTINUOUS:
@@ -285,7 +293,6 @@ class PcoCam(Camera):
 
     def StopAq(self):
         self.cam.stop()
-        self.n_read = 0
 
     def GetNumImsBuffered(self):
         try:
@@ -299,6 +306,8 @@ class PcoCam(Camera):
         return self.buffer_size
 
     def GetFPS(self):
+        if self.GetCycleTime() == 0:
+            return 0
         return 1.0/self.GetCycleTime()
 
     def SetHotPixelCorrectionMode(self, mode):
