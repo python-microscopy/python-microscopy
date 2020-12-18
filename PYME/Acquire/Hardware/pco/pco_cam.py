@@ -34,14 +34,15 @@ timebase = {'ns': 1e-9, 'us': 1e-6, 'ms': 1e-3}  # Conversions from a pco dictio
 class PcoCam(Camera):
     numpy_frames = 1
     
-    def __init__(self, camNum):
+    def __init__(self, camNum, debuglevel='off'):
         Camera.__init__(self)
         self.camNum = camNum
         self.initalized = False
         self.noiseProps = None
+        self._debuglevel = debuglevel  # ['off', 'error', 'verbose', 'extra verbose']
 
     def Init(self):
-        self.cam = pco.Camera(debuglevel='error')
+        self.cam = pco.Camera(debuglevel=self._debuglevel)
         self.SetDescription()
         self._mode = self.MODE_CONTINUOUS
         self.SetHotPixelCorrectionMode('off')
@@ -72,7 +73,6 @@ class PcoCam(Camera):
         return self.initalized
 
     def ExtractColor(self, chSlice, mode):
-
         # Somehow this check matters... shouldn't this be taken care of by ExpReady???
         if self.GetNumImsBuffered() < 1:
             return True
@@ -121,7 +121,7 @@ class PcoCam(Camera):
         return d['exposure']*timebase[d['exposure timebase']] 
 
     def GetCycleTime(self):
-       return self._cycle_time
+        return self._cycle_time
 
     def GetCCDWidth(self):
         return int(self.desc['max. horizontal resolution standard'])
@@ -250,9 +250,9 @@ class PcoCam(Camera):
 
     def GetCCDTemp(self):
         self.__temp_timeout += 1
-        if (self.__temp_timeout % 10) == 0:
+        if self.__temp_timeout > 10:
             self._ccd_temp = self.cam.sdk.get_temperature()['sensor temperature']
-            self.__temp_timeout = -1
+            self.__temp_timeout = 0
         return self._ccd_temp
         # return self.cam.sdk.get_temperature()['sensor temperature']
 
@@ -296,7 +296,7 @@ class PcoCam(Camera):
 
     def GetNumImsBuffered(self):
         try:
-            n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.n_read
+            n_buf = max(self.cam.rec.get_status()['dwProcImgCount'] - self.n_read, 0)
         except:
             n_buf = 0
         return n_buf

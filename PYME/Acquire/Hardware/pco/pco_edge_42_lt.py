@@ -20,8 +20,8 @@ noiseProperties = {
 }
 
 class PcoEdge42LT(pco_cam.PcoCam):
-    def __init__(self, camNum):
-        pco_cam.PcoCam.__init__(self, camNum)
+    def __init__(self, camNum, debuglevel='off'):
+        pco_cam.PcoCam.__init__(self, camNum, debuglevel)
 
     def Init(self):
         pco_cam.PcoCam.Init(self)
