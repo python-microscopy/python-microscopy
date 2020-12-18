@@ -105,7 +105,8 @@ class ObjectMeasurer:
         pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids,key)
+            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+                                                                                     key)
 
             from PYME.ui import recArrayView
             f = recArrayView.ArrayFrame(pipeline.objectMeasures['Everything'], parent=self.visFr, title='Object Measurements')
@@ -126,7 +127,8 @@ class ObjectMeasurer:
             for ch, i in zip(chans, range(len(chans))):
                 pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids,key)
+                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+                                                                                         key)
             
             pipeline.colourFilter.setColour(curChan)
 
