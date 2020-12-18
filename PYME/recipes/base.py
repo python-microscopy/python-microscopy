@@ -11,16 +11,16 @@ import six
 
 from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output
     
-    #for some reason traitsui raises SystemExit when called from sphinx on OSX
-    #This is due to the framework build problem of anaconda on OSX, and also
-    #creates a problem whenever there is no GUI available.
-    #as we want to be able to use recipes without a GUI (presumably the reason for this problem)
-    #it's prudent to catch this and spoof the View and Item functions which are not going to be used anyway
-    #try:
-    #from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
-    #except SystemExit:
-    #   print('Got stupid OSX SystemExit exception - using dummy traitsui')
-    #   from PYME.misc.mock_traitsui import *
+#for some reason traitsui raises SystemExit when called from sphinx on OSX
+#This is due to the framework build problem of anaconda on OSX, and also
+#creates a problem whenever there is no GUI available.
+#as we want to be able to use recipes without a GUI (presumably the reason for this problem)
+#it's prudent to catch this and spoof the View and Item functions which are not going to be used anyway
+#try:
+#from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
+#except SystemExit:
+#   print('Got stupid OSX SystemExit exception - using dummy traitsui')
+#   from PYME.misc.mock_traitsui import *
 
 from PYME.IO.image import ImageStack
 import numpy as np

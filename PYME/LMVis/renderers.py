@@ -523,7 +523,18 @@ class QuadTreeRenderer(ColourRenderer):
         return im[int(max(imb.x0 - quads.x0, 0)/pixelSize):int((imb.x1 - quads.x0)/pixelSize),int(max(imb.y0 - quads.y0, 0)/pixelSize):int((imb.y1 - quads.y0)/pixelSize)]
 
 
-RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
+class VoronoiRenderer(ColourRenderer):
+    """2D histogram rendering"""
+
+    name = 'Voronoi'
+    mode = 'voronoi'
+
+    def genIm(self, settings, imb, mdh):
+        return visHelpers.rendVoronoi(self.colourFilter['x'],self.colourFilter['y'], imb, settings['pixelSize'])
+
+
+
+RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer, VoronoiRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}
