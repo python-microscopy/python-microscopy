@@ -119,7 +119,7 @@ class PcoCam(Camera):
         self.cam.set_exposure_time(time)
 
         # This is going to reset the recorder, so we need to change ring buffer position
-        self.n_read = 0
+        # self.n_read = 0
 
     def GetIntegTime(self):
         d = self.cam.sdk.get_delay_exposure_time()
@@ -153,7 +153,7 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_binning(value, self.GetVerticalBin())
 
-        self.n_read = 0
+        # self.n_read = 0
 
     def GetHorizontalBin(self):
         return self.cam.sdk.get_binning()['binning x']
@@ -171,7 +171,7 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
 
-        self.n_read = 0
+        # self.n_read = 0
 
     def GetVerticalBin(self):
         return self.cam.sdk.get_binning()['binning y']
@@ -245,7 +245,7 @@ class PcoCam(Camera):
         logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x0, y0, x1-x0+1, y1-y0+1))
 
         # Recording state is reset, so set to 0
-        self.n_read = 0
+        # self.n_read = 0
 
     def GetROI(self):
         return self._roi
