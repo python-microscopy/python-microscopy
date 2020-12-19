@@ -8,10 +8,12 @@ import wx
 
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
-
+from  PYME.ui import manualFoldPanel
 from PYME.IO import MetaDataHandler
-
+import logging
 from PYME.contrib import dispatch
+
+logger = logging.getLogger(__name__)
 
 class AnalysisSettingsPanel(wx.Panel):
     def __init__(self, parent, analysisSettings, mdhChangedSignal=None):
@@ -142,6 +144,51 @@ class AnalysisDetailsPanel(wx.Panel):
             self.GetParent().fold1(self)
             self.GetParent().fold1(self)
 
+
+class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
+    def __init__(self, wx_parent, localization_settings, mdh_changed_signal=None,
+                 chained_analysis_page=None):
+        from PYME.ui.autoFoldPanel import collapsingPane
+        manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
+
+        self.localization_settings = localization_settings 
+        self.localization_mdh = localization_settings.analysisMDH
+        self.mdh_changed_signal = mdh_changed_signal
+        self.chained_analysis_page = chained_analysis_page
+        
+        clp = collapsingPane(self, caption='settings ...')
+        clp.AddNewElement(AnalysisSettingsPanel(clp, 
+                                                self.localization_settings,
+                                                self.mdh_changed_signal))
+        clp.AddNewElement(AnalysisDetailsPanel(clp, self.localization_settings,
+                                               self.mdh_changed_signal))
+        self.AddNewElement(clp)
+
+        # add box to propagate rule to rule chain
+        add_rule_panel = wx.Panel(self, -1)
+        v_sizer = wx.BoxSizer(wx.VERTICAL)
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.b_add_rule = wx.Button(add_rule_panel, -1, 
+                                      'Add Localization to Chained Analysis')
+        self.b_add_rule.Bind(wx.EVT_BUTTON, self.OnAddLocalizationRule)
+        h_sizer.Add(self.b_add_rule)
+        v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
+        add_rule_panel.SetSizerAndFit(v_sizer)
+        self.AddNewElement(add_rule_panel)
+
+    
+    def OnAddLocalizationRule(self, wx_event=None):
+        from PYME.cluster.rules import LocalisationRuleFactory as LocalizaitonRuleFactory
+        from PYME.Acquire.ui.rules import get_rule_tile
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        if self.chained_analysis_page is None:
+            logger.error('chained_analysis_page attribute unset')
+            return
+
+        mdh = DictMDHandler(self.localization_mdh)
+        loc_rule = get_rule_tile(LocalizaitonRuleFactory)(analysisMetadata=mdh)
+        self.chained_analysis_page.add_tile(loc_rule)
+    
 
 class AnalysisSettings(object):
     def __init__(self):
