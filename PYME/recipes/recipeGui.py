@@ -566,6 +566,77 @@ class RecipeView(wx.Panel):
                 wx.CallLater(10, p.update)
         
         k.edit_no_invalidate(handler=MControl())
+
+
+class RuleRecipeView(RecipeView):
+    def __init__(self, parent, recipes):
+        wx.Panel.__init__(self, parent, size=(400, 100))
+        
+        self.recipes = recipes
+        recipes.recipeView = self  # weird plug
+        hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self.recipePlot = RecipePlotPanel(self, recipes, size=(-1, 400))
+        vsizer.Add(self.recipePlot, 1, wx.ALL|wx.EXPAND, 5)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.bNewRecipe = wx.Button(self, -1, 'Clear Recipe')
+        hsizer.Add(self.bNewRecipe, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bNewRecipe.Bind(wx.EVT_BUTTON, self.OnNewRecipe)
+
+        self.bLoadRecipe = wx.Button(self, -1, 'Load Recipe')
+        hsizer.Add(self.bLoadRecipe, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bLoadRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnLoadRecipe)
+        
+        self.bAddModule = wx.Button(self, -1, 'Add Module')
+        hsizer.Add(self.bAddModule, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bAddModule.Bind(wx.EVT_BUTTON, self.OnAddModule)
+        
+        #self.bRefresh = wx.Button(self, -1, 'Refresh')
+        #hsizer.Add(self.bRefresh, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        self.bSaveRecipe = wx.Button(self, -1, 'Save Recipe')
+        hsizer.Add(self.bSaveRecipe, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSaveRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnSaveRecipe)
+
+        self.b_add_recipe_rule = wx.Button(self, -1, 
+                                           'Add Recipe to Chained Analysis')
+        hsizer.Add(self.b_add_recipe_rule, 0, 
+                   wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.b_add_recipe_rule.Bind(wx.EVT_BUTTON, 
+                                    self.recipes.OnAddRecipeRule)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        
+        hsizer1.Add(vsizer, 1, wx.EXPAND|wx.ALL, 2)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
+        #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+        
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self._set_text_styling()
+                                       
+        vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
+        
+        self.bApply = wx.Button(self, -1, 'Apply Text Changes')
+        vsizer.Add(self.bApply, 0, wx.ALL, 2)
+        self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+                                       
+        hsizer1.Add(vsizer, 0, wx.EXPAND|wx.ALL, 2)
+
+                
+        
+        self.SetSizerAndFit(hsizer1)
+        
+        self.recipes.LoadRecipeText('')
+
+        recipes.activeRecipe.recipe_changed.connect(self.update)
+        recipes.activeRecipe.recipe_executed.connect(self.update)
         
         
 class RecipeManager(object):
@@ -639,6 +710,22 @@ class PipelineRecipeManager(RecipeManager):
         
     def load_recipe_from_mdh(self, mdh):
         self.LoadRecipeText(mdh['Pipeline.Recipe'])
+
+
+class RuleRecipeManager(RecipeManager):
+    def __init__(self, chained_analysis_page=None):
+        RecipeManager.__init__(self)
+        self.chained_analysis_page = chained_analysis_page
+
+    def OnAddRecipeRule(self, wx_event):
+        from PYME.cluster.rules import RecipeRuleFactory
+        from PYME.Acquire.ui.rules import get_rule_tile
+        if self.chained_analysis_page is None:
+            logger.error('chained_analysis_page attribute unset')
+
+        rec = get_rule_tile(RecipeRuleFactory)(recipe=self.activeRecipe.toYAML())
+        self.chained_analysis_page.add_tile(rec)
+
 
 class dt(wx.FileDropTarget):
     def __init__(self, window):
