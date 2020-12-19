@@ -52,7 +52,6 @@ class PcoCam(Camera):
         self._roi = None
         self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
         self._ccd_temp = 0  # Store the sensor temperature
-        self.__temp_timeout = -1  # only update the temp every n calls
         self._cycle_time = 0
         self.recording = False
         self.__image_frame_bytes = 0
@@ -85,13 +84,8 @@ class PcoCam(Camera):
         else:
             curr_frame = self.buffer_size-self.GetNumImsBuffered()
 
-        # print('n_buffered: {}, n_read: {}, curr_frame: {}'.format(self.GetNumImsBuffered(), self.n_read, curr_frame))
-
         # Grab the image (unused metadata _)
         image, _ = self.cam.image(curr_frame)
-
-        # print('image dtype: {}'.format(image.dtype))
-        # print('curr_frame: {}, recorder_image_number: {}, num_ims_buffered: {}, num_ims_read: {}'.format(curr_frame, meta['recorder image number'], self.cam.rec.get_status()['dwProcImgCount'], self.n_read))
 
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
                    image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), 
@@ -176,7 +170,7 @@ class PcoCam(Camera):
         by_max, by_step_type = self.desc['max. binning vert'], self.desc['binning vert stepping']
 
         if bx_step_type == 0:
-            # binary
+            # binary step type
             x = [2**j for j in np.arange((bx_max).bit_length())]
         else:
             x = [j for j in np.arange(bx_max)]
@@ -247,15 +241,11 @@ class PcoCam(Camera):
         return self._roi
     
     def GetElectrTemp(self):
-        return self.cam.sdk.get_temperature()['camera temperature']  # FIXME: should this be 'power temperature'?
+        # FIXME: should this be 'power temperature'?
+        return self.cam.sdk.get_temperature()['camera temperature'] 
 
     def GetCCDTemp(self):
-        self.__temp_timeout += 1
-        if self.__temp_timeout > 10:
-            self._ccd_temp = self.cam.sdk.get_temperature()['sensor temperature']
-            self.__temp_timeout = 0
-        return self._ccd_temp
-        # return self.cam.sdk.get_temperature()['sensor temperature']
+        return self.cam.sdk.get_temperature()['sensor temperature']
 
     def GetCCDTempSetPoint(self):
         return self.cam.sdk.get_cooling_setpoint_temperature()['cooling setpoint temperature']
@@ -280,8 +270,12 @@ class PcoCam(Camera):
         # self.StopAq()
         self.n_read = 0
         d = self.cam.sdk.get_delay_exposure_time()
-        self._cycle_time = d['exposure']*timebase[d['exposure timebase']] + d['delay']*timebase[d['delay timebase']]
-        self.__image_frame_bytes = ctypes.c_ssize_t(int(self.GetPicWidth()*self.GetPicHeight()*ctypes.sizeof(ctypes.c_uint16)))
+        self._cycle_time = d['exposure']*timebase[d['exposure timebase']] \
+                           + d['delay']*timebase[d['delay timebase']]
+        # __image_frame_bytes from pco.sdk manual 2.10.1
+        self.__image_frame_bytes = ctypes.c_ssize_t(int(self.GetPicWidth()
+                                                        *self.GetPicHeight()
+                                                        *ctypes.sizeof(ctypes.c_uint16)))
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
         elif self._mode == self.MODE_CONTINUOUS:
