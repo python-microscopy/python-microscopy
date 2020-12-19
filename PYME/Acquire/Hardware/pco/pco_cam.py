@@ -118,9 +118,6 @@ class PcoCam(Camera):
             
         self.cam.set_exposure_time(time)
 
-        # This is going to reset the recorder, so we need to change ring buffer position
-        # self.n_read = 0
-
     def GetIntegTime(self):
         d = self.cam.sdk.get_delay_exposure_time()
         return d['exposure']*timebase[d['exposure timebase']] 
@@ -153,8 +150,6 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_binning(value, self.GetVerticalBin())
 
-        # self.n_read = 0
-
     def GetHorizontalBin(self):
         return self.cam.sdk.get_binning()['binning x']
 
@@ -170,8 +165,6 @@ class PcoCam(Camera):
         value = np.clip(value, 1, b_max)
 
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
-
-        # self.n_read = 0
 
     def GetVerticalBin(self):
         return self.cam.sdk.get_binning()['binning y']
@@ -196,56 +189,59 @@ class PcoCam(Camera):
         return list(itertools.product(x,y))
 
     def SetROI(self, x0, y0, x1, y1):
+        # Stepping (n pixels)
         dx = self.desc['roi hor steps']
         dy = self.desc['roi vert steps']
 
-        # Round to a multiple of dx, dy
-        x0 = int(np.floor(x0/dx)*dx)
-        y0 = int(np.floor(y0/dy)*dy)
-        x1 = int(np.floor(x1/dx)*dx)
-        y1 = int(np.floor(y1/dy)*dy)
-
+        # Chip size
         lx_max = self.GetCCDWidth()
         ly_max = self.GetCCDHeight()
+
+        # Minimum ROI size
         lx_min = self.desc['min size horz']
         ly_min = self.desc['min size vert']
 
-        # Don't let the ROI go out of bounds
-        x0 = np.clip(x0, 1, lx_max)
-        y0 = np.clip(y0, 1, ly_max)
-        x1 = np.clip(x1, 1, lx_max)
-        y1 = np.clip(y1, 1, ly_max)
-
-        # Make sure everything is ordered
+        # Make sure bounds are ordered
         if x1 < x0:
             x0, x1 = x1, x0
         if y1 < y0:
             y0, y1 = y1, y0
 
         # Don't let us choose too small an ROI
-        if (x1-x0) < lx_min:
+        if (x1-x0+1) < lx_min:
             logger.debug('Selected ROI width is too small, automatically adjusting to {}.'.format(lx_min))
-            guess_pos = x0+lx_min
+            guess_pos = x0+lx_min-1
             # Deal with boundaries
             if guess_pos <= lx_max:
                 x1 = guess_pos
             else:
-                x0 = x1-lx_min
-        if (y1-y0) < ly_min:
+                x0 = x1-lx_min+1
+        if (y1-y0+1) < ly_min:
             logger.debug('Selected ROI height is too small, automatically adjusting to {}.'.format(ly_min))
-            guess_pos = y0+ly_min
+            guess_pos = y0+ly_min-1
             if guess_pos <= ly_max:
                 y1 = guess_pos
             else:
-                y0 = y1-ly_min
+                y0 = y1-ly_min+1
+
+        # Round to a multiple of dx, dy
+        # TODO: Why do I need the 1 correction only on x0, y0???
+        x0 = 1+int(np.floor((x0-1)/dx)*dx)
+        y0 = 1+int(np.floor((y0-1)/dy)*dy)
+        x1 = int(np.floor(x1/dx)*dx)
+        y1 = int(np.floor(y1/dy)*dy)
+
+        # Don't let the ROI go out of bounds
+        # See pco.sdk manual chapter 3: IMAGE AREA SELECTION (ROI)
+        x0 = np.clip(x0, 1, lx_max-dx+1)
+        y0 = np.clip(y0, 1, ly_max-dy+1)
+        x1 = np.clip(x1, 1+dx, lx_max)
+        y1 = np.clip(y1, 1+dy, ly_max)
 
         self.cam.sdk.set_roi(x0, y0, x1, y1)
         self._roi = [x0, y0, x1, y1]
 
         logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x0, y0, x1-x0+1, y1-y0+1))
-
-        # Recording state is reset, so set to 0
-        # self.n_read = 0
 
     def GetROI(self):
         return self._roi
@@ -304,7 +300,8 @@ class PcoCam(Camera):
 
     def GetNumImsBuffered(self):
         if self.recording:
-            # FIXME: dwProcImgCount is an unsigned 32-bit integer, so this will fail after 2**32 images
+            # FIXME: dwProcImgCount is an unsigned 32-bit integer, so this will 
+            # fail after 2**32 images
             n_buf = self.cam.rec.get_status()['dwProcImgCount'] - self.n_read
         else:
             n_buf = 0
