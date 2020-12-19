@@ -75,7 +75,6 @@ class PcoCam(Camera):
 
     def ExtractColor(self, chSlice, mode):
         # Somehow this check matters... shouldn't this be taken care of by ExpReady???
-        # if self.GetNumImsBuffered() < 1:
         if (not self.recording) or (self.GetNumImsBuffered() < 1):
             return True
 
