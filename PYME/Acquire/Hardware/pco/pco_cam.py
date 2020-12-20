@@ -54,7 +54,6 @@ class PcoCam(Camera):
         self._ccd_temp = 0  # Store the sensor temperature
         self._cycle_time = 0
         self.recording = False
-        self.__image_frame_bytes = 0
 
     @property
     def noise_properties(self):
@@ -88,7 +87,7 @@ class PcoCam(Camera):
 
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
                    image.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)), 
-                   self.__image_frame_bytes)
+                   chSlice.nbytes)
 
         self.n_read += 1
 
@@ -271,10 +270,6 @@ class PcoCam(Camera):
         d = self.cam.sdk.get_delay_exposure_time()
         self._cycle_time = d['exposure']*timebase[d['exposure timebase']] \
                            + d['delay']*timebase[d['delay timebase']]
-        # __image_frame_bytes from pco.sdk manual 2.10.1
-        self.__image_frame_bytes = ctypes.c_ssize_t(int(self.GetPicWidth()
-                                                        *self.GetPicHeight()
-                                                        *ctypes.sizeof(ctypes.c_uint16)))
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
         elif self._mode == self.MODE_CONTINUOUS:
