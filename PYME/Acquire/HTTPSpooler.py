@@ -265,13 +265,13 @@ class Spooler(sp.Spooler):
                                self.md.to_JSON().encode(), self.clusterFilter)
             clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json', 
                                self.evtLogger.to_JSON().encode(),
-                               self.clusterFilter, 10)
+                               self.clusterFilter, timeout=10)
         else:
             clusterIO.put_file(self.seriesName + '/final_metadata.json', 
                                self.md.to_JSON().encode(), self.clusterFilter)
             clusterIO.put_file(self.seriesName + '/events.json', 
                                self.evtLogger.to_JSON().encode(), 
-                               self.clusterFilter, 10)
+                               self.clusterFilter, timeout=10)
         
         
     def OnFrame(self, sender, frameData, **kwargs):
