@@ -76,7 +76,7 @@ class PcoCam(Camera):
     def ExtractColor(self, chSlice, mode):
         # Somehow this check matters... shouldn't this be taken care of by ExpReady???
         if (not self.recording) or (self.GetNumImsBuffered() < 1):
-            return True
+            raise RuntimeError('Trying to grab a frame when there is no frame to grab.')
 
         if self.n_read < self.buffer_size:
             curr_frame = self.n_read
