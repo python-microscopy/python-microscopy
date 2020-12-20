@@ -408,6 +408,7 @@ class ExtractMultiviewChannel(ModuleBase):
     def execute(self, namespace):
         from PYME.IO.DataSources.CropDataSource import DataSource
         from PYME.IO.MetaDataHandler import DictMDHandler
+        from PYME.IO.image import ImageStack
 
         source = namespace[self.input_name]
         roi_size = source.mdh['Multiview.ROISize']
@@ -417,4 +418,4 @@ class ExtractMultiviewChannel(ModuleBase):
 
         mdh = DictMDHandler(source.mdh)
         mdh['Multiview.Extracted'] = ind
-        namespace[self.output_name] = extracted
+        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh)
