@@ -1652,7 +1652,9 @@ cdef class TriangleMesh(TrianglesBase):
             
             neighbours = &self._cvertices[new_v0].neighbor0
             for i in range(NEIGHBORSIZE):
-                if neighbours[i] == new_v1:
+                if neighbours[i] == -1:
+                    continue
+                if self._chalfedges[neighbours[i]].vertex == new_v1:
                     return 0
         else:
             if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
@@ -1676,7 +1678,7 @@ cdef class TriangleMesh(TrianglesBase):
                       self._cfaces[curr_edge.face].normal1*(fmy - pmy) + \
                       self._cfaces[curr_edge.face].normal2*(fmz - pmz)
         
-        
+
         if flipped_dot < 0:
             # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
             # concavity, so don't flip.
@@ -1688,7 +1690,7 @@ cdef class TriangleMesh(TrianglesBase):
             self._cvertices[twin_edge.vertex].locally_manifold = 0
             self._cvertices[new_v0].locally_manifold = 0
             self._cvertices[new_v1].locally_manifold = 0
-
+        
         # _next's next and prev must be adjusted
         self._chalfedges[_next].prev = _twin_prev
         self._chalfedges[_next].next = _twin
@@ -1740,15 +1742,12 @@ cdef class TriangleMesh(TrianglesBase):
             # Update face and vertex normals
             #self._update_face_normals([curr_edge.face, twin_edge.face])
             #self._update_vertex_neighbors([curr_edge.vertex, twin_edge.vertex, self._chalfedges[_next].vertex, self._chalfedges[_twin_next].vertex])
-            
             update_face_normal(curr_edge.face, self._chalfedges, self._cvertices, self._cfaces)
             update_face_normal(twin_edge.face, self._chalfedges, self._cvertices, self._cfaces)
-            
             update_single_vertex_neighbours(curr_edge.vertex, self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(twin_edge.vertex, self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(self._chalfedges[_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(self._chalfedges[_twin_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
-            
             self._faces_by_vertex = None
             self._H = None
             self._K = None
@@ -1895,20 +1894,19 @@ cdef class TriangleMesh(TrianglesBase):
                 continue
             
             _twin = curr_edge.twin
-            twin_edge = &self._chalfedges[_twin]
 
+            v2, v4 = 0, 0
             target_valence = VALENCE
             if _twin == -1:
                 # boundary
                 target_valence = BOUNDARY_VALENCE
+            else:
+                twin_edge = &self._chalfedges[_twin]
+                v2 = self._cvertices[twin_edge.vertex].valence - target_valence  # pre-flip 
+                v4 = self._cvertices[self._chalfedges[twin_edge.next].vertex].valence - target_valence  # post-flip
 
-            # Pre-flip vertices
-            v1 = self._cvertices[curr_edge.vertex].valence - target_valence
-            v2 = self._cvertices[twin_edge.vertex].valence - target_valence
-
-            # Post-flip vertices
-            v3 = self._cvertices[self._chalfedges[curr_edge.next].vertex].valence - target_valence
-            v4 = self._cvertices[self._chalfedges[twin_edge.next].vertex].valence - target_valence
+            v1 = self._cvertices[curr_edge.vertex].valence - target_valence  # pre-flip
+            v3 = self._cvertices[self._chalfedges[curr_edge.next].vertex].valence - target_valence  # post-flip
 
             # Check valence deviation from VALENCE (or
             # BOUNDARY_VALENCE for boundaries) pre- and post-flip
@@ -1924,7 +1922,7 @@ cdef class TriangleMesh(TrianglesBase):
                 r = self.edge_flip(i)
                 flip_count += r
                 failed_flip_count += (1-r)
-
+                
         print('Flip count: %d [%d failed]' % (flip_count, failed_flip_count))
         return flip_count
 

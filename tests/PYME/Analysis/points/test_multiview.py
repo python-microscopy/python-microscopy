@@ -63,5 +63,5 @@ def test_extract_channel():
     d = ImageStack(data=d, mdh=mdh)
     out = ExtractMultiviewChannel(view_number=1).apply_simple(input_name=d)
 
-    np.testing.assert_equal(out.getSlice(0).squeeze(), 1)
-    np.testing.assert_equal(roi_size, out.shape[:2])
+    np.testing.assert_equal(out.data.getSlice(0).squeeze(), 1)
+    np.testing.assert_equal(roi_size, out.data.shape[:2])
