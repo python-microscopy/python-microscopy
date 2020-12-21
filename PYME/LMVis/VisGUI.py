@@ -167,7 +167,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
-        self.Bind(wx.EVT_CLOSE, self.OnQuit)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         #self.Bind(wx.EVT_IDLE, self.OnIdle)
         #self.refv = False
@@ -208,6 +208,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
+        self.add_common_menu_items()
         
     def reconstruct_pipeline_from_image(self, image):
         self._recipe_manager.load_recipe_from_mdh(image.mdh)
@@ -238,13 +239,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.Update()
         event.Skip()      
 
-    def OnQuit(self, event):
+    def OnClose(self, event):
         while len(self.pipeline.filesToClose) > 0:
             self.pipeline.filesToClose.pop().close()
 
         # pylab.close('all')
         matplotlib.pyplot.close('all')
         self._cleanup()
+        
+        #AUIFrame.OnQuit(self, event)
 
 
     def OnAbout(self, event):
