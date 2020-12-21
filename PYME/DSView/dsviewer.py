@@ -160,6 +160,7 @@ class DSViewFrame(AUIFrame):
         self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
+        self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         
 
