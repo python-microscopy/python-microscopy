@@ -207,7 +207,7 @@ class PcoCam(Camera):
         y1 = np.clip(y1, 1+dy, ly_max)
 
         # Don't let us choose too small an ROI
-        if (x1-x0) < lx_min:
+        if (x1-x0+1) < lx_min:
             logger.debug('Selected ROI width is too small, automatically adjusting to {}.'.format(lx_min))
             guess_pos = x0+lx_min
             # Deal with boundaries
@@ -215,7 +215,7 @@ class PcoCam(Camera):
                 x1 = guess_pos
             else:
                 x0 = x1-lx_min-1
-        if (y1-y0) < ly_min:
+        if (y1-y0+1) < ly_min:
             logger.debug('Selected ROI height is too small, automatically adjusting to {}.'.format(ly_min))
             guess_pos = y0+ly_min
             if guess_pos <= ly_max:
