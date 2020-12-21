@@ -57,6 +57,11 @@ class ClusterOfOne(object):
         self._node_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
         
     def _launch_cluster_ui(self, gui=False):
+        try:
+            import django
+        except ImportError:
+            logger.error('django is not installed, to use clusterUI install django (1.11.x, 2.0.x, 2.1.x)')
+            
         if not self._cluster_ui is None:
             self._kill_procs([self._cluster_ui, ])
 
