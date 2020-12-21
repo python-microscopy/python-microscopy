@@ -199,22 +199,29 @@ class PcoCam(Camera):
         if y1 < y0:
             y0, y1 = y1, y0
 
+        # Don't let the ROI go out of bounds
+        # See pco.sdk manual chapter 3: IMAGE AREA SELECTION (ROI)
+        x0 = np.clip(x0, 1, lx_max-dx+1)
+        y0 = np.clip(y0, 1, ly_max-dy+1)
+        x1 = np.clip(x1, 1+dx, lx_max)
+        y1 = np.clip(y1, 1+dy, ly_max)
+
         # Don't let us choose too small an ROI
-        if (x1-x0+1) < lx_min:
+        if (x1-x0) < lx_min:
             logger.debug('Selected ROI width is too small, automatically adjusting to {}.'.format(lx_min))
-            guess_pos = x0+lx_min-1
+            guess_pos = x0+lx_min
             # Deal with boundaries
             if guess_pos <= lx_max:
                 x1 = guess_pos
             else:
-                x0 = x1-lx_min+1
-        if (y1-y0+1) < ly_min:
+                x0 = x1-lx_min-1
+        if (y1-y0) < ly_min:
             logger.debug('Selected ROI height is too small, automatically adjusting to {}.'.format(ly_min))
-            guess_pos = y0+ly_min-1
+            guess_pos = y0+ly_min
             if guess_pos <= ly_max:
                 y1 = guess_pos
             else:
-                y0 = y1-ly_min+1
+                y0 = y1-ly_min-1
 
         # Round to a multiple of dx, dy
         # TODO: Why do I need the 1 correction only on x0, y0???
@@ -222,13 +229,6 @@ class PcoCam(Camera):
         y0 = 1+int(np.floor((y0-1)/dy)*dy)
         x1 = int(np.floor(x1/dx)*dx)
         y1 = int(np.floor(y1/dy)*dy)
-
-        # Don't let the ROI go out of bounds
-        # See pco.sdk manual chapter 3: IMAGE AREA SELECTION (ROI)
-        x0 = np.clip(x0, 1, lx_max-dx+1)
-        y0 = np.clip(y0, 1, ly_max-dy+1)
-        x1 = np.clip(x1, 1+dx, lx_max)
-        y1 = np.clip(y1, 1+dy, ly_max)
 
         self.cam.sdk.set_roi(x0, y0, x1, y1)
         self._roi = [x0, y0, x1, y1]
