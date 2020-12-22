@@ -56,7 +56,7 @@ class WireframeEngine(BaseEngine):
                     normal_buffer[1::2,:] += normals
                 else:
                     # Display normals with length scaled by normal_scaling
-                    normal_buffer[1::2,:] += layer.normal_scaling*normals/(normals.sum(1)[:,None])
+                    normal_buffer[1::2,:] += layer.normal_scaling*normals*(((normals*normals).sum(1)**0.5)[:,None])
                 glVertexPointerf(normal_buffer)
                 sc = np.array([1, 1, 1, 1])
                 glColorPointerf(np.ones((normal_buffer.shape[0],4))*sc[None,:])  # white normals
