@@ -56,9 +56,10 @@ class WireframeEngine(BaseEngine):
                 
                 glVertexPointerf(normal_buffer)
                 sc = np.array([1, 1, 1, 1])
-                glColorPointerf(np.ones((normal_buffer.shape[0],4))*sc[None,:])  # white normals
+                glColorPointerf(np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
+                glNormalPointerf(np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
                 glLineWidth(3)  # slightly thick
-                glDrawArrays(GL_LINES, 0, n_vertices)
+                glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
 
 
