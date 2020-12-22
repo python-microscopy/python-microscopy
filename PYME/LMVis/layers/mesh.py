@@ -51,12 +51,9 @@ class WireframeEngine(BaseEngine):
                     vtemp = np.repeat((1./3)*(vertices[0::3]+vertices[1::3]+vertices[2::3]), 3, axis=0)
                     normal_buffer[0::2,:] = vtemp
                     normal_buffer[1::2,:] = vtemp
-                if layer.normal_scaling == -1:
-                    # Display actual normals
-                    normal_buffer[1::2,:] += normals
-                else:
-                    # Display normals with length scaled by normal_scaling
-                    normal_buffer[1::2,:] += layer.normal_scaling*normals*(((normals*normals).sum(1)**0.5)[:,None])
+                assert(np.allclose(np.linalg.norm(normals,axis=1),1))
+                normal_buffer[1::2,:] += layer.normal_scaling*normals
+                
                 glVertexPointerf(normal_buffer)
                 sc = np.array([1, 1, 1, 1])
                 glColorPointerf(np.ones((normal_buffer.shape[0],4))*sc[None,:])  # white normals
