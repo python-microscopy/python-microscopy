@@ -3,7 +3,7 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 
 import numpy as np
 #import pandas as pd
-from PYME.IO import tabular
+from PYME.IO import tabular, MetaDataHandler
 #from PYME.LMVis import renderers
 
 @register_module('Mapping')
@@ -179,21 +179,24 @@ class SelectTableColumns(ModuleBase):
 @register_module('RandomSubset')
 class RandomSubset(ModuleBase):
     """Select a random subset of rows from a table"""
-    input = Input('input')
-    output = Output('output')
-    numToSelect = Int(100)
+    input_name = Input('input')
+    output_name = Output('output')
+    n_to_select = Int(100)
+    require_at_least_n = Bool(False)
     
     def execute(self, namespace):
-        data = namespace[self.input]
+        data = namespace[self.input_name]
         
-        out = tabular.RandomSelectionFilter(data, num_Samples=self.numToSelect)
+        if self.require_at_least_n:
+            n_to_select = self.n_to_select
+        else:
+            n_to_select = min(len(data), self.n_to_select)
+        
+        out = tabular.RandomSelectionFilter(data, num_Samples=n_to_select)
         
         try:
-            out.mdh = data.mdh
+            out.mdh = MetaDataHandler.DictMDHandler(data.mdh)
         except AttributeError:
             pass
 
-        namespace[self.outputName] = out
-        
-
-
+        namespace[self.output_name] = out
