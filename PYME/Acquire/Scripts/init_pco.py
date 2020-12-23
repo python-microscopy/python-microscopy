@@ -4,6 +4,20 @@ from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
 from PYME import config
 
+@init_hardware('Fake Piezos')
+def pz(scope):
+    from PYME.Acquire.Hardware.Simulator import fakePiezo
+    scope.fakePiezo = fakePiezo.FakePiezo(100)
+    scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+    
+    scope.fakeXPiezo = fakePiezo.FakePiezo(100)
+    scope.register_piezo(scope.fakeXPiezo, 'x')
+    
+    scope.fakeYPiezo = fakePiezo.FakePiezo(100)
+    scope.register_piezo(scope.fakeYPiezo, 'y')
+
+pz.join() #piezo must be there before we start camera
+
 @init_hardware('PcoEdge42LT')
 def pco_cam(scope):
     from PYME.Acquire.Hardware.pco.pco_edge_42_lt import PcoEdge42LT
