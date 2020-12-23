@@ -1,5 +1,6 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
+
 import os
 import glob
 import collections
@@ -254,12 +255,44 @@ class SqliteTileIO(TileIO):
     def __del__(self):
         self._cur.close()
         self._conn.close()
-    
+
+
+TILEIO_EXT = {
+    '.pzf': PZFTileIO,
+    '.npy': NumpyTileIO,
+    '.db': SqliteTileIO,
+}
+
+def infer_tileio_backend(base_directory):
+    """ find TileIO backend for a given ImagePyramid
+
+    Parameters
+    ----------
+    base_directory : str
+        root directory of an ImagePyramid instance
+
+    Returns
+    -------
+    class
+        which TileIO derived class the ImagePyramid can be
+        built with.
+
+    Raises
+    ------
+    IOError
+        If no file with an extension in TILEIO_EXT is found.
+    """
+    for root, dirs, files in os.walk(base_directory):
+        for file in files:
+            file_extension = os.path.splitext(file)[-1]
+            if file_extension in TILEIO_EXT.keys():
+                return TILEIO_EXT[file_extension]
+    raise IOError("No files found for loading ImagePyramid.")
 
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1):
+                 pixel_size=1, backend=PZFTileIO):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -278,7 +311,7 @@ class ImagePyramid(object):
         self.n_tiles_x = n_tiles_x
         self.n_tiles_y = n_tiles_y
         self.depth = depth
-        
+
         self.x0 = x0
         self.y0 = y0
         self.pixel_size=pixel_size
@@ -286,20 +319,49 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
-        
+
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
-            
-        #self._tilecache = TileCache()
-            
-        self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
-        self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
-        self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
 
-        # self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
-        # self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
-        # self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
-    
+        #self._tilecache = TileCache()
+
+        if backend is None:
+            backend = infer_tileio_backend(self.base_dir)
+
+        self._imgs = backend(base_dir=self.base_dir, suff='img')
+        self._acc = backend(base_dir=self.base_dir, suff='acc')
+        self._occ = backend(base_dir=self.base_dir, suff='occ')
+
+    @classmethod
+    def load_exiting(cls, storage_directory):
+        """ loads an ImagePyramid from a given directory.
+
+        Parameters
+        ----------
+        storage_directory : str
+            root directory of an ImagePyramid instance.
+
+        Returns
+        -------
+        ImagePyramid
+            based on storage_directory contents.
+        """
+
+        mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+
+        return ImagePyramid(
+            tile_base,
+            pyramid_tile_size=mdh['Pyramid.TileSize'],
+            mdh=mdh,
+            n_tiles_x=mdh["Pyramid.NTilesX"],
+            n_tiles_y=mdh["Pyramid.NTilesY"],
+            depth=mdh["Pyramid.Depth"],
+            x0=mdh['Pyramid.x0'],
+            y0=mdh['Pyramid.y0'],
+            pixel_size=mdh["Pyramid.PixelSize"],
+            backend=TILEIO_EXT.get(mdh.get("Pyramid.Backend", None),None)
+        )
+
     def __del__(self):
         try:
             self._temp_directory.cleanup()
