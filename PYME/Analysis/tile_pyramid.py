@@ -291,7 +291,7 @@ def infer_tileio_backend(base_directory):
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1, backend=".pzf"):
+                 pixel_size=1, backend=PZFTileIO):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -326,8 +326,6 @@ class ImagePyramid(object):
 
         if backend is None:
             backend = infer_tileio_backend(self.base_dir)
-        else:
-            backend = TILEIO_EXT[backend]
 
         self._imgs = backend(base_dir=self.base_dir, suff='img')
         self._acc = backend(base_dir=self.base_dir, suff='acc')
@@ -360,7 +358,7 @@ class ImagePyramid(object):
             x0=mdh['Pyramid.x0'],
             y0=mdh['Pyramid.y0'],
             pixel_size=mdh["Pyramid.PixelSize"],
-            backend=mdh["Pyramid.Backend"],
+            backend=TILEIO_EXT.get(mdh.get("Pyramid.Backend", None),None)
         )
 
     def __del__(self):
