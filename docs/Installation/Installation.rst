@@ -21,11 +21,17 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 	
     conda config --append channels anaconda
     conda config --add channels david_baddeley
-    conda install python-microscopy
+    conda install python=3.7 python-microscopy
 
 .. note::
 
-    **Which Python version?** We are in the process of switching the default install from Python 2.7 to Python 3.6. As of 2020/09/25, we support python 2.7, 3.6 & 3.7. The Python 2 version is currently better tested, but most of the core functionality runs on Python 3. Due to ongoing changes in the anaconda repositories, installation on Python 3 tends to be easier. We aim to drop Python 2 support in January of 2021.
+    **Which Python version?** As of 2020/12/07, we recommend python 3.6 or 3.7 for new installs. We plan to add support for
+    python=3.8 (as installed by default in miniconda) in the near future, but until such time downgrading to either 3.6 or 3.7
+    with and explicit python=3.x argument to conda install is required.
+
+    Having recently made the py2-> py3 transition, there are a still few components which might work better / are better tested on python 2.7
+    (likely to only effect instrument control). As we are no longer building updated packages on 2.7 we recommend a source
+    install in this case.
 
 
 Updating
@@ -136,9 +142,20 @@ with a resolvable set of dependencies, or when you are installing on top of a bu
 
 If installing in a tricky evironment, you can manually edit requirements.txt before installing. You can also use the top line to setup for a development install.
 
+Installation on python 2.7
+==========================
+
+On some instrument control computers, or when debugging potential regressions, it still makes sense to install PYME on
+python 2.7. We have stopped building packages on py2.7, so you'll need a source install to get the most recent functionality
+and fixes. Unfortunately it is becoming increasingly difficult to `conda` install a consistent environment on python 2.7.
+As we are now focussed on py3 and things seem to change every couple of weeks we have given up on maintaining updated
+py 2.7 installation instructions. It is still possible to get things running, but it will be a bit of trial and error and you will need to manually
+up or downgrade some of the dependency packages. Good candidates for package conflicts would be `traitsui`, `pyface`, and
+`wxpython`. You might also need to use the full MS visual studio (community edition should suffice) rather than the stripped down
+msvc for python.
+
 .. rubric:: Footnotes
 
 .. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
-
 
 

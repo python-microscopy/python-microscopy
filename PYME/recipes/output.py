@@ -60,7 +60,7 @@ class CSVOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -126,7 +126,7 @@ class XLSOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -187,7 +187,7 @@ class ImageOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -257,7 +257,7 @@ class RGBImageOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -319,7 +319,7 @@ class HDFOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -417,7 +417,7 @@ class ReportOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------
@@ -486,7 +486,7 @@ class ReportForEachOutput(OutputModule):
         context : dict
             Information about the source file to allow pattern substitution to generate the output name. At least
             'basedir' (which is the fully resolved directory name in which the input file resides) and
-            'filestub' (which is the filename without any extension) should be resolved.
+            'file_stub' (which is the filename without any extension) should be resolved.
 
         Returns
         -------

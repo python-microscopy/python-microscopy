@@ -92,7 +92,6 @@ def gen_isosurface(visFr):
         dmc._invalidate_parent = True
         print('Isosurface layer added')
         
-
 def open_surface(visFr):
     import wx
     # from PYME.experimental import triangle_mesh
@@ -284,14 +283,22 @@ def add_tesselation_layer(visFr):
 
 def gen_isosurface_from_tesselation(visFr):
     from PYME.LMVis.layers.mesh import TriangleRenderLayer
-    from PYME.recipes.surface_fitting import MarchingTetrahedra
+    from PYME.recipes.surface_fitting import DelaunayMarchingTetrahedra
+
+    if 'delaunay0' not in visFr.pipeline.dataSources.keys():
+        del_name = add_tesselation(visFr)
+    else:
+        _, c = visFr.pipeline.new_ds_name('delaunay', return_count=True)
+        del_name = 'delaunay{}'.format(c-1)
+
+    if 'dn' not in visFr.pipeline.dataSources[del_name].keys():
+        # visFr.pipeline.selectDataSource(del_name)
+        estimate_density(visFr)
     
-    surf_count = 0
-    oc_name = 'delaunay%d' % surf_count
-    surf_name, surf_count = visFr.pipeline.new_ds_name('surf')
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
     
     recipe = visFr.pipeline.recipe
-    mt = MarchingTetrahedra(recipe, invalidate_parent=False, input=oc_name, output=surf_name)
+    mt = DelaunayMarchingTetrahedra(recipe, invalidate_parent=False, input=del_name, output=surf_name)
     
     if mt.configure_traits(kind='modal'):
         recipe.add_modules_and_execute([mt,])

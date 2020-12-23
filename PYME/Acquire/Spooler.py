@@ -123,14 +123,17 @@ class Spooler:
        
 
     def StartSpool(self):
+        """ Perform protocol 'frame -1' tasks, log start metadata, then connect
+        to the frame source.
+        """
         self.watchingFrames = True
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
-   
-        self.doStartLog()
 
         self.protocol.Init(self)
+
+        self.doStartLog()
    
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True

@@ -281,8 +281,8 @@ class SpoolController(object):
 
         """
         if self.spoolType == 'Cluster':
-            from PYME.IO import clusterIO
-            nodes = clusterIO.get_status()
+            from PYME.cluster import status
+            nodes = status.get_polled_status()
             free_storage = sum([n['Disk']['free'] for n in nodes])
             return free_storage / 1e9
         else:
@@ -293,6 +293,8 @@ class SpoolController(object):
         
     def _update_series_counter(self):
         logger.debug('Updating series counter')
+        self.seriesCounter = 0
+        self.seriesName = self._GenSeriesName()
         while self._checkOutputExists(self.seriesName):
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()

@@ -175,7 +175,7 @@ class BlobFinder(Plugin):
         self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
         if self.vObjPos is None:
-            self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
+            self.vObjPos = recArrayView.ArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
@@ -244,7 +244,7 @@ class BlobFinder(Plugin):
             #if self.nObjFit == None:
                 
                 
-            vObjFit = recArrayView.recArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
+            vObjFit = recArrayView.ArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
             self.dsviewer.AddPage(vObjFit, caption = 'Fitted Positions %d - %d' % (chnum, self.nObjFit))
         self.nObjFit += 1
         #else:

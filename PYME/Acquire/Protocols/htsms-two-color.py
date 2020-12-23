@@ -3,8 +3,15 @@ from PYME.Acquire.protocol import *
 # T(when, what, *args) creates a new task. "when" is the frame number, "what" is a function to
 # be called, and *args are any additional arguments.
 taskList = [
-    T(-1, scope.l642.TurnOn),
-    T(-1, scope.l560.TurnOn),
+    T(-1, scope.state.update, {
+        'Lasers.MPB560.On': True,
+        'Lasers.MPB560.Power': 550.0,
+        'Lasers.MPB642.On': True,
+        'Lasers.MPB642.Power': 575.0,
+        'Multiview.ActiveViews': [0, 1, 2, 3],
+        'Multiview.ROISize': [256, 256],
+        'Camera.IntegrationTime': 0.00125,
+    }),
     T(0, scope.focus_lock.DisableLock),
     T(maxint, scope.turnAllLasersOff),
     T(maxint, scope.focus_lock.EnableLock)

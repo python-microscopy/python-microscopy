@@ -101,6 +101,7 @@ class IntegerIDRule(Rule):
                       "driftResults" : "PYME-CLUSTER://__aggregate_h5r/path/to/analysis.h5r/DriftResults"}
         }
     
+    
     **Recipes**
     The recipe can either be specified inline:
     
@@ -113,6 +114,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+    
         
     or using a cluster URI:
     
@@ -125,6 +127,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+     
         
     The rule will substitute ``{{taskInputs}}`` with a dictionary mapping integer task IDs to recipe input files, e.g.
     
@@ -134,6 +137,7 @@ class IntegerIDRule(Rule):
          1 : {"recipe_input_0" : "input_0_URI_1","recipe_input_1" : "input_1_URI_1"},
          2 : {"recipe_input_0" : "input_0_URI_2","recipe_input_1" : "input_1_URI_2"},
          }
+       
          
     Alternatively the inputs dictionary can be supplied directly (without relying on the taskInputs substitution).
     

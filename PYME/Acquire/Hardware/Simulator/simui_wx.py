@@ -212,13 +212,13 @@ class dSimControl(afp.foldPanel):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(pFirstPrinciples, -1, 'Generate matrix for:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+        hsizer.Add(wx.StaticText(pFirstPrinciples, -1, 'Generate matrix for:'), 0, wx.ALL,
                    2)
         
         self.cModelPresets = wx.Choice(pFirstPrinciples, -1, choices=['STORM', 'PALM', 'PAINT'])
         self.cModelPresets.Bind(wx.EVT_CHOICE, self.OnModelPresets)
         
-        hsizer.Add(self.cModelPresets, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.cModelPresets, 0, wx.ALL, 2)
         
         sbsizer2.Add(hsizer, 0, wx.ALL, 2)
         
@@ -284,7 +284,7 @@ class dSimControl(afp.foldPanel):
         self.bLoadEmpiricalHist = wx.Button(pEmpiricalModel, -1, 'Load')
         self.bLoadEmpiricalHist.Bind(wx.EVT_BUTTON, self.OnBLoadEmpiricalHistButton)
         sbsizer2.Add(self.bLoadEmpiricalHist, 0,
-                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                     wx.ALIGN_CENTER_VERTICAL, 2)
         
         pEmpiricalModelSizer.Add(sbsizer2, 0, wx.ALL | wx.EXPAND, 2)
         
@@ -293,7 +293,7 @@ class dSimControl(afp.foldPanel):
         self.bGenEmpiricalHistFluors = wx.Button(pEmpiricalModel, -1, 'Go')
         self.bGenEmpiricalHistFluors.Bind(wx.EVT_BUTTON, self.OnBGenEmpiricalHistFluorsButton)
         hsizer.Add(self.bGenEmpiricalHistFluors, 1,
-                   wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                   wx.ALIGN_CENTER_VERTICAL, 2)
         
         pEmpiricalModelSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
         

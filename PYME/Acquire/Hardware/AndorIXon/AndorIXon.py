@@ -121,9 +121,9 @@ class iXonCamera(Camera):
 
         #ret = ac.Initialize('.')
         if 'linux' in sys.platform:
-            ret = ac.Initialize("/usr/local/etc/andor")
+            ret = ac.Initialize(b"/usr/local/etc/andor")
         else:
-            ret = ac.Initialize('.')
+            ret = ac.Initialize(b'.')
 
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error initialising camera: %s' % ac.errorCodes[ret])
@@ -410,11 +410,11 @@ class iXonCamera(Camera):
         #    return tmp == ac.DRV_IDLE
 
     def GetPicWidth(self):
-        return (self.ROIx[1] - self.ROIx[0] + 1)/self.binX
+        return int((self.ROIx[1] - self.ROIx[0] + 1)/self.binX)
         #return self.CCDSize[0]
 
     def GetPicHeight(self):
-        return (self.ROIy[1] - self.ROIy[0] + 1)/self.binY
+        return int((self.ROIy[1] - self.ROIy[0] + 1)/self.binY)
         #return self.CCDSize[1]
 
     def SetROI(self, x1,y1,x2,y2):
@@ -688,7 +688,7 @@ class iXonCamera(Camera):
         self.__selectCamera()
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
-        return hm.value
+        return hm.value.decode()
     
     @property
     def noise_properties(self):

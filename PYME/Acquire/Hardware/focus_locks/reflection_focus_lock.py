@@ -341,6 +341,34 @@ class ReflectedLinePIDFocusLock(PID):
         
         logger.debug('failed to find focus, lowering objective')
         self.piezo.SetOffset(min_offset)
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiring', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiring(self):
+        self.EnableLock()  # make sure we have the lock on
+        if not self.LockOK():
+            import time
+            logger.debug('lock not OK, pausing for 5 s')
+            time.sleep(5)
+            if not self.LockOK():
+                logger.debug('still not OK, starting pause/reacquire sequence')
+                time.sleep(5)
+                self.ReacquireLock()
+            else:
+                logger.debug('lock OK')
+        
+        self.DisableLock()
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiringIfEnabled', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiringIfEnabled(self):
+        """
+        Helper function to allow protocols used in automated workflows to make 
+        sure they have the right focal plane without barring that protocols
+        use for manual imaging without the focus lock on/set up
+        """
+        if self.LockEnabled():
+            self.DisableLockAfterAcquiring()
 
     def find_peak(self, profile):
         """
@@ -440,6 +468,12 @@ class RLPIDFocusLockClient(object):
     @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
     def ReacquireLock(self, step_size=3.):
         return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f' % (step_size,))
+    
+    def DisableLockAfterAcquiring(self):
+        return self._session.get(self.base_url + '/DisableLockAfterAcquiring')
+    
+    def DisableLockAfterAcquiringIfEnabled(self):
+        return self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled')
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):

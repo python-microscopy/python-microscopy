@@ -2,7 +2,7 @@ from PYME import config as conf
 import os
 import yaml
 from PYME.misc import pyme_zeroconf
-from PYME.misc.computerName import GetComputerName
+from PYME.IO.FileUtils.nameUtils import get_service_name
 import subprocess
 import time
 import socket
@@ -81,7 +81,8 @@ def main():
             proc = subprocess.Popen('python -m PYME.cluster.distributor 1234', shell=True)
 
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
-    ns.register_service('PYMEDistributor: ' + GetComputerName(), externalAddr, int(serverPort))
+    service_name = get_service_name('PYMEDistributor')
+    ns.register_service(service_name, externalAddr, int(serverPort))
 
     try:
         while not proc.poll():
@@ -96,7 +97,7 @@ def main():
             #         logfile_debug.seek(0)
 
     finally:
-        ns.unregister('PYMEDistributor: ' + GetComputerName())
+        ns.unregister(service_name)
         #try and shut down the distributor cleanly
         proc.send_signal(1)
         time.sleep(2)

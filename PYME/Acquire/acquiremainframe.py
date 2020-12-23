@@ -106,7 +106,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.snapNum = 0
 
-        wx.EVT_CLOSE(self, self.OnCloseWindow)        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)        
         
         self.MainFrame = self #reference to this window for use in scripts etc...
         protocol.MainFrame = self
@@ -666,9 +666,22 @@ class PYMEMainFrame(AUIFrame):
         msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
             if six.PY3:
-                msg += '%s, %s\n' % (t.name, t._target)
+                cd = None
+                if hasattr(t._target, '__code__'):
+                    cd = t._target.__code__
+                elif hasattr(t._target, '__func__'):
+                    cd = t._target.__func__.__code__
+                elif hasattr(t, '__code__'):
+                    cd = t.__code__
+                else:
+                    # Thread sub-class
+                    try:
+                        cd = t.__class__.run.__code__
+                    except AttributeError:
+                        pass
+                msg += '%s, %s, daemon=%s, %s\n' % (t.name, t._target, t.daemon, cd)
             else:
-                msg += '%s, %s\n' % (t, t._Thread__target)
+                msg += '%s, %s, daemon=%s\n' % (t, t._Thread__target, t.daemon)
             
         logging.info(msg)
 

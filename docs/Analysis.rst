@@ -1,5 +1,5 @@
-**dh5view** - Image Data Analysis and Viewing
-*********************************************
+**PYMEImage (dh5view)** - Image Data Analysis and Viewing
+*********************************************************
 
 DSView is a general purpose data viewer that supports all the :ref:`DataFormats`
 and additionally the ``QUEUE`` objects used in real-time data analysis. DSView may

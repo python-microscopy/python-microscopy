@@ -135,7 +135,8 @@ class AggregateMeasurements(ModuleBase):
     outputName = Output('aggregatedMeasurements')
 
     def execute(self, namespace):
-        res = {}
+        import collections
+        res = collections.OrderedDict()
         for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if
                            n.startswith('inputMeas')]:
             if not mk == '':
@@ -147,7 +148,7 @@ class AggregateMeasurements(ModuleBase):
 
         meas1 = namespace[self.inputMeasurements1]
         #res = pd.DataFrame(res)
-        res = tabular.CloneSource(res)
+        res = tabular.DictSource(res)
         if 'mdh' in dir(meas1):
             res.mdh = meas1.mdh
 

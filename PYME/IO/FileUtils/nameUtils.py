@@ -273,3 +273,28 @@ def getRelFilename(filename, datadir=datadir):
         return filename[len(dataDir):]
 
     return filename
+
+def get_service_name(process_name):
+    """Generate an appropriate service name for zeroconf, pyro, etc.
+
+    Parameters
+    ----------
+    process_name : str
+        name of the process, e.g. 'PYMEDataServer [serverfilter]'
+
+    Returns
+    -------
+    str
+        service name including process ID and as much of the process name and
+        computer as possible given length constraints. Something like
+        PYMEDataServer [trout]:cutthroat - PID:2020
+    """
+    from PYME.misc.computerName import GetComputerName
+
+    pid = str(os.getpid())
+
+    base_name = process_name + ':' + GetComputerName() + ' - '
+    # max of 63 characters for zeroconf compatibility
+    base_name = base_name[:(63 - 4 - len(pid))]
+    
+    return base_name + 'PID:' + pid

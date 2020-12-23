@@ -1,6 +1,7 @@
 # <img alt="PYME" src="PYME/resources/icons/pymeLogo.png" style="float:left"> The PYthon Microscopy Environment
 
 ![tag](https://img.shields.io/github/v/tag/python-microscopy/python-microscopy?sort=semver&logo=github)
+[![DOI](https://zenodo.org/badge/224552047.svg)](https://zenodo.org/badge/latestdoi/224552047)
 ![commits](https://img.shields.io/github/commit-activity/m/python-microscopy/python-microscopy?logo=github)
 ![testing](https://img.shields.io/azure-devops/tests/davidbaddeleynz/pyme-ci/2/master?logo=azuredevops)
 
