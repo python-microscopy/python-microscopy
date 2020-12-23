@@ -252,8 +252,8 @@ class Spooler(sp.Spooler):
             # The alternative - letting spooling continue during the acquisition of the next series - has the potential
             # to result in runaway memory and thread usage when things go pear shaped (i.e. spooling is not fast enough)
             # TODO - is there actually a performance impact that justifies this config option, or is it purely theoretical
-            for pt in self._pollThreads:
-                pt.join()
+            for ind in range(len(self._pollThreads))[::-1]:
+                self._pollThreads.pop(ind).join()  # pop off the back and join
         
         # save events and final metadata
         # TODO - use a binary format for saving events - they can be quite
