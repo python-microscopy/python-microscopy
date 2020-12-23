@@ -347,9 +347,6 @@ class TriangleRenderLayer(EngineLayer):
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
                      Group([Item('cmap', label='LUT'),
                             Item('alpha', visible_when='method in ["flat", "tessel", "shaded"]')
-                            ]),
-                     Group([Item('display_normals'),
-                            Item('normal_scaling', visible_when='display_normals==True')
                             ])
                      ], )
         # buttons=['OK', 'Cancel'])
