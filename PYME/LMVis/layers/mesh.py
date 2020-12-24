@@ -4,7 +4,7 @@ from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderPro
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
+from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
 from matplotlib import cm
 import numpy as np
@@ -27,17 +27,39 @@ class WireframeEngine(BaseEngine):
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
 
+            normals = layer.get_normals()
+            colors = layer.get_colors()
+
             glVertexPointerf(vertices)
-            glNormalPointerf(layer.get_normals())
-            glColorPointerf(layer.get_colors())
+            glNormalPointerf(normals)
+            glColorPointerf(colors)
 
             glDrawArrays(GL_TRIANGLES, 0, n_vertices)
             
             if self._outlines:
                 sc = np.array([0.5, 0.5, 0.5, 1])
-                glColorPointerf(layer.get_colors()*sc[None,:])
+                glColorPointerf(colors*sc[None,:])
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
+
+            if layer.display_normals:
+                normal_buffer = np.empty((vertices.shape[0]+normals.shape[0],3), dtype=vertices.dtype)
+                if layer.normal_mode == 'Per vertex':
+                    normal_buffer[0::2,:] = vertices
+                    normal_buffer[1::2,:] = vertices
+                else:
+                    vtemp = np.repeat((1./3)*(vertices[0::3]+vertices[1::3]+vertices[2::3]), 3, axis=0)
+                    normal_buffer[0::2,:] = vtemp
+                    normal_buffer[1::2,:] = vtemp
+                assert(np.allclose(np.linalg.norm(normals,axis=1),1))
+                normal_buffer[1::2,:] += layer.normal_scaling*normals
+                
+                glVertexPointerf(normal_buffer)
+                sc = np.array([1, 1, 1, 1])
+                glColorPointerf(np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
+                glNormalPointerf(np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+                glLineWidth(3)  # slightly thick
+                glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
 
 
@@ -106,6 +128,8 @@ class TriangleRenderLayer(EngineLayer):
     alpha = Float(1.0, desc='Face tranparency')
     method = Enum(*ENGINES.keys(), desc='Method used to display faces')
     normal_mode = Enum(['Per vertex', 'Per face'])
+    display_normals = Bool(False)
+    normal_scaling = Float(10.0)
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of triangles (should be a TriangularMesh object)')
     _datasource_choices = List()
     _datasource_keys = List()
@@ -133,7 +157,7 @@ class TriangleRenderLayer(EngineLayer):
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname, normal_mode')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname, normal_mode, display_normals, normal_scaling')
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments

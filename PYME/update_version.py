@@ -47,7 +47,7 @@ def update_version_hg():
 
 
 def update_version():
-    now = datetime.now()
+    now = datetime.utcnow()
     
     p = subprocess.Popen('git describe --abbrev=12 --always --dirty=+', shell=True, stdout=subprocess.PIPE)
     id = p.stdout.readline().strip().decode()
@@ -59,6 +59,8 @@ def update_version():
     f.write('#Git changeset id\n')
     f.write("changeset = '%s'\n" % id)
     f.close()
+    
+    print('PYMEVERSION=%d.%02d.%02d' %(now.year - 2000, now.month, now.day))
     
 if __name__ == '__main__':
     update_version()

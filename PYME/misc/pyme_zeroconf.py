@@ -20,7 +20,6 @@ import zeroconf
 import socket
 import time
 #import Pyro.core
-
 import threading
 
 class PatchedServiceInfo(zeroconf.ServiceInfo):
@@ -95,6 +94,10 @@ class ZCListener(object):
         self.advertised_services = {}
         
         self._lock = threading.Lock()
+        
+        self._poll_thread = threading.Thread(target=self._poll_services_open)
+        self._poll_thread.daemon = True
+        self._poll_thread.start()
     
     def remove_service(self, zc, _type, name):
         #print("Service %s removed" % (name,))
@@ -106,14 +109,16 @@ class ZCListener(object):
             pass
         
     def add_service(self, zc, _type, name):
+        from PYME.misc.sqlite_ns import is_port_open
         #print _type, name
         nm = name.split('.' + self._protocol)[0]
-        
-        with self._lock:
-            #info = zc.get_service_info(_type, name)
-            info = PatchedServiceInfo(_type, name)
-            if info.request(zc, 5000):
-                self.advertised_services[nm] = info
+
+        info = PatchedServiceInfo(_type, name)
+        if info.request(zc, 5000):
+            if is_port_open(socket.inet_ntoa(info.address), info.port):
+                with self._lock:
+                    #info = zc.get_service_info(_type, name)
+                    self.advertised_services[nm] = info
 
     def list(self, filterby):
         with self._lock:
@@ -127,18 +132,48 @@ class ZCListener(object):
         with self._lock:
             return list(self.advertised_services.items())
         
+    def _poll_services_open(self):
+        from PYME.misc.sqlite_ns import is_port_open
+        while True:
+            with self._lock:
+                # grab list then release lock
+                svcs = list(self.advertised_services.items())
+            
+            # check to see if the services are up (without lock)
+            dead_svcs = []
+            for name, info in svcs:
+                if not is_port_open(socket.inet_ntoa(info.address), info.port):
+                    dead_svcs.append((name, info))
+                    
+            # delete any dead services
+            with self._lock:
+                for name, info in dead_svcs:
+                    try:
+                        # check that service hasn't been re-added with new info while we were checking ports
+                        if self.advertised_services[name] is info:
+                            # remove dead service
+                            self.advertised_services.pop(name)
+                    except KeyError:  # service has been removed while we had released the lock
+                        pass
+                    
+            # wait 10 seconds before polling again
+            time.sleep(10)
+                    
+                
+                
+        
             
 class ZeroConfNS(object):
     """This spoofs (but does not fully re-implement) a Pyro.naming.Nameserver"""
     def __init__(self, protocol = '_pyme-pyro'):
-        self._services = {}
         self._protocol = protocol
+        self._services = {}
         self.zc = zeroconf.Zeroconf()
         self.listener = ZCListener(self._protocol)
         
         self.browser = zeroconf.ServiceBrowser(self.zc, "%s._tcp.local." % self._protocol,
-                                         self.listener)
-                                        
+                                               self.listener) 
+                              
     def register(self, name, URI):
         desc = {'URI': str(URI)}
         
@@ -149,14 +184,20 @@ class ZeroConfNS(object):
     #     return self.listener.advertised_services
     
     def get_advertised_services(self):
-        from PYME.misc.sqlite_ns import is_port_open
         svcs = self.listener.get_advertised_services()
-
-        svcs = [(name, info) for name, info in svcs if is_port_open(socket.inet_ntoa(info.address), info.port)]
         
         return svcs
         
     def register_service(self, name, address, port, desc={}):
+        """
+
+        Parameters
+        ----------
+        name : str
+            Max 63 chars long. PYME.IO.FileUtils.nameUtils.get_service_name can be used to get a suitable (truncated if necessary)
+            name.
+
+        """
         if name in self.listener.advertised_services.keys():
             raise RuntimeError('Name "%s" already exists' %name)
         
@@ -169,6 +210,14 @@ class ZeroConfNS(object):
         self.zc.register_service(info)
         
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+
+        """
         try:
             info = self._services[name]
             self.zc.unregister_service(info)
@@ -188,7 +237,12 @@ class ZeroConfNS(object):
         from PYME.misc.sqlite_ns import is_port_open
         for name, info in self.get_advertised_services():
             if not is_port_open(socket.inet_ntoa(info.address), info.port):
-                self.unregister(name)
+                # try 3 times before actually giving up on the service as dead
+                n_failures = getattr(info, 'n_failures', 0)
+                if n_failures >= 3:
+                    self.unregister(name)
+                else:
+                    info.n_failures = n_failures + 1
         
             
     def __del__(self):

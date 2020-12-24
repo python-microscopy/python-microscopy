@@ -39,14 +39,14 @@ class ClusterOfOne(object):
             self._kill_procs([self._data_server,])
             
         logger.info('Launching data server: root=%s' % self._root_dir)
-        self._data_server = subprocess.Popen('%s -m PYME.cluster.HTTPDataServer -a local -p 0 -r %s' % (sys.executable, self._root_dir), shell=True)
+        self._data_server = subprocess.Popen('"%s" -m PYME.cluster.HTTPDataServer -a local -p 0 -r "%s"' % (sys.executable, self._root_dir), shell=True)
         
     def _launch_rule_server(self):
         if not self._rule_server is None:
             self._kill_procs([self._rule_server, ])
 
         logger.info('Launching rule server')
-        self._rule_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleServer -a local -p 0'
+        self._rule_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleServer -a local -p 0'
                                              '' % sys.executable, shell=True)
         
     def _launch_node_server(self):
@@ -54,15 +54,20 @@ class ClusterOfOne(object):
             self._kill_procs([self._node_server, ])
 
         logger.info('Launching node server')
-        self._node_server = subprocess.Popen('%s -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
+        self._node_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
         
     def _launch_cluster_ui(self, gui=False):
+        try:
+            import django
+        except ImportError:
+            logger.error('django is not installed, to use clusterUI install django (1.11.x, 2.0.x, 2.1.x)')
+            
         if not self._cluster_ui is None:
             self._kill_procs([self._cluster_ui, ])
 
         logger.info('Launching clusterUI')
         self._cluster_ui_stderr = open('clusterui.log', 'w')
-        self._cluster_ui = subprocess.Popen('%s %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), stderr=self._cluster_ui_stderr, shell=True)
+        self._cluster_ui = subprocess.Popen('"%s" %s runserver 9999' % (sys.executable, os.path.join(os.path.split(__file__)[0], 'clusterUI', 'manage.py')), stderr=self._cluster_ui_stderr, shell=True)
         
         if gui:
             #launch a web-browser to view clusterUI

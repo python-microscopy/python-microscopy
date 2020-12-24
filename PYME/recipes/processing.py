@@ -711,10 +711,24 @@ class FindCaWaves(ModuleBase):
         
         
 @register_module('Gradient')         
-class Gradient2D(ModuleBase):   
+class Gradient2D(ModuleBase):
+    """
+    Calculate the gradient along x and y for each channel of an ImageStack
+
+    Parameters
+    ----------
+    inputName : PYME.IO.image.ImageStack
+        input image
+    units : Enum
+        specify whether to return gradient in units of intensity/pixel or
+        intensity/um. Note that intensity/um will account for anisotropic 
+        voxels, while the per pixel in intensity/pixel can be direction 
+        dependent.
+    """
     inputName = Input('input')
     outputNameX = Output('grad_x')
     outputNameY = Output('grad_y')
+    units = Enum(['intensity/pixel', 'intensity/um'])
     
     def calc_grad(self, data, chanNum):
         grad_x = []
@@ -734,6 +748,9 @@ class Gradient2D(ModuleBase):
         grad_y = []
         for chanNum in range(image.data.shape[3]):
             fx, fy = self.calc_grad(image.data, chanNum)
+            if self.units == 'intensity/um':
+                fx /= (image.voxelsize_nm.x / 1e3)  # [data/pix] -> [data/um]
+                fy /= (image.voxelsize_nm.y / 1e3)
             grad_x.append(fx)
             grad_y.append(fy)
         
@@ -754,10 +771,24 @@ class Gradient2D(ModuleBase):
 
 @register_module('Gradient3D')
 class Gradient3D(ModuleBase):
+    """
+    Calculate the gradient along x, y, and z for each channel of an ImageStack
+
+    Parameters
+    ----------
+    inputName : PYME.IO.image.ImageStack
+        input image
+    units : Enum
+        specify whether to return gradient in units of intensity/pixel or
+        intensity/um. Note that intensity/um will account for anisotropic 
+        voxels, while the per pixel in intensity/pixel can be direction 
+        dependent.
+    """
     inputName = Input('input')
     outputNameX = Output('grad_x')
     outputNameY = Output('grad_y')
     outputNameZ = Output('grad_z')
+    units = Enum(['intensity/pixel', 'intensity/um'])
 
     def calc_grad(self, data, chanNum):
         dx, dy, dz = np.gradient(np.atleast_3d(data[:,:,:,chanNum].squeeze()))
@@ -772,6 +803,10 @@ class Gradient3D(ModuleBase):
 
         for chanNum in range(image.data.shape[3]):
             fx, fy, fz = self.calc_grad(image.data, chanNum)
+            if self.units == 'intensity/um':
+                fx /= (image.voxelsize_nm.x / 1e3)  # [data/pix] -> [data/um]
+                fy /= (image.voxelsize_nm.y / 1e3)
+                fz /= (image.voxelsize_nm.z / 1e3)
             grad_x.append(fx)
             grad_y.append(fy)
             grad_z.append(fz)
@@ -1541,7 +1576,10 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         from PYME.IO.image import ImageStack
         image = namespace[self.inputImage]
         
-        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        if self.flatfieldFilename != '':
+            flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        else:
+            flat = None
         
         if not self.darkFilename == '':
             dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
@@ -1762,7 +1800,8 @@ class AverageFramesByZStep(ModuleBase):
         logger.debug('Averaged stack size: %d' % n_steps)
 
         new_stack = []
-        t = time.time()
+       # TODO - should we default to zero or abort?
+        t = image_stack.mdh.getOrDefault('StartTime', 0)
         fudged_events = []
         cycle_time = image_stack.mdh.getOrDefault('Camera.CycleTime', 1.0)
         for ci in range(image_stack.data.shape[3]):

@@ -106,14 +106,7 @@ def orca_cam(scope):
     # as it's much easier
     # TODO - make flip, rotate etc actually work for tiling in case we have two cameras
     scope.register_camera(cam, 'HamamatsuORCA', rotate=False, flipx=False, flipy=False)
-
-    def set_camera_views(views):
-        if (views is None) or (len(views) == 0):
-            cam.disable_multiview()
-        else:
-            cam.enable_multiview(views)
-
-    scope.state.registerHandler('Camera.Views', lambda: cam.active_views, set_camera_views, True)
+    cam.register_state_handlers(scope.state)
 
 
 @init_gui('sCMOS Camera controls')
@@ -125,8 +118,10 @@ def orca_cam_controls(MainFrame, scope):
     scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
 
-    MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
-    MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
+    MainFrame.AddMenuItem('Camera', 'Set Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', [0, 1, 2, 3]))
+    MainFrame.AddMenuItem('Camera', 'Clear Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', []))
 
 @init_gui('Sample Metadata')
 def sample_metadata(main_frame, scope):
@@ -216,7 +211,20 @@ def action_manager(MainFrame, scope):
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
-    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+    from PYME.cluster.rules import RecipeRuleFactory
+    import yaml
+    import os
+
+    # add some default pairings
+    defaults = {}
+    rec_dir = 'C:\\Users\\Bergamot\\PYMEData\\recipes'
+
+    tilerec = os.path.join(rec_dir, 'tile_detect_filter_queue.yaml')
+    with open(tilerec) as f:
+        tilerec = f.read()
+    defaults['htsms-tile'] = [RecipeRuleFactory(recipe=tilerec)]
+
+    SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
 @init_hardware('tweeter')
 def tweeter(scope):

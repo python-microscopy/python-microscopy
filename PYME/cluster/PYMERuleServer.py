@@ -8,7 +8,7 @@ import yaml
 from PYME import config
 from PYME.cluster import ruleserver
 from PYME.misc import pyme_zeroconf, sqlite_ns
-from PYME.misc.computerName import GetComputerName
+from PYME.IO.FileUtils.nameUtils import get_service_name
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -83,7 +83,8 @@ def main():
     time.sleep(0.5)
     #get the actual adress (port) we bound to
     sa = proc.distributor.socket.getsockname()
-    ns.register_service('PYMERuleServer: ' + GetComputerName(), proc.externalAddr, int(sa[1]))
+    service_name = get_service_name('PYMERuleServer')
+    ns.register_service(service_name, proc.externalAddr, int(sa[1]))
 
     try:
         while proc.is_alive():
@@ -92,7 +93,7 @@ def main():
     finally:
         logger.debug('trying to shut down server')
         proc.shutdown()
-        ns.unregister('PYMERuleServer: ' + GetComputerName())
+        ns.unregister(service_name)
         #try and shut down the distributor cleanly
         
         #time.sleep(2)

@@ -89,13 +89,13 @@ class QueueAcquisitions(OutputModule):
             Information about the source file to allow pattern substitution to 
             generate the output name. At least 'basedir' (which is the fully 
             resolved directory name in which the input file resides) and 
-            'filestub' (which is the filename without any extension) should be 
+            'file_stub' (which is the filename without any extension) should be 
             resolved.
         
         Notes
         -----
         str spool_settings values can context-substitute templated parameters,
-        e.g. spool_settings = {'subdirectory': '{filestub}'}
+        e.g. spool_settings = {'subdirectory': '{file_stub}'}
         """
         # substitute spool settings
         spool_settings = self.spool_settings.copy()
