@@ -540,7 +540,7 @@ class LocalisationRule(Rule):
         #set up results file:
         logging.debug('resultsURI: ' + self.worker_resultsURI)
         clusterResults.fileResults(self.worker_resultsURI + '/MetaData', self.mdh)
-        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
+        # events file will be handled in self.push / self._poll_loop
 
         # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.put_file(self.resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=self.serverfilter)
@@ -589,8 +589,52 @@ class LocalisationRule(Rule):
             self.frames_outstanding = numTotalFrames - self._next_release_start
             
             return release_start, release_end
+    
+    def push(self):
+        """ overrides the base class implementation to handle copying events
+        when a datasource is completed """
+        self._ruleID = None
+        self.taskQueueURI = self._getTaskQueueURI()
+        self._current_task_num = 0
+    
+        #create any needed files - e.g. metadata
+        post_args = self.prepare()
+    
+        #post our rule
+        self._post_rule(**post_args)
+    
+        if not self.complete:
+            #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
+            self.doPoll = True
+            self.pollT = threading.Thread(target=self._poll_loop)
+            self.pollT.start()
+        else:
+            # copy events file to the results h5r
+            clusterResults.fileResults(self.worker_resultsURI + '/Events', 
+                                       self.ds.getEvents())
+    
+    def _poll_loop(self):
+        """ overrides the base class implementation to handle copying events
+        when a datasource is completed """
+        logging.debug('task pusher poll loop started')
+
+        while (self.doPoll == True):
+            try:
+                rel_start, rel_end = self.get_new_tasks()
+                self._release_tasks(rel_start, rel_end)
+            except NoNewTasks:
+                pass
         
-        
+            if self.complete:
+                # copy events
+                clusterResults.fileResults(self.worker_resultsURI + '/Events',
+                                           self.ds.getEvents())
+                logging.debug('input data complete and all tasks pushed, marking rule as complete')
+                self._mark_complete()
+                logging.debug('ending polling loop.')
+                self.doPoll = False
+            else:
+                time.sleep(1)
         
 
 class RuleFactory(object):
