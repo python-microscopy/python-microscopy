@@ -365,7 +365,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
         Imc = scipy.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
-            print((jsig.shape, Imc.shape))
+            #print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
@@ -391,7 +391,7 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
         Imc = scipy.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
-            print((jsig.shape, Imc.shape))
+            #print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
@@ -596,7 +596,7 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         Imc = scipy.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
-            print((jsig.shape, Imc.shape))
+            #print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
@@ -650,7 +650,7 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
 
         Imc = scipy.rand(len(x)) < mcp
         if isinstance(jsig, numpy.ndarray):
-            print((jsig.shape, Imc.shape))
+            #print((jsig.shape, Imc.shape))
             jsig_ = jsig[Imc]
             jsigz_ = jsigz[Imc]
         else:
@@ -659,7 +659,7 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
         p = numpy.hstack(((x[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz_*scipy.randn(Imc.sum()))[:, None]))
-        print((p.shape))
+        #print((p.shape))
         RenderTetrahedra(p, im)
 
 #if multiProc:
@@ -789,4 +789,89 @@ def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
 
     im = im[roiSize:-roiSize, roiSize:-roiSize, :]
 
+    return im
+
+
+def rendVoronoi(x, y, imageBounds, pixelSize):
+    from matplotlib import tri
+    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
+    from PYME.recipes.pointcloud import Tesselation
+    sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
+    sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
+    
+    im = np.zeros((sizeX, sizeY))
+    
+    #T = tri.Triangulation(x, y)
+    Ts = Tesselation({'x': x, 'y': y, 'z': 0 * x}, three_d=False)
+    cc = Ts.circumcentres()
+    T = Ts.T
+
+    tdb = []
+    for i in range(len(x)):
+        tdb.append([])
+
+    for i in range(len(T.simplices)):
+        nds = T.simplices[i]
+        for n in nds:
+            tdb[n].append(i)
+
+    xs_ = None
+    ys_ = None
+    c_ = None
+
+    area_colouring = True
+    for i in range(len(x)):
+        #get triangles around point
+        impingentTriangs = tdb[i] #numpy.where(T.triangle_nodes == i)[0]
+        if len(impingentTriangs) >= 3:
+        
+            circumcenters = cc[impingentTriangs] #get their circumcenters
+        
+            #add current point - to deal with edge cases
+            newPts = np.array(list(circumcenters) + [[x[i], y[i]]])
+        
+            #re-triangulate (we could try and sort the triangles somehow, but this is easier)
+            T2 = tri.Triangulation(newPts[:, 0], newPts[:, 1])
+        
+            #now do the same as for the standard triangulation
+            xs = T2.x[T2.triangles]
+            ys = T2.y[T2.triangles]
+        
+            a = np.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+            b = np.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+        
+            #area of triangle
+            c = 0.5 * np.sqrt((b * b).sum(1) - ((a * b).sum(1) ** 2) / (a * a).sum(1)) * np.sqrt((a * a).sum(1))
+        
+            #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+        
+            #c_neighbours = c[T.triangle_neighbors].sum(1)
+            #c = 1.0/(c + c_neighbours + 1)
+            c = c.sum() * np.ones(c.shape)
+            c = 1.0 / (c + 1)
+        
+        
+            #print xs.shape
+            #print c.shape
+        
+            if xs_ is None:
+                xs_ = xs
+                ys_ = ys
+                c_ = c
+            else:
+                xs_ = np.vstack((xs_, xs))
+                ys_ = np.vstack((ys_, ys))
+                c_ = np.hstack((c_, c))
+
+    
+
+    # convert vertices [nm] to pixel position in output image (still floating point)
+    xs = (xs_ - imageBounds.x0) / pixelSize
+    ys = (ys_ - imageBounds.y0) / pixelSize
+
+    # NOTE 1: drawTriangles truncates co-ordinates to the nearest pixel on the left.
+    # NOTE 2: this truncation means that nothing is drawn for triangles < 1 pixel
+    # NOTE 3: triangles which would intersect with the edge of the image are discarded
+    drawTriangles(im, xs, ys, c_)
+    
     return im

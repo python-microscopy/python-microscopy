@@ -143,9 +143,10 @@ class DSViewFrame(AUIFrame):
         self._menus['Save'] = self.save_menu
         tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
         
-        tmp_menu.AppendSeparator()
-        tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
+        #tmp_menu.AppendSeparator()
+        #tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
         self.menubar.Append(tmp_menu, "File")
+        self._menus['File'] = tmp_menu
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
@@ -160,9 +161,9 @@ class DSViewFrame(AUIFrame):
         self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        #self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
         
-
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 		
         self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
@@ -171,7 +172,7 @@ class DSViewFrame(AUIFrame):
         modules.loadMode(self.mode, self)
         self.CreateModuleMenu()
 
-        
+        self.add_common_menu_items()
 
         self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
         self.optionspanel.SetSize(self.optionspanel.GetBestSize())

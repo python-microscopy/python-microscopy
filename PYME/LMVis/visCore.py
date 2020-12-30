@@ -262,9 +262,8 @@ class VisGUICore(object):
             self.AddMenuItem('File', itemType='separator')
             self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurements)
 
-            self.AddMenuItem('File', itemType='separator')
-
-            self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
+            #self.AddMenuItem('File', itemType='separator')
+            #self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
         if not self._new_layers:

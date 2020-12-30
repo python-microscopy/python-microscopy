@@ -198,6 +198,26 @@ class AUIFrame(wx.Frame):
             menu.AppendSeparator()
             
         return mItem
+    
+    def add_common_menu_items(self):
+        """
+        Adds File-->Close and File-->Quit
+        
+        TODO - add about and help here as well
+        
+        Returns
+        -------
+
+        """
+        
+        self.AddMenuItem('File', itemType='separator')
+        self.AddMenuItem('File', 'Close', lambda e : self.Close(), id=wx.ID_CLOSE)
+        self.AddMenuItem('File', 'Quit', self.OnQuit, id=wx.ID_EXIT)
+        
+    def OnQuit(self, event):
+        for w in wx.GetTopLevelWindows():
+            w.Close()
+        
         
     def _cleanup(self):
         #self.timer.Stop()

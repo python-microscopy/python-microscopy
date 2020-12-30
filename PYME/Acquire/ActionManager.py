@@ -65,6 +65,7 @@ class ActionManager(object):
 
         self._monitoring = True
         self._monitor = threading.Thread(target=self._monitor_defunct)
+        self._monitor.daemon = True
         self._monitor.start()
         
     def QueueAction(self, functionName, args, nice=10, timeout=1e6, 

@@ -83,11 +83,8 @@ class SupertileDataSource(BaseDataSource):
         qp = parse_qs(query)
         level = int(qp.get('level', [0])[0])
         stride = int(qp.get('stride', [3])[0])
-        overlap = int(qp.get('overlap', [1])[0])
-        
-        mdh = MetaDataHandler.load_json(os.path.join(tile_base, 'metadata.json'))  # TODO - does this need to be posixpath?
-        # TODO - make the ImagePyramid read it's own metadata
-        p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
+        overlap = int(qp.get('overlap', [1])[0])        
+        p = ImagePyramid.load_exiting(tile_base)
         
         return SupertileDataSource(p, level, stride, overlap)
 
