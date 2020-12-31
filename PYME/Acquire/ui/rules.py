@@ -230,8 +230,9 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
         self.ax.cla()
 
         rule_factories = self.parent.rule_chain.rule_factories
-
-        nodes_x = np.linspace(0, 1, len(rule_factories) + 2)[1:-1]
+        width = 1  # size of tile to draw
+        height = 0.5
+        nodes_x = np.arange(0, len(rule_factories) * 1.5 * width, 1.5 * width)
         nodes_y = np.ones_like(nodes_x)
 
         
@@ -248,17 +249,20 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
     
         cols = {}
 
-        # plot the connecting lines
-        for xv, yv in zip(nodes_x, nodes_y):
-            self.ax.plot(xv, yv, lw=2)
+        # plot connecting lines
+        for ind in range(1, len(rule_factories)):
+            self.ax.plot([nodes_x[ind - 1] + width, nodes_x[ind]],
+                         [nodes_y[ind - 1] + 0.5 * height, 
+                          nodes_y[ind] + 0.5 * height], lw=2)
                 
         #plot the boxes and the labels
         for ind in range(len(rule_factories)):
             # draw a box
             s = rule_factories[ind]._type
             fc = [.8,.8, 1]
-                
-            rect = plt.Rectangle([nodes_x[ind], nodes_y[ind]], 1, .5, ec='k', lw=2, fc=fc, picker=True)
+            
+            rect = plt.Rectangle([nodes_x[ind], nodes_y[ind]], width, height,
+                                 ec='k', lw=2, fc=fc, picker=True)
             rect._data = s
             self.ax.add_patch(rect)
             
@@ -269,7 +273,7 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
                 self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .18 - .05*(len(s) - 1) , '\n'.join(s), size=font_size, weight='bold')
         
         self.ax.set_ylim(0, 2)
-        self.ax.set_xlim(0, 1)
+        self.ax.set_xlim(-0.5 * width, nodes_x[-1] + 1.5 * width)
         
         self.ax.axis('off')
         self.ax.grid()
@@ -584,7 +588,6 @@ class ChainedAnalysisPanel(wx.Panel):
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.active = True
         self.checkbox_active = wx.CheckBox(self, -1, 'active')
         self.checkbox_active.SetValue(True)
         self.checkbox_active.Bind(wx.EVT_CHECKBOX, self.OnToggleActive)
@@ -632,7 +635,7 @@ class ChainedAnalysisPanel(wx.Panel):
         raise NotImplementedError()
 
     def OnToggleActive(self, wx_event):
-        self.active = self.checkbox_active.GetValue()
+        self.self._protocol_rules.active = self.checkbox_active.GetValue()
 
     @staticmethod
     def plug(main_frame, scope, default_pairings=None):
