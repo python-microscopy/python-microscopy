@@ -58,13 +58,13 @@ class RuleChain(HasTraits):
         HasTraits.__init__(self, *args, **kwargs)
 
 
-class ProtocolRules(OrderedDict):
+class ProtocolRules(dict):
     """
     Container for associating sets of analysis rules with specific acquisition
     protocols
     """
-    def __init__(self, posting_thread_queue_size=5):
-        """[summary]
+    def __init__(self, spool_controller, posting_thread_queue_size=5):
+        """
         Parameters
         ----------
         posting_thread_queue_size : int, optional
@@ -73,13 +73,63 @@ class ProtocolRules(OrderedDict):
         """
         import queue
 
-        OrderedDict.__init__(self)
-
+        dict.__init__(self)
+        self.active = True
+        self._spool_controller = spool_controller
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
+        self._updated = dispatch.Signal()
         
         self['default'] = RuleChain()
 
-        self._updated = dispatch.Signal()
+        self._spool_controller.onSpoolStart.connect(self.on_spool_start)
+        self._spool_controller.onSpoolStop.connect(self.on_spool_stop)
+    
+    def on_spool_start(self, **kwargs):
+        self.on_spool_event('spool start')
+    
+    def on_spool_stop(self, **kwargs):
+        self.on_spool_event('spool stop')
+    
+    def on_spool_event(self, event):
+        """
+        pipe input series name into rule chain and post them all
+        Parameters
+        ----------
+        kwargs: dict
+            present here to allow us to call this method through a dispatch.Signal.send
+        """
+        if not self.active:
+            logger.info('inactive, check "active" to turn on auto analysis')
+            return
+        
+        prot_filename = self._spool_controller.spooler.protocol.filename
+        prot_filename = '' if prot_filename is None else prot_filename
+        protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
+        logger.info('protocol name : %s' % protocol_name)
+
+        try:
+            rule_factory_chain = self[protocol_name]
+        except KeyError:
+            rule_factory_chain = self['default']
+        
+        if rule_factory_chain.post_on != event:
+            # not the right trigger for this protocol
+            return
+        
+        if len(rule_factory_chain) == 0:
+            logger.info('no rules in chain')
+            return
+        
+        # set the context based on the input series
+        series_uri = self._spool_controller.spooler.getURL()
+        spool_dir, series_stub = posixpath.split(series_uri)
+        series_stub = posixpath.splitext(series_stub)[0]
+        context = {'spool_dir': spool_dir, 'series_stub': series_stub,
+                   'seriesName': series_uri, 'inputs': {'input': [series_uri]},
+                   'output_dir': posixpath.join(spool_dir, 'analysis')}
+
+        # rule chain is already linked, add context and push
+        rule_factory_chain.rule_factories[0].get_rule(context=context).push()
 
 
 class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
@@ -238,9 +288,6 @@ class ChainedAnalysisPage(wx.Panel):
             [description]
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
             [description]
-        spool_controller : PYME.Acquire.SpoolController.SpoolController
-            microscope's spool controller instance, so we can launch on spool
-            start/stop
         default_pairings : dict
             protocol keys with lists of RuleFactorys as values to prepopulate
             panel on start up
@@ -249,7 +296,6 @@ class ChainedAnalysisPage(wx.Panel):
         self._protocol_rules = protocol_rules
         self._selected_protocol = list(protocol_rules.keys())[0]
         self._recipe_manager = recipe_manager
-        self._spool_controller = spool_controller
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -292,16 +338,23 @@ class ChainedAnalysisPage(wx.Panel):
         self._protocol_rules._updated.connect(self.update)
     
     def OnClear(self, wx_event=None):
-        raise NotImplementedError
+        self._protocol_rules[self._selected_protocol] = RuleChain()
+        self._protocol_rules._updated.send(self)
 
     def OnAddRecipe(self, wx_event=None):
         raise NotImplementedError
 
     def OnProtocolChoice(self, wx_event=None):
-        raise NotImplementedError
+        protocol_filename = self.c_protocol.GetStringSelection()
+        protocol = os.path.splitext(os.path.split(protocol_filename)[-1])[0]
+        if protocol not in self._protocol_rules.keys():
+            self._protocol_rules[protocol] = RuleChain()
+            self._protocol_rules._updated.send(self)
+        self._selected_protocol = protocol
 
     def OnPostChoice(self, wx_event=None):
-        raise NotImplementedError
+        self._protocol_rules[self._selected_protocol].post_on = self.c_post.GetStringSelection()
+        self._protocol_rules._updated.send(self)
         
     def _set_text_styling(self):
         from wx import stc
@@ -442,8 +495,7 @@ class ChainedAnalysisPage(wx.Panel):
 
 class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def __init__(self, parent, protocol_rules, recipe_manager, 
-                 localization_settings, spool_controller, 
-                 default_pairings=None):
+                 localization_settings, default_pairings=None):
         """
 
         Parameters
@@ -453,9 +505,6 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
             [description]
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
             [description]
-        spool_controller : PYME.Acquire.SpoolController.SpoolController
-            microscope's spool controller instance, so we can launch on spool
-            start/stop
         default_pairings : dict
             protocol keys with lists of RuleFactorys as values to prepopulate
             panel on start up
@@ -465,7 +514,6 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         self._selected_protocol = list(protocol_rules.keys())[0]
         self._recipe_manager = recipe_manager
         self._localization_settings = localization_settings
-        self._spool_controller = spool_controller
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -515,8 +563,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         pass
 
 class ChainedAnalysisPanel(wx.Panel):
-    def __init__(self, parent, protocol_rules, spool_controller, 
-                 default_pairings=None):
+    def __init__(self, parent, protocol_rules, default_pairings=None):
         """
 
         Parameters
@@ -526,9 +573,6 @@ class ChainedAnalysisPanel(wx.Panel):
             [description]
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
             [description]
-        spool_controller : PYME.Acquire.SpoolController.SpoolController
-            microscope's spool controller instance, so we can launch on spool
-            start/stop
         default_pairings : dict
             protocol keys with lists of RuleFactorys as values to prepopulate
             panel on start up
@@ -536,7 +580,6 @@ class ChainedAnalysisPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
 
         self._protocol_rules = protocol_rules
-        self._spool_controller = spool_controller
 
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -591,42 +634,6 @@ class ChainedAnalysisPanel(wx.Panel):
     def OnToggleActive(self, wx_event):
         self.active = self.checkbox_active.GetValue()
 
-    def post_rules(self, **kwargs):
-        """
-        pipe input series name into rule chain and post them all
-        Parameters
-        ----------
-        kwargs: dict
-            present here to allow us to call this method through a dispatch.Signal.send
-        """
-        if not self.active:
-            logger.info('inactive, check "active" to turn on auto analysis')
-            return
-        prot_filename = self._spool_controller.spooler.protocol.filename
-        prot_filename = '' if prot_filename is None else prot_filename
-        protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
-        logger.info('protocol name : %s' % protocol_name)
-
-        try:
-            rule_factory_chain = self._protocol_rules[protocol_name]
-        except KeyError:
-            rule_factory_chain = self._protocol_rules['default']
-        
-        if len(rule_factory_chain) == 0:
-            logger.info('no rules in chain')
-            return
-        
-        # set the context based on the input series
-        series_uri = self._spool_controller.spooler.getURL()
-        spool_dir, series_stub = posixpath.split(series_uri)
-        series_stub = posixpath.splitext(series_stub)[0]
-        context = {'spool_dir': spool_dir, 'series_stub': series_stub,
-                   'seriesName': series_uri, 'inputs': {'input': [series_uri]},
-                   'output_dir': posixpath.join(spool_dir, 'analysis')}
-
-        # rule chain is already linked, add context and push
-        rule_factory_chain.rule_factories[0].get_rule(context=context).push()
-
     @staticmethod
     def plug(main_frame, scope, default_pairings=None):
         """
@@ -643,13 +650,12 @@ class ChainedAnalysisPanel(wx.Panel):
         """
         from PYME.recipes.recipeGui import RuleRecipeView, RuleRecipeManager
 
-        scope.protocol_rules = ProtocolRules()
+        scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()
 
         main_frame.chained_analysis_page = ChainedAnalysisPage(main_frame, 
                                                                scope.protocol_rules,
                                                                scope._recipe_manager,
-                                                               scope.spoolController,
                                                                default_pairings)
         
         scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
@@ -661,15 +667,13 @@ class ChainedAnalysisPanel(wx.Panel):
 
         # add this panel
         chained_analysis = ChainedAnalysisPanel(main_frame, scope.protocol_rules,
-                                                scope.spoolController,
                                                 default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
                                     True))
 
 
 class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
-    def __init__(self, wx_parent, protocol_rules, spool_controller, 
-                 default_pairings=None):
+    def __init__(self, wx_parent, protocol_rules, default_pairings=None):
         """
         Parameters
         ----------
@@ -681,7 +685,6 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
             prepopulate panel on start up. By default, None
         """
         ChainedAnalysisPanel.__init__(self, wx_parent, protocol_rules, 
-                                      spool_controller, 
                                       default_pairings=None)
 
     # def OnToggleLiveView(self, wx_event=None):
@@ -720,7 +723,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         from PYME.recipes.recipeGui import RuleRecipeView, RuleRecipeManager
         from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings, LocalizationSettingsPanel
 
-        scope.protocol_rules = ProtocolRules()
+        scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()
         scope._localization_settings = AnalysisSettings()
 
@@ -728,7 +731,6 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
                                                                    scope.protocol_rules,
                                                                    scope._recipe_manager,
                                                                    scope._localization_settings,
-                                                                   scope.spoolController,
                                                                    default_pairings)
         
         scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
@@ -745,7 +747,6 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         # add this panel
         chained_analysis = SMLMChainedAnalysisPanel(main_frame, 
                                                     scope.protocol_rules,
-                                                    scope.spoolController,
                                                     default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
                                     True))
