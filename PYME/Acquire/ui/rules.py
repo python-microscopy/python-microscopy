@@ -171,19 +171,14 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
         -------
         str : Returns string of column 'col' for item 'item'
         """
-        try:
-            if col == 0:
-                return list(self._protocol_rules.keys())[item]
-            if col == 1:
-                chains = list(self._protocol_rules.rule_factories.values())
-                return str(len(chains[item]))
-            if col == 2:
-                chains = list(self._protocol_rules.rule_factories.values())
-                return chains[item].post_on
-        except:
-            return ''
-        else:
-            return ''
+        if col == 0:
+            return list(self._protocol_rules.keys())[item]
+        if col == 1:
+            chains = list(self._protocol_rules.values())
+            return str(len(chains[item].rule_factories))
+        if col == 2:
+            chains = list(self._protocol_rules.values())
+            return chains[item].post_on
 
     def update_list(self, sender=None, **kwargs):
         self.SetItemCount(len(self._protocol_rules.keys()))
