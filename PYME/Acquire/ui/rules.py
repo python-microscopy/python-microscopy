@@ -58,10 +58,14 @@ class RuleChain(HasTraits):
         HasTraits.__init__(self, *args, **kwargs)
 
 
-class ProtocolRules(dict):
+class ProtocolRules(OrderedDict):
     """
     Container for associating sets of analysis rules with specific acquisition
     protocols
+
+    Notes
+    -----
+    use ordered dict for reproducibility with listctrl displays
     """
     def __init__(self, spool_controller, posting_thread_queue_size=5):
         """
@@ -73,7 +77,7 @@ class ProtocolRules(dict):
         """
         import queue
 
-        dict.__init__(self)
+        OrderedDict.__init__(self)
         self.active = True
         self._spool_controller = spool_controller
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
@@ -230,6 +234,8 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
         self.ax.cla()
 
         rule_factories = self.parent.rule_chain.rule_factories
+        if len(rule_factories) < 1:
+            return
         width = 1  # size of tile to draw
         height = 0.5
         nodes_x = np.arange(0, len(rule_factories) * 1.5 * width, 1.5 * width)
@@ -346,15 +352,20 @@ class ChainedAnalysisPage(wx.Panel):
         self._protocol_rules._updated.send(self)
 
     def OnAddRecipe(self, wx_event=None):
-        raise NotImplementedError
+        self._recipe_manager.OnAddRecipeRule()
 
     def OnProtocolChoice(self, wx_event=None):
         protocol_filename = self.c_protocol.GetStringSelection()
         protocol = os.path.splitext(os.path.split(protocol_filename)[-1])[0]
+        self.select_rule_chain(protocol)
+    
+    def select_rule_chain(self, protocol='default'):
         if protocol not in self._protocol_rules.keys():
             self._protocol_rules[protocol] = RuleChain()
             self._protocol_rules._updated.send(self)
         self._selected_protocol = protocol
+        # force a redraw, even though we might just have done so if we added
+        self.rule_plot.draw()
 
     def OnPostChoice(self, wx_event=None):
         self._protocol_rules[self._selected_protocol].post_on = self.c_post.GetStringSelection()
@@ -499,7 +510,7 @@ class ChainedAnalysisPage(wx.Panel):
 
 class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def __init__(self, parent, protocol_rules, recipe_manager, 
-                 localization_settings, default_pairings=None):
+                 localization_panel, default_pairings=None):
         """
 
         Parameters
@@ -517,7 +528,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         self._protocol_rules = protocol_rules
         self._selected_protocol = list(protocol_rules.keys())[0]
         self._recipe_manager = recipe_manager
-        self._localization_settings = localization_settings
+        self._localization_panel = localization_panel
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -564,10 +575,11 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         self._protocol_rules._updated.connect(self.update)
     
     def OnAddLocalization(self, wx_event=None):
-        pass
+        self._localization_panel.OnAddLocalizationRule()
 
 class ChainedAnalysisPanel(wx.Panel):
-    def __init__(self, parent, protocol_rules, default_pairings=None):
+    def __init__(self, parent, protocol_rules, chained_analysis_page,
+                 default_pairings=None):
         """
 
         Parameters
@@ -584,6 +596,7 @@ class ChainedAnalysisPanel(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
 
         self._protocol_rules = protocol_rules
+        self._page = chained_analysis_page
 
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         h_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -632,10 +645,14 @@ class ChainedAnalysisPanel(wx.Panel):
         self._protocol_rules_list.delete_rule_chains()
     
     def OnEditRuleChain(self, wx_event=None):
-        raise NotImplementedError()
+        ind = self._protocol_rules_list.get_selected_items()[0]
+        protocol = self._protocol_rules_list.GetItemText(ind, col=0)
+        self._page.select_rule_chain(protocol)
+        # FIXME - select that tab
+        self.parent.SetSelection(self._page)
 
     def OnToggleActive(self, wx_event):
-        self.self._protocol_rules.active = self.checkbox_active.GetValue()
+        self._protocol_rules.active = self.checkbox_active.GetValue()
 
     @staticmethod
     def plug(main_frame, scope, default_pairings=None):
@@ -669,14 +686,17 @@ class ChainedAnalysisPanel(wx.Panel):
                            caption='Chained Analysis')
 
         # add this panel
-        chained_analysis = ChainedAnalysisPanel(main_frame, scope.protocol_rules,
+        chained_analysis = ChainedAnalysisPanel(main_frame, 
+                                                scope.protocol_rules,
+                                                main_frame.chained_analysis_page,
                                                 default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
                                     True))
 
 
 class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
-    def __init__(self, wx_parent, protocol_rules, default_pairings=None):
+    def __init__(self, wx_parent, protocol_rules, chained_analysis_page,
+                 default_pairings=None):
         """
         Parameters
         ----------
@@ -688,7 +708,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
             prepopulate panel on start up. By default, None
         """
         ChainedAnalysisPanel.__init__(self, wx_parent, protocol_rules, 
-                                      default_pairings=None)
+                                      chained_analysis_page, default_pairings)
 
     # def OnToggleLiveView(self, wx_event=None):
     #     if self.checkbox_view_live.GetValue() and 0 in self._rule_list_ctrl.localization_rule_indices:
@@ -730,17 +750,18 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         scope._recipe_manager = RuleRecipeManager()
         scope._localization_settings = AnalysisSettings()
 
+        main_frame.localization_settings = LocalizationSettingsPanel(main_frame,
+                                                                     scope._localization_settings,
+                                                                     scope._localization_settings.onMetadataChanged)
+
         main_frame.chained_analysis_page = SMLMChainedAnalysisPage(main_frame, 
                                                                    scope.protocol_rules,
                                                                    scope._recipe_manager,
-                                                                   scope._localization_settings,
+                                                                   main_frame.localization_settings,
                                                                    default_pairings)
         
         scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
         main_frame.recipe_view = RuleRecipeView(main_frame, scope._recipe_manager)
-        main_frame.localization_settings = LocalizationSettingsPanel(main_frame,
-                                                                     scope._localization_settings,
-                                                                     scope._localization_settings.onMetadataChanged)
         main_frame.localization_settings.chained_analysis_page = main_frame.chained_analysis_page
         main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
         main_frame.AddPage(page=main_frame.localization_settings, select=False, caption='Localization')
@@ -750,6 +771,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         # add this panel
         chained_analysis = SMLMChainedAnalysisPanel(main_frame, 
                                                     scope.protocol_rules,
+                                                    main_frame.chained_analysis_page,
                                                     default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
                                     True))
