@@ -584,7 +584,8 @@ class ChainedAnalysisPanel(wx.Panel):
 
         Parameters
         ----------
-        parent : wx something
+        parent : PYME.ui.AUIFrame.AUIFrame
+            should be the 'main frame'
         protocol_rules : dict
             [description]
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
@@ -594,7 +595,7 @@ class ChainedAnalysisPanel(wx.Panel):
             panel on start up
         """
         wx.Panel.__init__(self, parent, -1)
-
+        self.parent = parent
         self._protocol_rules = protocol_rules
         self._page = chained_analysis_page
 
@@ -648,8 +649,7 @@ class ChainedAnalysisPanel(wx.Panel):
         ind = self._protocol_rules_list.get_selected_items()[0]
         protocol = self._protocol_rules_list.GetItemText(ind, col=0)
         self._page.select_rule_chain(protocol)
-        # FIXME - select that tab
-        self.parent.SetSelection(self._page)
+        self.parent.select_page_by_name('Chained Analysis')
 
     def OnToggleActive(self, wx_event):
         self._protocol_rules.active = self.checkbox_active.GetValue()

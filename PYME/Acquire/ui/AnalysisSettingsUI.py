@@ -178,7 +178,7 @@ class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
 
     
     def OnAddLocalizationRule(self, wx_event=None):
-        from PYME.cluster.rules import LocalisationRuleFactory as LocalizaitonRuleFactory
+        from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
         from PYME.Acquire.ui.rules import get_rule_tile
         from PYME.IO.MetaDataHandler import DictMDHandler
         if self.chained_analysis_page is None:
@@ -186,7 +186,7 @@ class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
             return
 
         mdh = DictMDHandler(self.localization_mdh)
-        loc_rule = get_rule_tile(LocalizaitonRuleFactory)(analysisMetadata=mdh)
+        loc_rule = get_rule_tile(LocalizationRuleFactory)(analysisMetadata=mdh)
         self.chained_analysis_page.add_tile(loc_rule)
     
 

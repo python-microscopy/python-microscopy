@@ -717,7 +717,7 @@ class RuleRecipeManager(RecipeManager):
         RecipeManager.__init__(self)
         self.chained_analysis_page = chained_analysis_page
 
-    def OnAddRecipeRule(self, wx_event):
+    def OnAddRecipeRule(self, wx_event=None):
         from PYME.cluster.rules import RecipeRuleFactory
         from PYME.Acquire.ui.rules import get_rule_tile
         if self.chained_analysis_page is None:
