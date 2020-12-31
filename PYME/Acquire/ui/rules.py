@@ -10,7 +10,6 @@ import posixpath
 import logging
 from PYME.contrib import dispatch, wxPlotPanel
 from PYME.recipes.traits import HasTraits, Enum, Float, CStr
-from PYME.Acquire.protocol import get_protocol_list
 import textwrap
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +17,14 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 POST_CHOICES = ['off', 'spool start', 'spool stop']
+
+def get_protocol_list():
+    """version of PYME.Acquire.protocol.get_protocol_list which uses 'default'
+    instead of '<None>' and drops all '.py' extensions
+    """
+    from PYME.Acquire.protocol import _get_protocol_dict
+    protocol_list = ['default', ] + sorted(list(_get_protocol_dict().keys()))
+    return [os.path.splitext(p)[0] for p in protocol_list]
 
 class RuleTile(HasTraits):
     task_timeout = Float(60 * 10)
@@ -188,6 +195,8 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
     def delete_rule_chains(self, indices=None):
         selected_indices = self.get_selected_items() if indices is None else indices
 
+        # FIXME - should call a function elsewhere which can additionally select
+        # default in the chained analysis page, etc.
         for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
             if self.GetItemText(ind, col=0) == 'default':
                 logger.error('Cannot delete the default rule chain')
@@ -350,9 +359,7 @@ class ChainedAnalysisPage(wx.Panel):
         self._recipe_manager.OnAddRecipeRule()
 
     def OnProtocolChoice(self, wx_event=None):
-        protocol_filename = self.c_protocol.GetStringSelection()
-        protocol = os.path.splitext(os.path.split(protocol_filename)[-1])[0]
-        self.select_rule_chain(protocol)
+        self.select_rule_chain(self.c_protocol.GetStringSelection())
     
     def select_rule_chain(self, protocol='default'):
         if protocol not in self._protocol_rules.keys():
