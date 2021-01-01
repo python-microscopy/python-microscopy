@@ -195,8 +195,6 @@ class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
     def delete_rule_chains(self, indices=None):
         selected_indices = self.get_selected_items() if indices is None else indices
 
-        # FIXME - should call a function elsewhere which can additionally select
-        # default in the chained analysis page, etc.
         for ind in reversed(sorted(selected_indices)):  # delete in reverse order so we can pop without changing indices
             if self.GetItemText(ind, col=0) == 'default':
                 logger.error('Cannot delete the default rule chain')
@@ -239,6 +237,7 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
 
         rule_factories = self.parent.rule_chain.rule_factories
         if len(rule_factories) < 1:
+            self.canvas.draw()
             return
         width = 1  # size of tile to draw
         height = 0.5
@@ -367,7 +366,7 @@ class ChainedAnalysisPage(wx.Panel):
             self._protocol_rules._updated.send(self)
         self._selected_protocol = protocol
         # force a redraw, even though we might just have done so if we added
-        self.rule_plot.draw()
+        self.update()
 
     def OnPostChoice(self, wx_event=None):
         self._protocol_rules[self._selected_protocol].post_on = self.c_post.GetStringSelection()
@@ -645,6 +644,10 @@ class ChainedAnalysisPanel(wx.Panel):
         self._protocol_rules._updated.send(self)
 
     def OnRemoveProtocolRule(self, wx_event=None):
+        # make sure that we reset the chained analysis page just in case
+        # we deleted a rule which was active
+        self._page.c_protocol.SetStringSelection('default')
+        self._page.OnProtocolChoice()
         self._protocol_rules_list.delete_rule_chains()
     
     def OnEditRuleChain(self, wx_event=None):
