@@ -84,7 +84,7 @@ class SupertileDataSource(BaseDataSource):
         level = int(qp.get('level', [0])[0])
         stride = int(qp.get('stride', [3])[0])
         overlap = int(qp.get('overlap', [1])[0])        
-        p = ImagePyramid.load_exiting(tile_base)
+        p = ImagePyramid.load_existing(tile_base)
         
         return SupertileDataSource(p, level, stride, overlap)
 

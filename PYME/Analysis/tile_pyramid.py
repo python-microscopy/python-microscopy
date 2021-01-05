@@ -333,7 +333,7 @@ class ImagePyramid(object):
         self._occ = backend(base_dir=self.base_dir, suff='occ')
 
     @classmethod
-    def load_exiting(cls, storage_directory):
+    def load_existing(cls, storage_directory):
         """ loads an ImagePyramid from a given directory.
 
         Parameters
