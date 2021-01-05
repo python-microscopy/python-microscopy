@@ -350,7 +350,7 @@ class ImagePyramid(object):
         mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
 
         return ImagePyramid(
-            tile_base,
+            storage_directory,
             pyramid_tile_size=mdh['Pyramid.TileSize'],
             mdh=mdh,
             n_tiles_x=mdh["Pyramid.NTilesX"],
