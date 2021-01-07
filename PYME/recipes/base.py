@@ -468,7 +468,6 @@ class OutputModule(ModuleBase):
 
     def save(self, namespace, context={}):
         """
-        Save recipes output(s) to CSV
 
         Parameters
         ----------
