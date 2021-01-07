@@ -24,7 +24,7 @@ from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, F
 
 from PYME.IO.image import ImageStack
 import numpy as np
-
+from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
@@ -461,12 +461,33 @@ class OutputModule(ModuleBase):
 
     def execute(self, namespace):
         """
-        Output modules be definition do nothing when executed - they act as a sink and implement a save method instead.
+        Output modules by definition do nothing when executed - they act as a sink and implement a save method instead.
 
         """
         pass
 
-from PYME.contrib import dispatch
+    def save(self, namespace, context={}):
+        """
+        Save recipes output(s) to CSV
+
+        Parameters
+        ----------
+        namespace : dict
+            The recipe namespace
+        context : dict
+            Information about the source file to allow pattern substitution to
+            generate the output name. At least 'basedir' (which is the fully-
+            resolved directory name in which the input file resides) and 
+            'file_stub' (which is the filename without any extension) should be
+            resolved.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError
+
+
 class ModuleCollection(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
