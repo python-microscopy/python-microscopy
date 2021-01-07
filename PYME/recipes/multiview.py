@@ -318,6 +318,8 @@ class CalibrateShifts(ModuleBase):
         # Generate raw shift vectors (map of displacements between channels) for each channel
         mol_list = np.unique(clump_id)
         n_mols = len(mol_list)
+        if n_mols < 3:
+            raise ValueError('Need at 3 clusters containing points from each channel - try increasing search radius')
 
         dx = np.zeros((n_chan - 1, n_mols))
         dy = np.zeros_like(dx)
