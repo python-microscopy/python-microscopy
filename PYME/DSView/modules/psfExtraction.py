@@ -251,6 +251,7 @@ class PsfExtractor(Plugin):
             import matplotlib.pyplot as plt
             
             x,y,z = self.PSFLocs[0]
+            x, y = int(x), int(y)  # int cast for indexing
             
             z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
             z_ -= z_.mean()
