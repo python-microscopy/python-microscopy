@@ -12,18 +12,80 @@ import socket
 import threading
 import requests
 import posixpath
+import sys
+import numpy as np
+
+from PYME import config
 
 from multiprocessing.pool import ThreadPool
 
 from PYME.misc.computerName import GetComputerName
 local_computer_name = GetComputerName()
-from PYME.IO.clusterIO import _LimitedSizeDict, get_ns #TODO - move elsewhere to avoid circular import
 
 import logging
 logger = logging.getLogger(__name__)
 
 SERVICE_CACHE_LIFETIME = 1 #seconds
 DIR_CACHE_TIME = 1 #seconds
+
+import PYME.misc.pyme_zeroconf as pzc
+from PYME.misc import hybrid_ns
+
+_ns = None
+_ns_lock = threading.Lock()
+
+if config.get('clusterIO-hybridns', True):
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3 * np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = hybrid_ns.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+        
+        return _ns
+else:
+    def get_ns():
+        global _ns
+        with _ns_lock:
+            if _ns is None:
+                #stagger query times
+                time.sleep(3 * np.random.rand())
+                #_ns = pzc.getNS('_pyme-http')
+                _ns = pzc.getNS('_pyme-http')
+                #wait for replies
+                time.sleep(5)
+        
+        return _ns
+
+if not 'sphinx' in sys.modules.keys():
+    # do not start zeroconf if running under sphinx
+    # otherwise, spin up a thread to go and find the ns and get on with the rest of our initialization
+    
+    threading.Thread(target=get_ns).start()
+
+from collections import OrderedDict
+
+class _LimitedSizeDict(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+
+        self._lock = threading.Lock()
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        with self._lock:
+            OrderedDict.__setitem__(self, key, value)
+            self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
 
 class DirectoryInfoManager(object):
     def __init__(self, ns=None, serverfilter=''):
@@ -43,6 +105,8 @@ class DirectoryInfoManager(object):
         #use one session for each server (to allow http keep-alives)
         self._sessions = {}
         self._pool = ThreadPool(10)
+        
+        self._list_dir_lock = threading.Lock()
 
     def _getSession(self, url):
         if not isinstance(url, bytes):
@@ -89,6 +153,10 @@ class DirectoryInfoManager(object):
                             self._cached_servers.append(serverurl)
             
             self._service_expiry_time = t + SERVICE_CACHE_LIFETIME
+        
+        if len(self._cached_servers) < 1:
+            # check that there is a cluster running
+            raise IOError('No data servers found, is the cluster running?')
         
         return self._cached_servers
             
@@ -165,7 +233,10 @@ class DirectoryInfoManager(object):
             dirname = dirname + '/'
   
         urls = [s + dirname for s in self.dataservers]
-        listings = self._pool.map(self.list_single_node_dir, urls)
+        
+        with self._list_dir_lock:
+            # TODO - is lock needed?
+            listings = self._pool.map(self.list_single_node_dir, urls)
 
         for dirL, dt in listings:
             cl.aggregate_dirlisting(dirlist, dirL)
@@ -295,7 +366,9 @@ class DirectoryInfoManager(object):
 
         """
         urls = [s + '__glob?pattern=%s' % pattern for s in self.dataservers]
-        matches = self._pool.map(self._cglob, urls)
+        
+        with self._list_dir_lock:
+            matches = self._pool.map(self._cglob, urls)
     
         #concatenate lists
         matches = sum(matches, [])
@@ -325,7 +398,7 @@ class DirectoryInfoManager(object):
         """
         from . import clusterListing as cl
         t = time.time()
-        self._locateCache[filename] = ([(url, .1), ], t1)
+        self._locateCache[filename] = ([(url, .1), ], t)
         try:
             dirurl, fn = posixpath.split(url)
             dirurl = dirurl + '/'
