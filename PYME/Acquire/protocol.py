@@ -217,8 +217,10 @@ class ZStackTaskListProtocol(TaskListProtocol):
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
         spooler.md.setEntry('Protocol.ZStack', True)
         
-        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
-        eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
+        # Starting move relocated to execute after other -1 tasks as workaround for HTSMS system (see issue 766)
+        # TODO - revisit the move
+        #scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
+        #eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
 
         TaskListProtocol.Init(self,spooler)
 
@@ -232,6 +234,14 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
+        
+        if frameNum == -1:
+            # Make move to initial position **after** all other -1 setup tasks have been performed (in super-class
+            # OnFrame() call above).
+            # This is currently required as a work-around on the HTSMS system which needs to unlock the focus
+            # lock before changing focus (issue 766).
+            scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
+            eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (-1, self.zPoss[self.pos]))
 
     def OnFinish(self):
         #return piezo to start position
