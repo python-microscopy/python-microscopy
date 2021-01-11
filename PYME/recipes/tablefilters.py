@@ -181,16 +181,16 @@ class RandomSubset(ModuleBase):
     """Select a random subset of rows from a table"""
     input = Input('input')
     output = Output('output')
-    n_to_select = Int(100)
+    num_to_select = Int(100)
     require_at_least_n = Bool(False)
     
     def execute(self, namespace):
         data = namespace[self.input]
         
         if self.require_at_least_n:
-            n_to_select = self.n_to_select
+            n_to_select = self.num_to_select
         else:
-            n_to_select = min(len(data), self.n_to_select)
+            n_to_select = min(len(data), self.num_to_select)
         
         out = tabular.RandomSelectionFilter(data, num_Samples=n_to_select)
         
