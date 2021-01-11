@@ -9,6 +9,11 @@ from PYME.IO import tabular
 import logging
 logger = logging.getLogger(__name__)
 
+def _ensure_output_directory(filename):
+    dirname = os.path.dirname(filename)
+    if not os.path.exists(dirname):
+        os.path.makedirs(dirname)
+
 @register_module('CSVOutput')
 class CSVOutput(OutputModule):
     """
@@ -75,7 +80,8 @@ class CSVOutput(OutputModule):
             clusterResults.fileResults('pyme-cluster://_aggregate_csv/' + out_filename.lstrip('/'), v.toDataFrame())
         else:
             out_filename = self._schemafy_filename(out_filename)
-            os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+            _ensure_output_directory(out_filename)
+            
             if not isinstance(v, pd.DataFrame):
                 v = v.toDataFrame()
                 
@@ -135,7 +141,8 @@ class XLSOutput(OutputModule):
         """
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
-        os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+        _ensure_output_directory(out_filename)
+        
         v = namespace[self.inputName]
         v.toDataFrame.to_excel(out_filename)
 
@@ -196,7 +203,8 @@ class ImageOutput(OutputModule):
         """
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
-        os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+        _ensure_output_directory(out_filename)
+        
         v = self.generate(namespace)
         v.Save(out_filename)
 
@@ -267,7 +275,8 @@ class RGBImageOutput(OutputModule):
         from PIL import Image
         
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
-        os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+        _ensure_output_directory(out_filename)
+        
         v = self.generate(namespace)
         
         Image.fromarray(v, mode='RGB').save(out_filename)
@@ -339,7 +348,8 @@ class HDFOutput(OutputModule):
                 #NOTE - aggregation does not support metadata
         else:
             out_filename = self._schemafy_filename(out_filename)
-            os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+            _ensure_output_directory(out_filename)
+            
             for name, h5_name in self.inputVariables.items():
                 v = namespace[name]
                 v.to_hdf(out_filename, tablename=h5_name, metadata=getattr(v, 'mdh', None))
@@ -427,7 +437,7 @@ class ReportOutput(OutputModule):
         import codecs
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
-        os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+        _ensure_output_directory(out_filename)
 
         with open(out_filename, 'wb') as f:
             f.write(self.generate(namespace, recipe_context=context).encode('utf-8'))
@@ -497,7 +507,7 @@ class ReportForEachOutput(OutputModule):
 
         for i, c in enumerate(v):
             out_filename = self._schemafy_filename(self.filePattern.format(num=i, **context))
-            os.makedirs(os.path.split(out_filename)[0], exist_ok=True)
+            _ensure_output_directory(out_filename)
             
             with open(out_filename, 'w') as f:
                 f.write(template.render(data=c, img=img))
