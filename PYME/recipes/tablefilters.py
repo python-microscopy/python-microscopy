@@ -179,13 +179,13 @@ class SelectTableColumns(ModuleBase):
 @register_module('RandomSubset')
 class RandomSubset(ModuleBase):
     """Select a random subset of rows from a table"""
-    input_name = Input('input')
-    output_name = Output('output')
+    input = Input('input')
+    output = Output('output')
     n_to_select = Int(100)
     require_at_least_n = Bool(False)
     
     def execute(self, namespace):
-        data = namespace[self.input_name]
+        data = namespace[self.input]
         
         if self.require_at_least_n:
             n_to_select = self.n_to_select
@@ -199,4 +199,4 @@ class RandomSubset(ModuleBase):
         except AttributeError:
             pass
 
-        namespace[self.output_name] = out
+        namespace[self.output] = out
