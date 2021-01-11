@@ -227,6 +227,7 @@ def _processEvents(ds, events, mdh):
             if b'PiezoOnTarget' in evKeyNames:
                 # Sometimes we also emit PiezoOnTarget events with the actual piezo position, rather than where we
                 # told it to go, use these preferentially
+                # TODO - deprecate in favour of, e.g. 'FocusOnTarget' events which are offset-corrected - see issue 766
                 from PYME.Analysis import piezo_movement_correction
                 spoofed_evts =  piezo_movement_correction.spoof_focus_events_from_ontarget(events, mdh)
                 zm = piecewiseMapping.GeneratePMFromEventList(spoofed_evts, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
