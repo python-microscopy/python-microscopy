@@ -500,7 +500,8 @@ class ReportForEachOutput(OutputModule):
         -------
 
         """
-        template = env.get_template(self.template)
+        from PYME import reports
+        template = reports.env.get_template(self.template)
 
         v = namespace[self.inputName]
         img = namespace[self.inputImage]
