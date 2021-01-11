@@ -26,7 +26,7 @@ class OffScreenHandler(object):
         self._viewport_size = viewport_size
         self._mode = mode
         self._snap = None
-        (self._frame_buffer_object, self._render_buffer) = self.setup_off_screen()
+        self._frame_buffer_object, self._render_buffer, self._depth_buffer = self.setup_off_screen()
 
     def __enter__(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer_object)
@@ -51,6 +51,7 @@ class OffScreenHandler(object):
     def __del__(self):
         glDeleteFramebuffers(1, self._frame_buffer_object)
         glDeleteRenderbuffers(1, self._render_buffer)
+        glDeleteRenderbuffers(1, self._depth_buffer)
 
     def get_viewport_size(self):
         return self.get_viewport_size()
@@ -59,15 +60,32 @@ class OffScreenHandler(object):
         return self._snap
 
     def setup_off_screen(self):
-        frame_buffer_object = glGenFramebuffers(1)
+        if any([self._viewport_size[ind] >= GL_MAX_RENDERBUFFER_SIZE for ind in range(2)]):
+            raise RuntimeError('Both width and height (%d, %d) must be smaller than GL_MAX_RENDERBUFFER_SIZE: %d' % (
+            self._viewport_size[0], self._viewport_size[1], GL_MAX_RENDERBUFFER_SIZE))
+        
+        # Create colour renderbuffer
         render_buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, render_buffer)
-        if any([self._viewport_size[ind] >= GL_MAX_RENDERBUFFER_SIZE for ind in range(2)]):
-            raise RuntimeError('Both width and height (%d, %d) must be smaller than GL_MAX_RENDERBUFFER_SIZE: %d' % (self._viewport_size[0], self._viewport_size[1], GL_MAX_RENDERBUFFER_SIZE))
+              
         if self._mode == GL_RGB:
             glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, self._viewport_size[0], self._viewport_size[1])
         else:
             glRenderbufferStorage(GL_RENDERBUFFER, GL_LUMINANCE, self._viewport_size[0], self._viewport_size[1])
+
+        # create depth buffer
+        depth_buffer = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer)
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, self._viewport_size[0], self._viewport_size[1])
+        
+        # create frame buffer
+        frame_buffer_object = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_object)
+        
+        # attach colour buffer
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, render_buffer)
-        return frame_buffer_object, render_buffer
+        
+        # attach depth buffer
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer)
+        
+        return frame_buffer_object, render_buffer, depth_buffer
