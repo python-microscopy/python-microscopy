@@ -32,7 +32,7 @@ import numpy as np
 
 renderMetadataProviders = []
 
-PASS_THROUGH_KEYS = [
+SAMPLE_MD_KEYS = [
     'Sample.SlideRef',
     'Sample.Creator',
     'Sample.Notes',
@@ -40,8 +40,8 @@ PASS_THROUGH_KEYS = [
     'AcquiringUser'
 ]
 
-def add_pass_through_metadata(old_mdh, new_mdh):
-    pass_through = [k for k in PASS_THROUGH_KEYS if k in old_mdh.keys()]
+def copy_sample_metadata(old_mdh, new_mdh):
+    pass_through = [k for k in SAMPLE_MD_KEYS if k in old_mdh.keys()]
     for k in pass_through:
         new_mdh[k] = old_mdh[k]
 
@@ -184,7 +184,7 @@ class CurrentRenderer:
 
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
-        add_pass_through_metadata(self.pipeline.mdh, mdh)
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
@@ -235,7 +235,7 @@ class ColourRenderer(CurrentRenderer):
     
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
-        add_pass_through_metadata(self.pipeline.mdh, mdh)
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
