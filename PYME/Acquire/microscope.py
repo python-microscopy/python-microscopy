@@ -877,7 +877,43 @@ class microscope(object):
         
         locals.update(scope=self)
         ExecTools.setDefaultNamespace(locals, globals())
-        ExecTools.execFileBG(init_script_name, locals, globals())
+        self._init_thread = ExecTools.execFileBG(init_script_name, locals, globals(), then=self._post_init)
+        
+        return self._init_thread
+        
+    @property
+    def initialized(self):
+        """
+        Checks if the initialisation thread has run (replaces check of initDone flag which needed to be manually set
+        in initialisation script). Semantics are slightly different in that this returns true even if there is an error
+        whist the old way of checking would get forever stuck at the splash screen.
+        
+        Returns
+        -------
+        
+        True if the initialisation script has run, False otherwise
+
+        """
+        try:
+            return not self._init_thread.is_alive()
+        except AttributeError:
+            # don't have and _init_thread yet
+            return False
+        
+    def wait_for_init(self):
+        self._init_thread.join()
+        
+    def _post_init(self):
+        """
+        Called after the init script runs to do stuff based on what hardware is present
+        """
+        
+        if len(self.positioning) > 0:
+            # we have registered piezos => we can do z-stacks
+            from PYME.Acquire import stackSettings
+            
+            # FIXME - this looks like it will create a circular reference
+            self.stackSettings = stackSettings.StackSettings(self)
                 
     def register_piezo(self, piezo, axis_name, multiplier=1, needCamRestart=False, channel=0):
         """
