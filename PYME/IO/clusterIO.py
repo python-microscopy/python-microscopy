@@ -748,7 +748,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=0.5):
     """
     Get a file from the cluster.
     
@@ -813,7 +813,7 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
         try:
             nTries += 1
             s = _getSession(url)
-            r = s.get(url, timeout=.5)
+            r = s.get(url, timeout=timeout)
             haveResult = True
         except (requests.Timeout, requests.ConnectionError):
             # s.get sometimes raises ConnectionError instead of ReadTimeoutError
