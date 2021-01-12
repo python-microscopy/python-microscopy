@@ -163,7 +163,7 @@ class PYMEMainFrame(AUIFrame):
         
 
     def _check_init_done(self):
-        if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+        if self.scope.initialized == True and self._check_init_done in self.time1.WantNotification:
             logger.debug('Backround initialization done')
             self.time1.WantNotification.remove(self._check_init_done)
             

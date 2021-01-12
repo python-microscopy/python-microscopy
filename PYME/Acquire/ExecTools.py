@@ -101,8 +101,10 @@ def execFile(filename, localVars = defLocals, globalVars = defGlobals, then=None
         then()
 
 def execFileBG(filename, localVars = defLocals, globalVars = defGlobals, then=None):
+    t = threading.Thread(target=execFile, args = (filename, localVars, globalVars, then))
+    t.start()
     #return the thread so we can join it ...
-    return threading.Thread(target=execFile, args = (filename, localVars, globalVars, then)).start()
+    return t
 
 def _bginit(name, codeObj):
     global defGlobals

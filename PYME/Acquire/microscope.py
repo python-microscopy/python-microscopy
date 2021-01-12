@@ -882,7 +882,7 @@ class microscope(object):
         return self._init_thread
         
     @property
-    def initialsed(self):
+    def initialized(self):
         """
         Checks if the initialisation thread has run (replaces check of initDone flag which needed to be manually set
         in initialisation script). Semantics are slightly different in that this returns true even if there is an error
