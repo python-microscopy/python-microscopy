@@ -217,7 +217,7 @@ class RandomSubset(ModuleBase):
         if self.strict and (num_to_select > 0.5*n_rows):
             logger.warning('RandomSubset: Selecting %d from %d rows will not be very random' % (self.num_to_select, n_rows))
         
-        out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select)
+        out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select))
         
         try:
             out.mdh = MetaDataHandler.DictMDHandler(data.mdh)
