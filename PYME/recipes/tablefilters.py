@@ -208,13 +208,13 @@ class RandomSubset(ModuleBase):
         
         n_rows = len(data)
         
-        if n_rows < num_to_select:
+        if n_rows < self.num_to_select:
             if self.strict:
                 raise IndexError('Trying to select %d from data with only %d rows. To allow truncation, use strict=False' % (self.num_to_select, n_rows))
             else:
                 logger.info('RandomSubset: Truncating from %d to %d rows as data only has %d rows. To make this an error, use strict=True' % (self.num_to_select, n_rows, n_rows)) 
         
-        if self.strict and (num_to_select > 0.5*n_rows):
+        if self.strict and (self.num_to_select > 0.5*n_rows):
             logger.warning('RandomSubset: Selecting %d from %d rows will not be very random' % (self.num_to_select, n_rows))
         
         out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select))
