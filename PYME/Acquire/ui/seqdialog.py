@@ -205,9 +205,9 @@ class seqPanel(wx.Panel):
 
         #if not ('sa' in self.scope.__dict__):
         #    self.stackSettings = simplesequenceaquisator.SimpleSequenceAquisitor(self.scope.chaninfo, self.scope.cam, self.scope.shutters, self.scope.piezos)
-        if not 'stackSettings' in dir(self.scope):
+        #if not 'stackSettings' in dir(self.scope):
             #inject stack settings into the scope object
-            self.scope.stackSettings = stackSettings.StackSettings(scope)
+        #    self.scope.stackSettings = stackSettings.StackSettings(scope)
         #for pz in self.scope.piezos:
         #    self.chPiezo.Append(pz[2])
             

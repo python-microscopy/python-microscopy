@@ -126,10 +126,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
         logger.debug('Init run, waiting on background threads')
 
     def _wait_for_init_complete(self):
-        while not self.scope.initDone:
-            time.sleep(0.1)
-            
-        #if self.scope.initDone == True:
+        self.scope.wait_for_init()
         logger.debug('Backround initialization done')
         
     def _on_frame_group(self, *args, **kwargs):

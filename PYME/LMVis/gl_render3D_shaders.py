@@ -93,9 +93,9 @@ class LMGLShaderCanvas(GLCanvas):
     def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER]
-        num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
-        if num_antialias_samples > 0:
-            attribute_list.extend([wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, num_antialias_samples])
+        self._num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
+        if self._num_antialias_samples > 0:
+            attribute_list.extend([wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, self._num_antialias_samples])
         
         GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -903,7 +903,7 @@ class LMGLShaderCanvas(GLCanvas):
         #     raise RuntimeError('{} is not a supported format.'.format(mode))
         # img.show()
         self.on_screen = False
-        off_screen_handler = OffScreenHandler(self.view_port_size, mode)
+        off_screen_handler = OffScreenHandler(self.view_port_size, mode, self._num_antialias_samples)
         with off_screen_handler:
             self.OnDraw()
         snap = off_screen_handler.get_snap()

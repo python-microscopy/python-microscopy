@@ -22,11 +22,12 @@ from OpenGL.GL import *
 
 
 class OffScreenHandler(object):
-    def __init__(self, viewport_size, mode):
+    def __init__(self, viewport_size, mode, multisample_buffers=4):
         self._viewport_size = viewport_size
         self._mode = mode
         self._snap = None
-        (self._frame_buffer_object, self._render_buffer) = self.setup_off_screen()
+        self._multisample_buffers=multisample_buffers
+        self._frame_buffer_object, self._render_buffer, self._depth_buffer, self._ss_framebuffer, self._ss_renderbuffer = self.setup_off_screen()
 
     def __enter__(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer_object)
@@ -36,6 +37,20 @@ class OffScreenHandler(object):
         glDrawBuffer(GL_COLOR_ATTACHMENT0)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._multisample_buffers > 1:
+            width, height = self._viewport_size
+            # copy rendered image from MSAA (multi-sample) to normal (single-sample)
+            # NOTE: The multi samples at a pixel in read buffer will be converted
+            # to a single sample at the target pixel in draw buffer.
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, self._frame_buffer_object) # src FBO (multi-sample)
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self._ss_framebuffer)     # dst FBO (single-sample)
+    
+            glBlitFramebuffer(0, 0, width, height,             # src rect
+                      0, 0, width, height,             # dst rect
+                      GL_COLOR_BUFFER_BIT,             # buffer mask
+                      GL_LINEAR)                      # scale filter
+    
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, self._ss_framebuffer)
         glReadBuffer(GL_COLOR_ATTACHMENT0)
         # glNamedFramebufferReadBuffer(self._frame_buffer_object, GL_COLOR_ATTACHMENT0) # only OpenGL 4.5
         self._snap = glReadPixelsf(0, 0, self._viewport_size[0], self._viewport_size[1], self._mode)
@@ -51,6 +66,11 @@ class OffScreenHandler(object):
     def __del__(self):
         glDeleteFramebuffers(1, self._frame_buffer_object)
         glDeleteRenderbuffers(1, self._render_buffer)
+        glDeleteRenderbuffers(1, self._depth_buffer)
+        
+        if not self._ss_framebuffer is None:
+            glDeleteFramebuffers(1, self._ss_framebuffer)
+            glDeleteRenderbuffers(1, self._ss_renderbuffer)
 
     def get_viewport_size(self):
         return self.get_viewport_size()
@@ -59,15 +79,56 @@ class OffScreenHandler(object):
         return self._snap
 
     def setup_off_screen(self):
-        frame_buffer_object = glGenFramebuffers(1)
+        if any([self._viewport_size[ind] >= GL_MAX_RENDERBUFFER_SIZE for ind in range(2)]):
+            raise RuntimeError('Both width and height (%d, %d) must be smaller than GL_MAX_RENDERBUFFER_SIZE: %d' % (
+            self._viewport_size[0], self._viewport_size[1], GL_MAX_RENDERBUFFER_SIZE))
+        
+        # Create colour renderbuffer
         render_buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, render_buffer)
-        if any([self._viewport_size[ind] >= GL_MAX_RENDERBUFFER_SIZE for ind in range(2)]):
-            raise RuntimeError('Both width and height (%d, %d) must be smaller than GL_MAX_RENDERBUFFER_SIZE: %d' % (self._viewport_size[0], self._viewport_size[1], GL_MAX_RENDERBUFFER_SIZE))
-        if self._mode == GL_RGB:
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, self._viewport_size[0], self._viewport_size[1])
+        
+        fmt = GL_RGB8 if (self._mode == GL_RGB) else GL_LUMINANCE
+        
+        if self._multisample_buffers > 1:
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self._multisample_buffers, fmt, self._viewport_size[0], self._viewport_size[1])
         else:
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_LUMINANCE, self._viewport_size[0], self._viewport_size[1])
+            glRenderbufferStorage(GL_RENDERBUFFER, fmt, self._viewport_size[0], self._viewport_size[1])
+
+        # create depth buffer
+        depth_buffer = glGenRenderbuffers(1)
+        glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer)
+        if self._multisample_buffers > 1:
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, self._multisample_buffers, GL_DEPTH_COMPONENT, self._viewport_size[0], self._viewport_size[1])
+        else:
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, self._viewport_size[0], self._viewport_size[1])
+        
+        # create frame buffer
+        frame_buffer_object = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_object)
+        
+        # attach colour buffer
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, render_buffer)
-        return frame_buffer_object, render_buffer
+        
+        # attach depth buffer
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer)
+        
+        
+        #if we are multisampling, also generate a single-sampled buffer for readout
+        ss_framebuffer = None
+        ss_renderbuffer = None
+        if self._multisample_buffers > 1:
+            # Create colour renderbuffer  (don't need depthbuffer as we're just doing a 2D blit)
+            ss_renderbuffer = glGenRenderbuffers(1)
+            glBindRenderbuffer(GL_RENDERBUFFER, ss_renderbuffer)
+    
+            fmt = GL_RGB8 if (self._mode == GL_RGB) else GL_LUMINANCE
+            glRenderbufferStorage(GL_RENDERBUFFER, fmt, self._viewport_size[0], self._viewport_size[1])
+
+            ss_framebuffer = glGenFramebuffers(1)
+            glBindFramebuffer(GL_FRAMEBUFFER, ss_framebuffer)
+
+            # attach colour buffer
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, ss_renderbuffer)
+            
+        
+        return frame_buffer_object, render_buffer, depth_buffer, ss_framebuffer, ss_renderbuffer
