@@ -206,7 +206,7 @@ class taskWorker(object):
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
 
-    def _get_tasks(self, timeout=5):
+    def _get_tasks(self):
         """
 
         Query nodeserver for tasks and place them in the queue for this worker,
@@ -225,7 +225,7 @@ class taskWorker(object):
             # ask the queue for tasks
             print('getting tasks')
             s = clusterIO._getSession(queueURL)
-            r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName, timeout=timeout)
+            r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)
             if r.status_code == 200:
                 resp = r.json()
                 if resp['ok']:
@@ -273,7 +273,7 @@ class taskWorker(object):
             # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
                 # if we don't have any new tasks, sleep to avoid constant polling
-                if not self._get_tasks(timeout=5):
+                if not self._get_tasks():
                     # no queues had tasks
                     time.sleep(0.1)
 
