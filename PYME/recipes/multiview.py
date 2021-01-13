@@ -382,6 +382,7 @@ class CalibrateShifts(ModuleBase):
         namespace[self.output_name].mdh = mdh
 
 
+@register_module('ExtractMultiviewChannel')
 class ExtractMultiviewChannel(ModuleBase):
     """Extract a single multiview channel
 
