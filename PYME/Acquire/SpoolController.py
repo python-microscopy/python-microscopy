@@ -534,11 +534,12 @@ class SpoolController(object):
                 subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
      
     def launch_cluster_analysis(self):
-        from PYME.cluster import HTTPRulePusher
+        from PYME.cluster import rules
         
         seriesName = self.spooler.getURL()
         try:
-            HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+            #HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+            rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH).push()
         except:
             logger.exception('Error launching analysis for %s' % seriesName)
 

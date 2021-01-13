@@ -131,6 +131,9 @@ class Spooler:
 
         self.imNum = 0
 
+        # record start time here in case protocol init tasks generate events (prob only effects simulator).
+        self.tStart = time.time()
+
         self.protocol.Init(self)
 
         self.doStartLog()
@@ -235,7 +238,7 @@ class Spooler:
         
         self.dtStart = dt
         
-        self.tStart = time.time()
+        #self.tStart = time.time()
         
         # create an in-memory metadata handler and populate this prior to copying data over to the spooler
         # metadata handler. This significantly improves performance if the spooler metadata handler has high latency

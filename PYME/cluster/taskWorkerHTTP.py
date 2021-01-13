@@ -131,9 +131,13 @@ class taskWorker(object):
         self.tCompute.daemon = True
         self.tCompute.start()
 
-        self.tIO = threading.Thread(target=self.ioLoop)
-        self.tIO.daemon = True
-        self.tIO.start()
+        self.tI = threading.Thread(target=self.tasksLoop)
+        self.tI.daemon = True
+        self.tI.start()
+
+        self.tO = threading.Thread(target=self.returnLoop)
+        self.tO.daemon = True
+        self.tO.start()
 
         try:
             while True:
@@ -249,7 +253,7 @@ class taskWorker(object):
             # flag that there were no new tasks
             return False
 
-    def ioLoop(self):
+    def tasksLoop(self):
         """
 
         Loop forever asking for tasks to queue up for this worker
@@ -258,7 +262,28 @@ class taskWorker(object):
         -------
 
         """
-        localQueueName = 'PYMENodeServer: ' + compName
+        while True:
+            if not self._loop_alive:
+                break
+
+            # if our queue for computing is empty, try to get more tasks
+            if self.inputQueue.empty():
+                # if we don't have any new tasks, sleep to avoid constant polling
+                if not self._get_tasks():
+                    # no queues had tasks
+                    time.sleep(0.1)
+            else:
+                time.sleep(0.1)
+                    
+    def returnLoop(self):
+        """
+
+        Loop forever returning task results
+
+        Returns
+        -------
+
+        """
         while True:
             # turn in completed tasks
             try:
@@ -270,12 +295,7 @@ class taskWorker(object):
             if not self._loop_alive:
                 break
 
-            # if our queue for computing is empty, try to get more tasks
-            if self.inputQueue.empty():
-                # if we don't have any new tasks, sleep to avoid constant polling
-                if not self._get_tasks():
-                    # no queues had tasks
-                    time.sleep(0.1)
+            time.sleep(1)
 
 
     def computeLoop(self):
