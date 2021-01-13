@@ -93,7 +93,7 @@ class DataSource(BaseDataSource):
         import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter))
+            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter, timeout=10))
             if len(ev) == 0:
                 return []
             
