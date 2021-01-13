@@ -227,7 +227,6 @@ class taskWorker(object):
 
         try:
             # ask the queue for tasks
-            print('getting tasks')
             s = clusterIO._getSession(queueURL)
             r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)
             if r.status_code == 200:
