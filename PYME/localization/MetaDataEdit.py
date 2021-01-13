@@ -396,7 +396,7 @@ class ShiftFieldParam(FilenameParam):
         FilenameParam.retrieveValue(self, mdh, *args, **kwargs)
         
         if not self.filename == oldfn and not self.filename in ['<none>', '']:
-            dx, dy = np.load(self.filename)
+            dx, dy = np.load(self.filename, allow_pickle=True)
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
         

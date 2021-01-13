@@ -190,14 +190,14 @@ class PositionPanel(wx.Panel):
             self.tY = wx.TextCtrl(self, -1, "0")
             gsizer.Add(self.tY, 1, wx.ALIGN_CENTRE_VERTICAL | wx.ALL | wx.EXPAND, 0)
             
-            hsizer.Add(gsizer, 1, wx.EXPAND|wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 0)
+            hsizer.Add(gsizer, 1, wx.EXPAND|wx.ALL, 0)
             
             self.bGo = wx.Button(self, -1, "G\nO", size=(30, -1))
             #self.bGo.SetSize((25, 200))
             self.bGo.Bind(wx.EVT_BUTTON, self.on_moveto)
             vsizer = wx.BoxSizer(wx.VERTICAL)
             vsizer.Add(self.bGo, 1, wx.EXPAND, 0)
-            hsizer.Add(vsizer, 0, wx.EXPAND|wx.ALIGN_CENTRE_VERTICAL,0)
+            hsizer.Add(vsizer, 0, wx.EXPAND,0)
             
             gsizer = wx.GridBagSizer(2, 2)
             self.bLeft = wx.Button(self, -1, '<', style=wx.BU_EXACTFIT)

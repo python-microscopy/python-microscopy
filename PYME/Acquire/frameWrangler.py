@@ -46,7 +46,7 @@ else: #linux
 import time
 import traceback
 
-import dispatch
+from PYME.contrib import dispatch
 import warnings
 
 from PYME.Acquire import eventLog
@@ -236,6 +236,7 @@ class FrameWrangler(object):
         except:
             import traceback
             traceback.print_exc()
+
         finally:       
             if not contMode:
                 #flag the need to start a new exposure

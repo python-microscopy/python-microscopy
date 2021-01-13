@@ -89,7 +89,7 @@ class ColocSettingsDialog(wx.Dialog):
             sizer1.Add(hsizer, 0, wx.EXPAND)
             
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hsizer.Add(wx.StaticText(self, -1, '2st Channel:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+            hsizer.Add(wx.StaticText(self, -1, '2nd Channel:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
             self.cChan2 = wx.Choice(self, -1, choices=names)
             self.cChan2.SetSelection(1)
             hsizer.Add(self.cChan2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)

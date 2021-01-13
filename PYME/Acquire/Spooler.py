@@ -37,7 +37,7 @@ import time
 global timeFcn
 timeFcn = time.time
 
-import dispatch
+from PYME.contrib import dispatch
 import uuid
 
 from PYME.Acquire import eventLog
@@ -123,14 +123,20 @@ class Spooler:
        
 
     def StartSpool(self):
+        """ Perform protocol 'frame -1' tasks, log start metadata, then connect
+        to the frame source.
+        """
         self.watchingFrames = True
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
-   
-        self.doStartLog()
+
+        # record start time here in case protocol init tasks generate events (prob only effects simulator).
+        self.tStart = time.time()
 
         self.protocol.Init(self)
+
+        self.doStartLog()
    
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True
@@ -232,7 +238,7 @@ class Spooler:
         
         self.dtStart = dt
         
-        self.tStart = time.time()
+        #self.tStart = time.time()
         
         # create an in-memory metadata handler and populate this prior to copying data over to the spooler
         # metadata handler. This significantly improves performance if the spooler metadata handler has high latency

@@ -3,6 +3,12 @@
 Installation for development or instrument control
 **************************************************
 
+.. warning::
+
+    These installation instructions are outdated, but retained as they have a little more explanation for some of the
+    choices. Most notably we now recommend python 3.6 or 3.7 for new installs. Use the :ref:`new instructions<installation>`
+    as a first stop and read this in conjunction with the updated instructions.
+
 If you want to contribute to PYMEs development, or you want to use PYME in a context (e.g. instrument control) which
 requires modification to some of the scripts you will want to have the PYME sources somewhere you can easily find, modify
 and update them.

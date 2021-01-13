@@ -99,6 +99,7 @@ class GLImageView(LMGLShaderCanvas):
         
     def _add_layers(self):
         from PYME.LMVis.layers import image_layer
+        self.SetCurrent(self.gl_context)
         for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
             l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
         

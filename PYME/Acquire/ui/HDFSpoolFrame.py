@@ -67,7 +67,7 @@ class PanSpool(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
     
         self.stAqProtocol = wx.StaticText(pan, -1, '<None>', size=wx.Size(136, -1))
-        hsizer.Add(self.stAqProtocol, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
+        hsizer.Add(self.stAqProtocol, 5, wx.ALL | wx.EXPAND, 2)
     
         self.bSetAP = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetAP.Bind(wx.EVT_BUTTON, self.OnBSetAqProtocolButton)
@@ -79,10 +79,13 @@ class PanSpool(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.rbNoSteps = wx.RadioButton(pan, -1, 'Standard', style=wx.RB_GROUP)
         self.rbNoSteps.Bind(wx.EVT_RADIOBUTTON, self.OnToggleZStepping)
-        hsizer.Add(self.rbNoSteps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
+        hsizer.Add(self.rbNoSteps, 1, wx.ALL | wx.EXPAND, 2)
         self.rbZStepped = wx.RadioButton(pan, -1, 'Z stepped')
         self.rbZStepped.Bind(wx.EVT_RADIOBUTTON, self.OnToggleZStepping)
         hsizer.Add(self.rbZStepped, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        if not hasattr(self.scope, 'stackSettings'):
+            self.rbZStepped.Disable()
     
         if self.spoolController.z_stepped:
             self.rbZStepped.SetValue(True)
@@ -109,7 +112,7 @@ class PanSpool(afp.foldingPane):
     
         self.rbSpoolFile = wx.RadioButton(pan, -1, 'File', style=wx.RB_GROUP)
         self.rbSpoolFile.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
-        hsizer.Add(self.rbSpoolFile, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
+        hsizer.Add(self.rbSpoolFile, 1, wx.ALL | wx.EXPAND, 2)
         self.rbSpoolCluster = wx.RadioButton(pan, -1, 'Cluster')
         self.rbSpoolCluster.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
         hsizer.Add(self.rbSpoolCluster, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
@@ -132,7 +135,7 @@ class PanSpool(afp.foldingPane):
     
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.stSpoolDirName = wx.StaticText(pan, -1, 'Save images in: Blah Blah', size=wx.Size(136, -1))
-        hsizer.Add(self.stSpoolDirName, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
+        hsizer.Add(self.stSpoolDirName, 5, wx.ALL | wx.EXPAND, 5)
     
         self.bSetSpoolDir = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetSpoolDir.Bind(wx.EVT_BUTTON, self.OnBSetSpoolDirButton)
@@ -218,7 +221,7 @@ class PanSpool(afp.foldingPane):
         self.tcSpoolFile = wx.TextCtrl(pan, -1, 'dd_mm_series_a', size=wx.Size(100, -1))
         self.tcSpoolFile.Bind(wx.EVT_TEXT, self.OnTcSpoolFileText)
     
-        hsizer.Add(self.tcSpoolFile, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
+        hsizer.Add(self.tcSpoolFile, 5, wx.ALL | wx.EXPAND, 5)
     
         self.bStartSpool = wx.Button(pan, -1, 'Start', style=wx.BU_EXACTFIT)
         self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
@@ -279,11 +282,12 @@ class PanSpool(afp.foldingPane):
     def _init_ctrls(self):
         self.AddNewElement(self._protocol_pan())
 
-        clp = afp.collapsingPane(self, caption='Z stepping ...')
-        self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
-        clp.AddNewElement(self._seq_panel)
-        self.AddNewElement(clp)
-        self.seq_pan = clp
+        if hasattr(self.scope, 'stackSettings'):
+            clp = afp.collapsingPane(self, caption='Z stepping ...')
+            self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
+            clp.AddNewElement(self._seq_panel)
+            self.AddNewElement(clp)
+            self.seq_pan = clp
 
         self.AddNewElement(self._spool_to_pan())
 

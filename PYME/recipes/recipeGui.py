@@ -52,7 +52,17 @@ logger = logging.getLogger(__name__)
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
+_cols = {}
+def get_line_colour(key, recipe):
+    #choose a colour at random for this input
+    if not key in _cols.keys():
+        _cols[key] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
     
+    c = _cols[key]
+    if recipe.failed and not key in recipe.namespace.keys():
+        c = 0.2 * c + 0.8*0.5
+        
+    return c
 class RecipePlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, recipes, **kwargs):
         self.recipes = recipes
@@ -71,7 +81,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         self.ax.cla()
 
-        dg = self.recipes.activeRecipe.dependancyGraph()
+        recipe = self.recipes.activeRecipe
+        dg = recipe.dependancyGraph()
 
         #Find the connecting lines
         node_positions, connecting_lines = recipeLayout.layout(dg)
@@ -92,11 +103,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         #Plot the connecting lines
         for xv, yv, e in connecting_lines:
-            #choose a colour at random for this input
-            if not e in cols.keys():
-                cols[e] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
-
-            self.ax.plot(xv, yv, c=cols[e], lw=2)
+            self.ax.plot(xv, yv, c=get_line_colour(e, recipe), lw=2)
                 
         #plot the boxes and the labels
         for k, v in node_positions.items():
@@ -150,13 +157,12 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
             else:
                 #line - draw an output dot, and a text label 
                 s = k
-                if not k in cols.keys():
-                    cols[k] = 0.7*np.array(matplotlib.cm.hsv(np.random.rand()))
-                self.ax.plot(v[0], v[1], 'o', color=cols[k])
+                c = get_line_colour(k, recipe)
+                self.ax.plot(v[0], v[1], 'o', color=c)
                 if k.startswith('out'):
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
                 else:
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True)
                 t._data = k
                 
                 
@@ -234,7 +240,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
         hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
 
-        self.stModuleHelp = wx.html.HtmlWindow(self, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
+        self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
         hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
 
         vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
@@ -342,7 +348,7 @@ class RecipeView(wx.Panel):
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
-        vsizer.Add(self.bApply, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
                                        
         hsizer1.Add(vsizer, 0, wx.EXPAND|wx.ALL, 2)
@@ -352,6 +358,9 @@ class RecipeView(wx.Panel):
         self.SetSizerAndFit(hsizer1)
         
         self.recipes.LoadRecipeText('')
+
+        recipes.activeRecipe.recipe_changed.connect(self.update)
+        recipes.activeRecipe.recipe_executed.connect(self.update)
         
     def _set_text_styling(self):
         from wx import stc
@@ -485,12 +494,12 @@ class RecipeView(wx.Panel):
     def update_recipe_text(self):
         self.set_recipe_text(self.recipes.activeRecipe.toYAML())
     
-    def update(self):
+    def update(self, *args, **kwargs):
         self.recipePlot.draw()
         self.update_recipe_text()
         
     def OnApplyText(self, event):
-        self.recipes.LoadRecipeText(self.tRecipeText.GetValue())
+        self.recipes.UpdateRecipeText(self.tRecipeText.GetValue())
         
     def OnNewRecipe(self, event):
         if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
@@ -520,12 +529,13 @@ class RecipeView(wx.Panel):
             if c.configure_traits(kind='modal'):
                 self.recipes.activeRecipe.add_module(c)
                 self.recipes.activeRecipe.invalidate_data()
-                wx.CallLater(10, self.update)
+                #wx.CallLater(10, self.update)
                 
         dlg.Destroy()
         
         
     def OnPick(self, event):
+        from PYME.IO import tabular
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
             self.configureModule(k)
@@ -541,6 +551,11 @@ class RecipeView(wx.Panel):
                         mode = 'lite'
                                    
                     dv = ViewIm3D(outp, mode=mode, glCanvas=self.recipes.dsviewer.glCanvas)
+                    
+            elif isinstance(outp, tabular.TabularBase):
+                from PYME.ui import recArrayView
+                f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
+                f.Show()
     
     
     def configureModule(self, k):
@@ -592,9 +607,16 @@ class RecipeManager(object):
         #self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
 
         try:        
+            self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_executed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_failed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass
+        
+    def UpdateRecipeText(self, s):
+        #update (rather than replace) the current recipe based on text)
+        self.activeRecipe.update_from_yaml(s)
 
 class PipelineRecipeManager(RecipeManager):
     """Version of recipe manager for use with the VisGUI pipeline. Updates the existing recipe rather than replacing
@@ -609,6 +631,8 @@ class PipelineRecipeManager(RecipeManager):
     def LoadRecipeText(self, s, filename=''):
         self.pipeline.recipe.update_from_yaml(s)
         try:
+            #self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            #self.activeRecipe.recipe_executed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass

@@ -121,7 +121,7 @@ class seqPanel(wx.Panel):
         
         self.bStartHere = wx.Button(self, -1,'Start', size=(30,-1), style=wx.BU_EXACTFIT)
         self.bStartHere.Bind(wx.EVT_BUTTON, self.OnBStartHereButton)
-        hsizer.Add(self.bStartHere, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.RIGHT, 2)
+        hsizer.Add(self.bStartHere, 1, wx.EXPAND|wx.RIGHT, 2)
 
         #sStart = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Start Pos [\u03BCm]'), wx.HORIZONTAL)
 
@@ -140,7 +140,7 @@ class seqPanel(wx.Panel):
         
         self.bEndHere = wx.Button(self, -1,'End', size=(30,-1), style=wx.BU_EXACTFIT)
         self.bEndHere.Bind(wx.EVT_BUTTON, self.OnBEndHereButton)
-        hsizer.Add(self.bEndHere, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.LEFT, 5)
+        hsizer.Add(self.bEndHere, 1, wx.EXPAND|wx.LEFT, 5)
 
         self.tEndPos = wx.TextCtrl(self, -1, value='40', size=(10,-1))
         self.tEndPos.Bind(wx.EVT_KILL_FOCUS, self.OnTEndPosKillFocus)
@@ -205,9 +205,9 @@ class seqPanel(wx.Panel):
 
         #if not ('sa' in self.scope.__dict__):
         #    self.stackSettings = simplesequenceaquisator.SimpleSequenceAquisitor(self.scope.chaninfo, self.scope.cam, self.scope.shutters, self.scope.piezos)
-        if not 'stackSettings' in dir(self.scope):
+        #if not 'stackSettings' in dir(self.scope):
             #inject stack settings into the scope object
-            self.scope.stackSettings = stackSettings.StackSettings(scope)
+        #    self.scope.stackSettings = stackSettings.StackSettings(scope)
         #for pz in self.scope.piezos:
         #    self.chPiezo.Append(pz[2])
             

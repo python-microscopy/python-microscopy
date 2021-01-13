@@ -41,7 +41,7 @@ import scipy
 import matplotlib.pyplot as plt
 import matplotlib.cm
 
-import dispatch
+from PYME.contrib import dispatch
 
 LUTCache = {}
 

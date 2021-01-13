@@ -335,9 +335,9 @@ class MDHandlerBase(DictMixin):
         mdToCopy : an instance of a metadata handler
             The metadata handler from which to copy entries.
         """
-        for en in mdToCopy.getEntryNames():
-            #print en
-            self.setEntry(en, mdToCopy.getEntry(en))
+        for en in mdToCopy.keys():
+            # 9/10/20 DB - change to dictionary access notation so we can also pass a dictionary
+            self.setEntry(en, mdToCopy.get(en))
         #self.update(mdToCopy)
 
     def mergeEntriesFrom(self, mdToCopy):
@@ -560,7 +560,38 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
+
+class DictMDHandler(MDHandlerBase):
+    """Simple implementation using a dict.
+    
+    Should eventually replace most instances of NestedClassMDHandler
+    
+    Adds a writable flag to enable read-only metadata (currently unused, but gives us the option of enforcing good
+    behaviour in, e.g., recipe modules, in the future). TODO - propagate writable flag up to base?
+    """
+    def __init__(self, mdToCopy=None, writable=True):
+        self._storage = {}
+        self._writable = True
+        if not mdToCopy is None:
+            self.copyEntriesFrom(mdToCopy)
         
+        # set our writable after we've done the initial copy
+        self._writable = writable
+    
+    def setEntry(self, entryName, value):
+        if not self._writable:
+            raise RuntimeError('metadata handler is read-only')
+        
+        self._storage[entryName] = value
+    
+    def getEntry(self, entryName):
+        return self._storage[entryName]
+    
+    def getEntryNames(self):
+        return list(self._storage.keys())
+    
+    def set_readonly(self):
+        self._writable = False
         
 class CachingMDHandler(MDHandlerBase):
     def __init__(self, mdToCache):

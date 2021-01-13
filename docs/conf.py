@@ -50,6 +50,54 @@ sys.modules['pyfftw'] = mock.Mock()
 sys.modules['quaternion'] = mock.Mock()
     
 sys.modules['wx'] = mock.Mock()
+sys.modules['wx.aui'] = mock.Mock()
+sys.modules['wx.lib'] = mock.Mock()
+sys.modules['wx.lib.newevent'] = mock.Mock()
+sys.modules['wx.lib.mixins'] = mock.Mock()
+sys.modules['wx.lib.dialogs'] = mock.Mock()
+sys.modules['wx.lib.agw'] = mock.Mock()
+sys.modules['wx.lib.agw.aui'] = mock.Mock()
+sys.modules['wx.gizmos'] = mock.Mock()
+sys.modules['wx.grid'] = mock.Mock()
+sys.modules['wx.lib.agw.aui.aui_utilities'] = mock.Mock()
+sys.modules['wx.py.shell'] = mock.Mock()
+sys.modules['wx.glcanvas'] = mock.Mock()
+
+sys.modules['OpenGL'] = mock.Mock()
+sys.modules['OpenGL.GL'] = mock.Mock()
+
+sys.modules['scipy'] = mock.Mock()
+sys.modules['scipy.ndimage'] = mock.Mock()
+sys.modules['scipy.ndimage.interpolation'] = mock.Mock()
+sys.modules['scipy.fftpack'] = mock.Mock()
+sys.modules['scipy.optimize'] = mock.Mock()
+sys.modules['scipy.signal'] = mock.Mock()
+sys.modules['scipy.spatial'] = mock.Mock()
+sys.modules['scipy.interpolate'] = mock.Mock()
+sys.modules['scipy.special'] = mock.Mock()
+sys.modules['scipy.stats'] = mock.Mock()
+sys.modules['scipy.misc'] = mock.Mock()
+sys.modules['scipy.integrate'] = mock.Mock()
+
+sys.modules['skimage.filters'] = mock.Mock()
+sys.modules['sklearn'] = mock.Mock()
+
+sys.modules['matplotlib'] = mock.Mock()
+sys.modules['matplotlib.cm'] = mock.Mock()
+sys.modules['matplotlib.colors'] = mock.Mock()
+
+sys.modules['tables'] = mock.Mock()
+sys.modules['yaml'] = mock.Mock()
+sys.modules['toposort'] = mock.Mock()
+sys.modules['matplotlib.pyplot'] = mock.Mock()
+sys.modules['cherrypy'] = mock.Mock()
+sys.modules['pandas'] = mock.Mock()
+sys.modules['zeroconf'] = mock.Mock()
+sys.modules['django'] = mock.Mock()
+sys.modules['pandas'] = mock.Mock()
+sys.modules['Pyro'] = mock.Mock()
+sys.modules['ujson'] = mock.Mock()
+
 import wx
 #import wx.py.shell
 #from wx.lib.agw.aui.aui_utilities import BitmapFromBits
@@ -60,6 +108,12 @@ class mClass:
 wx.Frame = mClass
 wx.Panel = mClass
 wx.Dialog = mClass
+
+import wx.lib.newevent
+wx.lib.newevent.NewCommandEvent = lambda : (None,None)
+
+import matplotlib.cm
+matplotlib.cm.cmapnames = []
 
 
 # -- General configuration -----------------------------------------------------

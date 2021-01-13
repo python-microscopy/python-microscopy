@@ -123,6 +123,7 @@ def genClusterResultFileName(dataFileName, create=True):
     """Generates a filename for saving fit results based on the original image
     filename"""
     from PYME import config
+    import posixpath
     fn, ext = os.path.splitext(dataFileName) #remove extension
     
     if fn.upper().startswith('PYME-CLUSTER://'):
@@ -132,16 +133,25 @@ def genClusterResultFileName(dataFileName, create=True):
         rel_name = fn.split('://%s/' % clusterfilter)[1]
     else:
         # special case for cluster of one uses where we didn't open file using a cluster URI
-        # if not fn.startswith('/'):
-        #     # filename is relative to PYMEDATATDIR
-        #     fn = getFullFilename(fn)
+        if not os.path.isabs(fn):
+            # add the PYMEData dir path on if we weren't given an absolute path
+            fn = getFullFilename(fn)
+        
+        try:
+            # relpath will raise ValueError on windows if we aren't on the same drive
+            rel_name = os.path.relpath(fn, config.get('dataserver-root'))
+            if rel_name.startswith('..'):
+                raise ValueError  # we are not under PYMEData
+        except ValueError:
+            # recreate the tree under PYMEData, dropping the drive letter or UNC
+            rel_name = fn
             
-        rel_name = getRelFilename(fn, config.get('dataserver-root'))
+        rel_name = rel_path_as_posix(rel_name)
 
-    dir_name = os.path.dirname(rel_name)
-    file_name = os.path.basename(rel_name)
+    dir_name = posixpath.dirname(rel_name)
+    file_name = posixpath.basename(rel_name)
 
-    return '/'.join([dir_name, 'analysis', file_name]) + '.h5r'
+    return posixpath.join(dir_name, 'analysis', file_name + '.h5r')
 
 def genResultDirectoryPath():
     """Returns the default destination for saving fit reults"""
@@ -206,6 +216,16 @@ def translateSeparators(filename):
 
     return fn
 
+def rel_path_as_posix(path):
+    """
+    Translate any separators to '/' and drop drive letters
+    
+    #FIXME - do something sensible with drive letters?
+    """
+    import posixpath
+    # FIXME - just use pathlib.path().to_posix() when we drop py2
+    return posixpath.sep.join(seps2.split(os.path.splitdrive(path)[-1]))
+
 def getFullFilename(relFilename):
     """ returns a fully resolved filename given a filename relative to
     the environment variable PYMEDATADIR. If environment variable not defined,
@@ -253,3 +273,28 @@ def getRelFilename(filename, datadir=datadir):
         return filename[len(dataDir):]
 
     return filename
+
+def get_service_name(process_name):
+    """Generate an appropriate service name for zeroconf, pyro, etc.
+
+    Parameters
+    ----------
+    process_name : str
+        name of the process, e.g. 'PYMEDataServer [serverfilter]'
+
+    Returns
+    -------
+    str
+        service name including process ID and as much of the process name and
+        computer as possible given length constraints. Something like
+        PYMEDataServer [trout]:cutthroat - PID:2020
+    """
+    from PYME.misc.computerName import GetComputerName
+
+    pid = str(os.getpid())
+
+    base_name = process_name + ':' + GetComputerName() + ' - '
+    # max of 63 characters for zeroconf compatibility
+    base_name = base_name[:(63 - 4 - len(pid))]
+    
+    return base_name + 'PID:' + pid

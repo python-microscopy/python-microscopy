@@ -11,7 +11,7 @@ import PYME.localization.FitFactories
 
 from PYME.IO import MetaDataHandler
 
-import dispatch
+from PYME.contrib import dispatch
 
 class AnalysisSettingsPanel(wx.Panel):
     def __init__(self, parent, analysisSettings, mdhChangedSignal=None):

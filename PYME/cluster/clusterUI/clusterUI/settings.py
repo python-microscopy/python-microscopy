@@ -76,6 +76,11 @@ TEMPLATES = [
             ],
         },
     },
+    # {
+    #     'BACKEND': 'django.template.backends.jinja2.Jinja2',
+    #     'DIRS': [],
+    #     'APP_DIRS': True,
+    # }
 ]
 
 WSGI_APPLICATION = 'clusterUI.wsgi.application'
@@ -137,3 +142,6 @@ import PYME.resources
 STATICFILES_DIRS = [
     PYME.resources.get_web_static_dir(),
 ]
+
+# allow starting recipe jobs with more than 1,000 series
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None

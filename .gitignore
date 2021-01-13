@@ -51,3 +51,4 @@ tests/cov_html/*
 tests/*.html
 fftw_wisdom.pkl
 *.css.map
+.vscode/

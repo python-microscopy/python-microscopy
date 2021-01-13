@@ -32,6 +32,19 @@ import numpy as np
 
 renderMetadataProviders = []
 
+SAMPLE_MD_KEYS = [
+    'Sample.SlideRef',
+    'Sample.Creator',
+    'Sample.Notes',
+    'Sample.Labelling',
+    'AcquiringUser'
+]
+
+def copy_sample_metadata(old_mdh, new_mdh):
+    pass_through = [k for k in SAMPLE_MD_KEYS if k in old_mdh.keys()]
+    for k in pass_through:
+        new_mdh[k] = old_mdh[k]
+
 class CurrentRenderer:
     """Renders current view (in black and white). Only renderer not to take care
     of colour channels. Simplest renderer and as such also the base class for all 
@@ -171,6 +184,7 @@ class CurrentRenderer:
 
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
@@ -221,6 +235,7 @@ class ColourRenderer(CurrentRenderer):
     
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
@@ -504,22 +519,37 @@ class QuadTreeRenderer(ColourRenderer):
     def genIm(self, settings, imb, mdh):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
+        leaf_size = settings.get('qtLeafSize', 10) #default to 10 record leaf size
 
         if not np.mod(np.log2(pixelSize/self.pipeline.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
                 self.pipeline.QTGoalPixelSize = pixelSize
                 self.pipeline.Quads = None
 
-        self.pipeline.GenQuads()
+        self.pipeline.GenQuads(max_leaf_size=leaf_size)
+        quads = self.pipeline.Quads #TODO remove GenQuads from pipeline
 
-        qtWidth = self.pipeline.Quads.x1 - self.pipeline.Quads.x0
+        qtWidth = max(quads.x1 - quads.x0, quads.y1 - quads.y0)
         qtWidthPixels = int(np.ceil(qtWidth/pixelSize))
 
         im = np.zeros((qtWidthPixels, qtWidthPixels))
-        QTrend.rendQTa(im, self.pipeline.Quads)
-        return im[int(imb.x0/pixelSize):int(imb.x1/pixelSize),int(imb.y0/pixelSize):int(imb.y1/pixelSize)]
+        QTrend.rendQTa(im, quads)
+        
+        #FIXME - make this work for imb > quadtree size
+        return im[int(max(imb.x0 - quads.x0, 0)/pixelSize):int((imb.x1 - quads.x0)/pixelSize),int(max(imb.y0 - quads.y0, 0)/pixelSize):int((imb.y1 - quads.y0)/pixelSize)]
 
 
-RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
+class VoronoiRenderer(ColourRenderer):
+    """2D histogram rendering"""
+
+    name = 'Voronoi'
+    mode = 'voronoi'
+
+    def genIm(self, settings, imb, mdh):
+        return visHelpers.rendVoronoi(self.colourFilter['x'],self.colourFilter['y'], imb, settings['pixelSize'])
+
+
+
+RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer, VoronoiRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}

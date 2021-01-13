@@ -254,4 +254,3 @@ joinBGInit() #wait for anyhting which was being done in a separate thread
 #time.sleep(.5)
 scope.initDone = True
 
-

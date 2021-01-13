@@ -422,7 +422,21 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
 
 
 
-def gen2DTriangsTF(T, sizeCutoff = inf):
+def cull_triangles_2D(T, max_edge_length = inf):
+    """
+    Cull triangles in a triangulation which have an edge length greater than max_edge_length.
+    The triangle-culling is designed to walk back from the convex hull to the true object perimeter for objects with
+    concave regions.
+    
+    Parameters
+    ----------
+    T :  a triangulation as produced by the matplotlib.delaunay module
+    max_edge_length : the max edge length in nm.
+
+    Returns
+    -------
+
+    """
     iarray = array(T.simplices)
 
     va = array(T.points)
@@ -439,9 +453,9 @@ def gen2DTriangsTF(T, sizeCutoff = inf):
 
 
     #A = median([s01, s12, s02], 0)
-    A = maximum(s01, s12, s02)
+    max_edge_squared = maximum(s01, s12, s02)
 
-    cutInd = A < sizeCutoff**2
+    cutInd = max_edge_squared < max_edge_length**2
 
     #area
     A = 0.5*sqrt((s_01*s_01).sum(1)*(s_12*s_12).sum(1) - ((s_01*s_12).sum(1)**2))
@@ -753,7 +767,7 @@ def blobify2D(objects, sizeCutoff):
     for o, i in zip(objects, range(len(objects))):
         T = Delaunay(o)
         #T2 = matplotlib.delaunay.Triangulation(o[:, 0], o[:,1])
-        P, A, triI = gen2DTriangsTF(T, sizeCutoff)
+        P, A, triI = cull_triangles_2D(T, sizeCutoff)
 
         #P, A, N = removeInternalFaces(P, A, N)
 
