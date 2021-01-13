@@ -180,6 +180,11 @@ class Rule(object):
 
         """
         return True
+
+    @property
+    def data_complete(self):
+        """ Is the underlying data complete?"""
+        return True
     
     def on_data_complete(self):
         '''Over-ride in derived rules so that, e.g. events can be written at the end of a real-time acquisition '''
@@ -317,9 +322,12 @@ class Rule(object):
             except NoNewTasks:
                 pass
         
+            if self.data_complete and not hasattr(self, '_data_comp_callback_res'):
+                logging.debug('input data complete, calling on_data_complete')
+                self._data_comp_callback_res=self.on_data_complete()
+            
             if self.complete:
                 logging.debug('input data complete and all tasks pushed, marking rule as complete')
-                self.on_data_complete()
                 self._mark_complete()
                 logging.debug('ending polling loop.')
                 self.doPoll = False
@@ -564,6 +572,10 @@ class LocalisationRule(Rule):
         return {}
 
     @property
+    def data_complete(self):
+        return self.ds.is_complete
+    
+    @property
     def complete(self):
         """
         Is this rule complete, or do we need to poll for more input?
@@ -573,9 +585,10 @@ class LocalisationRule(Rule):
         -------
 
         """
-        return self.ds.is_complete and not (self.frames_outstanding  > 0)
+        return self.data_complete and not (self.frames_outstanding  > 0)
     
     def on_data_complete(self):
+        logger.debug('Data complete, copying events to output file')
         clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
     def get_new_tasks(self):
