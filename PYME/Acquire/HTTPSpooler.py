@@ -254,6 +254,9 @@ class Spooler(sp.Spooler):
             # TODO - is there actually a performance impact that justifies this config option, or is it purely theoretical
             for pt in self._pollThreads:
                 pt.join()
+
+        # remove our reference to the threads which hold back-references preventing garbage collection
+        del(self._pollThreads)
         
         # save events and final metadata
         # TODO - use a binary format for saving events - they can be quite

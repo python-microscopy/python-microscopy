@@ -109,7 +109,7 @@ class H5File(h5rFile.H5RFile):
         elif filename == 'events.json':
             try:
                 events = self._h5file.root.Events[:]
-                return json.dumps(list(zip(events['EventName'], events['EventDescr'], events['Time'])))
+                return json.dumps(list(zip(events['EventName'], events['EventDescr'], events['Time'])), reject_bytes=False)
             except AttributeError:
                 raise IOError('File has no events')
             #raise NotImplementedError('reading events not yet implemented')
