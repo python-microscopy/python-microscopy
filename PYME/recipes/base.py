@@ -1118,11 +1118,7 @@ class ArithmaticFilter(ModuleBase):
     inputName0: PYME.IO.image.ImageStack
     inputName1: PYME.IO.image.ImageStack
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. single-frame vs stack operations, or single-color vs multi-color
-        operations.
+    
     """
     inputName0 = Input('input')
     inputName1 = Input('input')
@@ -1239,10 +1235,7 @@ class Add(ArithmaticFilter):
     inputName0: PYME.IO.image.ImageStack
     inputName1: PYME.IO.image.ImageStack
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. adding a single frame to each frame in a stack.
+    
     """
 
     def applyFilter(self, data0, data1, chanNum, i, image0):
@@ -1262,10 +1255,7 @@ class Subtract(ArithmaticFilter):
         image being subtracted
     outputName: PYME.IO.image.ImageStack
         difference image
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. subtracting a single frame from each frame in a stack.
+    
     """
 
     def applyFilter(self, data0, data1, chanNum, i, image0):
@@ -1282,10 +1272,7 @@ class Multiply(ArithmaticFilter):
     inputName0: PYME.IO.image.ImageStack
     inputName1: PYME.IO.image.ImageStack
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. multiplying a single frame by each frame in the other stack.
+    
     """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
@@ -1304,10 +1291,7 @@ class Divide(ArithmaticFilter):
     inputName1: PYME.IO.image.ImageStack
         denominator
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. dividing each frame in one stack by a single frame.
+    
     """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
@@ -1378,10 +1362,6 @@ class BinaryOr(ArithmaticFilter):
     inputName0: PYME.IO.image.ImageStack
     inputName1: PYME.IO.image.ImageStack
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. comparing a single frame with each frame in the other stack.
     
     Notes
     -----
@@ -1403,10 +1383,6 @@ class LogicalAnd(ArithmaticFilter):
     inputName0: PYME.IO.image.ImageStack
     inputName1: PYME.IO.image.ImageStack
     outputName: PYME.IO.image.ImageStack
-    processFramesIndividually: Bool
-        `True` will force the operation to be frame by frame, in which case the input images
-        must have the same number of slices. `False` can also do frame-by-frame, but allows
-        broadcasting for e.g. comparing a single frame with each frame in the other stack.
     """
 
     def applyFilter(self, data0, data1, chanNum, i, image0):
