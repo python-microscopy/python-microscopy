@@ -79,6 +79,10 @@ class mercuryStepper(base_piezo.PiezoBase):
             self.minTravel = [float(self.query('TMN?', a)) for a in self.axes]
             self.maxTravel = [float(self.query('TMX?', a)) for a in self.axes]
 
+            # turn joystick off (if on)
+            for i, a in enumerate(self.axes):
+                self.set('JON', a, '1 0', omit_axis=True)
+
             #initialise and calibrate axes
             for a in self.axes:
                 self.set('SVO', a, 1)
@@ -88,8 +92,8 @@ class mercuryStepper(base_piezo.PiezoBase):
             self.onTarget = False
 
             #set joystick to use parabolic lookup table
-            for a in self.axes:
-                self.set('JDT', a, 2)
+            #for a in self.axes:
+            #    self.set('JDT', a, 2, omit_axis=True)
 
 
 
@@ -103,6 +107,9 @@ class mercuryStepper(base_piezo.PiezoBase):
         with self.lock:
             for i, a in enumerate(self.axes):
                 self.set('JAX', a, '1 1 %s' %a, omit_axis=True)
+
+                #set joystick to use parabolic loopup table
+                self.set('JDT', a, '1 2', omit_axis=True)
 
 
     def _get_status(self):

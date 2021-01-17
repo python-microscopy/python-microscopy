@@ -28,24 +28,20 @@ import time
 
 @init_hardware('Z Piezo')
 def pz(scope):
-    from PYME.Acquire.Hardware.Piezos import piezo_e816#, offsetPiezo
+    from PYME.Acquire.Hardware.Piezos import piezo_e816, offsetPiezoREST
 
-    scope.piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
+    scope._piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
     #scope.hardwareChecks.append(scope._piFoc.OnTarget)
-    scope.CleanupFunctions.append(scope.piFoc.close)
+    scope.CleanupFunctions.append(scope._piFoc.close)
 
-    #scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
+    scope.piFoc = offsetPiezoREST.server_class()(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=True)
 
-    # server so drift correction can connect to the piezo
-    #pst = offsetPiezo.ServerThread(scope.piFoc)
-    #pst.start()
-    #scope.CleanupFunctions.append(pst.cleanup)
     
 @init_hardware('XY Stage')
 def stage(scope):
-    from PYME.Acquire.Hardware.Mercury import mercuryStepper
-    scope.stage = mercuryStepper.mercuryStepper(comPort=6, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+    from PYME.Acquire.Hardware.Mercury import mercuryStepperGCS
+    scope.stage = mercuryStepperGCS.mercuryStepper(comPort='COM6', baud=115200, axes=['X', 'Y'], steppers=['M-229.25S', 'M-229.25S'])
     scope.stage.SetSoftLimits(0, [1.06, 20.7])
     scope.stage.SetSoftLimits(1, [.8, 17.6])
 
@@ -57,18 +53,18 @@ def stage(scope):
     
     scope.CleanupFunctions.append(scope.stage.Cleanup)
 
-# @init_hardware('sCMOS Camera')
-# def sCMOS_cam(scope):
-#     from PYME.Acquire.Hardware.AndorNeo import AndorZyla
+@init_hardware('sCMOS Camera')
+def sCMOS_cam(scope):
+    from PYME.Acquire.Hardware.AndorNeo import AndorZyla
 
-#     cam = AndorZyla.AndorZyla(0)
-#     cam.Init()
-#     cam.port = 'R100'
-#     #cam.SetActive(False)
-#     cam.orientation = dict(rotate=True, flipx=True, flipy=False)
-#     cam.DefaultEMGain = 0  # hack to make camera work with standard protocols
+    cam = AndorZyla.AndorZyla(0)
+    cam.Init()
+    cam.port = 'R100'
+    #cam.SetActive(False)
+    cam.orientation = dict(rotate=True, flipx=True, flipy=False)
+    cam.DefaultEMGain = 0  # hack to make camera work with standard protocols
 
-#     scope.register_camera(cam, 'sCMOS')
+    scope.register_camera(cam, 'sCMOS')
 
 @init_hardware('EMCCD Camera')
 def EMCCD_cam(scope):
@@ -81,11 +77,11 @@ def EMCCD_cam(scope):
 
 #scope.EnableJoystick = 'foo'
 
-# @init_gui('sCMOS Camera controls')
-# def cam_controls(MainFrame, scope):
-#     from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
-#     scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
-#     MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties', False, False))
+@init_gui('sCMOS Camera controls')
+def cam_controls(MainFrame, scope):
+    from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
+    scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
+    MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties', False, False))
 
 @init_gui('EMCCD Camera controls')
 def cam_controls1(MainFrame, scope):
