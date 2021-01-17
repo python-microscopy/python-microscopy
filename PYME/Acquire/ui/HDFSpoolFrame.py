@@ -36,6 +36,7 @@ import glob
 from PYME.IO import PZFFormat
 import sys
 
+from PYME import config
 
 [wxID_FRSPOOL, wxID_FRSPOOLBSETSPOOLDIR, wxID_FRSPOOLBSTARTSPOOL, 
  wxID_FRSPOOLBSTOPSPOOLING, wxID_FRSPOOLCBCOMPRESS, wxID_FRSPOOLCBQUEUE, 
@@ -164,7 +165,7 @@ class PanSpool(afp.foldingPane):
         hsizer.Add(self.cbCompress, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
         self.cbQuantize = wx.CheckBox(pan, -1, 'Quantization')
-        self.cbQuantize.SetValue(True)
+        self.cbQuantize.SetValue(config.get('Acquire-quantize_by_default', False))
     
         hsizer.Add(self.cbQuantize, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
