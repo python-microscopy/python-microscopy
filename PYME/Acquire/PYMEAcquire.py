@@ -116,6 +116,8 @@ def main():
     options.initFile = init_file
     logger.info('using initialization script %s' % init_file)
 
+    logger.debug('using initialization script %s, %s' % (init_file, os.path.abspath(init_file)))
+
     application = BoaApp(options, 0)
     application.MainLoop()
 

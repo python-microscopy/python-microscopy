@@ -33,7 +33,7 @@ except ImportError:
 from PYME.Acquire.Hardware.lasers import Laser
 
 class PhoxxLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM3', maxpower=0.14, **kwargs):
+    def __init__(self, name,turnOn=False, portname='COM3', maxpower=0.14, power_fudge=1.0,**kwargs):
         self.ser_args = dict(port=portname, baudrate=500000, timeout=.1, writeTimeout=2)
         #self.ser_port = serial.Serial(portname, 500000, timeout=.1, writeTimeout=2)
         self.powerControlable = True
@@ -41,7 +41,10 @@ class PhoxxLaser(Laser):
         
         self.doPoll=True
         self.maxpower = maxpower # maximum power, for our current only laser of this type it is 140mW
-        
+        # optionally de-rate the maximum power that we can set. Used as a work-around for calibration issues
+        # in the built-in power meter which causes the erroneous detection of an over-power failure and triggers
+        # and interlock
+        self.power_fudge = power_fudge
         self.commandQueue = Queue.Queue()
         self.replyQueue = Queue.Queue()
         #self.adhocQueue = Queue.Queue()
@@ -81,7 +84,7 @@ class PhoxxLaser(Laser):
             raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
         
-        p = 0xFFF*power
+        p = 0xFFF*power*self.power_fudge
         
         ps = '%03X' %p
         

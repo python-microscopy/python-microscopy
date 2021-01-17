@@ -87,6 +87,10 @@ class mercuryStepper(base_piezo.PiezoBase):
             self.referencing = True
             self.onTarget = False
 
+            #set joystick to use parabolic lookup table
+            for a in self.axes:
+                self.set('JDT', a, 2)
+
 
 
         self.poll = tPoll(self)
