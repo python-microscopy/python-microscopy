@@ -238,7 +238,7 @@ def drift_tracking(MainFrame, scope):
         scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     time.sleep(15)
-    #_drift_init()
+    _drift_init()
     #wx.CallLater(15e3, _drift_init)
 
 
