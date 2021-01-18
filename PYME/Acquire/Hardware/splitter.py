@@ -118,14 +118,14 @@ class Unmixer:
         dsa = data.squeeze() - offset
         
         if self.axis == 'up_down':
-            g_ = dsa[:, :(dsa.shape[1]/2)]
-            r_ = dsa[:, (dsa.shape[1]/2):]
+            g_ = dsa[:, :int(dsa.shape[1]/2)]
+            r_ = dsa[:, int(dsa.shape[1]/2):]
             if self.flip:
                 r_ = numpy.fliplr(r_)
             r_ = self._deshift(r_, ROI)
         else:
-            g_ = dsa[:(dsa.shape[0]/2), :]
-            r_ = dsa[(dsa.shape[0]/2):, :]
+            g_ = dsa[:int(dsa.shape[0]/2), :]
+            r_ = dsa[int(dsa.shape[0]/2):, :]
             if self.flip:
                 r_ = numpy.flipud(r_)
             r_ = self._deshift(r_, ROI)
