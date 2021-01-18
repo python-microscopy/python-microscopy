@@ -568,7 +568,8 @@ class LocalisationRule(Rule):
         self._next_release_start = self.start_at
         numTotalFrames = self.ds.getNumSlices()
         self.frames_outstanding=numTotalFrames - self._next_release_start
-        
+        if self.data_complete:
+            return dict(max_tasks=self.ds.getNumSlices())
         return {}
 
     @property
