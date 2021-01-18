@@ -122,7 +122,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
 
     #print json.dumps(f.cleaned_data)
     # NB - any metadata entries given here will override the series metadata later: pass analysis settings only
-    analysisMDH = MetaDataHandler.NestedClassMDHandler()
+    analysisMDH = MetaDataHandler.DictMDHandler()
     analysisMDH.update(f.cleaned_data)
 
     #print request.GET
@@ -135,6 +135,11 @@ def localize(request, analysisModule='LatGaussFitFR'):
     nSeries = len(remaining_series)
     
     nAttempts = 0
+
+    if USE_RULES:
+        import posixpath
+        from PYME.cluster.rules import LocalisationRuleFactory
+        rule_factory = LocalisationRuleFactory(analysisMetadata=analysisMDH)
     
     while len(remaining_series) > 0 and nAttempts < 3:
         nAttempts += 1
@@ -145,7 +150,8 @@ def localize(request, analysisModule='LatGaussFitFR'):
         for seriesName in seriesToLaunch:
             try:
                 if USE_RULES:
-                    HTTPRulePusher.launch_localize(analysisMDH, seriesName)
+                    context = {'seriesName': seriesName}
+                    rule_factory.get_rule(context=context).push()
                 else:
                     HTTPTaskPusher.launch_localize(analysisMDH, seriesName)
             except:
