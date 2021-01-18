@@ -923,7 +923,7 @@ def mirror_file(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
+def put_file(filename, data, serverfilter=local_serverfilter, timeout=5):
     """
     Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
     designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
