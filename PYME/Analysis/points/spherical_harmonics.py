@@ -214,13 +214,13 @@ def generate_icosahedron():
     zenith = np.hstack([0, np.array(5*[np.pi-t,t]).ravel(), np.pi])  # [0, pi]
     azimuth = np.hstack([0, np.arange(0, 2*np.pi, np.pi/5), 0])   # [0, 2*pi]
     idxs = np.arange(len(zenith))[1:-1]
-    upper_middle_strip = np.vstack([[v0,v1,v2] for v0,v1,v2 in 
+    upper_middle_strip = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                                     zip(idxs[::2],idxs[1::2],np.roll(idxs[::2],-1))])
-    lower_middle_strip = np.vstack([[v0,v1,v2] for v0,v1,v2 in 
+    lower_middle_strip = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                                     zip(np.roll(idxs[::2],-1),idxs[1::2],np.roll(idxs[1::2],-1))])
-    upper_cap = np.vstack([[v0,v1,v2] for v0,v1,v2 in 
+    upper_cap = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                         zip(np.zeros(5),idxs[::2],np.roll(idxs[::2],-1))])
-    lower_cap = np.vstack([[v0,v1,v2] for v0,v1,v2 in 
+    lower_cap = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                         zip(11*np.ones(5),np.roll(idxs[1::2],-1),idxs[1::2])])
     faces = np.vstack([upper_cap, upper_middle_strip, lower_middle_strip, lower_cap]).astype(np.int)
     
