@@ -227,7 +227,7 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl, nRetries=1, timeout=5):
+def _listSingleDir(dirurl, nRetries=1, timeout=10):
     t = time.time()
 
     try:
@@ -748,7 +748,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=0.5):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=5):
     """
     Get a file from the cluster.
     
@@ -923,7 +923,7 @@ def mirror_file(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
+def put_file(filename, data, serverfilter=local_serverfilter, timeout=5):
     """
     Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
     designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
