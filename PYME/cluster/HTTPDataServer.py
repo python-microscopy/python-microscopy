@@ -244,6 +244,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(path):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(path, -1)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -251,9 +255,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
                 f.write(data)
-
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -306,6 +307,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -335,9 +340,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 h5f.appendToTable(tablename.lstrip('/'), data)
                 #logging.debug('added data to table')
 
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -370,16 +372,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5File.openH5(filename, 'a') as h5f:
             tablename = tablename.lstrip('/')
             h5f.put_file(tablename, data)
             
-
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -613,28 +615,43 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """
         from PYME.IO import clusterListing as cl
 
-        with _listDirLock:
+        
+        curTime = time.time()
+        
+        # if dir is in already in cache, return without doing any locking
+        try:
+            js_dir, expiry = _dirCache[path]
+            if expiry < curTime:
+                js_dir=None
+            
+            #logger.debug('jsoned dir cache hit')
+        except KeyError:
+            js_dir = None
+            
+        if js_dir is None: # not in cache
             #make sure only one thread calculates the directory listing
-            curTime = time.time()
-            try:
-                js_dir, expiry = _dirCache[path]
-                if expiry < curTime:
-                    raise RuntimeError('Expired')
-                
-                #logger.debug('jsoned dir cache hit')
-            except (KeyError, RuntimeError):
-                #logger.debug('jsoned dir cache miss')
+            with _listDirLock:
+                # try the cache again, in case entry was added by another thread while we were waiting for the lock.
+                # in this case don't check expiry as directory listing took place while we were waiting - if it's
+                # already expired, then things aren't keeping up and doubling down is not going to help us.
                 try:
-                    if USE_DIR_CACHE:
-                        l2 = cl.dir_cache.list_directory(path)
-                    else:
-                        l2 = cl.list_directory(path)
-                except os.error:
-                    self.send_error(404, "No permission to list directory")
-                    return None
-    
-                js_dir = json.dumps(l2)
-                _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
+                    js_dir, expiry = _dirCache[path]
+                except KeyError:
+                    js_dir = None
+                    
+                
+                if js_dir is None:
+                    try:
+                        if USE_DIR_CACHE:
+                            l2 = cl.dir_cache.list_directory(path)
+                        else:
+                            l2 = cl.list_directory(path)
+                    except os.error:
+                        self.send_error(404, "No permission to list directory")
+                        return None
+        
+                    js_dir = json.dumps(l2)
+                    _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
         f, length = self._string_to_file(js_dir)
         
