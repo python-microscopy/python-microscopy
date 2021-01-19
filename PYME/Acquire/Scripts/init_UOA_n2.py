@@ -193,10 +193,10 @@ def focus_keys(MainFrame, scope):
 @init_gui('Splitter')
 def splitter(MainFrame, scope):
     from PYME.Acquire.Hardware import splitter
-    splt1 = splitter.Splitter(MainFrame, scope, scope.cameras['EMCCD'], flipChan = 1, dichroic = 'Unspecified' ,
+    splt1 = splitter.Splitter(MainFrame, scope, scope.cameras['EMCCD'], flipChan = 1, dichroic = 'FF700-Di01' ,
                               transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False, cam_name='EMCCD')
-    splt2 = splitter.Splitter(MainFrame, scope, scope.cameras['sCMOS'], flipChan = 1, dichroic = 'FF700-Di01' ,
-                              transLocOnCamera = 'Right', flip=False, dir='left_right', constrain=False, cam_name='sCMOS')
+    splt2 = splitter.Splitter(MainFrame, scope, scope.cameras['sCMOS'], flipChan = 1, dichroic = 'T686lpxr' ,
+                              transLocOnCamera = 'Right', flip=False, dir='left_right', constrain=False, cam_name='sCMOS', rois=[[70,0,800,2046], [880,0,800,2046]])
 
 
 #InitGUI("""
