@@ -206,10 +206,10 @@ class _LimitedSizeDict(OrderedDict):
                 self.popitem(last=False)
 
 
-_locateCache = _LimitedSizeDict(size_limit=500)
-_dirCache = _LimitedSizeDict(size_limit=100)
+_locateCache = _LimitedSizeDict(size_limit=5000)
+_dirCache = _LimitedSizeDict(size_limit=500)
 DIR_CACHE_TIME = 1
-_fileCache = _LimitedSizeDict(size_limit=100)
+_fileCache = _LimitedSizeDict(size_limit=500)
 
 #use one session for each server (to allow http keep-alives)
 sessions = {}
