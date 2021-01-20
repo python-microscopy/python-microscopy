@@ -114,39 +114,30 @@ class DirCache(object):
         dn = dn + '/'
         parent += '/'
         #logging.debug('update_cache: %s, %s' % (dirname, filename))
+        
         with self._lock:
-            try:
-                #this is a new file - update the directory entry for our parent
-                p_dir = self._cache[parent][0]
-            except KeyError:
-                #force our parent directory into the cache so that we can update it
-                l = self.list_directory(parent)
-                p_dir = self._cache[parent][0]
-            
-            try:
-                dir = self._cache[dirname][0]
-                dir_info = p_dir[dirname]
-            except KeyError:
-                #force our directory into the cache
-                l = self.list_directory(dirname)
-                dir = self._cache[dirname][0]
-                if l.get('final_metadata.json', False):
-                    dir_info = (FILETYPE_SERIES_COMPLETE, len(l))
-                elif l.get('metadata.json', False):
-                    dir_info = (FILETYPE_SERIES, len(l))
-                else:
-                    dir_info = (FILETYPE_DIRECTORY, len(l))
+            # get entry for our directory, forcing into cache if not already present
+            dir = self.list_directory(dirname)
+            if dir.get('final_metadata.json', False):
+                dir_info = (FILETYPE_SERIES_COMPLETE, len(dir))
+            elif dir.get('metadata.json', False):
+                dir_info = (FILETYPE_SERIES, len(dir))
+            else:
+                dir_info = (FILETYPE_DIRECTORY, len(dir))
                 
-            #logger.debug('pdir = %s' % p_dir)
-                
+            # if this is due to an aggregate call, filesize is the size of the next chunk, add to existing file size
+            # FIXME - remove as we don't update on aggregate any more???
             try:
                 fs = dir[fname][1]
             except KeyError:
                 fs = 0
-
-                p_dir[dn] = FileInfo(dir_info[0], dir_info[1] + 1)
                 
             dir[fname] = FileInfo(FILETYPE_NORMAL, fs + filesize)
+            
+            if not parent == dirname:
+                # we are not in the root directory, update parent directory as well
+                p_dir = self.list_directory(parent)
+                p_dir[dn] = FileInfo(dir_info[0], dir_info[1] + 1)
         
     
     def _add_entry(self, dirname, listing):
@@ -183,13 +174,16 @@ class DirCache(object):
             if expiry < time.time():
                 raise RuntimeError('Cache entry expired')
         except (KeyError, RuntimeError):
-            list = os.listdir(dirname)
-    
-            list.sort(key=lambda a: a.lower())
-    
-            #l2 = dict(map(lambda fn : _file_info(path, fn), list))
-            listing = dict([_file_info(dirname, fn) for fn in list])
-            self._add_entry(dirname, listing)
+            with self._lock:
+                try:
+                    listing, _ = self._cache[dirname]
+                except KeyError:
+                    list = os.listdir(dirname)
+                    list.sort(key=lambda a: a.lower())
+            
+                    #l2 = dict(map(lambda fn : _file_info(path, fn), list))
+                    listing = dict([_file_info(dirname, fn) for fn in list])
+                    self._add_entry(dirname, listing)
             
         return listing
     
