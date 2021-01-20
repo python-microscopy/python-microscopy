@@ -170,14 +170,18 @@ class DirCache(object):
     def list_directory(self, dirname):
         #logging.debug('list_directory: %s' % dirname)
         try:
+            #try our cache (without locking)
             listing, expiry = self._cache[dirname]
             if expiry < time.time():
                 raise RuntimeError('Cache entry expired')
         except (KeyError, RuntimeError):
             with self._lock:
+                # if not in cache, acquire lock so that we can modify cache
                 try:
+                    # double check that entry was not added while we were waiting for the lock
                     listing, _ = self._cache[dirname]
                 except KeyError:
+                    # not in cache, do the listing and add
                     list = os.listdir(dirname)
                     list.sort(key=lambda a: a.lower())
             
