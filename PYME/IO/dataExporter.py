@@ -230,6 +230,12 @@ class OMETiffExporter(Exporter):
                 return data.astype('uint8')
             else:
                 return data
+            
+        if data.nbytes > 2e9:
+            warnings.warn('Data is larger than 2GB, generated TIFF may not read in all software')
+            
+        if data.nbytes > 4e9:
+            raise RuntimeError('TIFF has a maximum file size of 4GB, crop data or save as HDF')
         
         dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None
