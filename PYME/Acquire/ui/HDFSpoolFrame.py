@@ -165,7 +165,7 @@ class PanSpool(afp.foldingPane):
         hsizer.Add(self.cbCompress, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
         self.cbQuantize = wx.CheckBox(pan, -1, 'Quantization')
-        self.cbQuantize.SetValue(config.get('Acquire-quantize_by_default', False))
+        self.cbQuantize.SetValue(config.get('spooler-quantize_by_default', False))
     
         hsizer.Add(self.cbQuantize, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
