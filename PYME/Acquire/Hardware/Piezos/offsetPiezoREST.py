@@ -99,7 +99,7 @@ class OffsetPiezo(PiezoBase):
         import wx
         #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (float(dx), float(dy), float(dz)))
-        wx.CallAfter(eventLog.logEvent, 'PiezoOffset', '%3.4f, %d' % (self.GetOffset(), active))
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffset', '%3.4f, %d' % (self.GetOffset(), int(active)))
 
     @webframework.register_endpoint('/OnTarget', output_is_json=False)
     def OnTarget(self):
@@ -167,7 +167,6 @@ class OffsetPiezoClient(PiezoBase):
 
     def LogShifts(self, dx, dy, dz, active=True):
         res = self._session.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
-        return float(res.json())
 
     def OnTarget(self):
         res = self._session.get(self.urlbase + '/OnTarget')
@@ -184,7 +183,12 @@ class OffsetPiezoClient(PiezoBase):
         res = self._session.get(self.urlbase + '/GetMinOffset')
         return float(res.json())
 
-def generate_offset_piezo_server(offset_piezo_base_class):
+def getClient():
+    #TODO - move away from hard-coded ports!!!
+    return OffsetPiezoClient()
+
+
+def server_class(offset_piezo_base_class=OffsetPiezo):
     """
     Class factory to return class which inherits from the desired style of OffsetPiezo
 
@@ -211,7 +215,7 @@ def generate_offset_piezo_server(offset_piezo_base_class):
             self.daemon_threads = True
 
             self._server_thread = threading.Thread(target=self._thread_target)
-            self._server_thread.daemon_threads = True
+            self._server_thread.daemon = True
 
             self._server_thread.start()
 
@@ -225,6 +229,11 @@ def generate_offset_piezo_server(offset_piezo_base_class):
                 self.server_close()
 
     return OffsetPiezoServer
+
+def generate_offset_piezo_server(piezo_class):
+    import warnings
+    warnings.warn(DeprecationWarning('Use `server_class() instead'))
+    return server_class(piezo_class)
 
 class TargetOwningOffsetPiezo(OffsetPiezo):
     """

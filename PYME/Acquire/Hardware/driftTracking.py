@@ -14,8 +14,8 @@ from scipy import ndimage
 from PYME.Acquire import eventLog
 #from PYME.gohlke import tifffile as tif
 
-import Pyro.core
-import Pyro.naming
+#import Pyro.core
+#import Pyro.naming
 import threading
 from PYME.misc.computerName import GetComputerName
 
@@ -63,9 +63,8 @@ def correlateAndCompareFrames(A, B):
     return (As -B).mean(), dx, dy
     
     
-class correlator(Pyro.core.ObjBase):
+class Correlator(object):
     def __init__(self, scope, piezo=None):
-        Pyro.core.ObjBase.__init__(self)
         self.scope = scope
         self.piezo = piezo
         
@@ -394,11 +393,24 @@ class correlator(Pyro.core.ObjBase):
     #     time.sleep(0.5)
     #     self.setRefC()
     #     piezo.MoveTo(0, p)
-    
+
+
+def correlator(scope, piezo=None):
+    # API compatible constructor for Py2
+    import Pyro.core
+    class klass(Pyro.core.ObjBase):
+        def __init__(self, scope, piezo=None):
+            Pyro.core.ObjBase.__init__(self)
+            Correlator.__init__(self, scope, piezo=piezo)
+
+    return klass
+
 
 class ServerThread(threading.Thread):
     def __init__(self, driftTracker):
         threading.Thread.__init__(self)
+        import Pyro.core
+        import Pyro.naming
 
         import socket
         ip_addr = socket.gethostbyname(socket.gethostname())
