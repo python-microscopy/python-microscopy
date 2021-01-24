@@ -105,6 +105,17 @@ class DirCache(object):
         
         self._lock = threading.RLock()
         
+        self._dir_locks={}
+        
+    def dir_lock(self, dirname):
+        try:
+            return self._dir_locks[dirname]
+        except KeyError:
+            with self._lock:
+                self._dir_locks[dirname] = threading.RLock()
+                
+            return self._dir_locks[dirname]
+        
     def update_cache(self, filename, filesize):
         dirname, fname = os.path.split(filename)
         parent, dn = os.path.split(dirname)
@@ -115,7 +126,8 @@ class DirCache(object):
         parent += '/'
         #logging.debug('update_cache: %s, %s' % (dirname, filename))
         
-        with self._lock:
+        #with self._lock:
+        with self.dir_lock(dirname):
             # get entry for our directory, forcing into cache if not already present
             dir = self.list_directory(dirname)
             if dir.get('final_metadata.json', False):
@@ -136,8 +148,9 @@ class DirCache(object):
             
             if not parent == dirname:
                 # we are not in the root directory, update parent directory as well
-                p_dir = self.list_directory(parent)
-                p_dir[dn] = FileInfo(dir_info[0], dir_info[1] + 1)
+                with self.dir_lock(parent):
+                    p_dir = self.list_directory(parent)
+                    p_dir[dn] = FileInfo(dir_info[0], dir_info[1] + 1)
         
     
     def _add_entry(self, dirname, listing):
@@ -161,11 +174,12 @@ class DirCache(object):
             
     def invalidate_directory(self, dirname):
         with self._lock:
-            try:
-                self._cache.pop(dirname)
-                self._purge_list.remove(dirname)
-            except KeyError:
-                logger.debug('%s not in directory cache' % dirname)
+            with self.dir_lock(dirname):
+                try:
+                    self._cache.pop(dirname)
+                    self._purge_list.remove(dirname)
+                except KeyError:
+                    logger.debug('%s not in directory cache' % dirname)
     
     def list_directory(self, dirname):
         #logging.debug('list_directory: %s' % dirname)
