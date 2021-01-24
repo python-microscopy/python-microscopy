@@ -605,6 +605,7 @@ class SpoolControllerWrapper(object):
     @webframework.register_endpoint('/info_longpoll', output_is_json=False)
     def info_longpoll(self):
         with self.spool_controller._status_changed_condition:
+            self.spool_controller._status_changed_condition.wait()
             return self.spool_controller.get_info()
 
     @webframework.register_endpoint('/settings', output_is_json=False)

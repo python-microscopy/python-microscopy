@@ -92,7 +92,13 @@
                     </form>
 
                     <h6 class="sidebar-heading"><span>Acquisition</span></h6>
-
+                    <div class= mtv-if="spooler.settings">
+                        <form action="javascript:void(0);">
+                        <div class="form-check form-check-inline"  v-for="method in spooler.available_spool_methods">
+                            <input class="form-check-input" type="radio" :id="method" :value="method" v-model="spooler.settings.method">
+                            <label class="form-check-label" :for="method">{{ method }}</label>
+                        </div>
+                        </form>
                     <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
                     <div v-if="spooler.status.spooling" class="mt-1 text-center">
                         <p>Currently spooling, {{ spooler.status.frames_spooled }} frames spooled</p>
@@ -101,6 +107,9 @@
                     <div v-else class="mt-1 text-center">
                         <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start spooling</button>
                     </div>
+                    </div>
+
+
 
                 </div>
                 {% endraw %}

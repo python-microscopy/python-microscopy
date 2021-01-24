@@ -236,6 +236,20 @@
 
     poll_state();
 
+    function get_spooler(){
+        $.ajax({
+            url: "/spool_controller/info",
+            success: function(data){
+                //app.state=data;
+                hw.spooler = data;
+                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+            }
+
+        })
+    }
+
+    get_spooler();
+
     function poll_spooler(){
         $.ajax({
             url: "/spool_controller/info_longpoll",
