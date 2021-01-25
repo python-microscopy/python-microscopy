@@ -623,6 +623,11 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             js_dir, expiry = _dirCache[path]
             if expiry < curTime:
                 js_dir=None
+                try:
+                    # remove directory entry from cache as it's expired.
+                    _dirCache.pop(path)
+                except KeyError:
+                    pass
             
             #logger.debug('jsoned dir cache hit')
         except KeyError:
