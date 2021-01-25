@@ -20,7 +20,7 @@ ujson
 jinja2
 toposort
 pymecompress >=0.2
-zeroconf==0.17.7 #TODO - can we relax this pin?
+zeroconf<=0.26.3
 
 cython # do we need this for a non-dev install?
 
