@@ -191,7 +191,7 @@ def interlock(MainFrame, scope):
 
     address = config.get('interlockserver-address', '127.0.0.1')
     port = config.get('interlockserver-port', 9119)
-    InterlockServer(scope, email_info, port, address)
+    scope.interlock = InterlockServer(scope, email_info, port, address)
 
 @init_gui('Multiview Selection')
 def multiview_selection(MainFrame, scope):

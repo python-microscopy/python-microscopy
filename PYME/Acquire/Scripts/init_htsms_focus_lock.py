@@ -117,6 +117,16 @@ def focus_lock(MainFrame, scope):
     MainFrame.camPanels.append((focus_log_panel, 'Focus Logger'))
 
 
+@init_gui('Interlock')
+def interlock(MainFrame, scope):
+    from PYME import config
+    from PYME.Acquire.interlock import InterlockClient
+
+    address = config.get('interlockserver-address', '127.0.0.1')
+    port = config.get('interlockserver-port', 9119)
+    scope.interlock = InterlockClient(address, port)
+
+
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
 

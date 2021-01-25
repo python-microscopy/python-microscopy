@@ -110,7 +110,8 @@ class ReflectedLinePIDFocusLock(PID):
     """
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
-                 max_sigma=np.finfo(float).max):
+                 max_sigma=np.finfo(float).max, 
+                 trigger_interlock=True):
         """
 
         Parameters
@@ -134,6 +135,9 @@ class ReflectedLinePIDFocusLock(PID):
         max_sigma : float
             maximum fit result sigma which we are willing to accept as a valid
             peak measurement we can use to correct the focus.
+        trigger_interlock : bool
+            if True, try to kill lasers if the profile intensity saturates a
+            majority of the pixels on the focus lock camera
         
         """
         self.scope = scope
@@ -148,6 +152,8 @@ class ReflectedLinePIDFocusLock(PID):
         
         self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
+
+        self.use_interlock = trigger_interlock and hasattr(scope, 'interlock')
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
 
@@ -369,6 +375,11 @@ class ReflectedLinePIDFocusLock(PID):
         """
         if self.LockEnabled():
             self.DisableLockAfterAcquiring()
+    
+    @property
+    def _interlock_threshold(self):
+        frame_shape = self.scope.frameWrangler.currentFrame.shape
+        return 0.5 * frame_shape[0] * frame_shape[1] * self.scope.cam.noise_properties['SaturationThreshold']
 
     def find_peak(self, profile):
         """
@@ -395,6 +406,8 @@ class ReflectedLinePIDFocusLock(PID):
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
+        if self.use_interlock and profile.sum() > self._interlock_threshold:
+            self.scope.interlock.kill(message='focus lock profile suggests heat danger')
         if self.subtraction_profile is not None:
             peak_position, success = self.find_peak(profile - self.subtraction_profile)
         else:
