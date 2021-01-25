@@ -35,8 +35,34 @@ class Interlock(object):
         message : str
             something about why you needed to kill using the interlock
         """
-        self.scope().turnAllLasersOff()
-        logger.error('shutting off lasers: %s' % message)
+        try:  # kill the lasers
+            self.scope().turnAllLasersOff()
+        except Exception as e:
+            logger.error(str(e))
+        
+        logger.error('interlock activated: %s' % message)
+        
+        try:  # pause the action queue
+            self.scope().action_manager.paused = True
+        except Exception as e:
+            logger.error(str(e))
+        
+        try:  # stop spooling
+            self.scope().spoolController.StopSpooling()
+        except Exception as e:
+            logger.error(str(e))
+        
+        try:  # unlock focus lock
+            self.scope().focus_lock.DisableLock()
+        except Exception as e:
+            logger.error(str(e))
+        
+        try:  # lower the objective
+            self.scope().piFoc.MoveTo(0, self.scope().piFoc.GetMin(0))
+        except Exception as e:
+            logger.error(str(e))
+
+        # call home
         if self.email_info is not None:
             try:
                 import smtplib, ssl
@@ -91,3 +117,23 @@ class InterlockServer(webframework.APIHTTPServer, Interlock):
             logger.info('Shutting down Interlock server ...')
             self.shutdown()
             self.server_close()
+
+
+class InterlockClient(object):
+    """
+    For systems running two PYMEAcquire instances, e.g. one for drift
+    tracking, this allows you to define a scope.interlock in both systems to
+    kill the lasers in the main PYMEAcquire.
+    """
+    def __init__(self, host='127.0.0.1', port=9119, name='interlock'):
+        import requests
+
+        self.host = host
+        self.port = port
+        self.name = name
+
+        self.base_url = 'http://%s:%d' % (host, port)
+        self._session = requests.Session()
+
+    def kill(self, message=''):
+        return self._session.get(self.base_url + '/kill?message=%s' % message)
