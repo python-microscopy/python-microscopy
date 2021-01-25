@@ -179,6 +179,20 @@ def laser_controls(MainFrame, scope):
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
+@init_gui('Interlock')
+def interlock(MainFrame, scope):
+    from PYME import config
+    from PYME.Acquire.interlock import InterlockServer
+    import yaml
+
+    email_info = config['email-info-path']
+    with open(email_info, 'r') as f:
+        email_info = yaml.safe_load(f)
+
+    address = config.get('interlockserver-address', '127.0.0.1')
+    port = config.get('interlockserver-port', 9119)
+    InterlockServer(scope, email_info, port, address)
+
 @init_gui('Multiview Selection')
 def multiview_selection(MainFrame, scope):
     from PYME.Acquire.ui import multiview_select
