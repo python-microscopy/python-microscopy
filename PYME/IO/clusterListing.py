@@ -154,27 +154,26 @@ class DirCache(object):
         
     
     def _add_entry(self, dirname, listing):
-        with self._lock:
-            if self._n >= self._cache_size:
-                # overflowing - remove an entry before adding
-    
-                to_remove = self._purge_list.pop(0)
+        with self.dir_lock(dirname):
+            with self._lock:
+                if self._n >= self._cache_size:
+                    # overflowing - remove an entry before adding
+        
+                    to_remove = self._purge_list.pop(0)
+                    
+                    try:
+                        self._cache.pop(to_remove)
+                        self._n -= 1
+                    except KeyError:
+                        logger.error('Could not remove %s from directory cache' % to_remove)
                 
-                #logger.debug('Removing %s from directory cache' % to_remove)
-                
-                try:
-                    self._cache.pop(to_remove)
-                    self._n -= 1
-                except KeyError:
-                    logger.error('Could not remove %s from directory cache' % to_remove)
-            
-            self._cache[dirname] = (listing, time.time() + self._lifetime_s)
-            self._purge_list.append(dirname)
-            self._n += 1
+                self._cache[dirname] = (listing, time.time() + self._lifetime_s)
+                self._purge_list.append(dirname)
+                self._n += 1
             
     def invalidate_directory(self, dirname):
-        with self._lock:
-            with self.dir_lock(dirname):
+        with self.dir_lock(dirname):
+            with self._lock:
                 try:
                     self._cache.pop(dirname)
                     self._purge_list.remove(dirname)
@@ -183,25 +182,20 @@ class DirCache(object):
     
     def list_directory(self, dirname):
         #logging.debug('list_directory: %s' % dirname)
-        try:
-            #try our cache (without locking)
-            listing, expiry = self._cache[dirname]
-            if expiry < time.time():
-                raise RuntimeError('Cache entry expired')
-        except (KeyError, RuntimeError):
-            with self._lock:
-                # if not in cache, acquire lock so that we can modify cache
-                try:
-                    # double check that entry was not added while we were waiting for the lock
-                    listing, _ = self._cache[dirname]
-                except KeyError:
-                    # not in cache, do the listing and add
-                    list = os.listdir(dirname)
-                    list.sort(key=lambda a: a.lower())
-            
-                    #l2 = dict(map(lambda fn : _file_info(path, fn), list))
-                    listing = dict([_file_info(dirname, fn) for fn in list])
-                    self._add_entry(dirname, listing)
+        with self.dir_lock(dirname):
+            try:
+                #try our cache (without locking)
+                listing, expiry = self._cache[dirname]
+                if expiry < time.time():
+                    raise RuntimeError('Cache entry expired')
+            except (KeyError, RuntimeError):
+                # not in cache, do the listing and add
+                list = os.listdir(dirname)
+                list.sort(key=lambda a: a.lower())
+        
+                #l2 = dict(map(lambda fn : _file_info(path, fn), list))
+                listing = dict([_file_info(dirname, fn) for fn in list])
+                self._add_entry(dirname, listing)
             
         return listing
     

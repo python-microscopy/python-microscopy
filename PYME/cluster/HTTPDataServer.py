@@ -211,7 +211,7 @@ class _LimitedSizeDict(OrderedDict):
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
 
-_listDirLock = threading.Lock()
+#_listDirLock = threading.Lock()
 
 from PYME.IO import clusterListing as cl
 
@@ -614,49 +614,33 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         """
         from PYME.IO import clusterListing as cl
-
-        
         curTime = time.time()
-        
-        # if dir is in already in cache, return without doing any locking
-        try:
-            js_dir, expiry = _dirCache[path]
-            if expiry < curTime:
-                js_dir=None
-                try:
-                    # remove directory entry from cache as it's expired.
-                    _dirCache.pop(path)
-                except KeyError:
-                    pass
-            
-            #logger.debug('jsoned dir cache hit')
-        except KeyError:
-            js_dir = None
-            
-        if js_dir is None: # not in cache
-            #make sure only one thread calculates the directory listing
-            with _listDirLock:
-                # try the cache again, in case entry was added by another thread while we were waiting for the lock.
-                # in this case don't check expiry as directory listing took place while we were waiting - if it's
-                # already expired, then things aren't keeping up and doubling down is not going to help us.
-                try:
-                    js_dir, expiry = _dirCache[path]
-                except KeyError:
-                    js_dir = None
-                    
-                
-                if js_dir is None:
+
+        with cl.dir_cache.dir_lock(path):
+            # if dir is in already in cache, return
+            try:
+                js_dir, expiry = _dirCache[path]
+                if expiry < curTime:
                     try:
-                        if USE_DIR_CACHE:
-                            l2 = cl.dir_cache.list_directory(path)
-                        else:
-                            l2 = cl.list_directory(path)
-                    except os.error:
-                        self.send_error(404, "No permission to list directory")
-                        return None
-        
-                    js_dir = json.dumps(l2)
-                    _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
+                        # remove directory entry from cache as it's expired.
+                        _dirCache.pop(path)
+                    except KeyError:
+                        pass
+                    
+                    raise KeyError('Entry expired')
+            
+            except KeyError:
+                try:
+                    if USE_DIR_CACHE:
+                        l2 = cl.dir_cache.list_directory(path)
+                    else:
+                        l2 = cl.list_directory(path)
+                except os.error:
+                    self.send_error(404, "No permission to list directory")
+                    return None
+    
+                js_dir = json.dumps(l2)
+                _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
         f, length = self._string_to_file(js_dir)
         
