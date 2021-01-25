@@ -179,6 +179,7 @@
             message: 'Hello Vue!',
             state: scope_state,
             spooler : {status:{spooling:false,},},
+            stack : {},
             },
         computed: {
             integration_time_ms: function () {
@@ -218,55 +219,61 @@
 
     get_state();
 
-    function poll_state(){
-        $.ajax({
-            url: "/scope_state_longpoll",
-            success: function(data){
-                //console.log(data);
-                app.state=data;
-                hw.state = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            },
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                }
-
-        })
-    }
-
-    poll_state();
+    // function poll_state(){
+    //     $.ajax({
+    //         url: "/scope_state_longpoll",
+    //         success: function(data){
+    //             //console.log(data);
+    //             app.state=data;
+    //             hw.state = data;
+    //             //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
+    //         },
+    //         complete: function(jqXHR, status){
+    //                 if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
+    //             }
+    //
+    //     })
+    // }
+    //
+    // poll_state();
 
     function get_spooler(){
         $.ajax({
             url: "/spool_controller/info",
-            success: function(data){
-                //app.state=data;
-                hw.spooler = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            }
-
+            success: function(data){hw.spooler = data;}
         })
     }
 
     get_spooler();
 
-    function poll_spooler(){
-        $.ajax({
-            url: "/spool_controller/info_longpoll",
-            success: function(data){
-                //console.log(data);
-                //app.state=data;
-                hw.spooler = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            },
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_spooler();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                }
-
-        })
+    function poll_updates(url, to_set, attrib){
+        var _poll = function(){
+            $.ajax({
+                url: url,
+                success: function(data) {
+                        for (v in to_set) {
+                            v[attrib] = data;
+                        }
+                    },
+                complete: function(jqXHR, status){if (status == 'success') {_poll();} else {console.log('Error whilst polling ' + url + ', make sure server is up and try refreshing the page');}}
+            })
+        };
+        _poll();
     }
 
-    poll_spooler();
+
+    poll_updates("/scope_state_longpoll", [hw, app], 'state');
+    poll_updates("/spool_controller/info_longpoll", [hw,], 'spooler');
+    poll_updates("/stack_settings/settings_longpoll", [hw,], 'stack');
+
+    /*function poll_spooler(){
+        $.ajax({
+            url: "/spool_controller/info_longpoll",
+            success: function(data){hw.spooler = data;},
+            complete: function(jqXHR, status){if (status == 'success') {poll_spooler();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}}
+        })
+    }
+    poll_spooler();*/
 
 
     $(window).on('load', function(){$("#home-tab").tab('show');});
