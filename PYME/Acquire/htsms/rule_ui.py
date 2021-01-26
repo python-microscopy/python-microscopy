@@ -578,6 +578,88 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def OnAddLocalization(self, wx_event=None):
         self._localization_panel.OnAddLocalizationRule()
 
+from PYME.recipes.recipeGui import RecipeView, RecipeManager
+class RuleRecipeView(RecipeView):
+    def __init__(self, parent, recipes):
+        wx.Panel.__init__(self, parent, size=(400, 100))
+        
+        self.recipes = recipes
+        recipes.recipeView = self  # weird plug
+        hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self.recipePlot = RecipePlotPanel(self, recipes, size=(-1, 400))
+        vsizer.Add(self.recipePlot, 1, wx.ALL | wx.EXPAND, 5)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        self.bNewRecipe = wx.Button(self, -1, 'Clear Recipe')
+        hsizer.Add(self.bNewRecipe, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bNewRecipe.Bind(wx.EVT_BUTTON, self.OnNewRecipe)
+        
+        self.bLoadRecipe = wx.Button(self, -1, 'Load Recipe')
+        hsizer.Add(self.bLoadRecipe, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bLoadRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnLoadRecipe)
+        
+        self.bAddModule = wx.Button(self, -1, 'Add Module')
+        hsizer.Add(self.bAddModule, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bAddModule.Bind(wx.EVT_BUTTON, self.OnAddModule)
+        
+        #self.bRefresh = wx.Button(self, -1, 'Refresh')
+        #hsizer.Add(self.bRefresh, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        self.bSaveRecipe = wx.Button(self, -1, 'Save Recipe')
+        hsizer.Add(self.bSaveRecipe, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSaveRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnSaveRecipe)
+        
+        self.b_add_recipe_rule = wx.Button(self, -1,
+                                           'Add Recipe to Chained Analysis')
+        hsizer.Add(self.b_add_recipe_rule, 0,
+                   wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.b_add_recipe_rule.Bind(wx.EVT_BUTTON,
+                                    self.recipes.OnAddRecipeRule)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        hsizer1.Add(vsizer, 1, wx.EXPAND | wx.ALL, 2)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
+        #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+        
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self._set_text_styling()
+        
+        vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
+        
+        self.bApply = wx.Button(self, -1, 'Apply Text Changes')
+        vsizer.Add(self.bApply, 0, wx.ALL, 2)
+        self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        hsizer1.Add(vsizer, 0, wx.EXPAND | wx.ALL, 2)
+        
+        self.SetSizerAndFit(hsizer1)
+        
+        self.recipes.LoadRecipeText('')
+        
+        recipes.activeRecipe.recipe_changed.connect(self.update)
+        recipes.activeRecipe.recipe_executed.connect(self.update)
+
+class RuleRecipeManager(RecipeManager):
+    def __init__(self, chained_analysis_page=None):
+        RecipeManager.__init__(self)
+        self.chained_analysis_page = chained_analysis_page
+
+    def OnAddRecipeRule(self, wx_event=None):
+        from PYME.cluster.rules import RecipeRuleFactory
+        #from PYME.Acquire.htsms.rule_ui import get_rule_tile
+        if self.chained_analysis_page is None:
+            logger.error('chained_analysis_page attribute unset')
+
+        rec = get_rule_tile(RecipeRuleFactory)(recipe=self.activeRecipe.toYAML())
+        self.chained_analysis_page.add_tile(rec)
+
 class ChainedAnalysisPanel(wx.Panel):
     def __init__(self, parent, protocol_rules, chained_analysis_page,
                  default_pairings=None):
@@ -654,7 +736,7 @@ class ChainedAnalysisPanel(wx.Panel):
         ind = self._protocol_rules_list.get_selected_items()[0]
         protocol = self._protocol_rules_list.GetItemText(ind, col=0)
         self._page.select_rule_chain(protocol)
-        self.parent.select_page_by_name('Chained Analysis')
+        self.parent._select_page_by_name('Chained Analysis')
 
     def OnToggleActive(self, wx_event):
         self._protocol_rules.active = self.checkbox_active.GetValue()
@@ -673,7 +755,6 @@ class ChainedAnalysisPanel(wx.Panel):
             [optional] protocol keys with lists of RuleFactorys as values to
             prepopulate panel on start up. By default, None
         """
-        from PYME.recipes.recipeGui import RuleRecipeView, RuleRecipeManager
 
         scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()
@@ -698,6 +779,50 @@ class ChainedAnalysisPanel(wx.Panel):
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
                                     True))
 
+
+from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettingsPanel, AnalysisDetailsPanel, manualFoldPanel
+class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
+    def __init__(self, wx_parent, localization_settings, mdh_changed_signal=None,
+                 chained_analysis_page=None):
+        from PYME.ui.autoFoldPanel import collapsingPane
+        manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
+        
+        self.localization_settings = localization_settings
+        self.localization_mdh = localization_settings.analysisMDH
+        self.mdh_changed_signal = mdh_changed_signal
+        self.chained_analysis_page = chained_analysis_page
+        
+        clp = collapsingPane(self, caption='settings ...')
+        clp.AddNewElement(AnalysisSettingsPanel(clp,
+                                                self.localization_settings,
+                                                self.mdh_changed_signal))
+        clp.AddNewElement(AnalysisDetailsPanel(clp, self.localization_settings,
+                                               self.mdh_changed_signal))
+        self.AddNewElement(clp)
+        
+        # add box to propagate rule to rule chain
+        add_rule_panel = wx.Panel(self, -1)
+        v_sizer = wx.BoxSizer(wx.VERTICAL)
+        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.b_add_rule = wx.Button(add_rule_panel, -1,
+                                    'Add Localization to Chained Analysis')
+        self.b_add_rule.Bind(wx.EVT_BUTTON, self.OnAddLocalizationRule)
+        h_sizer.Add(self.b_add_rule)
+        v_sizer.Add(h_sizer, 0, wx.EXPAND | wx.TOP, 0)
+        add_rule_panel.SetSizerAndFit(v_sizer)
+        self.AddNewElement(add_rule_panel)
+    
+    def OnAddLocalizationRule(self, wx_event=None):
+        from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
+        #from PYME.Acquire.htsms.rule_ui import get_rule_tile
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        if self.chained_analysis_page is None:
+            logger.error('chained_analysis_page attribute unset')
+            return
+        
+        mdh = DictMDHandler(self.localization_mdh)
+        loc_rule = get_rule_tile(LocalizationRuleFactory)(analysisMetadata=mdh)
+        self.chained_analysis_page.add_tile(loc_rule)
 
 class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
     def __init__(self, wx_parent, protocol_rules, chained_analysis_page,

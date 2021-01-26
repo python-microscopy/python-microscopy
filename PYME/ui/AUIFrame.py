@@ -129,8 +129,18 @@ class AUIFrame(wx.Frame):
         self.Update()
         self._mgr.Update()
     
-    def select_page_by_name(self, name):
-        """set a page to be active, using just it's caption
+    def _select_page_by_name(self, name):
+        """
+        WARNING - ADDED FOR TEMPORARY FUNCTIONALITY - WILL PROBABLY BE REMOVED
+        
+        FIXME - this is likely broken for page captions with spaces (where name != caption), this includes the use case
+        it was added for.
+        
+        FIXME - should get the notebook using self.pane0, rather than GetPaneByName
+        
+        FIXME - will fail if only one page
+        
+        set a page to be active, using just it's caption
 
         Parameters
         ----------
