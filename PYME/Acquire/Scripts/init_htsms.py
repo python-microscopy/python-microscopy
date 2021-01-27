@@ -210,7 +210,7 @@ def action_manager(MainFrame, scope):
 
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
-    from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
+    from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel
     from PYME.cluster.rules import RecipeRuleFactory
     import yaml
     import os
