@@ -21,9 +21,8 @@
 #
 ##################
 
-from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
-
 from PYME import config
+from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 #enable high-throughput style directory hashing
 config.config['acquire-spool_subdirectories'] = True
 
@@ -136,7 +135,6 @@ def lasers(scope):
     from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
     from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
     from PYME.config import config
-    from PYME.Acquire.Hardware.ioslave import ServoFiberShaker
     import json
 
     calib_file = config['aotf-calibration-file']
@@ -182,7 +180,7 @@ def laser_controls(MainFrame, scope):
 @init_gui('Interlock')
 def interlock(MainFrame, scope):
     from PYME import config
-    from PYME.Acquire.interlock import InterlockServer
+    from PYME.Acquire.Utils.failsafe import FailsafeServer
     import yaml
 
     email_info = config['email-info-path']
@@ -191,7 +189,7 @@ def interlock(MainFrame, scope):
 
     address = config.get('interlockserver-address', '127.0.0.1')
     port = config.get('interlockserver-port', 9119)
-    scope.interlock = InterlockServer(scope, email_info, port, address)
+    scope.interlock = FailsafeServer(scope, email_info, port, address)
 
 @init_gui('Multiview Selection')
 def multiview_selection(MainFrame, scope):
@@ -226,7 +224,6 @@ def action_manager(MainFrame, scope):
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.ui.rules import SMLMChainedAnalysisPanel
     from PYME.cluster.rules import RecipeRuleFactory
-    import yaml
     import os
 
     # add some default pairings

@@ -20,10 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
-
-
 import time
+
+from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
 @init_hardware('Camera')
 def cam(scope):
@@ -120,11 +119,11 @@ def focus_lock(MainFrame, scope):
 @init_gui('Interlock')
 def interlock(MainFrame, scope):
     from PYME import config
-    from PYME.Acquire.interlock import InterlockClient
+    from PYME.Acquire.Utils.failsafe import FailsafeClient
 
     address = config.get('interlockserver-address', '127.0.0.1')
     port = config.get('interlockserver-port', 9119)
-    scope.interlock = InterlockClient(address, port)
+    scope.interlock = FailsafeClient(address, port)
 
 
 #must be here!!!

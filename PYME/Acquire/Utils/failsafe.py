@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Interlock(object):
+class Failsafe(object):
     def __init__(self, microscope, email_info=None):
         """ 
 
@@ -24,6 +24,11 @@ class Interlock(object):
         """
         self.scope = weakref.ref(microscope)
         self.email_info = email_info
+        
+        # Uncomment the following after merge of #799
+        # Register as a server endpoint
+        # from PYME.Acquire import webui
+        # webui.add_endpoints(self, '/failsafe')
     
     @webframework.register_endpoint('/kill', output_is_json=False)
     def kill(self, message=''):
@@ -34,6 +39,14 @@ class Interlock(object):
         ----------
         message : str
             something about why you needed to kill using the interlock
+            
+        TODOs:
+        - require authentication for this endpoint
+        - make more generic
+            - wrap the try-except stuff into a common function,
+            - find a way of passing list of "actions" / supplementary actions in constructor
+            - move non-standard stuff which is not guaranteed to be present (piFoc, focus_lock, etc into this list)
+        - find a way of doing email/notification which is a) multi-user aware and b) does not require plaintext passwords
         """
         try:  # kill the lasers
             self.scope().turnAllLasersOff()
@@ -75,7 +88,7 @@ class Interlock(object):
             except Exception as e:
                 logger.error(str(e))
 
-class InterlockServer(webframework.APIHTTPServer, Interlock):
+class FailsafeServer(webframework.APIHTTPServer, Failsafe):
     def __init__(self, microscope, email_info=None, port=9119, 
                  bind_address=''):
         """
@@ -101,7 +114,7 @@ class InterlockServer(webframework.APIHTTPServer, Interlock):
             host.
         """
         webframework.APIHTTPServer.__init__(self, (bind_address, port))
-        Interlock.__init__(self, microscope, email_info)
+        Failsafe.__init__(self, microscope, email_info)
         
         self.daemon_threads = True
         self._server_thread = threading.Thread(target=self._serve)
@@ -119,11 +132,16 @@ class InterlockServer(webframework.APIHTTPServer, Interlock):
             self.server_close()
 
 
-class InterlockClient(object):
+class FailsafeClient(object):
     """
     For systems running two PYMEAcquire instances, e.g. one for drift
     tracking, this allows you to define a scope.interlock in both systems to
     kill the lasers in the main PYMEAcquire.
+    
+    TODO: Do we really need an explicit python client?? Just giving the focus lock code the HTTP endpoint coded as a string and
+    having it do a requests.get() on the endpoint (if defined) might be sufficient and result in less spaghetti. Clients
+    are needed for the remote piezos as we are substituting them for a python object with a previously defined interface,
+    but it might be better to just call the REST interface the official one in cases like this.
     """
     def __init__(self, host='127.0.0.1', port=9119, name='interlock'):
         import requests
