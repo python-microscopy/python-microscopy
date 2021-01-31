@@ -178,8 +178,8 @@ def laser_controls(MainFrame, scope):
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
-@init_gui('Interlock')
-def interlock(MainFrame, scope):
+@init_gui('Failsafe')
+def failsafe(MainFrame, scope):
     from PYME import config
     from PYME.Acquire.Utils.failsafe import FailsafeServer
     import yaml
@@ -188,9 +188,9 @@ def interlock(MainFrame, scope):
     with open(email_info, 'r') as f:
         email_info = yaml.safe_load(f)
 
-    address = config.get('interlockserver-address', '127.0.0.1')
-    port = config.get('interlockserver-port', 9119)
-    scope.interlock = FailsafeServer(scope, email_info, port, address)
+    address = config.get('failsafeserver-address', '127.0.0.1')
+    port = config.get('failsafeserver-port', 9119)
+    scope.failsafe = FailsafeServer(scope, email_info, port, address)
 
 @init_gui('Multiview Selection')
 def multiview_selection(MainFrame, scope):
