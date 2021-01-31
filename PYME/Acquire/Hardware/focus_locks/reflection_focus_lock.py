@@ -214,7 +214,7 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
-        # take out the lock so we can log offset before disabling
+        # take out the lock so we can log offset and disable 'at once'
         with self._piezo_control_lock:
             self.piezo.LogFocusCorrection(self.piezo.GetOffset())
             self.set_auto_mode(False)
