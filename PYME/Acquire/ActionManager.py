@@ -25,8 +25,21 @@ class Action(object):
     '''
     Base Action method - over-ride the __call__ function in derived classes
     '''
+    def __init__(self, **kwargs):
+        self.params = kwargs
+    
     def __call__(self, scope):
         pass
+    
+    def serialise(self):
+        '''Convert to a .json serializable dictionary'''
+        d = dict(self.params)
+        
+        then = getattr(self, '_then', None)
+        if then:
+            d['then'] = then.serialise()
+            
+        return {self.__class__.__name__ : d}
     
     
 class FunctionAction(Action):
@@ -37,6 +50,8 @@ class FunctionAction(Action):
     def __init__(self, functionName, args):
         self._fcn = functionName
         self._args = args
+        
+        Action.__init__(self, functionName=functionName, args=args)
         
     def __call__(self, scope):
         fcn = eval('.'.join(['scope', self._fcn]))
@@ -53,8 +68,9 @@ class StateAction(Action):
     NOTE: we currently do not support chaining off the end of actions (e.g. spooling) which are likely to take some time.
     This is because functions such as StartSpooling are non-blocking - they return a callback instead.
     '''
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._then=None
+        Action.__init__(self, **kwargs)
 
     def then(self, task):
         self._then = task
@@ -67,7 +83,7 @@ class StateAction(Action):
 class UpdateState(StateAction):
     def __init__(self, **kwargs):
         self._state = kwargs
-        StateAction.__init__(self)
+        StateAction.__init__(self, **kwargs)
         
     def __call__(self, scope):
         scope.state.update(self._state)
@@ -79,22 +95,33 @@ class UpdateState(StateAction):
 
 class CentreROIOn(StateAction):
     def __init__(self, x, y):
-        StateAction.__init__(self)
+        StateAction.__init__(self, x=x, y=y)
         raise NotImplementedError
         
 
 class SpoolSeries(Action):
     def __init__(self, **kwargs):
         self._args = kwargs
+        Action.__init__(self, **kwargs)
         
     def __call__(self, scope):
         return scope.spoolController.StartSpooling(**self._args)
         
-        
     def __repr__(self):
         return 'SpoolSeries(%s)' % ( self._args)
         
+def action_from_dict(serialised):
+    assert(len(serialised) == 1)
+    act, params = serialised.items()[0]
     
+    then = params.pop('then', None)
+    # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
+    a = globals()[act](**params)
+    if then:
+        a.then(action_from_dict(then))
+        
+    return a
+
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -304,6 +331,34 @@ class ActionManagerWebWrapper(object):
             action manager instance to wrap
         """
         self.action_manager = action_manager
+
+    @webframework.register_endpoint('/queue_actions', output_is_json=False)
+    def queue_actions(self, body, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+        """
+        Add a list of actions to the queue
+        
+        Parameters
+        ----------
+        body - json formatted list of serialised actions (see example below)
+        nice
+        timeout
+        max_duration
+
+        Returns
+        -------
+        
+        
+        Example body
+        ------------
+        
+        `[{'UpdateState':{'foo':'bar', 'then': {'SpoolSeries' : {...}}}]`
+
+        """
+        import json
+        actions = [action_from_dict(a) for a in json.loads(body)]
+
+        self.action_manager.queue_actions(actions, nice=nice, timeout=timeout, max_duration=max_duration)
+        
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
     def queue_action(self, body):
