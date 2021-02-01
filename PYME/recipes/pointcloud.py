@@ -308,10 +308,10 @@ class Ripleys(ModuleBase):
         if self.three_d:
             if np.count_nonzero(points_real['z']) == 0:
                 raise RuntimeError('Need a 3D dataset')
-            if mask.data.shape[2] < 2:
+            if mask and mask.data.shape[2] < 2:
                 raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
         else:
-            if mask.data.shape[2] > 1:
+            if mask and mask.data.shape[2] > 1:
                 raise RuntimeError('Need a 2D mask.')
 
         if self.statistics and mask is None:
