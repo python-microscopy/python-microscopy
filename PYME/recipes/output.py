@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def _ensure_output_directory(filename):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
-        os.path.makedirs(dirname)
+        os.makedirs(dirname)
 
 @register_module('CSVOutput')
 class CSVOutput(OutputModule):
