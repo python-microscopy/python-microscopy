@@ -96,7 +96,9 @@ class UpdateState(StateAction):
 class CentreROIOn(StateAction):
     def __init__(self, x, y):
         StateAction.__init__(self, x=x, y=y)
-        raise NotImplementedError
+        # TODO - write this however David wanted it
+    def __call__(self, scope):
+        scope.centre_roi_on(self.params['x'], self.params['y'])
         
 
 class SpoolSeries(Action):
@@ -112,11 +114,16 @@ class SpoolSeries(Action):
         
 def action_from_dict(serialised):
     assert(len(serialised) == 1)
-    act, params = serialised.items()[0]
+    act, params = list(serialised.items())[0]
     
     then = params.pop('then', None)
-    # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
-    a = globals()[act](**params)
+    try:
+        # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
+        a = globals()[act](**params)
+    except KeyError:
+        # Legacy string-based action queued in `Action` function method
+        logger.warn('string-based function queuing is deprecated, see ActionManager.FunctionAction')
+        return FunctionAction(act, params)
     if then:
         a.then(action_from_dict(then))
         
@@ -357,7 +364,9 @@ class ActionManagerWebWrapper(object):
         import json
         actions = [action_from_dict(a) for a in json.loads(body)]
 
-        self.action_manager.queue_actions(actions, nice=nice, timeout=timeout, max_duration=max_duration)
+        self.action_manager.queue_actions(actions, nice=int(nice), 
+                                          timeout=float(timeout), 
+                                          max_duration=float(max_duration))
         
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
