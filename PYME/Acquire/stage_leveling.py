@@ -113,6 +113,25 @@ class StageLeveler(object):
             self.add_grid(9000 * 12, 9000 * 8, 9000, 9000, center=False)
         else:
             logger.error('short axes must be "x" or "y"')
+    
+    def add_ibidi8wellslide_positions(self, short='x'):
+        """Shortcut for queueing center positions on a ibidi 8 well slide from
+        minimum x, y well. x (2 well) should be short axis, y (4 well) long
+
+        Parameters
+        ----------
+        short: str
+            stage dimension of the short axis (2 wells) of the plate. Defaults
+            to x.
+        """
+        if short=='x':
+            self.add_grid(11.2 * 1e3 * 2, 12.5 * 1e3 * 4, 
+                          11.2 * 1e3, 12.5 * 1e3, center=False)
+        elif short=='y':
+            self.add_grid(12.5 * 1e3 * 4, 11.2 * 1e3 * 2,
+                          12.5 * 1e3, 11.2 * 1e3, center=False)
+        else:
+            logger.error('short axes must be "x" or "y"')
 
     def measure_offsets(self, optimize_path=True):
         """
