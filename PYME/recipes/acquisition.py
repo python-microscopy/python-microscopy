@@ -127,9 +127,7 @@ class QueueAcquisitions(OutputModule):
                 'CentreROIOn':{
                     'x': positions[ri, 0], 'y': positions[ri, 1],
                     'then': {
-                        'SpoolSeries' : {
-                            'spool_settings': spool_settings,
-                        }
+                        'SpoolSeries' : spool_settings
                     }
                 }
             })
