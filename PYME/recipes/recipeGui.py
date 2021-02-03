@@ -640,6 +640,7 @@ class PipelineRecipeManager(RecipeManager):
     def load_recipe_from_mdh(self, mdh):
         self.LoadRecipeText(mdh['Pipeline.Recipe'])
 
+
 class dt(wx.FileDropTarget):
     def __init__(self, window):
         wx.FileDropTarget.__init__(self)

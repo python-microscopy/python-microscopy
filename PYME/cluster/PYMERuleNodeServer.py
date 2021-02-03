@@ -116,7 +116,7 @@ def main():
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir=%s' % (sys.executable, serverPort, profiledir), shell=True,
+    workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir="%s"' % (sys.executable, serverPort, profiledir), shell=True,
                                         stdin=subprocess.PIPE))
 
     try:

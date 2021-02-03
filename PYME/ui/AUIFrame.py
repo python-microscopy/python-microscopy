@@ -128,6 +128,31 @@ class AUIFrame(wx.Frame):
         self.Refresh()
         self.Update()
         self._mgr.Update()
+    
+    def _select_page_by_name(self, name):
+        """
+        WARNING - ADDED FOR TEMPORARY FUNCTIONALITY - WILL PROBABLY BE REMOVED
+        
+        FIXME - this is likely broken for page captions with spaces (where name != caption), this includes the use case
+        it was added for.
+        
+        FIXME - should get the notebook using self.pane0, rather than GetPaneByName
+        
+        FIXME - will fail if only one page
+        
+        set a page to be active, using just it's caption
+
+        Parameters
+        ----------
+        name : str
+            caption used when you added the page in `self.AddPage`
+        """
+        pn = self._mgr.GetPaneByName(name)
+        nb = self._mgr.GetNotebooks()[pn.notebook_id]
+        for pg_ind in range(nb.GetPageCount()):
+            t = nb.GetPageText(pg_ind)
+            if t == name:
+                nb.SetSelection(pg_ind)
 
     def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY,
                     error_context_manager=True, short_description=None):
