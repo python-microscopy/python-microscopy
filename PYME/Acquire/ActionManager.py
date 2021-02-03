@@ -21,6 +21,115 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+class Action(object):
+    '''
+    Base Action method - over-ride the __call__ function in derived classes
+    '''
+    def __init__(self, **kwargs):
+        self.params = kwargs
+    
+    def __call__(self, scope):
+        pass
+    
+    def serialise(self):
+        '''Convert to a .json serializable dictionary'''
+        d = dict(self.params)
+        
+        then = getattr(self, '_then', None)
+        if then:
+            d['then'] = then.serialise()
+            
+        return {self.__class__.__name__ : d}
+    
+    
+class FunctionAction(Action):
+    '''Legacy action which evals a string.
+    
+    Used for handling old -style actions
+    '''
+    def __init__(self, functionName, args):
+        self._fcn = functionName
+        self._args = args
+        
+        Action.__init__(self, functionName=functionName, args=args)
+        
+    def __call__(self, scope):
+        fcn = eval('.'.join(['scope', self._fcn]))
+        #fcn = getattr(scope, self._fcn)
+        return fcn(**self._args)
+    
+    def __repr__(self):
+        return 'FunctionAction: %s(%s)' % (self._fcn, self._args)
+    
+    
+class StateAction(Action):
+    ''' Base class for actions which modify scope state, with chaining support
+    
+    NOTE: we currently do not support chaining off the end of actions (e.g. spooling) which are likely to take some time.
+    This is because functions such as StartSpooling are non-blocking - they return a callback instead.
+    '''
+    def __init__(self, **kwargs):
+        self._then=None
+        Action.__init__(self, **kwargs)
+
+    def then(self, task):
+        self._then = task
+            
+    def _do_then(self, scope):
+        if self._then is not None:
+            return self._then(scope)
+
+
+class UpdateState(StateAction):
+    def __init__(self, **kwargs):
+        self._state = kwargs
+        StateAction.__init__(self, **kwargs)
+        
+    def __call__(self, scope):
+        scope.state.update(self._state)
+        return self._do_then(scope)
+        
+    def __repr__(self):
+        return 'UpdateState: %s' % self._state
+    
+
+class CentreROIOn(StateAction):
+    def __init__(self, x, y):
+        StateAction.__init__(self, x=x, y=y)
+        # TODO - write this however David wanted it
+    def __call__(self, scope):
+        scope.centre_roi_on(self.params['x'], self.params['y'])
+        
+
+class SpoolSeries(Action):
+    def __init__(self, **kwargs):
+        self._args = kwargs
+        Action.__init__(self, **kwargs)
+        
+    def __call__(self, scope):
+        return scope.spoolController.StartSpooling(**self._args)
+        
+    def __repr__(self):
+        return 'SpoolSeries(%s)' % ( self._args)
+        
+def action_from_dict(serialised):
+    assert(len(serialised) == 1)
+    act, params = list(serialised.items())[0]
+    
+    then = params.pop('then', None)
+    try:
+        # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
+        a = globals()[act](**params)
+    except KeyError:
+        # Legacy string-based action queued in `Action` function method
+        logger.warn('string-based function queuing is deprecated, see ActionManager.FunctionAction')
+        return FunctionAction(act, params)
+    if then:
+        a.then(action_from_dict(then))
+        
+    return a
+
+
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
     
@@ -70,7 +179,7 @@ class ActionManager(object):
         
     def QueueAction(self, functionName, args, nice=10, timeout=1e6, 
                     max_duration=np.finfo(float).max):
-        """Add an action to the queue
+        """Add an action to the queue. Legacy version for string based actions. Most applications should use queue_actions() below instead
         
         Parameters
         ----------
@@ -111,8 +220,60 @@ class ActionManager(object):
         #ensure FIFO behaviour for events with the same priority
         nice_ = nice + self._timestamp*1e-10
         
-        self.actionQueue.put_nowait((nice_, functionName, args, expiry, 
-                                     max_duration))
+        self.actionQueue.put_nowait((nice_, FunctionAction(functionName, args), expiry, max_duration))
+        self.onQueueChange.send(self)
+        
+    def queue_actions(self, actions, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+        '''
+        Queue a number of actions for subsequent execution
+        
+        Parameters
+        ----------
+        actions : list
+            A list of Action instances
+        nice : int (or float)
+            The priority with which to execute the function. Functions with a
+            lower nice value execute first.
+        timeout : float
+            A timeout in seconds from the current time at which the action
+            becomes irrelevant and should be ignored.
+        max_duration : float
+            A generous estimate, in seconds, of how long the task might take,
+            after which the lasers will be automatically turned off and the
+            action queue paused. This will not interrupt the current task,
+            though it has presumably already failed at that point. Intended as a
+            safety feature for automated acquisitions, the check is every 3 s
+            rather than fine-grained.
+
+        Returns
+        -------
+        
+        
+        Examples
+        --------
+        
+        >>> my_actions = [UpdateState({'Camera.ROI' : [50, 50, 200, 200]}),
+        >>>      SpoolSeries(maxFrames=500, stack=False),
+        >>>      UpdateState({'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
+        >>>      ]
+        >>>
+        >>>ActionManager.queue_actions(my_actions)
+        
+        Note that the first two tasks are independant -
+
+        '''
+        for action in actions:
+            curTime = time.time()
+            expiry = curTime + timeout
+        
+            #make sure our timestamps strictly increment
+            self._timestamp = max(curTime, self._timestamp + 1e-3)
+        
+            #ensure FIFO behaviour for events with the same priority
+            nice_ = nice + self._timestamp * 1e-10
+        
+            self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
+            
         self.onQueueChange.send(self)
         
         
@@ -128,7 +289,7 @@ class ActionManager(object):
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
-                nice, functionName, args, expiry, max_duration = self.currentTask
+                nice, action, expiry, max_duration = self.currentTask
                 self._cur_task_kill_time = time.time() + max_duration
                 self.onQueueChange.send(self)
             except Queue.Empty:
@@ -136,9 +297,9 @@ class ActionManager(object):
                 return
             
             if expiry > time.time():
-                print('%s, %s' % (self.currentTask, functionName))
-                fcn = eval('.'.join(['self.scope()', functionName]))
-                self.isLastTaskDone = fcn(**args)
+                print('%s, %s' % (self.currentTask, action))
+                #fcn = eval('.'.join(['self.scope()', functionName]))
+                self.isLastTaskDone = action(self.scope())
             else:
                 past_expire = time.time() - expiry
                 logger.debug('task expired %f s ago, ignoring %s' % (past_expire,
@@ -177,6 +338,36 @@ class ActionManagerWebWrapper(object):
             action manager instance to wrap
         """
         self.action_manager = action_manager
+
+    @webframework.register_endpoint('/queue_actions', output_is_json=False)
+    def queue_actions(self, body, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+        """
+        Add a list of actions to the queue
+        
+        Parameters
+        ----------
+        body - json formatted list of serialised actions (see example below)
+        nice
+        timeout
+        max_duration
+
+        Returns
+        -------
+        
+        
+        Example body
+        ------------
+        
+        `[{'UpdateState':{'foo':'bar', 'then': {'SpoolSeries' : {...}}}]`
+
+        """
+        import json
+        actions = [action_from_dict(a) for a in json.loads(body)]
+
+        self.action_manager.queue_actions(actions, nice=int(nice), 
+                                          timeout=float(timeout), 
+                                          max_duration=float(max_duration))
+        
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
     def queue_action(self, body):
