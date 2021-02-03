@@ -99,6 +99,10 @@ class CentreROIOn(StateAction):
         # TODO - write this however David wanted it
     def __call__(self, scope):
         scope.centre_roi_on(self.params['x'], self.params['y'])
+        return self._do_then(scope)
+    
+    def __repr__(self):
+        return 'CentreROIOn: %f, %f (x, y)' % (self.params['x'], self.params['y'])
         
 
 class SpoolSeries(Action):
