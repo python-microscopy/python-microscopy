@@ -211,7 +211,7 @@ class _LimitedSizeDict(OrderedDict):
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
 
-_listDirLock = threading.Lock()
+#_listDirLock = threading.Lock()
 
 from PYME.IO import clusterListing as cl
 
@@ -244,6 +244,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(path):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(path, -1)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -251,9 +255,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
                 f.write(data)
-
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -306,6 +307,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -335,9 +340,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 h5f.appendToTable(tablename.lstrip('/'), data)
                 #logging.debug('added data to table')
 
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -370,16 +372,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5File.openH5(filename, 'a') as h5f:
             tablename = tablename.lstrip('/')
             h5f.put_file(tablename, data)
             
-
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -612,18 +614,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         """
         from PYME.IO import clusterListing as cl
+        curTime = time.time()
 
-        with _listDirLock:
-            #make sure only one thread calculates the directory listing
-            curTime = time.time()
+        with cl.dir_cache.dir_lock(path):
+            # if dir is in already in cache, return
             try:
                 js_dir, expiry = _dirCache[path]
                 if expiry < curTime:
-                    raise RuntimeError('Expired')
-                
-                #logger.debug('jsoned dir cache hit')
-            except (KeyError, RuntimeError):
-                #logger.debug('jsoned dir cache miss')
+                    try:
+                        # remove directory entry from cache as it's expired.
+                        _dirCache.pop(path)
+                    except KeyError:
+                        pass
+                    
+                    raise KeyError('Entry expired')
+            
+            except KeyError:
                 try:
                     if USE_DIR_CACHE:
                         l2 = cl.dir_cache.list_directory(path)
