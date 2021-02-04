@@ -381,7 +381,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         # queue them all
         actions = list()
         for x, y, filename in zip(x_wells, y_wells, names):
-            state = UpdateState({'Positioning.x': x, 'Positioning.y': y})
+            state = UpdateState(state={'Positioning.x': x, 'Positioning.y': y})
             spool = SpoolSeries(protocol=protocol_name, stack=False, 
                                 doPreflightCheck=False, fn=filename)
             actions.append(state.then(spool))

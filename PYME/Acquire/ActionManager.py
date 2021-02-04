@@ -256,9 +256,9 @@ class ActionManager(object):
         Examples
         --------
         
-        >>> my_actions = [UpdateState({'Camera.ROI' : [50, 50, 200, 200]}),
+        >>> my_actions = [UpdateState(state={'Camera.ROI' : [50, 50, 200, 200]}),
         >>>      SpoolSeries(maxFrames=500, stack=False),
-        >>>      UpdateState({'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
+        >>>      UpdateState(state={'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
         >>>      ]
         >>>
         >>>ActionManager.queue_actions(my_actions)
