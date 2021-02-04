@@ -137,6 +137,16 @@ class QueueAcquisitions(OutputModule):
                         data=json.dumps(actions),
                         headers={'Content-Type': 'application/json'})
         
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        np.iinfo(int).max,
+                                                                        self.max_duration),
+                        data=json.dumps([{
+                            'FunctionAction': {
+                                'functionName': 'turnAllLasersOff', 'args': {}
+                                }
+                            }]),
+                        headers={'Content-Type': 'application/json'})
+        
         # queue a high-nice call to shut off all lasers when we're done
         session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
                                                                         np.iinfo(int).max,
