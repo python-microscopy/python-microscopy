@@ -127,7 +127,7 @@ class ProtocolRules(OrderedDict):
             # not the right trigger for this protocol
             return
         
-        if len(rule_factory_chain) == 0:
+        if len(rule_factory_chain.rule_factories) == 0:
             logger.info('no rules in chain')
             return
         
@@ -578,7 +578,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def OnAddLocalization(self, wx_event=None):
         self._localization_panel.OnAddLocalizationRule()
 
-from PYME.recipes.recipeGui import RecipeView, RecipeManager
+from PYME.recipes.recipeGui import RecipeView, RecipeManager, RecipePlotPanel
 class RuleRecipeView(RecipeView):
     def __init__(self, parent, recipes):
         wx.Panel.__init__(self, parent, size=(400, 100))
@@ -873,8 +873,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
             [optional] protocol keys with lists of RuleFactorys as values to
             prepopulate panel on start up. By default, None
         """
-        from PYME.recipes.recipeGui import RuleRecipeView, RuleRecipeManager
-        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings, LocalizationSettingsPanel
+        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
 
         scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()
