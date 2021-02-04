@@ -223,7 +223,7 @@ def action_manager(MainFrame, scope):
 
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
-    from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel
+    from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel, get_rule_tile, RuleChain
     from PYME.cluster.rules import RecipeRuleFactory, LocalisationRuleFactory
     from PYME.IO.MetaDataHandler import DictMDHandler
     import yaml
@@ -236,7 +236,7 @@ def chained_analysis(main_frame, scope):
     tilerec = os.path.join(rec_dir, '20210125_tile_detect_filter_queue_subset.yaml')
     with open(tilerec) as f:
         tilerec = f.read()
-    defaults['htsms-tile'] = [RecipeRuleFactory(recipe=tilerec)]
+    defaults['htsms-tile'] = RuleChain([get_rule_tile(RecipeRuleFactory)(recipe=tilerec)])
 
     mdh = DictMDHandler({
             "Analysis.BGRange": [-32, 0],
@@ -253,8 +253,8 @@ def chained_analysis(main_frame, scope):
             "Analysis.subtractBackground": True,
     })
 
-    defaults['htsms-flow'] = [LocalisationRuleFactory(analysisMetadata=mdh)]
-    defaults['htsms-staggered'] = [LocalisationRuleFactory(analysisMetadata=mdh)]
+    defaults['htsms-flow'] = RuleChain([get_rule_tile(LocalisationRuleFactory)(analysisMetadata=mdh)])
+    defaults['htsms-staggered'] = RuleChain([get_rule_tile(LocalisationRuleFactory)(analysisMetadata=mdh)])
 
     SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 
