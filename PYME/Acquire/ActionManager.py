@@ -47,11 +47,13 @@ class FunctionAction(Action):
     
     Used for handling old -style actions
     '''
-    def __init__(self, functionName, args):
+    def __init__(self, functionName, args=None):
+        Action.__init__(self, functionName=functionName, args=args)
         self._fcn = functionName
+        if args is None:
+            args = {}
         self._args = args
         
-        Action.__init__(self, functionName=functionName, args=args)
         
     def __call__(self, scope):
         fcn = eval('.'.join(['scope', self._fcn]))
@@ -82,9 +84,9 @@ class StateAction(Action):
 
 
 class UpdateState(StateAction):
-    def __init__(self, **kwargs):
-        self._state = kwargs
-        StateAction.__init__(self, **kwargs)
+    def __init__(self, state):
+        self._state = state
+        StateAction.__init__(self, state=state)
         
     def __call__(self, scope):
         scope.state.update(self._state)
