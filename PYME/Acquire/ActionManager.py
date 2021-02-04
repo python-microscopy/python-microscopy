@@ -74,6 +74,7 @@ class StateAction(Action):
 
     def then(self, task):
         self._then = task
+        return self
             
     def _do_then(self, scope):
         if self._then is not None:
