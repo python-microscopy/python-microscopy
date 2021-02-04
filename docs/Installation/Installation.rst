@@ -21,7 +21,7 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 	
     conda config --append channels anaconda
     conda config --add channels david_baddeley
-    conda install python=3.7 python-microscopy
+    conda create -n PYME python=3.6 pyme-depends-strict python-microscopy
 
 .. note::
 
@@ -32,6 +32,16 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
     Having recently made the py2-> py3 transition, there are a still few components which might work better / are better tested on python 2.7
     (likely to only effect instrument control). As we are no longer building updated packages on 2.7 we recommend a source
     install in this case.
+
+.. note::
+
+   The inclusion of `pyme-depends-strict` above pins all the PYME dependencies as well as their dependencies to fixed,
+   known good versions. This blunt way of avoiding dependency conflicts was introduced after having been burnt once too
+   often by packaging issues in one of our dependencies, but might make it hard to install other packages (e.g. keras)
+   that you might want to use in conjunction with PYME. In general omitting `pyme-depends-strict`, and simply running
+   `conda create -n PYME python=3.6 python-microscopy` should be enough to give a functioning install, but there is a
+   small chance that you will need to fix dependency conflicts. `traits`, `traitsui` and `pyface` have been
+   the most consistent offenders, with a version of `traitsui` being installed which requires an older version of `pyface`.
 
 
 Updating
