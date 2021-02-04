@@ -19,16 +19,16 @@ class ActionList(wx.ListCtrl):
         self.actionManager.onQueueChange.connect(self.update)
         
         self.InsertColumn(0, "Priority")
-        self.InsertColumn(1, "Function")
-        self.InsertColumn(2, "Args")
-        self.InsertColumn(3, "Expiry")
-        self.InsertColumn(4, 'Max Duration')
+        self.InsertColumn(1, "Action")
+        #self.InsertColumn(2, "Args")
+        self.InsertColumn(2, "Expiry")
+        self.InsertColumn(3, 'Max Duration')
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 150)
-        self.SetColumnWidth(2, 450)
-        self.SetColumnWidth(3, 50)
-        self.SetColumnWidth(4, 200)
+        self.SetColumnWidth(1, 600)
+        #self.SetColumnWidth(2, 450)
+        self.SetColumnWidth(2, 50)
+        self.SetColumnWidth(3, 200)
 
 
     def OnGetItemText(self, item, col):
@@ -39,7 +39,7 @@ class ActionList(wx.ListCtrl):
         
     def update(self, **kwargs):
         self._queueItems = list(self.actionManager.actionQueue.queue)
-        self._queueItems.sort()
+        self._queueItems.sort(key=lambda a : a[0])
         self.SetItemCount(len(self._queueItems))
         self.Refresh()
 

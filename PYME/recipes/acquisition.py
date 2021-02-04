@@ -119,29 +119,31 @@ class QueueAcquisitions(OutputModule):
         else:
             positions = positions[::-1, :] if self.lifo else positions
         
-        dest = self.action_server_url + '/queue_action'
+        dest = self.action_server_url + '/queue_actions'
         session = requests.Session()
+        actions = list()
         for ri in range(positions.shape[0]):
-            args = {'function_name': 'centre_roi_on', 
-            'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': self.nice,
-                    'max_duration': self.max_duration}
-            session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
-            
-            time.sleep(self.between_post_throttle)
-
-            args = {'function_name': 'spoolController.StartSpooling',
-                    'args': spool_settings,
-                    'timeout': self.timeout, 'nice': self.nice,
-                    'max_duration': self.max_duration}
-            session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
-            
-            time.sleep(self.between_post_throttle)
+            actions.append({
+                'CentreROIOn':{
+                    'x': positions[ri, 0], 'y': positions[ri, 1],
+                    'then': {
+                        'SpoolSeries' : spool_settings
+                    }
+                }
+            })
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        self.nice,
+                                                                        self.max_duration),
+                        data=json.dumps(actions),
+                        headers={'Content-Type': 'application/json'})
         
         # queue a high-nice call to shut off all lasers when we're done
-        args = {'function_name': 'turnAllLasersOff',
-                    'timeout': self.timeout, 'nice': np.iinfo(int).max}
-        session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        np.iinfo(int).max,
+                                                                        self.max_duration),
+                        data=json.dumps([{
+                            'FunctionAction': {
+                                'functionName': 'turnAllLasersOff', 'args': {}
+                                }
+                            }]),
+                        headers={'Content-Type': 'application/json'})
