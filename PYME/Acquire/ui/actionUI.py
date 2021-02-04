@@ -39,7 +39,7 @@ class ActionList(wx.ListCtrl):
         
     def update(self, **kwargs):
         self._queueItems = list(self.actionManager.actionQueue.queue)
-        self._queueItems.sort()
+        self._queueItems.sort(key=lambda a : a[0])
         self.SetItemCount(len(self._queueItems))
         self.Refresh()
 
