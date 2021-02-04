@@ -99,7 +99,13 @@ class UpdateState(StateAction):
 class CentreROIOn(StateAction):
     def __init__(self, x, y):
         StateAction.__init__(self, x=x, y=y)
-        raise NotImplementedError
+        # TODO - write this however David wanted it
+    def __call__(self, scope):
+        scope.centre_roi_on(self.params['x'], self.params['y'])
+        return self._do_then(scope)
+    
+    def __repr__(self):
+        return 'CentreROIOn: %f, %f (x, y)' % (self.params['x'], self.params['y'])
         
 
 class SpoolSeries(Action):
@@ -115,14 +121,15 @@ class SpoolSeries(Action):
         
 def action_from_dict(serialised):
     assert(len(serialised) == 1)
-    act, params = serialised.items()[0]
+    act, params = list(serialised.items())[0]
     
     then = params.pop('then', None)
     # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
     a = globals()[act](**params)
+
     if then:
         a.then(action_from_dict(then))
-        
+    
     return a
 
 
@@ -248,9 +255,9 @@ class ActionManager(object):
         Examples
         --------
         
-        >>> my_actions = [UpdateState({'Camera.ROI' : [50, 50, 200, 200]}),
+        >>> my_actions = [UpdateState(state={'Camera.ROI' : [50, 50, 200, 200]}),
         >>>      SpoolSeries(maxFrames=500, stack=False),
-        >>>      UpdateState({'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
+        >>>      UpdateState(state={'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
         >>>      ]
         >>>
         >>>ActionManager.queue_actions(my_actions)
@@ -360,7 +367,9 @@ class ActionManagerWebWrapper(object):
         import json
         actions = [action_from_dict(a) for a in json.loads(body)]
 
-        self.action_manager.queue_actions(actions, nice=nice, timeout=timeout, max_duration=max_duration)
+        self.action_manager.queue_actions(actions, nice=int(nice), 
+                                          timeout=float(timeout), 
+                                          max_duration=float(max_duration))
         
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
