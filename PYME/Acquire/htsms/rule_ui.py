@@ -674,7 +674,7 @@ class ChainedAnalysisPanel(wx.Panel):
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
             [description]
         default_pairings : dict
-            protocol keys with lists of RuleFactorys as values to prepopulate
+            protocol keys with RuleChains as values to prepopulate
             panel on start up
         """
         wx.Panel.__init__(self, parent, -1)
@@ -870,7 +870,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         scope : PYME.Acquire.microscope.microscope
             the microscope itself
         default_pairings : dict
-            [optional] protocol keys with lists of RuleFactorys as values to
+            [optional] protocol keys with RuleChains as values to
             prepopulate panel on start up. By default, None
         """
         from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
