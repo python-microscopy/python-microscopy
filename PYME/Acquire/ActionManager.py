@@ -121,16 +121,12 @@ def action_from_dict(serialised):
     act, params = list(serialised.items())[0]
     
     then = params.pop('then', None)
-    try:
-        # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
-        a = globals()[act](**params)
-    except KeyError:
-        # Legacy string-based action queued in `Action` function method
-        logger.warn('string-based function queuing is deprecated, see ActionManager.FunctionAction')
-        return FunctionAction(act, params)
+    # TODO - use a slightly less broad dictionary for action lookup (or move actions to a separate module)
+    a = globals()[act](**params)
+
     if then:
         a.then(action_from_dict(then))
-        
+    
     return a
 
 
