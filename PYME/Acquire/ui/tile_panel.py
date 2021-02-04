@@ -330,6 +330,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
     def OnQueue(self, event=None):
         import numpy as np
+        from PYME.Acquire.ActionManager import UpdateState, SpoolSeries, FunctionAction
         from PYME.Acquire import protocol
         tile_protocols = [p for p in protocol.get_protocol_list() if 'tile' in p]
 
@@ -378,13 +379,13 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         y_wells += curr_pos['y']
 
         # queue them all
+        actions = list()
         for x, y, filename in zip(x_wells, y_wells, names):
-            args = {'state': {'Positioning.x': x, 'Positioning.y': y}}
-            self.scope.actions.QueueAction('state.update', args, nice)
-            args = {'protocol': protocol_name, 'stack': False, 
-                    'doPreflightCheck':False, 'fn': filename}
-            self.scope.actions.QueueAction('spoolController.StartSpooling', 
-                                            args, nice)
-        self.scope.actions.QueueAction('turnAllLasersOff', 
-                                            {}, nice)
+            state = UpdateState(state={'Positioning.x': x, 'Positioning.y': y})
+            spool = SpoolSeries(protocol=protocol_name, stack=False, 
+                                doPreflightCheck=False, fn=filename)
+            actions.append(state.then(spool))
+        
+        actions.append(FunctionAction('turnAllLasersOff', {}))
+        self.scope.actions.queue_actions(actions, nice)
         
