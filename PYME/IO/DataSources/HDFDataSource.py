@@ -31,6 +31,9 @@ try:
 except ImportError:
     pass
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DataSource(BaseDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
@@ -48,6 +51,37 @@ class DataSource(BaseDataSource):
                 self.framesize = PZFFormat.loads(self.h5File.root.PZFImageData[0])[0].squeeze().shape
         else:
             self.usePZFFormat = False
+            
+        try:
+            self.dimorder = self._img_data.attrs.DimOrder
+            assert (self.dimorder[:2] == 'XY')
+            
+            self.sizeC = int(self._img_data.attrs.SizeC)
+            self.sizeZ = int(self._img_data.attrs.SizeZ)
+            self.sizeT = int(self._img_data.attrs.SizeT)
+
+            # FIXME - we currently ignore SizeZ and SizeT and collapse to one dimension (to fit with the XY[Z/T]C data model)
+            # This should be changed once we fully move to an xyztc model. In the meantime, it's probably safest if C is
+            # always the last dimension.
+            
+            if self.sizeC > 1:
+                if self.dimorder[-1] == 'C':
+                    self.additionalDims = 'TC'
+                else:
+                    self.additionalDims = 'CT'
+            else:
+                self.additionalDims = 'T'
+            
+        except:
+            logger.exception('Error reading dim info (can be safely ignored for old files)')
+            pass
+            
+    @property
+    def _img_data(self):
+        if self.usePZFFormat:
+            return self.h5File.root.PZFImageData
+        else:
+            return self.h5File.root.ImageData
 
     def getSlice(self, ind):
         if self.usePZFFormat:

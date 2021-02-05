@@ -55,6 +55,16 @@ class BaseDataSource(object):
         return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
     
     @property
+    def ndims(self):
+        # for numpy (and dask) compatibility
+        return self.nTrueDims
+    
+    @property
+    def dtype(self):
+        # for numpy (and dask) compatibility
+        return self.getSlice(0).dtype
+    
+    @property
     def is_complete(self):
         """
         For datasources which may be opened before spooling is finished.
@@ -147,18 +157,76 @@ class BaseDataSource(object):
         return r
     
 class XYZTCDataSource(object):
+    ndim=5
+    
     def __init__(self, datasource, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
         self._datasource = datasource
         self._input_order = input_order
+        
         
         if not input_order.startswith('XY'):
             raise RuntimeError('First 2 dimensions of input must be X and Y')
         
         self.shape = self._datasource.getSliceShape() + [size_z, size_t, size_c]
+        self.dtype = self._datasource.dtype
+        
+        if input_order == 'XYZTC':
+            self._z_stride = 1
+            self._t_stride = size_z
+            self._c_stride = size_z*size_t
+        elif input_order == 'XYTZC':
+            self._z_stride = size_t
+            self._t_stride = 1
+            self._c_stride = size_z * size_t
+        elif input_order == 'XYZCT':
+            self._z_stride = 1
+            self._t_stride = size_z * size_c
+            self._c_stride = size_z
+        elif input_order == 'XYTCZ':
+            self._z_stride = size_t * size_c
+            self._t_stride = 1
+            self._c_stride = size_t
+        elif input_order == 'XYCZT':
+            self._z_stride = size_c
+            self._t_stride = size_c*size_z
+            self._c_stride = 1
+        elif input_order == 'XYCTZ':
+            self._z_stride = size_t * size_c
+            self._t_stride = size_c
+            self._c_stride = 1
+        else:
+            raise RuntimeError('Input order: %s not supported' % input_order)
         
     #@property
     #def shape(self):
     #    raise NotImplementedError()
     
-    def __getitem__(self, item):
-        raise NotImplementedError()
+    def __getitem__(self, keys):
+        keys = list(keys)
+        
+        if not len(keys) == 5:
+            raise RuntimeError('Must provide a 5-dimensional slice')
+        
+        indices = {}
+        
+        for i in range(len(keys)):
+            if not isinstance(keys[i], slice):
+                if keys[i] == -1:
+                    #special case for -1 indexing
+                    keys[i] = slice(-1, None)
+                else:
+                    keys[i] = slice(keys[i],keys[i] + 1)
+                    
+            indices['XYZTC'[i]] = keys[i].indices(self.shape[i])
+        
+        #allocate output array
+        out = np.zeros([len(indices[k]) for k in 'XYZTC'], dtype=self.dtype)
+        
+        for c in indices['C']:
+            for t in indices['T']:
+                for z in indices['Z']:
+                    slice_idx = self._c_stride*c + self._t_stride*t + self._z_stride*z
+                    out[:,:, z, c, t] = self._datasource.getSlice(slice_idx)[keys[0], keys[1]]
+        
+            
+        return out
