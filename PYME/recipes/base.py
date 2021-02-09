@@ -1259,6 +1259,23 @@ class Filter(ModuleBase):
         self.completeMetadata(im)
         
         return im
+    
+    def applyFilter(self, data, channel_number, frame_index, image_stack):
+        """
+
+        Parameters
+        ----------
+        data : PYME.IO.DataSources.BaseDataSource.DataSource
+            datasource to apply filter to
+        channel_number : int
+            color channel number to operate on
+        frame_index : int
+            z/t index (dim 2)
+        image_stack : PYME.IO.image.ImageStack
+            image stack object associated with `data`, usually used if metadata
+            is needed.
+        """
+        raise NotImplementedError
         
     def execute(self, namespace):
         namespace[self.outputName] = self.filter(namespace[self.inputName])
@@ -1409,6 +1426,29 @@ class JoinChannels(ModuleBase):
     
     def execute(self, namespace):
         namespace[self.outputName] = self._joinChannels(namespace)
+
+
+@register_module('Crop')
+class Crop(ModuleBase):
+    input_stack = Input('input')
+    x_range = List(Int)([0, -1])
+    y_range = List(Int)([0, -1])
+    t_range = List(Int)([0, -1])
+    output = Output('cropped')
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources.CropDataSource import DataSource
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        
+        im = namespace[self.input_stack]
+        mdh = DictMDHandler(im.mdh)
+        mdh['Crop.XRange'] = self.x_range
+        mdh['Crop.YRange'] = self.y_range
+        mdh['Crop.TRange'] = self.t_range
+        out = ImageStack(data=DataSource(im.data, self.x_range, self.y_range, 
+                                         self.t_range), 
+                         mdh=mdh, haveGUI=False)
+        namespace[self.output] = out
 
 
 @register_module('Add')    
