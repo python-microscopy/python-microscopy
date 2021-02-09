@@ -111,6 +111,7 @@ class FrameWrangler(object):
         self.tl=0
         
         self.inNotify = False
+        self._notify_lock = threading.Lock()
         
         #Signals
         ##########################
@@ -271,13 +272,17 @@ class FrameWrangler(object):
                         bufferOverflowing = False
 
                     if bufferOverflowing:
-                        self.bufferOverflowed = True
-                        print('Warning: Camera buffer overflowing - purging buffer')
-                        eventLog.logEvent('Camera Buffer Overflow')
-                        #stop the aquisition - we're going to restart after we're read out to purge the buffer
-                        #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
-                        #currently being written to
-                        self._event_loop.call_in_main_thread(self.cam.StopAq)
+                        with self._notify_lock:
+                            #acquire lock before flagging the buffer as overflowed so that we can be sure that StopAq
+                            # gets called before StartAq in Notify()
+                            
+                            self.bufferOverflowed = True
+                            print('Warning: Camera buffer overflowing - purging buffer')
+                            eventLog.logEvent('Camera Buffer Overflow')
+                            #stop the aquisition - we're going to restart after we're read out to purge the buffer
+                            #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
+                            #currently being written to
+                            self._event_loop.call_in_main_thread(self.cam.StopAq)
                         #self.needExposureStart = True
             
                     self.onExpReady()
@@ -301,98 +306,100 @@ class FrameWrangler(object):
             print('Already in notify, skip for now')
             return
             
-        try:            
-            self.inNotify = True
-            "Should be called on each timer tick"
-            self.te = time.clock()
-            #print self.te - self.tl
-            self.tl = self.te
-            
-            if (not self.cam.CamReady()):# and self.piezoReady())):
-                # Stop the aquisition if there is a hardware error
-                self.stop()
-                return
-
-            if getattr(self.cam, 'hardware_overflowed', False):
-                self.cam.StopAq()
-                self.bufferOverflowed = True
-
-
-            #is there a picture waiting for us?
-            #if so do the relevant processing
-            #otherwise do nothing ...
-            
-            #nFrames = 0 #number of frames grabbed this pass
-            
-            #bufferOverflowed = False
-
-            # while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
-            #     if 'GetNumImsBuffered' in dir(self.cam):
-            #         bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
-            #     else:
-            #         bufferOverflowing = False
-            #     if bufferOverflowing:
-            #         bufferOverflowed = True
-            #         print('Warning: Camera buffer overflowing - purging buffer')
-            #         eventLog.logEvent('Camera Buffer Overflow')
-            #         #stop the aquisition - we're going to restart after we're read out to purge the buffer
-            #         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
-            #         #currently being written to
-            #         self.cam.StopAq()
-            #         #self.needExposureStart = True
-            #
-            #     self.onExpReady()
-            #     nFrames += 1
-                #te= time.clock()
+        with self._notify_lock:
+            #lock to prevent _poll_loop setting an overflowed flag while we're in here.
+            try:
+                self.inNotify = True
+                "Should be called on each timer tick"
+                self.te = time.clock()
+                #print self.te - self.tl
+                self.tl = self.te
                 
-                #If we can't deal with the data fast enough (e.g. due to file i/o limitations) this can turn into an infinite loop -
-                #avoid this by bailing out with a warning if nFrames exceeds a certain value. This will probably lead to buffer overflows
-                #and loss of data, but is arguably better than an unresponsive app.
-                #This value is (currently) chosen fairly arbitrarily, taking the following facts into account:
-                #the buffer has enough storage for ~3s when running flat out,
-                #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
-                #allow us to catch up following glitches of one form or another, although not too many more.
-            if ('GetNumImsBuffered' in dir(self.cam)) and (self.n_frames_in_group > self.cam.GetBufferSize()/2):
-                print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
-             
-            # just copy data to the current frame once per frame group - individual frames don't get copied
-            # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
-            with self._current_frame_lock:
-                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
-            
-
-            if self.bufferOverflowed:
-                print('nse')
-                self.needExposureStart = True
-
-            # See if we need to restart the exposure. This will happen if
-            # a) we are in single shot mode
-            # or b) the camera buffer overflowed
-            if self.needExposureStart and self.checkHardware():
-                self.needExposureStart = False
-                self.bufferOverflowed = False
-                self.cam.StartExposure() #restart aquisition - this should purge buffer
+                if (not self.cam.CamReady()):# and self.piezoReady())):
+                    # Stop the aquisition if there is a hardware error
+                    self.stop()
+                    return
+    
+                if getattr(self.cam, 'hardware_overflowed', False):
+                    self.cam.StopAq()
+                    self.bufferOverflowed = True
+    
+    
+                #is there a picture waiting for us?
+                #if so do the relevant processing
+                #otherwise do nothing ...
                 
-
-            if self.n_frames_in_group > 0:
-                #we got some frames, record timing info and let any listeners know
-                self.n_Frames += self.n_frames_in_group
+                #nFrames = 0 #number of frames grabbed this pass
                 
-                self.tLastFrame = self.tThisFrame
-                self.nFrames = self.n_frames_in_group
-                self.n_frames_in_group = 0
-                self.tThisFrame = time.clock()
+                #bufferOverflowed = False
+    
+                # while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
+                #     if 'GetNumImsBuffered' in dir(self.cam):
+                #         bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
+                #     else:
+                #         bufferOverflowing = False
+                #     if bufferOverflowing:
+                #         bufferOverflowed = True
+                #         print('Warning: Camera buffer overflowing - purging buffer')
+                #         eventLog.logEvent('Camera Buffer Overflow')
+                #         #stop the aquisition - we're going to restart after we're read out to purge the buffer
+                #         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
+                #         #currently being written to
+                #         self.cam.StopAq()
+                #         #self.needExposureStart = True
+                #
+                #     self.onExpReady()
+                #     nFrames += 1
+                    #te= time.clock()
+                    
+                    #If we can't deal with the data fast enough (e.g. due to file i/o limitations) this can turn into an infinite loop -
+                    #avoid this by bailing out with a warning if nFrames exceeds a certain value. This will probably lead to buffer overflows
+                    #and loss of data, but is arguably better than an unresponsive app.
+                    #This value is (currently) chosen fairly arbitrarily, taking the following facts into account:
+                    #the buffer has enough storage for ~3s when running flat out,
+                    #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
+                    #allow us to catch up following glitches of one form or another, although not too many more.
+                if ('GetNumImsBuffered' in dir(self.cam)) and (self.n_frames_in_group > self.cam.GetBufferSize()/2):
+                    print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                  
-                self.onFrameGroup.send(self)
-           
-        except:
-            traceback.print_exc()
-        finally:     
-            self.inNotify = False
-            
-            #restart the time so we get called again
-            self.timer.start(self.tiint)
+                # just copy data to the current frame once per frame group - individual frames don't get copied
+                # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
+                with self._current_frame_lock:
+                    memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                           self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
+                
+    
+                if self.bufferOverflowed:
+                    print('nse')
+                    self.needExposureStart = True
+    
+                # See if we need to restart the exposure. This will happen if
+                # a) we are in single shot mode
+                # or b) the camera buffer overflowed
+                if self.needExposureStart and self.checkHardware():
+                    self.needExposureStart = False
+                    self.bufferOverflowed = False
+                    self.cam.StartExposure() #restart aquisition - this should purge buffer
+                    
+    
+                if self.n_frames_in_group > 0:
+                    #we got some frames, record timing info and let any listeners know
+                    self.n_Frames += self.n_frames_in_group
+                    
+                    self.tLastFrame = self.tThisFrame
+                    self.nFrames = self.n_frames_in_group
+                    self.n_frames_in_group = 0
+                    self.tThisFrame = time.clock()
+                     
+                    self.onFrameGroup.send(self)
+               
+            except:
+                traceback.print_exc()
+            finally:
+                self.inNotify = False
+                
+                #restart the time so we get called again
+                self.timer.start(self.tiint)
             
             
     @property
