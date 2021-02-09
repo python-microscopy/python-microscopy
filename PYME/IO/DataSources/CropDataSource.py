@@ -29,20 +29,41 @@ class DataSource(BaseDataSource):
         #self.unmixer = unmixer
         self.dataSource = dataSource
         
-        if xrange is None:
+        sizeC = self.dataSource.sizeC
+
+        if xrange is None or tuple(xrange) == (0, -1):
             self.xrange = (0, self.dataSource.shape[0])
         else:
-            self.xrange = xrange
+            # force to positive values we can handle simply in getSliceShape
+            x0 = xrange[0] if xrange[0] > -1 else self.dataSource.shape[0] + xrange[0]
+            x1 = xrange[1] if xrange[1] > -1 else self.dataSource.shape[0] + xrange[1]
+            assert x1 - x0 > 0 and x1 - x0 <= self.dataSource.shape[0]
+            assert x0 < self.dataSource.shape[0] and x0 > 0
+            assert x1 < self.dataSource.shape[0] and x1 > 0
+            self.xrange = (x0, x1)
             
-        if yrange is None:
+        if yrange is None or tuple(yrange) == (0, -1):
             self.yrange = (0, self.dataSource.shape[1])
         else:
-            self.yrange = yrange
+            # force to positive values we can handle simply in getSliceShape
+            y0 = yrange[0] if yrange[0] > -1 else self.dataSource.shape[1] + yrange[0]
+            y1 = yrange[1] if yrange[1] > -1 else self.dataSource.shape[1] + yrange[1]
+            assert y1 - y0 > 0 and y1 - y0 <= self.dataSource.shape[1]
+            assert y0 < self.dataSource.shape[1] and y0 > 0
+            assert y1 < self.dataSource.shape[1] and y1 > 0
+            self.yrange = (y0, y1)
             
-        if trange is None:
+        if trange is None or tuple(trange) == (0, -1):
             self.trange = (0, self.dataSource.getNumSlices())
         else:
-            self.trange = trange
+            # force to positive values we can handle simply in getNumSlices
+            n_slices = self.dataSource.getNumSlices()
+            t0 = trange[0] if trange[0] > -1 else n_slices + trange[0]
+            t1 = trange[1] if trange[1] > -1 else n_slices + trange[1]
+            assert t1 - t0 > 0 and t1 - t0 <= n_slices
+            assert t0 < n_slices and t0 > 0
+            assert t1 < n_slices and t1 > 0
+            self.trange = (t0, t1)
         
     
     def getSlice(self,ind):
