@@ -322,7 +322,7 @@ class ReflectedLinePIDFocusLock(PID):
 
         Parameters
         ----------
-        start_art: float, optional
+        start_at: float, optional
             offset to start the scan at (10 positions chosen 'spirally' out
             before linearly stepping through the range from bottom up)
         step_size : float, optional
