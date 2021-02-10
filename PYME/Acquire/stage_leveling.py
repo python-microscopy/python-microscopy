@@ -231,3 +231,41 @@ class StageLeveler(object):
         if len(self._scans) < 1:
             raise UserWarning('no scans available, call StageLeveler.measure_offsets() first')
         StageLeveler.plot_scan(self._scans[index], interpolation_factor=interpolation_factor)
+
+    def store_scan(self, index=-1):
+        self._current_scan = self._scans[index]
+
+    @property
+    def current_scan(self):
+        try:
+            return self._current_scan
+        except AttributeError:
+            if len(self._scans) > 0:
+                return self._scans[-1]
+            else:
+                raise UserWarning('run a scan first')
+
+    def lookup_offset(self, x, y):
+        """use a stored scan to estimate what the z offset should be at a given
+        xy position
+
+        Parameters
+        ----------
+        x : float
+            x position in micrometers
+        y : float
+            y position in micrometers
+
+        Returns
+        -------
+        float
+            offset at xy from interpolated scan
+        """
+        from scipy.interpolate import interp2d
+        try:
+            scan = self.current_scan
+        except AttributeError:
+            logger.error('no scan, returning 0 for offset lookup')
+            return 0
+        f = interp2d(scan['x'], scan['y'], scan['offset'])
+        return f(x, y)[0]
