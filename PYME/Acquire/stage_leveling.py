@@ -164,7 +164,7 @@ class StageLeveler(object):
             if hasattr(self, '_focus_lock') and not self._focus_lock.LockOK():
                 logger.debug('focus lock not OK, scanning offset')
                 # self.scan_offset_until_ok()
-                self._focus_lock.ReacquireLock()
+                self._focus_lock.ReacquireLock(start_at=-25)
                 time.sleep(1.)
 
                 if self._focus_lock.LockOK():
