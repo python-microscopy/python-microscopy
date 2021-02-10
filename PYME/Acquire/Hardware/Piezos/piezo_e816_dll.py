@@ -332,7 +332,7 @@ class piezo_e816T(PiezoBase):
                 if '-1' in str(e):
                     logger.debug('reinitializing GCS connection, 10 s pause')
                     gcs.CloseConnection(self.id)
-                    time.sleep(10.0)
+                    time.sleep(10.0)  # this takes at least more than 1 s
                     try:
                         self.id = gcs.ConnectUSB(self._identifier)
                         logger.debug('restablished connection to piezo')
