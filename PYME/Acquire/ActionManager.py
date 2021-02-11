@@ -70,6 +70,8 @@ class ActionManager(object):
         self._monitor.daemon = True
         self._monitor.start()
         
+        self._lock = threading.Lock()
+        
     def QueueAction(self, functionName, args, nice=10, timeout=1e6, 
                     max_duration=np.finfo(float).max):
         """Add an action to the queue. Legacy version for string based actions. Most applications should use queue_actions() below instead
@@ -155,17 +157,20 @@ class ActionManager(object):
         Note that the first two tasks are independant -
 
         '''
-        for action in actions:
-            curTime = time.time()
-            expiry = curTime + timeout
-        
-            #make sure our timestamps strictly increment
-            self._timestamp = max(curTime, self._timestamp + 1e-3)
-        
-            #ensure FIFO behaviour for events with the same priority
-            nice_ = nice + self._timestamp * 1e-10
-        
-            self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
+        with self._lock:
+            # lock to prevent 'nice' collisions when queueing from separate threads.
+            
+            for action in actions:
+                curTime = time.time()
+                expiry = curTime + timeout
+            
+                #make sure our timestamps strictly increment
+                self._timestamp = max(curTime, self._timestamp + 1e-3)
+            
+                #ensure FIFO behaviour for events with the same priority
+                nice_ = nice + self._timestamp * 1e-10
+            
+                self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
             
         self.onQueueChange.send(self)
         
