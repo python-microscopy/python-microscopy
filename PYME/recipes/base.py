@@ -276,13 +276,14 @@ class ModuleBase(HasTraits):
         inv_mode = self._invalidate_parent
         
         try:
+            old_traits = self.trait_get()
             #print('turning off invalidation')
             self._invalidate_parent = False
-            old_traits = self.trait_get()
             #print('edit_traits')
             self.edit_traits(*args, kind='modal', **kwargs)
             self._invalidate_parent = inv_mode
             if not self.trait_get() == old_traits:
+                #print(self.trait_get(), old_traits)
                 #print('invalidating ...')
                 self.invalidate_parent()
         finally:
@@ -685,6 +686,8 @@ class ModuleCollection(HasTraits):
 
         """
         #remove anything which is downstream from changed inputs
+        
+        print('recipe.execute()')
         #print self.namespace.keys()
         for k, v in kwargs.items():
             #print k, v
@@ -710,6 +713,7 @@ class ModuleCollection(HasTraits):
         for m in exec_order:
             if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                 try:
+                    print('Executing %s' %m)
                     m.check_inputs(self.namespace)
                     m.execute(self.namespace)
                     m._last_error = None
