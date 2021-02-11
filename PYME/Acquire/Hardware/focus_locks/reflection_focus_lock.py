@@ -318,7 +318,7 @@ class ReflectedLinePIDFocusLock(PID):
         return bool(abs(self.peak_position - self.setpoint) < tolerance)
     
     @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
-    def ReacquireLock(self, start_at=0.0, step_size=3., pause=0.75):
+    def ReacquireLock(self, start_at=0.0, step_size=3., pause=0.75, retries=0):
         """Routine to call if we've lost the lock. The lock is disabled,
         objective is moved to its lowest position, and we step upwards gradually
         until we get decent fits on the profile and the profile is sufficiently
@@ -361,16 +361,18 @@ class ReflectedLinePIDFocusLock(PID):
         # try not to be overly mean to the pifoc, step small after first 10
         scan_positions = scan_positions[:cut] + sorted(scan_positions)
 
-        for pos in scan_positions:
-            logger.debug('looking for focus, offset: %.1f' % pos)
-            
-            self.piezo.SetOffset(pos)
-            
-            time.sleep(pause)
-            if self.lockable(self._ok_tolerance):
-                logger.debug('found focus, offset %.1f' % pos)
-                self.EnableLock()
-                return
+        n = -1
+        while n < retries:
+            n += 1
+            for pos in scan_positions:
+                logger.debug('looking for focus, offset: %.1f' % pos)
+                self.piezo.SetOffset(pos)
+
+                time.sleep(pause)
+                if self.lockable(self._ok_tolerance):
+                    logger.debug('found focus, offset %.1f' % pos)
+                    self.EnableLock()
+                    return
         
         logger.debug('failed to find focus, lowering objective')
         self.piezo.SetOffset(min_offset)
