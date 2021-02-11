@@ -423,7 +423,7 @@ class ModuleBase(HasTraits):
                     [Item('_'),] +
                     self._view_items(params) +
                     [Item('_'),] +
-                    [Item(tn) for tn in outputs], buttons=['OK', 'Cancel']) #TODO - should we have cancel? Traits update whilst being edited and cancel doesn't roll back
+                    [Item(tn) for tn in outputs], buttons=['OK']) #TODO - should we have cancel? Traits update whilst being edited and cancel doesn't roll back
 
     def default_traits_view( self ):
         """ This is the traits stock method to specify the default view"""
@@ -1196,7 +1196,7 @@ class ModuleCollection(HasTraits):
             return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
                                                           mutable=False),
                              style='custom', show_label=False),
-                        buttons=['OK', 'Cancel'])
+                        buttons=['OK'])
         
     def to_svg(self):
         from . import recipeLayout

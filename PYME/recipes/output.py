@@ -367,7 +367,7 @@ class HDFOutput(OutputModule):
         
         return View([Item(tn, editor=DictChoiceStrEditor(choices=self._namespace_keys)) for tn in inputs] +
                     [Item('_'),] +
-                    self._view_items(params), buttons=['OK', 'Cancel'])
+                    self._view_items(params), buttons=['OK'])
 
 
 
