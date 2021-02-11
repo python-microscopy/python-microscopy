@@ -64,7 +64,7 @@ class StageLeveler(object):
         """
         self._positions.append(self._scope.GetPos())
 
-    def add_grid(self, x_length, y_length, x_spacing, y_spacing, center=True):
+    def add_grid(self, x_length, y_length, x_spacing, y_spacing, center):
         """
         Add a grid of set spacings to the list of positions to scan when measuring offsets.
 
