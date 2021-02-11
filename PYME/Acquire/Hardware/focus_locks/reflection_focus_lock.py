@@ -110,7 +110,7 @@ class ReflectedLinePIDFocusLock(PID):
     """
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
-                 max_sigma=np.finfo(float).max, 
+                 max_sigma=np.finfo(float).max, min_lateral_sigma=0,
                  trigger_failsafe=True):
         """
 
@@ -135,6 +135,10 @@ class ReflectedLinePIDFocusLock(PID):
         max_sigma : float
             maximum fit result sigma which we are willing to accept as a valid
             peak measurement we can use to correct the focus.
+        min_lateral_sigma : float
+            minimum standard dev along the dimension we sum (squash) to get the
+            profile. If the lateral sigma is below this we reject the frame for
+            fitting because we expect a long spread profile.
         trigger_failsafe : bool
             if True, try to kill lasers if the profile intensity saturates a
             majority of the pixels on the focus lock camera
@@ -149,6 +153,7 @@ class ReflectedLinePIDFocusLock(PID):
 
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
+        self._min_lateral_sigma = min_lateral_sigma
         
         self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
@@ -433,15 +438,21 @@ class ReflectedLinePIDFocusLock(PID):
 
     def on_frame(self, **kwargs):
         # get focus position
-        profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
+        cf = self.scope.frameWrangler.currentFrame.squeeze()
+        profile = cf.sum(axis=0).astype(float)
+        
         if self.use_failsafe and profile.sum() > self._failsafe_threshold:
             self.scope.failsafe.kill(message='focus lock profile suggests heat danger')
-        if self.subtraction_profile is not None:
-            peak_position, success = self.find_peak(profile - self.subtraction_profile)
-        else:
-            peak_position, success = self.find_peak(profile)
-
-        if not success:
+        
+        try:
+            assert np.std(cf, axis=0) < self._min_lateral_sigma
+            
+            if self.subtraction_profile is not None:
+                peak_position, success = self.find_peak(profile - self.subtraction_profile)
+            else:
+                peak_position, success = self.find_peak(profile)
+            assert success
+        except AssertionError:
             self._lock_ok = False
             # restart the integration / derivatives so we don't go wild when we
             # eventually get a good fit again
