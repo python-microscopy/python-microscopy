@@ -277,6 +277,11 @@ class StageLeveler(object):
         f = interp2d(scan['x'], scan['y'], scan['offset'])
         return f(x, y)[0]
     
-    def reacquire_focus_lock(self):
-        p = self._scope.GetPos()
-        self._scope.focus_lock.ReacquireLock(self.lookup_offset(p['x'], p['y']))
+    def acquire_focus_lock(self):
+        self._focus_lock.EnableLock()
+        if self._focus_lock.LockOK():
+            return
+        time.sleep(1)
+        if not self._focus_lock.LockOK():
+            p = self._scope.GetPos()
+            self._scope.focus_lock.ReacquireLock(self.lookup_offset(p['x'], p['y']))
