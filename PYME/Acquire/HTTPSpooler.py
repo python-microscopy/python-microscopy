@@ -236,6 +236,26 @@ class Spooler(sp.Spooler):
         else:
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
+    def doStopLog(self):
+        sp.Spooler.doStopLog(self)
+        # save events and final metadata
+        # TODO - use a binary format for saving events - they can be quite
+        # numerous, and can trip the standard 1 s clusterIO.put_file timeout.
+        # Use long timeouts as a temporary hack because failing these can ruin
+        # a dataset
+        if self._aggregate_h5:
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json',
+                               self.md.to_JSON().encode(), self.clusterFilter)
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json',
+                               self.evtLogger.to_JSON().encode(),
+                               self.clusterFilter, timeout=10)
+        else:
+            clusterIO.put_file(self.seriesName + '/final_metadata.json',
+                               self.md.to_JSON().encode(), self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/events.json',
+                               self.evtLogger.to_JSON().encode(),
+                               self.clusterFilter, timeout=10)
+    
     def StopSpool(self):
         sp.Spooler.StopSpool(self)
 
@@ -257,25 +277,6 @@ class Spooler(sp.Spooler):
 
         # remove our reference to the threads which hold back-references preventing garbage collection
         del(self._pollThreads)
-        
-        # save events and final metadata
-        # TODO - use a binary format for saving events - they can be quite
-        # numerous, and can trip the standard 1 s clusterIO.put_file timeout.
-        # Use long timeouts as a temporary hack because failing these can ruin
-        # a dataset
-        if self._aggregate_h5:
-            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json', 
-                               self.md.to_JSON().encode(), self.clusterFilter)
-            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json', 
-                               self.evtLogger.to_JSON().encode(),
-                               self.clusterFilter, timeout=10)
-        else:
-            clusterIO.put_file(self.seriesName + '/final_metadata.json', 
-                               self.md.to_JSON().encode(), self.clusterFilter)
-            clusterIO.put_file(self.seriesName + '/events.json', 
-                               self.evtLogger.to_JSON().encode(), 
-                               self.clusterFilter, timeout=10)
-        
         
     def OnFrame(self, sender, frameData, **kwargs):
         # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
