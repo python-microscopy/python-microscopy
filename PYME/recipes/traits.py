@@ -11,6 +11,11 @@ except ImportError:
     from traits.api import *
 
 
+#Monkey-patch traits so that editors need enter / focus change to update by default
+from traits import trait_types
+trait_types.TraitType.auto_set = False
+trait_types.TraitType.enter_set = True
+
 class Input(CStr):
     fast_validate = None
     
