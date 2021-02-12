@@ -447,7 +447,7 @@ class ReflectedLinePIDFocusLock(PID):
             self.scope.failsafe.kill(message='focus lock profile suggests heat danger')
         
         try:
-            assert np.std(cf, axis=0) < self._min_lateral_sigma
+            assert np.std(cf.sum(axis=1)) > self._min_lateral_sigma
             
             if self.subtraction_profile is not None:
                 peak_position, success = self.find_peak(profile - self.subtraction_profile)
