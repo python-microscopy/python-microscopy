@@ -340,9 +340,11 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         self.SetSizerAndFit(vsizer)
     
-    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, sleep=500):
+    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=5):
+        from PYME.Acquire.actions import FunctionAction
         from PYME.IO import clusterIO
         import posixpath
+        import time
 
         logger.debug('requeuing missed wells')
         time.sleep(sleep)
@@ -385,13 +387,14 @@ class MultiwellProtocolQueuePanel(wx.Panel):
                                           {'n_x': n_x, 'n_y': n_y, 
                                           'x_spacing': x_spacing, 'y_spacing': y_spacing, 
                                           'start_pos': start_pos, 
-                                          'protocol_name': protocol_name}))
-
+                                          'protocol_name': protocol_name,
+                                          'nice': nice}))
+        
+        logger.debug('requeuing %d wells' % len(names))
         self.scope.actions.queue_actions(actions, nice)
 
     def OnQueue(self, event=None):
-        import numpy as np
-        from PYME.Acquire.ActionManager import UpdateState, SpoolSeries, FunctionAction
+        from PYME.Acquire.actions import FunctionAction
         from PYME.Acquire import protocol
         tile_protocols = [p for p in protocol.get_protocol_list() if 'tile' in p]
 
@@ -416,8 +419,8 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         curr_pos = self.scope.GetPos()
 
-        actions = self._get_action_list(n_x, n_y, x_spacing, y_spacing, 
-                                        curr_pos, protocol_name)
+        x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, curr_pos)
+        actions = self._get_action_list(x_wells, y_wells, names, protocol_name)
         
         actions.append(FunctionAction('turnAllLasersOff', {}))
 
@@ -426,11 +429,13 @@ class MultiwellProtocolQueuePanel(wx.Panel):
                                           {'n_x': n_x, 'n_y': n_y,
                                            'x_spacing': x_spacing, 'y_spacing': y_spacing,
                                            'start_pos': curr_pos, 
-                                           'protocol_name': protocol_name}))
+                                           'protocol_name': protocol_name,
+                                           'nice': nice}))
 
         self.scope.actions.queue_actions(actions, nice)
     
-    def _get_positions(n_x, n_y, x_spacing, y_spacing, start_pos):
+    def _get_positions(self, n_x, n_y, x_spacing, y_spacing, start_pos):
+        import numpy as np
         # TODO - making this more flexible orientation wise, numbering for e.g.
         # 384wp, etc.. This puts H1 of a 96er at the min x, min y well.
         xind_names = np.array([chr(ord('@') + n) for n in range(1, n_x + 1)[::-1]])
@@ -453,13 +458,14 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         x_wells = np.asarray(x_wells)
 
         # add the current scope position offset
-        x_wells += curr_pos['x']
-        y_wells += curr_pos['y']
+        x_wells += start_pos['x']
+        y_wells += start_pos['y']
 
         return x_wells, y_wells, names
         
     
     def _get_action_list(self, x_wells, y_wells, names, protocol_name):
+        from PYME.Acquire.actions import UpdateState, SpoolSeries
         actions = list()
         for x, y, filename in zip(x_wells, y_wells, names):
             state = UpdateState(state={'Positioning.x': x, 'Positioning.y': y})
