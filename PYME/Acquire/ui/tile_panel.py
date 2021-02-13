@@ -1,5 +1,10 @@
 import wx
 from PYME.Acquire.Utils import tiler
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 class TilePanel(wx.Panel):
     def __init__(self, parent, scope):
@@ -282,6 +287,8 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         
         self.scope=scope
+        self._shame_index = 0
+        self.scope.multiwellpanel = self
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -316,6 +323,11 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         vsizer.Add(hsizer)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.cb_get_it_done = wx.CheckBox(self, -1, 'Requeue missed')
+        hsizer.Add(self.cb_get_it_done, 0, wx.ALL, 2)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.queue_button = wx.Button(self, -1, 'Queue')
         # self.bGo.Disable()
         self.queue_button.Bind(wx.EVT_BUTTON, self.OnQueue)
@@ -327,6 +339,55 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         vsizer.Add(hsizer)
 
         self.SetSizerAndFit(vsizer)
+    
+    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, sleep=500):
+        from PYME.IO import clusterIO
+        import posixpath
+
+        logger.debug('requeuing missed wells')
+        time.sleep(sleep)
+
+        spooldir = self.scope.spoolController.dirname
+        detections_pattern = posixpath.join(spooldir, '[A-Z][0-9]*_detections.h5')
+        imaged = clusterIO.cglob(detections_pattern)
+        imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
+        logger.debug('imaged %d wells' % len(imaged_wells))
+
+        x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, start_pos)
+        x_wells = x_wells.tolist()
+        y_wells = y_wells.tolist()
+        to_pop = []
+        for fn in imaged_wells:
+            well = fn.split('_')[0]
+            try:
+                to_pop.append(names.index(well))
+            except ValueError:
+                pass
+
+        for pfn in sorted(to_pop)[::-1]:
+            x_wells.pop(pfn)
+            y_wells.pop(pfn)
+            names.pop(pfn)
+
+        if len(names) < 1:
+            return
+        
+        self._shame_index += 1
+        shame_suffix = '_%d' % self._shame_index
+        names = [name + shame_suffix for name in names]
+        actions = self._get_action_list(x_wells, y_wells, names, protocol_name)
+        
+        actions.append(FunctionAction('turnAllLasersOff', {}))
+
+        # lets just make it recursive for fun
+        if self.cb_get_it_done.GetValue():
+            actions.append(FunctionAction('multiwellpanel.requeue_missed', 
+                                          {'n_x': n_x, 'n_y': n_y, 
+                                          'x_spacing': x_spacing, 'y_spacing': y_spacing, 
+                                          'start_pos': start_pos, 
+                                          'protocol_name': protocol_name}))
+
+        self.scope.actions.queue_actions(actions, nice)
 
     def OnQueue(self, event=None):
         import numpy as np
@@ -345,6 +406,8 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         protocol_name = dialog.GetStringSelection()
         dialog.Destroy()
 
+        self._shame_index = 0
+
         x_spacing = float(self.x_spacing_mm.GetValue()) * 1e3  # [mm -> um]
         y_spacing = float(self.y_spacing_mm.GetValue()) * 1e3  # [mm -> um]
         n_x = int(self.n_x.GetValue())
@@ -353,6 +416,21 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         curr_pos = self.scope.GetPos()
 
+        actions = self._get_action_list(n_x, n_y, x_spacing, y_spacing, 
+                                        curr_pos, protocol_name)
+        
+        actions.append(FunctionAction('turnAllLasersOff', {}))
+
+        if self.cb_get_it_done.GetValue():
+            actions.append(FunctionAction('multiwellpanel.requeue_missed', 
+                                          {'n_x': n_x, 'n_y': n_y,
+                                           'x_spacing': x_spacing, 'y_spacing': y_spacing,
+                                           'start_pos': curr_pos, 
+                                           'protocol_name': protocol_name}))
+
+        self.scope.actions.queue_actions(actions, nice)
+    
+    def _get_positions(n_x, n_y, x_spacing, y_spacing, start_pos):
         # TODO - making this more flexible orientation wise, numbering for e.g.
         # 384wp, etc.. This puts H1 of a 96er at the min x, min y well.
         xind_names = np.array([chr(ord('@') + n) for n in range(1, n_x + 1)[::-1]])
@@ -378,14 +456,14 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         x_wells += curr_pos['x']
         y_wells += curr_pos['y']
 
-        # queue them all
+        return x_wells, y_wells, names
+        
+    
+    def _get_action_list(self, x_wells, y_wells, names, protocol_name):
         actions = list()
         for x, y, filename in zip(x_wells, y_wells, names):
             state = UpdateState(state={'Positioning.x': x, 'Positioning.y': y})
             spool = SpoolSeries(protocol=protocol_name, stack=False, 
                                 doPreflightCheck=False, fn=filename)
             actions.append(state.then(spool))
-        
-        actions.append(FunctionAction('turnAllLasersOff', {}))
-        self.scope.actions.queue_actions(actions, nice)
-        
+        return actions
