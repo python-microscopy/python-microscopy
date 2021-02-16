@@ -1971,7 +1971,7 @@ class Projection(Filter):
     TODO - make this more efficient - we currently force the whole stack into memory
     """
     
-    kind = Enum(['Mean', 'Max', 'Median', 'Std', 'Min'])
+    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min'])
     axis = Int(2)
     
     processFramesIndividually = False
@@ -1979,6 +1979,8 @@ class Projection(Filter):
     def applyFilter(self, data, chanel_num, frame_num, image):
         if self.kind == 'Mean':
             return np.mean(data, axis=int(self.axis))
+        if self.kind == 'Sum':
+            return np.sum(data, axis=int(self.axis))
         if self.kind == 'Max':
             return np.max(data, axis=int(self.axis))
         if self.kind == 'Median':
