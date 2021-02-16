@@ -93,8 +93,8 @@ class ActionManager(object):
             a dictionary of arguments to pass the function    
         nice : int (or float)
             The priority with which to execute the function. Functions with a
-            lower nice value execute first. Nice should follow the convention of the unix function with the same name
-            - i.e. a value between -20 and 20. nice=20 is reserved by convention for tidy-up tasks which should run
+            lower nice value execute first. Nice should have a value between 0 and 20. nice=20 is reserved by convention
+            for tidy-up tasks which should run
             after all other tasks and put the microscope in a 'safe' state.
         timeout : float
             A timeout in seconds from the current time at which the action
@@ -109,7 +109,7 @@ class ActionManager(object):
             
         """
         # make sure nice is in supported range.
-        assert ((nice >= -20) and (nice <= 20))
+        assert ((nice >= 0) and (nice <= 20))
         
         curTime = time.time()
         expiry = curTime + timeout
@@ -133,8 +133,7 @@ class ActionManager(object):
             A list of Action instances
         nice : int (or float)
             The priority with which to execute the function. Functions with a
-            lower nice value execute first. Nice should follow the convention of the unix function with the same name
-            - i.e. a value between -20 and 20.
+            lower nice value execute first. Nice should have a value between 0 and 20.
         timeout : float
             A timeout in seconds from the current time at which the action
             becomes irrelevant and should be ignored.
@@ -164,7 +163,7 @@ class ActionManager(object):
 
         '''
         # make sure nice is in supported range.
-        assert((nice >= -20) and (nice <= 20))
+        assert((nice >= 0) and (nice <= 20))
         
         with self._lock:
             # lock to prevent 'nice' collisions when queueing from separate threads.

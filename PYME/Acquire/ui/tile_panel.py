@@ -311,7 +311,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALL, 2)
-        self.nice = wx.TextCtrl(self, -1, value='%d' % 20)
+        self.nice = wx.TextCtrl(self, -1, value='%d' % 11)
         hsizer.Add(self.nice, 0, wx.ALL, 2)
         vsizer.Add(hsizer)
 

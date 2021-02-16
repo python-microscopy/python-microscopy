@@ -138,8 +138,11 @@ class QueueAcquisitions(OutputModule):
                         headers={'Content-Type': 'application/json'})
         
         # queue a high-nice call to shut off all lasers when we're done
+        # FIXME - there has to be a better way of handling this!
+        # a) protocols should turn lasers off anyway
+        # b) maybe have a a specific 'safe state' fallback in the action manager for when the queue is empty?
         session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
-                                                                        np.iinfo(int).max,
+                                                                        20,
                                                                         self.max_duration),
                         data=json.dumps([{
                             'FunctionAction': {
