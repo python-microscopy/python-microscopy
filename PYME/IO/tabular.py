@@ -912,6 +912,10 @@ class CachingResultsFilter(TabularBase):
 
     def keys(self):
         return list(self.resultsSource.keys())
+    
+    @property
+    def mdh(self):
+        return self.resultsSource.mdh
 
 @deprecated_name('mappingFilter')
 class MappingFilter(TabularBase):
