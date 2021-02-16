@@ -114,6 +114,8 @@ class Spooler:
         self.spoolOn = False
         self.imNum = 0
         
+        self.spool_complete = False
+        
         self._spooler_uuid = uuid.uuid4()
             
         if not fakeCamCycleTime is None:
@@ -171,6 +173,16 @@ class Spooler:
             self.guiUpdateCallback()
             
         self.onSpoolStop.send(self)
+        
+        self.finalise() #TODO - should this be before we send the onStopSpool signal?
+        self.spool_complete = True
+        
+    def finalise(self):
+        """
+        Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
+
+        """
+        pass
         
     def abort(self):
         """

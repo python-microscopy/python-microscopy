@@ -470,7 +470,7 @@ class SpoolController(object):
         self.onSpoolStart.send(self)
         
         #return a function which can be called to indicate if we are done
-        return lambda : not self.spooler.spoolOn
+        return lambda : self.spooler.spool_complete
 
     @property
     def display_dirname(self):
