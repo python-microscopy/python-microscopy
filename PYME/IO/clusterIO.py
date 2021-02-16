@@ -746,7 +746,7 @@ def get_local_path(filename, serverfilter):
     filename = (filename)
     serverfilter = (serverfilter)
     
-    if serverfilter == local_serverfilter and local_dataroot:
+    if (serverfilter == local_serverfilter or serverfilter == '') and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
         if os.path.exists(localpath):
