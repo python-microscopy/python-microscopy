@@ -114,6 +114,8 @@ class Spooler:
         self.spoolOn = False
         self.imNum = 0
         
+        self.spool_complete = False
+        
         self._spooler_uuid = uuid.uuid4()
             
         if not fakeCamCycleTime is None:
@@ -136,7 +138,7 @@ class Spooler:
 
         self.protocol.Init(self)
 
-        self.doStartLog()
+        self._collect_start_metadata()
    
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True
@@ -156,7 +158,7 @@ class Spooler:
         try:
             self.protocol.OnFinish()#this may still cause events
             self.FlushBuffer()
-            self.doStopLog()
+            self._collect_stop_metadata()
         except:
             import traceback
             traceback.print_exc()
@@ -171,6 +173,16 @@ class Spooler:
             self.guiUpdateCallback()
             
         self.onSpoolStop.send(self)
+        
+        self.finalise() #TODO - should this be before we send the onStopSpool signal?
+        self.spool_complete = True
+        
+    def finalise(self):
+        """
+        Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
+
+        """
+        pass
         
     def abort(self):
         """
@@ -225,7 +237,7 @@ class Spooler:
             self.StopSpool()
             
 
-    def doStartLog(self):
+    def _collect_start_metadata(self):
         """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -253,7 +265,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-    def doStopLog(self):
+    def _collect_stop_metadata(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         

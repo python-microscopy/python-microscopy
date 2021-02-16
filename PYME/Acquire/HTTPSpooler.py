@@ -236,9 +236,7 @@ class Spooler(sp.Spooler):
         else:
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
-    def StopSpool(self):
-        sp.Spooler.StopSpool(self)
-
+    def finalise(self):
         # wait until our input queue is empty rather than immediately stopping saving.
         self._stopping=True
         logger.debug('Stopping spooling %s' % self.seriesName)
