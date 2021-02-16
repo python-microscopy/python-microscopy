@@ -50,6 +50,7 @@ taskList = [
         'Multiview.ROISize': [256, 256],
         'Camera.IntegrationTime': 0.005,
     }),
+    T(-1, scope._stage_leveler.reacquire_focus_lock),
     T(-1, scanner.setup),
     T(-1, scope.l405.TurnOn),
     T(0, scanner.start),

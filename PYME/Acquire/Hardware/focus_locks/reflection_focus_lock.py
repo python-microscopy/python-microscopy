@@ -110,7 +110,7 @@ class ReflectedLinePIDFocusLock(PID):
     """
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
-                 max_sigma=np.finfo(float).max, 
+                 max_sigma=np.finfo(float).max, min_lateral_sigma=0,
                  trigger_failsafe=True):
         """
 
@@ -135,6 +135,10 @@ class ReflectedLinePIDFocusLock(PID):
         max_sigma : float
             maximum fit result sigma which we are willing to accept as a valid
             peak measurement we can use to correct the focus.
+        min_lateral_sigma : float
+            minimum standard dev along the dimension we sum (squash) to get the
+            profile. If the lateral sigma is below this we reject the frame for
+            fitting because we expect a long spread profile.
         trigger_failsafe : bool
             if True, try to kill lasers if the profile intensity saturates a
             majority of the pixels on the focus lock camera
@@ -149,6 +153,7 @@ class ReflectedLinePIDFocusLock(PID):
 
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
+        self._min_lateral_sigma = min_lateral_sigma
         
         self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
@@ -219,6 +224,7 @@ class ReflectedLinePIDFocusLock(PID):
             self.piezo.LogFocusCorrection(self.piezo.GetOffset())
             self.set_auto_mode(False)
             logger.debug('Disabling focus lock')
+            time.sleep(0.01)
 
     def register(self):
         if self.mode == 'time':
@@ -312,7 +318,7 @@ class ReflectedLinePIDFocusLock(PID):
         return bool(abs(self.peak_position - self.setpoint) < tolerance)
     
     @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
-    def ReacquireLock(self, step_size=3.):
+    def ReacquireLock(self, start_at=0.0, step_size=3., pause=0.75, retries=0):
         """Routine to call if we've lost the lock. The lock is disabled,
         objective is moved to its lowest position, and we step upwards gradually
         until we get decent fits on the profile and the profile is sufficiently
@@ -321,31 +327,52 @@ class ReflectedLinePIDFocusLock(PID):
 
         Parameters
         ----------
+        start_at: float, optional
+            offset to start the scan at (10 positions chosen 'spirally' out
+            before linearly stepping through the range from bottom up)
         step_size : float, optional
             number of microns to step the objective position by when searching, 
             by default 3.
+        pause : float, optional
+            seconds to pause after each offset change before checking if we can
+            lock
         """
+        from itertools import zip_longest
         step_size = float(step_size)
+        start_at = float(start_at)
+        pause = float(pause)
         logger.debug('reacquiring lock')
         self.DisableLock()
 
+        # get our range
         min_offset = self.piezo.GetMinOffset()
         max_offset = self.piezo.GetMaxOffset()
-
-        scan_positions = np.arange(min_offset, max_offset + step_size, 
-                                   step_size)
+        start_at = max(min_offset, min(max_offset, start_at))  # clip
+        
+        # set up scan positions
+        scan_up = np.arange(start_at, max_offset + step_size, step_size).tolist()
+        scan_up.append(max_offset)
+        scan_down = np.arange(start_at - step_size, min_offset, -step_size).tolist()
+        scan_down.append(min_offset)
+        scan_positions = [item for sub in zip_longest(scan_up, scan_down) for item in sub]
+        scan_positions = [pos for pos in scan_positions if pos is not None]
         assert len(scan_positions) > 0
+        cut = min(len(scan_positions), 10)
+        # try not to be overly mean to the pifoc, step small after first 10
+        scan_positions = scan_positions[:cut] + sorted(scan_positions)
 
-        for pos in scan_positions:
-            logger.debug('looking for focus, offset: %.1f' % pos)
-            
-            self.piezo.SetOffset(pos)
-            
-            time.sleep(0.3)
-            if self.lockable(self._ok_tolerance):
-                logger.debug('found focus, offset %.1f' % pos)
-                self.EnableLock()
-                return
+        n = -1
+        while n < retries:
+            n += 1
+            for pos in scan_positions:
+                logger.debug('looking for focus, offset: %.1f' % pos)
+                self.piezo.SetOffset(pos)
+
+                time.sleep(pause)
+                if self.lockable(self._ok_tolerance):
+                    logger.debug('found focus, offset %.1f' % pos)
+                    self.EnableLock()
+                    return
         
         logger.debug('failed to find focus, lowering objective')
         self.piezo.SetOffset(min_offset)
@@ -361,7 +388,13 @@ class ReflectedLinePIDFocusLock(PID):
             if not self.LockOK():
                 logger.debug('still not OK, starting pause/reacquire sequence')
                 time.sleep(5)
-                self.ReacquireLock()
+                if hasattr(self.scope, '_stage_leveler'):
+                    pos = self.scope.GetPos()
+                    offset = self.scope._stage_leveler.lookup_offset(pos['x'],
+                                                                     pos['y'])
+                    self.ReacquireLock(start_at=offset)
+                else:
+                    self.ReacquireLock()
             else:
                 logger.debug('lock OK')
         
@@ -407,15 +440,21 @@ class ReflectedLinePIDFocusLock(PID):
 
     def on_frame(self, **kwargs):
         # get focus position
-        profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
+        cf = self.scope.frameWrangler.currentFrame.squeeze()
+        profile = cf.sum(axis=0).astype(float)
+        
         if self.use_failsafe and profile.sum() > self._failsafe_threshold:
             self.scope.failsafe.kill(message='focus lock profile suggests heat danger')
-        if self.subtraction_profile is not None:
-            peak_position, success = self.find_peak(profile - self.subtraction_profile)
-        else:
-            peak_position, success = self.find_peak(profile)
-
-        if not success:
+        
+        try:
+            assert np.std(cf.sum(axis=1)) > self._min_lateral_sigma
+            
+            if self.subtraction_profile is not None:
+                peak_position, success = self.find_peak(profile - self.subtraction_profile)
+            else:
+                peak_position, success = self.find_peak(profile)
+            assert success
+        except AssertionError:
             self._lock_ok = False
             # restart the integration / derivatives so we don't go wild when we
             # eventually get a good fit again
@@ -472,6 +511,8 @@ class RLPIDFocusLockClient(object):
         while self.LockEnabled() and retry < retries:
             logger.debug('lock still enabled, holding')
             retry += 1
+        # for some reason it takes a bit for the piezo to log the offset update event
+        time.sleep(0.01)  # so give it a chance to get that done
         logger.debug('continuing')
 
     def DisableLock(self):
@@ -498,8 +539,8 @@ class RLPIDFocusLockClient(object):
         return self._session.get(self.base_url + '/SetSubtractionProfile')
     
     @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
-    def ReacquireLock(self, step_size=3.):
-        return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f' % (step_size,))
+    def ReacquireLock(self, start_at=0, step_size=3):
+        return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f&start_at=%3.3f' % (step_size, start_at))
     
     def DisableLockAfterAcquiring(self):
         r = self._session.get(self.base_url + '/DisableLockAfterAcquiring')

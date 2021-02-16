@@ -64,7 +64,7 @@ class StageLeveler(object):
         """
         self._positions.append(self._scope.GetPos())
 
-    def add_grid(self, x_length, y_length, x_spacing, y_spacing, center=True):
+    def add_grid(self, x_length, y_length, x_spacing, y_spacing, center):
         """
         Add a grid of set spacings to the list of positions to scan when measuring offsets.
 
@@ -133,7 +133,7 @@ class StageLeveler(object):
         else:
             logger.error('short axes must be "x" or "y"')
 
-    def measure_offsets(self, optimize_path=True):
+    def measure_offsets(self, optimize_path=True, use_previous_scan=True):
         """
         Visit each position and log the offset
 
@@ -163,8 +163,15 @@ class StageLeveler(object):
             time.sleep(self._pause_on_relocate)
             if hasattr(self, '_focus_lock') and not self._focus_lock.LockOK():
                 logger.debug('focus lock not OK, scanning offset')
-                # self.scan_offset_until_ok()
-                self._focus_lock.ReacquireLock()
+                if use_previous_scan:
+                    try:
+                        start_at = self.lookup_offset(positions[ind, 0],
+                                                      positions[ind, 1])
+                    except:
+                        start_at = -25
+                else:
+                    start_at = -25
+                self._focus_lock.ReacquireLock(start_at=start_at)
                 time.sleep(1.)
 
                 if self._focus_lock.LockOK():
@@ -231,3 +238,50 @@ class StageLeveler(object):
         if len(self._scans) < 1:
             raise UserWarning('no scans available, call StageLeveler.measure_offsets() first')
         StageLeveler.plot_scan(self._scans[index], interpolation_factor=interpolation_factor)
+
+    def store_scan(self, index=-1):
+        self._current_scan = self._scans[index]
+
+    @property
+    def current_scan(self):
+        try:
+            return self._current_scan
+        except AttributeError:
+            if len(self._scans) > 0:
+                return self._scans[-1]
+            else:
+                raise UserWarning('run a scan first')
+
+    def lookup_offset(self, x, y):
+        """use a stored scan to estimate what the z offset should be at a given
+        xy position
+
+        Parameters
+        ----------
+        x : float
+            x position in micrometers
+        y : float
+            y position in micrometers
+
+        Returns
+        -------
+        float
+            offset at xy from interpolated scan
+        """
+        from scipy.interpolate import interp2d
+        try:
+            scan = self.current_scan
+        except AttributeError:
+            logger.error('no scan, returning 0 for offset lookup')
+            return 0
+        f = interp2d(scan['x'], scan['y'], scan['offset'])
+        return f(x, y)[0]
+    
+    def acquire_focus_lock(self):
+        self._focus_lock.EnableLock()
+        if self._focus_lock.LockOK():
+            return
+        time.sleep(1)
+        if not self._focus_lock.LockOK():
+            p = self._scope.GetPos()
+            self._scope.focus_lock.ReacquireLock(self.lookup_offset(p['x'], p['y']))
