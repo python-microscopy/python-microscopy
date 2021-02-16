@@ -165,9 +165,13 @@ class TabularBase(object):
         
         def fmt(d):
             if np.isscalar(d):
-                return '%e' % d
+                if isinstance(d, six.string_types):
+                    return str(d)
+                else:
+                    return '%e' % d
             else:
-                return '"%s"' % str(d)
+                # try to make sure odd objects don't break file formatting
+                return ('"%s"' % str(d).strip(delim).strip('\n'))
     
         of = open(outFile, 'w')
     
@@ -908,6 +912,10 @@ class CachingResultsFilter(TabularBase):
 
     def keys(self):
         return list(self.resultsSource.keys())
+    
+    @property
+    def mdh(self):
+        return self.resultsSource.mdh
 
 @deprecated_name('mappingFilter')
 class MappingFilter(TabularBase):

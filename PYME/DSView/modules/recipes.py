@@ -155,7 +155,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 import six
                 
                 cache = tabular.CachingResultsFilter(self.outp)
-                self.dsviewer.pipeline.OpenFile(ds = cache)
+                self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
