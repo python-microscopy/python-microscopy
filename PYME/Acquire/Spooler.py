@@ -138,7 +138,7 @@ class Spooler:
 
         self.protocol.Init(self)
 
-        self.doStartLog()
+        self._collect_start_metadata()
    
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True
@@ -158,7 +158,7 @@ class Spooler:
         try:
             self.protocol.OnFinish()#this may still cause events
             self.FlushBuffer()
-            self.doStopLog()
+            self._collect_stop_metadata()
         except:
             import traceback
             traceback.print_exc()
@@ -237,7 +237,7 @@ class Spooler:
             self.StopSpool()
             
 
-    def doStartLog(self):
+    def _collect_start_metadata(self):
         """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -265,7 +265,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-    def doStopLog(self):
+    def _collect_stop_metadata(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
