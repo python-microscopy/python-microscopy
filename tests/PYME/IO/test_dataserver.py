@@ -14,7 +14,7 @@ tmp_root = None
 
 def setup_module():
     global proc, tmp_root
-    tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
+    tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TES1')
     
     print('DataServer root: %s' % tmp_root)
     
@@ -23,9 +23,9 @@ def setup_module():
         shutil.rmtree(tmp_root)
         
     os.makedirs(tmp_root)
-    proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TEST', '-a', 'local'])
+    proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TES1', '-a', 'local'])
     
-    time.sleep(3) #give time for the server to spin up
+    time.sleep(5) #give time for the server to spin up
     
     logging.info('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
     
@@ -41,17 +41,17 @@ def teardown_module():
     
 def test_put():
     testdata = b'foo bar\n'
-    clusterIO.put_file('_testing/test.txt', testdata, 'TEST')
-    retrieved = clusterIO.get_file('_testing/test.txt', 'TEST')
+    clusterIO.put_file('_testing/test.txt', testdata, 'TES1')
+    retrieved = clusterIO.get_file('_testing/test.txt', 'TES1')
     
     assert testdata == retrieved
     
 def test_putfiles_and_list():
     test_files = [('_testing/test_list/file_%d' % i, b'testing ... \n') for i in range(10)]
     
-    clusterIO.put_files(test_files, 'TEST')
+    clusterIO.put_files(test_files, 'TES1')
     
-    listing = clusterIO.listdir('_testing/test_list/', 'TEST')
+    listing = clusterIO.listdir('_testing/test_list/', 'TES1')
     
     assert(len(listing) == 10)
 
@@ -59,11 +59,11 @@ def test_putfiles_and_list():
 def test_list_after_timeout():
     test_files = [('_testing/test_list2/file_%d' % i, b'testing ... \n') for i in range(10)]
     
-    clusterIO.put_files(test_files, 'TEST')
+    clusterIO.put_files(test_files, 'TES1')
     
     time.sleep(2)
-    listing = clusterIO.listdirectory('_testing/test_list2/', 'TEST',timeout=.00001)
-    listing = clusterIO.listdirectory('_testing/test_list2/', 'TEST', timeout=5)
+    listing = clusterIO.listdirectory('_testing/test_list2/', 'TES1',timeout=.00001)
+    listing = clusterIO.listdirectory('_testing/test_list2/', 'TES1', timeout=5)
     
     assert (len(listing) == 10)
 
@@ -72,16 +72,16 @@ def test_double_put():
     """Trying to put the same file twice should cause an error"""
     testdata = b'foo bar\n'
 
-    clusterIO.put_file('_testing/test_d.txt', testdata, 'TEST')
+    clusterIO.put_file('_testing/test_d.txt', testdata, 'TES1')
     
     try:
-        clusterIO.put_file('_testing/test_d.txt', testdata, 'TEST')
+        clusterIO.put_file('_testing/test_d.txt', testdata, 'TES1')
         raise AssertionError('Second put attempt did not raise an error')
     except RuntimeError:
         #we want to generate this error
         pass
     
-    #retrieved = clusterIO.getFile('test.txt', 'TEST')
+    #retrieved = clusterIO.getFile('test.txt', 'TES1')
     
     #assert testdata == retrieved
     
@@ -90,16 +90,16 @@ def test_aggregate_h5r():
     from PYME.IO import clusterResults
     testdata = np.ones(10, dtype=[('a', '<f4'), ('b', '<f4')])
     
-    clusterResults.fileResults('pyme-cluster://TEST/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
-    clusterResults.fileResults('pyme-cluster://TEST/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
-    clusterResults.fileResults('pyme-cluster://TEST/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
+    clusterResults.fileResults('pyme-cluster://TES1/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
+    clusterResults.fileResults('pyme-cluster://TES1/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
+    clusterResults.fileResults('pyme-cluster://TES1/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
 
 
 def test_dircache_purge():
     testdata = b'foo bar\n'
     for i in range(1050):
-        clusterIO.put_file('_testing/lots_of_folders/test_%d/test.txt' % i, testdata, 'TEST')
+        clusterIO.put_file('_testing/lots_of_folders/test_%d/test.txt' % i, testdata, 'TES1')
     
-        listing = clusterIO.listdir('_testing/lots_of_folders/test_%d/' % i, 'TEST')
+        listing = clusterIO.listdir('_testing/lots_of_folders/test_%d/' % i, 'TES1')
     
     #assert (len(listing) == 10)
