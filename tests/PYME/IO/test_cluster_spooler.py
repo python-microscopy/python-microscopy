@@ -10,7 +10,8 @@ import logging
 from PYME.IO import clusterIO
 
 import pytest
-#pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
+if os.environ.get('AZURE_TEST', False):
+    pytestmark = pytest.mark.skip(reason="Doesn't seem to work on azure")
 
 procs = []
 tmp_root = None
@@ -44,6 +45,7 @@ def teardown_module():
     shutil.rmtree(tmp_root)
     
     
+
 def test_spooler(nFrames=50):
     ts = testClusterSpooling.TestSpooler(testFrameSize=[1024,256], serverfilter='TEST')
     ts.run(nFrames=nFrames)
