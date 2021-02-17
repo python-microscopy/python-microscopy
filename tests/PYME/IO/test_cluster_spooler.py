@@ -6,6 +6,8 @@ import shutil
 
 import time
 import sys
+import logging
+from PYME.IO import clusterIO
 
 import pytest
 #pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
@@ -26,6 +28,7 @@ def setup_module():
         
     time.sleep(5)
     print('Launched servers')
+    logging.info('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
 
 
 def teardown_module():
