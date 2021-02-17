@@ -88,7 +88,12 @@ def main():
     
     from PYME import config
     
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger()
+    fh = logging.handlers.RotatingFileHandler(filename=os.path.join(config.get('dataserver-root'), 'LOGS', 'PYMEAcquire.log'), 
+                                              mode='w', maxBytes=1e6, backupCount=1)
+    fh.setLevel(logging.INFO)
+    logger.addHandler(fh)
+
     parser = OptionParser()
     parser.add_option("-i", "--init-file", dest="initFile",
                       help="Read initialisation from file [defaults to init.py]",
