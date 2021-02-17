@@ -171,11 +171,11 @@ class TabularBase(object):
                     return '%e' % d
             else:
                 # try to make sure odd objects don't break file formatting
-                return ('"%s"' % str(d).strip(delim).strip('\n'))
+                return ('"%s"' % str(d).replace(delim,' ').replace('\n',' '))
     
         of = open(outFile, 'w')
     
-        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
+        of.write('# ' + delim.join(['%s' % k for k in keys]) + '\n')
     
         for row in zip(*[self[k] for k in keys]):
             of.write(delim.join([fmt(c) for c in row]) + '\n')
