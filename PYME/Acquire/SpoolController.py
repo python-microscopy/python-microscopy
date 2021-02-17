@@ -343,7 +343,8 @@ class SpoolController(object):
     def StartSpooling(self, fn=None, stack=None, compLevel=None, 
                       zDwellTime=None, doPreflightCheck=True, 
                       maxFrames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None):
+                      cluster_h5=None, protocol=None, subdirectory=None,
+                      metadata=None):
         """
 
         Parameters
@@ -382,6 +383,9 @@ class SpoolController(object):
         subdirectory : str, optional
             Directory within current set directory to spool this series. The
             directory will be created if it doesn't already exist.
+        metadata : dict, optional
+            metadata to supplement this series for entries known prior to
+            acquisition which do not have handlers to hook start metadata
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -459,6 +463,8 @@ class SpoolController(object):
         #        #the connection to the database will timeout if not present
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
+        if metadata is not None:
+            self.spooler.md.mergeEntriesFrom(metadata)
             
         try:
             self.spooler.onSpoolStop.connect(self.SpoolStopped)
@@ -626,7 +632,8 @@ class SpoolControllerWrapper(object):
     def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
                       z_dwell=None, preflight_check=True, 
                       max_frames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None):
+                      cluster_h5=None, protocol=None, subdirectory=None,
+                      metadata=None):
         """
 
         Parameters
@@ -665,10 +672,14 @@ class SpoolControllerWrapper(object):
         subdirectory : str, optional
             Directory within current set directory to spool this series. The
             directory will be created if it doesn't already exist.
+        metadata : dict, optional
+            metadata to supplement this series for entries known prior to
+            acquisition which do not have handlers to hook start metadata
         """
         self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
                                             z_dwell, preflight_check,
                                             max_frames, 
                                             pzf_compression_settings, 
-                                            cluster_h5, protocol, subdirectory)
+                                            cluster_h5, protocol, subdirectory,
+                                            metadata)
         return 'OK'
