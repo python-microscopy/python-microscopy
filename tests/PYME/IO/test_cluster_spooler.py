@@ -28,7 +28,7 @@ def setup_module():
         
     time.sleep(5)
     print('Launched servers')
-    logging.info('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
+    print('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
 
 
 def teardown_module():
