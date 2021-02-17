@@ -824,7 +824,10 @@ class Pipeline:
         
         self.recipe.execute()
         self.filterKeys = {}
-        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        if 'filtered_localizations' in self.dataSources.keys():
+            self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        else:
+            self.selectDataSource(self.dataSources.keys()[0])
 
         # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
         self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
