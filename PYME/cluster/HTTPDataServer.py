@@ -972,6 +972,12 @@ def main(protocol="HTTP/1.0"):
         if GPU_STATS:
             pynvml.nvmlShutdown()
 
+        try:
+            from pytest_cov.embed import cleanup
+            cleanup()
+        except:
+            pass
+        
         sys.exit()
 
 
