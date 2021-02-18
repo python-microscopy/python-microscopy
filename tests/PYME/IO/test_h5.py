@@ -34,6 +34,31 @@ def test_h5_export_uint16():
         im.dataSource.release()
     finally:
         shutil.rmtree(tempdir)
+
+
+def test_h5_export_uint16_multicolour():
+    '''
+    Saves and re-loads an image using the hdf exporter
+
+    '''
+    from PYME.IO import dataExporter
+    from PYME.IO import h5File
+    
+    data = (1e3 * np.random.rand(100, 100, 50, 2)).astype('uint16')
+    evts = np.zeros(3, dtype=h5File.EVENTS_DTYPE)
+    
+    tempdir = tempfile.mkdtemp()
+    filename = os.path.join(tempdir, 'test_h5.h5')
+    
+    try:
+        dataExporter.ExportData(data, mdh=MetaData.TIRFDefault, events=evts, filename=filename)
+        
+        im = image.ImageStack(filename=filename)
+        
+        assert (np.allclose(im.data[:, :, :, :].squeeze(), data))
+        im.dataSource.release()
+    finally:
+        shutil.rmtree(tempdir)
     
  
 def test_hdf_spooler(nFrames=50):
