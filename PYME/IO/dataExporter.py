@@ -92,10 +92,11 @@ class H5Exporter(Exporter):
         data = Wrap(data) #make sure we can index along a colour dimension
         nChans = data.shape[3]
 
-        xSize, ySize = data[xslice, yslice, 0].shape[:2]
+        slice0 = data[xslice, yslice, 0, 0]
+        xSize, ySize = slice0.shape[:2]
         
         print((xSize, ySize))
-        dtype = data[xslice, yslice, 0].dtype
+        dtype = slice0.dtype
         
         if not dtype in ['uint8', 'uint16', 'float32']:
             warnings.warn('Attempting to save an unsupported data-type (%s) - data should be one of uint8, uint16, or float32' % dtype,
