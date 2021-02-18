@@ -21,7 +21,7 @@ except:
 #import win32api
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
-from PYME.IO import unifiedIO
+from PYME.IO import unifiedIO, MetaDataHandler
 
 
 #import PYME.Acquire.Protocols
@@ -464,7 +464,7 @@ class SpoolController(object):
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
         if metadata is not None:
-            self.spooler.md.mergeEntriesFrom(metadata)
+            self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(metadata))
             
         try:
             self.spooler.onSpoolStop.connect(self.SpoolStopped)
