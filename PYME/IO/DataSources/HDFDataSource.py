@@ -54,6 +54,9 @@ class DataSource(BaseDataSource):
             
         try:
             self.dimorder = self._img_data.attrs.DimOrder
+            if isinstance(self.dimorder, bytes):
+                self.dimorder = self.dimorder.decode()
+                
             assert (self.dimorder[:2] == 'XY')
             
             self.sizeC = int(self._img_data.attrs.SizeC)
