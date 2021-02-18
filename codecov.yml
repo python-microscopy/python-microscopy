@@ -1,0 +1,9 @@
+github_checks:
+    annotations: false    # turn back on when our coverage is more decent - they are just annoying for now
+
+ignore:
+    - "*/contrib/*"
+    - "*/Protocols/*"
+    - "*/setup.py"
+    - "*/setup_exe.py"
+    - "*/Hardware/*"
