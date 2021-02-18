@@ -3,7 +3,8 @@ from PYME.IO import clusterIO
 import tempfile
 import os
 import shutil
-#import unittest
+import signal
+import pytest
 import time
 import sys
 
@@ -32,8 +33,8 @@ def setup_module():
     
 def teardown_module():
     global proc, tmp_root
-    #proc.send_signal(1)
-    #time.sleep(1)
+    proc.send_signal(signal.SIGINT)
+    time.sleep(5)
     proc.kill()
     
     #shutil.rmtree(tmp_root)
