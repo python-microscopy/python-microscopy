@@ -91,7 +91,7 @@ installed as part of PYME.
 | ``PYMEAcquire``         | This for acquiring data from a custom microscope. When launched without any options, it will start with simulated    |
 |                         | hardware. It will display a live image of random noise, streamed from a simulated camera.                            |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``PYMEVisualize``       | This is for viewing point data sets. It shows a blank canvas when launched without any parameters.                   |
+| ``PYMEVis``             | This is for viewing point data sets. It shows a blank canvas when launched without any parameters.                   |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
 
 Troubleshooting
