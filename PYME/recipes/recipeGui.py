@@ -304,6 +304,9 @@ class RecipeView(wx.Panel):
         
         self.recipes = recipes
         recipes.recipeView = self
+        
+        self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
+        
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -538,7 +541,10 @@ class RecipeView(wx.Panel):
         from PYME.IO import tabular
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
-            self.configureModule(k)
+            if not self._editing:
+                self._editing = True
+                self.configureModule(k)
+                self._editing = False
         else:
             outp = self.recipes.activeRecipe.namespace[k]
             if isinstance(outp, ImageStack):
