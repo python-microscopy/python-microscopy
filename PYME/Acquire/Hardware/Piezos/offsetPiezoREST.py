@@ -93,6 +93,7 @@ class OffsetPiezo(PiezoBase):
             self.offset += correction
             # self.MoveTo(0, target)  # move the base piezo to correct position
             self.basePiezo.MoveTo(0, target + self.offset, True)
+            self.LogFocusCorrection(self.offset)
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):
