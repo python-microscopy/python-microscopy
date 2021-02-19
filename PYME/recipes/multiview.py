@@ -421,4 +421,5 @@ class ExtractMultiviewChannel(ModuleBase):
 
         mdh = DictMDHandler(source.mdh)
         mdh['Multiview.Extracted'] = ind
-        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh)
+        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh, 
+                                                 events=source.events)
