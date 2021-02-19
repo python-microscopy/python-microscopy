@@ -2358,20 +2358,25 @@ cdef class TriangleMesh(TrianglesBase):
             # iteration's search will be part of another component.
             component += 1
 
-    def keep_largest_connected_component(self):
+    def keep_largest_connected_component(self, n=1):
         # Find the connected components
         self.find_connected_components()
 
-        # Which connected component is largest? 
+        # Get n largest connected components
         com, counts = np.unique(self._vertices['component'][self._vertices['component']!=-1], return_counts=True)
-        max_count = np.argmax(counts)
-        max_com = com[max_count]
+        # max_count = np.argmax(counts)
+        counts_sorted = np.argsort(counts)
+        # max_com = com[max_count]
+        max_coms = com[counts_sorted[-n:]]
 
         # Remove the smaller components
-        _vertices = np.where((self._vertices['component'] != max_com))[0]
-        _edges = np.where((self._halfedges['component'] != max_com))[0]
+        # _vertices = np.where((self._vertices['component'] != max_com))[0]
+        _vertices = np.flatnonzero((self._vertices['component'][:,None] != max_coms[None,:]).prod(1))
+        # _edges = np.where((self._halfedges['component'] != max_com))[0]
+        _edges = np.flatnonzero((self._halfedges['component'][:,None] != max_coms[None,:]).prod(1))
         _edges_with_twins = _edges[self._halfedges['twin'][_edges] != -1]
-        _faces = np.where((self._faces['component'] != max_com))[0]
+        # _faces = np.where((self._faces['component'] != max_com))[0]
+        _faces = np.flatnonzero((self._faces['component'][None,:] != max_coms[:,None]).prod(1))
         # Delete vertices
         self._vertices[_vertices] = -1
         _kept_edges = self._halfedges['twin'][_edges_with_twins]
