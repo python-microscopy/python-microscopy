@@ -89,6 +89,7 @@ class ProtocolRules(OrderedDict):
         self._spool_controller = spool_controller
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
         self._updated = dispatch.Signal()
+        self._updated.connect(self.update)
         
         self['default'] = RuleChain()
 
@@ -141,6 +142,12 @@ class ProtocolRules(OrderedDict):
 
         # rule chain is already linked, add context and push
         rule_factory_chain.rule_factories[0].get_rule(context=context).push()
+    
+    def update(self, *args, **kwargs):
+        for p in self.keys():
+            factories = self[p].rule_factories
+            for ind in range(len(factories) - 1):
+                factories[ind].chain(factories[ind + 1])
 
 
 class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
@@ -713,17 +720,9 @@ class ChainedAnalysisPanel(wx.Panel):
     
     def _set_up_defaults(self, pairings):
         for protocol_name, rule_chain in pairings.items():
-            # make sure we've chained the rules
-            rule_factories = rule_chain.rule_factories
-            n_rules = len(rule_factories)
-            for s_ind, f_ind in enumerate(range(1, n_rules)):
-                rule_factories[s_ind].chain(rule_factories[f_ind])
-
             # add them to the protocol rules dict
             self._protocol_rules[protocol_name] = rule_chain
         
-        # update the GUI
-        # self._protocol_rules_list.update_list()
         self._protocol_rules._updated.send(self)
 
     def OnRemoveProtocolRule(self, wx_event=None):
