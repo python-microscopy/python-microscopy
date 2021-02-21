@@ -323,7 +323,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         boolean mask True inside, False outside
     """
     input_shell = Input('harmonic_shell')
-    image_bound_source = Input('input')
+    input_image_bound_source = Input('input')
     voxelsize_nm = ListInt([75, 75, 75])
     output = Output('output')
 
@@ -333,7 +333,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         from PYME.IO.MetaDataHandler import DictMDHandler
 
         shell = namespace[self.input_shell]
-        b = ImageBounds.estimateFromSource(namespace[self.image_bound_source])
+        b = ImageBounds.estimateFromSource(namespace[self.input_image_bound_source])
         
         nx = np.ceil((np.ceil(b.x1) - np.floor(b.x0)) / self.voxelsize_nm[0]) + 1
         ny = np.ceil((np.ceil(b.y1) - np.floor(b.y0)) / self.voxelsize_nm[1]) + 1
