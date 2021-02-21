@@ -3,6 +3,10 @@ from .base import register_module, ModuleBase
 from .traits import Input, Output, Float, Int, Bool, CStr, ListInt
 import numpy as np
 from PYME.IO import tabular
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 @register_module('FitSurfaceWithPatches')
 class FitSurfaceWithPatches(ModuleBase):
@@ -330,10 +334,12 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
 
     def execute(self, namespace):
         from PYME.IO.image import ImageBounds, ImageStack
-        from PYME.IO.MetaDataHandler import DictMDHandler
+        from PYME.IO.MetaDataHandler import DictMDHandler, origin_nm
 
         shell = namespace[self.input_shell]
-        b = ImageBounds.estimateFromSource(namespace[self.input_image_bound_source])
+        image_bound_source = namespace[self.input_image_bound_source]
+        b = ImageBounds.estimateFromSource(image_bound_source)
+        ox, oy, oz = origin_nm(image_bound_source.mdh)
         
         nx = np.ceil((np.ceil(b.x1) - np.floor(b.x0)) / self.voxelsize_nm[0]) + 1
         ny = np.ceil((np.ceil(b.y1) - np.floor(b.y0)) / self.voxelsize_nm[1]) + 1
@@ -342,6 +348,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         x = np.arange(np.floor(b.x0), b.x0 + nx * self.voxelsize_nm[0], self.voxelsize_nm[0])
         y = np.arange(np.floor(b.y0), b.y0 + ny * self.voxelsize_nm[1], self.voxelsize_nm[1])
         z = np.arange(np.floor(b.z0), b.z0 + nz * self.voxelsize_nm[2], self.voxelsize_nm[2])
+        logger.debug('mask size %s' % ((len(x), len(y), len(z)),))
 
         xx, yy, zz = np.meshgrid(x, y, z, indexing='xy')
 
@@ -355,6 +362,9 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
             'ImageBounds.x0': x.min(), 'ImageBounds.x1': x.max(),
             'ImageBounds.y0': y.min(), 'ImageBounds.y1': y.max(),
             'ImageBounds.z0': z.min(), 'ImageBounds.z1': z.max(),
+            'Origin.x': ox + b.x0,
+            'Origin.y': oy + b.y0,
+            'Origin.z': oz + b.z0
         })
 
         namespace[self.output] = ImageStack(data=inside, mdh=mdh, 
