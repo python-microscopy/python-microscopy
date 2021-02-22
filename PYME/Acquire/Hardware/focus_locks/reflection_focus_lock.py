@@ -396,6 +396,7 @@ class ReflectedLinePIDFocusLock(PID):
                     self.ReacquireLock(start_at=offset)
                 else:
                     self.ReacquireLock()
+                time.sleep(0.5)
             else:
                 logger.debug('lock OK')
         
