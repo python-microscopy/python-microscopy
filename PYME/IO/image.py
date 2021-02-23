@@ -567,7 +567,7 @@ class ImageStack(object):
         
         self.data = SupertileDatasource.DataSource(filename)
         self.mdh = self.data.mdh
-    
+        self.seriesName = filename
         self.mode = 'default'
         
     def _loadNPY(self, filename):
