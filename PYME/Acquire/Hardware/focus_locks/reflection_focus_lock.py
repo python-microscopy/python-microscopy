@@ -381,8 +381,9 @@ class ReflectedLinePIDFocusLock(PID):
                                     output_is_json=False)
     def DisableLockAfterAcquiring(self):
         self.EnableLock()  # make sure we have the lock on
+        if not self.on_target(1):
+            time.sleep(0.5)
         if not self.LockOK():
-            import time
             logger.debug('lock not OK, pausing for 5 s')
             time.sleep(5)
             if not self.LockOK():
@@ -395,6 +396,7 @@ class ReflectedLinePIDFocusLock(PID):
                     self.ReacquireLock(start_at=offset)
                 else:
                     self.ReacquireLock()
+                time.sleep(0.5)
             else:
                 logger.debug('lock OK')
         
