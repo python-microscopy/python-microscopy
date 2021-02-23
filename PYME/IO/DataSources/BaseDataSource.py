@@ -65,6 +65,10 @@ class BaseDataSource(object):
         return self.getSlice(0).dtype
     
     @property
+    def nbytes(self):
+        return np.prod(self.shape) * self.getSlice(0).itemsize
+    
+    @property
     def is_complete(self):
         """
         For datasources which may be opened before spooling is finished.
