@@ -249,10 +249,8 @@ class StageLeveler(object):
         except AttributeError:
             if len(self._scans) > 0:
                 return self._scans[-1]
-            else:
-                raise UserWarning('run a scan first')
 
-    def lookup_offset(self, x, y):
+    def lookup_offset(self, x, y, default=0):
         """use a stored scan to estimate what the z offset should be at a given
         xy position
 
@@ -271,9 +269,9 @@ class StageLeveler(object):
         from scipy.interpolate import interp2d
         try:
             scan = self.current_scan
-        except AttributeError:
-            logger.error('no scan, returning 0 for offset lookup')
-            return 0
+        except IndexError:
+            logger.error('no scan, returning %f for offset lookup' % default)
+            return default
         f = interp2d(scan['x'], scan['y'], scan['offset'])
         return f(x, y)[0]
     
