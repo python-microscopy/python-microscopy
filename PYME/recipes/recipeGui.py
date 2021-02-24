@@ -369,19 +369,20 @@ class RecipeView(wx.Panel):
         #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
         #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
         
-        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(400, -1))
         self._set_text_styling()
+        
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
         vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        self.bApply.Disable()
+        self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
                                        
         hsizer1.Add(vsizer, 0, wx.EXPAND|wx.ALL, 2)
-
-                
-        
         self.SetSizerAndFit(hsizer1)
         
         self.recipes.LoadRecipeText('')
@@ -507,15 +508,23 @@ class RecipeView(wx.Panel):
         #ed.SetSelBackground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHT))
         #ed.SetSelForeground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
         
+        # error annotations
+        self.STYLE_ERROR = wx.stc.STC_STYLE_LASTPREDEFINED + 1
+        ed.StyleSetSpec(self.STYLE_ERROR, 'back:#F0A0A0,face:Arial,size:10')
+        
+        
         
     def set_recipe_text(self, text):
         self.tRecipeText.SetText(text)
         self.tRecipeText.EmptyUndoBuffer()
+        self.tRecipeText.AnnotationClearAll()
         self.tRecipeText.Colourise(0, -1)
 
         # line numbers in the margin
         self.tRecipeText.SetMarginType(1, wx.stc.STC_MARGIN_NUMBER)
         self.tRecipeText.SetMarginWidth(1, 25)
+
+        self.bApply.Disable()
         
         
     def update_recipe_text(self):
@@ -526,13 +535,20 @@ class RecipeView(wx.Panel):
         self.update_recipe_text()
         
     def OnApplyText(self, event):
-        from PYME.ui import progress
-        with progress.ComputationInProgress(self, 'Updating recipe'):
-            #wrap in computationInProgress so that we get an error
-            try:
-                self.recipes.UpdateRecipeText(self.tRecipeText.GetValue())
-            except:
-                self.tRecipeText.SetBackgroundColour()
+        recipe_text = self.tRecipeText.GetValue()
+        self.tRecipeText.AnnotationClearAll()
+        try:
+            self.recipes.UpdateRecipeText(recipe_text)
+            self.bApply.Disable()
+        except Exception as e:
+            # FIXME - visually indicate that recipe text is out of sync with recipe.
+            #self.tRecipeText.StyleSetBackground(wx.stc.STC_YAML_DEFAULT, wx.RED)
+            n_lines = recipe_text.count('\n') + 1
+            self.tRecipeText.AnnotationSetText(n_lines-1, 'Error parsing recipe: %s' % e)
+            self.tRecipeText.AnnotationSetStyle(n_lines-1, self.STYLE_ERROR)
+            self.tRecipeText.AnnotationSetVisible(wx.stc.STC_ANNOTATION_BOXED)
+            raise
+            
         
     def OnNewRecipe(self, event):
         if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
