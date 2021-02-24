@@ -91,6 +91,35 @@ class ModuleBase(HasTraits):
         self._invalidate_parent = invalidate_parent
 
         HasTraits.__init__(self)
+
+        
+        if (parent is not None):
+            # make sure that the default output name does not collide with any outputs
+            # already in the recipe
+            for k, v in self._output_traits.items():
+                if v in parent.module_outputs:
+                    duplicate_num = 0
+                    val = v
+            
+                    while (val in parent.module_outputs):
+                        # we already have an output of that name in the recipe
+                        # increase the subscript until we get a unique value
+                        duplicate_num += 1
+                        val = v + '_%d' % duplicate_num
+                        
+                    self.trait_set(**{k:val})
+                
+
+        # if an input matches the default value for an output, our circular reference check will fail, even if we are
+        # setting both values to good values in the kwargs (see issue #695). To mitigate, we first set without validation
+        # to overwrite any default values which may be modified, and then re-set with validation turned on to catch any
+        # circular references in the final values.
+        self._initial_set = False
+        self.trait_set(trait_change_notify=False, **kwargs) #don't notify here - next set will do notification.
+        self._initial_set = True
+        
+        # validate input and outputs now that output names have been set.
+        # for now, just set all the values again to re-trigger validation
         self.trait_set(**kwargs)
         
         self._check_outputs()
@@ -214,11 +243,14 @@ class ModuleBase(HasTraits):
 
         Returns
         -------
-        input_dict : dict
-            input names (keys) and modules (values)
+        set of input names
         """
         return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
+    @property
+    def _output_traits(self):
+        return {k:v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
+    
     @property
     def outputs(self):
         """
@@ -226,10 +258,9 @@ class ModuleBase(HasTraits):
 
         Returns
         -------
-        output_dict : dict
-            output names (keys) and modules (values)
+        set of output names
         """
-        return {v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
+        return set(self._output_traits.values())
     
     @property
     def file_inputs(self):
@@ -866,13 +897,12 @@ class ModuleCollection(HasTraits):
         for mdd in l:
             mn, md = list(mdd.items())[0]
             try:
-                mod = all_modules[mn](self)
+                mod = all_modules[mn](self, **md)
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = _legacy_modules[mn.split('.')[-1]](self)
+                mod = _legacy_modules[mn.split('.')[-1]](self, **md)
         
-            mod.set(**md)
             mc.append(mod)
         
         self.modules = mc
