@@ -283,6 +283,7 @@ class MultiwellTilePanel(TilePanel):
 
 
 class MultiwellProtocolQueuePanel(wx.Panel):
+    # TODO - refactor into Acquire.htsms - this is aquiring a bit of cruft that we probably don't want to support in the long term
     def __init__(self, parent, scope):
         wx.Panel.__init__(self, parent)
         
