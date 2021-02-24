@@ -193,10 +193,20 @@ class ModuleSelectionDialog(wx.Dialog):
         modNames.sort()
 
         self.rootNodes = {}
-        self.modnames = {}
+        #self.modnames = {}
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer2 = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer2.Add(wx.StaticText(self.pan, -1, 'Filter:'), 0, wx.RIGHT, 5)
+        
+        self.tFilter = wx.TextCtrl(self.pan, -1, '')
+        self.tFilter.Bind(wx.EVT_TEXT, self.OnSearchChange)
+        hsizer2.Add(self.tFilter, 1, wx.EXPAND|wx.ALL, 0)
+        vsizer2.Add(hsizer2, 0, wx.ALL|wx.EXPAND, 2)
 
         self.tree_list = wx.gizmos.TreeListCtrl(self.pan, -1, size=(250, 400), style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT|wx.TR_FULL_ROW_HIGHLIGHT|
                                                             wx.TR_LINES_AT_ROOT)
@@ -209,6 +219,8 @@ class ModuleSelectionDialog(wx.Dialog):
 
         root = self.tree_list.AddRoot('root')
         self.tree_list.SetItemText(root, "root", 0)
+        
+        self.items = []
 
         for mn in modNames:
             basename, modname = mn.split('.')
@@ -220,6 +232,7 @@ class ModuleSelectionDialog(wx.Dialog):
                 self.rootNodes[basename] = base
 
             item = self.tree_list.AppendItem(base, modname)
+            self.items.append((basename, modname, item))
             self.tree_list.SetPyData(item, mn)
             self.tree_list.SetItemText(item, modname, 0)
             #try:
@@ -238,7 +251,8 @@ class ModuleSelectionDialog(wx.Dialog):
         #self.tree_list.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnSelect)
         self.tree_list.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelect)
 
-        hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
+        vsizer2.Add(self.tree_list, 1, wx.EXPAND | wx.ALL, 2)
+        hsizer.Add(vsizer2, 1, wx.EXPAND|wx.ALL, 2)
 
         self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
         hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
@@ -296,6 +310,19 @@ class ModuleSelectionDialog(wx.Dialog):
 
     def GetSelectedModule(self):
         return self.tree_list.GetPyData(self.tree_list.GetSelection())
+    
+    def OnSearchChange(self, evt):
+        filter = self.tFilter.GetValue()
+        
+        for k, item in self.rootNodes.items():
+            self.tree_list.HideItem(item)
+        
+        for base, modname, item in self.items:
+            show = (filter.upper() in modname.upper())
+            self.tree_list.HideItem(item, not show)
+            
+            if show:
+                self.tree_list.HideItem(self.rootNodes[base], False)
 
 
 class RecipeView(wx.Panel):
