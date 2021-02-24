@@ -408,6 +408,7 @@ class BICGaussianMixtureModel(ModuleBase):
     n_max = Int(1)
     covariance = Enum(('full', 'tied', 'diag', 'spherical'))
     output_labeled = Output('labeled_points')
+    
     def execute(self, namespace):
         from sklearn.mixture import GaussianMixture
         from PYME.IO import MetaDataHandler
@@ -425,6 +426,7 @@ class BICGaussianMixtureModel(ModuleBase):
             logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
 
         best = n_components[np.argmin(bic)]
+        # TODO - warn if (best == n_max) or (not bic[best] << bic[n_max]) as ideal number of components might be higher than n_max 
         gmm = GaussianMixture(n_components=best,
                               covariance_type=self.covariance)
         predictions = gmm.fit_predict(X)
@@ -460,6 +462,7 @@ class BayesianGaussianMixtureModel(ModuleBase):
     n_components = Int(1)
     covariance = Enum(('full', 'tied', 'diag', 'spherical'))
     output_labeled = Output('labeled_points')
+    
     def execute(self, namespace):
         from sklearn.mixture import BayesianGaussianMixture
         from PYME.IO import MetaDataHandler
