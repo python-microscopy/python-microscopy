@@ -22,7 +22,7 @@ class Input(CStr):
     def validate(self, object, name, value):
         value = CStr.validate(self, object, name, value)
 
-        if getattr(object, '_initial_set', True):
+        if getattr(object, '_initial_set', False):
             # defer validation when performed in constructor to avoid detection of spurious circular references with default values (see issue #695)
             
             # make sure we're not assigning to an output of this module
@@ -48,7 +48,7 @@ class Output(CStr):
     def validate(self, object, name, value):
         value = CStr.validate(self, object, name, value)
         
-        if getattr(object, '_initial_set', True):
+        if getattr(object, '_initial_set', False):
             # defer validation when performed in constructor to avoid detection of spurious circular references with default values (see issue #695)
         
             # make sure we're not assigning to an input of this module

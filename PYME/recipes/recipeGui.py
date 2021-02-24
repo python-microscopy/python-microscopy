@@ -526,7 +526,13 @@ class RecipeView(wx.Panel):
         self.update_recipe_text()
         
     def OnApplyText(self, event):
-        self.recipes.UpdateRecipeText(self.tRecipeText.GetValue())
+        from PYME.ui import progress
+        with progress.ComputationInProgress(self, 'Updating recipe'):
+            #wrap in computationInProgress so that we get an error
+            try:
+                self.recipes.UpdateRecipeText(self.tRecipeText.GetValue())
+            except:
+                self.tRecipeText.SetBackgroundColour()
         
     def OnNewRecipe(self, event):
         if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
