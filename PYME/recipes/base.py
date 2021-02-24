@@ -91,6 +91,17 @@ class ModuleBase(HasTraits):
         self._invalidate_parent = invalidate_parent
 
         HasTraits.__init__(self)
+
+        # if an input matches the default value for an output, our circular reference check will fail, even if we are
+        # setting both values to good values in the kwargs (see issue #695). To mitigate, turn off circular reference checking
+        # in the initial module creation. We will validate against circular references in _check_outputs, below, after
+        # all traits have their initial values.
+        self._initial_set = False
+        self.trait_set(trait_change_notify=False, **kwargs)
+        self._initial_set = True
+        
+        # validate input and outputs now that output names have been set.
+        # for now, just set all the values again to re-trigger validation
         self.trait_set(**kwargs)
         
         self._check_outputs()
