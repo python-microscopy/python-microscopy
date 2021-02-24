@@ -339,7 +339,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         shell = namespace[self.input_shell]
         image_bound_source = namespace[self.input_image_bound_source]
         b = ImageBounds.estimateFromSource(image_bound_source)
-        ox, oy, oz = origin_nm(image_bound_source.mdh)
+        ox, oy, _ = origin_nm(image_bound_source.mdh)
         
         nx = np.ceil((np.ceil(b.x1) - np.floor(b.x0)) / self.voxelsize_nm[0]) + 1
         ny = np.ceil((np.ceil(b.y1) - np.floor(b.y0)) / self.voxelsize_nm[1]) + 1
@@ -364,7 +364,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
             'ImageBounds.z0': z.min(), 'ImageBounds.z1': z.max(),
             'Origin.x': ox + b.x0,
             'Origin.y': oy + b.y0,
-            'Origin.z': oz + b.z0
+            'Origin.z': b.z0
         })
 
         namespace[self.output] = ImageStack(data=inside, mdh=mdh, 
