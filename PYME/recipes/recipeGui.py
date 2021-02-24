@@ -587,8 +587,8 @@ class RecipeView(wx.Panel):
     
     def configureModule(self, k):
         p = self
-        from traitsui.api import Controller
-        class MControl(Controller):
+        from traitsui.api import Controller, Handler
+        class MControl(Handler):
             def closed(self, info, is_ok):
                 wx.CallLater(10, p.update)
         

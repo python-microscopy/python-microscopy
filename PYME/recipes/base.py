@@ -897,13 +897,12 @@ class ModuleCollection(HasTraits):
         for mdd in l:
             mn, md = list(mdd.items())[0]
             try:
-                mod = all_modules[mn](self)
+                mod = all_modules[mn](self, **md)
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = _legacy_modules[mn.split('.')[-1]](self)
+                mod = _legacy_modules[mn.split('.')[-1]](self, **md)
         
-            mod.set(**md)
             mc.append(mod)
         
         self.modules = mc
