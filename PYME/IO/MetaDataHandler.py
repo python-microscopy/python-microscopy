@@ -178,6 +178,8 @@ def origin_nm(mdh, default_pixel_size=1.):
     
         if 'AcquisitionType' in mdh.getEntryNames() and mdh['AcquisitionType'] == 'Stack':
             oz = mdh['StackSettings.StartPos'] * 1e3
+        elif 'Positioning.z' in mdh.getEntryNames():	
+            oz = mdh['Positioning.z'] * 1e3        
         elif 'Positioning.PIFoc' in mdh.getEntryNames():
             oz = mdh['Positioning.PIFoc'] * 1e3
     
