@@ -110,7 +110,7 @@ def upload(request, directory):
     request.upload_handlers.insert(0, TemporaryFileUploadHandler(request))
     return upload_files(request, directory)
 
-@csrf_exempt
+@csrf_protect
 def upload_files(request, directory):
     from PYME.IO import clusterIO
 
