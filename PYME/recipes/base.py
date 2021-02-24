@@ -97,7 +97,7 @@ class ModuleBase(HasTraits):
         # to overwrite any default values which may be modified, and then re-set with validation turned on to catch any
         # circular references in the final values.
         self._initial_set = False
-        self.trait_set(trait_change_notify=False, **kwargs)
+        self.trait_set(trait_change_notify=False, **kwargs) #don't notify here - next set will do notification.
         self._initial_set = True
         
         # validate input and outputs now that output names have been set.
