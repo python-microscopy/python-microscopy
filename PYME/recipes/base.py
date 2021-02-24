@@ -93,9 +93,9 @@ class ModuleBase(HasTraits):
         HasTraits.__init__(self)
 
         # if an input matches the default value for an output, our circular reference check will fail, even if we are
-        # setting both values to good values in the kwargs (see issue #695). To mitigate, turn off circular reference checking
-        # in the initial module creation. We will validate against circular references in _check_outputs, below, after
-        # all traits have their initial values.
+        # setting both values to good values in the kwargs (see issue #695). To mitigate, we first set without validation
+        # to overwrite any default values which may be modified, and then re-set with validation turned on to catch any
+        # circular references in the final values.
         self._initial_set = False
         self.trait_set(trait_change_notify=False, **kwargs)
         self._initial_set = True
