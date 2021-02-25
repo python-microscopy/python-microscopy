@@ -102,7 +102,7 @@ class QueueAcquisitions(OutputModule):
         -----
         str spool_settings values can context-substitute templated parameters,
         e.g. spool_settings = {'subdirectory': '{file_stub}',
-                               'metadata: {'Samples.Well': '{file_stub}'}}
+                               'extra_metadata: {'Samples.Well': '{file_stub}'}}
         """
         # substitute spool settings
         spool_settings = self.spool_settings.copy()
