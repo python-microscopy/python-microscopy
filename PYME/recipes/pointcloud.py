@@ -3,7 +3,10 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 
 import numpy as np
 from PYME.IO import tabular
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 
 @register_module('Octree')
@@ -381,3 +384,86 @@ class Ripleys(ModuleBase):
             pass
         
         namespace[self.outputName] = res
+
+
+@register_module('GaussianMixtureModel')
+class GaussianMixtureModel(ModuleBase):
+    """Fit a Gaussian Mixture to a pointcloud, predicting component membership
+    for each input point.
+
+    Parameters
+    ----------
+    input_points: PYME.IO.tabular
+        points to fit. Currently hardcoded to use x, y, and z keys.
+    n: Int
+        number of Gaussian components in the model for optimization mode `n` 
+        and `bayesian`, or maxinum number of components for `bic`
+    mode: Enum
+        optimization on the number of components. For `n` and `bayesian` the
+        GMM uses exactly n components, while for `bic` it is the maximum number
+        of components used, with the optimum Bayesian Information Criterion
+        used to select the best model.
+    covariance: Enum
+        type of covariance to use in the model
+    label_key: str
+        name of membership/label key in output datasource, 'gmm_label' by
+        default
+    output_labeled: PYME.IO.tabular
+        input source with additional column indicating predicted component
+        membership of each point
+    
+    Notes
+    -----
+    Directly implements or closely wraps scikit-learn mixture.GaussianMixture
+    and mixture.BayesianGaussianMixture
+    """
+    input_points = Input('input')
+    n = Int(1)
+    mode = Enum(('n', 'bic', 'bayesian'))
+    covariance = Enum(('full', 'tied', 'diag', 'spherical'))
+    label_key = CStr('gmm_label')
+    output_labeled = Output('labeled_points')
+    
+    def execute(self, namespace):
+        from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
+        from PYME.IO import MetaDataHandler
+
+        points = namespace[self.input_points]
+        X = np.stack([points['x'], points['y'], points['z']], axis=1)
+
+        if self.mode == 'n':
+            gmm = GaussianMixture(n_components=self.n,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bic':
+            n_components = range(1, self.n + 1)
+            bic = np.zeros(len(n_components))
+            for ind in range(len(n_components)):
+                gmm = GaussianMixture(n_components=n_components[ind], 
+                                    covariance_type=self.covariance)
+                gmm.fit(X)
+                bic[ind] = gmm.bic(X)
+                logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
+
+            best = n_components[np.argmin(bic)]
+            if best == self.n or (self.n > 10 and best > 0.9 * self.n):
+                logger.warning('BIC optimization selected n components near n max')
+            
+            gmm = GaussianMixture(n_components=best,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bayesian':
+            bgm = BayesianGaussianMixture(n_components=self.n,
+                                      covariance_type=self.covariance)
+            predictions = bgm.fit_predict(X)
+
+        out = tabular.MappingFilter(points)
+        try:
+            out.mdh = MetaDataHandler.DictMDHandler(points.mdh)
+        except AttributeError:
+            pass
+
+        out.addColumn(self.label_key, predictions)
+        namespace[self.output_labeled] = out
