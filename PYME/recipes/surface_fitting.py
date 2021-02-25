@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr, ListInt
+from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
 import numpy as np
 from PYME.IO import tabular
 import logging
@@ -328,7 +328,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
     """
     input_shell = Input('harmonic_shell')
     input_image_bound_source = Input('input')
-    voxelsize_nm = ListInt([75, 75, 75])
+    voxelsize_nm = ListFloat([75, 75, 75])
     output = Output('output')
 
 
