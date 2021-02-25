@@ -21,6 +21,7 @@ from . import multiview
 from . import surface_fitting
 from . import acquisition
 from . import supertile
+from . import pointcloud
 try:
     from . import skfilters
 except:
