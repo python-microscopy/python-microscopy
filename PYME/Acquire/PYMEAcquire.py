@@ -40,6 +40,10 @@ import matplotlib
 from PYME.Acquire import acquiremainframe
 #from PYME import mProfile
 
+#make wx less spammy with warnings
+import warnings
+warnings.simplefilter('once', wx.wxPyDeprecationWarning)
+
 import os
 import json
 import logging
