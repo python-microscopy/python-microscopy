@@ -386,93 +386,73 @@ class Ripleys(ModuleBase):
         namespace[self.outputName] = res
 
 
-@register_module('BICGaussianMixtureModel')
-class BICGaussianMixtureModel(ModuleBase):
-    """Fit a Gaussian Mixture to a pointcloud, varying the number of components
-    and using the Bayesian Information Criterion to determine the optimum
-    number to use in the final model.
+@register_module('GaussianMixtureModel')
+class GaussianMixtureModel(ModuleBase):
+    """Fit a Gaussian Mixture to a pointcloud, predicting component membership
+    for each input point.
 
     Parameters
     ----------
     input_points: PYME.IO.tabular
         points to fit. Currently hardcoded to use x, y, and z keys.
-    n_max: Int
-        maximum number of Gaussians in the model
+    n: Int
+        number of Gaussian components in the model for optimization mode `n` 
+        and `bayesian`, or maxinum number of components for `bic`
+    mode: Enum
+        optimization on the number of components. For `n` and `bayesian` the
+        GMM uses exactly n components, while for `bic` it is the maximum number
+        of components used, with the optimum Bayesian Information Criterion
+        used to select the best model.
     covariance: Enum
         type of covariance to use in the model
+    label_key: str
+        name of membership/label key in output datasource, 'gmm_label' by
+        default
     output_labeled: PYME.IO.tabular
-        input source with additional column 'gmm_label' indicating predicted 
-        component membership of each point
+        input source with additional column indicating predicted component
+        membership of each point
     """
     input_points = Input('input')
-    n_max = Int(1)
+    n = Int(1)
+    mode = Enum(('n', 'bic', 'bayesian'))
     covariance = Enum(('full', 'tied', 'diag', 'spherical'))
+    label_key = CStr('gmm_label')
     output_labeled = Output('labeled_points')
     
     def execute(self, namespace):
-        from sklearn.mixture import GaussianMixture
+        from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
         from PYME.IO import MetaDataHandler
 
         points = namespace[self.input_points]
         X = np.stack([points['x'], points['y'], points['z']], axis=1)
 
-        n_components = range(1, self.n_max + 1)
-        bic = np.zeros(len(n_components))
-        for ind in range(len(n_components)):
-            gmm = GaussianMixture(n_components=n_components[ind], 
-                                  covariance_type=self.covariance)
-            gmm.fit(X)
-            bic[ind] = gmm.bic(X)
-            logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
+        if self.mode == 'n':
+            gmm = GaussianMixture(n_components=self.n,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bic':
+            n_components = range(1, self.n + 1)
+            bic = np.zeros(len(n_components))
+            for ind in range(len(n_components)):
+                gmm = GaussianMixture(n_components=n_components[ind], 
+                                    covariance_type=self.covariance)
+                gmm.fit(X)
+                bic[ind] = gmm.bic(X)
+                logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
 
-        best = n_components[np.argmin(bic)]
-        # TODO - warn if (best == n_max) or (not bic[best] << bic[n_max]) as ideal number of components might be higher than n_max 
-        gmm = GaussianMixture(n_components=best,
-                              covariance_type=self.covariance)
-        predictions = gmm.fit_predict(X)
-        out = tabular.MappingFilter(points)
-        try:
-            out.mdh = MetaDataHandler.DictMDHandler(points.mdh)
-        except AttributeError:
-            pass
-
-        out.addColumn('gmm_label', predictions)
-        namespace[self.output_labeled] = out
-
-
-@register_module('BayesianGaussianMixtureModel')
-class BayesianGaussianMixtureModel(ModuleBase):
-    """Fit a Bayesian Gaussian Mixture to a pointcloud, predicting component
-    membership for each input point.
-
-    Parameters
-    ----------
-    input_points: PYME.IO.tabular
-        points to fit. Currently hardcoded to use x, y, and z keys.
-    n_components: Int
-        number of Gaussians in the model. Stick breaking is used to effectively
-        use what is necessary. See scikit-learn BayesianGaussianMixture
-    covariance: Enum
-        type of covariance to use in the model
-    output_labeled: PYME.IO.tabular
-        input source with additional column 'bgm_label' indicating predicted 
-        component membership of each point
-    """
-    input_points = Input('input')
-    n_components = Int(1)
-    covariance = Enum(('full', 'tied', 'diag', 'spherical'))
-    output_labeled = Output('labeled_points')
-    
-    def execute(self, namespace):
-        from sklearn.mixture import BayesianGaussianMixture
-        from PYME.IO import MetaDataHandler
-
-        points = namespace[self.input_points]
-        X = np.stack([points['x'], points['y'], points['z']], axis=1)
-
-        bgm = BayesianGaussianMixture(n_components=self.n_components,
+            best = n_components[np.argmin(bic)]
+            if best == self.n or (self.n > 10 and best > 0.9 * self.n):
+                logger.warning('BIC optimization selected n components near n max')
+            
+            gmm = GaussianMixture(n_components=best,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bayesian':
+            bgm = BayesianGaussianMixture(n_components=self.n,
                                       covariance_type=self.covariance)
-        predictions = bgm.fit_predict(X)
+            predictions = bgm.fit_predict(X)
 
         out = tabular.MappingFilter(points)
         try:
@@ -480,5 +460,5 @@ class BayesianGaussianMixtureModel(ModuleBase):
         except AttributeError:
             pass
 
-        out.addColumn('bgm_label', predictions)
+        out.addColumn(self.label_key, predictions)
         namespace[self.output_labeled] = out
