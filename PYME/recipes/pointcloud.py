@@ -411,6 +411,11 @@ class GaussianMixtureModel(ModuleBase):
     output_labeled: PYME.IO.tabular
         input source with additional column indicating predicted component
         membership of each point
+    
+    Notes
+    -----
+    Directly implements or closely wraps scikit-learn mixture.GaussianMixture
+    and mixture.BayesianGaussianMixture
     """
     input_points = Input('input')
     n = Int(1)
