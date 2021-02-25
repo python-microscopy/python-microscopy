@@ -1,8 +1,12 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr
+from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
 import numpy as np
 from PYME.IO import tabular
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 @register_module('FitSurfaceWithPatches')
 class FitSurfaceWithPatches(ModuleBase):
@@ -300,3 +304,69 @@ class SphericalHarmonicShell(ModuleBase):
 
         namespace[self.output_name] = shell
         namespace[self.output_name_mapped] = points
+
+
+@register_module('ImageMaskFromSphericalHarmonicShell')
+class ImageMaskFromSphericalHarmonicShell(ModuleBase):
+    """
+
+    Parameters
+    ----------
+    input_shell: spherical_harmonics.ScaledShell()
+        input localizations to fit a shell to
+    bounds_source: PYME.IO.tabular
+        optional input to estimate image bounds from, otherwise the points
+        used to fit the shell are used
+    voxelsize_nm: list
+        x, y, z pixel size in nm
+
+
+    Returns
+    ------
+    output: PYME.IO.image.ImageStack
+        boolean mask True inside, False outside
+    """
+    input_shell = Input('harmonic_shell')
+    input_image_bound_source = Input('input')
+    voxelsize_nm = ListFloat([75, 75, 75])
+    output = Output('output')
+
+
+    def execute(self, namespace):
+        from PYME.IO.image import ImageBounds, ImageStack
+        from PYME.IO.MetaDataHandler import DictMDHandler, origin_nm
+
+        shell = namespace[self.input_shell]
+        image_bound_source = namespace[self.input_image_bound_source]
+        # TODO - make bounds estimation more generic - e.g. to match an existing image.
+        b = ImageBounds.estimateFromSource(image_bound_source)
+        ox, oy, _ = origin_nm(image_bound_source.mdh)
+        
+        nx = np.ceil((np.ceil(b.x1) - np.floor(b.x0)) / self.voxelsize_nm[0]) + 1
+        ny = np.ceil((np.ceil(b.y1) - np.floor(b.y0)) / self.voxelsize_nm[1]) + 1
+        nz = np.ceil((np.ceil(b.z1) - np.floor(b.z0)) / self.voxelsize_nm[2]) + 1
+        
+        x = np.arange(np.floor(b.x0), b.x0 + nx * self.voxelsize_nm[0], self.voxelsize_nm[0])
+        y = np.arange(np.floor(b.y0), b.y0 + ny * self.voxelsize_nm[1], self.voxelsize_nm[1])
+        z = np.arange(np.floor(b.z0), b.z0 + nz * self.voxelsize_nm[2], self.voxelsize_nm[2])
+        logger.debug('mask size %s' % ((len(x), len(y), len(z)),))
+
+        xx, yy, zz = np.meshgrid(x, y, z, indexing='xy')
+
+        inside = shell.check_inside(xx.ravel(), yy.ravel(), zz.ravel())
+        inside = np.reshape(inside, xx.shape)
+        
+        mdh = DictMDHandler({
+            'voxelsize.x': self.voxelsize_nm[0] / 1e3,
+            'voxelsize.y': self.voxelsize_nm[1] / 1e3,
+            'voxelsize.z': self.voxelsize_nm[2] / 1e3,
+            'ImageBounds.x0': x.min(), 'ImageBounds.x1': x.max(),
+            'ImageBounds.y0': y.min(), 'ImageBounds.y1': y.max(),
+            'ImageBounds.z0': z.min(), 'ImageBounds.z1': z.max(),
+            'Origin.x': ox + b.x0,
+            'Origin.y': oy + b.y0,
+            'Origin.z': b.z0
+        })
+
+        namespace[self.output] = ImageStack(data=inside, mdh=mdh, 
+                                            haveGUI=False)
