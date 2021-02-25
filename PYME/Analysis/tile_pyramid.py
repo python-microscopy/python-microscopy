@@ -481,7 +481,7 @@ class ImagePyramid(object):
         
         return mdh
     
-    def add_base_tile(self, x, y, frame, weights):
+    def update_base_tiles_from_frame(self, x, y, frame, weights):
         """add tile to the pyramid
 
         Parameters
@@ -517,35 +517,34 @@ class ImagePyramid(object):
         
         for tile_x in tile_xs:
             for tile_y in tile_ys:
-                acc_ = self._acc.get_tile(0, tile_x, tile_y)
-                occ_ = self._occ.get_tile(0, tile_x, tile_y)
-                
-                if (acc_ is None) or (occ_ is None):
-                    acc_ = np.zeros([self.tile_size, self.tile_size])
-                    occ_ = np.zeros([self.tile_size, self.tile_size])
-                
-                xs, xe = max(tile_x * self.tile_size - x, 0), min((tile_x + 1) * self.tile_size - x, frameSizeX)
-                xst = max(x - tile_x * self.tile_size, 0)
-                xet = min(xst + (xe - xs),
-                          self.tile_size) #min(frameSizeX - (tile_x + 1) * self.tile_size - x, 0) #FIXME
-                
-                ys, ye = max((tile_y * self.tile_size) - y, 0), min(((tile_y + 1) * self.tile_size) - y,
-                                                                  frameSizeY)
-                
-                yst = max(y - tile_y * self.tile_size, 0)
-                yet = min(yst + (ye - ys), self.tile_size) #min(frameSizeY - (tile_y + 1) * self.tile_size - y,0) #FIXME
-                
-                #print(tile_x, tile_y)
-                #print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, xet, yst, yet, xs, xe, ys, ye))
-                acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
-                occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
-
-                self._acc.save_tile(0, tile_x, tile_y, acc_)
-                self._occ.save_tile(0, tile_x, tile_y, occ_)
-                
-                self._clean_tiles(tile_x, tile_y)
+                self.update_base_tile(0, tile_x, tile_y, weights, frameSizeX, frameSizeY)
         
         self.pyramid_valid = False
+    
+    def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY):
+        acc_ = self._acc.get_tile(0, tile_x, tile_y)
+        occ_ = self._occ.get_tile(0, tile_x, tile_y)
+
+        if (acc_ is None) or (occ_ is None):
+            acc_ = np.zeros([self.tile_size, self.tile_size])
+            occ_ = np.zeros([self.tile_size, self.tile_size])
+
+        xs = max(tile_x * self.tile_size - x, 0)
+        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+        xst = max(x - tile_x * self.tile_size, 0)
+        xet = min(xst + (xe - xs), self.tile_size)
+
+        ys = max((tile_y * self.tile_size) - y, 0)
+        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+        yst = max(y - tile_y * self.tile_size, 0)
+        yet = min(yst + (ye - ys), self.tile_size)
+
+        acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
+        occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
+        self._acc.save_tile(0, tile_x, tile_y, acc_)
+        self._occ.save_tile(0, tile_x, tile_y, occ_)
+
+        self._clean_tiles(tile_x, tile_y)
 
 
 def get_position_from_events(events, mdh):
@@ -698,7 +697,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
 
             d_weighted = weights * d
             # TODO - account for orientation so this works for non-primary cams
-            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            P.update_base_tiles_from_frame(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
                 
     
     t2 = time.time()
