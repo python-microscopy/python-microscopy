@@ -338,6 +338,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
 
         shell = namespace[self.input_shell]
         image_bound_source = namespace[self.input_image_bound_source]
+        # TODO - make bounds estimation more generic - e.g. to match an existing image.
         b = ImageBounds.estimateFromSource(image_bound_source)
         ox, oy, _ = origin_nm(image_bound_source.mdh)
         
