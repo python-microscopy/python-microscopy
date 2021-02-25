@@ -4,9 +4,10 @@ from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShade
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
-import dispatch
+from PYME.contrib import dispatch
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,6 +25,9 @@ class Points3DEngine(BaseEngine):
     
         with self.shader_program:
             vertices = layer.get_vertices()
+            if vertices is None:
+                return False
+            
             n_vertices = vertices.shape[0]
         
             glVertexPointerf(vertices)
@@ -38,6 +42,7 @@ class Points3DEngine(BaseEngine):
             else:
                 glPointSize(layer.point_size*self.point_scale_correction)
             glDrawArrays(GL_POINTS, 0, n_vertices)
+            
 
 
 class PointSpritesEngine(Points3DEngine):
@@ -154,7 +159,7 @@ class PointCloudRenderLayer(EngineLayer):
 
     def _update(self, *args, **kwargs):
         cdata = self._get_cdata()
-        self.clim = [float(cdata.min()), float(cdata.max())]
+        self.clim = [float(np.nanmin(cdata)), float(np.nanmax(cdata))+1e-9]
         #self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -204,7 +209,8 @@ class PointCloudRenderLayer(EngineLayer):
         self._color_map = None
         self._color_limit = 0
         self._alpha = 0
-        if x is not None and y is not None and z is not None:
+        
+        if x is not None and y is not None and z is not None and len(x) > 0:
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             
@@ -226,14 +232,11 @@ class PointCloudRenderLayer(EngineLayer):
             
             cs = cs.ravel().reshape(len(colors), 4)
         else:
-            #cs = None
             if not vertices is None:
                 cs = np.ones((vertices.shape[0], 4), 'f')
             else:
                 cs = None
-            color_map = None
-            color_limit = None
-        
+
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
@@ -280,7 +283,7 @@ class PointCloudRenderLayer(EngineLayer):
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
                      Group(Item('cmap', label='LUT'),
                            Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']", editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
-                           Item('point_size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
+                           Item('point_size', label=u'Point\u00A0size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

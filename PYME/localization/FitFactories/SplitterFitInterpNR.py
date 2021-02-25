@@ -160,8 +160,7 @@ def genFitImage(fitResults, metadata):
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+    vx, vy, _ = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)
@@ -210,8 +209,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         DeltaX = md.chroma.dx.ev(x, y)
         DeltaY = md.chroma.dy.ev(x, y)
 
-        vx = 1e3*md.voxelsize.x
-        vy = 1e3*md.voxelsize.y
+        vx, vy, _ = md.voxelsize_nm
         
         dxp = int(DeltaX/vx)
         dyp = int(DeltaY/vy)
@@ -256,7 +254,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
 
         Xr = Xg - dx_
         Yr = Yg - dy_
-        Zr = Zg + self.metadata.Analysis.AxialShift
+        Zr = Zg + self.metadata['Analysis.AxialShift']
                 
 
         #estimate some start parameters...
@@ -273,7 +271,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,:1], X_, Y_)
             else:
                 startParams = self.startPosEstimator.getStartParameters(dataROI[:,:,1:], X_, Y_)
-                z0 = self.metadata.Analysis.AxialShift
+                z0 = self.metadata['Analysis.AxialShift']
 
         fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
         fitShifts = self.metadata.getOrDefault('Analysis.FitShifts', False)
@@ -299,12 +297,12 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
         if  self.metadata.getOrDefault('Analysis.PoissonML', False):
-            res = FitModelPoissonBFGS(self.fitfcn, startParameters, dataROI + bgROI, bgROI, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)[0]
+            res = FitModelPoissonBFGS(self.fitfcn, startParameters, dataROI + bgROI, bgROI, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift'])[0]
             cov_x = np.eye(len(res))            
-            infodict = {'fvec': self.fitfcn(res, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift) - (dataROI + bgROI)}
+            infodict = {'fvec': self.fitfcn(res, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, ['self.metadata.Analysis.AxialShift']) - (dataROI + bgROI)}
             resCode = 1
         else:
-            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift'])
             #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted_D(self.fitfcn, startParameters, dataROI, sigma, pScale, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata.Analysis.AxialShift)
 
         fitErrors=None

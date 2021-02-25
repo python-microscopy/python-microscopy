@@ -93,7 +93,7 @@ class DataSource(BaseDataSource):
         import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter))
+            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter, timeout=10))
             if len(ev) == 0:
                 return []
             
@@ -111,7 +111,8 @@ class DataSource(BaseDataSource):
     def getMetadata(self):
         return self.mdh
 
-    def isComplete(self):
+    @property
+    def is_complete(self):
         #TODO - add check to see if we have an updated number of frames
         return clusterIO.exists(self.eventFileName, self.clusterfilter)
  

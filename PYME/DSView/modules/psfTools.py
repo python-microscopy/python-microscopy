@@ -170,7 +170,7 @@ class CRBViewPanel(wx.Panel):
             d = self.image.data[:,:,:,0].squeeze()
             I = d[:,:,int(d.shape[2]/2)].sum()
 
-            vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+            vs = self.image.voxelsize_nm
 
             #print 'fi'
             FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
@@ -178,10 +178,10 @@ class CRBViewPanel(wx.Panel):
             self.crb = cramerRao.CalcCramerReoZ(FI)
             #print 'crbd'
 
-            z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+            z_ = np.arange(d.shape[2])*vs.z
             self.z_ = z_ - z_.mean()
 
-            ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs[0], strength=2)
+            ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs.x, strength=2)
             I = ps_as[:,:,int(ps_as.shape[2]/2)].sum()
             self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
 
@@ -260,27 +260,30 @@ class PSFTools(HasTraits):
 
     def OnExtractPupil(self, event):
         import numpy as np
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         from PYME.Analysis.PSFGen import fourierHNA
         
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        z_ = np.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
+        
+        vs = self.image.voxelsize_nm
+        z_ = np.arange(self.image.data.shape[2])*vs.z
         z_ -= z_.mean()  
         
         self.configure_traits(kind='modal')
         
         #pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
 
-        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, vs.x, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
                 
         
-        pylab.figure()
-        pylab.subplot(121)
-        pylab.imshow(np.abs(pupil), interpolation='nearest')
-        pylab.subplot(122)
-        pylab.imshow(np.angle(pupil)*(np.abs(pupil) > 0), interpolation='nearest')
+        plt.figure()
+        plt.subplot(121)
+        plt.imshow(np.abs(pupil), interpolation='nearest')
+        plt.subplot(122)
+        plt.imshow(np.angle(pupil)*(np.abs(pupil) > 0), interpolation='nearest')
         
         pupil = pupil*(np.abs(pupil) > 0)
         
@@ -298,7 +301,13 @@ class PSFTools(HasTraits):
         from PYME.recipes.measurement import FitPoints
         from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
+        import matplotlib.cm
         import mpld3
+        import warnings
+        if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+            #mpld3 has messed with warnings - undo
+            warnings.filters.pop(0)
+            
         import json
         from PYME.Analysis.PSFEst import extractImages
         import wx
@@ -371,7 +380,7 @@ class PSFTools(HasTraits):
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
 
-        colors = iter(plt.cm.Dark2(np.linspace(0, 1, 2*self.image.data.shape[3])))
+        colors = iter(matplotlib.cm.Dark2(np.linspace(0, 1, 2*self.image.data.shape[3])))
         plt.subplot(121)
         for i, res in enumerate(results):
             nextColor1 = next(colors)
@@ -390,7 +399,7 @@ class PSFTools(HasTraits):
         plt.legend()
 
         plt.subplot(122)
-        colors = iter(plt.cm.Dark2(np.linspace(0, 1, self.image.data.shape[3])))
+        colors = iter(matplotlib.cm.Dark2(np.linspace(0, 1, self.image.data.shape[3])))
         for i, res in enumerate(results):
             nextColor = next(colors)
             lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
@@ -461,7 +470,7 @@ class PSFTools(HasTraits):
         d = self.image.data[:,:,:]
         I = d[:,:,d.shape[2]/2].sum()
         
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        vs = np.array(self.image.voxelsize_nm)
         
         #print 'fi'        
         FI = cramerRao.CalcFisherInformZn2(d*(2e3/I), 100, voxelsize=vs)
@@ -469,27 +478,28 @@ class PSFTools(HasTraits):
         crb = cramerRao.CalcCramerReoZ(FI)
         #print 'crbd'
         
-        import pylab
-        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+        # import pylab
+        import matplotlib.pyplot as plt
+        z_ = np.arange(d.shape[2])*vs[2]
         z_ = z_ - z_.mean()
         
         print('p')
-        pylab.figure()
-        pylab.plot(z_, np.sqrt(crb[:,0]), label='x')
-        pylab.plot(z_, np.sqrt(crb[:,1]), label='y')
-        pylab.plot(z_, np.sqrt(crb[:,2]), label='z')
-        pylab.legend()
+        plt.figure()
+        plt.plot(z_, np.sqrt(crb[:,0]), label='x')
+        plt.plot(z_, np.sqrt(crb[:,1]), label='y')
+        plt.plot(z_, np.sqrt(crb[:,2]), label='z')
+        plt.legend()
         
-        pylab.xlabel('Defocus [nm]')
-        pylab.ylabel('Std. Dev. [nm]')
-        pylab.title('Cramer-Rao bound for 2000 photons')
+        plt.xlabel('Defocus [nm]')
+        plt.ylabel('Std. Dev. [nm]')
+        plt.title('Cramer-Rao bound for 2000 photons')
         
         ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 2)  
         I = ps_as[:,:,ps_as.shape[2]/2].sum()
         crb_as = np.sqrt(cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I, 500, voxelsize=vs)))
-        pylab.plot(z_, crb_as[:,0], 'b:')
-        pylab.plot(z_, crb_as[:,1], 'g:')
-        pylab.plot(z_, crb_as[:,2], 'r:')
+        plt.plot(z_, crb_as[:,0], 'b:')
+        plt.plot(z_, crb_as[:,1], 'g:')
+        plt.plot(z_, crb_as[:,2], 'r:')
         
         
     def OnCalcCRB3DvsBG(self, event):
@@ -499,7 +509,7 @@ class PSFTools(HasTraits):
         import numpy as np
         
         
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+        vs = np.array(self.image.voxelsize_nm)
         
         zf = self.image.data.shape[2]/2
         dz = 500/vs[2]
@@ -526,16 +536,17 @@ class PSFTools(HasTraits):
             crb3D.append(np.sqrt(crb.sum(1)).mean())
             crb3Das.append(np.sqrt(crb_as.sum(1)).mean())
             
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         
-        pylab.figure()
-        pylab.plot(bgv, crb3Das, label='Theoretical PSF')
-        pylab.plot(bgv, crb3D, label='Measured PSF')
-        pylab.legend()
+        plt.figure()
+        plt.plot(bgv, crb3Das, label='Theoretical PSF')
+        plt.plot(bgv, crb3D, label='Measured PSF')
+        plt.legend()
         
-        pylab.xlabel('Background [photons]')
-        pylab.ylabel('Average CRB 3D')
-        pylab.title('Cramer-Rao bound vs Background')
+        plt.xlabel('Background [photons]')
+        plt.ylabel('Average CRB 3D')
+        plt.title('Cramer-Rao bound vs Background')
         
 
     

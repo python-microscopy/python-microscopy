@@ -13,8 +13,15 @@ except ImportError:
     import queue as Queue
     
 import time
-import dispatch
+from PYME.contrib import dispatch
 import weakref
+import threading
+from PYME.util import webframework
+import numpy as np
+import logging
+logger = logging.getLogger(__name__)
+
+from .actions import *
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -57,9 +64,17 @@ class ActionManager(object):
         self.onQueueChange = dispatch.Signal()
         
         self._timestamp = 0
+
+        self._monitoring = True
+        self._monitor = threading.Thread(target=self._monitor_defunct)
+        self._monitor.daemon = True
+        self._monitor.start()
         
-    def QueueAction(self, functionName, args, nice=10, timeout=1e6):
-        """Add an action to the queue
+        self._lock = threading.Lock()
+        
+    def QueueAction(self, functionName, args, nice=10, timeout=1e6, 
+                    max_duration=np.finfo(float).max):
+        """Add an action to the queue. Legacy version for string based actions. Most applications should use queue_actions() below instead
         
         Parameters
         ----------
@@ -78,13 +93,25 @@ class ActionManager(object):
             a dictionary of arguments to pass the function    
         nice : int (or float)
             The priority with which to execute the function. Functions with a
-            lower nice value execute first.
+            lower nice value execute first. Nice should have a value between 0 and 20. nice=20 is reserved by convention
+            for tidy-up tasks which should run
+            after all other tasks and put the microscope in a 'safe' state.
         timeout : float
             A timeout in seconds from the current time at which the action
             becomes irrelevant and should be ignored.
+        max_duration : float
+            A generous estimate, in seconds, of how long the task might take, 
+            after which the lasers will be automatically turned off and the 
+            action queue paused. This will not interrupt the current task, 
+            though it has presumably already failed at that point. Intended as a
+            safety feature for automated acquisitions, the check is every 3 s 
+            rather than fine-grained.
             
         """
-        curTime = time.time()    
+        # make sure nice is in supported range.
+        assert ((nice >= 0) and (nice <= 20))
+        
+        curTime = time.time()
         expiry = curTime + timeout
         
         #make sure our timestamps strictly increment
@@ -93,7 +120,66 @@ class ActionManager(object):
         #ensure FIFO behaviour for events with the same priority
         nice_ = nice + self._timestamp*1e-10
         
-        self.actionQueue.put_nowait((nice_, functionName, args, expiry))
+        self.actionQueue.put_nowait((nice_, FunctionAction(functionName, args), expiry, max_duration))
+        self.onQueueChange.send(self)
+        
+    def queue_actions(self, actions, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+        '''
+        Queue a number of actions for subsequent execution
+        
+        Parameters
+        ----------
+        actions : list
+            A list of Action instances
+        nice : int (or float)
+            The priority with which to execute the function. Functions with a
+            lower nice value execute first. Nice should have a value between 0 and 20.
+        timeout : float
+            A timeout in seconds from the current time at which the action
+            becomes irrelevant and should be ignored.
+        max_duration : float
+            A generous estimate, in seconds, of how long the task might take,
+            after which the lasers will be automatically turned off and the
+            action queue paused. This will not interrupt the current task,
+            though it has presumably already failed at that point. Intended as a
+            safety feature for automated acquisitions, the check is every 3 s
+            rather than fine-grained.
+
+        Returns
+        -------
+        
+        
+        Examples
+        --------
+        
+        >>> my_actions = [UpdateState(state={'Camera.ROI' : [50, 50, 200, 200]}),
+        >>>      SpoolSeries(maxFrames=500, stack=False),
+        >>>      UpdateState(state={'Camera.ROI' : [100, 100, 250, 250]}).then(SpoolSeries(maxFrames=500, stack=False)),
+        >>>      ]
+        >>>
+        >>>ActionManager.queue_actions(my_actions)
+        
+        Note that the first two tasks are independant -
+
+        '''
+        # make sure nice is in supported range.
+        assert((nice >= 0) and (nice <= 20))
+        
+        with self._lock:
+            # lock to prevent 'nice' collisions when queueing from separate threads.
+            
+            for action in actions:
+                curTime = time.time()
+                expiry = curTime + timeout
+            
+                #make sure our timestamps strictly increment
+                self._timestamp = max(curTime, self._timestamp + 1e-3)
+            
+                #ensure FIFO behaviour for events with the same priority
+                nice_ = nice + self._timestamp * 1e-10
+            
+                self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
+            
         self.onQueueChange.send(self)
         
         
@@ -109,17 +195,165 @@ class ActionManager(object):
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
-                nice, functionName, args, expiry = self.currentTask
+                nice, action, expiry, max_duration = self.currentTask
+                self._cur_task_kill_time = time.time() + max_duration
                 self.onQueueChange.send(self)
             except Queue.Empty:
                 self.currentTask = None
                 return
             
             if expiry > time.time():
-                print('%s, %s' % (self.currentTask, functionName))
-                fcn = eval('.'.join(['self.scope()', functionName]))
-                self.isLastTaskDone = fcn(**args)
-                
-
+                print('%s, %s' % (self.currentTask, action))
+                #fcn = eval('.'.join(['self.scope()', functionName]))
+                self.isLastTaskDone = action(self.scope())
+            else:
+                past_expire = time.time() - expiry
+                logger.debug('task expired %f s ago, ignoring %s' % (past_expire,
+                                                                     self.currentTask))
+    
+    def _monitor_defunct(self):
+        """
+        polling thread method to check that if a task is being executed through
+        the action manager it isn't taking longer than its `max_duration`.
+        """
+        while self._monitoring:
+            if self.currentTask is not None:
+                #logger.debug('here, %f s until kill' % (self._cur_task_kill_time - time.time()))
+                if time.time() > self._cur_task_kill_time:
+                    self.scope().turnAllLasersOff()
+                    # pause and reset so we can start up again later
+                    self.paused = True
+                    self.isLastTaskDone = None
+                    self.currentTask = None
+                    self.onQueueChange.send(self)
+                    logger.error('task exceeded specified max duration')
         
-                
+            time.sleep(3)
+    
+    def __del__(self):
+        self._monitoring = False
+
+
+class ActionManagerWebWrapper(object):
+    def __init__(self, action_manager):
+        """ Wraps an action manager instance with server endpoints
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            action manager instance to wrap
+        """
+        self.action_manager = action_manager
+
+    @webframework.register_endpoint('/queue_actions', output_is_json=False)
+    def queue_actions(self, body, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+        """
+        Add a list of actions to the queue
+        
+        Parameters
+        ----------
+        body - json formatted list of serialised actions (see example below)
+        nice
+        timeout
+        max_duration
+
+        Returns
+        -------
+        
+        
+        Example body
+        ------------
+        
+        `[{'UpdateState':{'foo':'bar', 'then': {'SpoolSeries' : {...}}}]`
+
+        """
+        import json
+        actions = [action_from_dict(a) for a in json.loads(body)]
+
+        self.action_manager.queue_actions(actions, nice=int(nice), 
+                                          timeout=float(timeout), 
+                                          max_duration=float(max_duration))
+        
+    
+    @webframework.register_endpoint('/queue_action', output_is_json=False)
+    def queue_action(self, body):
+        """
+        adds an action to the queue
+
+        Parameters
+        ----------
+        body: str
+            json.dumps(dict) with the following keys:
+                function_name : str
+                    The name of a function relative to the microscope object.
+                    e.g. to `call scope.spoolController.StartSpooling()`, you 
+                    would use a functionName of 'spoolController.StartSpooling'.
+                    
+                    The function should either return `None` if the operation 
+                    has already completed, or function which evaluates to True 
+                    once the operation has completed. See 
+                    `scope.spoolController.StartSpooling()` for an example.
+                args : dict, optional
+                    a dictionary of arguments to pass to `function_name`
+                nice : int, optional
+                    priority with which to execute the function, by default 10. 
+                    Functions with a lower nice value execute first.
+                timeout : float, optional
+                    A timeout in seconds from the current time at which the 
+                    action becomes irrelevant and should be ignored. By default
+                    1e6.
+                max_duration : float
+                    A generous estimate, in seconds, of how long the task might
+                    take, after which the lasers will be automatically turned 
+                    off and the action queue paused.
+        """
+        import json
+        params = json.loads(body)
+        function_name = params['function_name']
+        args = params.get('args', {})
+        nice = params.get('nice', 10.)
+        timeout = params.get('timeout', 1e6)
+        max_duration = params.get('max_duration', np.finfo(float).max)
+
+        self.action_manager.QueueAction(function_name, args, nice, timeout,
+                                        max_duration)
+
+
+class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):
+    def __init__(self, action_manager, port, bind_address=''):
+        """
+        Server process to expose queue_action functionality to everything on the
+        cluster network.
+
+        NOTE - this will likely not be around long, as it would be preferable to
+        add the ActionManagerWebWrapper to
+        `PYME.acquire_server.AcquireHTTPServer` and run a single server process
+        on the microscope computer.
+
+        Parameters
+        ----------
+        action_manager : ActionManager
+            already initialized
+        port : int
+            port to listen on
+        bind_address : str, optional
+            specifies ip address to listen on, by default '' will bind to local 
+            host.
+        """
+        webframework.APIHTTPServer.__init__(self, (bind_address, port))
+        ActionManagerWebWrapper.__init__(self, action_manager)
+        
+        self.daemon_threads = True
+        self._server_thread = threading.Thread(target=self._serve)
+        self._server_thread.daemon_threads = True
+        self._server_thread.start()
+
+    def _serve(self):
+        try:
+            logger.info('Starting ActionManager server on %s:%s' % (self.server_address[0], self.server_address[1]))
+            self.serve_forever()
+        finally:
+            logger.info('Shutting down ActionManager server ...')
+            self.shutdown()
+            self.server_close()
+

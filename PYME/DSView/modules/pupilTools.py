@@ -146,10 +146,10 @@ class PupilTools(HasTraits):
         z_ -= z_.mean()        
         
         if self.vectorial:
-            ps = fourierHNA.PsfFromPupilVect(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
+            ps = fourierHNA.PsfFromPupilVect(self.image.data[:,:], z_, self.image.voxelsize_nm.x, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
             #ps = abs(ps*np.conj(ps))
         else:
-            ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
+            ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.voxelsize_nm.x, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
         
         #ps = ps/ps[:,:,self.sizeZ/2].sum()
         
@@ -182,7 +182,7 @@ class PupilTools(HasTraits):
         #else:
         #    ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
         
-        ps = fourierHNA.GenZernikeDPSF(z_, dx = self.image.mdh['voxelsize.x']*1e3, 
+        ps = fourierHNA.GenZernikeDPSF(z_, dx = self.image.voxelsize_nm.x,
                                        zernikeCoeffs = self.dsviewer.zernModes, lamb=self.wavelength, 
                                        n=1.51, NA = self.NA, ns=1.51, beadsize=0, 
                                        vect=self.vectorial, apodization=self.apodization)

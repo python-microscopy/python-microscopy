@@ -66,6 +66,7 @@ def as_string(cinfo,field):
     return (ctypes.cast(strval, ctypes.c_char_p)).value
 
 def translateCaminfo(camlist):
+    print(camlist, dir(camlist), camlist.dwCount)
     tlist = {}
 
     tlist['count'] = int(camlist.dwCount)
@@ -75,6 +76,7 @@ def translateCaminfo(camlist):
     tlist['cameras'] = []
     for n in range(tlist['count']):
         uci = "uci%d" % n
+        print(uci)
         caminfo = getattr(camlist,uci)
         camdict = {
             'serno'       : as_string(caminfo,'SerNo[16]'),
@@ -92,14 +94,21 @@ def GetCameraList():
     nCams = GetNumCameras()
     
     class UEYE_CAMERA_LIST(ctypes.Structure):
-        _fields_ = [("dwCount", uc480.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
+        _fields_ = [("dwCount", uc480.DWORD ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
         # _fields_ = [("dwCount", ctypes.wintypes.ULONG ),
         #             ("caminfo", uc480.UEYE_CAMERA_INFO * nCams)]
 
     camlist = UEYE_CAMERA_LIST()
     camlist.dwCount = nCams
     
-    uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    #print('dwCount:', camlist.dwCount, nCams)
+
+    ret = uc480.CALL("GetCameraList", ctypes.byref(camlist))
+    if not ret == uc480.IS_SUCCESS:
+        raise RuntimeError('Error (%d) getting camera list' % ret)
+
+    #print('dwCount:', camlist.dwCount, nCams)
+    camlist.dwCount = nCams
 
     return translateCaminfo(camlist)
 
@@ -201,6 +210,8 @@ class uc480Camera(Camera):
             raise RuntimeError('Error getting camera info: %d: %s' % GetError(self.boardHandle))
         
         self.serialNum = caminfo.SerNo
+
+        logger.debug('caminfo: %s' %caminfo)
 
         #get the CCD size 
         sensorProps = uc480.SENSORINFO()
@@ -739,7 +750,8 @@ class uc480Camera(Camera):
     def noise_properties(self):
         return {'ElectronsPerCount': self.GetElectronsPerCount(),
                 'ReadNoise': self.GetReadNoise(),
-                'ADOffset': self.GetADOffset()}
+                'ADOffset': self.GetADOffset(),
+                'SaturationThreshold': 2 ** self.nbits  - 1}
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata

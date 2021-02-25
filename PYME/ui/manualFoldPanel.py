@@ -173,7 +173,7 @@ class CaptionBar(wx.Window):
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
 
-        self.style = cbstyle
+        self.style = dict(cbstyle)
         self.parent = parent
         self.caption = caption
         self.foldIcons = foldIcons
@@ -341,6 +341,11 @@ class foldElement:
 
 class foldingPane(wx.Panel):
     def __init__(self, *args, **kwargs):
+        # NOTE: If you are creating a foldingPane to encapsulate other 
+        # foldingPanes, the top-level foldingPane must have the flag
+        # pinned=True or all the sub-foldingPanes will be hidden,
+        # unhidable, and no error will be thrown. Alternatively you
+        # can pass folded=False to the top-level pane.
         try:
             self.orientation = kwargs.pop('orientation')
         except KeyError:
@@ -601,7 +606,7 @@ class collapsingPane(foldingPane):
 
 
 
-import dispatch
+from PYME.contrib import dispatch
 class foldPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         try:

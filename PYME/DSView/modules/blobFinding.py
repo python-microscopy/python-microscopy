@@ -30,12 +30,12 @@ import wx.lib.agw.aui as aui
 import os
 import six
 
-class blobFinder:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
 
-        self.image = dsviewer.image
-        self.do = dsviewer.do
+from ._base import Plugin
+
+class BlobFinder(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
 
         self.vObjPos = None
         self.vObjFit = None
@@ -162,7 +162,7 @@ class blobFinder:
         #and identify objects ...
         if self.chMethod.GetSelection() == 1: #don't detect objects in poisson noise
             fudgeFactor = 1 #to account for the fact that the blurring etc... in ofind doesn't preserve intensities - at the moment completely arbitrary so a threshold setting of 1 results in reasonable detection.
-            threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data.astype('f') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
+            threshold =  (numpy.sqrt(self.image.mdh.Camera.ReadNoise**2 + numpy.maximum(self.image.mdh.Camera.ElectronsPerCount*(self.image.mdh.Camera.NoiseFactor**2)*(self.image.data[:,:,:, chnum].astype('f4') - self.image.mdh.Camera.ADOffset)*self.image.mdh.Camera.TrueEMGain, 1))/self.image.mdh.Camera.ElectronsPerCount)*fudgeFactor*threshold
             self.ofd.FindObjects(threshold, 0)
         elif self.chMethod.GetSelection() == 2:
             bs = float(self.tBlurSize.GetValue())
@@ -175,7 +175,7 @@ class blobFinder:
         self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
         if self.vObjPos is None:
-            self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
+            self.vObjPos = recArrayView.ArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
@@ -244,7 +244,7 @@ class blobFinder:
             #if self.nObjFit == None:
                 
                 
-            vObjFit = recArrayView.recArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
+            vObjFit = recArrayView.ArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
             self.dsviewer.AddPage(vObjFit, caption = 'Fitted Positions %d - %d' % (chnum, self.nObjFit))
         self.nObjFit += 1
         #else:
@@ -254,7 +254,8 @@ class blobFinder:
         
     def OnCalcShiftmap(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
-        import pylab
+        # import pylab
+        import matplotlib.pyplot as plt
         masterChan = self.chChannel.GetSelection()
         
         master = self.objFitRes[masterChan]
@@ -272,7 +273,7 @@ class blobFinder:
         
         self.shiftfields ={}
 
-        pylab.figure() 
+        plt.figure() 
         
         nchans = self.image.data.shape[3]
         ch_i = 1
@@ -298,19 +299,19 @@ class blobFinder:
                 self.shiftfields[ch] = (spx, spy, numpy.median(dz[mask]))
                 #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
                 
-                pylab.subplot(1,nchans -1, ch_i)
+                plt.subplot(1,nchans -1, ch_i)
                 ch_i += 1
                 twoColourPlot.PlotShiftResidualsS(x[mask], y[mask], dx[mask], dy[mask], spx, spy)
                 
-        pylab.figure()
+        plt.figure()
         X, Y = numpy.meshgrid(numpy.linspace(0., 70.*self.image.data.shape[0], 20), numpy.linspace(0., 70.*self.image.data.shape[1], 20))
         X = X.ravel()
         Y = Y.ravel()
         for k in self.shiftfields.keys():
             spx, spy, dz = self.shiftfields[k]
-            pylab.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], scale=2e3)
+            plt.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], scale=2e3)
             
-        pylab.axis('equal')
+        plt.axis('equal')
         
     def saveShiftmaps(self, event=None):
         from six.moves import cPickle
@@ -364,7 +365,7 @@ class blobFinder:
 
 
 def Plug(dsviewer):
-    dsviewer.blobFinder = blobFinder(dsviewer)
+    blobFinder = BlobFinder(dsviewer)
     
     if not 'overlaypanel' in dir(dsviewer):    
         dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
@@ -373,4 +374,6 @@ def Plug(dsviewer):
         dsviewer._mgr.AddPane(dsviewer.overlaypanel, pinfo2)
     
         dsviewer.panesToMinimise.append(pinfo2)
+        
+    return blobFinder
     

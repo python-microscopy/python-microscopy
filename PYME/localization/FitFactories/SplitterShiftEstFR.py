@@ -148,9 +148,10 @@ class GaussianFitFactory:
         #average in z
         #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
-        #generate grid to evaluate function on        
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        #generate grid to evaluate function on
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[xslice]
+        Y = vs.y*scipy.mgrid[yslice]
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -158,7 +159,7 @@ class GaussianFitFactory:
         #similarly for y. For slowly varying shifts the following should be
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
-        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
+        #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata['chroma.dx'],self.metadata['chroma.dy'])
 
         #Xr = Xg + DeltaX
         #Yr = Yg + DeltaY
@@ -192,7 +193,7 @@ class GaussianFitFactory:
         nSlices = 1#dataROI.shape[2]
         
         #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(dataROI, 1)/nSlices)/self.metadata['Camera.ElectronsPerCount']
 
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)

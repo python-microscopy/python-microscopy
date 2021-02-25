@@ -92,7 +92,9 @@ class TrackFeatures(ModuleBase):
         pipe = {}
         pipe.update(clumpInfo)
         pipe.update(objects)
-        pipe = pd.DataFrame(pipe)
+        # pipe = pd.DataFrame(pipe)
+        from PYME.IO.tabular import DictSource
+        pipe = DictSource(pipe)
         
         if 'mdh' in dir(objects):
             #propagate metadata
@@ -105,7 +107,8 @@ class TrackFeatures(ModuleBase):
         else:
             clumps = [c for c in clumps.all if (c.nEvents > self.minTrackLength) ]
 
-        clumpInfo = pd.DataFrame(clumpInfo)
+        # clumpInfo = pd.DataFrame(clumpInfo)
+        clumpInfo = DictSource(clumpInfo)
         
         if 'mdh' in dir(objects):
             #propagate metadata
@@ -125,12 +128,16 @@ class TrackFeatures(ModuleBase):
         into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
 
-        pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
-        pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
-        pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
+        # pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
+        # pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
+        # pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
         
         #self.clumps = clumps        
-        pipeline.clumps = clumps
+        # pipeline.clumps = clumps
+
+        # FIXME - is this the right thing to be adding (and under the right name?) Does the pipeline (As used in dsviewer)
+        # actually support multiple data sources in a meaningful way? Consider fixing DSView/modules/particleTracking and removing this function completely.
+        pipeline.addDataSource('clumps', clumpInfo)
         
         return clumps
 
@@ -139,18 +146,47 @@ class TrackFeatures(ModuleBase):
 class FindClumps(ModuleBase):
     """
     Generates tracks / clumps of single molecules based on spatial and temporal grouping. This is appropriate for
-    diffraction limited objects where size, shape, or other features do not contin useful tracking information.
+    sparse diffraction limited objects where size, shape, or other features do not contain useful tracking information.
     
-    One of the main uses for this module is to chain multiple observations of a single molecule together.
+    The main use for this module is to chain multiple observations of a single molecule in consecutive frames
+    of a single switching event together. It functions by grouping localizations together that appear within consecutive
+    frames and are within a given search radius (by default twice the particle localisation error). To accommodate for
+    rapid blinking within one "on" event the algorithm will link events even if they are separated by a small temporal
+    gap (timeWindow).
+    
+    It can also be used for simple particle tracking applications where the particles are well separated and moving
+    slowly. In this case, the clumpRadiusVariable should be set to a constant (1.0) rather than error_x, and the
+    clumpRadiusScale should be set to the furthest distance in nm that a particle is expected to move in a single frame.
+    
+    The module provides two outputs - a tabular object which is a copy of the input data with added columns for the
+    clump assignment (clumpIndex) and clump size (clumpSize). This is the output that is used by most downstream modules
+    including clump coalescing used to remove over-counting artifacts caused by localisations which are on for multiple
+    frames.
+    
+    A second output, 'clumps' is used exclusively for particle tracking. This is a list-like object which lazily
+    generates a PYME.Analysis.trackUtils.Track object for a clump when indexed by that clumps number. The Track object
+    facilitates plotting trajectories and calculating MSDs.
+    
+    .. note::
+        
+        The **minClumpSize** parameter only effects the 'clumps' output used with particle tracking and is ignored
+        for the clump assignment and with_clumps output. The tabular clump assignments can be filtered on the `clumpSize`
+        column using a FilterTable recipe module or using the pipeline filter in VisGUI. Deferring clump size filtering
+        is a performance optimisation - the clump assignment performed here is relatively expensive whilst filtering
+        after the fact is cheap - performing clumpSize filtering here would necessitate recomputing the assignment
+        whenever the size-cutoff is changed.
+        
+        The reason for filtering in the `clumps` output is that not filtering here would result in the creation of a
+        large number of small Track objects, which is expensive.
     """
     inputName = Input('input')
     outputName = Output('with_clumps')
-    outputClumps = Output('clumps')
+    outputClumps = Output('')
     
     timeWindow = Int(3)
     clumpRadiusScale = Float(2.0)
     clumpRadiusVariable = CStr('error_x')
-    minClumpSize = Int(2)
+    minClumpSize = Int(2) # TODO - check for usages and rename to reflect the fact that this only effects the clumps output. Hide in view if outputClumps==''
     
     
     def execute(self, namespace):
@@ -170,7 +206,8 @@ class FindClumps(ModuleBase):
         
         #clumpInfo, clumps = self.Track(meas, True)
         namespace[self.outputName] = with_clumps
-        namespace[self.outputClumps] = clumps
+        if self.outputClumps:
+            namespace[self.outputClumps] = clumps
         
         
     
@@ -230,8 +267,9 @@ class LoadSpeckles(ModuleBase):
         inp = tabular.RecArraySource(traces)
 
         #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
-        map = tabular.MappingFilter(inp, x ='x_pixels*%3.2f' % (1000 * mdh['voxelsize.x']),
-                                    y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
+        vs = mdh.voxelsize_nm
+        map = tabular.MappingFilter(inp, x ='x_pixels*%3.2f' % vs.x,
+                                    y='y_pixels*%3.2f' % vs.y)
 
         map.mdh = mdh
 

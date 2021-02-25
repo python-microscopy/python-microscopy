@@ -36,6 +36,7 @@ Target: 800 MB/s
 Notes
 =====
 - Occasional connection timeout bug. Seems to be worse with HTTP/1.1
+- Now extened to permit testing of direct streaming to HDF (hacky)
 """
 
 import glob
@@ -50,10 +51,10 @@ from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
-from PYME.Acquire import HTTPSpooler
+from PYME.Acquire import HTTPSpooler, HDFSpooler
 
 import time
-import dispatch
+from PYME.contrib import dispatch
 import sys
 
 TEST_FRAME_SIZE = [2000,2000]
@@ -76,7 +77,7 @@ class TestSpooler:
         self.serverfilter=serverfilter
 
 
-    def run(self, filename=None, nFrames = 2000, interval=0, compression=False):
+    def run(self, filename=None, nFrames = 2000, interval=0, compression=False, hdf_spooler=False, frameShape=None):
         if filename is None:
             filename = 'test_%3.1f' % time.time()
 
@@ -85,19 +86,25 @@ class TestSpooler:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
-        if compression:
-            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter)
+        if hdf_spooler:
+            if compression:
+                self.spooler = HDFSpooler.Spooler(filename, self.onFrame, frameShape = frameShape, complevel=0)
+            else:
+                self.spooler = HDFSpooler.Spooler(filename, self.onFrame,frameShape = frameShape, complevel=3)
         else:
-            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
-                                               frameShape = None, serverfilter=self.serverfilter,
-                                               compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
-                                                                    'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
+            if compression:
+                self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter)
+            else:
+                self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
+                                                   frameShape = None, serverfilter=self.serverfilter,
+                                                   compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
+                                                                        'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
         
         try:
             #spool our data
             self.spooler.StartSpool()
     
-            print(self.spooler.seriesName)
+            print(getattr(self.spooler, 'seriesName', self.spooler.filename))
     
             startTime = time.time()
     

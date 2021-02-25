@@ -23,19 +23,15 @@
 import wx
 
 #from PYME.Acquire.mytimer import mytimer
-import pylab
+# import pylab
 from scipy import ndimage
 import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
-
-class mthresholder:
+from ._base import Plugin
+class MultiThreshold(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        #self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self.dsviewer)
 
         
         dsviewer.AddMenuItem('Processing', "Object # vs threshold", self.OnPlotProfile)
@@ -100,5 +96,5 @@ class mthresholder:
 
 
 def Plug(dsviewer):
-    dsviewer.mthreshold = mthresholder(dsviewer)
+    return MultiThreshold(dsviewer)
     

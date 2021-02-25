@@ -171,8 +171,9 @@ class GaussianFitFactory:
         #only recalculate grid if existing one doesn't match
         if not self.X or not self.X.shape == self.data.shape[:2]:
              X,  Y, C = np.mgrid[0:self.data.shape[0], 0:self.data.shape[1], 0:2]
-             self.X = 1e3*self.metadata.voxelsize.x*X
-             self.Y = 1e3*self.metadata.voxelsize.y*Y
+             vs = self.metadata.voxelsize_nm
+             self.X = vs.x*X
+             self.Y = vs.y*Y
              self.C = C.astype('int')
             
 
@@ -184,9 +185,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(data, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(data, 1)/nSlices)/self.metadata['Camera.ElectronsPerCount']
 
-        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and self.metadata.getOrDefault('Analysis.subtractBackground', True):
             #average in z
             bgM = self.background
             
@@ -296,8 +297,8 @@ class GaussianFitFactory:
                 y = (Y_m*d_m).sum()/imOs
                 
                 #correct for chromatic shift
-                DeltaX = self.metadata.chroma.dx.ev(x_, y_)
-                DeltaY = self.metadata.chroma.dy.ev(x_, y_)
+                DeltaX = self.metadata['chroma.dx'].ev(x_, y_)
+                DeltaY = self.metadata['chroma.dy'].ev(x_, y_)
                 
                 A = imO.max()
     
@@ -376,8 +377,9 @@ class GaussianFitFactory:
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        vs = md.voxelsize_nm
+        X = vs.x*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*scipy.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 

@@ -1,5 +1,5 @@
 from PYME.Analysis.piecewise import piecewiseLinear
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 
@@ -308,7 +308,9 @@ def binSum(binVar, indepVar, bins):
 def frc(image):
     from PYME.Analysis import binAvg        
     import numpy as np
-    import pylab
+    # import pylab
+    import matplotlib.pyplot as plt
+    from numpy.fft import fft2, fftshift
 
     voxelsize = image.voxelsize
 
@@ -327,23 +329,23 @@ def frc(image):
     Y = Y - .5
     R = np.sqrt(X**2 + Y**2)
     
-    H1 = pylab.fft2(imA)
-    H2 = pylab.fft2(imB)
+    H1 = fft2(imA)
+    H2 = fft2(imB)
     
     ringwidth  = 1 # in pixels
     rB = np.linspace(0,0.5,0.5*imA.shape[0]/ringwidth)
     
-    bn, bm, bs = binSum(R, pylab.fftshift(H1*H2.conjugate()), rB)
+    bn, bm, bs = binSum(R, fftshift(H1*H2.conjugate()), rB)
     
-    bn1, bm1, bs1 = binSum(R, pylab.fftshift(abs(H1*H1.conjugate())), rB)
-    bn2, bm2, bs2 = binSum(R, pylab.fftshift(abs(H2*H2.conjugate())), rB)
+    bn1, bm1, bs1 = binSum(R, fftshift(abs(H1*H1.conjugate())), rB)
+    bn2, bm2, bs2 = binSum(R, fftshift(abs(H2*H2.conjugate())), rB)
     
     bmr = np.real(bm)
     
     
-    pylab.figure()
+    plt.figure()
     
-    ax = pylab.gca()
+    ax = plt.gca()
 
     freqpnm = rB/voxelsize[0]
     ax.plot(freqpnm[:-1], bmr/np.sqrt(bm1*bm2))
@@ -354,15 +356,15 @@ def frc(image):
     xt = np.array([10., 15, 20, 30, 50, 80, 100, 150])
     rt = 1.0/xt
     
-    pylab.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]])
+    plt.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]])
 
-    pylab.show()
+    plt.show()
 
     return H1, H2, R, bmr/np.sqrt(bm1*bm2), bn, bm, bm1, bm2, rB
 
 def abscorrel(a,b):
-    from scipy.fftpack import fftn, ifftn
-    from pylab import fftshift, ifftshift
+    from numpy.fft import fftn, ifftn, fftshift, ifftshift
+    # from pylab import fftshift, ifftshift
     import numpy as np
 
     F0 = fftn(a)
@@ -456,7 +458,7 @@ def savitzky_golay(y, window_size, order, deriv=0):
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))
-    except ValueError, msg:
+    except ValueError:
         raise ValueError("window_size and order have to be of type int")
     if window_size % 2 != 1 or window_size < 1:
         raise TypeError("window_size size must be a positive odd number")
@@ -999,7 +1001,7 @@ def getdriftxyzFromEvts(pipeline, tframes=None, coordpos=0):
         ts = np.array(ts)
         cs = np.array(cs)
     # convert time to frame numbers
-    tfr = piecewiseMapping.timeToFrames(ts, pipeline.events, pipeline.mdh)
+    tfr = piecewiseMapping.times_to_frames(ts, pipeline.events, pipeline.mdh)
     # interpolate to desired frame set
     if tframes is not None:
         # finter = interp1d(tfr,cs,fill_value = 'extrapolate') # we need to check that we get no errors from this step

@@ -70,11 +70,11 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
         startParams = -5e3*np.ones(fitResults.shape, 'f')
     
     res['tIndex'] = metadata.tIndex
-    res['fitResults'].view('5f4')[0,:] = fitResults.astype('f')
-    res['fitError'].view('5f4')[0,:] = fitErr.astype('f')
+    res['fitResults'].view('5f4')[0,:len(fitResults)] = fitResults.astype('f')
+    res['fitError'].view('5f4')[0,:len(fitResults)] = fitErr.astype('f')
     res['resultCode'] = resultCode
     res['slicesUsed'].view('9i4')[:] = np.array(fmtSlicesUsed(slicesUsed), dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
-    res['startParams'].view('5f4')[0,:] = startParams.astype('f')
+    res['startParams'].view('5f4')[0,:len(fitResults)] = startParams.astype('f')
     res['nchi2'] = nchi2
     res['subtractedBackground'] = background
     
@@ -88,9 +88,8 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
-    
-    vx = 1e3*metadata.voxelsize.x
-    vy = 1e3*metadata.voxelsize.y
+
+    vx, vy = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)

@@ -4,7 +4,7 @@ import numpy as np
 import time
 from PYME.IO import MetaDataHandler
 import os
-import dispatch
+from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
@@ -64,10 +64,11 @@ class Tiler(pointScanner.PointScanner):
         self._pixel_size = self.mdh.getEntry('voxelsize.x')
         self.background = self.mdh.getOrDefault('Camera.ADOffset', self.background)
         
-        # make our x0, y0 independent of the camera ROI setting
+        # calculate origin independent of the camera ROI setting to store in
+        # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
         x0_cam, y0_cam = MetaDataHandler.get_camera_physical_roi_origin(self.mdh)
             
-        x0 = self._x0 + self._pixel_size*x0_cam
+        x0 = self._x0 + self._pixel_size*x0_cam  # offset in [um]
         y0 = self._y0 + self._pixel_size*y0_cam
         
         self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
@@ -108,7 +109,7 @@ class Tiler(pointScanner.PointScanner):
         self.on_stop.send(self)
         self.progress.send(self)
 
-class CircularTiler(Tiler):
+class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256, return_to_start=True):
         """
@@ -120,42 +121,148 @@ class CircularTiler(Tiler):
             # calculate tile spacing such that there is ~30% overlap.
             tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
         # take the pixel size to be the same or at least similar in both directions
-        self.pixel_radius = int(max_radius_um / tile_spacing.mean())
-        logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % self.pixel_radius)
+        pixel_radius = int(max_radius_um / tile_spacing.mean())
+        logger.debug('Circular tiler target radius in units of (overlapped) FOVs: %d' % pixel_radius)
+
+        pointScanner.CircularPointScanner.__init__(self, scope, pixel_radius,
+                                          tile_spacing, dwelltime, background, 
+                                          False, evtLog, trigger=trigger, 
+                                          stop_on_complete=True,
+                                          return_to_start=return_to_start)
         
-        Tiler.__init__(self, scope, tile_dir, n_tiles=self.pixel_radius, tile_spacing=tile_spacing, dwelltime=dwelltime,
-                       background=background, evtLog=evtLog, trigger=trigger, base_tile_size=base_tile_size,
-                       return_to_start=return_to_start)
+        self._tiledir = tile_dir
+        self._base_tile_size = base_tile_size
+        self._flat = None #currently not used
+        
+        self._last_update_time = 0
+        
+        self.on_stop = dispatch.Signal()
+        self.progress = dispatch.Signal()
 
-    def genCoords(self):
+
+class MultiwellCircularTiler(object):
+    """
+    Creates a circular tiler for each well at a given spacing. For now create a separate tilepyramid for each well.
+    """
+    def __init__(self, well_scan_radius, x_spacing, y_spacing, n_x, n_y, scope, tile_dir, tile_spacing=None,
+                 dwelltime=1, background=0, evtLog=False, trigger=False, base_tile_size=256, laser_state=None):
         """
-        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
-        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
-        an ~optimal order.
+        Creates a new pyramid for each well due to performance constraints.
+
+        Parameters
+        ----------
+        well_scan_radius: float
+            radius to scan within each well [um]
+        x_well_spacing: float
+            center-to-center spacing of each well along x [um]
+        y_well_spacing: float
+            center-to-center spacing of each well along y [um]
+        n_x: int
+            number of rows along x to tile
+        n_y: int
+            number of columns along y to tile
+        scope: PYME.Acquire.microscope
+        tile_dir: str
+            directory to store all pyramids
+        tile_spacing: float
+            distance between tile 'pixels', i.e. center-to-center distance between the individual tiles.
+        dwelltime
+        background
+        evtLog
+        trigger
+        base_tile_size
+        laser_state: dict
+            state lasers should be in at the start of each well - lasers are blanked between wells. Should be compatible
+            with PYME.Acquire.microscope.StateManager.setItems
         """
-        self.currPos = self.scope.GetPos()
-        logger.debug('Current positions: %s' % (self.currPos,))
-    
-        r, t = [0], [np.array([0])]
-        for r_ring in self.pixelsize[0] * np.arange(1, self.pixel_radius + 1):  # 0th ring is (0, 0)
-            # keep the rings spaced by pixel size and hope the overlap is enough
-            # 2 pi / (2 pi r / pixsize) = pixsize/r
-            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
-            r.extend(r_ring * np.ones_like(thetas))
-            t.append(thetas)
-    
-        # convert to cartesian and add currPos offset
-        r = np.asarray(r)
-        t = np.concatenate(t)
-        self.xp = r * np.cos(t) + self.currPos['x']
-        self.yp = r * np.sin(t) + self.currPos['y']
-    
-        self.nx = len(self.xp)
-        self.ny = len(self.yp)
-        self.imsize = self.nx
 
-    def _position_for_index(self, callN):
-        ind = callN % self.nx
-        return self.xp[ind], self.yp[ind]
+        self.well_scan_radius = well_scan_radius
+        self.x_spacing = x_spacing
+        self.y_spacing = y_spacing
+        self.n_x = n_x
+        self.n_y = n_y
 
+        self.scope = scope
+        self.tile_dir = tile_dir
+
+        self.set_well_positions()
+
+        self.start_state = laser_state if laser_state is not None else {}
+
+        # store the individual tiler settings
+        self.tile_spacing = tile_spacing
+        self.dwelltime = dwelltime
+        self.background = background
+        self.evt_log = evtLog
+        self.trigger = trigger
+        self.base_tile_size = base_tile_size
+
+        # set our current well index
+        self.ind = 0
+
+    def set_well_positions(self):
+        """
+        Establish x,y center positions of each well to scan. Making the current microscope position the center of the
+        (0, 0) well, which is also the min x, min y well.
+
+        """
+        self.curr_pos = self.scope.GetPos()
+
+        x_wells = np.arange(0, self.n_x * self.x_spacing, self.x_spacing)
+        y_wells = np.arange(0, self.n_y * self.y_spacing, self.y_spacing)
+
+        self._x_wells = []
+        self._y_wells = np.repeat(y_wells, self.n_x)
+        # zig-zag with turns along x
+        for xi in range(self.n_y):
+            if xi % 2:
+                self._x_wells.extend(x_wells[::-1])
+            else:
+                self._x_wells.extend(x_wells)
+        self._x_wells = np.asarray(self._x_wells)
+
+        # add the current scope position offset
+        self._x_wells += self.curr_pos['x']
+        self._y_wells += self.curr_pos['y']
+
+        self.max_ind = self.n_x * self.n_y
+
+    def start_next(self, *args, **kwargs):
+        """
+        Creates and starts the tiler for the next well until we're finished.
+
+        Parameters
+        ----------
+        args
+        kwargs:
+            necessary as dispatch calls will include a signal keyword argument
+        """
+        try:
+            self.tiler.on_stop.disconnect()
+        except:
+            pass
+
+        if self.ind < self.max_ind:
+            self.start_state.update({'Positioning.x': self._x_wells[self.ind],
+                                     'Positioning.y': self._y_wells[self.ind]})
+            self.scope.state.setItems(self.start_state,
+                                      stopCamera=True)  # stop cam to make sure the next tiler gets the right center pos
+
+            tile_dir = os.path.join(self.tile_dir, 'well_%d' % self.ind)
+            self.tiler = CircularTiler(self.scope, tile_dir, self.well_scan_radius, self.tile_spacing, self.dwelltime,
+                                  self.background, self.evt_log, self.trigger, self.base_tile_size, False)
+            self.tiler.start()
+            self.ind += 1
+            self.tiler.on_stop.connect(self.start_next)
+
+
+    def start(self):
+        self.start_next()
+
+    def stop(self):
+        self.max_ind = 0
+        try:
+            self.tiler.stop()
+        except AttributeError:
+            pass
         

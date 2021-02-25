@@ -39,7 +39,7 @@ import sys
 
 import matplotlib
 matplotlib.use('wxagg')
-import pylab
+# import pylab
 
 from PYME import config
 from PYME.misc import extraCMaps
@@ -56,6 +56,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
+logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+logging.getLogger('PIL.PngImagePlugin').setLevel(logging.ERROR)
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
@@ -113,7 +116,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
-              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
+              introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
@@ -164,7 +167,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         #self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_MOVE, self.OnMove)
-        self.Bind(wx.EVT_CLOSE, self.OnQuit)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         #self.Bind(wx.EVT_IDLE, self.OnIdle)
         #self.refv = False
@@ -195,6 +198,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     self.pipeline.recipe.update_from_yaml(recipe)
                     #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
+
+                self._recipe_editor.update_recipe_text()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
@@ -203,6 +208,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
+        self.add_common_menu_items()
         
     def reconstruct_pipeline_from_image(self, image):
         self._recipe_manager.load_recipe_from_mdh(image.mdh)
@@ -233,22 +239,41 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.Update()
         event.Skip()      
 
-    def OnQuit(self, event):
+    def OnClose(self, event):
         while len(self.pipeline.filesToClose) > 0:
             self.pipeline.filesToClose.pop().close()
 
-        pylab.close('all')
+        # pylab.close('all')
+        matplotlib.pyplot.close('all')
         self._cleanup()
+        
+        #AUIFrame.OnQuit(self, event)
 
 
     def OnAbout(self, event):
-        msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
+        from PYME.version import version
+        from PYME.resources import getIconPath
+        import wx.adv
+        # msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
               
-        dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
-                               wx.OK | wx.ICON_INFORMATION)
-        dlg.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL, False, "Verdana"))
-        dlg.ShowModal()
-        dlg.Destroy()
+        # dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
+        #                        wx.OK | wx.ICON_INFORMATION)
+        # dlg.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL, False, "Verdana"))
+        # dlg.ShowModal()
+        # dlg.Destroy()
+
+        dlg = wx.adv.AboutDialogInfo()
+        dlg.SetName("PYME Visualise")
+        dlg.SetVersion(version)
+        dlg.SetDescription("Visualisation of localisation microscopy data.")
+        dlg.SetCopyright("(C)2009-2020")
+        dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
+        #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
+        # TODO: should this be the issues page or the website
+        dlg.SetWebSite("https://github.com/python-microscopy/python-microscopy/issues", desc="Report an issue")        
+        #dlg.AddDeveloper("David Baddeley") #should probably be all or none here, punting full list for now
+
+        wx.adv.AboutBox(dlg)
 
 #    def OnToggleWindow(self, event):
 #        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
@@ -393,8 +418,13 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.OpenChannel(filename)
 
     def OnOpenRaw(self, event):
-        from PYME.DSView import ViewIm3D, ImageStack
-        ViewIm3D(ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        from PYME.IO import image
+        from PYME.DSView import ViewIm3D
+        try:
+            ViewIm3D(image.ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+        except image.FileSelectionError:
+            # the user canceled the open dialog
+            pass
         
     def AddExtrasMenuItem(self,label, callback):
         """Add an item to the VisGUI extras menu.
@@ -478,7 +508,6 @@ if __name__ == '__main__':
     main()
     mProfile.report()
 
-
 def ipython_visgui(filename=None, **kwargs):
     import PYME.config
     
@@ -491,4 +520,5 @@ def ipython_visgui(filename=None, **kwargs):
     visFr.Show()
     return visFr
     
-    
+def ipython_pymevisualize(filename=None, **kwargs):
+    return ipython_visgui(filename, **kwargs)

@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -55,15 +55,14 @@ dz = None
 def genTheoreticalModel(md):
     global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
 
-    if not dx == md.voxelsize.x*1e3 and not dy == md.voxelsize.y*1e3 and not dz == md.voxelsize.z*1e3:
+    vs = md.voxelsize_nm
+    if not dx == vs.x and not dy == vs.y and not vs.z:
 
-        IntXVals = 1e3*md.voxelsize.x*scipy.mgrid[-20:20]
-        IntYVals = 1e3*md.voxelsize.y*scipy.mgrid[-20:20]
-        IntZVals = 1e3*md.voxelsize.z*scipy.mgrid[-20:20]
+        IntXVals = vs.x*scipy.mgrid[-20:20]
+        IntYVals = vs.y*scipy.mgrid[-20:20]
+        IntZVals = vs.z*scipy.mgrid[-20:20]
 
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = scipy.arange(0,1.01,.01)
 
@@ -87,9 +86,10 @@ def setModel(modName, md):
         #if not voxelsize.x == md.voxelsize.x:
         #    raise RuntimeError("PSF and Image voxel sizes don't match")
 
-        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        #FIXME - are the voxel sizes right here?
+        IntXVals = 1e3*voxelsize.x*scipy.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*scipy.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*scipy.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         dx = voxelsize.x*1e3
         dy = voxelsize.y*1e3
@@ -123,7 +123,7 @@ def f_Interp3d(p, X, Y, Z, *args):
 
     #print x1, y1, z1
 
-    coords = array([x1, y1, z1])
+    coords = numpy.array([x1, y1, z1])
 
     g1 = ndimage.interpolation.map_coordinates(interpModel, coords, mode='nearest', prefilter=False).squeeze()
 
@@ -168,9 +168,10 @@ class PSFFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
+        Z = vs.z*scipy.mgrid[self.slicesUsed[2]]
         P = scipy.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
         #pass

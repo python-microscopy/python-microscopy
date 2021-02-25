@@ -33,7 +33,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-def check_mapexists(mdh, type='dark'):
+def check_mapexists(mdh, type='dark', fill=True):
     import os
     from PYME.IO import clusterIO
     from PYME.IO.FileUtils import nameUtils
@@ -56,31 +56,43 @@ def check_mapexists(mdh, type='dark'):
 
     if clusterIO.exists(cluster_path):
         c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
-        mdh[id] = c_path
+        if fill:
+            mdh[id] = c_path
         return c_path
     elif os.path.exists(local_path):
-        mdh[id] = local_path
+        if fill:
+            mdh[id] = local_path
         return local_path
     else:
         return None
 
 
 class CameraMapMixin(object):
-    def update_flatfield_map(self):
-        """The flatfield map should be constant, we can cache this"""
-        self._prefilled = MetaDataHandler.NestedClassMDHandler()
-        check_mapexists(self._prefilled, type='flatfield')
+    def _map_cache_key(self, mdh, map_type):
+        if map_type == 'flatfield':
+            return (map_type, mdh['Camera.SerialNumber'])
+        else:
+            return (map_type, mdh['Camera.SerialNumber'], mdh['Camera.IntegrationTime'])
         
-    def fill_camera_map_metadata(self, mdh):
-        # populate prefilled info the first time we call the function
-        if not hasattr(self, '_prefilled'):
-            self.update_flatfield_map()
+    def _fill_camera_map_id(self, mdh, mdh_key, map_type):
+        #create cache if not already present
+        if not hasattr(self, '_camera_map_cache'):
+            self._camera_map_cache = {}
             
-        mdh.copyEntriesFrom(self._prefilled)
+        cache_key = self._map_cache_key(mdh, map_type)
+        try:
+            map_fn = self._camera_map_cache[cache_key]
+        except KeyError:
+            map_fn = check_mapexists(mdh, map_type, fill=False)
+            self._camera_map_cache[cache_key] = map_fn
         
-        # do not cache dark and variance maps as these change with integration time (and potentially ROI, although we ignore this currently).
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
+        if not map_fn is None:
+            mdh[mdh_key] = map_fn
+    
+    def fill_camera_map_metadata(self, mdh):
+        self._fill_camera_map_id(mdh, 'Camera.DarkMapID', map_type='dark')
+        self._fill_camera_map_id(mdh, 'Camera.VarianceMapID', map_type='variance')
+        self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
 
 
 class Camera(object):
@@ -935,13 +947,22 @@ class MultiviewCameraMixin(object):
                 return self._current_pic_height
             else:
                 return self.camera_class.GetPicHeight(self)
+        
+        def set_active_views(self, views):
+            if len(views) == 0:
+                self.disable_multiview()
+            elif sorted(views) == self.active_views:
+                pass
+            else:
+                self.enable_multiview(views)
+            
 
         def enable_multiview(self, views):
             """
 
             Parameters
             ----------
-            views: List
+            views: list
                 views to activate. Should be integers which can be used to index self.multiview_info
 
             Returns
@@ -953,6 +974,7 @@ class MultiviewCameraMixin(object):
             again. This is not special to this function, but rather anytime SetROI gets called.
 
             """
+            views = sorted(list(views))  # tuple(int) isn't iterable, make sure we avoid it
             # set the camera FOV to be just large enough so we do most of the cropping where it is already optimized
             self.x_origins, self.y_origins = zip(*[self.view_origins[view] for view in views])
             chip_x_min, chip_x_max = min(self.x_origins), max(self.x_origins)
@@ -1054,3 +1076,21 @@ class MultiviewCameraMixin(object):
                 mdh.setEntry('Multiview.ActiveViews', self.active_views)
                 for ind in range(self.n_views):
                     mdh.setEntry('Multiview.ROI%dOrigin' % ind, self.view_origins[ind])
+
+        def register_state_handlers(self, state_manager):
+            """ Allow key multiview settings to be updated easily through
+            the microscope state handler
+
+            Parameters
+            ----------
+            state_manager : PYME.Acquire.microscope.State
+            """
+            logger.debug('registering multiview camera state handlers')
+            
+            state_manager.registerHandler('Multiview.ActiveViews', 
+                                          lambda : self.active_views, 
+                                          self.set_active_views, True)
+            state_manager.registerHandler('Multiview.ROISize', 
+                                          lambda : [self.size_x, self.size_y],
+                                          lambda p : self.ChangeMultiviewROISize(p[0], p[1]),
+                                          True)

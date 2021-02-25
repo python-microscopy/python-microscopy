@@ -24,12 +24,11 @@ import wx
 #import pylab
 #from PYME.IO.image import ImageStack
 
-class filterer:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-        self.do = dsviewer.do
+from ._base import Plugin
 
-        self.image = dsviewer.image
+class Filterer(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self,dsviewer)
                 
         dsviewer.AddMenuItem('Processing', '&Gaussian Filter', self.OnGaussianFilter)        
         dsviewer.AddMenuItem('Processing', 'Generate &Mask', self.OnApplyThreshold)
@@ -47,7 +46,11 @@ class filterer:
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+        filter_size = '[1,1,1]'
+        if self.image.data.shape[2] == 1:
+            filter_size = '[1,1]'
+
+        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', filter_size)
 
         if dlg.ShowModal() == wx.ID_OK:
             sigmas = eval(dlg.GetValue())
@@ -320,13 +323,13 @@ class filterer:
 
         dialog = wx.TextEntryDialog(None, 'Z Spacing [um]:', 'Enter Desired Spacing', str(0.05))
         if dialog.ShowModal() == wx.ID_OK:
-            regular = ResampleZ().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
+            regular = ResampleZ(z_sampling=float(dialog.GetValue())).apply_simple(input=self.image)
 
             ViewIm3D(regular, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
 
 def Plug(dsviewer):
-    dsviewer.filtering = filterer(dsviewer)
+    return Filterer(dsviewer)
 
 
 

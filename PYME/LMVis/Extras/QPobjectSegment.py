@@ -23,7 +23,7 @@
 
 import wx
 import numpy as np
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from io import StringIO
 
@@ -54,7 +54,7 @@ class QPObjectSegmenter:
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
-                dsviewer.openViewers.keys(),
+                list(dsviewer.openViewers.keys()),
                 wx.CHOICEDLG_STYLE
                 )
 
@@ -149,8 +149,8 @@ class QPObjectSegmenter:
             cumuy = (1.0+np.arange(nts))/np.float(nts)
             bbx = (x.min(),x.max())
             bby = (y.min(),y.max())
-            voxx = 1e3*mdh['voxelsize.x']
-            voxy = 1e3*mdh['voxelsize.y']
+            voxx, voxy, _ = mdh.voxelsize_nm
+            
             bbszx = bbx[1]-bbx[0]
             bbszy = bby[1]-bby[0]
             maxtd = dtg.max()

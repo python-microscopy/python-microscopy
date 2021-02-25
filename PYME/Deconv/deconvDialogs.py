@@ -312,22 +312,22 @@ class DeconvSettingsDialog(wx.Dialog):
         PSFMode = self.nb2.GetCurrentPage().PSFMode
         #get PSF from file
         if PSFMode == 'File':
-            #psf, vs = np.load(self.GetPSFFilename())
-            psf, vs = load_psf(self.GetPSFFilename())
+            fn = self.GetPSFFilename()
+            psf, vs = load_psf(fn)
             psf = np.atleast_3d(psf)
             
-            return (self.GetPSFFilename(), psf, vs)        
+            return (fn, psf, vs)
         elif (PSFMode == 'Laplace'):
             sc = float(self.tLaplaceFWHM.GetValue())/2.0
             X, Y = np.mgrid[-30.:31., -30.:31.]
             R = np.sqrt(X*X + Y*Y)
             
             if not vshint is None:
-                vx = vshint*1e3
+                vx = vshint
             else:
                 vx = sc/2.
             
-            vs = type('vs', (object,), dict(x=vx/1e3, y=vx/1e3))
+            vs = type('vs', (object,), dict(x=vx, y=vx))
             
             psf = np.atleast_3d(stats.cauchy.pdf(vx*R, scale=sc))
                 

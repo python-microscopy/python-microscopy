@@ -64,9 +64,10 @@ class GaussianFitFactory(FFBase.FitFactory):
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
-        
-        x0 =  x*1e3*self.metadata.voxelsize.x
-        y0 =  y*1e3*self.metadata.voxelsize.y
+
+        vs = self.metadata.voxelsize_nm
+        x0 =  x*vs.x
+        y0 =  y*vs.y
 
         startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
         

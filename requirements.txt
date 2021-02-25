@@ -1,55 +1,66 @@
-#PIP requirements
-#NB - this might be incomplete / buggy, the conda route is currently more reliable
+# PIP requirements
+# NB - this might be incomplete / buggy, the conda route is currently more reliable
+# 
 
-numpy==1.14.*
+numpy>=1.14.* # we build and test against 1.14, but should work against any higher version. Try numpy==1.14.* if you run into issues.
 scipy
 matplotlib
 wxpython
-tables <=3.4.2
+tables #<=3.4.2
 pyopengl
 traits
 traitsui
 pillow
-cython
-
+six
+future
+requests
+pyyaml
+psutil
+ujson
+jinja2
 toposort
-#networkx
+pymecompress >=0.2
+zeroconf==0.17.7 #TODO - can we relax this pin?
 
-#pyro
+cython # do we need this for a non-dev install?
 
 #pyfftw3; python_version < '3.0'
 pyfftw #; python_version > '3.0'
 
-#mpld3
+mpld3 # used for graphs in html recipe output, potentially OK to ommit
 cherrypy
-#scikit-image
-#scikit-learn
+pandas
+
+scikit-image #both skimage and sklearn have the potential to generate dependency clashes. Not strictly required for core functionality.
+scikit-learn
+
+# docutils and sphinx are used for formatting help text in the recipe editor. Not super critical and can be ommitted if you want a lighter weight install.
+docutils
+sphinx
+
+# there is currently no pip packages for dispatch, so install directly from github (NOTE: this will prevent us from moving requirements to setup.py and having them
+# automatically installed in the future)
+# TODO - project is no longer maintained - copy move to PYME/contrib and maintain our own copy?
+#dispatch
+git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch; python_version < '3.0'
+
+#########################
+# Optional dependencies
+#########################
+# These support functionality which is not core
+
+# django is used for the full-blown clusterUI (see cluster analysis docs) but is not required for most analysis tasks. Don't install by default as backwards
+# compatibility between django versions is not great and it's hard to keep this tracking the latest security fixes. Installing a (potentially old and insecure)
+# version of django should be a deliberate choice.  
+# django==1.11.29
+
+#networkx
+#pywin32 [win]
 
 #FIXME for py3k
 #shapely [osx and py2k]
 
-zeroconf==0.17.7
-#zeroconf
-requests
-pandas
-pyyaml
-psutil
-
-#docutils
-#sphinx
-ujson
-jinja2
-django==1.11.28
-
-#dispatch
-git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch
-
+#pyro [py2k]# install on py 2.7 if you want to use old style distributed analysis
 #pycairo
+#mayavi # 3D volume rendering, alternative 3D isosurface implementation
 
-#pymecompress >=0.1.4
-git+https://github.com/python-microscopy/pymecompress.git@master#egg=pymecompress
-
-six
-future
-#pywin32 [win]
-cython

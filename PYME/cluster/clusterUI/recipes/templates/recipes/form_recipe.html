@@ -16,6 +16,17 @@
                 </span>
             </div>
         </div>
+        
+        <div class="form-group">
+            <label class="control-label" for="recipeOutputPath">Output path</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster:///</span>
+                <input type="text" class="form-control" id="recipeOutputPath" name="recipeOutputPath">
+                <!-- <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="select_output">select</button>
+                </span> -->
+            </div>
+        </div>
 
         <div id="recipe_image"></div>
 
@@ -39,6 +50,12 @@
             var fileNames=[];
             $('.cu-selected').each(function(index, item){
                 var sn = item.getAttribute('data-cu-filename');
+                if (sn != null) {
+                    fileNames.push(sn);
+                    f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                }
+                // Also check for series, e.g. pcs extensions
+                var sn = item.getAttribute('data-cu-seriesname');
                 if (sn != null) {
                     fileNames.push(sn);
                     f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')

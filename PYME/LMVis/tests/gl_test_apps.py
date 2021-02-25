@@ -23,7 +23,9 @@ import time
 from ast import literal_eval
 from math import floor
 
-import pylab
+# import pylab
+import matplotlib.cm
+import datetime
 from wx import wx
 
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
@@ -55,7 +57,7 @@ class TestApp(wx.App):
         self._canvas.gl_context.SetCurrent(self._canvas)
         self._canvas.SetCurrent()
         self._canvas.initialize()
-        self._canvas.setCMap(pylab.cm.hot)
+        self._canvas.setCMap(matplotlib.cm.hot)
         self._canvas.clim = [0.1, 0.9]
         self._canvas.displayMode = '3D'
         self._canvas.pointSize = 50
@@ -69,7 +71,7 @@ class TestApp(wx.App):
         if self.to:
             self.to.save(test_object_file)
             self.to.add_to_json('file', test_object_file)
-            self.to.add_to_json('time', '%s' % pylab.datetime.datetime.now())
+            self.to.add_to_json('time', '%s' % datetime.datetime.now())
             configurations = json.dumps(self.to, cls=TestObjectEncoder, indent=4)
             with open(configuration_file, 'wb') as f:
                 f.writelines(configurations)

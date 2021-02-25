@@ -42,7 +42,7 @@ class progPanel(wxPlotPanel.PlotPanel):
                 self.subplot1 = self.figure.add_axes([.14,.05,.85,.9])#self.figure.add_subplot( 211 )
                 self.subplot2 = self.subplot1.twinx()#self.figure.add_subplot( 212 )
 
-            a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
+            a, ed = numpy.histogram(self.fitResults['tIndex'], int(self.Size[0]/2))
             print((float(numpy.diff(ed[:2]))))
 
             self.subplot1.cla()

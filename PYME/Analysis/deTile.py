@@ -25,7 +25,8 @@ import numpy as np
 from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter
 
-from pylab import ifftshift, ifftn, fftn, fftshift
+# from pylab import ifftshift, ifftn, fftn, fftshift
+from numpy.fft import ifftshift, ifftn, fftn, fftshift
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def findRectangularROIs(mask):
@@ -107,7 +108,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     if split:
         frameSizeY /=2
         nchans = 2
-        unmux = splitter.Unmixer(shiftfield, 1e3*mdh.getEntry('voxelsize.x'))
+        unmux = splitter.Unmixer(shiftfield, mdh.voxelsize_nm.x)
     else:
         nchans = 1
 
@@ -260,7 +261,6 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ret[occupancy.squeeze() == 0] = 0 #fix up /0s
 
     return ret
-
 
 
 

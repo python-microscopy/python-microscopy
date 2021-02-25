@@ -91,20 +91,20 @@ def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
     t.start()
     return t
 
-def execFile(filename, localVars = defLocals, globalVars = defGlobals):
+def execFile(filename, localVars = defLocals, globalVars = defGlobals, then=None):
     #fid = open(checkFilename(filename))
     #code = fid.read()
     #fid.close()
 
     _execfile(filename, localVars, globalVars)
+    if then is not None:
+        then()
 
-def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
-    #fid = open(checkFilename(filename))
-    #code = fid.read()
-    #fid.close()
-
-    #execBG(checkFilename(filename), localVars, globalVars)
-    threading.Thread(target=execFile, args = (filename, localVars, globalVars)).start()
+def execFileBG(filename, localVars = defLocals, globalVars = defGlobals, then=None):
+    t = threading.Thread(target=execFile, args = (filename, localVars, globalVars, then))
+    t.start()
+    #return the thread so we can join it ...
+    return t
 
 def _bginit(name, codeObj):
     global defGlobals
@@ -190,6 +190,14 @@ class GUIInitTask(object):
         self.codeObj = codeObj
 
     def run(self, parent, scope):
+        """
+
+        Parameters
+        ----------
+        parent : PYME.Acquire.acquiremainframe.PYMEMainFrame, wx.Frame
+        scope : PYME.Acquire.microscope.microscope
+        
+        """
         global defGlobals
         global defLocals
         #try:

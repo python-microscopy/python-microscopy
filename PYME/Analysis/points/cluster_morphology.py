@@ -24,7 +24,9 @@ import numpy as np
 
 def get_labels_from_image(label_image, points, minimum_localizations=1):
     """
-    Function to extract labels from a segmented image (2D or 3D) at given locations. 
+    Function to extract labels from a segmented image (2D or 3D) at given locations.
+    
+    TODO - Move this somewhere more sensible and drop minimum_localizations in favour of post-filtering.
 
     Parameters
     ----------
@@ -39,24 +41,9 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
     numPerObject: Number of localizations within the label that a given localization belongs to
 
     """
-    from PYME.IO.MetaDataHandler import get_camera_roi_origin
-    
-    im_ox, im_oy, im_oz = label_image.origin
+    from PYME.Analysis.points.coordinate_tools import pixel_index_of_points_in_image
 
-    # account for ROIs
-    try:
-        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
-
-        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
-        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
-    except AttributeError:
-        raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
-
-    # Image origin is referenced to top-left corner of pixelated image.
-    # FIXME - localisations are currently referenced to centre of raw pixels
-    pixX = np.floor((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
-    pixY = np.floor((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
-    pixZ = np.floor((points['z'] - im_oz) / label_image.sliceSize).astype('i')
+    pixX, pixY, pixZ = pixel_index_of_points_in_image(label_image, points)
 
     label_data = label_image.data
 
@@ -157,7 +144,9 @@ def measure_3d(x, y, z, output=None):
     N = len(x)
     output['count'] = N
     if N < 3:
-        raise UserWarning('measure_3D can only be used on clusters of size 3 or larger')
+        import warnings
+        warnings.warn('measure_3D can only be used on clusters of size 3 or larger', UserWarning)
+        return
     
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()

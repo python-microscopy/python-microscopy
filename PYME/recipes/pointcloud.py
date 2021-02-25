@@ -3,7 +3,10 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 
 import numpy as np
 from PYME.IO import tabular
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 
 @register_module('Octree')
@@ -243,3 +246,224 @@ class DelaunayCircumcentres(ModuleBase):
             pass
         
         namespace[self.output] = out
+
+
+@register_module('Ripleys')
+class Ripleys(ModuleBase):
+    """
+    Ripley's K-function, and alternate normalizations, for examining clustering 
+    and dispersion of points within aregion R, where R is defined by a mask (2D 
+    or 3D) of the data.
+    
+        inputPositions : traits.Input
+            Localization data source to analyze as PYME.IO.tabular types
+        inputMask : traits.Input
+            PYME.IO.image.ImageStack mask defining the localization bounding region
+        outputName : traits.Output
+            Name of resulting PYME.IO.tabular.DictSource data ource
+        normalization : traits.Enum
+            Ripley's normalization type. See M. A. Kiskowski, J. F. Hancock, 
+            and A. K. Kenworthy, "On the use of Ripley's K-function and its 
+            derivatives to analyze domain size," Biophys. J., vol. 97, no. 4, 
+            pp. 1095-1103, 2009.
+        nbins : traits.Int
+            Number of bins over which to analyze K-function
+        binSize : traits.Float
+            K-function bin size in nm
+        sampling : traits.Float
+            spacing (in nm) of samples from mask / region.
+        statistics : traits.Bool
+            Monte-Carlo sampling of the structure to determine clustering/
+            dispersion probability.
+        nsim : int
+            Number of Monte-Carlo simulations to run. More simulations = 
+            more statistical power. Used if statistics == True.
+        significance : float
+            Desired significance of 
+        threaded : bool
+            Calculate pairwise distances using multithreading (faster)
+        three_d : bool
+            Analyze localizations in 2D or 3D. Requires correct dimensionality
+            of input localizations and mask.
+
+    """
+    inputPositions = Input('input')
+    inputMask = Input('')
+    outputName = Output('ripleys')
+    normalization = Enum(['K', 'L', 'H', 'dL', 'dH'])
+    nbins = Int(50)
+    binSize = Float(50.)
+    sampling = Float(5.)
+    statistics = Bool(False)
+    nsim = Int(20)
+    significance = Float(0.05)
+    threaded = Bool(False)
+    three_d = Bool(False)
+    
+    def execute(self, namespace):
+        from PYME.Analysis.points import ripleys
+        from PYME.IO import MetaDataHandler
+        
+        points_real = namespace[self.inputPositions]
+        mask = namespace.get(self.inputMask, None)
+
+        # three_d = np.count_nonzero(points_real['z']) > 0
+        if self.three_d:
+            if np.count_nonzero(points_real['z']) == 0:
+                raise RuntimeError('Need a 3D dataset')
+            if mask and mask.data.shape[2] < 2:
+                raise RuntimeError('Need a 3D mask to run in 3D. Generate a 3D mask or select 2D.')
+        else:
+            if mask and mask.data.shape[2] > 1:
+                raise RuntimeError('Need a 2D mask.')
+
+        if self.statistics and mask is None:
+            raise RuntimeError('Mask is needed to calculate statistics.')
+
+        if self.statistics and 1.0/self.nsim > self.significance:
+            raise RuntimeError('Need at least {} simulations to achieve a significance of {}'.format(int(np.ceil(1.0/self.significance)),self.significance))
+        
+        try:
+            origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
+        except:
+            origin_coords = (0, 0, 0)
+        
+        if self.three_d:
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'], z=points_real['z'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+        else:
+            bb, K = ripleys.ripleys_k(x=points_real['x'], y=points_real['y'],
+                                      mask=mask, n_bins=self.nbins, bin_size=self.binSize,
+                                      sampling=self.sampling, threaded=self.threaded, coord_origin=origin_coords)
+
+        # Run MC simulations
+        if self.statistics:
+            K_min, K_max, p_clustered, p_dispersed = ripleys.mc_sampling_statistics(K, mask=mask,
+                                                                        n_points=len(points_real['x']), n_bins=self.nbins, 
+                                                                        three_d=self.three_d, bin_size=self.binSize,
+                                                                        significance=self.significance, 
+                                                                        n_sim=self.nsim, sampling=self.sampling, 
+                                                                        threaded=self.threaded, coord_origin=origin_coords)
+        
+        # Check for alternate Ripley's normalization
+        norm_func = None
+        if self.normalization == 'L':
+            norm_func = ripleys.ripleys_l
+        elif self.normalization == 'dL':
+            # Results will be of length 2 less than other results
+            norm_func = ripleys.ripleys_dl
+        elif self.normalization == 'H':
+            norm_func = ripleys.ripleys_h
+        elif self.normalization == 'dH':
+            # Results will be of length 2 less than other results
+            norm_func = ripleys.ripleys_dh
+        
+        # Apply normalization if present
+        if norm_func is not None:
+            d = 3 if self.three_d else 2
+            bb0, K = norm_func(bb, K, d)  # bb0 in case we use dL/dH
+            if self.statistics:
+                _, K_min = norm_func(bb, K_min, d)
+                _, K_max = norm_func(bb, K_max, d)
+                if self.normalization == 'dL' or self.normalization == 'dH':
+                    # Truncate p_clustered for dL and dH to match size
+                    p_clustered = p_clustered[1:-1]
+                    p_dispersed = p_dispersed[1:-1]
+            bb = bb0
+
+        if self.statistics:
+            res = tabular.DictSource({'bins': bb, 'vals': K, 'min': K_min, 'max': K_max, 'pc': p_clustered, 'pd': p_dispersed})
+        else:
+            res = tabular.DictSource({'bins': bb, 'vals': K})
+        
+        # propagate metadata, if present
+        try:
+            res.mdh = points_real.mdh
+        except AttributeError:
+            pass
+        
+        namespace[self.outputName] = res
+
+
+@register_module('GaussianMixtureModel')
+class GaussianMixtureModel(ModuleBase):
+    """Fit a Gaussian Mixture to a pointcloud, predicting component membership
+    for each input point.
+
+    Parameters
+    ----------
+    input_points: PYME.IO.tabular
+        points to fit. Currently hardcoded to use x, y, and z keys.
+    n: Int
+        number of Gaussian components in the model for optimization mode `n` 
+        and `bayesian`, or maxinum number of components for `bic`
+    mode: Enum
+        optimization on the number of components. For `n` and `bayesian` the
+        GMM uses exactly n components, while for `bic` it is the maximum number
+        of components used, with the optimum Bayesian Information Criterion
+        used to select the best model.
+    covariance: Enum
+        type of covariance to use in the model
+    label_key: str
+        name of membership/label key in output datasource, 'gmm_label' by
+        default
+    output_labeled: PYME.IO.tabular
+        input source with additional column indicating predicted component
+        membership of each point
+    
+    Notes
+    -----
+    Directly implements or closely wraps scikit-learn mixture.GaussianMixture
+    and mixture.BayesianGaussianMixture
+    """
+    input_points = Input('input')
+    n = Int(1)
+    mode = Enum(('n', 'bic', 'bayesian'))
+    covariance = Enum(('full', 'tied', 'diag', 'spherical'))
+    label_key = CStr('gmm_label')
+    output_labeled = Output('labeled_points')
+    
+    def execute(self, namespace):
+        from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
+        from PYME.IO import MetaDataHandler
+
+        points = namespace[self.input_points]
+        X = np.stack([points['x'], points['y'], points['z']], axis=1)
+
+        if self.mode == 'n':
+            gmm = GaussianMixture(n_components=self.n,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bic':
+            n_components = range(1, self.n + 1)
+            bic = np.zeros(len(n_components))
+            for ind in range(len(n_components)):
+                gmm = GaussianMixture(n_components=n_components[ind], 
+                                    covariance_type=self.covariance)
+                gmm.fit(X)
+                bic[ind] = gmm.bic(X)
+                logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
+
+            best = n_components[np.argmin(bic)]
+            if best == self.n or (self.n > 10 and best > 0.9 * self.n):
+                logger.warning('BIC optimization selected n components near n max')
+            
+            gmm = GaussianMixture(n_components=best,
+                                covariance_type=self.covariance)
+            predictions = gmm.fit_predict(X)
+        
+        elif self.mode == 'bayesian':
+            bgm = BayesianGaussianMixture(n_components=self.n,
+                                      covariance_type=self.covariance)
+            predictions = bgm.fit_predict(X)
+
+        out = tabular.MappingFilter(points)
+        try:
+            out.mdh = MetaDataHandler.DictMDHandler(points.mdh)
+        except AttributeError:
+            pass
+
+        out.addColumn(self.label_key, predictions)
+        namespace[self.output_labeled] = out

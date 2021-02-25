@@ -37,7 +37,7 @@ import time
 global timeFcn
 timeFcn = time.time
 
-import dispatch
+from PYME.contrib import dispatch
 import uuid
 
 from PYME.Acquire import eventLog
@@ -114,6 +114,8 @@ class Spooler:
         self.spoolOn = False
         self.imNum = 0
         
+        self.spool_complete = False
+        
         self._spooler_uuid = uuid.uuid4()
             
         if not fakeCamCycleTime is None:
@@ -123,14 +125,20 @@ class Spooler:
        
 
     def StartSpool(self):
+        """ Perform protocol 'frame -1' tasks, log start metadata, then connect
+        to the frame source.
+        """
         self.watchingFrames = True
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
-   
-        self.doStartLog()
+
+        # record start time here in case protocol init tasks generate events (prob only effects simulator).
+        self.tStart = time.time()
 
         self.protocol.Init(self)
+
+        self._collect_start_metadata()
    
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True
@@ -150,7 +158,7 @@ class Spooler:
         try:
             self.protocol.OnFinish()#this may still cause events
             self.FlushBuffer()
-            self.doStopLog()
+            self._collect_stop_metadata()
         except:
             import traceback
             traceback.print_exc()
@@ -161,8 +169,45 @@ class Spooler:
             pass
         
         self.spoolOn = False
-        
+        if not self.guiUpdateCallback is None:
+            self.guiUpdateCallback()
+            
         self.onSpoolStop.send(self)
+        
+        self.finalise() #TODO - should this be before we send the onStopSpool signal?
+        self.spool_complete = True
+        
+    def finalise(self):
+        """
+        Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
+
+        """
+        pass
+        
+    def abort(self):
+        """
+        Tidy up if something goes horribly wrong. Disconnects frame source and event logger  and then calls cleanup()
+
+        """
+        #there is a race condition on disconnect - ignore any additional frames
+        self.watchingFrames = False
+        
+        try:
+            logger.debug('Disconnecting from frame source')
+            self.frameSource.disconnect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+            logger.debug('Frame source should be disconnected')
+        except:
+            logger.exception('Error disconnecting frame source')
+
+
+        try:
+            eventLog.WantEventNotification.remove(self.evtLogger)
+        except ValueError:
+            pass
+
+        self.spoolOn = False
+        self.onSpoolStop.send(self)
+        
 
     def OnFrame(self, **kwargs):
         """Callback which should be called on every frame"""
@@ -192,7 +237,7 @@ class Spooler:
             self.StopSpool()
             
 
-    def doStartLog(self):
+    def _collect_start_metadata(self):
         """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -205,7 +250,7 @@ class Spooler:
         
         self.dtStart = dt
         
-        self.tStart = time.time()
+        #self.tStart = time.time()
         
         # create an in-memory metadata handler and populate this prior to copying data over to the spooler
         # metadata handler. This significantly improves performance if the spooler metadata handler has high latency
@@ -220,7 +265,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-    def doStopLog(self):
+    def _collect_stop_metadata(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
@@ -240,6 +285,14 @@ class Spooler:
     def status(self):
         return {'spooling' : self.spoolOn,
                 'frames_spooled' : self.imNum}
+    
+    def cleanup(self):
+        """ over-ride to do any cleanup"""
+        pass
+    
+    def finished(self):
+        """ over-ride in derived classes to indicate when buffers flushed"""
+        return True
         
         
     def __del__(self):

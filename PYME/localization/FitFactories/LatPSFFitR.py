@@ -62,9 +62,10 @@ class PSFFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*np.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*np.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*np.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*np.mgrid[self.slicesUsed[0]]
+        Y = vs.y*np.mgrid[self.slicesUsed[1]]
+        Z = vs.z*np.mgrid[self.slicesUsed[2]]
         P = np.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*np.pi/525, 1.47, 10e3)
         #pass
@@ -94,9 +95,10 @@ class PSFFitFactory(FFBase.FitFactory):
         dataROI = self.data[xslice, yslice, zslice]
 
         #generate grid to evaluate function on
-        X = 1e3*self.metadata.voxelsize.x*np.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*np.mgrid[yslice]
-        Z = 1e3*self.metadata.voxelsize.z*np.mgrid[zslice]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*np.mgrid[xslice]
+        Y = vs.y*np.mgrid[yslice]
+        Z = vs.z*np.mgrid[zslice]
         P = np.arange(0,1.01,.01)
 
         #imshow(dataROI[:,:,0])
@@ -115,7 +117,7 @@ class PSFFitFactory(FFBase.FitFactory):
 
         #estimate errors in data
         #sigma = (4 + scipy.sqrt(2*dataROI)/2)
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*np.maximum(dataROI, 1))/self.metadata['Camera.ElectronsPerCount']
 
         #fit with start values above current position        
         (res1, cov_x1, infodict1, mesg1, resCode1) = FitModelWeighted(f_PSF3d, startParameters1, dataROI, sigma, X, Y, Z, P, 2*np.pi/488, 1.47, 50e3)

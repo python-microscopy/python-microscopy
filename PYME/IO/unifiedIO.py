@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-alpha_regex = re.compile(r'^[\w/\.]+$')
+alpha_regex = re.compile(r'^[\w/\.\-]+$')
 
 def check_name(name):
     """
@@ -103,8 +103,24 @@ def verbose_fix_name(name):
         logger.error(str(e))
     return fix_name(name)
 
+def is_cluster_uri(url):
+    """
+    Checks whether the supplied uri/filename is a pyme-cluster uri
+    
+    Parameters
+    ----------
+    url
+
+    Returns
+    -------
+    
+    bool
+
+    """
+    return (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER'))
+
 def split_cluster_url(url):
-    if not (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER')):
+    if not is_cluster_uri(url):
         raise RuntimeError('Not a cluster URL')
 
     clusterfilter = url.split('://')[1].split('/')[0]
@@ -155,7 +171,7 @@ def local_or_temp_filename(url):
 
     if os.path.exists(filename):
         yield filename
-    elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
+    elif is_cluster_uri(url):
         from .import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)
@@ -183,7 +199,7 @@ def openFile(filename, mode='rb'):
     if os.path.exists(filename):
         return open(filename, mode)
 
-    elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
+    elif is_cluster_uri(filename):
         #TODO - add short-circuiting for local files
         from . import clusterIO
 
@@ -202,7 +218,7 @@ def read(filename):
             s = f.read()
         return s
 
-    elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
+    elif is_cluster_uri(filename):
         from . import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)
@@ -211,3 +227,13 @@ def read(filename):
         return s
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)
+    
+def write(filename, data):
+    if is_cluster_uri(filename):
+        from . import clusterIO
+        sequenceName, clusterfilter = split_cluster_url(filename)
+        clusterIO.put_file(sequenceName, data, serverfilter=clusterfilter)
+    else:
+        with open(filename, 'wb') as f:
+            f.write(data)
+    

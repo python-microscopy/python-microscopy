@@ -28,10 +28,11 @@ class FW102B:
         self.ser = serial.Serial(ser_port, baudrate=115200, timeout=1)
 
     def getPos(self):
-        self.ser.write('pos?\r')
+        self.ser.write('pos?\r'.encode())
         reply = self.ser.readline()
-        return int(reply.split('\r')[-2].split(' ')[0])
+        print(reply)
+        return int(reply.split(b'\r')[-2].split(b' ')[0])
 
     def setPos(self, pos):
-        self.ser.write('pos=%d\r' % pos)
-        reply = self.ser.readline()
+        self.ser.write(('pos=%d\r' % pos).encode())
+        reply = self.ser.readline().decode()

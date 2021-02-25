@@ -26,7 +26,8 @@ import wx.lib.newevent
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
-import pylab
+# import pylab
+import matplotlib.cm
 import numpy as np
 
 from PYME.ui import histLimits
@@ -60,7 +61,7 @@ class DisplayPane(afp.foldingPane):
         self._pc_clim_change = False
 
         #Colourmap
-        cmapnames = pylab.cm.cmapnames
+        cmapnames = matplotlib.cm.cmapnames
         
         #print((cmapnames, self.glCanvas.cmap.name))
 
@@ -220,11 +221,11 @@ class DisplayPane(afp.foldingPane):
 
 
     def OnCMapChange(self, event):
-        cmapname = pylab.cm.cmapnames[self.cColourmap.GetSelection()]
+        cmapname = matplotlib.cm.cmapnames[self.cColourmap.GetSelection()]
         #if self.cbCmapReverse.GetValue():
         #    cmapname += '_r'
 
-        self.glCanvas.setCMap(pylab.cm.__dict__[cmapname])
+        self.glCanvas.setCMap(matplotlib.cm.__dict__[cmapname])
         #self.visFr.OnGLViewChanged()
         evt = DisplayInvalidEvent(self.GetId())
         self.ProcessEvent(evt)
@@ -388,7 +389,9 @@ class DisplayPaneHorizontal(wx.Panel):
         bRight = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-right.png')), style=wx.NO_BORDER|wx.BU_AUTODRAW, name='Right')
         bRight.Bind(wx.EVT_BUTTON, self.OnViewRight)
         hsizer.Add(bRight, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
-        
+        bHome = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-home.png')), style=wx.NO_BORDER | wx.BU_AUTODRAW, name='Home')
+        bHome.Bind(wx.EVT_BUTTON, self.visFr.OnHome)
+        hsizer.Add(bHome, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
         
         hsizer.AddSpacer(10)
         

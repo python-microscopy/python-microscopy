@@ -4,6 +4,8 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 import numpy as np
 from PYME.IO import tabular
 from PYME.LMVis import renderers
+import logging
+logger = logging.getLogger(__name__)
 
 
 @register_module('ExtractTableChannel')
@@ -125,14 +127,42 @@ class DensityMapping(ModuleBase):
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
+    """
+    Perform standard mappings, including those derived from acquisition events.
+
+    Parameters
+    ----------
+    inputFitResults : string - the name of a tabular.TabularBase object
+        Typically the FitResults table of an h5r file
+    inputEvents : string - name of a tabular.TabularBase object containing acquisition events [optional]
+        This is not usually required as the IO methods attach `.events` as a datasource attribute. Use when events come
+        from a separate file or when there are intervening processing steps between IO and this module (the `.events`
+        attribute does not propagate through recipe modules).
+        TODO - do we really want to be attaching events as an attribute or should they be there own entry in the recipe namespace
+        TODO - should we change this to the processed events???
+    pixelSizeNM : float
+        Scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units. Defaults to 1.
+    
+    Returns
+    -------
+    outputLocalizations : tabular.MappingFilter
+    
+    """
     inputFitResults = Input('FitResults')
-    inputDriftResults = Input('')
     inputEvents = Input('')
-    outputLocalizations = Output('localizations')
+    
+    # Fiducial table input
+    # inputDriftResults = Input('')
+    # TODO - to replicate the pipeline input processing, we should take inputFitResults and inputDriftResults and output
+    # 'Localisations' and 'Fiducials' (the fiducials get some, but not all of the manipulations and extra columns). Should
+    # we expand this module, or pass the fiducials though in the same way as the fit results, living with the fact that
+    # there will be extra columns?
 
-    pixelSizeNM = Float(1)
+    pixelSizeNM = Float(1, label='nanometer units',
+                        desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
 
-
+    outputLocalizations = Output('Localizations')
+    
     def execute(self, namespace):
         from PYME.LMVis import pipeline
         fitResults = namespace[self.inputFitResults]
@@ -147,7 +177,17 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        events = namespace.get(self.inputEvents, None)
+        if self.inputEvents != '':
+            # Use specified table for events if given (otherwise look for a `.events` attribute on the input data
+            # TODO: resolve how best to handle events (i.e. should they be a separate table, or should they be attached to data tables)
+            events = namespace.get(self.inputEvents, None)
+        else:
+            try:
+                events = fitResults.events
+            except AttributeError:
+                logger.debug('no events found')
+                events = None
+        
         if isinstance(events, tabular.TabularBase):
             events = events.to_recarray()
 
@@ -159,7 +199,13 @@ class Pipelineify(ModuleBase):
             fitModule = mdh['Analysis.FitModule']
 
             if 'LatGaussFitFR' in fitModule:
+                # TODO - move getPhotonNums() out of pipeline
                 mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+            
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, mdh))
+                mapped_ds.addColumn('nPhotonsr', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
 
         mapped_ds.mdh = mdh
 
@@ -187,9 +233,9 @@ class ProcessColour(ModuleBase):
         seen_structures = []
     
         for structure, dye in labels:
-            #info might be unicode - encode to a standard string to keep traits happy
-            structure = structure.encode()
-            dye = dye.encode()
+            #info might be unicode - convert to a standard string to keep traits happy
+            structure = str(structure)
+            dye = str(dye)
             
             if structure in seen_structures:
                 strucname = structure + '_1'
@@ -208,7 +254,12 @@ class ProcessColour(ModuleBase):
         mdh = input.mdh
         
         if self.ratios_from_metadata:
+            # turn off invalidation so we don't get a recursive loop. TODO - fix this properly as it's gross to be changing
+            # our parameters here
+            invalidate = self._invalidate_parent
+            self._invalidate_parent = False
             self._get_dye_ratios_from_metadata(mdh)
+            self._invalidate_parent = invalidate
         
         output = tabular.MappingFilter(input)
         output.mdh = mdh
@@ -237,7 +288,7 @@ class ProcessColour(ModuleBase):
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
                     
         cached_output = tabular.CachingResultsFilter(output)
-        cached_output.mdh = output.mdh
+        #cached_output.mdh = output.mdh
         namespace[self.output] = cached_output
 
 
@@ -350,22 +401,25 @@ class DBSCANClustering(ModuleBase):
 
     Parameters
     ----------
-
-        searchRadius: search radius for clustering
-        minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
+    searchRadius : float
+        search radius for clustering [nm]
+    minPtsForCore : int
+        number of points within SearchRadius required for a given point to be 
+        considered a core point
 
     Notes
     -----
 
-    See `sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
+    See `sklearn.cluster.dbscan` for more details about the underlying 
+    algorithm and parameter meanings.
 
     """
     import multiprocessing
     inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
-    searchRadius = Float()
-    minClumpSize = Int()
+    searchRadius = Float(10)
+    minClumpSize = Int(1)
     
     #exposes sklearn parallelism. Recipe modules are generally assumed
     #to be single-threaded. Enable at your own risk
@@ -633,7 +687,7 @@ class MeasureClusters3D(ModuleBase):
         if np.min(inp[self.labelKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
-        labels = inp[self.labelKey]
+        labels = inp[self.labelKey].astype(np.int)
         I = np.argsort(labels)
         I = I[labels[I] > 0]
         
@@ -824,143 +878,3 @@ class AutocorrelationDriftCorrection(ModuleBase):
             pass
         
         namespace[self.outputName] = out
-
-
-@register_module('SphericalHarmonicShell')
-class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong here
-    """
-    Fits a shell represented by a series of spherical harmonic co-ordinates to a 3D set of points. The points
-    should represent a hollow, fairly round structure (e.g. the surface of a cell nucleus). The object should NOT
-    be filled (i.e. points should only be on the surface).
-    
-    Parameters
-    ----------
-
-        max_m_mode: Maximum order to calculate to.
-        zscale: Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the
-            x, y, and z extents are roughly equal.
-            
-    Inputs
-    ------
-        inputName: name of a tabular datasource containing the points to be fitted with a spherical harmonic shell
-        
-
-    """
-    input_name = Input('input')
-    max_m_mode = Int(5)
-    z_scale = Float(5.0)
-    n_iterations = Int(2)
-    init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
-    output_name = Output('harmonic_shell')
-
-    def execute(self, namespace):
-        import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO import MetaDataHandler
-
-        inp = namespace[self.input_name]
-
-        modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
-                                                                    mmax=self.max_m_mode,
-                                                                    centre_points=True,
-                                                                    nIters=self.n_iterations,
-                                                                    tol_init=self.init_tolerance)
-        
-        mdh = MetaDataHandler.NestedClassMDHandler()
-        try:
-            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
-        except AttributeError:
-            pass
-        
-        mdh['Processing.SphericalHarmonicShell.ZScale'] = self.z_scale
-        mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
-        mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
-        mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
-        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
-
-        output_dtype = [('modes', '<2i4'), ('coefficients', '<f4')]
-        out = np.zeros(len(coefficients), dtype=output_dtype)
-        out['modes']= modes
-        out['coefficients'] = coefficients
-        out = tabular.RecArraySource(out)
-        out.mdh = mdh
-
-        namespace[self.output_name] = out
-
-@register_module('AddShellMappedCoordinates')
-class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
-    """
-
-    Maps x,y,z co-ordinates into the co-ordinate space of spherical harmonic shell. Notably, a normalized
-    radius is provided, which can be used to determine which localizations are within the structure.
-
-    Inputs
-    ------
-
-    inputName : name of tabular data whose coordinates one would like to have generated with respect to a spherical
-            harmonic structure
-    inputSphericalHarmonics: name of reference spherical harmonic shell representation (e.g.
-            output of recipes.localizations.SphericalHarmonicShell). See PYME.Analysis.points.spherical_harmonics.
-
-    Outputs
-    -------
-
-    outputName: a new tabular data source containing spherical coordinates generated with respect to the spherical
-    harmonic representation.
-
-    Parameters
-    ----------
-
-    None
-
-    Notes
-    -----
-
-    """
-
-
-    inputName = Input('points')
-    inputSphericalHarmonics = Input('harmonicShell')
-
-    input_name_r = CStr('r')
-    input_name_theta = CStr('theta')
-    input_name_phi = CStr('phi')
-    input_name_r_norm = CStr('r_norm')
-    input_name_distance_to_shell = CStr('distance_to_shell')
-
-    outputName = Output('shell_mapped')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import spherical_harmonics
-        from PYME.IO.MetaDataHandler import NestedClassMDHandler
-
-        inp = namespace[self.inputName]
-        mapped = tabular.MappingFilter(inp)
-
-        rep = namespace[self.inputSphericalHarmonics]
-
-        center = rep.mdh['Processing.SphericalHarmonicShell.Centre']
-        z_scale = rep.mdh['Processing.SphericalHarmonicShell.ZScale']
-        x0, y0, z0 = center
-
-        # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spherical_harmonics.cart2sph(inp['x'] - x0, inp['y'] - y0, (inp['z'] - z0)/z_scale)
-        # additionally calculate the cartesian distance
-        min_distance, nearest_point_on_shell = spherical_harmonics.distance_to_surface([inp['x'], inp['y'], inp['z']],
-                                                                                       center, rep['modes'],
-                                                                                       rep['coefficients'],
-                                                                                       z_scale=z_scale)
-        mapped.addColumn(self.input_name_r, datRad)
-        mapped.addColumn(self.input_name_theta, theta)
-        mapped.addColumn(self.input_name_phi, phi)
-        mapped.addColumn(self.input_name_r_norm, datRad / spherical_harmonics.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
-        mapped.addColumn(self.input_name_distance_to_shell, min_distance)
-
-        try:
-            # note that copying overwrites shared fields
-            mapped.mdh = NestedClassMDHandler(rep.mdh)
-            mapped.mdh.copyEntriesFrom(inp.mdh)
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = mapped
-

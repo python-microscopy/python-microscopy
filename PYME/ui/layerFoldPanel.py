@@ -1,5 +1,5 @@
 from . import manualFoldPanel
-from PYME.LMVis.layers import pointcloud, mesh
+from PYME.LMVis.layers import pointcloud, mesh, tracks
 import PYME.resources
 import wx
 
@@ -37,7 +37,8 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
     @property
     def _active_bitmap(self):
         import numpy as np
-        from pylab import cm
+        # from pylab import cm
+        from matplotlib import cm
         x = np.linspace(0, 1, 30)
         img = (255*getattr(cm, self._layer.cmap)(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
         
@@ -78,6 +79,8 @@ class LayerCaptionBar(manualFoldPanel.CaptionBar):
             self._icon = wx.Bitmap(PYME.resources.getIconPath('points.png'))
         elif isinstance(layer, mesh.TriangleRenderLayer):
             self._icon = wx.Bitmap(PYME.resources.getIconPath('mesh.png'))
+        elif isinstance(layer, tracks.TrackRenderLayer):
+            self._icon = wx.Bitmap(PYME.resources.getIconPath('tracks.png'))
 
         self._layer.on_trait_change(self._refresh)
 

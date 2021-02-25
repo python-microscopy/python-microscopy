@@ -37,9 +37,11 @@ from PYME.DSView.LUT import applyLUT
 
 import numpy
 import scipy
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
+import matplotlib.cm
 
-import dispatch
+from PYME.contrib import dispatch
 
 LUTCache = {}
 
@@ -116,7 +118,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.selectHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in pylab.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
+        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in matplotlib.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect is None:
 #            if scipy.isscalar(aspect):
@@ -270,7 +272,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
                 
-            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
@@ -349,7 +351,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
             dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
             if self.scaleBarLength > 1000:
-                s = u'%1.1f \u03BCm' % (self.scaleBarLength/1000.)
+                s = u'%1.1f \u00B5m' % (self.scaleBarLength / 1000.)
             else:
                 s = u'%d nm' % int(self.scaleBarLength)
             w, h = dc.GetTextExtent(s)
@@ -682,13 +684,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             else:
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == 73: #I
-            self.do.yp += 1
+            self.do.yp -= 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
                 self.imagepanel.Refresh()
-        elif event.GetKeyCode() == 75: #L
-            self.do.yp -= 1
+        elif event.GetKeyCode() == 75: #K
+            self.do.yp += 1
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
@@ -848,19 +850,21 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         #print(pos)
         self.do.inOnChange = True
-        sc = pow(2.0,(self.do.scale))
-        #print(sc)
-        if (self.do.slice == self.do.SLICE_XY):
-            self.do.xp =int(pos[0]/sc)
-            self.do.yp = int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.xp =int(pos[0]/sc)
-            self.do.zp =int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.yp =int(pos[0]/sc)
-            self.do.zp =int(pos[1]/(sc*self.aspect))
+        try:
+            sc = pow(2.0,(self.do.scale))
+            #print(sc)
+            if (self.do.slice == self.do.SLICE_XY):
+                self.do.xp =int(pos[0]/sc)
+                self.do.yp = int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_XZ):
+                self.do.xp =int(pos[0]/sc)
+                self.do.zp =int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_YZ):
+                self.do.yp =int(pos[0]/sc)
+                self.do.zp =int(pos[1]/(sc*self.aspect))
+        finally:
+            self.do.inOnChange = False
             
-        self.do.inOnChange = False
         self.do.OnChange()
         
         for cb in self.selectHandlers:

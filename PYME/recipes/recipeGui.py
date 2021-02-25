@@ -23,7 +23,9 @@ from PYME.recipes import modules
 from PYME.recipes import batchProcess
 from PYME.recipes import recipeLayout
 
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
+import matplotlib.cm
 from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 
@@ -41,6 +43,7 @@ import six
 import os
 import glob
 import textwrap
+import wx.stc
 
 import logging
 logger = logging.getLogger(__name__)
@@ -49,7 +52,17 @@ logger = logging.getLogger(__name__)
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
+_cols = {}
+def get_line_colour(key, recipe):
+    #choose a colour at random for this input
+    if not key in _cols.keys():
+        _cols[key] = 0.7 * np.array(matplotlib.cm.hsv(np.random.rand()))
     
+    c = _cols[key]
+    if recipe.failed and not key in recipe.namespace.keys():
+        c = 0.2 * c + 0.8*0.5
+        
+    return c
 class RecipePlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, recipes, **kwargs):
         self.recipes = recipes
@@ -68,7 +81,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         self.ax.cla()
 
-        dg = self.recipes.activeRecipe.dependancyGraph()
+        recipe = self.recipes.activeRecipe
+        dg = recipe.dependancyGraph()
 
         #Find the connecting lines
         node_positions, connecting_lines = recipeLayout.layout(dg)
@@ -89,11 +103,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         #Plot the connecting lines
         for xv, yv, e in connecting_lines:
-            #choose a colour at random for this input
-            if not e in cols.keys():
-                cols[e] = 0.7 * np.array(pylab.cm.hsv(pylab.rand()))
-
-            self.ax.plot(xv, yv, c=cols[e], lw=2)
+            self.ax.plot(xv, yv, c=get_line_colour(e, recipe), lw=2)
                 
         #plot the boxes and the labels
         for k, v in node_positions.items():
@@ -106,10 +116,22 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                     fc = [.8, 1, .8]
                 else:
                     fc = [.8,.8, 1]
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=fc, picker=True)
-                
+                    
+                error = getattr(k, '_last_error', None)
+                if error:
+                    ec = 'r'
+                    lw = 3
+                else:
+                    lw = 1
+                    if getattr(k, '_success', False):
+                        ec = 'g'
+                    else:
+                        ec = 'k'
+                    
+                rect = plt.Rectangle([v[0], v[1]-.25], 1, .5, ec=ec, lw=lw, fc=fc, picker=True)
                 rect._data = k
                 self.ax.add_patch(rect)
+                
                 s = TW2.wrap(s)
                 if len(s) == 1:
                     self.ax.text(v[0]+.05, v[1]+.18 , s[0], size=fontSize, weight='bold')
@@ -129,21 +151,23 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 else:
                     s2 = '\n'.join(s2)
                 self.ax.text(v[0]+.05, v[1]-.22 , s2, size=.8*fontSize, stretch='ultra-condensed')
+                
+                if error:
+                    self.ax.text(v[0] - .25, v[1] - .32, error.splitlines()[-1], size=0.8*fontSize, stretch='ultra-condensed', color='r')
             else:
                 #line - draw an output dot, and a text label 
                 s = k
-                if not k in cols.keys():
-                    cols[k] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
-                self.ax.plot(v[0], v[1], 'o', color=cols[k])
+                c = get_line_colour(k, recipe)
+                self.ax.plot(v[0], v[1], 'o', color=c)
                 if k.startswith('out'):
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True, bbox={'color':'w','edgecolor':'k'})
                 else:
-                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=cols[k], size=fontSize, weight='bold', picker=True)
+                    t = self.ax.text(v[0]+.1, v[1] + .02, s, color=c, size=fontSize, weight='bold', picker=True)
                 t._data = k
                 
                 
                 
-        ipsv = np.array(node_positions.values())
+        ipsv = np.array(list(node_positions.values()))
         try:
             xmn, ymn = ipsv.min(0)
             xmx, ymx = ipsv.max(0)
@@ -169,10 +193,20 @@ class ModuleSelectionDialog(wx.Dialog):
         modNames.sort()
 
         self.rootNodes = {}
-        self.modnames = {}
+        #self.modnames = {}
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer2 = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer2.Add(wx.StaticText(self.pan, -1, 'Filter:'), 0, wx.RIGHT, 5)
+        
+        self.tFilter = wx.TextCtrl(self.pan, -1, '')
+        self.tFilter.Bind(wx.EVT_TEXT, self.OnSearchChange)
+        hsizer2.Add(self.tFilter, 1, wx.EXPAND|wx.ALL, 0)
+        vsizer2.Add(hsizer2, 0, wx.ALL|wx.EXPAND, 2)
 
         self.tree_list = wx.gizmos.TreeListCtrl(self.pan, -1, size=(250, 400), style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT|wx.TR_FULL_ROW_HIGHLIGHT|
                                                             wx.TR_LINES_AT_ROOT)
@@ -185,6 +219,8 @@ class ModuleSelectionDialog(wx.Dialog):
 
         root = self.tree_list.AddRoot('root')
         self.tree_list.SetItemText(root, "root", 0)
+        
+        self.items = []
 
         for mn in modNames:
             basename, modname = mn.split('.')
@@ -196,6 +232,7 @@ class ModuleSelectionDialog(wx.Dialog):
                 self.rootNodes[basename] = base
 
             item = self.tree_list.AppendItem(base, modname)
+            self.items.append((basename, modname, item))
             self.tree_list.SetPyData(item, mn)
             self.tree_list.SetItemText(item, modname, 0)
             #try:
@@ -214,9 +251,10 @@ class ModuleSelectionDialog(wx.Dialog):
         #self.tree_list.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnSelect)
         self.tree_list.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelect)
 
-        hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
+        vsizer2.Add(self.tree_list, 1, wx.EXPAND | wx.ALL, 2)
+        hsizer.Add(vsizer2, 1, wx.EXPAND|wx.ALL, 2)
 
-        self.stModuleHelp = wx.html.HtmlWindow(self, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
+        self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
         hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
 
         vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
@@ -272,6 +310,19 @@ class ModuleSelectionDialog(wx.Dialog):
 
     def GetSelectedModule(self):
         return self.tree_list.GetPyData(self.tree_list.GetSelection())
+    
+    def OnSearchChange(self, evt):
+        filter = self.tFilter.GetValue()
+        
+        for k, item in self.rootNodes.items():
+            self.tree_list.HideItem(item)
+        
+        for base, modname, item in self.items:
+            show = (filter.upper() in modname.upper())
+            self.tree_list.HideItem(item, not show)
+            
+            if show:
+                self.tree_list.HideItem(self.rootNodes[base], False)
 
 
 class RecipeView(wx.Panel):
@@ -280,6 +331,9 @@ class RecipeView(wx.Panel):
         
         self.recipes = recipes
         recipes.recipeView = self
+        
+        self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
+        
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -315,29 +369,189 @@ class RecipeView(wx.Panel):
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
-                                       style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+        #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
+        #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+        
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(400, -1))
+        self._set_text_styling()
+        
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
-        vsizer.Add(self.bApply, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        self.bApply.Disable()
+        self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
                                        
         hsizer1.Add(vsizer, 0, wx.EXPAND|wx.ALL, 2)
-
-                
-        
         self.SetSizerAndFit(hsizer1)
         
         self.recipes.LoadRecipeText('')
+
+        recipes.activeRecipe.recipe_changed.connect(self.update)
+        recipes.activeRecipe.recipe_executed.connect(self.update)
         
-    def update(self):
+    def _set_text_styling(self):
+        from wx import stc
+        ed = self.tRecipeText
+        ed.SetLexer(wx.stc.STC_LEX_YAML)
+
+        # Enable folding
+        ed.SetProperty("fold", "1")
+
+        # Highlight tab/space mixing (shouldn't be any)
+        ed.SetProperty("tab.timmy.whinge.level", "1")
+
+        # Set left and right margins
+        ed.SetMargins(2, 2)
+
+        # Set up the numbers in the margin for margin #1
+        ed.SetMarginType(1, wx.stc.STC_MARGIN_NUMBER)
+        # Reasonable value for, say, 4-5 digits using a mono font (40 pix)
+        ed.SetMarginWidth(1, 40)
+
+        # Indentation and tab stuff
+        ed.SetIndent(4)               # Proscribed indent size for wx
+        ed.SetIndentationGuides(True) # Show indent guides
+        ed.SetBackSpaceUnIndents(True)# Backspace unindents rather than delete 1 space
+        ed.SetTabIndents(True)        # Tab key indents
+        ed.SetTabWidth(4)             # Proscribed tab size for wx
+        ed.SetUseTabs(False)          # Use spaces rather than tabs, or
+        # TabTimmy will complain!    
+        # White space
+        ed.SetViewWhiteSpace(False)   # Don't view white space
+
+        # EOL: Since we are loading/saving ourselves, and the
+        # strings will always have \n's in them, set the STC to
+        # edit them that way.            
+        ed.SetEOLMode(wx.stc.STC_EOL_LF)
+        ed.SetViewEOL(False)
+
+        # No right-edge mode indicator
+        ed.SetEdgeMode(stc.STC_EDGE_NONE)
+
+        # Setup a margin to hold fold markers
+        ed.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
+        ed.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        ed.SetMarginSensitive(2, True)
+        ed.SetMarginWidth(2, 12)
+
+        # and now set up the fold markers
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDEREND, stc.STC_MARK_BOXPLUSCONNECTED, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNER, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL, stc.STC_MARK_LCORNER, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB, stc.STC_MARK_VLINE, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDER, stc.STC_MARK_BOXPLUS, "white", "black")
+        ed.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN, stc.STC_MARK_BOXMINUS, "white", "black")
+
+        # Global default style
+        if wx.Platform == '__WXMSW__':
+            ed.StyleSetSpec(stc.STC_STYLE_DEFAULT,
+                              'fore:#000000,back:#FFFFFF,face:Courier New')
+        elif wx.Platform == '__WXMAC__':
+            # TODO: if this looks fine on Linux too, remove the Mac-specific case 
+            # and use this whenever OS != MSW.
+            ed.StyleSetSpec(stc.STC_STYLE_DEFAULT,
+                              'fore:#000000,back:#FFFFFF,face:Monaco')
+        else:
+            defsize = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT).GetPointSize()
+            ed.StyleSetSpec(stc.STC_STYLE_DEFAULT,
+                              'fore:#000000,back:#FFFFFF,face:Courier,size:%d' % defsize)
+
+        # Clear styles and revert to default.
+        ed.StyleClearAll()
+
+        # Following style specs only indicate differences from default.
+        # The rest remains unchanged.
+
+        # Line numbers in margin
+        ed.StyleSetSpec(wx.stc.STC_STYLE_LINENUMBER, 'fore:#000000,back:#99A9C2')
+        # Highlighted brace
+        ed.StyleSetSpec(wx.stc.STC_STYLE_BRACELIGHT, 'fore:#00009D,back:#FFFF00')
+        # Unmatched brace
+        ed.StyleSetSpec(wx.stc.STC_STYLE_BRACEBAD, 'fore:#00009D,back:#FF0000')
+        # Indentation guide
+        ed.StyleSetSpec(wx.stc.STC_STYLE_INDENTGUIDE, "fore:#CDCDCD")
+
+        # YAML styles
+        ed.StyleSetSpec(wx.stc.STC_YAML_DEFAULT, 'fore:#000000')
+        ed.StyleSetSpec(wx.stc.STC_YAML_COMMENT, 'fore:#008000,back:#F0FFF0')
+        ed.StyleSetSpec(wx.stc.STC_YAML_NUMBER, 'fore:#0080F0')
+        ed.StyleSetSpec(wx.stc.STC_YAML_IDENTIFIER, 'fore:#80000')
+        ed.StyleSetSpec(wx.stc.STC_YAML_DOCUMENT, 'fore:#E0E000') #what is this?
+        ed.StyleSetSpec(wx.stc.STC_YAML_KEYWORD, 'fore:#000080,bold')
+        ed.StyleSetSpec(wx.stc.STC_YAML_ERROR, 'fore:#FE2020')
+        ed.StyleSetSpec(wx.stc.STC_YAML_OPERATOR, 'fore:#0000A0')
+        ed.StyleSetSpec(wx.stc.STC_YAML_REFERENCE, 'fore:#E0E000')
+        ed.StyleSetSpec(wx.stc.STC_YAML_TEXT, 'fore:#E0E000')
+
+        # # Strings and characters
+        # ed.StyleSetSpec(wx.stc.STC_P_STRING, 'fore:#800080')
+        # ed.StyleSetSpec(wx.stc.STC_P_CHARACTER, 'fore:#800080')
+        # # Keywords
+        # ed.StyleSetSpec(wx.stc.STC_P_WORD, 'fore:#000080,bold')
+        # # Triple quotes
+        # ed.StyleSetSpec(wx.stc.STC_P_TRIPLE, 'fore:#800080,back:#FFFFEA')
+        # ed.StyleSetSpec(wx.stc.STC_P_TRIPLEDOUBLE, 'fore:#800080,back:#FFFFEA')
+        # # Class names
+        # ed.StyleSetSpec(wx.stc.STC_P_CLASSNAME, 'fore:#0000FF,bold')
+        # # Function names
+        # ed.StyleSetSpec(wx.stc.STC_P_DEFNAME, 'fore:#008080,bold')
+        # # Operators
+        # ed.StyleSetSpec(wx.stc.STC_P_OPERATOR, 'fore:#800000,bold')
+
+        # Caret color
+        ed.SetCaretForeground("BLUE")
+        # Selection background
+        ed.SetSelBackground(1, '#66CCFF')
+
+        #ed.SetSelBackground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        #ed.SetSelForeground(True, wx.SystemSettings_GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        
+        # error annotations
+        self.STYLE_ERROR = wx.stc.STC_STYLE_LASTPREDEFINED + 1
+        ed.StyleSetSpec(self.STYLE_ERROR, 'back:#F0A0A0,face:Arial,size:10')
+        
+        
+        
+    def set_recipe_text(self, text):
+        self.tRecipeText.SetText(text)
+        self.tRecipeText.EmptyUndoBuffer()
+        self.tRecipeText.AnnotationClearAll()
+        self.tRecipeText.Colourise(0, -1)
+
+        # line numbers in the margin
+        self.tRecipeText.SetMarginType(1, wx.stc.STC_MARGIN_NUMBER)
+        self.tRecipeText.SetMarginWidth(1, 25)
+
+        self.bApply.Disable()
+        
+        
+    def update_recipe_text(self):
+        self.set_recipe_text(self.recipes.activeRecipe.toYAML())
+    
+    def update(self, *args, **kwargs):
         self.recipePlot.draw()
-        self.tRecipeText.SetValue(self.recipes.activeRecipe.toYAML())
+        self.update_recipe_text()
         
     def OnApplyText(self, event):
-        self.recipes.LoadRecipeText(self.tRecipeText.GetValue())
+        recipe_text = self.tRecipeText.GetValue()
+        self.tRecipeText.AnnotationClearAll()
+        try:
+            self.recipes.UpdateRecipeText(recipe_text)
+            self.bApply.Disable()
+        except Exception as e:
+            # FIXME - visually indicate that recipe text is out of sync with recipe.
+            #self.tRecipeText.StyleSetBackground(wx.stc.STC_YAML_DEFAULT, wx.RED)
+            n_lines = recipe_text.count('\n') + 1
+            self.tRecipeText.AnnotationSetText(n_lines-1, 'Error parsing recipe: %s' % e)
+            self.tRecipeText.AnnotationSetStyle(n_lines-1, self.STYLE_ERROR)
+            self.tRecipeText.AnnotationSetVisible(wx.stc.STC_ANNOTATION_BOXED)
+            raise
+            
         
     def OnNewRecipe(self, event):
         if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
@@ -367,15 +581,19 @@ class RecipeView(wx.Panel):
             if c.configure_traits(kind='modal'):
                 self.recipes.activeRecipe.add_module(c)
                 self.recipes.activeRecipe.invalidate_data()
-                wx.CallLater(10, self.update)
+                #wx.CallLater(10, self.update)
                 
         dlg.Destroy()
         
         
     def OnPick(self, event):
+        from PYME.IO import tabular
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
-            self.configureModule(k)
+            if not self._editing:
+                self._editing = True
+                self.configureModule(k)
+                self._editing = False
         else:
             outp = self.recipes.activeRecipe.namespace[k]
             if isinstance(outp, ImageStack):
@@ -388,12 +606,17 @@ class RecipeView(wx.Panel):
                         mode = 'lite'
                                    
                     dv = ViewIm3D(outp, mode=mode, glCanvas=self.recipes.dsviewer.glCanvas)
+                    
+            elif isinstance(outp, tabular.TabularBase):
+                from PYME.ui import recArrayView
+                f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
+                f.Show()
     
     
     def configureModule(self, k):
         p = self
-        from traitsui.api import Controller
-        class MControl(Controller):
+        from traitsui.api import Controller, Handler
+        class MControl(Handler):
             def closed(self, info, is_ok):
                 wx.CallLater(10, p.update)
         
@@ -439,9 +662,16 @@ class RecipeManager(object):
         #self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
 
         try:        
+            self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_executed.connect(self.recipeView.update)
+            self.activeRecipe.recipe_failed.connect(self.recipeView.update)
             self.recipeView.update()
         except AttributeError:
             pass
+        
+    def UpdateRecipeText(self, s):
+        #update (rather than replace) the current recipe based on text)
+        self.activeRecipe.update_from_yaml(s)
 
 class PipelineRecipeManager(RecipeManager):
     """Version of recipe manager for use with the VisGUI pipeline. Updates the existing recipe rather than replacing
@@ -455,9 +685,16 @@ class PipelineRecipeManager(RecipeManager):
     
     def LoadRecipeText(self, s, filename=''):
         self.pipeline.recipe.update_from_yaml(s)
+        try:
+            #self.activeRecipe.recipe_changed.connect(self.recipeView.update)
+            #self.activeRecipe.recipe_executed.connect(self.recipeView.update)
+            self.recipeView.update()
+        except AttributeError:
+            pass
         
     def load_recipe_from_mdh(self, mdh):
         self.LoadRecipeText(mdh['Pipeline.Recipe'])
+
 
 class dt(wx.FileDropTarget):
     def __init__(self, window):
@@ -610,11 +847,40 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         if (out_dir == '') or not os.path.exists(out_dir):
             wx.MessageBox('Ouput directory does not exist', 'Error', wx.OK|wx.ICON_ERROR)
             return
+
         
-        if not len(self.inputFiles) == len(self.inputFiles2):            
-            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
-        else:
-            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir, num_procs=num_procs)
+        #old_style_output = any([('output' in m.outputs) for m in self.rm.activeRecipe.modules])
+            
+        if not any([isinstance(m, modules.base.OutputModule) for m in self.rm.activeRecipe.modules]):
+            # no output module defined
+    
+            # if old_style_output:
+            #     #old style output, warn and give option to continue
+            #     if not wx.MessageBox(
+            #         "Relying on old-style magic 'output' variable, consider using output modules instead. Continue?",
+            #         'Warning', wx.OK|wx.CANCEL|wx.ICON_WARNING) == wx.OK:
+            #         return
+            # else:
+                
+            wx.MessageBox('No outputs defined - add an output module', 'Error', wx.OK | wx.ICON_ERROR)
+            return
         
+        # elif old_style_output:
+        #     wx.MessageBox("Both new and old style outputs defined, choose another name for the 'output' variable", 'Error', wx.OK | wx.ICON_ERROR)
+        #     return
+        
+        from PYME.ui import progress
+        
+        try:
+            with progress.ComputationInProgress(self, 'Batch Analysis'):
+                if not len(self.inputFiles) == len(self.inputFiles2):
+                    batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
+                else:
+                    batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir, num_procs=num_procs)
+        except:
+            if (num_procs > 1):
+                wx.MessageBox('Uncheck "spawn worker process for each core" for easier debugging', 'Error occurred during multiple process run', wx.OK | wx.ICON_ERROR)
+            raise
+            
             
    

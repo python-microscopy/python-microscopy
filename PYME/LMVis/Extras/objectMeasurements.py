@@ -29,6 +29,7 @@ class ObjectMeasurer:
 
         visFr.AddMenuItem('Analysis', "Get segmented IDs from image", self.OnGetIDs)
         visFr.AddMenuItem('Analysis', "Measure objects", self.OnMeasure)
+        visFr.AddMenuItem('Analysis', 'Pairwise distance point features', self.gen_pairwise_distance_features)
 
 
     def OnGetIDs(self, event):
@@ -59,7 +60,7 @@ class ObjectMeasurer:
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
-                image.openImages.keys(),
+                list(image.openImages.keys()),
                 wx.CHOICEDLG_STYLE
                 )
 
@@ -71,8 +72,7 @@ class ObjectMeasurer:
             
             output_name = recipe.new_output_name('labels_from_img')
             mod = LabelsFromImage(recipe, inputName=pipeline.selectedDataSourceKey,inputImage=img_name, outputName=output_name)
-            recipe.add_module(mod)
-            recipe.execute()
+            recipe.add_modules_and_execute([mod,])
 
             pipeline.selectDataSource(mod.outputName)
 
@@ -85,11 +85,33 @@ class ObjectMeasurer:
 
         chans = pipeline.colourFilter.getColourChans()
 
-        ids = set(pipeline.mapping['objectID'].astype('i'))
+        # If we're not using objectIDs from an image, look for other clustering labels
+        # TODO - rather than trying a few pre-set objectID alternatives, make this a dialog instead
+        # - look for objectID and carry on if present
+        # - if not present, display a dialog "No objectID found - did you segment objects? Either cancel, 
+        # segment, and come back, or choose an alternative column to use as an ID.
+        keys = ['objectID', 'dbscanClumpID', 'clumpIndex']
+        key = 'objectID'
+
+        for k in keys:
+            try:
+                ids = set(pipeline.mapping[k].astype('i'))
+                key = k
+                break
+            except(KeyError):
+                continue
+        # ids = set(pipeline.mapping['objectID'].astype('i'))
+
         pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+                                                                                     key)
+
+            from PYME.ui import recArrayView
+            f = recArrayView.ArrayFrame(pipeline.objectMeasures['Everything'], parent=self.visFr, title='Object Measurements')
+            f.Show()
+        
         else:
             curChan = pipeline.colourFilter.currentColour
 
@@ -105,9 +127,57 @@ class ObjectMeasurer:
             for ch, i in zip(chans, range(len(chans))):
                 pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+                                                                                         key)
             
             pipeline.colourFilter.setColour(curChan)
+
+            from PYME.ui import recArrayView
+            from PYME.IO import tabular
+            from PYME.recipes.tablefilters import AggregateMeasurements
+            
+            om = {k : tabular.RecArraySource(v) for k, v in pipeline.objectMeasures.items()}
+            
+            args = {}
+            for i, name in enumerate(chanNames):
+                args['inputMeasurements%d' % (i+1)] = name
+                args['suffix%d' % (i + 1)] = ('_' + name)
+                
+            args['outputName'] = 'aggregated'
+            
+            agg = AggregateMeasurements(**args)
+            agg.execute(om)
+            
+            f = recArrayView.ArrayFrame(om['aggregated'], parent=self.visFr, title='Object Measurements')
+            f.Show()
+            
+    
+    def gen_pairwise_distance_features(self, event=None):
+        from PYME.recipes import machine_learning
+        from PYME.ui import progress
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+
+        with progress.ComputationInProgress(visFr, 'calculating pairwise distance point features'):
+            m = machine_learning.PointFeaturesPairwiseDist(pipeline.recipe, inputLocalisations=pipeline.selectedDataSourceKey, outputName=pipeline.new_ds_name('features'))
+            m.edit_no_invalidate()
+       
+            pipeline.recipe.add_modules_and_execute([m,])
+            
+            pipeline.selectDataSource(m.outputName)
+            
+            if m.PCA:
+                # we did PCA - display the principle component vectors
+                import matplotlib.pyplot as plt
+                
+                plt.figure()
+                plt.plot(m.binWidth * np.arange(m.numBins), pipeline.selectedDataSource.pca.components_.T)
+                plt.legend(['pc%d' % i for i in range(pipeline.selectedDataSource.pca.components_.shape[0])])
+                plt.grid()
+                plt.xlabel('Distance [nm]')
+                plt.ylabel('Excess density [a.u.]')
+            
+            
 
 
 

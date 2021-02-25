@@ -23,7 +23,8 @@
 
 import numpy
 import numpy as np
-import pylab
+# import pylab
+import matplotlib.cm
 import wx
 import wx.glcanvas
 from OpenGL import GLUT
@@ -267,7 +268,7 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
-        self.cmap = pylab.cm.hsv
+        self.cmap = matplotlib.cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
 
@@ -353,7 +354,7 @@ class LMGLCanvas(GLCanvas):
         wx.PaintDC(self)
         # print self.GetContext()
         self.gl_context.SetCurrent(self)
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if not self._is_initialized:
             self.InitGL()
@@ -653,7 +654,7 @@ class LMGLCanvas(GLCanvas):
         self.a = self.c
         vs = P
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
 
@@ -678,7 +679,7 @@ class LMGLCanvas(GLCanvas):
 
         vs = np.vstack([vs, 0*vs[:,0]])
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1,
@@ -718,7 +719,7 @@ class LMGLCanvas(GLCanvas):
         self.a = 0.5*numpy.ones_like(A)
         vs = P
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if wireframe:
             mode = 'wireframe'
@@ -778,7 +779,7 @@ class LMGLCanvas(GLCanvas):
         #self.a = alpha*numpy.ones_like(c)
         #vs = P
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         
         if wireframe:
             mode = 'wireframe'
@@ -821,7 +822,7 @@ class LMGLCanvas(GLCanvas):
 
         mode = 'quads'
         
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, self.clim, mode=mode, alpha=1))
         self.Refresh()
 
@@ -858,7 +859,7 @@ class LMGLCanvas(GLCanvas):
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
         
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
 

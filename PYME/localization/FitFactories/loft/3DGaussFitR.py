@@ -14,7 +14,7 @@ import scipy
 import numpy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 from PYME.Analysis.PSFGen.ps_app import *
 
 from PYME.Analysis._fithelpers import *
@@ -68,9 +68,10 @@ class PSFFitResult:
     def renderFit(self):
         #X,Y = scipy.mgrid[self.slicesUsed[0], self.slicesUsed[1]]
         #return f_gauss2d(self.fitResults, X, Y)
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[self.slicesUsed[2]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
+        Z = vs.z*scipy.mgrid[self.slicesUsed[2]]
         P = scipy.arange(0,1.01,.1)
         return f_PSF3d(self.fitResults, X, Y, Z, P, 2*scipy.pi/525, 1.47, 10e3)
         #pass
@@ -102,7 +103,7 @@ def GaussFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr
 
 class PSFFitFactory:
     def __init__(self, data, metadata, background=None):
-        self.data = data - metadata.Camera.ADOffset
+        self.data = data - metadata['Camera.ADOffset']
         self.metadata = metadata
         self.background = background
 
@@ -114,9 +115,10 @@ class PSFFitFactory:
         dataROI = self.data[xslice, yslice, zslice]
 
         #generate grid to evaluate function on
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
-        Z = 1e3*self.metadata.voxelsize.z*scipy.mgrid[zslice]
+        vx, vy, vz = self.metadata.voxelsize_nm
+        X = vx*scipy.mgrid[xslice]
+        Y = vy*scipy.mgrid[yslice]
+        Z = vz*scipy.mgrid[zslice]
         P = scipy.arange(0,1.01,.01)
 
         #imshow(dataROI[:,:,0])
@@ -135,7 +137,7 @@ class PSFFitFactory:
 
         #estimate errors in data
         #sigma = (4 + scipy.sqrt(2*dataROI)/2)
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1))/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(dataROI, 1))/self.metadata['Camera.ElectronsPerCount']
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #print X
@@ -155,9 +157,9 @@ class PSFFitFactory:
         #print scipy.sqrt(diag(cov_x))
         #return GaussianFitResult(res, self.metadata, (xslice, yslice, zslice), resCode)
         if (misfit1 < misfit2):
-            return PSFFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(diag(cov_x1)))
+            return PSFFitResultR(res1, self.metadata, (xslice, yslice, zslice), resCode1, scipy.sqrt(scipy.diag(cov_x1)))
         else:
-            return PSFFitResultR(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(diag(cov_x2)))
+            return PSFFitResultR(res2, self.metadata, (xslice, yslice, zslice), resCode2, scipy.sqrt(scipy.diag(cov_x2)))
 
     def FromPoint(self, x, y, z=None, roiHalfSize=8, axialHalfSize=5):
         if (z is None): # use position of maximum intensity

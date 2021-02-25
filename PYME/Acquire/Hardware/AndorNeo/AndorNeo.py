@@ -587,14 +587,6 @@ class AndorBase(SDK3Camera):
         #return self.FrameRate.getValue()
         return self._frameRate
 
-    def __getattr__(self, name):
-        if name in self.noiseProps.keys():
-            return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
-
-
-
-
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True

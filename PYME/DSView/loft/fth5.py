@@ -16,7 +16,11 @@ from PYME.Analysis import remFitBuf
 import os
 import wx
 from PYME.IO import MetaDataHandler
-from pylab import *
+# from pylab import *
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import cm
+import numpy as np
 from PYME.IO.FileUtils import fileID
 from PYME.IO.FileUtils.nameUtils import genResultFileName
 
@@ -88,11 +92,11 @@ def testFrameD(detThresh = 0.9):
     return ft(True)
 
 def testFrames(detThresh = 0.9, offset = 0):
-    close('all')
+    plt.close('all')
     matplotlib.interactive(False)
-    clf()
+    plt.clf()
     sq = min(mdh.getEntry('EstimatedLaserOnFrameNo') + 1000, dataSource.getNumSlices()/4)
-    zps = array(range(mdh.getEntry('EstimatedLaserOnFrameNo') + 20, mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
+    zps = np.array(range(mdh.getEntry('EstimatedLaserOnFrameNo') + 20, mdh.getEntry('EstimatedLaserOnFrameNo') + 24)  + range(sq, sq + 4) + range(dataSource.getNumSlices()/2,dataSource.getNumSlices() /2+4))
     zps += offset
     fitMod = cFitType.GetStringSelection()
     #bgFrames = int(tBackgroundFrames.GetValue())
@@ -108,36 +112,36 @@ def testFrames(detThresh = 0.9, offset = 0):
         else:
             ft = remFitBuf.fitTask(seriesName, zps[i], detThresh, MetaDataHandler.NestedClassMDHandler(mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True)
         res = ft()
-        xp = floor(i/4)/3.
+        xp = np.floor(i/4)/3.
         yp = (3 - i%4)/4.
         #print xp, yp
-        axes((xp,yp, 1./6,1./4.5))
+        plt.axes((xp,yp, 1./6,1./4.5))
         #d = ds[zps[i], :,:].squeeze().T
         d = dataSource.getSlice(zps[i]).T
-        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
-        title('Frame %d' % zps[i])
-        xlim(0, d.shape[1])
-        ylim(0, d.shape[0])
-        xticks([])
-        yticks([])
+        plt.imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(np.median(d.ravel()), d.max()))
+        plt.title('Frame %d' % zps[i])
+        plt.xlim(0, d.shape[1])
+        plt.ylim(0, d.shape[0])
+        plt.xticks([])
+        plt.yticks([])
         #print 'i = %d, ft.index = %d' % (i, ft.index)
         #subplot(4,6,2*i+13)
         xp += 1./6
-        axes((xp,yp, 1./6,1./4.5))
+        plt.axes((xp,yp, 1./6,1./4.5))
         d = ft.ofd.filteredData.T
         #d = ft.data.squeeze().T
-        imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
-        plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+        plt.imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(np.median(d.ravel()), d.max()))
+        plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         if ft.driftEst:
-             plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+             plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
         if ft.fitModule in remFitBuf.splitterFitModules:
-                plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                plt.plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
         #axis('tight')
-        xlim(0, d.shape[1])
-        ylim(0, d.shape[0])
-        xticks([])
-        yticks([])
-    show()
+        plt.xlim(0, d.shape[1])
+        plt.ylim(0, d.shape[0])
+        plt.xticks([])
+        plt.yticks([])
+    plt.show()
     matplotlib.interactive(True)
 
 

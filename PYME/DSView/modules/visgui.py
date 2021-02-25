@@ -21,7 +21,8 @@
 ##################
 
 from PYME.LMVis.imageView2 import ImageViewPanel, ColourImageViewPanel
-import pylab
+# import pylab
+import matplotlib.cm
 import numpy
 import wx
 import os
@@ -39,20 +40,32 @@ class visGuiExtras:
         dsviewer.AddMenuItem("View", "Set as visualisation &background", self.OnViewBackground)
 
     def OnViewBackground(self, event):
-        ivp = self.dsviewer.GetSelectedPage() #self.notebook.GetPage(self.notebook.GetSelection())
+        from PYME.LMVis.layers import image_layer
+        img = self.dsviewer.image
+        glCanvas = self.dsviewer.glCanvas
+        
+        glCanvas.SetCurrent(glCanvas.gl_context) #make sure that the context we want to add the shaders to is current
 
-        if 'image' in dir(ivp): #is a single channel
-            img = numpy.minimum(255.*(ivp.image.img - ivp.clim[0])/(ivp.clim[1] - ivp.clim[0]), 255).astype('uint8')
-            self.dsviewer.glCanvas.setBackgroundImage(img, (ivp.image.imgBounds.x0, ivp.image.imgBounds.y0), pixelSize=ivp.image.pixelSize)
+        for name, i in zip(img.names, xrange(img.data.shape[3])):
+            l_i = image_layer.ImageRenderLayer({'im': img}, dsname='im',
+                                               display_opts=self.dsviewer.do, #slave the display scaling to the image viewer scaling
+                                               channel=i,
+                                               context=glCanvas.gl_context)
+    
+            glCanvas.layers.insert(0, l_i) #prepend layers so they are drawn before points
+            
+        # FIXME - this is gross - just add to glCanvas and have it issue a signal which can be caught higher up
+        glCanvas.GetParent().GetParent().GetParent().layer_added.send(None)
 
-        self.dsviewer.glCanvas.Refresh()
+        glCanvas.Refresh()
+        
 
 
 
     def OnExport(self, event):
         #ivp = self.notebook.GetPage(self.notebook.GetSelection())
         ivp = self.dsviewer.GetSelectedPage()
-        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif, *.bmp, *.gif, *.jpg, *.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        fname = wx.FileSelector('Save Current View', default_extension='.tif', wildcard="Supported Image Files (*.tif, *.bmp, *.gif, *.jpg, *.png)|*.tif;*.bmp;*.gif;*.jpg;*.png", flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
 
         if not fname == "":
             ext = os.path.splitext(fname)[-1]
@@ -86,6 +99,7 @@ class GLImageView(LMGLShaderCanvas):
         
     def _add_layers(self):
         from PYME.LMVis.layers import image_layer
+        self.SetCurrent(self.gl_context)
         for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
             l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
         
@@ -102,7 +116,7 @@ class GLImageView(LMGLShaderCanvas):
 def Plug(dsviewer):
     dsviewer.vgextras = visGuiExtras(dsviewer)
 
-    cmaps = [pylab.cm.r, pylab.cm.g, pylab.cm.b]
+    cmaps = [matplotlib.cm.r, matplotlib.cm.g, matplotlib.cm.b]
 
     if not 'ivps' in dir(dsviewer):
         dsviewer.ivps = []
@@ -123,7 +137,9 @@ def Plug(dsviewer):
         dsviewer.civp.ivps = dsviewer.ivps
         dsviewer.AddPage(page=dsviewer.civp, select=False, caption='Composite')
 
-    dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
-    dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
+    if dsviewer.image.data.shape[2] == 1:
+        # gl canvas doesn't currently work for 3D images, crashes on linux
+        dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
+        dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
     
 

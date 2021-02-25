@@ -68,7 +68,7 @@ def voxelsize_x(image, psft):
     pixels too large looses information whilst making them too small is empty 
     magnification and is incurs extra noise and computational cost. A high NA oil 
     immersion objective is assumed in these calculations"""
-    vsx = image.mdh['voxelsize.x']*1e3
+    vsx = image.voxelsize_nm.x
     merit = (np.abs(vsx - 70.)/20)**2    
     return vsx, merit
 
@@ -90,7 +90,7 @@ def voxelsize_z_loc(image, psft):
     wise to oversample in z (typically using 50 nm spacing) in order to reduce 
     the sensitivity of psf shape to the interpolation algortihms used in the 
     fitting. Oversampling also increases the effective SNR of the PSF"""
-    vsz = image.mdh['voxelsize.z']*1e3
+    vsz = image.voxelsize_nm.z
     merit = np.abs(vsz - 50.)/50 + 1.0*(vsz > 50)
     return vsz, merit
     
@@ -102,7 +102,7 @@ def voxelsize_z_dec(image, psft):
     calculalation typically used for voxel size selection. In most cases a
     z-spacing of 200 nm will be appropriate for a high NA oil immersion objective,
     although this might sometimes want to be reduced."""
-    vsz = image.mdh['voxelsize.z']*1e3 
+    vsz = image.voxelsize_nm.z
     merit = 2*(1 + (170./(370.-vsz))**4 - 2*(170./(370-vsz))**2)
     return vsz, merit
     
@@ -114,7 +114,7 @@ def depth_loc(image, psft):
     sufficient. Due to the implementation of the object finding algorithm, very
     large axial extents are actually a disadvantage as they will interfere with 
     reliable event detection."""
-    vsz = image.mdh['voxelsize.z']
+    vsz = image.voxelsize_nm.z
     depth = vsz*image.data.shape[2]
     merit = np.abs(depth - 3.)
     return depth, merit
@@ -146,7 +146,7 @@ def noise(image, psft):
     """This test looks at a region to the side of the in-focus plane to assess
     noise levels. Noise can be improved by using a longer integration time when
     acquiring the bead images or by averaging more beads."""
-    n = image.data[:,:,image.data.shape[2]/2][:5,:5].std()
+    n = image.data[:,:, int(image.data.shape[2] / 2)][:5,:5].std()
     merit = n/.0005    
     return n, merit
     

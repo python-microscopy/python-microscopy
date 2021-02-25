@@ -24,7 +24,8 @@
 import numpy
 
 import wx
-import scipy.misc
+# import scipy.misc
+import scipy.ndimage
 
 from PYME.DSView.displayOptions import DisplayOpts
 
@@ -83,7 +84,7 @@ class ImageViewPanel(wx.Panel):
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
                 
-            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGLE:
+            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
@@ -347,7 +348,8 @@ class ColourImageViewPanel(ImageViewPanel):
             else:
                 im = (self.image.data[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.do.zp, chanNum].squeeze().astype('f').T)
 
-            im = self._map_image(scipy.misc.imresize(im, sc), chanNum)
+            # im = self._map_image(scipy.misc.imresize(im, sc), chanNum)
+            im = self._map_image(scipy.ndimage.zoom(im, sc), chanNum)
         
             dx = int(round((-self.centreX + x0 + width/2)/pixelsize))
             dy = int(round((self.centreY - y1 + height/2)/pixelsize))
@@ -362,5 +364,6 @@ class ColourImageViewPanel(ImageViewPanel):
 
         dc.Clear()
         dc.DrawBitmap(wx.BitmapFromImage(imw), 0,0)
+        
         
         

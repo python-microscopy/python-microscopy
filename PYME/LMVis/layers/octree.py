@@ -1,33 +1,36 @@
 from .base import EngineLayer
-from .mesh import TriangleRenderLayer, ENGINES
+from .mesh import TriangleRenderLayer  #, ENGINES
 
 from PYME.experimental._octree import Octree
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
-from pylab import cm
+# from pylab import cm
+from matplotlib import cm
 import numpy as np
 
 
 from OpenGL.GL import *
 
 
+# OCT_SHIFT is just _octant_sign from _octree
+OCT_SHIFT = np.zeros((8,3))
+for n in range(8):
+    OCT_SHIFT[n,0] = 2*(n&1) - 1
+    OCT_SHIFT[n,1] = (n&2) -1
+    OCT_SHIFT[n,2] = (n&4)/2.0 -1
+
 class OctreeRenderLayer(TriangleRenderLayer):
     """
     Layer for viewing octrees. Takes in an octree, splits the faces into triangles, and then uses the rendering engines
     from PYME.LMVis.layers.triangle_mesh.
     """
-    # properties to show in the GUI. Note that we also inherit 'visible' from BaseLayer
-    #vertexColour = CStr('', desc='Name of variable used to colour our points')
-    #cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour faces')
-    #clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
-    #alpha = Float(1.0, desc='Face tranparency')
+    # Additional properties (the rest are inherited from TriangleRenderLayer)
     depth = Int(3, desc='Depth at which to render Octree. Set to -1 for dynamic depth rendering.')
     density = Float(0.0, desc='Minimum density of octree node to display.')
     min_points = Int(10, desc='Number of points/node to truncate octree at')
-    #method = Enum(*ENGINES.keys(), desc='Method used to display faces')
 
-    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
-        TriangleRenderLayer.__init__(self, pipeline, method, dsname, **kwargs)
+    def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
+        TriangleRenderLayer.__init__(self, pipeline, method, dsname, context, **kwargs)
 
         self.on_trait_change(self.update, 'depth')
         self.on_trait_change(self.update, 'density')
@@ -37,7 +40,6 @@ class OctreeRenderLayer(TriangleRenderLayer):
     def _ds_class(self):
         from PYME.experimental import octree
         return (octree.Octree, octree.PyOctree)
-        
 
     def update_from_datasource(self, ds):
         """
@@ -68,106 +70,110 @@ class OctreeRenderLayer(TriangleRenderLayer):
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
 
             alpha = nodes['nPoints'] * ((2 ** nodes['depth'])**3)
-            
         else:
-            # Follow the nodes until we reach a terminating node, then append this node to our list of nodes to render
-            # Start at the 0th node
-            # children = ds._nodes[0]['children'].tolist()
-            # node_indices = []
-            # box_sizes = []
-            # # Do this until we've looked at the whole octree (the list of children is empty)
-            # while children:
-            #     # Check the child
-            #     node_index = children.pop()
-            #     curr_node = ds._nodes[node_index]
-            #     # Is this a terminating node?
-            #     if np.any(curr_node['children']):
-            #         # It's not, so we'll add the children to the list
-            #         new_children = curr_node['children'][curr_node['children'] > 0]
-            #         children.extend(new_children)
-            #     else:
-            #         # Terminating node! We want to render this
-            #         node_indices.append(node_index)
-            #         box_sizes.append(ds.box_size(curr_node['depth']))
-                    
-            
-            
-
-            # We've followed the octree to the end, return the nodes and box sizes
-            #nodes = ds._nodes[node_indices]
-            #box_sizes = np.array(box_sizes)
-
-            nodes = nodes[np.sum(nodes['children']) == 0]
+            # Plot leaf nodes
+            nodes = nodes[(np.sum(nodes['children'],axis=1) == 0)&(nodes['depth'] > 0)]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
             
             alpha = nodes['nPoints']*((2.0**nodes['depth']))**3
 
-
-        # First we need the vertices of the cube. We find them from the center c provided and the box size (lx, ly, lz)
-        # provided by the octree:
-
         if len(nodes) > 0:
             c = nodes['centre']  # center
-            v0 = c + box_sizes * -1 / 2            # v0 = c - lx/2 - ly/2 - lz/2
-            v1 = c + box_sizes * [-1, -1, 1] / 2   # v1 = c - lx/2 - ly/2 + lz/2
-            v2 = c + box_sizes * [-1, 1, -1] / 2   # v2 = c - lx/2 + ly/2 - lz/2
-            v3 = c + box_sizes * [-1, 1, 1] / 2    # v3 = c - lx/2 + ly/2 + lz/2
-            v4 = c + box_sizes * [1, -1, -1] / 2   # v4 = c + lx/2 - ly/2 - lz/2
-            v5 = c + box_sizes * [1, -1, 1] / 2    # v5 = c + lx/2 - ly/2 + lz/2
-            v6 = c + box_sizes * [1, 1, -1] / 2    # v6 = c + lx/2 + ly/2 - lz/2
-            v7 = c + box_sizes / 2                 # v7 = c + lx/2 + ly/2 + lz/2
+            shifts = (box_sizes[:,None]*OCT_SHIFT[None,:])*0.5
+            v = (c[:,None,:] + shifts)
 
             #
             #     z
             #     ^
             #     |
-            #    v1 ----------v3
+            #    v4 ----------v6
             #    /|           /|
             #   / |          / |
             #  v5----------v7  |
             #  |  |    c    |  |
             #  | v0---------|-v2
             #  | /          | /
-            #  v4-----------v6---> y
+            #  v1-----------v3---> y
             #  /
             # x
             #
             # Now note that the counterclockwise triangles (when viewed straight-on) formed along the faces of the cube are:
             #
-            # v0 v2 v6
-            # v0 v4 v5
-            # v1 v3 v2
-            # v2 v0 v1
-            # v3 v1 v5
-            # v3 v7 v6
-            # v4 v6 v7
-            # v5 v1 v0
-            # v5 v7 v3
-            # v6 v2 v3
-            # v6 v4 v0
-            # v7 v5 v4
+            # v0 v2 v1
+            # v0 v1 v5
+            # v0 v5 v4
+            # v0 v6 v2
+            # v0 v4 v6
+            # v1 v2 v3
+            # v1 v3 v7
+            # v1 v7 v5
+            # v2 v6 v7
+            # v2 v7 v3
+            # v4 v5 v6
+            # v5 v7 v6
 
+            # Counterclockwise triangles (when viewed straight-on) formed along
+            # the faces of an octree box
+            t0 = np.vstack(v[:,[0,0,0,0,0,1,1,1,2,2,4,5],:])
+            t1 = np.vstack(v[:,[2,1,5,6,4,2,3,7,6,7,5,7],:])
+            t2 = np.vstack(v[:,[1,5,4,2,6,3,7,5,7,3,6,6],:])
 
-            # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
-            # and assign the points to x, y, z vectors
-            triangle_v0 = np.vstack((v0, v0, v1, v2, v3, v3, v4, v5, v5, v6, v6, v7))
-            triangle_v1 = np.vstack((v2, v4, v3, v0, v1, v7, v6, v1, v7, v2, v4, v5))
-            triangle_v2 = np.vstack((v6, v5, v2, v1, v5, v6, v7, v0, v3, v3, v0, v4))
+            x, y, z = np.hstack([t0,t1,t2]).reshape(-1, 3).T  # positions
 
-            x, y, z = np.hstack((triangle_v0, triangle_v1, triangle_v2)).reshape(-1, 3).T
+            # Now we create the normal as the cross product
+            tn = np.cross((t2-t1),(t0-t1))
 
-            # Now we create the normal as the cross product (triangle_v2 - triangle_v1) x (triangle_v0 - triangle_v1)
-            triangle_normals = np.cross((triangle_v2 - triangle_v1), (triangle_v0 - triangle_v1))
             # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
-            xn, yn, zn = np.repeat(triangle_normals.T, 3, axis=1)
+            xn, yn, zn = np.repeat(tn.T, 3, axis=1)  # normals
+
+            # Color is fixed constnat for octree
+            c = np.ones(len(x))
+            clim = [0, 1]
             
             alpha = self.alpha*alpha/alpha.max()
             alpha = (alpha[None,:]*np.ones(12)[:,None])
             alpha = np.repeat(alpha.ravel(), 3)
             print('Octree scaled alpha range: %g, %g' % (alpha.min(), alpha.max()))
 
-            # Pass the restructured data to update_data
-            self.update_data(x, y, z, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=alpha, xn=xn, yn=yn, zn=zn)
+            cmap = getattr(cm, self.cmap)
+
+            # Do we have coordinates? Concatenate into vertices.
+            if x is not None and y is not None and z is not None:
+                vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+                self._vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
+
+                if not xn is None:
+                    self._normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel())).T.ravel().reshape(len(x.ravel()), 3)
+                else:
+                    self._normals = -0.69 * np.ones(self._vertices.shape)
+
+                self._bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
+            else:
+                self._bbox = None
+
+            if clim is not None and c is not None and cmap is not None:
+                cs_ = ((c - clim[0]) / (clim[1] - clim[0]))
+                cs = cmap(cs_)
+
+                if self.method in ['flat', 'tessel']:
+                    alpha = cs_ * alpha
+                
+                cs[:, 3] = alpha
+                
+                if self.method == 'tessel':
+                    cs = np.power(cs, 0.333)
+
+                self._colors = cs.ravel().reshape(len(c), 4)
+            else:
+                # cs = None
+                if not self._vertices is None:
+                    self._colors = np.ones((self._vertices.shape[0], 4), 'f')
+
+            print('Colors: {}'.format(self._colors))
+                
+            self._alpha = alpha
+            self._color_map = cmap
+            self._color_limit = clim
         else:
             print('No nodes for density {0}, depth {1}'.format(self.density, self.depth))
         

@@ -53,23 +53,23 @@ def makedirs_safe(dir):
 import logging
 import logging.handlers
 dataserver_root = config.get('dataserver-root')
-if dataserver_root:
-    log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
-    #if not os.path.exists(log_dir):
-    #    os.makedirs(log_dir)
-    makedirs_safe(log_dir)
-
-    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
-        
-    #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
-    #logger = logging.getLogger('')
-    logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
-    logger.addHandler(fh)
-else:
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger('')
+# if dataserver_root:
+#     log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
+#     #if not os.path.exists(log_dir):
+#     #    os.makedirs(log_dir)
+#     makedirs_safe(log_dir)
+#
+#     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
+#
+#     #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+#     #logger = logging.getLogger('')
+#     logger = logging.getLogger('')
+#     logger.setLevel(logging.DEBUG)
+#     fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+#     logger.addHandler(fh)
+# else:
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('')
     
 #now do all the normal imports
     
@@ -102,7 +102,8 @@ import socket
 import threading
 import datetime
 import time
-
+from PYME.IO import h5File
+from PYME.IO.FileUtils.nameUtils import get_service_name
 #GPU status functions
 try:
     import pynvml
@@ -210,7 +211,7 @@ class _LimitedSizeDict(OrderedDict):
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
 
-_listDirLock = threading.Lock()
+#_listDirLock = threading.Lock()
 
 from PYME.IO import clusterListing as cl
 
@@ -243,6 +244,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(path):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(path, -1)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -250,9 +255,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
                 f.write(data)
-
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -305,6 +307,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -334,9 +340,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 h5f.appendToTable(tablename.lstrip('/'), data)
                 #logging.debug('added data to table')
 
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -369,16 +372,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5File.openH5(filename, 'a') as h5f:
             tablename = tablename.lstrip('/')
             h5f.put_file(tablename, data)
             
-
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -509,7 +512,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         matches = glob.glob(pattern)
 
         f = BytesIO()
-        f.write(json.dumps(matches))
+        f.write(json.dumps(matches).encode())
         length = f.tell()
         f.seek(0)
         self.send_response(200)
@@ -567,6 +570,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
+        elif '.h5r/' in self.path or '.hdf/' in self.path:
+            # throw the query back on to our fully resolved path
+            return self.get_tabular_part(path + '?' + urlparse.urlparse(self.path).query)
 
         ctype = self.guess_type(path)
         try:
@@ -608,18 +614,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         """
         from PYME.IO import clusterListing as cl
+        curTime = time.time()
 
-        with _listDirLock:
-            #make sure only one thread calculates the directory listing
-            curTime = time.time()
+        with cl.dir_cache.dir_lock(path):
+            # if dir is in already in cache, return
             try:
                 js_dir, expiry = _dirCache[path]
                 if expiry < curTime:
-                    raise RuntimeError('Expired')
-                
-                #logger.debug('jsoned dir cache hit')
-            except (KeyError, RuntimeError):
-                #logger.debug('jsoned dir cache miss')
+                    try:
+                        # remove directory entry from cache as it's expired.
+                        _dirCache.pop(path)
+                    except KeyError:
+                        pass
+                    
+                    raise KeyError('Entry expired')
+            
+            except KeyError:
                 try:
                     if USE_DIR_CACHE:
                         l2 = cl.dir_cache.list_directory(path)
@@ -679,6 +689,63 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except IOError:
             self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
+
+    def get_tabular_part(self, path):
+        """
+
+        Parameters
+        ----------
+        path: str
+            OS-translated path to an hdf or h5r file on the dataserver computer. 
+            Append the part of the file to read after the file extension, e.g. 
+            .h5r/Events. Return format (for arrays) can additionally be 
+            specified, as can slices
+            using the following syntax: test.h5r/FitResults.json?from=0&to=100. 
+            Supported array formats include json and npy.
+
+        Returns
+        -------
+        f: BytesIO
+            Requested part of the file encoded as bytes
+
+        """
+        from PYME.IO import h5rFile, clusterResults
+
+        # parse path
+        ext = '.h5r' if '.h5r' in path else '.hdf'
+        # TODO - should we just use the the untranslated path?
+        filename, details = path.split(ext + os.sep)
+        filename = filename + ext  # path to file on dataserver disk
+        query = urlparse.urlparse(details).query
+        details = details.strip('?' + query)
+        if '.' in details:
+            part, return_type = details.split('.')
+        else:
+            part, return_type = details, ''
+
+
+        try:
+            with h5rFile.openH5R(filename) as h5f:
+                if part == 'Metadata':
+                    wire_data, output_format = clusterResults.format_results(h5f.mdh, return_type)
+                else:
+                    # figure out if we have any slicing to do
+                    query = urlparse.parse_qs(query)
+                    start = int(query.get('from', [0])[0])
+                    end = None if 'to' not in query.keys() else int(query['to'][0])
+                    wire_data, output_format = clusterResults.format_results(h5f.getTableData(part, slice(start, end)),
+                                                                             '.' + return_type)
+
+            f, length = self._string_to_file(wire_data)
+            self.send_response(200)
+            self.send_header("Content-Type", output_format if output_format else 'application/octet-stream')
+            self.send_header("Content-Length", length)
+            #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+            self.end_headers()
+            return f
+
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
         
         
 
@@ -820,6 +887,14 @@ def main(protocol="HTTP/1.0"):
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 
+    # setup logging to file
+    log_dir = '%s/LOGS/%s' % (options.root, compName)
+    makedirs_safe(log_dir)
+
+    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (options.root, compName)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
+    logger.addHandler(fh)
+
     
     logger.info('========================================\nPYMEDataServer, running on python %s\n' % sys.version)
     
@@ -828,7 +903,14 @@ def main(protocol="HTTP/1.0"):
     os.chdir(options.root)
 
     if options.advertisements == 'local':
-        ns = sqlite_ns.getNS('_pyme-http')
+        # preference is to avoid zeroconf on clusterofone due to poor
+        # performance on crowded networks
+        if config.get('clusterIO-hybridns', True):
+            ns = sqlite_ns.getNS('_pyme-http')
+        else:
+            # if we aren't using the hybridns, we are using zeroconf in clusterIO
+            # TODO - warn that we might run into performance issues???
+            ns = pzc.getNS('_pyme-http')
         server_address = ('127.0.0.1', int(options.port))
         ip_addr = '127.0.0.1'
     else:
@@ -852,7 +934,7 @@ def main(protocol="HTTP/1.0"):
 
     #get the actual adress (port) we bound to
     sa = httpd.socket.getsockname()
-    service_name = 'PYMEDataServer [%s]: ' % options.server_filter + procName
+    service_name = get_service_name('PYMEDataServer [%s]' % options.server_filter)
     ns.register_service(service_name, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
@@ -890,6 +972,12 @@ def main(protocol="HTTP/1.0"):
         if GPU_STATS:
             pynvml.nvmlShutdown()
 
+        try:
+            from pytest_cov.embed import cleanup
+            cleanup()
+        except:
+            pass
+        
         sys.exit()
 
 

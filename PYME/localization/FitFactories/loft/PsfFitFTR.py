@@ -13,7 +13,7 @@
 import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 #import copy_reg
 import numpy
 import types
@@ -65,15 +65,14 @@ dz = None
 def genTheoreticalModel(md):
     global IntXVals, IntYVals, IntZVals, interpModel, interpModelF, interpModelFA, dx, dy, dz, kx, ky, kz
 
-    if not dx == md.voxelsize.x*1e3 and not dy == md.voxelsize.y*1e3 and not dz == md.voxelsize.z*1e3:
+    vs = md.voxelsize_nm
+    if not dx == vs.x and not dy == vs.y and not dz == vs.z:
 
-        IntXVals = 1e3*md.voxelsize.x*scipy.mgrid[-20:20]
-        IntYVals = 1e3*md.voxelsize.y*scipy.mgrid[-20:20]
-        IntZVals = 1e3*md.voxelsize.z*scipy.mgrid[-20:20]
+        IntXVals = vs.x*scipy.mgrid[-20:20]
+        IntYVals = vs.y*scipy.mgrid[-20:20]
+        IntZVals = vs.z*scipy.mgrid[-20:20]
 
-        dx = md.voxelsize.x*1e3
-        dy = md.voxelsize.y*1e3
-        dz = md.voxelsize.z*1e3
+        dx, dy, dz = vs
 
         P = scipy.arange(0,1.01,.01)
 
@@ -106,9 +105,9 @@ def setModel(modName, md):
         if not voxelsize.x == md.voxelsize.x:
             raise RuntimeError("PSF and Image voxel sizes don't match")
 
-        IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-        IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-        IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+        IntXVals = 1e3*voxelsize.x*scipy.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+        IntYVals = 1e3*voxelsize.y*scipy.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+        IntZVals = 1e3*voxelsize.z*scipy.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         dx = voxelsize.x*1e3
         dy = voxelsize.y*1e3
@@ -176,8 +175,8 @@ def setModel(modName, md):
 def misfit_z(p, data):
     z, A=p
     z = z/dz + interpModelFA.shape[2]/2.
-    zf = int(floor(z))
-    zc = int(ceil(z))
+    zf = int(scipy.floor(z))
+    zc = int(scipy.ceil(z))
     zr= (z - zf)
     pf = interpModelFA[:,:,zf]
     pc = interpModelFA[:,:,zc]
@@ -188,8 +187,8 @@ def get_ModZ(p):
     z, A=p
 
     z = z/dz + interpModelF.shape[2]/2.
-    zf = int(floor(z))
-    zc = int(ceil(z))
+    zf = int(scipy.floor(z))
+    zc = int(scipy.ceil(z))
     zr= (z - zf)
     pf = interpModelF[:,:,zf]
     pc = interpModelF[:,:,zc]
@@ -198,10 +197,10 @@ def get_ModZ(p):
 
 def misfit_xy(p, data, aModZ, X, Y):
     x0, y0 = p
-    x1 = x0/dx - floor(X.mean()/dx)
-    y1 = y0/dy - floor(Y.mean()/dy)
+    x1 = x0/dx - scipy.floor(X.mean()/dx)
+    y1 = y0/dy - scipy.floor(Y.mean()/dy)
 
-    m = (aModZ/data) - exp(2j*numpy.pi*(kx*x1 + ky*y1))
+    m = (aModZ/data) - scipy.exp(2j*numpy.pi*(kx*x1 + ky*y1))
     return (numpy.sqrt((m*m.conj()).real)*abs(aModZ)).ravel()
 
 
@@ -359,7 +358,7 @@ class PSFFitFactory:
 
         #sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*dataROI)/self.metadata.Camera.ElectronsPerCount
 
-        FData = fftn(dataROI)
+        FData = scipy.fftpack.fftn(dataROI)
         aFData = abs(FData)
 
         (res_z, cov_z, infodict_z, mesg_z, resCode_z) = optimize.leastsq(misfit_z, [z0, A], args=(aFData),full_output=1)

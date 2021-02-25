@@ -114,8 +114,9 @@ class GaussianFitFactory(FFBase.FitFactory):
         #estimate some start parameters...
         A = data.max() - data.min() #amplitude
 
-        x0 =  1e3*self.metadata.voxelsize.x*x
-        y0 =  1e3*self.metadata.voxelsize.y*y
+        vs = self.metadata.voxelsize_nm
+        x0 =  vs.x*x
+        y0 =  vs.y*y
         
         bgm = np.mean(background)
 
@@ -149,8 +150,9 @@ class GaussianFitFactory(FFBase.FitFactory):
 
         Used for fit visualisation"""
         #generate grid to evaluate function on
-        X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
+        vx, vy, _ = md.voxelsize_nm
+        X = vx*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vy*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
 
         return (f_gaussAstigSlow(params, X, Y), X[0], Y[0], 0)
 

@@ -1,4 +1,6 @@
-from pylab import *
+# from pylab import *
+import matplotlib.pyplot as plt
+import numpy as np
 #ioff()
 
 import reactions
@@ -19,17 +21,17 @@ s.initialConditions['Off'] = 1
 
 #print s.getDEs()
 
-t = linspace(.1, 1e3, 300)
+t = np.linspace(.1, 1e3, 300)
 
 res = s.solve(t)
 
 for n in res.dtype.names:
-    plot(t, res[n], label=n)
+    plt.plot(t, res[n], label=n)
 
-legend()
-show()
+plt.legend()
+plt.show()
 
-figure()
+plt.figure()
 #dm = DiscreteModel(s, ['S0', 'S1', 'T1', 'R', 'X'])
 dm = DiscreteModel(s, ['Off', 'On', 'Dark', 'Bleached'])
 timestep=2.#3e-3
@@ -38,19 +40,19 @@ dm.GenTransitionMatrix(t=[blinkStartTime], timestep=timestep)
 
 
 NSteps = 10000
-t = arange(NSteps)*timestep + blinkStartTime
+t = np.arange(NSteps)*timestep + blinkStartTime
 
 for i in range(4):
     tr = dm.DoSteps(NSteps)
 
-    subplot(4, 1, i+1)
-    step(t[::1], tr[::1] , lw=2)
+    plt.subplot(4, 1, i+1)
+    plt.step(t[::1], tr[::1] , lw=2)
 
-    yticks(range(5))
-    ax = gca()
+    plt.yticks(range(5))
+    ax = plt.gca()
     ax.set_yticklabels(dm.states)
 
-xlabel('Time [s]')
+plt.xlabel('Time [s]')
 
 #def countEvents(trace, threshold):
 #    nEvents = 0
@@ -69,30 +71,30 @@ densities = [1,2,5,10,20,50,100] #molecules/diffraction limited volume
 #densities = [100]
 
 eventCounts = {}
-trange = hstack([arange(1,100), logspace(2, 4, 100)])
+trange = np.hstack([np.arange(1,100), np.logspace(2, 4, 100)])
 
 for d in densities:
-    eventCounts[d] = zeros(trange.shape)
+    eventCounts[d] = np.zeros(trange.shape)
 
 nIters = 10
 NSteps = 100000
-for j in xrange(nIters):
+for j in np.arange(nIters):
 
     traces = []
 
-    for i in xrange(100):
+    for i in np.arange(100):
         traces.append(dm.DoSteps(NSteps))
 
     for d in densities:
         for k in range(100/d):
-            tr = ((vstack(traces[(k*d):(k*d + d)]) == 1).sum(0) > .5).astype('int32')
-            eventCounts[d] += array([countEvents(tr, td) for td in trange])
+            tr = ((np.vstack(traces[(k*d):(k*d + d)]) == 1).sum(0) > .5).astype('int32')
+            eventCounts[d] += np.array([countEvents(tr, td) for td in trange])
 
-figure()
+plt.figure()
 for d in densities:
-    semilogx(trange, eventCounts[d]/(100*nIters), label='%d /diff. limited vol.' % d)
+    plt.semilogx(trange, eventCounts[d]/(100*nIters), label='%d /diff. limited vol.' % d)
 
-legend()
+plt.legend()
 
 
 

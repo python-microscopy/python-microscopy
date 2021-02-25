@@ -23,19 +23,17 @@
 import wx
 
 #from PYME.Acquire.mytimer import mytimer
-import pylab
+# import pylab
+import matplotlib.pyplot as plt
 from scipy import ndimage
 import numpy as np
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
-class fitter:
+from ._base import Plugin
+class Fitter(Plugin):
     def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
-
-        #self.view = dsviewer.view
-        self.do = dsviewer.do
-        self.image = dsviewer.image
+        Plugin.__init__(self, dsviewer)
         
         dsviewer.AddMenuItem('Fitting', "Raw Intensity Decay", self.OnRawDecay)
         dsviewer.AddMenuItem('Fitting', "Simple Decay", self.OnRawDecaySimp)
@@ -54,9 +52,9 @@ class fitter:
         def gmod(p,x):
             A, x0, sig, b = p
             
-            return A*pylab.exp(-(x-x0)**2/(2*sig**2)) + b
+            return A*np.exp(-(x-x0)**2/(2*sig**2)) + b
         
-        pylab.figure()
+        plt.figure()
         
         cols = ['b','g','r']
         xv = self.image.xvals
@@ -66,15 +64,15 @@ class fitter:
             
             res = fh.FitModel(gmod, [I.max()-I.min(), xv[I.argmax()], xv[1] - xv[0], I.min()], I, xv)
             
-            pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
-            pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan],
+            plt.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
+            plt.plot(xv, gmod(res[0], self.image.xvals), cols[chan],
                        label='A: %2.3g, x0 :%2.4g, \n sig: %2.4g,  b: %2.3g\nFWHM: %2.3g' % (tuple(res[0]) + (2.35*res[0][2],)))
             
             print((res[0]))
             #imo = self.image.parent
-        pylab.legend()
+        plt.legend()
         #rawIntensity.processIntensityTrace(I, imo.mdh, dt=imo.mdh['Camera.CycleTime'])
-        pylab.show()
+        plt.show()
         
     def OnRawDecaySimp(self, event):
         #from pylab import *
@@ -136,5 +134,5 @@ class fitter:
 
 
 def Plug(dsviewer):
-    dsviewer.fitter = fitter(dsviewer)
+    return Fitter(dsviewer)
     

@@ -22,8 +22,8 @@
 ##################
 
 import wx
-import pylab
-
+# import pylab
+import weakref
 
 class OverlayPanel(wx.Panel):
     def __init__(self, parent, view, mdh, **kwargs):
@@ -31,7 +31,7 @@ class OverlayPanel(wx.Panel):
         wx.Panel.__init__(self, parent, **kwargs)
 
         #self.parent = parent
-        self.view = view
+        self.view = weakref.proxy(view)
         self.mdh = mdh
 
         vsizer = wx.BoxSizer(wx.VERTICAL)

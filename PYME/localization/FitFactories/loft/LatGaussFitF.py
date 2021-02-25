@@ -13,7 +13,7 @@
 import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+# from pylab import *
 try:
     # noinspection PyCompatibility
     import copy_reg
@@ -86,14 +86,15 @@ class GaussianFitResult:
         return self.fitResults[4]
 
     def FWHMnm(self):
-        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize.x*1e3
+        return FWHM_CONV_FACTOR*self.fitResults[3]*self.metadata.voxelsize_nm.x
 
     def correctedFWHM(self, FWHM_PSF):
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
 
     def renderFit(self):
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[self.slicesUsed[0]]
+        Y = vs.y*scipy.mgrid[self.slicesUsed[1]]
         return f_gauss2d(self.fitResults, X, Y)
         
 
@@ -123,8 +124,9 @@ class GaussianFitFactory:
         #X,Y = scipy.mgrid[xslice, yslice]
         #X = scipy.mgrid[xslice]
         #Y = scipy.mgrid[yslice]
-        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
+        vs = self.metadata.voxelsize_nm
+        X = vs.x*scipy.mgrid[xslice]
+        Y = vs.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude

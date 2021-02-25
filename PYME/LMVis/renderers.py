@@ -32,6 +32,20 @@ import numpy as np
 
 renderMetadataProviders = []
 
+SAMPLE_MD_KEYS = [
+    'Sample.SlideRef',
+    'Sample.Creator',
+    'Sample.Notes',
+    'Sample.Well',
+    'Sample.Labelling',
+    'AcquiringUser'
+]
+
+def copy_sample_metadata(old_mdh, new_mdh):
+    pass_through = [k for k in SAMPLE_MD_KEYS if k in old_mdh.keys()]
+    for k in pass_through:
+        new_mdh[k] = old_mdh[k]
+
 class CurrentRenderer:
     """Renders current view (in black and white). Only renderer not to take care
     of colour channels. Simplest renderer and as such also the base class for all 
@@ -171,6 +185,7 @@ class CurrentRenderer:
 
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
@@ -207,20 +222,21 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, settings, imb, mdh):
-        import matplotlib.pyplot as plt
-        oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(plt.cm.gray)
+        # import matplotlib.pyplot as plt
+        # oldcmap = self.visFr.glCanvas.cmap
+        # self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
-        self.visFr.glCanvas.setCMap(oldcmap)
+        # self.visFr.glCanvas.setCMap(oldcmap)
 
-        return np.atleast_3D(im)
+        return np.atleast_3d(im)
 
 class ColourRenderer(CurrentRenderer):
     """Base class for all other renderers which know about the colour filter"""
     
     def Generate(self, settings):
         mdh = MetaDataHandler.NestedClassMDHandler()
+        copy_sample_metadata(self.pipeline.mdh, mdh)
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
@@ -240,24 +256,15 @@ class ColourRenderer(CurrentRenderer):
         imb = self._get_image_bounds(pixelSize, sliceThickness, *settings.get('zBounds', [None, None]))
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
-        if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
-            #a rendered image with information about the source ROI
-            voxx, voxy = 1e3 * mdh['Source.voxelsize.x'], 1e3 * mdh['Source.voxelsize.y']
+        ox, oy, oz = MetaDataHandler.origin_nm(mdh)
+        if not imb.z0 == 0:
+            # single plane in z stack
+            # FIXME - what is z for 3D fitting at a single focal plane? Check for pipeline['focus']==0 instead?
+            oz = 0
 
-            ox = (mdh['Source.Camera.ROIPosX'] - 1) * voxx + imb.x0
-            oy = (mdh['Source.Camera.ROIPosY'] - 1) * voxy + imb.y0
-            if 'Source.Positioning.PIFoc' in mdh.getEntryNames():
-                oz = mdh['Source.Positioning.PIFoc'] * 1e3
-            else:
-                oz = imb.z0
-        else:
-            ox = imb.x0
-            oy = imb.y0
-            oz = imb.z0
-
-        mdh['Origin.x'] = ox
-        mdh['Origin.y'] = oy
-        mdh['Origin.z'] = oz
+        mdh['Origin.x'] = ox + imb.x0
+        mdh['Origin.y'] = oy + imb.y0
+        mdh['Origin.z'] = oz + imb.z0
 
         colours = settings['colours']
         oldC = self.colourFilter.currentColour
@@ -328,8 +335,8 @@ class Histogram3DRenderer(HistogramRenderer):
 
     def genIm(self, settings, imb, mdh):
         mdh['Origin.z'] = settings['zBounds'][0]
-        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
-
+        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zSliceThickness'])
+        
 class DensityFitRenderer(HistogramRenderer):
     """3D histogram rendering"""
 
@@ -513,24 +520,37 @@ class QuadTreeRenderer(ColourRenderer):
     def genIm(self, settings, imb, mdh):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
+        leaf_size = settings.get('qtLeafSize', 10) #default to 10 record leaf size
 
-        if not np.mod(np.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
-                self.visFr.QTGoalPixelSize = pixelSize
-                self.visFr.Quads = None
+        if not np.mod(np.log2(pixelSize/self.pipeline.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+                self.pipeline.QTGoalPixelSize = pixelSize
+                self.pipeline.Quads = None
 
-        self.visFr.GenQuads()
+        self.pipeline.GenQuads(max_leaf_size=leaf_size)
+        quads = self.pipeline.Quads #TODO remove GenQuads from pipeline
 
-        qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
-        qtWidthPixels = np.ceil(qtWidth/pixelSize)
+        qtWidth = max(quads.x1 - quads.x0, quads.y1 - quads.y0)
+        qtWidthPixels = int(np.ceil(qtWidth/pixelSize))
 
         im = np.zeros((qtWidthPixels, qtWidthPixels))
-        QTrend.rendQTa(im, self.visFr.Quads)
+        QTrend.rendQTa(im, quads)
+        
+        #FIXME - make this work for imb > quadtree size
+        return im[int(max(imb.x0 - quads.x0, 0)/pixelSize):int((imb.x1 - quads.x0)/pixelSize),int(max(imb.y0 - quads.y0, 0)/pixelSize):int((imb.y1 - quads.y0)/pixelSize)]
 
-        return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]
+
+class VoronoiRenderer(ColourRenderer):
+    """2D histogram rendering"""
+
+    name = 'Voronoi'
+    mode = 'voronoi'
+
+    def genIm(self, settings, imb, mdh):
+        return visHelpers.rendVoronoi(self.colourFilter['x'],self.colourFilter['y'], imb, settings['pixelSize'])
 
 
-RENDERER_GROUPS = ((CurrentRenderer,),
-                   (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
+
+RENDERER_GROUPS = ((HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer, VoronoiRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}

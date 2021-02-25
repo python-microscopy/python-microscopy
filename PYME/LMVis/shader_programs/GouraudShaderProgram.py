@@ -18,11 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram
 from OpenGL.GL import *
-from PYME.LMVis.shader_programs.shader_program import ShaderProgram
-import numpy as np
 
 class GouraudShaderProgram(GLProgram):
     INPUT_LIGHT = b'inputLight'
@@ -36,16 +33,11 @@ class GouraudShaderProgram(GLProgram):
             'light_specular': (0.7, 0.7, 0.7, 0.7),
             'light_position': lights_vector
     }
+    
+    shininess = 8
 
     def __init__(self):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
-        shader_program.add_shader("gouraud_vs.glsl", GL_VERTEX_SHADER)
-        shader_program.add_shader("gouraud_fs.glsl", GL_FRAGMENT_SHADER)
-        shader_program.link()
-        self.set_shader_program(shader_program)
-        self._shininess = 8
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_fs.glsl")
         
 
     def __enter__(self):
@@ -54,7 +46,7 @@ class GouraudShaderProgram(GLProgram):
             location = self.get_uniform_location(name)
             glUniform4f(location, *value)
         location = self.get_uniform_location('shininess')
-        glUniform1f(location, self._shininess)
+        glUniform1f(location, self.shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
 
@@ -90,11 +82,37 @@ class GouraudShaderProgram(GLProgram):
         
 class GouraudSphereShaderProgram(GouraudShaderProgram):
     def __init__(self):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
-        shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
-        shader_program.add_shader("spheres_fs.glsl", GL_FRAGMENT_SHADER)
-        shader_program.link()
-        self.set_shader_program(shader_program)
-        self._shininess = 8
+        GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl")
+
+    def __enter__(self):
+        self.get_shader_program().use()
+        GouraudShaderProgram.__enter__(self)
+    
+        glEnable(GL_POINT_SPRITE)
+        glEnable(GL_PROGRAM_POINT_SIZE)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        glDisable(GL_POINT_SPRITE)
+        glDisable(GL_PROGRAM_POINT_SIZE)
+        
+
+class OITGouraudShaderProgram(GouraudShaderProgram):
+    def __init__(self):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl")
+    
+    def __enter__(self):
+        self.get_shader_program().use()
+        GouraudShaderProgram.__enter__(self)
+        
+        glDepthMask(GL_FALSE)
+        glEnable(GL_BLEND)
+        glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA)
+        
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        glDisable(GL_DEPTH_TEST)
+        
+
+

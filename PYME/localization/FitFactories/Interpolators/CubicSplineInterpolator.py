@@ -48,9 +48,10 @@ class CubicSplineInterpolator(__interpolator):
         #generate grid to evaluate function on
         X,Y,Z = mgrid[xslice, yslice, :1]
 
-        X = 1e3*metadata.voxelsize.x*X
-        Y = 1e3*metadata.voxelsize.y*Y
-        Z = 1e3*metadata.voxelsize.z*Z
+        vs = metadata.voxelsize_nm
+        X = vs.x*X
+        Y = vs.y*Y
+        Z = vs.z*Z
 
         #what region is 'safe' (ie we won't run out of model to interpret)
         #for these slices...

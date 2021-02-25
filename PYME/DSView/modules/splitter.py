@@ -33,12 +33,11 @@ import logging
 logger=logging.getLogger(__name__)
         
 global_shiftfield = None                               
-    
-class Unmixer:
-    def __init__(self, dsviewer):
-        self.dsviewer = dsviewer
 
-        self.image = dsviewer.image 
+from ._base import Plugin
+class Unmixer(Plugin):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self,dsviewer)
         
         dsviewer.AddMenuItem('Processing', "&Unsplit\tCtrl-U", self.OnUnmix)
         dsviewer.AddMenuItem('Processing', "&Unsplit, taking brightest\tCtrl-Shift-U", self.OnUnmixMax)
@@ -138,7 +137,7 @@ class Unmixer:
         else:
             mode = 'lite'
             
-        print(im.data[:,:,1,1].shape)
+        #print(im.data[:,:,0,1].shape)
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -151,7 +150,7 @@ class Unmixer:
             
         fns = os.path.split(self.image.filename)[1]
 
-        zm = usds[0].shape[2]/2
+        zm = int(usds[0].shape[2]/2)
 
         maxs = [u[:,:,zm].max() for u in usds]
         im = ImageStack(usds[np.argmax(maxs)], titleStub = '%s - unsplit' % fns)
@@ -193,6 +192,6 @@ class Unmixer:
 
 
 def Plug(dsviewer):
-    dsviewer.unmux = Unmixer(dsviewer)
+    return Unmixer(dsviewer)
                                        
     

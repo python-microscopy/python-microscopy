@@ -106,7 +106,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.snapNum = 0
 
-        wx.EVT_CLOSE(self, self.OnCloseWindow)        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)        
         
         self.MainFrame = self #reference to this window for use in scripts etc...
         protocol.MainFrame = self
@@ -127,8 +127,8 @@ class PYMEMainFrame(AUIFrame):
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='PYMEAcquire - note that help, license etc below is for Python, not PYME\n\n')
-        self.AddPage(self.sh, caption='Console')
+              introText='PYMEAcquire - note that help, license, etc. below is for Python, not PYME\n\n')
+        self.AddPage(self.sh, caption='Shell')
 
         self.CreateToolPanel(getattr(options, 'gui_mode', 'default'))
 
@@ -163,7 +163,7 @@ class PYMEMainFrame(AUIFrame):
         
 
     def _check_init_done(self):
-        if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+        if self.scope.initialized == True and self._check_init_done in self.time1.WantNotification:
             logger.debug('Backround initialization done')
             self.time1.WantNotification.remove(self._check_init_done)
             
@@ -666,9 +666,22 @@ class PYMEMainFrame(AUIFrame):
         msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
             if six.PY3:
-                msg += '%s, %s\n' % (t.name, t._target)
+                cd = None
+                if hasattr(t._target, '__code__'):
+                    cd = t._target.__code__
+                elif hasattr(t._target, '__func__'):
+                    cd = t._target.__func__.__code__
+                elif hasattr(t, '__code__'):
+                    cd = t.__code__
+                else:
+                    # Thread sub-class
+                    try:
+                        cd = t.__class__.run.__code__
+                    except AttributeError:
+                        pass
+                msg += '%s, %s, daemon=%s, %s\n' % (t.name, t._target, t.daemon, cd)
             else:
-                msg += '%s, %s\n' % (t, t._Thread__target)
+                msg += '%s, %s, daemon=%s\n' % (t, t._Thread__target, t.daemon)
             
         logging.info(msg)
 

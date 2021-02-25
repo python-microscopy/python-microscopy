@@ -59,6 +59,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('resources')
     config.add_subpackage('contrib')
     config.add_subpackage('experimental')
+    config.add_subpackage('tileviewer')
     #config.add_subpackage('dataBrowser')
     #config.add_subpackage('shmarray')
     #config.add_subpackage('SampleDB2')
@@ -85,8 +86,22 @@ def configuration(parent_package='',top_path=None):
 if __name__ == '__main__':
     #import setuptools
     from numpy.distutils.core import setup
-    setup(author='David Baddeley',
-          description = 'PYthon (localisation) Microscopy Environment',
+    setup(description='Tools for (super-resolution) microscopy data analysis and microsope control',
+        author='David Baddeley',
+        author_email='david.baddeley@auckland.ac.nz',
+        url='https://github.com/python-microscopy/python-microscopy',
+        long_description='Tools for (super-resolution) microscopy data analysis and microsope control',
+        long_description_content_type="text/markdown",
+        license="GPLv3",
+        install_requires=['numpy'],
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
+            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)', # Again, pick a license
+            'Programming Language :: Python :: 2.7', #Specify which python versions that you want to support
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+        ],
           **configuration(top_path='').todict())
     #setup(options = {'bdist_wininst':{'install-script=' : 'pyme_win_postinstall.py',
     #                    'user-access-control=' : 'force'}}, **configuration(top_path='').todict())
