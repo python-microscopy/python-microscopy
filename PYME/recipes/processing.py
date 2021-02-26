@@ -1823,7 +1823,7 @@ class AverageFramesByZStep(ModuleBase):
 
         # fudge metadata, leaving breadcrumbs
         averaged.mdh['Camera.CycleTime'] = cycle_time
-        averaged.mdh['StackSettings.NumSteps'] = n_steps
+        averaged.mdh['StackSettings.NumSlices'] = n_steps
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
@@ -1868,8 +1868,8 @@ class ResampleZ(ModuleBase):
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
 
         # generate grid for sampling
-        xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
-                                 indexing='ij')
+        new_z = np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling)
+        xx, yy, zz = np.meshgrid(x, y, new_z, indexing='ij')
         # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
         uni, counts = np.unique(z_vals, return_counts=True)
         if np.any(counts > 1):
@@ -1881,11 +1881,17 @@ class ResampleZ(ModuleBase):
             interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
-        regular_stack = ImageStack(regular, mdh=MetaDataHandler.NestedClassMDHandler(stack.mdh))
-
-        regular_stack.mdh['RegularizedStack'] = True
-        regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
-        regular_stack.mdh['voxelsize.z'] = self.z_sampling
+        mdh = MetaDataHandler.DictMDHandler({
+            'RegularizedStack': True,
+            'StackSettings.StepSize': self.z_sampling,
+            'StackSettings.StartPos': new_z[0],
+            'StackSettings.EndPos': new_z[-1],
+            'StackSettings.NumSlices': len(new_z),
+            'voxelsize.z': self.z_sampling
+        })
+        mdh.mergeEntriesFrom(stack.mdh)
+        
+        regular_stack = ImageStack(regular, mdh=mdh)
 
         namespace[self.output] = regular_stack
 
