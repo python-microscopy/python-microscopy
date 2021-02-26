@@ -301,7 +301,7 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        print('setting spool dir: %s' % dirname)
+        logger.info('Setting spool dir: %s' % dirname)
         self._dirname = dirname
         self._cluster_dirname = self.get_cluster_dirname(dirname)
         #if we've had to quit for whatever reason start where we left off
@@ -410,7 +410,7 @@ class SpoolController(object):
         if stack:
             protocol = protocol_z
             protocol.dwellTime = z_dwell
-            print(protocol)
+            #print(protocol)
         else:
             protocol = protocol
 

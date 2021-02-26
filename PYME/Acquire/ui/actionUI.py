@@ -263,5 +263,5 @@ class ActionPanel(wx.Panel):
             raise requests.HTTPError('Could not get ROI locations')
 
         rois = np.array(resp.json())
-        print(rois.shape)
+        #print(rois.shape)
         self._add_ROIs(rois)

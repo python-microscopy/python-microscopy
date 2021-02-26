@@ -150,7 +150,7 @@ class wormlikeChain2D:
 
         #phi = cumsum(concatenate(([0], phi),0))
 
-        print(exp_costheta, costheta.mean())
+        #print(exp_costheta, costheta.mean())
 
         xs = np.random.uniform(-1, 1, numsteps)
         ys = np.random.uniform(-1, 1, numsteps)
