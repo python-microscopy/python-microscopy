@@ -35,32 +35,32 @@ If run without an intialisation file it defaults to using simulated hardware.
 
 #!/usr/bin/python
 import wx
-import matplotlib
+#import matplotlib
 #matplotlib.use('WXAgg')
-from PYME.Acquire import acquiremainframe
 #from PYME import mProfile
 
+#make wx less spammy with warnings
+import warnings
+warnings.simplefilter('once', wx.wxPyDeprecationWarning)
+
 import os
-import json
 import logging
 import logging.config
 
-def setup_logging(
-    default_path='logging.json', 
-    default_level=logging.DEBUG,
-    env_key='LOG_CFG'
-    ):
+def setup_logging(default_level=logging.DEBUG):
     """Setup logging configuration
 
     """
-    path = os.path.join(os.path.split(__file__)[0], default_path)
+    import yaml
+    import PYME.config
+    default_config_file = os.path.join(os.path.split(__file__)[0], 'logging.yaml')
+    
+    path = PYME.config.get('Acquire-logging_conf_file', default_config_file)
     print('attempting to load load logging config from %s' % path)
-    value = os.getenv(env_key, None)
-    if value:
-        path = value
+    
     if os.path.exists(path):
         with open(path, 'rt') as f:
-            config = json.load(f)
+            config = yaml.safe_load(f)
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
@@ -73,6 +73,7 @@ class BoaApp(wx.App):
         
         
     def OnInit(self):
+        from PYME.Acquire import acquiremainframe
         #wx.InitAllImageHandlers()
         self.main = acquiremainframe.create(None, self.options)
         #self.main.Show()

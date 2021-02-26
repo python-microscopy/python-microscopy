@@ -19,6 +19,9 @@ from PYME.Acquire import eventLog
 import threading
 from PYME.misc.computerName import GetComputerName
 
+import logging
+logger = logging.getLogger(__name__)
+
 def correlateFrames(A, B):
     A = A.squeeze()/A.mean() - 1
     B = B.squeeze()/B.mean() - 1
@@ -235,7 +238,7 @@ class Correlator(object):
         #what is the offset between our target position and the calibration position         
         posDelta = nomPos - calPos
         
-        print('%s' % [nomPos, posInd, calPos, posDelta])
+        #print('%s' % [nomPos, posInd, calPos, posDelta])
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -344,7 +347,7 @@ class Correlator(object):
             if self.lockActive:
                 if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
-                    print("focus lock released")
+                    logger.info("focus lock released")
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
                     zcorr = self.piezo.GetOffset() - dz
                     if zcorr < - self.maxfac*self.focusTolerance:
@@ -455,7 +458,7 @@ class ServerThread(threading.Thread):
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print('Shutting down drift tracking Server')
+        logger.info('Shutting down drift tracking Server')
         self.daemon.shutdown(True)
     
 def getClient(compName = GetComputerName()):

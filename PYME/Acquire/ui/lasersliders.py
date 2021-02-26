@@ -312,7 +312,7 @@ class LaserSliders_(wx.Panel):
             ind = self.sliders.index(sl)
             self.sl = sl
             self.ind = ind
-            print((self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.))
+            #print((self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.))
             self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
         finally:
             self.sliding = False

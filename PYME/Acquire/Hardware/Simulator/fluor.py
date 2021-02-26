@@ -272,7 +272,7 @@ class EmpiricalHistFluors(fluors):
             self.expTime = expTime
             self.count_on = []
             self.count_off = []
-            print('exptime', self.expTime)
+            #print('exptime', self.expTime)
             with self.stateQueue.mutex:
                 self.stateQueue.queue.clear()
             time.sleep(.5)

@@ -277,7 +277,7 @@ class FrameWrangler(object):
                             # gets called before StartAq in Notify()
                             
                             self.bufferOverflowed = True
-                            print('Warning: Camera buffer overflowing - purging buffer')
+                            logger.warning('Camera buffer overflowing - purging buffer')
                             eventLog.logEvent('Camera Buffer Overflow')
                             #stop the aquisition - we're going to restart after we're read out to purge the buffer
                             #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
@@ -303,14 +303,13 @@ class FrameWrangler(object):
         
         #check to see if we are already running
         if self.inNotify:
-            print('Already in notify, skip for now')
+            logger.debug('Already in notify, skip for now')
             return
             
         with self._notify_lock:
             #lock to prevent _poll_loop setting an overflowed flag while we're in here.
             try:
                 self.inNotify = True
-                "Should be called on each timer tick"
                 self.te = time.clock()
                 #print self.te - self.tl
                 self.tl = self.te
@@ -360,7 +359,7 @@ class FrameWrangler(object):
                     #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
                     #allow us to catch up following glitches of one form or another, although not too many more.
                 if ('GetNumImsBuffered' in dir(self.cam)) and (self.n_frames_in_group > self.cam.GetBufferSize()/2):
-                    print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
+                    logger.warning(('Not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                  
                 # just copy data to the current frame once per frame group - individual frames don't get copied
                 # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
@@ -370,7 +369,7 @@ class FrameWrangler(object):
                 
     
                 if self.bufferOverflowed:
-                    print('nse')
+                    logger.debug('Setting needStartExposure flag')
                     self.needExposureStart = True
     
                 # See if we need to restart the exposure. This will happen if
@@ -419,7 +418,7 @@ class FrameWrangler(object):
         free-running mode."""
         for callback in self.HardwareChecks:
             if not callback():
-                print('Waiting for hardware')
+                logger.debug('Waiting for hardware')
                 return False
 
         return True

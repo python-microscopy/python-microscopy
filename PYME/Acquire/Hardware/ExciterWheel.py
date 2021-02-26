@@ -26,6 +26,9 @@
 import wx
 from .fw102 import FW102B as filtWheel
 
+import logging
+logger = logging.getLogger(__name__)
+
 [wxID_FILTFRAME, wxID_FILTFRAMECHFILTWHEEL, wxID_FILTFRAMEPANEL1, 
 ] = [wx.NewId() for _init_ctrls in range(3)]
 
@@ -90,7 +93,7 @@ class FiltWheel(object):
     def DichroicSync(self):
         if self.DICHROIC_SYNC and self.dichroic.GetPosition()>=0:
             dname =  self.dichroic.GetFilter()
-            print(dname)
+            logger.debug('Setting filters for %s' % dname)
             fpair = [f for n, f in enumerate(self.filterpair) if f.filtercube == dname][0]
             
             if fpair.exciter in self.GetFilterNames():

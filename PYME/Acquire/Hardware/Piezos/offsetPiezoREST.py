@@ -267,7 +267,7 @@ class TargetOwningOffsetPiezo(OffsetPiezo):
     def MoveRel(self, iChannel, incr, bTimeOut=True):
         with self._move_lock:
             self._target_position += float(incr)
-            print('here - moving to %f' % self._target_position)
+            #print('here - moving to %f' % self._target_position)
             p = self.basePiezo.MoveTo(int(iChannel), 
                                       self._target_position + self.offset, 
                                       bool(bTimeOut))

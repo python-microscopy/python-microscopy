@@ -581,7 +581,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         if fn.endswith('.npy'):
@@ -599,7 +599,7 @@ class dSimControl(afp.foldPanel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         #self.points = pylab.load(fn)
@@ -625,7 +625,7 @@ class dSimControl(afp.foldPanel):
             
             self.st_psf.SetLabelText('PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
         else:
-            print('Setting PSF with zernike modes: %s' % z_modes)
+            logger.info('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
 
@@ -633,7 +633,7 @@ class dSimControl(afp.foldPanel):
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
-        print(fn)
+        logger.debug('Setting PSF from file: %s' % fn)
         if fn == '':
             #rend_im.genTheoreticalModel(rend_im.mdh)
             return
@@ -779,7 +779,7 @@ class dSimControl(afp.foldPanel):
         from . import EmpiricalHist
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         with open(fn,'r') as f:

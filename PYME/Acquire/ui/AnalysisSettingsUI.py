@@ -131,7 +131,7 @@ class AnalysisDetailsPanel(wx.Panel):
             self.Layout()
             self.SetMinSize([200, self.GetBestSize()[1]])
             self.GetParent().Layout()
-            print('custom analysis settings populated')
+            logger.debug('custom analysis settings populated')
                 
         except (KeyError, AttributeError):
             pass

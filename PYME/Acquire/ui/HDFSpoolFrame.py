@@ -129,7 +129,7 @@ class PanSpool(afp.foldingPane):
         elif (self.spoolController.spoolType == 'Cluster'):
             self.rbSpoolCluster.SetValue(True)
         else:
-            print(self.spoolController.spoolType)
+            #print(self.spoolController.spoolType)
             self.rbSpoolFile.SetValue(True)
     
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -438,7 +438,7 @@ class PanSpool(afp.foldingPane):
             try:
                 q_scale = float(self.tQuantizeScale.GetValue()) / self.scope.cam.noise_properties['ElectronsPerCount']
             except (AttributeError, NotImplementedError):
-                print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
+                logger.warning("Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
                 q_scale = float(self.tQuantizeScale.GetValue())
         
             compSettings = {

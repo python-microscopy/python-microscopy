@@ -288,7 +288,7 @@ class seqPanel(wx.Panel):
         
         self.scope.zs.view._mgr.ClosePane(self.pinfo1)
         self.scope.zs.view._mgr.Update()
-        print('se')
+        #print('se')
         
         
         
@@ -393,7 +393,7 @@ class seqPanel(wx.Panel):
         
 
     def UpdateDisp(self):
-        print('seqd: update display')
+        #print('seqd: update display')
         try:
             self.chPiezo.SetSelection(self.scanDirs.index(self.stackSettings.GetScanChannel()))
         except ValueError:
