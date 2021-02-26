@@ -517,11 +517,103 @@ class ImagePyramid(object):
         
         for tile_x in tile_xs:
             for tile_y in tile_ys:
-                self.update_base_tile(0, tile_x, tile_y, weights, frameSizeX, frameSizeY)
+                self.update_base_tile(0, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame)
         
         self.pyramid_valid = False
     
-    def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY):
+    def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame):
+        acc_ = self._acc.get_tile(layer, tile_x, tile_y)
+        occ_ = self._occ.get_tile(layer, tile_x, tile_y)
+
+        if (acc_ is None) or (occ_ is None):
+            acc_ = np.zeros([self.tile_size, self.tile_size])
+            occ_ = np.zeros([self.tile_size, self.tile_size])
+
+        xs = max(tile_x * self.tile_size - x, 0)
+        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+        xst = max(x - tile_x * self.tile_size, 0)
+        xet = min(xst + (xe - xs), self.tile_size)
+
+        ys = max((tile_y * self.tile_size) - y, 0)
+        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+        yst = max(y - tile_y * self.tile_size, 0)
+        yet = min(yst + (ye - ys), self.tile_size)
+
+        acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
+        occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
+        self._acc.save_tile(layer, tile_x, tile_y, acc_)
+        self._occ.save_tile(layer, tile_x, tile_y, occ_)
+
+        self._clean_tiles(tile_x, tile_y)
+
+
+class DistributedImagePyramid(ImagePyramid):
+    from PYME.cluster import HTTPDataServer
+    from PYME.IO import clusterIO
+    import socket
+    import requests
+    import logging
+
+    """
+    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME cluster.
+    Implementation from the microscope side.
+    """
+    def __init__(
+        self, storage_directory, pyramid_tile_size=256, mdh=None, 
+        n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0, 
+        pixel_size=1, backend=PZFTileIO, n_servers=1, chunk_shape=[8,8,1], timeout=10, repeats=3
+    ):
+        super().__init__(
+            storage_directory, pyramid_tile_size=pyramid_tile_size, mdh=mdh,
+            n_tiles_x=n_tiles_, n_tiles_y=n_tiles_y, depth=depth, x0=x0, y0=y0, 
+            pixel_size=pixel_size, backend=backend
+        )
+        self.chunk_shape = chunk_shape
+        self.timeout = timeout
+        self.repeats = repeats
+        self.servers = [((k), (v)) for k, v in clusterIO.get_ns().get_advertised_services()]
+        self.sessions = [requests.Session() for _, _ in self.servers]
+        self.logger = logging.getLogger(__name__)
+
+    def server_for_chunk(self, x, y, z=0):
+        """
+        Returns the server responsible for the chunk of tiles at given (x, y, z).
+        """
+        server_id = np.floor(x/self.chunk_shape[0])
+        server_id = server_id + np.floor(y/self.chunk_shape[1]) * len(self.sessions) * .3
+        server_id = server_id + np.floor(z/self.chunk_shape[2])) % len(self.n_servers)
+        return server_id
+
+    def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame):
+        """
+        
+        """
+
+        server_idx = self.server_for_chunk(tile_x, tile_y)
+        name, info = servers[server_idx]
+        filename = self.storage_directory
+        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+        url = url.encode()
+        
+        data = None
+        for repeat in range(self.repeats):
+            session = self.sessions[server_idx]
+            try:
+                response = session.put(url, data, self.timeout)
+                if not response.status_code == 200:
+                    raise RuntimeError('Put failed with %d: %s' % (return_code.status_code, return_code.content))
+            except response.ConnectTimeout:
+                if repeat + 1 == self.repeats:
+                    self.logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
+                    raise
+                else:
+                    self.logger.warn('Timeout attempting to put file: %s, retrying' % url)
+            finally:
+                try:
+                    response.close()
+                except:
+                    pass
+
         acc_ = self._acc.get_tile(0, tile_x, tile_y)
         occ_ = self._occ.get_tile(0, tile_x, tile_y)
 
