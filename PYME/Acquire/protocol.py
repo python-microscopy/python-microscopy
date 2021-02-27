@@ -211,7 +211,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
         
-        self.piezoName = 'Positioning.%s' % stack_mdh.get('StackSettings.ScanPiezo', GetScanChannel())
+        self.piezoName = 'Positioning.%s' % stack_mdh.get('StackSettings.ScanPiezo', scope.stackSettings.GetScanChannel())
 
     def Init(self, spooler):
         self.startPos = scope.state[self.piezoName + '_target'] #FIXME - _target positions shouldn't be part of scope state
