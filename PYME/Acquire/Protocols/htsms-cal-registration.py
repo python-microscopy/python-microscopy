@@ -7,13 +7,13 @@ logger = logging.getLogger(__name__)
 
 class Scanner(PointScanner):
     def __init__(self, steps=10):
-        self._steps = radial_steps
+        self._steps = steps
     
     def setup(self):
         fs = np.array((scope.cam.size_x, scope.cam.size_y))
-        fov_size = np.mean(fs * np.array(scope.GetPixelSize()))
+        fov_size = 2 * np.mean(fs * np.array(scope.GetPixelSize()))
 
-        CircularPointScanner.__init__(self, scope, self._steps, 
+        PointScanner.__init__(self, scope, self._steps, 
                                       fov_size/self._steps, 1, 0, 
                                       False, True, trigger=True, 
                                       stop_on_complete=True, 
