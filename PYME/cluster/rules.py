@@ -309,18 +309,18 @@ class Rule(object):
         else:
             logging.error('Failed to mark rule complete with status code: %d' % r.status_code)
 
-    def _poll_loop(self):
+    def _poll_loop(self, update_timeout=15):
         logging.debug('task pusher poll loop started')
-        # wait until clusterIO caches clear to avoid replicating the results file.
-        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
-        time.sleep(1.5)
-    
+        
+        last_update = time.time()
         while (self.doPoll == True):
             try:
                 rel_start, rel_end = self.get_new_tasks()
                 self._release_tasks(rel_start, rel_end)
+                last_update = time.time()
             except NoNewTasks:
-                pass
+                if time.time() > last_update + update_timeout:
+                    raise RuntimeError('Timeout waiting for new tasks')
         
             if self.data_complete and not hasattr(self, '_data_comp_callback_res'):
                 logging.debug('input data complete, calling on_data_complete')
