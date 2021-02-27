@@ -480,7 +480,7 @@ class ImagePyramid(object):
         mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
-    
+
     def update_base_tiles_from_frame(self, x, y, frame, weights):
         """add tile to the pyramid
 
@@ -520,7 +520,7 @@ class ImagePyramid(object):
                 self.update_base_tile(0, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame)
         
         self.pyramid_valid = False
-    
+
     def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame):
         acc_ = self._acc.get_tile(layer, tile_x, tile_y)
         occ_ = self._occ.get_tile(layer, tile_x, tile_y)
@@ -547,12 +547,80 @@ class ImagePyramid(object):
         self._clean_tiles(tile_x, tile_y)
 
 
+def server_for_chunk(self, x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
+    """
+    Returns the server responsible for the chunk of tiles at given (x, y, z).
+    """
+    server_id = np.floor(x/chunk_shape[0])
+    server_id = server_id + np.floor(y/chunk_shape[1]) * nr_servers * .3
+    server_id = server_id + np.floor(z/chunk_shape[2]) % nr_servers
+    return server_id
+
+
+class PartialPyramid:
+    """
+    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME cluster.
+    Implementation from the microscope side.
+    """
+    def __init__(
+        self, storage_directory, pyramid_tile_size=256, mdh=None, 
+        n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0, 
+        pixel_size=1, backend=PZFTileIO, chunk_shape=[8,8,1], nr_servers=1, 
+        server_idx=0,
+    ):
+        super().__init__(
+            storage_directory, pyramid_tile_size=pyramid_tile_size, mdh=mdh,
+            n_tiles_x=n_tiles_, n_tiles_y=n_tiles_y, depth=depth, x0=x0, y0=y0, 
+            pixel_size=pixel_size, backend=backend
+        )
+        self.chunk_shape = chunk_shape
+        self.server_idx = server_idx
+
+    def update_base_tile_from_request_data(self, data):
+        data_dict = json.load(data.decode())
+        frame_slice = numpy.asarray(data_dict["frame_data"])
+        frame_slice = frame_slice.reshape(data_dict["frame_shape"])
+        weights_slice = numpy.asarray(data_dict["weights_data"])
+        weights_slice = weights_slice.reshape(data_dict["weights_shape"])
+        tile_x = data_dict["coords"][0]
+        tile_y = data_dict["coords"][1]
+        self.update_base_tile_from_slices(0, tile_x, tile_y, frame_slice, weights_slice)
+
+    def update_base_tile_from_slices(self, layer, tile_x, tile_y, frame_slice, weights_slice):
+        acc_ = self._acc.get_tile(layer, tile_x, tile_y)
+        occ_ = self._occ.get_tile(layer, tile_x, tile_y)
+
+        if (acc_ is None) or (occ_ is None):
+            acc_ = np.zeros([self.tile_size, self.tile_size])
+            occ_ = np.zeros([self.tile_size, self.tile_size])
+
+        xs = max(tile_x * self.tile_size - x, 0)
+        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+        xst = max(x - tile_x * self.tile_size, 0)
+        xet = min(xst + (xe - xs), self.tile_size)
+
+        ys = max((tile_y * self.tile_size) - y, 0)
+        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+        yst = max(y - tile_y * self.tile_size, 0)
+        yet = min(yst + (ye - ys), self.tile_size)
+
+
+        acc_[xst:xet, yst:yet] += frame_slice
+        occ_[xst:xet, yst:yet] += weights_slice
+        self._acc.save_tile(layer, tile_x, tile_y, acc_)
+        self._occ.save_tile(layer, tile_x, tile_y, occ_)
+
+        self._clean_tiles(tile_x, tile_y)
+
+
+
 class DistributedImagePyramid(ImagePyramid):
     from PYME.cluster import HTTPDataServer
     from PYME.IO import clusterIO
     import socket
     import requests
     import logging
+    import json
 
     """
     Subclass of ImagePyramid which supports distribution of pyramid files over a PYME cluster.
@@ -575,27 +643,62 @@ class DistributedImagePyramid(ImagePyramid):
         self.sessions = [requests.Session() for _, _ in self.servers]
         self.logger = logging.getLogger(__name__)
 
-    def server_for_chunk(self, x, y, z=0):
-        """
-        Returns the server responsible for the chunk of tiles at given (x, y, z).
-        """
-        server_id = np.floor(x/self.chunk_shape[0])
-        server_id = server_id + np.floor(y/self.chunk_shape[1]) * len(self.sessions) * .3
-        server_id = server_id + np.floor(z/self.chunk_shape[2])) % len(self.n_servers)
-        return server_id
-
-    def update_base_tile(self, layer, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame):
-        """
+    def update_base_tiles_from_frame(self, x, y, frame, weights):
+        frameSizeX, frameSizeY = frame.shape[:2]
         
-        """
+        out_folder = os.path.join(self.base_dir, '0')
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
+        
+        if (x < 0) or (y < 0):
+            raise ValueError('base tile origin positions must be >=0')
+        
+        tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
+        tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
 
-        server_idx = self.server_for_chunk(tile_x, tile_y)
-        name, info = servers[server_idx]
+        self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
+        self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
+
+        for tile_x in tile_xs:
+            for tile_y in tile_ys:
+                server_idx = server_for_chunk(
+                    tile_x, tile_y, layer, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)
+                )
+                frame_slice, weights_slice = get_tile_slices_from(
+                    tile_x, tile_y, frameSizeX, frameSizeY, frame, weights
+                )
+                self.send_data_to_server(tile_x, tile_y, frame_slice, weights_slice, server_idx)
+
+        self.pyramid_valid = False
+
+    def get_tile_slices_from(self, tile_x, tile_y, frameSizeX, frameSizeY, frame, weights):
+        xs = max(tile_x * self.tile_size - x, 0)
+        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+        xst = max(x - tile_x * self.tile_size, 0)
+        xet = min(xst + (xe - xs), self.tile_size)
+
+        ys = max((tile_y * self.tile_size) - y, 0)
+        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+        yst = max(y - tile_y * self.tile_size, 0)
+        yet = min(yst + (ye - ys), self.tile_size)
+
+        frame_slice = frame[xs:xe, ys:ye]
+        weights_slice = weights[xs:xe, ys:ye]
+        return frame_slice, weights_slice
+
+    def send_data_to_server(self, x, y, frame, weights, server_idx):
+        name, info = self.servers[server_idx]
         filename = self.storage_directory
         url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
         url = url.encode()
-        
-        data = None
+        data_dict = {
+            "frame_shape": frame.shape,
+            "frame_data": frame.ravel().tolist(),
+            "weights_shape": weights.shape,
+            "weights_data": weights.ravel().tolist(),
+            "coords": [x, y],
+        }
+        data = json.dumps(data_dict).encode()
         for repeat in range(self.repeats):
             session = self.sessions[server_idx]
             try:
@@ -613,31 +716,6 @@ class DistributedImagePyramid(ImagePyramid):
                     response.close()
                 except:
                     pass
-
-        acc_ = self._acc.get_tile(0, tile_x, tile_y)
-        occ_ = self._occ.get_tile(0, tile_x, tile_y)
-
-        if (acc_ is None) or (occ_ is None):
-            acc_ = np.zeros([self.tile_size, self.tile_size])
-            occ_ = np.zeros([self.tile_size, self.tile_size])
-
-        xs = max(tile_x * self.tile_size - x, 0)
-        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
-        xst = max(x - tile_x * self.tile_size, 0)
-        xet = min(xst + (xe - xs), self.tile_size)
-
-        ys = max((tile_y * self.tile_size) - y, 0)
-        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
-        yst = max(y - tile_y * self.tile_size, 0)
-        yet = min(yst + (ye - ys), self.tile_size)
-
-        acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
-        occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
-        self._acc.save_tile(0, tile_x, tile_y, acc_)
-        self._occ.save_tile(0, tile_x, tile_y, occ_)
-
-        self._clean_tiles(tile_x, tile_y)
-
 
 def get_position_from_events(events, mdh):
     """Use acquisition events to create a mapping between frame number and
