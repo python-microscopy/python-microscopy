@@ -22,6 +22,7 @@ from . import surface_fitting
 from . import acquisition
 from . import supertile
 from . import pointcloud
+from . import focus
 try:
     from . import skfilters
 except:
