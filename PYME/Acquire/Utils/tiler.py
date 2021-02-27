@@ -89,7 +89,7 @@ class Tiler(pointScanner.PointScanner):
             
         x_i = np.round(((pos['x'] - self._x0)/self._pixel_size)).astype('i')
         y_i = np.round(((pos['y'] - self._y0) / self._pixel_size)).astype('i')
-        print(pos['x'], pos['y'], x_i, y_i, d.min(), d.max())
+        #print(pos['x'], pos['y'], x_i, y_i, d.min(), d.max())
         
         self.P.add_base_tile(x_i, y_i, self._weights*d, self._weights)
         

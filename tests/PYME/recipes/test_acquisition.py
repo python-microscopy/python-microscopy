@@ -31,9 +31,10 @@ def test_queue_acquisitions():
     rec = ModuleCollection()
     rec.namespace['input'] = d
 
-    rec.add_module(acquisition.QueueAcquisitions(rec))
-    rec.save()
+    spool_settings = {'extra_metadata' : {'Sample.Well': '{file_stub}'}}
+
+    rec.add_module(acquisition.QueueAcquisitions(rec, spool_settings=spool_settings))
+    rec.save(context={'file_stub': 'A1'})
     time.sleep(1)
     task = action_manager.actionQueue.get_nowait()
-    
-    
+    assert 'A1' == task[1]._then.params['extra_metadata']['Sample.Well']

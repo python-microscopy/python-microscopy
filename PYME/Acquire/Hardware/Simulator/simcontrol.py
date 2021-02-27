@@ -166,7 +166,7 @@ class SimController(object):
             label = 'PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if psf_settings.vectorial else 'scalar',
                                                                   psf_settings.NA, psf_settings.wavelength_nm, z_modes)
         else:
-            print('Setting PSF with zernike modes: %s' % z_modes)
+            logger.info('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
             

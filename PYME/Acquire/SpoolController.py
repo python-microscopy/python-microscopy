@@ -21,7 +21,7 @@ except:
 #import win32api
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
-from PYME.IO import unifiedIO
+from PYME.IO import unifiedIO, MetaDataHandler
 
 
 #import PYME.Acquire.Protocols
@@ -301,7 +301,7 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        print('setting spool dir: %s' % dirname)
+        logger.info('Setting spool dir: %s' % dirname)
         self._dirname = dirname
         self._cluster_dirname = self.get_cluster_dirname(dirname)
         #if we've had to quit for whatever reason start where we left off
@@ -343,7 +343,8 @@ class SpoolController(object):
     def StartSpooling(self, fn=None, stack=None, compLevel=None, 
                       zDwellTime=None, doPreflightCheck=True, 
                       maxFrames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None):
+                      cluster_h5=None, protocol=None, subdirectory=None,
+                      extra_metadata=None):
         """
 
         Parameters
@@ -382,6 +383,9 @@ class SpoolController(object):
         subdirectory : str, optional
             Directory within current set directory to spool this series. The
             directory will be created if it doesn't already exist.
+        extra_metadata : dict, optional
+            metadata to supplement this series for entries known prior to
+            acquisition which do not have handlers to hook start metadata
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -410,7 +414,7 @@ class SpoolController(object):
         if stack:
             protocol = protocol_z
             protocol.dwellTime = z_dwell
-            print(protocol)
+            #print(protocol)
         else:
             protocol = protocol
 
@@ -459,6 +463,8 @@ class SpoolController(object):
         #        #the connection to the database will timeout if not present
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
+        if extra_metadata is not None:
+            self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(extra_metadata))
             
         try:
             self.spooler.onSpoolStop.connect(self.SpoolStopped)
@@ -626,7 +632,8 @@ class SpoolControllerWrapper(object):
     def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
                       z_dwell=None, preflight_check=True, 
                       max_frames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None):
+                      cluster_h5=None, protocol=None, subdirectory=None,
+                      extra_metadata=None):
         """
 
         Parameters
@@ -665,10 +672,16 @@ class SpoolControllerWrapper(object):
         subdirectory : str, optional
             Directory within current set directory to spool this series. The
             directory will be created if it doesn't already exist.
+        extra_metadata : dict, optional
+            metadata to supplement this series for entries known prior to
+            acquisition which do not have handlers to hook start metadata
+            
+            FIXME: dict parameters will likely not be setable through the HTTP endpoint - change signature to accept json body instead? 
         """
         self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
                                             z_dwell, preflight_check,
                                             max_frames, 
                                             pzf_compression_settings, 
-                                            cluster_h5, protocol, subdirectory)
+                                            cluster_h5, protocol, subdirectory,
+                                            extra_metadata)
         return 'OK'

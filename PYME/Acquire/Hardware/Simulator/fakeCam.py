@@ -46,6 +46,9 @@ else: #linux
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
+import logging
+logger = logging.getLogger(__name__)
+
 def generate_camera_maps(size_x = 1024, size_y = 1024, seed=100, read_median=1.38, offset=100):
     """
     Generate camera maps for sCMOS simulation, using a constant random seed so that the maps are reproducible
@@ -198,8 +201,8 @@ class compThread(threading.Thread):
         self.stopAq = False
         self.startAq = False
 
-        print(laserPowers)
-        print(intTime)
+        #print(laserPowers)
+        #print(intTime)
 
         #self.frameLock = threading.Lock()
         #self.frameLock.acquire()
@@ -520,7 +523,7 @@ class FakeCamera(Camera):
             #chSlice[:,:] = d #grab image from completed computation thread
             #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
         except AttributeError:  # triggered if called with None
-            print("Grabbing problem: probably called with 'None' thread")
+            logger.error("Grabbing problem: probably called with 'None' thread")
         #pylab.figure(2)
         #pylab.hist([f.state for f in self.fluors], [0, 1, 2, 3], hold=False)
         #pylab.gca().set_xticks([0.5,1.5,2.5,3.5])

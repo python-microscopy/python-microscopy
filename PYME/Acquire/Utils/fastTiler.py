@@ -78,7 +78,7 @@ class fastTiler:
             self.scope.frameWrangler.stop()
             self.runInProgress=False
             self.i = -1
-            print('foo')
+            #print('foo')
             if len(self.startPositions) > 0:
                 nextX, nextY = self.startPositions.pop(0)
                 self.scope.stage.MoveTo(0, nextX)
@@ -99,7 +99,7 @@ class fastTiler:
             self.j = int((xp - self.rect[0])/self.pixelsize)
             self.i = int((yp - self.rect[1])/self.pixelsize)
 
-            print((self.i, self.j, self.data.shape))
+            #print((self.i, self.j, self.data.shape))
 
             nextY = self.endYPositions.pop(0)
 
@@ -129,7 +129,7 @@ class fastRectTiler(fastTiler):
         self.pixelsize = pixelsize
 
         fastTiler.__init__(self, scope, ystep=ystep, pixelsize=pixelsize)
-        print((self.startPositions))
+        #print((self.startPositions))
 
     def GetBoundingRect(self):
         return self.rect

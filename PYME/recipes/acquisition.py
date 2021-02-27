@@ -6,6 +6,12 @@ import json
 import numpy as np
 import time
 
+def format_values(d, context):
+    for k in d.keys():
+            if isinstance(d[k], str):
+                d[k] = d[k].format(**context)
+            elif isinstance(d[k], dict):
+                format_values(d[k], context)
 
 @register_module('QueueAcquisitions')
 class QueueAcquisitions(OutputModule):
@@ -95,13 +101,12 @@ class QueueAcquisitions(OutputModule):
         Notes
         -----
         str spool_settings values can context-substitute templated parameters,
-        e.g. spool_settings = {'subdirectory': '{file_stub}'}
+        e.g. spool_settings = {'subdirectory': '{file_stub}',
+                               'extra_metadata: {'Samples.Well': '{file_stub}'}}
         """
         # substitute spool settings
         spool_settings = self.spool_settings.copy()
-        for k in spool_settings.keys():
-            if isinstance(spool_settings[k], str):
-                spool_settings[k] = spool_settings[k].format(**context)
+        format_values(spool_settings, context)
         
         try:  # get positions in units of micrometers
             positions = np.stack((namespace[self.input_positions]['x_um'], 

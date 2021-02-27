@@ -106,7 +106,7 @@ class IntegrationSliders_(wx.Panel):
     def onCombobox(self, event):
         cb = event.GetEventObject()
         ind = self.cboxes.index(cb)
-        print((cb.GetValue()))
+        #print((cb.GetValue()))
         self.chaninfo.itimes[ind] = float(cb.GetValue())
         self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))

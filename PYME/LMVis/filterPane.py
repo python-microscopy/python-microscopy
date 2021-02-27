@@ -108,9 +108,9 @@ class FilterPanel(wx.Panel):
         self.lFiltKeys.DeleteAllItems()
         ind = 0
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(ind+1, key)
-            self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % value[0])
-            self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % value[1])
+            ind = self.lFiltKeys.InsertItem(ind+1, key)
+            self.lFiltKeys.SetItem(ind, 1, '%3.2f' % value[0])
+            self.lFiltKeys.SetItem(ind, 2, '%3.2f' % value[1])
 
     @property
     def dataSource(self):
@@ -177,9 +177,9 @@ class FilterPanel(wx.Panel):
 
             self.filterKeys[key] = [minVal, maxVal]
 
-            ind = self.lFiltKeys.InsertStringItem(UI_MAXSIZE, key)
-            self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % maxVal)
+            ind = self.lFiltKeys.InsertItem(UI_MAXSIZE, key)
+            self.lFiltKeys.SetItem(ind, 1, '%3.2f' % minVal)
+            self.lFiltKeys.SetItem(ind, 2, '%3.2f' % maxVal)
 
         dlg.Destroy()
 
@@ -209,8 +209,8 @@ class FilterPanel(wx.Panel):
 
                 self.filterKeys[key] = [minVal, maxVal]
 
-                self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
-                self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
+                self.lFiltKeys.SetItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+                self.lFiltKeys.SetItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
             dlg.Destroy()
         except (RuntimeError, KeyError, TypeError):
@@ -224,8 +224,8 @@ class FilterPanel(wx.Panel):
 
                 self.filterKeys[key] = [minVal, maxVal]
 
-                self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
-                self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
+                self.lFiltKeys.SetItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+                self.lFiltKeys.SetItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
             dlg.Destroy()
 
@@ -237,8 +237,8 @@ class FilterPanel(wx.Panel):
 
             self.filterKeys[key] = [minVal, maxVal]
 
-            self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
+            self.lFiltKeys.SetItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+            self.lFiltKeys.SetItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
         self.on_filter_changed.send(self)
 
@@ -319,12 +319,12 @@ class FilterPane(afp.foldingPane):
                 x1, y1 = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'x')
+                indx = self.pFilter.lFiltKeys.InsertItem(UI_MAXSIZE, 'x')
             else:
                 indx = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'y')
+                indy = self.pFilter.lFiltKeys.InsertItem(UI_MAXSIZE, 'y')
             else:
                 indy = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('y')
 
@@ -332,11 +332,11 @@ class FilterPane(afp.foldingPane):
             self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
             self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
 
-            self.pFilter.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
-            self.pFilter.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
+            self.pFilter.lFiltKeys.SetItem(indx,1, '%3.2f' % min(x0, x1))
+            self.pFilter.lFiltKeys.SetItem(indx,2, '%3.2f' % max(x0, x1))
 
-            self.pFilter.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
-            self.pFilter.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
+            self.pFilter.lFiltKeys.SetItem(indy,1, '%3.2f' % min(y0, y1))
+            self.pFilter.lFiltKeys.SetItem(indy,2, '%3.2f' % max(y0, y1))
 
             self.bClipToSelection.SetLabel('Clear Clipping ROI')
 
