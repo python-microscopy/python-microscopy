@@ -1,0 +1,481 @@
+INFO:PYME.Acquire.PYMEAcquire:using initialization script /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py
+
+DEBUG:PYME.Acquire.PYMEAcquire:using initialization script /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py, /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py
+
+DEBUG:matplotlib:(private) matplotlib data path: /home/tphan/miniconda3/envs/mypyme/lib/python3.7/site-packages/matplotlib/mpl-data
+
+DEBUG:matplotlib:matplotlib data path: /home/tphan/miniconda3/envs/mypyme/lib/python3.7/site-packages/matplotlib/mpl-data
+
+DEBUG:matplotlib:CONFIGDIR=/home/tphan/.config/matplotlib
+
+DEBUG:matplotlib:matplotlib version 3.3.4
+
+DEBUG:matplotlib:interactive is False
+
+DEBUG:matplotlib:platform is linux
+
+DEBUG:matplotlib:loaded modules: ['sys', 'builtins', '_frozen_importlib', '_imp', '_thread', '_warnings', '_weakref', 'zipimport', '_frozen_importlib_external', '_io', 'marshal', 'posix', 'encodings', 'codecs', '_codecs', 'encodings.aliases', 'encodings.utf_8', '_signal', '__main__', 'encodings.latin_1', 'io', 'abc', '_abc', 'site', 'os', 'stat', '_stat', '_collections_abc', 'posixpath', 'genericpath', 'os.path', '_sitebuiltins', '_bootlocale', '_locale', 'types', 'importlib', 'importlib._bootstrap', 'importlib._bootstrap_external', 'warnings', 'importlib.util', 'importlib.abc', 'importlib.machinery', 'contextlib', 'collections', 'operator', '_operator', 'keyword', 'heapq', '_heapq', 'itertools', 'reprlib', '_collections', 'functools', '_functools', 'mpl_toolkits', 'repoze', 'sphinxcontrib', 'zc', 'encodings.cp437', 're', 'enum', 'sre_compile', '_sre', 'sre_parse', 'sre_constants', 'copyreg', 'pkg_resources', 'time', 'zipfile', 'shutil', 'fnmatch', 'errno', 'zlib', 'bz2', '_compression', 'threading', 'traceback', 'linecache', 'tokenize', 'token', '_weakrefset', '_bz2', 'lzma', '_lzma', 'pwd', 'grp', 'struct', '_struct', 'binascii', 'pkgutil', 'weakref', 'platform', 'subprocess', 'signal', '_posixsubprocess', 'select', 'selectors', 'collections.abc', 'math', 'plistlib', 'datetime', '_datetime', 'xml', 'xml.parsers', 'xml.parsers.expat', 'pyexpat.errors', 'pyexpat.model', 'pyexpat', 'xml.parsers.expat.model', 'xml.parsers.expat.errors', 'email', 'email.parser', 'email.feedparser', 'email.errors', 'email._policybase', 'email.header', 'email.quoprimime', 'string', '_string', 'email.base64mime', 'base64', 'email.charset', 'email.encoders', 'quopri', 'email.utils', 'random', 'hashlib', '_hashlib', '_blake2', '_sha3', 'bisect', '_bisect', '_random', 'socket', '_socket', 'urllib', 'urllib.parse', 'email._parseaddr', 'calendar', 'locale', 'tempfile', 'textwrap', 'inspect', 'dis', 'opcode', '_opcode', 'ntpath', 'pkg_resources.extern', 'pkg_resources._vendor', 'pkg_resources._vendor.appdirs', 'pkg_resources.extern.appdirs', 'pkg_resources._vendor.packaging', '__future__', 'pkg_resources._vendor.packaging.__about__', 'pkg_resources.extern.packaging', 'pkg_resources.extern.packaging.version', 'pkg_resources.extern.packaging._structures', 'pkg_resources.extern.packaging._typing', 'pkg_resources.extern.packaging.specifiers', 'pkg_resources.extern.packaging._compat', 'pkg_resources.extern.packaging.utils', 'pkg_resources.extern.packaging.requirements', 'pkg_resources._vendor.pyparsing', 'copy', 'pprint', 'pkg_resources.extern.pyparsing', 'pkg_resources.extern.packaging.markers', 'sysconfig', 'email.message', 'uu', 'email._encoded_words', 'email.iterators', 'PYME', 'PYME.Acquire', 'PYME.Acquire.PYMEAcquire', 'wx', 'wx.__version__', 'wx.core', 'atexit', 'wx.siplib', 'wx._core', 'logging', 'logging.config', 'logging.handlers', 'pickle', '_compat_pickle', '_pickle', 'queue', '_queue', 'socketserver', 'optparse', 'gettext', 'yaml', 'yaml.error', 'yaml.tokens', 'yaml.events', 'yaml.nodes', 'yaml.loader', 'yaml.reader', 'yaml.scanner', 'yaml.parser', 'yaml.composer', 'yaml.constructor', 'yaml.resolver', 'yaml.dumper', 'yaml.emitter', 'yaml.serializer', 'yaml.representer', 'yaml.cyaml', 'yaml._yaml', 'cython_runtime', 'PYME.config', 'glob', 'PYME.IO', 'PYME.IO.FileUtils', 'PYME.IO.FileUtils.nameUtils', 'getpass', 'termios', 'PYME.Acquire.acquiremainframe', 'PYME.ui', 'PYME.ui.manualFoldPanel', 'six', 'wx.lib', 'wx.lib.agw', 'wx.lib.agw.aui', 'wx.lib.agw.aui.aui_constants', 'wx.lib.embeddedimage', 'wx.lib.agw.aui.aui_utilities', 'wx.lib.agw.aui.framemanager', 'wx.lib.agw.aui.auibar', 'wx.lib.agw.aui.auibook', 'wx.lib.expando', 'wx.lib.newevent', 'wx.lib.agw.aui.tabart', 'wx.lib.agw.aui.tabmdi', 'wx.lib.agw.aui.dockart', 'numpy', 'numpy._globals', 'numpy.__config__', 'numpy.version', 'numpy._distributor_init', 'mkl', 'ctypes', '_ctypes', 'ctypes._endian', 'mkl._mklinit', 'mkl._py_mkl_service', 'numpy.core', 'numpy.core.multiarray', 'numpy.core.overrides', 'numpy.core._multiarray_umath', 'numpy.compat', 'numpy.compat._inspect', 'numpy.compat.py3k', 'pathlib', 'numpy.core.umath', 'numpy.core.numerictypes', 'numbers', 'numpy.core._string_helpers', 'numpy.core._type_aliases', 'numpy.core._dtype', 'numpy.core.numeric', 'numpy.core.shape_base', 'numpy.core._asarray', 'numpy.core.fromnumeric', 'numpy.core._methods', 'numpy.core._exceptions', 'numpy.core._ufunc_config', 'numpy.core.arrayprint', 'numpy.core.defchararray', 'numpy.core.records', 'numpy.core.memmap', 'numpy.core.function_base', 'numpy.core.machar', 'numpy.core.getlimits', 'numpy.core.einsumfunc', 'numpy.core._add_newdocs', 'numpy.core._multiarray_tests', 'numpy.core._dtype_ctypes', 'numpy.core._internal', 'ast', '_ast', 'numpy._pytesttester', 'numpy.lib', 'numpy.lib.mixins', 'numpy.lib.scimath', 'numpy.lib.type_check', 'numpy.lib.ufunclike', 'numpy.lib.index_tricks', 'numpy.matrixlib', 'numpy.matrixlib.defmatrix', 'numpy.linalg', 'numpy.linalg.linalg', 'numpy.lib.twodim_base', 'numpy.linalg.lapack_lite', 'numpy.linalg._umath_linalg', 'numpy.lib.function_base', 'numpy.lib.histograms', 'numpy.lib.stride_tricks', 'numpy.lib.nanfunctions', 'numpy.lib.shape_base', 'numpy.lib.polynomial', 'numpy.lib.utils', 'numpy.lib.arraysetops', 'numpy.lib.npyio', 'numpy.lib.format', 'numpy.lib._datasource', 'numpy.lib._iotools', 'numpy.lib.financial', 'decimal', '_decimal', 'numpy.lib.arrayterator', 'numpy.lib.arraypad', 'numpy.lib._version', 'numpy.fft', 'numpy.fft._pocketfft', 'numpy.fft._pocketfft_internal', 'numpy.fft.helper', 'numpy.polynomial', 'numpy.polynomial.polynomial', 'numpy.polynomial.polyutils', 'numpy.polynomial._polybase', 'numpy.polynomial.chebyshev', 'numpy.polynomial.legendre', 'numpy.polynomial.hermite', 'numpy.polynomial.hermite_e', 'numpy.polynomial.laguerre', 'numpy.random', 'numpy.random._pickle', 'numpy.random.mtrand', 'numpy.random.bit_generator', '_cython_0_29_21', 'numpy.random._common', 'secrets', 'hmac', 'numpy.random._bounded_integers', 'numpy.random._mt19937', 'numpy.random._philox', 'numpy.random._pcg64', 'numpy.random._sfc64', 'numpy.random._generator', 'numpy.ctypeslib', 'numpy.ma', 'numpy.ma.core', 'numpy.ma.extras', 'PYME.contrib', 'PYME.contrib.dispatch', 'PYME.contrib.dispatch.dispatcher', 'wx.py', 'wx.py.buffer', 'wx.py.interpreter', 'code', 'codeop', 'wx.py.dispatcher', 'wx.py.introspect', 'imp', 'wx.py.document', 'wx.py.crust', 'wx.py.editwindow', 'wx.stc', 'wx._stc', 'wx.py.version', 'wx.py.filling', 'wx.py.images', 'wx.py.frame', 'wx.py.shell', 'wx.py.pseudo', 'wx.py.magic', 'wx.py.parse', 'wx.py.path', 'wx.py.crustslices', 'wx.py.editor', 'wx.py.sliceshell', 'PYME.DSView', 'PYME.DSView.dsviewer', 'matplotlib', 'distutils', 'distutils.version', 'matplotlib.cbook', 'gzip', 'shlex', 'matplotlib.cbook.deprecation', 'matplotlib.rcsetup', 'matplotlib.animation', 'uuid', 'matplotlib._animation_data', 'matplotlib.fontconfig_pattern', 'pyparsing', 'matplotlib.colors', 'matplotlib.docstring', 'matplotlib._color_data', 'cycler', 'six.moves', 'matplotlib._version', 'json', 'json.decoder', 'json.scanner', '_json', 'json.encoder', 'matplotlib.ft2font', 'dateutil', 'dateutil._version', 'kiwisolver']
+
+DEBUG:matplotlib:CACHEDIR=/home/tphan/.cache/matplotlib
+
+DEBUG:matplotlib.font_manager:Using fontManager instance from /home/tphan/.cache/matplotlib/fontlist-v330.json
+
+DEBUG:matplotlib.pyplot:Loaded backend WXAgg version unknown.
+
+INFO:numexpr.utils:Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+
+INFO:numexpr.utils:NumExpr defaulting to 8 threads.
+
+DEBUG:PYME.Acquire.SpoolController:Updating series counter
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_A (.pcs or .h5) on cluster
+
+INFO:PYME.Acquire.PYMEAcquire:using initialization script /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py
+
+DEBUG:PYME.Acquire.PYMEAcquire:using initialization script /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py, /home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py
+
+DEBUG:matplotlib:(private) matplotlib data path: /home/tphan/miniconda3/envs/mypyme/lib/python3.7/site-packages/matplotlib/mpl-data
+
+DEBUG:matplotlib:matplotlib data path: /home/tphan/miniconda3/envs/mypyme/lib/python3.7/site-packages/matplotlib/mpl-data
+
+DEBUG:matplotlib:CONFIGDIR=/home/tphan/.config/matplotlib
+
+DEBUG:matplotlib:matplotlib version 3.3.4
+
+DEBUG:matplotlib:interactive is False
+
+DEBUG:matplotlib:platform is linux
+
+DEBUG:matplotlib:loaded modules: ['sys', 'builtins', '_frozen_importlib', '_imp', '_thread', '_warnings', '_weakref', 'zipimport', '_frozen_importlib_external', '_io', 'marshal', 'posix', 'encodings', 'codecs', '_codecs', 'encodings.aliases', 'encodings.utf_8', '_signal', '__main__', 'encodings.latin_1', 'io', 'abc', '_abc', 'site', 'os', 'stat', '_stat', '_collections_abc', 'posixpath', 'genericpath', 'os.path', '_sitebuiltins', '_bootlocale', '_locale', 'types', 'importlib', 'importlib._bootstrap', 'importlib._bootstrap_external', 'warnings', 'importlib.util', 'importlib.abc', 'importlib.machinery', 'contextlib', 'collections', 'operator', '_operator', 'keyword', 'heapq', '_heapq', 'itertools', 'reprlib', '_collections', 'functools', '_functools', 'mpl_toolkits', 'repoze', 'sphinxcontrib', 'zc', 'encodings.cp437', 're', 'enum', 'sre_compile', '_sre', 'sre_parse', 'sre_constants', 'copyreg', 'pkg_resources', 'time', 'zipfile', 'shutil', 'fnmatch', 'errno', 'zlib', 'bz2', '_compression', 'threading', 'traceback', 'linecache', 'tokenize', 'token', '_weakrefset', '_bz2', 'lzma', '_lzma', 'pwd', 'grp', 'struct', '_struct', 'binascii', 'pkgutil', 'weakref', 'platform', 'subprocess', 'signal', '_posixsubprocess', 'select', 'selectors', 'collections.abc', 'math', 'plistlib', 'datetime', '_datetime', 'xml', 'xml.parsers', 'xml.parsers.expat', 'pyexpat.errors', 'pyexpat.model', 'pyexpat', 'xml.parsers.expat.model', 'xml.parsers.expat.errors', 'email', 'email.parser', 'email.feedparser', 'email.errors', 'email._policybase', 'email.header', 'email.quoprimime', 'string', '_string', 'email.base64mime', 'base64', 'email.charset', 'email.encoders', 'quopri', 'email.utils', 'random', 'hashlib', '_hashlib', '_blake2', '_sha3', 'bisect', '_bisect', '_random', 'socket', '_socket', 'urllib', 'urllib.parse', 'email._parseaddr', 'calendar', 'locale', 'tempfile', 'textwrap', 'inspect', 'dis', 'opcode', '_opcode', 'ntpath', 'pkg_resources.extern', 'pkg_resources._vendor', 'pkg_resources._vendor.appdirs', 'pkg_resources.extern.appdirs', 'pkg_resources._vendor.packaging', '__future__', 'pkg_resources._vendor.packaging.__about__', 'pkg_resources.extern.packaging', 'pkg_resources.extern.packaging.version', 'pkg_resources.extern.packaging._structures', 'pkg_resources.extern.packaging._typing', 'pkg_resources.extern.packaging.specifiers', 'pkg_resources.extern.packaging._compat', 'pkg_resources.extern.packaging.utils', 'pkg_resources.extern.packaging.requirements', 'pkg_resources._vendor.pyparsing', 'copy', 'pprint', 'pkg_resources.extern.pyparsing', 'pkg_resources.extern.packaging.markers', 'sysconfig', 'email.message', 'uu', 'email._encoded_words', 'email.iterators', 'PYME', 'PYME.Acquire', 'PYME.Acquire.PYMEAcquire', 'wx', 'wx.__version__', 'wx.core', 'atexit', 'wx.siplib', 'wx._core', 'logging', 'logging.config', 'logging.handlers', 'pickle', '_compat_pickle', '_pickle', 'queue', '_queue', 'socketserver', 'optparse', 'gettext', 'yaml', 'yaml.error', 'yaml.tokens', 'yaml.events', 'yaml.nodes', 'yaml.loader', 'yaml.reader', 'yaml.scanner', 'yaml.parser', 'yaml.composer', 'yaml.constructor', 'yaml.resolver', 'yaml.dumper', 'yaml.emitter', 'yaml.serializer', 'yaml.representer', 'yaml.cyaml', 'yaml._yaml', 'cython_runtime', 'PYME.config', 'glob', 'PYME.IO', 'PYME.IO.FileUtils', 'PYME.IO.FileUtils.nameUtils', 'getpass', 'termios', 'PYME.Acquire.acquiremainframe', 'PYME.ui', 'PYME.ui.manualFoldPanel', 'six', 'wx.lib', 'wx.lib.agw', 'wx.lib.agw.aui', 'wx.lib.agw.aui.aui_constants', 'wx.lib.embeddedimage', 'wx.lib.agw.aui.aui_utilities', 'wx.lib.agw.aui.framemanager', 'wx.lib.agw.aui.auibar', 'wx.lib.agw.aui.auibook', 'wx.lib.expando', 'wx.lib.newevent', 'wx.lib.agw.aui.tabart', 'wx.lib.agw.aui.tabmdi', 'wx.lib.agw.aui.dockart', 'numpy', 'numpy._globals', 'numpy.__config__', 'numpy.version', 'numpy._distributor_init', 'mkl', 'ctypes', '_ctypes', 'ctypes._endian', 'mkl._mklinit', 'mkl._py_mkl_service', 'numpy.core', 'numpy.core.multiarray', 'numpy.core.overrides', 'numpy.core._multiarray_umath', 'numpy.compat', 'numpy.compat._inspect', 'numpy.compat.py3k', 'pathlib', 'numpy.core.umath', 'numpy.core.numerictypes', 'numbers', 'numpy.core._string_helpers', 'numpy.core._type_aliases', 'numpy.core._dtype', 'numpy.core.numeric', 'numpy.core.shape_base', 'numpy.core._asarray', 'numpy.core.fromnumeric', 'numpy.core._methods', 'numpy.core._exceptions', 'numpy.core._ufunc_config', 'numpy.core.arrayprint', 'numpy.core.defchararray', 'numpy.core.records', 'numpy.core.memmap', 'numpy.core.function_base', 'numpy.core.machar', 'numpy.core.getlimits', 'numpy.core.einsumfunc', 'numpy.core._add_newdocs', 'numpy.core._multiarray_tests', 'numpy.core._dtype_ctypes', 'numpy.core._internal', 'ast', '_ast', 'numpy._pytesttester', 'numpy.lib', 'numpy.lib.mixins', 'numpy.lib.scimath', 'numpy.lib.type_check', 'numpy.lib.ufunclike', 'numpy.lib.index_tricks', 'numpy.matrixlib', 'numpy.matrixlib.defmatrix', 'numpy.linalg', 'numpy.linalg.linalg', 'numpy.lib.twodim_base', 'numpy.linalg.lapack_lite', 'numpy.linalg._umath_linalg', 'numpy.lib.function_base', 'numpy.lib.histograms', 'numpy.lib.stride_tricks', 'numpy.lib.nanfunctions', 'numpy.lib.shape_base', 'numpy.lib.polynomial', 'numpy.lib.utils', 'numpy.lib.arraysetops', 'numpy.lib.npyio', 'numpy.lib.format', 'numpy.lib._datasource', 'numpy.lib._iotools', 'numpy.lib.financial', 'decimal', '_decimal', 'numpy.lib.arrayterator', 'numpy.lib.arraypad', 'numpy.lib._version', 'numpy.fft', 'numpy.fft._pocketfft', 'numpy.fft._pocketfft_internal', 'numpy.fft.helper', 'numpy.polynomial', 'numpy.polynomial.polynomial', 'numpy.polynomial.polyutils', 'numpy.polynomial._polybase', 'numpy.polynomial.chebyshev', 'numpy.polynomial.legendre', 'numpy.polynomial.hermite', 'numpy.polynomial.hermite_e', 'numpy.polynomial.laguerre', 'numpy.random', 'numpy.random._pickle', 'numpy.random.mtrand', 'numpy.random.bit_generator', '_cython_0_29_21', 'numpy.random._common', 'secrets', 'hmac', 'numpy.random._bounded_integers', 'numpy.random._mt19937', 'numpy.random._philox', 'numpy.random._pcg64', 'numpy.random._sfc64', 'numpy.random._generator', 'numpy.ctypeslib', 'numpy.ma', 'numpy.ma.core', 'numpy.ma.extras', 'PYME.contrib', 'PYME.contrib.dispatch', 'PYME.contrib.dispatch.dispatcher', 'wx.py', 'wx.py.buffer', 'wx.py.interpreter', 'code', 'codeop', 'wx.py.dispatcher', 'wx.py.introspect', 'imp', 'wx.py.document', 'wx.py.crust', 'wx.py.editwindow', 'wx.stc', 'wx._stc', 'wx.py.version', 'wx.py.filling', 'wx.py.images', 'wx.py.frame', 'wx.py.shell', 'wx.py.pseudo', 'wx.py.magic', 'wx.py.parse', 'wx.py.path', 'wx.py.crustslices', 'wx.py.editor', 'wx.py.sliceshell', 'PYME.DSView', 'PYME.DSView.dsviewer', 'matplotlib', 'distutils', 'distutils.version', 'matplotlib.cbook', 'gzip', 'shlex', 'matplotlib.cbook.deprecation', 'matplotlib.rcsetup', 'matplotlib.animation', 'uuid', 'matplotlib._animation_data', 'matplotlib.fontconfig_pattern', 'pyparsing', 'matplotlib.colors', 'matplotlib.docstring', 'matplotlib._color_data', 'cycler', 'six.moves', 'matplotlib._version', 'json', 'json.decoder', 'json.scanner', '_json', 'json.encoder', 'matplotlib.ft2font', 'dateutil', 'dateutil._version', 'kiwisolver']
+
+DEBUG:matplotlib:CACHEDIR=/home/tphan/.cache/matplotlib
+
+DEBUG:matplotlib.font_manager:Using fontManager instance from /home/tphan/.cache/matplotlib/fontlist-v330.json
+
+DEBUG:matplotlib.pyplot:Loaded backend WXAgg version unknown.
+
+INFO:numexpr.utils:Note: NumExpr detected 16 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 8.
+
+INFO:numexpr.utils:NumExpr defaulting to 8 threads.
+
+DEBUG:PYME.Acquire.SpoolController:Updating series counter
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_A (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_B (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_C (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.acquiremainframe:Init run, waiting on background threads
+
+DEBUG:PYME.Acquire.acquiremainframe:Backround initialization done
+
+DEBUG:PYME.Acquire.acquiremainframe:Starting post-init
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Simulation UI
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Camera controls
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Sample database
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Fake DMD
+
+ERROR:PYME.Acquire.acquiremainframe:Error whilst initializing Fake DMD GUI
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/Acquire/acquiremainframe.py", line 238, in doPostInit
+    cm.run(self, self.scope)
+  File "/home/tphan/thesis/python-microscopy/PYME/Acquire/ExecTools.py", line 205, in run
+    self.codeObj(parent, scope)
+  File "/home/tphan/thesis/python-microscopy/PYME/Acquire/Scripts/init.py", line 120, in fake_dmd
+    from PYMEnf.Hardware import FakeDMD, DMDGui
+ModuleNotFoundError: No module named 'PYMEnf'
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Laser controls
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Focus Keys
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Action manager
+
+DEBUG:PYME.Acquire.acquiremainframe:Loading GUI component for Tiling
+
+DEBUG:PYME.Acquire.acquiremainframe:Run all custom GUI init tasks
+
+DEBUG:PYME.Acquire.acquiremainframe:Finished post-init
+
+WARNING:PYME.Acquire.frameWrangler:Not keeping up with camera, giving up with 13 frames still in buffer
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_C (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_C (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+INFO:PYME.Acquire.microscope:Reading voxel size directly from simulated camera
+
+DEBUG:PYME.Acquire.HTTPSpooler:Starting spooling: tphan/2021_2_27/27_2_series_C.h5
+
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 15 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+ERROR:PYME.IO.clusterIO:Error writing to 127.0.0.1, trying another server for 14 remaining files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1172, in put_files
+    s.sendall(header)
+BrokenPipeError: [Errno 32] Broken pipe
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.Spooler:Disconnecting from frame source
+
+DEBUG:PYME.Acquire.Spooler:Frame source should be disconnected
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.HTTPSpooler:Stopping spooling tphan/2021_2_27/27_2_series_C.h5
+
+ERROR:root:Exception whilst putting files
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1037, in _read_status
+    [version, status, reason] = line.split(None, 2)
+ValueError: not enough values to unpack (expected 3, got 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/tphan/thesis/python-microscopy/PYME/Acquire/HTTPSpooler.py", line 196, in _queuePoll
+    clusterIO.put_files(files, serverfilter=self.clusterFilter)
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1194, in put_files
+    status, reason, msg = _parse_response(fp)
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1054, in _parse_response
+    version, status, reason = _read_status(fp)
+  File "/home/tphan/thesis/python-microscopy/PYME/IO/clusterIO.py", line 1039, in _read_status
+    [version, status] = line.split(None, 1)
+ValueError: not enough values to unpack (expected 2, got 0)
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+WARNING:PYME.Acquire.frameWrangler:Not keeping up with camera, giving up with 17 frames still in buffer
+
+DEBUG:PYME.Acquire.SpoolController:Looking for tphan/2021_2_27/27_2_series_D (.pcs or .h5) on cluster
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+INFO:PYME.Acquire.microscope:Reading voxel size directly from simulated camera
+
+DEBUG:PYME.Acquire.HTTPSpooler:Starting spooling: tphan/2021_2_27/27_2_series_D.pcs
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.Spooler:Disconnecting from frame source
+
+DEBUG:PYME.Acquire.Spooler:Frame source should be disconnected
+
+DEBUG:PYME.Acquire.microscope:restarting framewrangler
+
+DEBUG:PYME.Acquire.microscope:restarted framewrangler
+
+DEBUG:PYME.Acquire.HTTPSpooler:Stopping spooling tphan/2021_2_27/27_2_series_D.pcs
+
+WARNING:PYME.Acquire.frameWrangler:Not keeping up with camera, giving up with 16 frames still in buffer
+
