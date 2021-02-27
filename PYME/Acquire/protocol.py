@@ -195,10 +195,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
     
     def set_stack_positions(self, stack_mdh=None):
         stack_mdh = dict() if stack_mdh is None else stack_mdh
-        step_size = stack_mdh.get('StackSettings.StepSize', scope.stackSettings.GetStepSize())
-        self.zPoss = np.arange(stack_mdh.get('StackSettings.StartPos', scope.stackSettings.GetStartPos()),
-                               stack_mdh.get('StackSettings.EndPos', scope.stackSettings.GetEndPos()) + .95 * step_size,
-                               step_size * scope.stackSettings.GetDirection())
+        start = stack_mdh.get('StackSettings.StartPos', scope.stackSettings.GetStartPos())
+        stop = stack_mdh.get('StackSettings.EndPos', scope.stackSettings.GetEndPos())
+        direction = 1 if stop > start else -1
+        step = direction * stack_mdh.get('StackSettings.StepSize', scope.stackSettings.GetStepSize())
+        self.zPoss = np.arange(start, stop + .95 * step, step)
 
         if self.slice_order != 'saw':
             if self.slice_order == 'random':
