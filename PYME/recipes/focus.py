@@ -80,25 +80,38 @@ class EstimateStackSettings(ModuleBase):
     """
     input_stack = Input('input')
     z_bottom = Float(49.0)
-    max_top = Float(60)
+    z_max = Float(58)
     output = Output('with_stack_settings')
     
     def execute(self, namespace):
         from scipy.ndimage import laplace
         from PYME.Analysis.piezo_movement_correction import correct_target_positions
+        from PYME.recipes.processing import Threshold
 
         im = namespace[self.input_stack]
 
         z = correct_target_positions(np.arange(im.data.shape[2]), im.events, im.mdh)
+        if 'Multiview.ActiveViews' in im.mdh:
+            # dodge striping in the middle
+            from PYME.recipes.multiview import ExtractMultiviewChannel
+            lps = []
+            for view in im.mdh['Multiview.ActiveViews']:
+                chan = ExtractMultiviewChannel(view_number=view).apply_simple(im)
+                lps.append(np.stack([laplace(chan.data[:,:,ind,0].squeeze()) for ind in range(chan.data.shape[2])], axis=2))
+            lp = np.concatenate(lps, axis=0)
+        else:
+            lp = np.stack([laplace(im.data[:,:,ind,0].squeeze()) for ind in range(im.data.shape[2])], axis=2)
 
-        lp = np.stack([laplace(im.data[:,:,ind,0].squeeze()) for ind in range(im.data.shape[2])], axis=2)
-        lpstd = np.std(lp, axis=(0, 1))
+        
+        otsu = Threshold(method='otsu').apply_simple(im)
+        masked = otsu.data[:,:,:,0] * lp
+        metric = np.sum(masked ** 2, axis=(0, 1))
 
         step_size = im.mdh['StackSettings.StepSize']
-        next_stack = np.argmin(np.abs(z - z[z < z.min() + 0.5 * step_size])) + 1
+        next_stack = np.argmin(np.abs(z - z[z < z.min() + 0.5 * step_size][0])) + 1
 
         fitter = GaussFitter1D()
-        res, success = fitter.fit(z[:next_stack], lpstd[:next_stack])
+        res, success = fitter.fit(z[:next_stack], metric[:next_stack])
         if not success:
             raise RuntimeError('Fit did not converge')
 
@@ -108,13 +121,16 @@ class EstimateStackSettings(ModuleBase):
         fitted = fitter._model_function(res, zz)
         # plt.plot(zz, fitted)
 
-        target_lpstd = fitter._model_function(res, np.asarray(self.z_bottom))
-        top = zz[fitted > target_lpstd][-1]
+        target_lap = fitter._model_function(res, self.z_bottom)
+        top = zz[fitted > target_lap][-1]
 
         mdh = MetaDataHandler.DictMDHandler({
             'StackSettings.StartPos': self.z_bottom,
             'StackSettings.EndPos': top
         })
+        for k in im.mdh.keys():
+            if k.startswith('Sample'):
+                mdh[k] = im.mdh[k]
 
         vx, vy, _ = im.mdh.voxelsize_nm
         
