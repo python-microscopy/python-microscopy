@@ -80,6 +80,7 @@ class EstimateStackSettings(ModuleBase):
     """
     input_stack = Input('input')
     z_bottom = Float(49.0)
+    step_size = Float(0)
     z_max = Float(58)
     output = Output('with_stack_settings')
     
@@ -128,6 +129,9 @@ class EstimateStackSettings(ModuleBase):
             'StackSettings.StartPos': self.z_bottom,
             'StackSettings.EndPos': top
         })
+        logger.debug('StartPos %.3f, EndPos %.3f' % (self.z_bottom, top))
+        if self.step_size != 0:
+            mdh['StackSettings.StepSize'] = self.step_size
         for k in im.mdh.keys():
             if k.startswith('Sample'):
                 mdh[k] = im.mdh[k]
