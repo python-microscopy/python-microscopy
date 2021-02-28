@@ -80,6 +80,7 @@ class EstimateStackSettings(ModuleBase):
     """
     input_stack = Input('input')
     z_bottom = Float(49.0)
+    min_range = Float(3)
     step_size = Float(0)
     z_max = Float(58)
     output = Output('with_stack_settings')
@@ -124,6 +125,9 @@ class EstimateStackSettings(ModuleBase):
 
         target_lap = fitter._model_function(res, self.z_bottom)
         top = zz[fitted > target_lap][-1]
+        if top - self.z_bottom < self.min_range:
+            logger.error('found focus smaller than minimum range, increasing')
+            top = self.z_bottom + self.min_range
 
         mdh = MetaDataHandler.DictMDHandler({
             'StackSettings.StartPos': self.z_bottom,
