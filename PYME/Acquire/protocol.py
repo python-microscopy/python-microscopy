@@ -186,6 +186,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.startFrame = startFrame
         self.dwellTime = dwellTime
         self.randomise = randomise
+        self.jitter = False
         if self.randomise:
             logger.warning("Use slice_order='random' instead of randomise=True")
             self.slice_order = 'random'
@@ -212,10 +213,6 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 else:
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
-            elif self.slice_order == 'triangle_wrap':
-                zrange = stop - start
-                
-                self.zPoss = start + np.arange(zrange * len(self.zPoss) * 10, step) % zrange
         
         self.piezoName = 'Positioning.%s' % stack_mdh.get('StackSettings.ScanPiezo', scope.stackSettings.GetScanChannel())
 
@@ -234,13 +231,17 @@ class ZStackTaskListProtocol(TaskListProtocol):
         TaskListProtocol.Init(self,spooler)
 
     def OnFrame(self, frameNum):
+        curr_cycle, self.jitter_val = 0, 0
         if frameNum > self.startFrame:
             fn = int(floor((frameNum - self.startFrame)/self.dwellTime) % len(self.zPoss))
+            cycle = int(floor((frameNum - self.startFrame)/self.dwellTime) // len(self.zPoss))
+            if cycle != curr_cycle and self.jitter:
+                self.jitter_val = (np.random.rand(1) - 0.5) * (self.zPoss[1] - self.zPoss[0])
             if not fn == self.pos:
                 self.pos = fn
                 #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
                 scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
-                eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
+                eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos] + self.jitter_val))
                 
         TaskListProtocol.OnFrame(self, frameNum)
         
