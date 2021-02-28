@@ -246,6 +246,12 @@ class QueueZAcquisition(OutputModule):
                 stack_settings[k] = pos.mdh[k]
         logger.debug('stack settings: %s' % str(stack_settings))
         spool_settings['stack'] = stack_settings
+
+        if 'Sample.Well' in pos.mdh.keys():
+            if 'extra_metadata' not in spool_settings.keys():
+                spool_settings['extra_metadata'] = {}
+            spool_settings['extra_metadata']['Sample.Well'] = pos.mdh['Sample.Well']
+            spool_settings['subdirectory'] = pos.mdh['Sample.Well']
         
         try:  # get positions in units of micrometers
             positions = np.stack((pos['x_um'], 
@@ -273,17 +279,3 @@ class QueueZAcquisition(OutputModule):
                                                                         self.max_duration),
                         data=json.dumps(actions),
                         headers={'Content-Type': 'application/json'})
-        
-        # queue a high-nice call to shut off all lasers when we're done
-        # FIXME - there has to be a better way of handling this!
-        # a) protocols should turn lasers off anyway
-        # b) maybe have a a specific 'safe state' fallback in the action manager for when the queue is empty?
-        # session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
-        #                                                                 20,
-        #                                                                 self.max_duration),
-        #                 data=json.dumps([{
-        #                     'FunctionAction': {
-        #                         'functionName': 'turnAllLasersOff', 'args': {}
-        #                         }
-        #                     }]),
-        #                 headers={'Content-Type': 'application/json'})
