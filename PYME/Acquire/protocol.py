@@ -37,6 +37,7 @@ class Protocol:
         # The filename parameter exists to allow setting the filename in protocols which are not instantiated through the spool controller, and
         # requires passing __name__ to the constructor in the protocol itself. Both solutions are a bit gross, and may be revisited in the future.
         self.filename = filename
+        self.dwellTime = None
 
     def Init(self, spooler):
         pass
@@ -211,6 +212,10 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 else:
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
+            elif self.slice_order == 'triangle_wrap':
+                zrange = stop - start
+                
+                self.zPoss = start + np.arange(zrange * len(self.zPoss) * 10, step) % zrange
         
         self.piezoName = 'Positioning.%s' % stack_mdh.get('StackSettings.ScanPiezo', scope.stackSettings.GetScanChannel())
 
