@@ -237,6 +237,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
             cycle = int(floor((frameNum - self.startFrame)/self.dwellTime) // len(self.zPoss))
             if cycle != curr_cycle and self.jitter:
                 self.jitter_val = (np.random.rand(1) - 0.5) * (self.zPoss[1] - self.zPoss[0])
+            curr_cycle = cycle
             if not fn == self.pos:
                 self.pos = fn
                 #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
