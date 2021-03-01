@@ -48,20 +48,34 @@ class TracebackDialog(wx.Dialog):
         #print(exc_tb)
         tb = ''.join(traceback.format_exception(exc_type, exc_val, exc_tb))
         #print(tb, type(tb))
-        err_text=wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb),
+        self.err_text=wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb),
                                size=(500,300), style=wx.TE_MULTILINE|wx.TE_READONLY)
-        vsizer.Add(err_text, 0, wx.ALL, 15)
-        vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'), 0, wx.ALL, 5)
-        
+        vsizer.Add(self.err_text, 0, wx.ALL|wx.EXPAND, 15)
+        vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'),0, wx.ALL, 5)
+
         btnsizer = wx.StdDialogButtonSizer()
+        
+        copy_btn = wx.Button(self, label="Copy")
+        copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)
+        btnsizer.Add(copy_btn, 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
+        
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
         
         btnsizer.Realize()
-        
+                
         vsizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
+    
+    def on_copy(self, event):
+        self.data = wx.TextDataObject()
+        self.data.SetText(self.err_text.GetValue())
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(self.data)
+            wx.TheClipboard.Close()
+        else:
+            wx.MessageBox("Unable to open the clipboard","Error")
         
 def show_traceback_dialog(parent, description, exc_type, exc_val, exc_tb):
     dlg = TracebackDialog(parent, description, exc_type, exc_val, exc_tb)
