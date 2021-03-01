@@ -171,10 +171,9 @@ class Spooler:
         self.spoolOn = False
         if not self.guiUpdateCallback is None:
             self.guiUpdateCallback()
-            
-        self.onSpoolStop.send(self)
         
-        self.finalise() #TODO - should this be before we send the onStopSpool signal?
+        self.finalise()
+        self.onSpoolStop.send(self)
         self.spool_complete = True
         
     def finalise(self):
