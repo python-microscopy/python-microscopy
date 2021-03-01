@@ -50,18 +50,20 @@ class TracebackDialog(wx.Dialog):
         #print(tb, type(tb))
         self.err_text=wx.TextCtrl(self, value=error_msg.format(description=description, pkgversions=get_package_versions(), traceback=tb),
                                size=(500,300), style=wx.TE_MULTILINE|wx.TE_READONLY)
-        vsizer.Add(self.err_text, 0, wx.ALL | wx.EXPAND, 15)
+        vsizer.Add(self.err_text, 0, wx.ALL|wx.EXPAND, 15)
+        vsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'),0, wx.ALL, 5)
+
+        btnsizer = wx.StdDialogButtonSizer()
         
-        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         copy_btn = wx.Button(self, label="Copy")
         copy_btn.Bind(wx.EVT_BUTTON, self.on_copy)
+        btnsizer.Add(copy_btn, 0, wx.LEFT|wx.ALIGN_CENTER_VERTICAL,5)
+        
         btn = wx.Button(self, wx.ID_OK)
         btn.SetDefault()
-
-        btnsizer.Add(wx.StaticText(self, label='Copy and paste the above message into an email or issue when\n reporting a bug'), 0, wx.ALL, 5)
-
-        btnsizer.Add(copy_btn, 0, wx.ALL, 5)
-        btnsizer.Add(btn, 0, wx.ALL, 5)
+        btnsizer.AddButton(btn)
+        
+        btnsizer.Realize()
                 
         vsizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
