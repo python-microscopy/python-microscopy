@@ -351,7 +351,7 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         z = np.arange(np.floor(b.z0), b.z0 + nz * self.voxelsize_nm[2], self.voxelsize_nm[2])
         logger.debug('mask size %s' % ((len(x), len(y), len(z)),))
 
-        xx, yy, zz = np.meshgrid(x, y, z, indexing='xy')
+        xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
 
         inside = shell.check_inside(xx.ravel(), yy.ravel(), zz.ravel())
         inside = np.reshape(inside, xx.shape)
