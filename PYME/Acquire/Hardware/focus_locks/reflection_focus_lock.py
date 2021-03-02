@@ -147,6 +147,7 @@ class ReflectedLinePIDFocusLock(PID):
         self.scope = scope
         self.piezo = piezo
         self._piezo_control_lock = threading.Lock()
+        self._piezo_home = 0.5 * (self.piezo.GetMax() - self.piezo.GetMin())
 
         self._lock_ok = False
         self._ok_tolerance = 5
@@ -216,6 +217,11 @@ class ReflectedLinePIDFocusLock(PID):
             retry += 1
         logger.debug('Enabling focus lock')
         self.set_auto_mode(True)
+    
+    @webframework.register_endpoint('/EnableLockAndHome', output_is_json=False)
+    def EnableLockAndHome(self):
+        self.EnableLock()
+        self.piezo.MoveTo(0, self._piezo_home)
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
@@ -248,6 +254,10 @@ class ReflectedLinePIDFocusLock(PID):
             self.setpoint = self.peak_position
         else:
             self.setpoint = float(setpoint)
+    
+    @webframework.register_endpoint('/UpdateHome', output_is_json=False)
+    def UpdateHome(self, home):
+        self._piezo_home = float(home)
 
     @webframework.register_endpoint('/SetSubtractionProfile', output_is_json=False)
     def SetSubtractionProfile(self):
@@ -341,7 +351,7 @@ class ReflectedLinePIDFocusLock(PID):
         step_size = float(step_size)
         start_at = float(start_at)
         pause = float(pause)
-        logger.debug('reacquiring lock')
+        logger.info('reacquiring lock')
         self.DisableLock()
 
         # get our range
@@ -370,7 +380,7 @@ class ReflectedLinePIDFocusLock(PID):
 
                 time.sleep(pause)
                 if self.lockable(self._ok_tolerance):
-                    logger.debug('found focus, offset %.1f' % pos)
+                    logger.info('found focus, offset %.1f' % pos)
                     self.EnableLock()
                     return
         
@@ -501,6 +511,10 @@ class RLPIDFocusLockClient(object):
     def EnableLock(self):
         return self._session.get(self.base_url + '/EnableLock')
     
+    def EnableLockAndHome(self):
+        self.EnableLock()
+        return self._session.get(self.base_url + '/EnableLockAndHome')
+    
     def _ensure_lock_disabled(self, retries=3):
         """helper function to pause until lock is disabled
 
@@ -530,6 +544,9 @@ class RLPIDFocusLockClient(object):
         if setpoint is None:
             setpoint = self.GetPeakPosition()
         return self._session.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+    
+    def UpdateHome(self, home):
+        return self._session.get(self.base_url + '/UpdateHome?home=%3.3f' % (home,))
 
     def ToggleLock(self):
         if self.lock_enabled:

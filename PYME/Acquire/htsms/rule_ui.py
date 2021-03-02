@@ -589,9 +589,9 @@ from PYME.recipes.recipeGui import RecipeView, RecipeManager, RecipePlotPanel
 class RuleRecipeView(RecipeView):
     def __init__(self, parent, recipes):
         wx.Panel.__init__(self, parent, size=(400, 100))
-        
         self.recipes = recipes
         recipes.recipeView = self  # weird plug
+        self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -634,15 +634,18 @@ class RuleRecipeView(RecipeView):
         
         #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
         #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        
-        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(400, -1))
         self._set_text_styling()
         
+                                       
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
         vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        self.bApply.Disable()
+        self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
         
         hsizer1.Add(vsizer, 0, wx.EXPAND | wx.ALL, 2)
         
