@@ -311,9 +311,6 @@ class Rule(object):
 
     def _poll_loop(self):
         logging.debug('task pusher poll loop started')
-        # wait until clusterIO caches clear to avoid replicating the results file.
-        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
-        time.sleep(1.5)
     
         while (self.doPoll == True):
             try:
@@ -323,11 +320,17 @@ class Rule(object):
                 pass
         
             if self.data_complete and not hasattr(self, '_data_comp_callback_res'):
-                logging.debug('input data complete, calling on_data_complete')
+                logger.debug('input data complete, calling on_data_complete')
                 self._data_comp_callback_res=self.on_data_complete()
             
             if self.complete:
-                logging.debug('input data complete and all tasks pushed, marking rule as complete')
+                logger.debug('input data complete')
+                try:  # check/relase one more time to avoid race condition
+                    rel_start, rel_end = self.get_new_tasks()
+                    self._release_tasks(rel_start, rel_end)
+                except NoNewTasks:
+                    pass
+                logger.debug('all tasks pushed, marking rule as complete')
                 self._mark_complete()
                 logging.debug('ending polling loop.')
                 self.doPoll = False
@@ -629,8 +632,6 @@ class SpoolLocalLocalizationRule(LocalisationRule):
 
         self.spooler = spooler
     
-        unifiedIO.assert_uri_ok(seriesName)
-    
         if resultsFilename is None:
             resultsFilename = genClusterResultFileName(seriesName)
         
@@ -666,11 +667,16 @@ class SpoolLocalLocalizationRule(LocalisationRule):
 
     @property
     def total_frames(self):
-        return self.spooler.imNum
+        return self.spooler.get_n_frames()
 
     @property
     def data_complete(self):
-        return self.spooler.spool_complete
+        try:
+            return self.spooler.finished()
+        except RuntimeError as e:
+            logger.error(str(e))
+            logger.info('marking data as complete')
+            return True
     
     def on_data_complete(self):
         logger.debug('Data complete, copying events to output file')

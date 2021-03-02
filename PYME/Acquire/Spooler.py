@@ -293,7 +293,9 @@ class Spooler:
     def finished(self):
         """ over-ride in derived classes to indicate when buffers flushed"""
         return True
-        
+    
+    def get_n_frames(self):
+        return self.imNum
         
     def __del__(self):
         if self.spoolOn:

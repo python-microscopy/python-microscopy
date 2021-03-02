@@ -113,8 +113,8 @@ class ProtocolRules(OrderedDict):
         if not self.active:
             logger.info('inactive, check "active" to turn on auto analysis')
             return
-        
-        prot_filename = self._spool_controller.spooler.protocol.filename
+        spooler = self._spool_controller.spooler
+        prot_filename = spooler.protocol.filename
         prot_filename = '' if prot_filename is None else prot_filename
         protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
         logger.info('protocol name : %s' % protocol_name)
@@ -133,12 +133,16 @@ class ProtocolRules(OrderedDict):
             return
         
         # set the context based on the input series
-        series_uri = self._spool_controller.spooler.getURL()
+        series_uri = spooler.getURL()
         spool_dir, series_stub = posixpath.split(series_uri)
         series_stub = posixpath.splitext(series_stub)[0]
-        context = {'spool_dir': spool_dir, 'series_stub': series_stub,
-                   'seriesName': series_uri, 'inputs': {'input': [series_uri]},
-                   'output_dir': posixpath.join(spool_dir, 'analysis')}
+        context = {
+            'spool_dir': spool_dir,  # do we need this? or typo in rule docs
+            'series_stub': series_stub,  # do we need this? or typo in rule docs
+            'seriesName': series_uri,  # Localization
+            'inputs': {'input': [series_uri]},  # Recipe
+            'output_dir': posixpath.join(spool_dir, 'analysis'), # Recipe
+            'spooler': spooler}  # SpoolLocalLocalization
 
         # rule chain is already linked, add context and push
         rule_factory_chain.rule_factories[0].get_rule(context=context).push()
@@ -589,9 +593,9 @@ from PYME.recipes.recipeGui import RecipeView, RecipeManager, RecipePlotPanel
 class RuleRecipeView(RecipeView):
     def __init__(self, parent, recipes):
         wx.Panel.__init__(self, parent, size=(400, 100))
-        
         self.recipes = recipes
         recipes.recipeView = self  # weird plug
+        self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -634,15 +638,18 @@ class RuleRecipeView(RecipeView):
         
         #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
         #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        
-        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(400, -1))
         self._set_text_styling()
         
+                                       
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
         vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        self.bApply.Disable()
+        self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
         
         hsizer1.Add(vsizer, 0, wx.EXPAND | wx.ALL, 2)
         
@@ -813,8 +820,7 @@ class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
         self.AddNewElement(add_rule_panel)
     
     def OnAddLocalizationRule(self, wx_event=None):
-        from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
-        #from PYME.Acquire.htsms.rule_ui import get_rule_tile
+        from PYME.cluster.rules import SpoolLocalLocalizationRule as LocalizationRuleFactory
         from PYME.IO.MetaDataHandler import DictMDHandler
         if self.chained_analysis_page is None:
             logger.error('chained_analysis_page attribute unset')
