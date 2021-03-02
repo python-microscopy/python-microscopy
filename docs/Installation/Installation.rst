@@ -163,6 +163,8 @@ msvc for python.
 Removing a PYME install
 =======================
 
+To upgrade PYME instead of starting fresh, enter ``conda update python-microscopy`` in the Anaconda prompt. Otherwise, read on.
+
 To remove an executable installer on Windows, go to **Start Menu > Settings > Apps**, find `python-microscopy` under
 **Apps & Features**, select it and press *Uninstall*. 
 
