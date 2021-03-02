@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from PYME.misc import big_sur_fix
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
