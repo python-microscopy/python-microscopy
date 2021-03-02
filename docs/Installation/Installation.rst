@@ -3,7 +3,9 @@
 Installation
 ************
 
-The best to install PYME will depend on your background and whether you are already using python on your computer.
+The best PYME installation method will depend on your background and whether you are already using python on your computer.
+
+If you have an existing PYME installation, we recommend :ref:`removing it<Removing a PYME install>` before installing a new one.
 
 Executable installers (Windows and OSX)
 =======================================
@@ -158,4 +160,14 @@ msvc for python.
 
 .. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
 
+Removing a PYME install
+=======================
 
+To remove an executable installer on Windows, go to **Start Menu > Settings > Apps**, find `python-microscopy` under
+**Apps & Features**, select it and press *Uninstall*. 
+
+For executable installers on Mac, and conda installations on Windows, Mac and Linux, removing the conda envrionment 
+(i.e. ``conda remove --name pyme --all``, see the `conda documentation <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#removing-an-environment>`__
+for additional help) is the preferred method to delete PYME. On Mac and Linux, to ensure old channels and terminal 
+environment paths do not influence new installs, we recommend removing `.condarc` and `.bash_profile` from the 
+user folder.
