@@ -1,6 +1,6 @@
 
 from .base import ModuleBase, register_module, OutputModule
-from .traits import Input, Output, CStr, Int
+from .traits import Input, Output, CStr, Int, Bool
 from PYME.IO import tabular
 import logging
 
@@ -107,22 +107,30 @@ class Supertile(ModuleBase):
     level = Int(0)
     stride = Int(3)
     overlap = Int(1)
+    distributed = Bool(False)
     output_name = Output('supertile')
 
     def execute(self, namespace):
         from PYME.IO.DataSources.SupertileDatasource import SupertileDataSource
         from PYME.IO.image import ImageStack
-        from PYME.Analysis import tile_pyramid
+        from PYME.Analysis import tile_pyramid, distributed_pyramid
         from tempfile import TemporaryDirectory
         
         stack = namespace[self.input_name]
             
         x, y = tile_pyramid.get_position_from_events(stack.events, stack.mdh)
-        
-        p = tile_pyramid.tile_pyramid(TemporaryDirectory(), stack.data, x, y, 
-                                      stack.mdh, 
-                                      pyramid_tile_size=self.base_tile_size)
-            
+
+        if self.distributed:
+            p = distributed_pyramid.distributed_pyramid(
+                TemporaryDirectory(), stack.data, x, y, stack.mdh, 
+                pyramid_tile_size=self.base_tile_size,
+            )
+        else:
+            p = tile_pyramid.tile_pyramid(
+                TemporaryDirectory(), stack.data, x, y, stack.mdh, 
+                pyramid_tile_size=self.base_tile_size,
+            )
+
         datasource = SupertileDataSource(p, self.level, self.stride, self.overlap)
         
         namespace[self.output_name] = ImageStack(data=datasource, 

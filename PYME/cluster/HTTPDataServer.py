@@ -215,6 +215,10 @@ _dirCacheTimeout = 1
 
 from PYME.IO import clusterListing as cl
 
+
+part_pyramids = {}
+
+
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
@@ -346,6 +350,60 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return
     
+    def _do_part_pyramid(self):
+        if self.path.lstrip('/').startswith('__part_pyramid_create'):
+            self._create_part_pyramid()
+        elif self.path.lstrip('/').startswith('__part_pyramid_update'):
+            self._update_base_tile()
+        elif self.path.lstrip('/').startswith('__part_pyramid_finish'):
+            self._finish_base_tiles()
+        elif self.path.lstrip('/').startswith('__part_pyramid_read'):
+            self._read_part_pyramid()
+
+    def _create_part_pyramid(self):
+        from PYME.Analysis.distributed_pyramid import PartialPyramid
+        filepath = self.path.lstrip('/')[len('__part_pyramid_create'):]
+        data = self._get_data()
+        part_pyramids[filepath] = PartialPyramid.build(filepath, data)
+        print("Created PartialPyramid for {}".format(filepath))
+        part_pyramids[filepath].update_thread.start()
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return
+
+    def _update_base_tile(self):
+        filepath = self.path.lstrip('/')[len('__part_pyramid_update'):]
+        data = self._get_data()
+        assert filepath in part_pyramids, "PartialPyramid for {} not initialized yet".format(filepath)
+        part_pyramids[filepath].update_queue.put(data)
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return
+
+    def _finish_base_tiles(self):
+        filepath = self.path.lstrip('/')[len('__part_pyramid_finish'):]
+        data = self._get_data()
+        part_pyramids[filepath].all_tiles_received = True
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return
+
+    def _read_part_pyramid(self):
+        filepath = self.path.lstrip('/')[len('__part_pyramid_read'):]
+        data = self._get_data()
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return
+
+
     def _aggregate_h5(self):
         """
         Support for results aggregation into an HDF5 file, using pytables.
@@ -420,6 +478,12 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
             #of a new file.
             self._doAggregate()
+            return
+
+        if self.path.lstrip('/').startswith('__part_pyramid'):
+            #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
+            #of a new file.
+            self._do_part_pyramid()
             return
 
 
