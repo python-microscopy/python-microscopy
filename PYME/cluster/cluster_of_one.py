@@ -60,7 +60,7 @@ class ClusterOfOne(object):
         try:
             import django
         except ImportError:
-            logger.error('django is not installed, to use clusterUI install django (1.11.x, 2.0.x, 2.1.x)')
+            logger.error('django is not installed, to use clusterUI install django (2.0.x, 2.1.x)')
             
         if not self._cluster_ui is None:
             self._kill_procs([self._cluster_ui, ])
