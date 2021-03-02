@@ -27,8 +27,10 @@ def runRec(args):
         runRecipe.runRecipe(*args)
         
         plt.switch_backend(old_backend)
-    except:
+        return True
+    except Exception as e:
         traceback.print_exc()
+        raise
     
 def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=None, success_callback=None, error_callback=None):
     """Run a given recipe over using multiple proceses.
@@ -63,7 +65,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
 
         cntxt = {'output_dir' : output_dir, 'file_stub': file_stub}
 
-        taskParams.append((recipe, in_d, out_d, cntxt))
+        taskParams.append((recipe.toYAML(), in_d, out_d, cntxt))
 
     if num_procs == 1:
         # map(runRec, taskParams)  # map now returns iterator, which means this never runs unless we convert to list
@@ -84,7 +86,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
     else:
         pool = multiprocessing.Pool(num_procs)
     
-        r = pool.map_async(runRec, taskParams)
+        r = pool.map_async(runRec, taskParams, error_callback = lambda e: traceback.print_exception(e, value=e, tb=e.__traceback__))
         
         r.wait()
         pool.close()
