@@ -625,6 +625,7 @@ class LocalisationRule(Rule):
 
 class SpoolLocalLocalizationRule(LocalisationRule):
     def __init__(self, spooler, seriesName, analysisMetadata, resultsFilename=None, startAt=0, serverfilter=clusterIO.local_serverfilter, **kwargs):
+        # TODO - reduce duplication of `LocalisationRule.__init__()` and `LocalisationRule._setup()`
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
