@@ -163,13 +163,12 @@ msvc for python.
 Removing a PYME install
 =======================
 
-To upgrade PYME instead of starting fresh, enter ``conda update python-microscopy`` in the Anaconda prompt. Otherwise, read on.
-
-To remove an executable installer on Windows, go to **Start Menu > Settings > Apps**, find `python-microscopy` under
+To remove an executable installer on Windows 10, go to **Start Menu > Settings > Apps**, find `python-microscopy` under
 **Apps & Features**, select it and press *Uninstall*. 
 
-For executable installers on Mac, and conda installations on Windows, Mac and Linux, removing the conda envrionment 
+To remove an executable installer on Mac, delete the `python-microscopy` folder, either in Finder or via the Terminal.
+
+For conda installations on Windows, Mac and Linux, removing the conda envrionment 
 (i.e. ``conda remove --name pyme --all``, see the `conda documentation <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#removing-an-environment>`__
-for additional help) is the preferred method to delete PYME. On Mac and Linux, to ensure old channels and terminal 
-environment paths do not influence new installs, we recommend removing `.condarc` and `.bash_profile` from the 
-user folder.
+for additional help) is the preferred method to delete PYME. If you want to completely remove
+any trace, you may also need to modify or remove `.condarc` and `.bash_profile`.
