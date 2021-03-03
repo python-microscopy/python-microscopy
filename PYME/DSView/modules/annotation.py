@@ -36,7 +36,7 @@ class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):#, listmix.TextEdi
     def OnLabelActivate(self, event):
         newLabel = wx.GetTextFromUser("Enter new category name", "Rename")
         if not newLabel == '':
-            self.SetStringItem(event.m_itemIndex, 1, newLabel)
+            self.SetStringItem(event.GetIndex(), 1, newLabel)
 
 
 class LabelPanel(wx.Panel):
@@ -96,7 +96,7 @@ class LabelPanel(wx.Panel):
         self.SetSizer(vsizer)
     
     def OnChangeStructure(self, event):
-        self.labeler.cur_label_index = event.m_itemIndex
+        self.labeler.cur_label_index = event.GetIndex()
     
     def OnChangeLineWidth(self, event):
         self.labeler.line_width = float(self.tLineWidth.GetValue())
