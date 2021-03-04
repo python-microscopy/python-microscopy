@@ -592,7 +592,7 @@ class LocalisationRule(Rule):
         -------
 
         """
-        return self.data_complete and not (self.frames_outstanding  > 0)
+        return self.data_complete and self.total_frames == self._next_release_start
     
     def on_data_complete(self):
         logger.debug('Data complete, copying events to output file')
@@ -765,7 +765,7 @@ class LocalisationRuleFactory(RuleFactory):
         """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
 
-class SpoolLocalLocalizationRule(RuleFactory):
+class SpoolLocalLocalizationRuleFactory(RuleFactory):
     _type = 'localization'
     def __init__(self, **kwargs):
         """
