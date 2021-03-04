@@ -259,6 +259,9 @@ def _listSingleDir(dirurl, nRetries=1, timeout=10):
         
         if dt > 1:
             logger.warning('_listSingleDir(%s) took longer than 1s (%3.2fs)'% (url, dt))
+            DIR_CACHE_TIME = min(DIR_CACHE_TIME + 1, 10)
+        else:
+            DIR_CACHE_TIME = 1
         
         if not r.status_code in [200, 404]: # if a directory is only on one node, we'll get 404s from all of the others. This is expected and not worth logging
             logger.debug('Request for %s failed with error: %d' % (url, r.status_code))
