@@ -221,6 +221,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     timeoutTesting = 0
     logrequests = False
     timeout=None
+    
+    def __init__(self, *args, **kwargs):
+        self._path_cache = _LimitedSizeDict(size_limit=1000)
+        http.server.SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
 
     def _aggregate_txt(self):
@@ -277,6 +281,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             data = self._gzip_decompress(data)
             
         return data
+    
+    def translate_path(self, path):
+        try:
+            return self._path_cache[path]
+        except KeyError:
+            self._path_cache[path] = http.server.SimpleHTTPRequestHandler.translate_path(self, path)
+            return self._path_cache[path]
 
     def _aggregate_h5r(self):
         """
