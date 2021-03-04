@@ -208,6 +208,7 @@ class _LimitedSizeDict(OrderedDict):
 
 _locateCache = _LimitedSizeDict(size_limit=500)
 _dirCache = _LimitedSizeDict(size_limit=100)
+global DIR_CACHE_TIME 
 DIR_CACHE_TIME = 1
 _fileCache = _LimitedSizeDict(size_limit=100)
 
@@ -228,6 +229,7 @@ def _getSession(url):
 
 
 def _listSingleDir(dirurl, nRetries=1, timeout=10):
+    global DIR_CACHE_TIME
     t = time.time()
 
     try:
