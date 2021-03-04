@@ -496,7 +496,18 @@ class LocalisationRule(Rule):
         MetaData.fixEMGain(resultsMdh)
         
         
-        self._setup(seriesName, resultsMdh, resultsFilename, startAt, dataSourceModule, serverfilter)
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
+
+        #load data source
+        if dataSourceModule is None:
+            DataSource = DataSources.getDataSourceForFilename(seriesName)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
+                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+    
+        self.ds = DataSource(seriesName)
+    
+        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
         
         Rule.__init__(self, **kwargs)
         
@@ -507,7 +518,6 @@ class LocalisationRule(Rule):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
-    
         
         #where the results are when we want to read them
         self.resultsURI = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsFilename)
@@ -522,17 +532,6 @@ class LocalisationRule(Rule):
         self.mdh = metadata
         self.start_at = startAt
         self.serverfilter = serverfilter
-    
-        #load data source
-        if dataSourceModule is None:
-            DataSource = DataSources.getDataSourceForFilename(dataSourceID)
-        else:
-            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
-                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
-    
-        self.ds = DataSource(self.dataSourceID)
-    
-        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
     
     def _task_template(self, context):
         tt = {'id': '{{ruleID}}~{{taskID}}',
@@ -592,7 +591,7 @@ class LocalisationRule(Rule):
         -------
 
         """
-        return self.data_complete and not (self.frames_outstanding  > 0)
+        return self.data_complete and self.total_frames == self._next_release_start
     
     def on_data_complete(self):
         logger.debug('Data complete, copying events to output file')
@@ -647,25 +646,10 @@ class SpoolLocalLocalizationRule(LocalisationRule):
                                                                         resultsMdh.getOrDefault('Analysis.StartAt', 0))
         MetaData.fixEMGain(resultsMdh)
         
-        self._setup(resultsMdh, resultsFilename, startAt, serverfilter)
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
         
         Rule.__init__(self, **kwargs)
-
-    def _setup(self, metadata, resultsFilename, startAt=0, serverfilter=clusterIO.local_serverfilter):
-        #where the results are when we want to read them
-        self.resultsURI = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsFilename)
-        
-        # it's faster (and safer for race condition avoidance) to pick a server in advance and give workers the direct
-        # HTTP endpoint to write to. This should also be an aggregate endpoint, as multiple writes are needed.
-        self.worker_resultsURI = clusterResults.pickResultsServer('__aggregate_h5r/%s' % resultsFilename, serverfilter)
     
-        self.resultsMDFilename = resultsFilename + '.json'
-        self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, self.resultsMDFilename)
-    
-        self.mdh = metadata
-        self.start_at = startAt
-        self.serverfilter = serverfilter
-
     @property
     def total_frames(self):
         return self.spooler.get_n_frames()
@@ -765,7 +749,7 @@ class LocalisationRuleFactory(RuleFactory):
         """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
 
-class SpoolLocalLocalizationRule(RuleFactory):
+class SpoolLocalLocalizationRuleFactory(RuleFactory):
     _type = 'localization'
     def __init__(self, **kwargs):
         """
