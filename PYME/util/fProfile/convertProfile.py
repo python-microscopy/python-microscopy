@@ -53,14 +53,14 @@ def build_call_tree_threads(df):
             #print l
             elif l.event == 'call':
                 level += 1
-                stack.append((l.time, l.file, l.function))
+                stack.append((float(l.time), l.file, l.function))
             elif l.event == 'return':
                 try:
                     c = stack.pop()
                     out.append({'ts': c[0],
                                 'f': l.file,
                                 'n': l.function,
-                                'tf': l.time,
+                                'tf': float(l.time),
                                 'l': level,
                                 'td': threadIDX,
                                 'tl' : float(thread_levels[threadIDX]),
@@ -72,7 +72,7 @@ def build_call_tree_threads(df):
     threadLines = [{'ts' : float(tst_i), 'tf' : float(tet_i), 'tl' : float(tl_i)} for tst_i, tet_i, tl_i in zip(tst, tet, thread_levels)]
 
 
-    return {'callstack': out, 'threadNames': threadNames, 'threadLines' : threadLines, 'maxConcurrentThreads' : thread_levels.max() + 1}
+    return {'callstack': out, 'threadNames': threadNames, 'threadLines' : threadLines, 'maxConcurrentThreads' : int(thread_levels.max() + 1)}
 
 
 def convert(infile='prof_spool.txt', outfile='prof_spool.json'):
