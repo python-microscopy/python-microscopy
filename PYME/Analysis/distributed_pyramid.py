@@ -89,7 +89,6 @@ class PartialPyramid(ImagePyramid):
         return PartialPyramid(
             filepath,
             pyramid_tile_size=part_params["pyramid_tile_size"],
-            # mdh=part_dict["mdh"],
             n_tiles_x=part_params["n_tiles_x"],
             n_tiles_y=part_params["n_tiles_y"],
             depth=part_params["depth"],
@@ -242,15 +241,12 @@ class PartialPyramid(ImagePyramid):
         new_layer = input_level + 1
         tile_coords = self.get_layer_tile_coords(input_level)
         
-        #print('tile_coords:', tile_coords)
-        
         qsize = int(self.tile_size / 2)
         
         new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
         layer_chunk_shape = np.asarray(self.chunk_shape) / pow(2, input_level)
         layer_chunk_shape[2] = 1
-        #print('new_tile_coords:', new_tile_coords)
-        
+
         for xc, yc in new_tile_coords:
             if is_server_for_chunk(
                 self.server_idx, xc, yc, z=input_level,
@@ -377,7 +373,6 @@ class DistributedImagePyramid(ImagePyramid):
         """
         part_params = {
             "pyramid_tile_size": self.tile_size,
-            # "mdh": self.mdh, # turn to json if possible
             "n_tiles_x": self.n_tiles_x,
             "n_tiles_y": self.n_tiles_y,
             "depth": self.depth,
@@ -413,8 +408,6 @@ class DistributedImagePyramid(ImagePyramid):
                 if not response.status_code == 200:
                     raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
                 return
-            # except requests.adapters.ConnectionError as err:
-            #     logger.error("{}\n{}".format(str(err), str(err.__traceback__)))
             except response.ConnectTimeout:
                 if repeat + 1 == self.repeats:
                     logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
@@ -439,8 +432,6 @@ class DistributedImagePyramid(ImagePyramid):
                 if not response.status_code == 200:
                     raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
                 return response
-            # except requests.adapters.ConnectionError as err:
-            #     logger.error("{}\n{}".format(str(err), str(err.__traceback__)))
             except response.ConnectTimeout:
                 if repeat + 1 == self.repeats:
                     logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
@@ -621,11 +612,6 @@ class DistributedImagePyramid(ImagePyramid):
             tile = self.get_tile_from_server(inputLevel, x, y)
             if tile is not None:
                 self._imgs.save_tile(inputLevel, x, y, tile)
-        # for x in range(width):
-        #     for y in range(height):
-        #         tile = self.get_tile_from_server(inputLevel, x, y)
-        #         if tile is not None:
-        #             self._imgs.save_tile(inputLevel, x, y, tile)
         logger.debug("Aggregated parts of level {}".format(inputLevel))
 
         while self._make_layer(inputLevel) > 1:
