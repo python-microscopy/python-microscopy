@@ -294,17 +294,7 @@ class FocusLockingOffsetPiezo(TargetOwningOffsetPiezo):
             logger.warning('focus lock is disabled, offset correction ignored')
             return
 
-        # both gettarget and moveto account for offset, so make sure we only apply the change once
-        correction = float(correction)
-        with self._move_lock:
-            target = self.GetTargetPos(0)
-            # correct the offset; positive means push base pos higher than offsetpiezo pos
-            correction = max(min(self.basePiezo.max_travel - (target + self.offset), 
-                                 correction), -(target + self.offset))
-            self.offset += correction
-            # self.MoveTo(0, target)  # move the base piezo to correct position
-            self.basePiezo.MoveTo(0, target + self.offset, True)
-            self.LogFocusCorrection(self.offset)
+        OffsetPiezo.CorrectOffset(self, correction)
 
 
 def main():
