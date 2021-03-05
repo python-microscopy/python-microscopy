@@ -362,9 +362,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def _create_part_pyramid(self):
         from PYME.Analysis.distributed_pyramid import PartialPyramid
+
         filepath = self.path.lstrip('/')[len('__part_pyramid_create'):]
         data = self._get_data()
-        part_pyramids[filepath] = PartialPyramid.build(filepath, data)
+        part_pyramids[filepath] = PartialPyramid.build_from_request(filepath, data)
         logger.debug("Created PartialPyramid for {}".format(filepath))
         part_pyramids[filepath].update_thread.start()
 
@@ -481,7 +482,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if self.path.lstrip('/').startswith('__part_pyramid'):
-            #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
+            #paths starting with __part_pyramid are special, and trigger operations on PartialPyramids rather than creation
             #of a new file.
             self._do_part_pyramid()
             return

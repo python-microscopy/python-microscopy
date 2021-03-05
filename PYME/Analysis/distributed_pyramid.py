@@ -1,5 +1,8 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import(
+    get_camera_roi_origin, get_camera_physical_roi_origin,
+    load_json, NestedClassMDHandler,
+)
 
 
 import threading
@@ -17,7 +20,9 @@ import json
 import queue
 import logging
 from PYME.IO import clusterIO
-from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
+from PYME.Analysis.tile_pyramid import (
+    TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
+)
 
 
 logger = logging.getLogger(__name__)
@@ -42,7 +47,8 @@ def is_server_for_chunk(candidate_server, x, y, z=0, chunk_shape=[8,8,1], nr_ser
 def update_partial_pyramid(pyramid, sleep_time=1):
     """
     Payload execution of PartialPyramid's update thread.
-    First updates base tiles until all frames are processed and then updates the higher pyramid layers.
+    First updates base tiles until all frames are processed and then updates the
+    higher pyramid layers.
 
     Parameters
     ----------
@@ -50,7 +56,8 @@ def update_partial_pyramid(pyramid, sleep_time=1):
     pyramid : PartialPyramid
         the pyramid to be updated.
     sleep_time : float
-        duration in which the update thread rests to reduce polling issues. Interpreted in units of seconds.
+        duration in which the update thread rests to reduce polling issues.
+        Interpreted in units of seconds.
     """
     while not pyramid.all_tiles_received:
         # time.sleep(sleep_time)
@@ -62,7 +69,9 @@ def update_partial_pyramid(pyramid, sleep_time=1):
 
 class PartialPyramid(ImagePyramid):
     """
-    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME cluster.
+    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME
+    cluster.
+
     Implementation from the microscope side.
     """
     def __init__(
@@ -80,11 +89,13 @@ class PartialPyramid(ImagePyramid):
         self.server_idx = server_idx
         self.nr_servers = nr_servers
         self.update_queue = queue.SimpleQueue()
-        self.update_thread = threading.Thread(target=update_partial_pyramid, args=(self,), daemon=True)
+        self.update_thread = threading.Thread(
+            target=update_partial_pyramid, args=(self,), daemon=True
+        )
         self.all_tiles_received = False
 
     @classmethod
-    def build(self, filepath, part_dict):
+    def build_from_request(self, filepath, part_dict):
         part_params = json.loads(part_dict.decode())
         return PartialPyramid(
             filepath,
@@ -138,7 +149,9 @@ class PartialPyramid(ImagePyramid):
         
         Notes
         -----
-        If the get_tile call at the same position would return None, this method returns the values of an empty array. This is to ensure there are bytes which can be sent via HTTP.
+        If the get_tile call at the same position would return None, this method returns
+        the values of an empty array.
+        This is to ensure there are bytes which can be sent via HTTP.
         """
         layer = int(request["layer"])
         x = int(request["x"])
@@ -171,12 +184,14 @@ class PartialPyramid(ImagePyramid):
 
     def get_status_at_request(self):
         """
-        Gets the current update status of this PartialPyramid. Used to determine whether this part has finished building.
+        Gets the current update status of this PartialPyramid. Used to determine whether this part
+        has finished building.
         
         Returns
         -------
         status : dict
-            indicates the update status via bool values at the keys ["base tiles done", "part pyramid done"].
+            indicates the update status via bool values at the keys
+            ["base tiles done", "part pyramid done"].
         """
         status = {
             "base tiles done": not (self.all_tiles_received and self.update_queue.empty()),
@@ -217,7 +232,8 @@ class PartialPyramid(ImagePyramid):
 
     def rebuild_base(self):
         """
-        Analoguous to _rebuild_base from the super class, but only rebuilds the tiles for which this server is responsible.
+        Analoguous to _rebuild_base from the super class, but only rebuilds the tiles
+        for which this server is responsible.
         """
         for xc, yc in self._occ.get_layer_tile_coords(0):
             if is_server_for_chunk(
@@ -234,7 +250,8 @@ class PartialPyramid(ImagePyramid):
 
     def make_new_layer(self, input_level):
         """
-        Analoguous to _make_layer from the super class, but only makes the tiles for which this server is responsible.
+        Analoguous to _make_layer from the super class, but only makes the tiles
+        for which this server is responsible.
         """
         from scipy import ndimage
 
@@ -295,7 +312,8 @@ class PartialPyramid(ImagePyramid):
 
 class DistributedImagePyramid(ImagePyramid):
     """
-    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME cluster.
+    Subclass of ImagePyramid which supports distribution of pyramid files over a PYME
+    cluster.
     Implementation from the microscope side.
     """
     def __init__(
@@ -312,7 +330,11 @@ class DistributedImagePyramid(ImagePyramid):
         self.timeout = timeout
         self.repeats = repeats
         if servers is None:
-            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in clusterIO.get_ns().get_advertised_services()]
+            self.servers = [
+                (
+                    socket.inet_ntoa(v.address), v.port
+                ) for k, v in clusterIO.get_ns().get_advertised_services()
+            ]
         else:
             self.servers = [(address, servers[address]) for address in servers]
         assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
@@ -388,10 +410,13 @@ class DistributedImagePyramid(ImagePyramid):
 
     def make_url(self, path_prefix, server_idx):
         """
-        Generates a URL to a specified cluster server for a request indicated by the path prefix.
+        Generates a URL to a specified cluster server for a request
+        indicated by the path prefix.
         """
         address, port = self.servers[server_idx]
-        path = (path_prefix + "{}" + self.base_dir).format('/' if self.base_dir[0] != '/' else "")
+        path = (path_prefix + "{}" + self.base_dir).format(
+            '/' if self.base_dir[0] != '/' else ""
+        )
         url = 'http://%s:%d/%s' % (address, port, path)
         url = url.encode()
         return url
@@ -471,9 +496,12 @@ class DistributedImagePyramid(ImagePyramid):
         self.put('__part_pyramid_create', data, server_idx)
         logger.debug("Created remote part pyramid for server {}".format(server_idx))
 
-    def get_tile_slices_from(self, x, y, tile_x, tile_y, frameSizeX, frameSizeY, frame, weights):
+    def get_tile_slices_from(
+        self, x, y, tile_x, tile_y, frameSizeX, frameSizeY, frame, weights
+    ):
         """
-        Extracts the update coordinates and slices from an update frame and its weights. Essentially prepares the input for PartialPyramid.update_base_tile_from_slices().
+        Extracts the update coordinates and slices from an update frame and its weights.
+        Essentially prepares the input for PartialPyramid.update_base_tile_from_slices().
         """
         xs = max(tile_x * self.tile_size - x, 0)
         xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
@@ -500,8 +528,16 @@ class DistributedImagePyramid(ImagePyramid):
         if (x < 0) or (y < 0):
             raise ValueError('base tile origin positions must be >=0')
         
-        tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
-        tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
+        tile_xs = range(
+            int(
+                np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1
+            )
+        )
+        tile_ys = range(
+            int(
+                np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1
+            )
+        )
 
         self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
         self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
@@ -520,7 +556,8 @@ class DistributedImagePyramid(ImagePyramid):
 
     def update_tile_on_server(self, coords, frame, weights, server_idx):
         """
-        Sends the output from get_tile_slices_from() to the responsible cluster server.
+        Sends the output from get_tile_slices_from() to the responsible cluster
+        server.
         """
         data_dict = {
             "frame_shape": frame.shape,
@@ -534,7 +571,8 @@ class DistributedImagePyramid(ImagePyramid):
 
     def finish_base_tiles(self):
         """
-        Notifies all cluster servers that all frames have been processed on the microscope end.
+        Notifies all cluster servers that all frames have been processed on the
+        microscope end.
         """
         for server_idx in range(len(self.servers)):
             self.put('__part_pyramid_finish', "".encode(), server_idx)
@@ -574,7 +612,8 @@ class DistributedImagePyramid(ImagePyramid):
 
     def rebuild_base(self):
         """
-        Synchronization step between the microscope and the cluster. This method returns when all PartialPyramids for this DistributedImagePyramid have been built.
+        Synchronization step between the microscope and the cluster.
+        This method returns when all PartialPyramids for this DistributedImagePyramid have been built.
         """
         unfinished_servers = set([i for i in range(len(self.servers))])
         while len(unfinished_servers) > 0:
@@ -603,7 +642,8 @@ class DistributedImagePyramid(ImagePyramid):
     def update_pyramid(self):
         """
         Builds the final layers once the lower levels have been built on the cluster.
-        The topmost layers on the cluster are aggregated on the microscope and then used to make the final layers.
+        The topmost layers on the cluster are aggregated on the microscope and
+        then used to make the final layers.
         """
         self.rebuild_base()
         inputLevel = self.top_part_layer()
@@ -624,9 +664,11 @@ class DistributedImagePyramid(ImagePyramid):
         self._imgs.flush()
 
 
-def distributed_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False, shiftfield=None,
-                 mixmatrix=[[1., 0.], [0., 1.]],
-                 correlate=False, dark=None, flat=None, pyramid_tile_size=256):
+def distributed_pyramid(
+    out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
+    shiftfield=None, mixmatrix=[[1., 0.], [0., 1.]],
+    correlate=False, dark=None, flat=None, pyramid_tile_size=256
+):
     """Create a distributed pyramid through PYMECluster.
 
     Parameters
