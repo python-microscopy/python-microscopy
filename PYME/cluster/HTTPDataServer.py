@@ -221,6 +221,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     timeoutTesting = 0
     logrequests = False
     timeout=None
+    
+    def __init__(self, *args, **kwargs):
+        self._path_cache = _LimitedSizeDict(size_limit=1000)
+        http.server.SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
 
     def _aggregate_txt(self):
@@ -277,6 +281,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             data = self._gzip_decompress(data)
             
         return data
+    
+    def translate_path(self, path):
+        try:
+            return self._path_cache[path]
+        except KeyError:
+            self._path_cache[path] = http.server.SimpleHTTPRequestHandler.translate_path(self, path)
+            return self._path_cache[path]
 
     def _aggregate_h5r(self):
         """
@@ -303,14 +314,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         data = self._get_data()
 
-        dirname = os.path.dirname(filename)
-        #if not os.path.exists(dirname):
-        #    os.makedirs(dirname)
-        makedirs_safe(dirname)
+        if not os.path.exists(filename):
+            dirname = os.path.dirname(filename)
+            #if not os.path.exists(dirname):
+            #    os.makedirs(dirname)
+            makedirs_safe(dirname)
         
-        if USE_DIR_CACHE and not os.path.exists(filename):
-            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
-            cl.dir_cache.update_cache(filename, -1)
+            if USE_DIR_CACHE:
+                # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+                cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -873,6 +885,7 @@ def main(protocol="HTTP/1.0"):
     default_root = config.get('dataserver-root', os.curdir)
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
+    op.add_option('--thread-profile', dest='thread_profile', help="Enable thread profiling", default=False, action="store_true")
     default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
@@ -886,6 +899,12 @@ def main(protocol="HTTP/1.0"):
         mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
+        
+    if options.thread_profile:
+        from PYME.util import fProfile
+        
+        tp = fProfile.ThreadProfiler()
+        tp.profile_on(outfile=options.root + '/LOGS/%s/tProf/dataserver.txt' % compName)
 
     # setup logging to file
     log_dir = '%s/LOGS/%s' % (options.root, compName)
@@ -966,6 +985,9 @@ def main(protocol="HTTP/1.0"):
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)
+            
+        if options.thread_profile:
+            tp.profile_off()
 
         sp.stop()
 
