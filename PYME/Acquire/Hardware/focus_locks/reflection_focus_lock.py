@@ -495,45 +495,40 @@ class RLPIDFocusLockClient(object):
 
         self.base_url = 'http://%s:%d' % (host, port)
         self._session = requests.Session()
+        self._enabled = False
 
     @property
     def lock_enabled(self):
-        return self.LockEnabled()
+        """Returns a cached version of the lock state, which while helpful in
+        some instances (notably whether to accept a correction from the server)
+        should usually not replace `LockEnabled`
+
+        Returns
+        -------
+        bool
+        """
+        return self._enabled
 
     def LockEnabled(self):
         response = self._session.get(self.base_url + '/LockEnabled')
-        return bool(response.json())
+        self._enabled = bool(response.json())
+        return self.lock_enabled
     
     def LockOK(self):
         response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
     def EnableLock(self):
+        self._enabled = True
         return self._session.get(self.base_url + '/EnableLock')
     
     def EnableLockAndHome(self):
-        self.EnableLock()
+        self._enabled = True
         return self._session.get(self.base_url + '/EnableLockAndHome')
-    
-    def _ensure_lock_disabled(self, retries=3):
-        """helper function to pause until lock is disabled
-
-        Parameters
-        ----------
-        retries : int, optional
-            max queries to check if lock is in fact disabled, by default 3
-        """
-        retry = 0
-        while self.LockEnabled() and retry < retries:
-            logger.debug('lock still enabled, holding')
-            retry += 1
-        # for some reason it takes a bit for the piezo to log the offset update event
-        time.sleep(0.01)  # so give it a chance to get that done
-        logger.debug('continuing')
 
     def DisableLock(self):
+        self._enabled = False
         r = self._session.get(self.base_url + '/DisableLock')
-        self._ensure_lock_disabled()
         return r
 
     def GetPeakPosition(self):
@@ -562,13 +557,12 @@ class RLPIDFocusLockClient(object):
         return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f&start_at=%3.3f' % (step_size, start_at))
     
     def DisableLockAfterAcquiring(self):
+        self._enabled = False
         r = self._session.get(self.base_url + '/DisableLockAfterAcquiring')
-        self._ensure_lock_disabled()
         return r
     
     def DisableLockAfterAcquiringIfEnabled(self):
         r = self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled')
-        self._ensure_lock_disabled()
         return r
 
 
