@@ -365,7 +365,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         filepath = self.path.lstrip('/')[len('__part_pyramid_create'):]
         data = self._get_data()
         part_pyramids[filepath] = PartialPyramid.build(filepath, data)
-        print("Created PartialPyramid for {}".format(filepath))
+        logger.debug("Created PartialPyramid for {}".format(filepath))
         part_pyramids[filepath].update_thread.start()
 
         self.send_response(200)
