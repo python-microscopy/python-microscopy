@@ -230,7 +230,6 @@ class ReflectedLinePIDFocusLock(PID):
             self.piezo.LogFocusCorrection(self.piezo.GetOffset())
             self.set_auto_mode(False)
             logger.debug('Disabling focus lock')
-            time.sleep(0.01)
 
     def register(self):
         if self.mode == 'time':
