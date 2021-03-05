@@ -61,6 +61,11 @@ import re
 
 import site
 
+if sys.version_info[0] >= 3:
+    time_fcn = time.perf_counter
+else:
+    time_fcn = time.clock
+
 lib_prefix = site.getsitepackages()[0]
 len_lib_prefix = len(lib_prefix)
 
@@ -118,7 +123,7 @@ class ThreadProfiler(object):
             #stack = '.'.join(frame.f_code.co_names)
             stack = frame.f_code.co_firstlineno #frame.f_back.f_code.co_name
 
-            t = time.clock()
+            t = time_fcn()
 
             self._out_queue.put((t, threading.current_thread().getName(), funcName, event, stack))
 
