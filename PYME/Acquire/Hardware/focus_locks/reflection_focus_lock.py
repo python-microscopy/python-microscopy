@@ -390,7 +390,7 @@ class ReflectedLinePIDFocusLock(PID):
                                     output_is_json=False)
     def DisableLockAfterAcquiring(self, target_tolerance=1):
         self.EnableLock()  # make sure we have the lock on
-        if not self.on_target(target_tolerance):
+        if not self.on_target(float(target_tolerance)):
             logger.info('not locked to target tolerance, waiting 0.5 s')
             time.sleep(0.5)
         if not self.LockOK():
@@ -421,7 +421,7 @@ class ReflectedLinePIDFocusLock(PID):
         use for manual imaging without the focus lock on/set up
         """
         if self.LockEnabled():
-            self.DisableLockAfterAcquiring(target_tolerance)
+            self.DisableLockAfterAcquiring(float(target_tolerance))
     
     @property
     def _failsafe_threshold(self):
