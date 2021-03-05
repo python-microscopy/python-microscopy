@@ -388,15 +388,16 @@ class ReflectedLinePIDFocusLock(PID):
     
     @webframework.register_endpoint('/DisableLockAfterAcquiring', 
                                     output_is_json=False)
-    def DisableLockAfterAcquiring(self):
+    def DisableLockAfterAcquiring(self, target_tolerance=1):
         self.EnableLock()  # make sure we have the lock on
-        if not self.on_target(1):
+        if not self.on_target(target_tolerance):
+            logger.info('not locked to target tolerance, waiting 0.5 s')
             time.sleep(0.5)
         if not self.LockOK():
-            logger.debug('lock not OK, pausing for 5 s')
+            logger.info('lock not OK, pausing for 5 s')
             time.sleep(5)
             if not self.LockOK():
-                logger.debug('still not OK, starting pause/reacquire sequence')
+                logger.info('still not OK, starting pause/reacquire sequence')
                 time.sleep(5)
                 if hasattr(self.scope, '_stage_leveler'):
                     pos = self.scope.GetPos()
@@ -413,14 +414,14 @@ class ReflectedLinePIDFocusLock(PID):
     
     @webframework.register_endpoint('/DisableLockAfterAcquiringIfEnabled', 
                                     output_is_json=False)
-    def DisableLockAfterAcquiringIfEnabled(self):
+    def DisableLockAfterAcquiringIfEnabled(self, target_tolerance=1):
         """
         Helper function to allow protocols used in automated workflows to make 
         sure they have the right focal plane without barring that protocols
         use for manual imaging without the focus lock on/set up
         """
         if self.LockEnabled():
-            self.DisableLockAfterAcquiring()
+            self.DisableLockAfterAcquiring(target_tolerance)
     
     @property
     def _failsafe_threshold(self):
@@ -551,17 +552,17 @@ class RLPIDFocusLockClient(object):
     def SetSubtractionProfile(self):
         return self._session.get(self.base_url + '/SetSubtractionProfile')
     
-    @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
     def ReacquireLock(self, start_at=0, step_size=3):
         return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f&start_at=%3.3f' % (step_size, start_at))
     
-    def DisableLockAfterAcquiring(self):
+    def DisableLockAfterAcquiring(self, target_tolerance=1):
         self._enabled = False
-        r = self._session.get(self.base_url + '/DisableLockAfterAcquiring')
+        r = self._session.get(self.base_url + '/DisableLockAfterAcquiring?target_tolerance=%3.3f' % target_tolerance)
         return r
     
-    def DisableLockAfterAcquiringIfEnabled(self):
-        r = self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled')
+    def DisableLockAfterAcquiringIfEnabled(self, target_tolerance=1):
+        self._enabled = False
+        r = self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled?target_tolerance=%3.3f' % target_tolerance)
         return r
 
 
