@@ -217,7 +217,7 @@ class Spooler(sp.Spooler):
             logging.error('An exception occurred in one of the spooling threads')
             raise RuntimeError('An exception occurred in one of the spooling threads')
         else:
-            return self._postQueue.empty() and (self._numThreadsProcessing == 0)
+            return (not self._dPoll) and self._postQueue.empty() and (self._numThreadsProcessing == 0)
 
         
     def getURL(self):

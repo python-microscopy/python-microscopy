@@ -151,14 +151,13 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
+        if not events is None and len(events) > 0:
+            assert isinstance(events, numpy.ndarray), "expected type of events object to be numpy array, but was {}".format(type(events))
+            # this should get the sorting done automatically
+            outEvents = h5out.create_table(h5out.root, 'Events', events, filters=tables.Filters(complevel=5, shuffle=True))
+        else:
+            outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent, filters=tables.Filters(complevel=5, shuffle=True))
 
-        outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
-
-        if not events is None:
-            #copy events to results file
-            if len(events) > 0:
-                outEvents.append(events)
-                
         h5out.flush()
         h5out.close()
 

@@ -224,7 +224,7 @@ def action_manager(MainFrame, scope):
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel, get_rule_tile, RuleChain
-    from PYME.cluster.rules import RecipeRuleFactory, LocalisationRuleFactory
+    from PYME.cluster.rules import RecipeRuleFactory, SpoolLocalLocalizationRuleFactory
     from PYME.IO.MetaDataHandler import DictMDHandler
     import yaml
     import os
@@ -253,8 +253,8 @@ def chained_analysis(main_frame, scope):
             "Analysis.subtractBackground": True,
     })
 
-    defaults['htsms-flow'] = RuleChain([get_rule_tile(LocalisationRuleFactory)(analysisMetadata=mdh)])
-    defaults['htsms-staggered'] = RuleChain([get_rule_tile(LocalisationRuleFactory)(analysisMetadata=mdh)])
+    defaults['htsms-flow'] = RuleChain([get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)])
+    defaults['htsms-staggered'] = RuleChain([get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)])
 
     SMLMChainedAnalysisPanel.plug(main_frame, scope, defaults)
 

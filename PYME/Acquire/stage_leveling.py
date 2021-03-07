@@ -269,7 +269,7 @@ class StageLeveler(object):
         from scipy.interpolate import interp2d
         try:
             scan = self.current_scan
-        except IndexError:
+        except (IndexError, ValueError):
             logger.error('no scan, returning %f for offset lookup' % default)
             return default
         f = interp2d(scan['x'], scan['y'], scan['offset'])

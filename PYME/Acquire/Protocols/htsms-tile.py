@@ -43,17 +43,17 @@ scanner = Scanner(scan_radius_um=500)
 
 # T(frame, function, *args) creates a new task
 taskList = [
-    T(-1, scope.turnAllLasersOff),
     T(-1, scope.state.update, {
         'Lasers.OBIS405.Power': 1.0,
+        'Lasers.OBIS405.On': True,
         'Multiview.ActiveViews': [1],
         'Multiview.ROISize': [256, 256],
-        'Camera.IntegrationTime': 0.005,
+        'Camera.IntegrationTime': 0.02,
     }),
-    T(-1, scope._stage_leveler.reacquire_focus_lock),
+    T(-1, scope._stage_leveler.acquire_focus_lock),
     T(-1, scanner.setup),
-    T(-1, scope.l405.TurnOn),
     T(0, scanner.start),
+    T(1, scope.l405.TurnOn),  # ~superstitious, but the obis is a punk sometimes
     T(maxint, scope.turnAllLasersOff),
 ]
 

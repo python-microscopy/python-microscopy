@@ -137,7 +137,7 @@ function label_1(d) {
 d3.select("#chart_d3 svg").remove();
 var svg = d3.select("#chart_d3").append("svg")
     .style("position", "relative")
-    .attr("width", 100 + "pc")
+    .attr("width", 100 + "%")
     .attr("height", 600 + "px");
 
 

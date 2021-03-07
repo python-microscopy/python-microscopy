@@ -3,12 +3,15 @@
 Installation
 ************
 
-The best to install PYME will depend on your background and whether you are already using python on your computer.
+The best PYME installation method will depend on your background and whether you are already using python on your computer.
+
+If you have an existing PYME installation, we recommend :ref:`removing it<Removing a PYME install>` before installing a new one.
 
 Executable installers (Windows and OSX)
 =======================================
 
-Recommended if you don't already have python on your computer and/or are unfamiliar with python. Download the latest installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions. 
+Recommended if you don't already have python on your computer and/or are unfamiliar with python. Download the latest
+installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions.
 
 
 Installing using conda
@@ -21,18 +24,24 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 	
     conda config --append channels anaconda
     conda config --add channels david_baddeley
-    conda install python=3.7 python-microscopy
+    conda create -n pyme python=3.6 pyme-depends-strict python-microscopy
+
+To run programs from the command prompt, you will need to run `conda activate pyme` before running the program.
+
+.. note::
+
+   The inclusion of `pyme-depends-strict` above pins all the PYME dependencies as well as their dependencies to fixed,
+   known good versions. This blunt way of avoiding dependency conflicts was introduced after having been burnt once too
+   often by packaging issues in our dependencies. It is particularly useful if you are also using uncurated channels such
+   as `conda-forge`. In general omitting `pyme-depends-strict`, and simply running
+   `conda create -n pyme python=3.6 python-microscopy` should be enough to give a functioning install, but there is a
+   small chance that you will need to fix dependency conflicts.
 
 .. note::
 
     **Which Python version?** As of 2020/12/07, we recommend python 3.6 or 3.7 for new installs. We plan to add support for
-    python=3.8 (as installed by default in miniconda) in the near future, but until such time downgrading to either 3.6 or 3.7
-    with and explicit python=3.x argument to conda install is required.
-
-    Having recently made the py2-> py3 transition, there are a still few components which might work better / are better tested on python 2.7
-    (likely to only effect instrument control). As we are no longer building updated packages on 2.7 we recommend a source
-    install in this case.
-
+    python=3.8 in the near future, but until such time downgrading to either 3.6 or 3.7
+    with and explicit python=3.x argument to conda create is required.
 
 Updating
 ========
@@ -158,4 +167,15 @@ msvc for python.
 
 .. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
 
+Removing a PYME install
+=======================
 
+To remove an executable installer on Windows 10, go to **Start Menu > Settings > Apps**, find `python-microscopy` under
+**Apps & Features**, select it and press *Uninstall*. 
+
+To remove an executable installer on Mac, delete the `python-microscopy` folder, either in Finder or via the Terminal.
+
+For conda installations on Windows, Mac and Linux, removing the conda envrionment 
+(i.e. ``conda remove --name pyme --all``, see the `conda documentation <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#removing-an-environment>`__
+for additional help) is the preferred method to delete PYME. If you want to completely remove
+any trace, you may also need to modify or remove `.condarc` and `.bash_profile`.
