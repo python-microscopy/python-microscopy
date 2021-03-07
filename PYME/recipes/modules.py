@@ -20,7 +20,7 @@ from . import localisations
 from . import multiview
 from . import surface_fitting
 from . import acquisition
-from . import supertile
+from . import pyramid
 from . import pointcloud
 try:
     from . import skfilters
