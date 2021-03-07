@@ -1,6 +1,6 @@
 
 from .base import ModuleBase, register_module, OutputModule
-from .traits import Input, Output, CStr, Int
+from .traits import Input, Output, CStr, Int, FileOrURI
 from PYME.IO import tabular
 import logging
 
@@ -89,6 +89,9 @@ class Supertile(ModuleBase):
     overlap : int
         overlap between spatially adjacent output frames, in units of 
         `base_tile_size`. By default, 1.
+    base_dir : str
+        A directory path or URL where the image pyramid is built and stored
+        permanently. If empty, it is ignored and a temporary directory is used.
     output_name : str
         `PYME.IO.image.ImageStack` wrapping a `SupertileDatasource`.
     
@@ -107,6 +110,7 @@ class Supertile(ModuleBase):
     level = Int(0)
     stride = Int(3)
     overlap = Int(1)
+    base_dir = FileOrURI('')
     output_name = Output('supertile')
 
     def execute(self, namespace):
@@ -119,9 +123,10 @@ class Supertile(ModuleBase):
             
         x, y = tile_pyramid.get_position_from_events(stack.events, stack.mdh)
         
-        p = tile_pyramid.tile_pyramid(TemporaryDirectory(), stack.data, x, y, 
-                                      stack.mdh, 
-                                      pyramid_tile_size=self.base_tile_size)
+        p = tile_pyramid.tile_pyramid(
+            TemporaryDirectory() if len(self.base_dir) == 0 else self.base_dir,
+            stack.data, x, y, stack.mdh, pyramid_tile_size=self.base_tile_size,
+        )
             
         datasource = SupertileDataSource(p, self.level, self.stride, self.overlap)
         
