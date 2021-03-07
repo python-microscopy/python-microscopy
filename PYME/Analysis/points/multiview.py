@@ -316,25 +316,25 @@ def raw_shifts_by_frame(x0, y0, t0, x0err, y0err, x1, y1, t1, x1err, y1err,
     Parameters
     ----------
     x0 : ndarray
-        [description]
+        x positions in channel 0
     y0 : ndarray
-        [description]
+        y positions in channel 0
     t0 : ndarray
-        [description]
+        frame index for points in channel 0
     x0err : ndarray
-        [description]
+        uncertainties for x positions in channel 0
     y0err : ndarray
-        [description]
+        uncertainties for y positions in channel 0
     x1 : ndarray
-        [description]
+        x positions in channel 1
     y1 : ndarray
-        [description]
+        y positions in channel 1
     t1 : ndarray
-        [description]
+        frame index for points in channel 1
     x1err : ndarray
-        [description]
+        uncertainties for x positions in channel 1
     y1err : ndarray
-        [description]
+        uncertainties for y positions in channel 1
     clump_distance : int, ndarray, optional
         distance to search, by default 1000
 
