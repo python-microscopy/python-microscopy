@@ -58,7 +58,7 @@ def test_pydeclump_gap():
     x = np.array([0, 0, 0])
     y = x
     t = np.array([0, 1, 3], dtype=np.int32)
-    dist = 2 * np.ones(2)
+    dist = 2 * np.ones(len(x))
     assigned = pyDeClump.findClumps(t.astype(np.int32), x, y, dist, 1)
     np.testing.assert_array_equal([1, 1, 2], assigned)
 
@@ -68,7 +68,7 @@ def test_declump_no_gap():
     x = np.array([0, 0])
     y = x
     t = np.array([0, 0], dtype=np.int32)
-    dist = 2 * np.ones(2)
+    dist = 2 * np.ones(len(x))
     assigned = deClump.findClumps(t.astype(np.int32), x.astype(np.float32), y.astype(np.float32), dist.astype(np.float32), 0)
     assert np.all(assigned == 1)
 
@@ -78,6 +78,6 @@ def test_declump_gap():
     x = np.array([0, 0, 0])
     y = x
     t = np.array([0, 1, 3], dtype=np.int32)
-    dist = 2 * np.ones(2)
+    dist = 2 * np.ones(len(x))
     assigned = deClump.findClumps(t.astype(np.int32), x.astype(np.float32), y.astype(np.float32), dist.astype(np.float32), 1)
     np.testing.assert_array_equal([1, 1, 2], assigned)
