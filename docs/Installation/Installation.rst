@@ -5,7 +5,7 @@ Installation
 
 The best PYME installation method will depend on your background and whether you are already using python on your computer.
 
-If you have an existing PYME installation, we recommend :ref:`removing it<Removing a PYME install>` before installing a new one.
+If you have an existing PYME installation, we recommend :ref:`removing it<Removing a PYME install>`_ before installing a new one.
 
 Executable installers (Windows and OSX)
 =======================================
