@@ -301,7 +301,7 @@ class CalibrateShifts(ModuleBase):
 
         inp = namespace[self.input_name]
 
-        try]:  # make sure we're looking at multiview data
+        try:  # make sure we're looking at multiview data
             n_chan = inp.mdh['Multiview.NumROIs']  # TODO- use Multiview.ActiveViews + index appropriately
         except AttributeError:
             raise AttributeError('multiview metadata is missing or incomplete')
