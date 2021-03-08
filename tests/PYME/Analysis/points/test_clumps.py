@@ -42,17 +42,7 @@ def test_coalesce_incomplete_nontrivial():
 
     assert len(x_out) == len(np.unique(assigned[assigned >= 1]))
 
-def test_pydeclump_no_gap():
-    from PYME.Analysis.points.DeClump import pyDeClump
-    import numpy as np
-    x = np.array([0, 0])
-    y = x
-    t = np.array([0, 0], dtype=np.int32)
-    dist = 2 * np.ones(2)
-    assigned = pyDeClump.findClumps(t.astype(np.int32), x, y, dist, 0)
-    assert np.all(assigned == 1)
-
-def test_pydeclump_gap():
+def test_pydeclump_findclumps_gap():
     from PYME.Analysis.points.DeClump import pyDeClump
     import numpy as np
     x = np.array([0, 0, 0])
@@ -60,19 +50,10 @@ def test_pydeclump_gap():
     t = np.array([0, 1, 3], dtype=np.int32)
     dist = 2 * np.ones(len(x))
     assigned = pyDeClump.findClumps(t.astype(np.int32), x, y, dist, 1)
-    np.testing.assert_array_equal([1, 1, 2], assigned)
+    # should group all points as there is only a 1 frame gap
+    np.testing.assert_array_equal([1, 1, 1], assigned)
 
-def test_declump_no_gap():
-    from PYME.Analysis.points.DeClump import deClump
-    import numpy as np
-    x = np.array([0, 0])
-    y = x
-    t = np.array([0, 0], dtype=np.int32)
-    dist = 2 * np.ones(len(x))
-    assigned = deClump.findClumps(t.astype(np.int32), x.astype(np.float32), y.astype(np.float32), dist.astype(np.float32), 0)
-    assert np.all(assigned == 1)
-
-def test_declump_gap():
+def test_declump_findclumps_gap():
     from PYME.Analysis.points.DeClump import deClump
     import numpy as np
     x = np.array([0, 0, 0])
@@ -80,4 +61,27 @@ def test_declump_gap():
     t = np.array([0, 1, 3], dtype=np.int32)
     dist = 2 * np.ones(len(x))
     assigned = deClump.findClumps(t.astype(np.int32), x.astype(np.float32), y.astype(np.float32), dist.astype(np.float32), 1)
-    np.testing.assert_array_equal([1, 1, 2], assigned)
+    # should group all points as there is only a 1 frame gap
+    np.testing.assert_array_equal([1, 1, 1], assigned)
+
+def test_pydeclump_findclumps_same_frame():
+    from PYME.Analysis.points.DeClump import pyDeClump
+    import numpy as np
+    x = np.array([0, 0])
+    y = x
+    t = np.array([0, 0], dtype=np.int32)
+    dist = 2 * np.ones(2)
+    assigned = pyDeClump.findClumps(t.astype(np.int32), x, y, dist, 0)
+    # should not group any points because they are both on the same frame
+    np.testing.assert_array_equal([1, 2], assigned)
+
+def test_declump_findclumps_same_frame():
+    from PYME.Analysis.points.DeClump import deClump
+    import numpy as np
+    x = np.array([0, 0])
+    y = x
+    t = np.array([0, 0], dtype=np.int32)
+    dist = 2 * np.ones(len(x))
+    assigned = deClump.findClumps(t.astype(np.int32), x.astype(np.float32), y.astype(np.float32), dist.astype(np.float32), 0)
+    # should not group any points because they are both on the same frame
+    np.testing.assert_array_equal([1, 2], assigned)
