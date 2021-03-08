@@ -108,7 +108,7 @@ class FindClumps(ModuleBase):
         localizations as PYME.IO.Tabular types
     time_gap_tolerance : traits.Int
         Number of frames which a localizations is allowed to be missing and still be considered the same molecule if it
-        reappears
+        reappears. Currently this is ~off by 2, so time_gap_tolerance=1 means link only on the same frame
     radius_scale : traits.Float
         Factor by which the localization precision is multiplied to determine the search radius for clustering. The
         default of 2 sigma means that we link ~95% of the points which should be linked (if Gaussian statistics hold)
@@ -301,15 +301,15 @@ class CalibrateShifts(ModuleBase):
 
         inp = namespace[self.input_name]
 
-        try:  # make sure we're looking at multiview data
+        try]:  # make sure we're looking at multiview data
             n_chan = inp.mdh['Multiview.NumROIs']  # TODO- use Multiview.ActiveViews + index appropriately
         except AttributeError:
             raise AttributeError('multiview metadata is missing or incomplete')
 
         shift_map_dtype = [('mx', '<f4'), ('mx2', '<f4'), ('mx3', '<f4'),  # x terms
-                            ('my', '<f4'), ('my2', '<f4'), ('my3', '<f4'),  # y terms
-                            ('mxy', '<f4'), ('mx2y', '<f4'), ('mxy2', '<f4'),  # cross terms
-                            ('x0', '<f4')]  # 0th order shift
+                           ('my', '<f4'), ('my2', '<f4'), ('my3', '<f4'),  # y terms
+                           ('mxy', '<f4'), ('mx2y', '<f4'), ('mxy2', '<f4'),  # cross terms
+                           ('x0', '<f4')]  # 0th order shift
 
         shift_maps = np.zeros(2*(n_chan - 1), dtype=shift_map_dtype)
         mdh = MetaDataHandler.DictMDHandler(inp.mdh)
