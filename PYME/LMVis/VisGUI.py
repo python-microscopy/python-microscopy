@@ -267,7 +267,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         dlg.SetName("PYME Visualise")
         dlg.SetVersion(version)
         dlg.SetDescription("Visualisation of localisation microscopy data.")
-        dlg.SetCopyright("(C)2009-2020")
+        dlg.SetCopyright("(C)2009-2021")
         dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
         #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
         # TODO: should this be the issues page or the website
