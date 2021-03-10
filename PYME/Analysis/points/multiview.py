@@ -1,6 +1,5 @@
 
 import numpy as np
-from PYME.Analysis.points.DeClump import pyDeClump
 
 def load_shiftmap(uri):
     """
@@ -275,13 +274,15 @@ def pair_molecules(t_index, x0, y0, which_chan, delta_x=[None], appear_in=np.ara
     x_kept = x[keep] in order to only look at kept molecules.
 
     """
+    from PYME.Analysis.points.DeClump import findClumps
+    
     # take out any large linear shifts for the sake of easier pairing
     x, y = correlative_shift(x0, y0, which_chan, pix_size_nm)
     # group within a certain distance, potentially based on localization uncertainty
     if not delta_x[0]:
         delta_x = 100.*np.ones_like(x)
     # group localizations
-    assigned = pyDeClump.findClumps(t_index.astype(np.int32), x, y, delta_x, n_frame_sep)
+    assigned = findClumps(t_index.astype(np.int32), x, y, delta_x, n_frame_sep)
     # print assigned.min()
 
     # only look at clumps with localizations from each channel
@@ -355,7 +356,7 @@ def apply_shifts_to_points(datasource, shiftWallet):  # FIXME: add metadata for 
 
 
 def find_clumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
-    from PYME.Analysis.points.DeClump import deClump
+    from PYME.Analysis.points.DeClump import findClumps
     from PYME.IO import tabular
     t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
@@ -366,7 +367,7 @@ def find_clumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=F
 
     deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
 
-    assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
+    assigned = findClumps(t, x, y, deltaX, gap_tolerance)
     clumps[I] = assigned
 
     if not inject:
@@ -393,7 +394,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     each channel separately, and then merge channels.
 
     """
-    from PYME.Analysis.points.DeClump import deClump
+    from PYME.Analysis.points.DeClump import findClumps
     from PYME.IO import tabular
     t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
@@ -414,7 +415,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     startAt = 0
     for pi in uprobe:
         pmask = probe == pi
-        pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
+        pClumps = findClumps(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
         # throw all unclumped into the 0th clumpID, and preserve pClumps[-1] of the last iteration
         pClumps[pClumps == startAt] = 0
         # patch in assignments for this color channel
