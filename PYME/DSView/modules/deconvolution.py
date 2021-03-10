@@ -119,7 +119,7 @@ class Deconvolver(Plugin):
             if psf.shape[2] > self.image.data.shape[2]:
                 dz = psf.shape[2] - self.image.data.shape[2]
 
-                psf = psf[:, :, numpy.floor(dz / 2):(psf.shape[2] - numpy.ceil(dz / 2))]
+                psf = psf[:, :, int(numpy.floor(dz / 2)):int(psf.shape[2] - numpy.ceil(dz / 2))]
 
 
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
