@@ -235,11 +235,15 @@ class H5RFile(object):
                 #iterate over the queues (in a threadsafe manner)
                 for tablename in tablenames:
                     waiting = self.appendQueues[tablename]
+                    recs = []
                     try:
                         while len(waiting) > 0:
-                            self._appendToTable(tablename, waiting.popleft())
+                            #self._appendToTable(tablename, waiting.popleft())
+                            recs.append(waiting.popleft())
                     except IndexError:
                         pass
+                    
+                    self._appendToTable(tablename, np.hstack(recs))
 
                 curTime = time.time()
                 if (curTime - self._lastFlushTime) > self.FLUSH_INTERVAL:

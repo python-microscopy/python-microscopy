@@ -290,6 +290,8 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         self.scope=scope
         self._shame_index = 0
         self.scope.multiwellpanel = self
+        self._drop_wells = []
+        self.fast_axis = 'y'
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -324,8 +326,16 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         vsizer.Add(hsizer)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.axis_select_box = wx.ComboBox(self, -1, choices=['x', 'y'],
+                                           value='y', size=(65, -1),
+                                           style=wx.CB_DROPDOWN | wx.TE_PROCESS_ENTER)
+
+        hsizer.Add(self.axis_select_box, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.axis_select_box.Bind(wx.EVT_COMBOBOX, self._on_combo_box)
+        
         self.cb_get_it_done = wx.CheckBox(self, -1, 'Requeue missed')
         hsizer.Add(self.cb_get_it_done, 0, wx.ALL, 2)
+        hsizer.Fit(self)
         vsizer.Add(hsizer)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -340,6 +350,10 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         vsizer.Add(hsizer)
 
         self.SetSizerAndFit(vsizer)
+    
+    def _on_combo_box(self, event):
+        cb = event.GetEventObject()
+        self.fast_axis = cb.GetValue()
     
     def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=5):
         from PYME.Acquire.actions import FunctionAction
@@ -357,20 +371,9 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         logger.debug('imaged %d wells' % len(imaged_wells))
 
         x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, start_pos)
-        x_wells = x_wells.tolist()
-        y_wells = y_wells.tolist()
-        to_pop = []
-        for fn in imaged_wells:
-            well = fn.split('_')[0]
-            try:
-                to_pop.append(names.index(well))
-            except ValueError:
-                pass
-
-        for pfn in sorted(to_pop)[::-1]:
-            x_wells.pop(pfn)
-            y_wells.pop(pfn)
-            names.pop(pfn)
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, self._drop_wells)
+        to_pop = [fn.split('_')[0] for fn in imaged_wells]
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, to_pop)
 
         if len(names) < 1:
             return
@@ -421,6 +424,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         curr_pos = self.scope.GetPos()
 
         x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, curr_pos)
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, self._drop_wells)
         actions = self._get_action_list(x_wells, y_wells, names, protocol_name)
         
         actions.append(FunctionAction('turnAllLasersOff', {}))
@@ -445,18 +449,33 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         x_w = np.arange(0, n_x * x_spacing, x_spacing)
         y_w = np.arange(0, n_y * y_spacing, y_spacing)
 
-        x_wells = []
-        y_wells = np.repeat(y_w, n_x)
-        names = []
-        # zig-zag with turns along x
-        for xi in range(n_y):
-            if xi % 2:
-                x_wells.extend(x_w[::-1])
-                names.extend([xi_name + yind_names[xi] for xi_name in xind_names[::-1]])
-            else:
-                x_wells.extend(x_w)
-                names.extend([xi_name + yind_names[xi] for xi_name in xind_names])
-        x_wells = np.asarray(x_wells)
+        
+        if self.fast_axis == 'x':
+            # zig-zag with turns along x
+            x_wells = []
+            y_wells = np.repeat(y_w, n_x)
+            names = []
+            for xi in range(n_y):
+                if xi % 2:
+                    x_wells.extend(x_w[::-1])
+                    names.extend([xi_name + yind_names[xi] for xi_name in xind_names[::-1]])
+                else:
+                    x_wells.extend(x_w)
+                    names.extend([xi_name + yind_names[xi] for xi_name in xind_names])
+            x_wells = np.asarray(x_wells)
+        else:
+            # zig-zag with turns along y
+            y_wells = []
+            x_wells = np.repeat(x_w, n_y)
+            names = []
+            for yi in range(n_x):
+                if yi % 2:
+                    y_wells.extend(y_w[::-1])
+                    names.extend([xind_names[yi] + yi_name for yi_name in yind_names[::-1]])
+                else:
+                    y_wells.extend(y_w)
+                    names.extend([xind_names[yi] + yi_name for yi_name in yind_names])
+            y_wells = np.asarray(y_wells)
 
         # add the current scope position offset
         x_wells += start_pos['x']
@@ -474,3 +493,25 @@ class MultiwellProtocolQueuePanel(wx.Panel):
                                 doPreflightCheck=False, fn=filename)
             actions.append(state.then(spool))
         return actions
+    
+    def _pop_wells(self, x_wells, y_wells, names, to_pop):
+        import numpy as np
+
+        pop_inds = []
+        for well in to_pop:
+            try:
+                pop_inds.append(names.index(well))
+            except ValueError:
+                pass
+        
+        if len(pop_inds) < 1:
+            return x_wells, y_wells, names
+        x_wells = x_wells.tolist()
+        y_wells = y_wells.tolist()
+
+        for pfn in sorted(pop_inds)[::-1]:
+            x_wells.pop(pfn)
+            y_wells.pop(pfn)
+            names.pop(pfn)
+        
+        return np.asarray(x_wells), np.asarray(y_wells), names

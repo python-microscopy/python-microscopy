@@ -204,7 +204,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
             elif self.slice_order == 'triangle':
                 if len(self.zPoss) % 2:
                     # odd
-                    self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
+                    self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-2::-2]])
                 else:
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])

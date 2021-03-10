@@ -60,6 +60,9 @@ class DataSource(BaseDataSource):
         self.fshape = None#(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
         
         self._getNumFrames()
+        
+        # if the series is complete when we start, we don't need to update the number of slices
+        self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
     
     def _getNumFrames(self):
         frameNames = [f for f in clusterIO.listdir(self.sequenceName, self.clusterfilter) if f.endswith('.pzf')]
@@ -79,9 +82,10 @@ class DataSource(BaseDataSource):
         return self.fshape
         
     def getNumSlices(self):
-        t = time.time()
-        if (t-self.lastShapeTime) > SHAPE_LIFESPAN:
-            self._getNumFrames()
+        if not self._complete:
+            t = time.time()
+            if (t-self.lastShapeTime) > SHAPE_LIFESPAN:
+                self._getNumFrames()
             
         return self.numFrames
 
@@ -113,6 +117,10 @@ class DataSource(BaseDataSource):
 
     @property
     def is_complete(self):
-        #TODO - add check to see if we have an updated number of frames
-        return clusterIO.exists(self.eventFileName, self.clusterfilter)
+        if not self._complete:
+            # if cached property is false, check to see if anything has changed
+            #TODO - add check to see if we have an updated number of frames
+            self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
+        
+        return self._complete
  

@@ -227,13 +227,19 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl, nRetries=1, timeout=10):
+def _listSingleDir(dirurl, nRetries=1, timeout=10, strict_caching=False):
     t = time.time()
 
     try:
         dirL, rt, dt = _dirCache[dirurl]
-        if (t - rt) > DIR_CACHE_TIME:
-            raise RuntimeError('key is expired')
+        time_in_cache = t - rt
+        if time_in_cache > DIR_CACHE_TIME:
+            # use cached value if the last request took longer than the length of time we've been expired as it
+            # doesn't make sense to hit the server again
+            if strict_caching or (time_in_cache > (DIR_CACHE_TIME + dt)):
+                raise RuntimeError('key is expired')
+            else:
+                logger.warning('Using expired entry from directory cache on %s as previous request took too long' % dirurl)
         #logger.debug('dir cache hit')
     except (KeyError, RuntimeError):
         #logger.debug('dir cache miss')

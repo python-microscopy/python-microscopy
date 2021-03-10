@@ -820,14 +820,14 @@ class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
         self.AddNewElement(add_rule_panel)
     
     def OnAddLocalizationRule(self, wx_event=None):
-        from PYME.cluster.rules import SpoolLocalLocalizationRule as LocalizationRuleFactory
+        from PYME.cluster.rules import SpoolLocalLocalizationRuleFactory
         from PYME.IO.MetaDataHandler import DictMDHandler
         if self.chained_analysis_page is None:
             logger.error('chained_analysis_page attribute unset')
             return
         
         mdh = DictMDHandler(self.localization_mdh)
-        loc_rule = get_rule_tile(LocalizationRuleFactory)(analysisMetadata=mdh)
+        loc_rule = get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)
         self.chained_analysis_page.add_tile(loc_rule)
 
 class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):

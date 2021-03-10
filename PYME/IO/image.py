@@ -1135,7 +1135,12 @@ class ImageStack(object):
             if not (self.filename is None):
                 self.saved = True
 
-                openImages.pop(ofn)
+                try:
+                    openImages.pop(ofn)
+                except KeyError:
+                    # if the image does not already have a filename / is not in the list of exisiting images ignore and continue
+                    pass
+                
                 openImages[self.filename] = self
 
             else:

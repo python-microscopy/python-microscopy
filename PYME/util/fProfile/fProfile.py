@@ -64,7 +64,7 @@ import site
 lib_prefix = site.getsitepackages()[0]
 len_lib_prefix = len(lib_prefix)
 
-class thread_profiler(object):
+class ThreadProfiler(object):
     def __init__(self):
         self.outfile = None
         
@@ -102,7 +102,11 @@ class thread_profiler(object):
         
     def _poll(self):
         while self._do_poll:
-            self.outfile.write(self._out_queue.get(timeout=0.1))
+            try:
+                l = '%f\t%s\t%s\t%s\t%s\n' % self._out_queue.get(timeout=0.1)
+                self.outfile.write(l)
+            except Queue.Empty:
+                pass
 
     def prof_callback(self, frame, event, arg):
         if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__) and self.regex.match(frame.f_code.co_filename):
@@ -116,7 +120,9 @@ class thread_profiler(object):
 
             t = time.clock()
 
-            self._out_queue.put('%f\t%s\t%s\t%s\t%s\n' % (t, threading.current_thread().getName(), funcName, event, stack))
+            self._out_queue.put((t, threading.current_thread().getName(), funcName, event, stack))
 
 
         
+# backwards compat
+thread_profiler = ThreadProfiler
