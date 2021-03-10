@@ -75,4 +75,4 @@ def findClumps(t, x, y, delta_x, n_frames=10, link_within_frame=True):
     localisation data.
     """
     
-    return deClump.findClumps(t, x, delta_x, n_frames, link_within_frame)
+    return deClump.findClumps(t, x, y, delta_x, n_frames, link_within_frame)
