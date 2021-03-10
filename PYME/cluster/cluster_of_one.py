@@ -39,7 +39,7 @@ class ClusterOfOne(object):
             self._kill_procs([self._data_server,])
             
         logger.info('Launching data server: root=%s' % self._root_dir)
-        self._data_server = subprocess.Popen('"%s" -m PYME.cluster.HTTPDataServer -a local -p 0 -r "%s" --thread-profile' % (sys.executable, self._root_dir), shell=True)
+        self._data_server = subprocess.Popen('"%s" -m PYME.cluster.HTTPDataServer -a local -p 0 -r "%s"' % (sys.executable, self._root_dir), shell=True)
         
     def _launch_rule_server(self):
         if not self._rule_server is None:
