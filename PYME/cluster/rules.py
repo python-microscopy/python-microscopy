@@ -665,7 +665,7 @@ class SpoolLocalLocalizationRule(LocalisationRule):
     
     def on_data_complete(self):
         from PYME.IO import events as E
-        events = E.as_array(self.spooler.evtLogger.to_JSON())
+        events = E.event_array_from_list(json.loads(self.spooler.evtLogger.to_JSON()))
         clusterResults.fileResults(self.worker_resultsURI + '/Events', events)
 
 
