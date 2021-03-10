@@ -82,7 +82,13 @@ int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, i
 
     if (!link_within_frame)
     {
+        if (t[i] == 0)
+        {
+         stop_idx = 0;
+        } else
+        {
         stop_idx = MAX(frameIndices[MAX(t[i]-1, 0)], 0);
+        }
     } else
     {
         stop_idx = i;
@@ -90,7 +96,7 @@ int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, i
 
 
     ts = t[i] - (nFrames + 2);
-    if (ts <= 0)
+    if (ts <= -1)
     {
         start_idx = 0;
     } else
