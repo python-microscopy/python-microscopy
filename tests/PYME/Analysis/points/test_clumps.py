@@ -60,6 +60,11 @@ def test_clumping():
     assert np.allclose(findClumps(t, x, y, dx, 1, True), [1, 1, 1, 1, 2])
     assert np.allclose(findClumps(t, x, y, dx, 2, True), [1, 1, 1, 1, 1])
     assert np.allclose(findClumps(t, x, y, dx, -1, True), [1, 1, 2, 3, 4])
+
+    assert np.allclose(findClumps(t+1, x, y, dx, 0, False), [1, 2, 1, 3, 4])
+    assert np.allclose(findClumps(t+1, x, y, dx, 1, False), [1, 2, 1, 1, 3])
+    assert np.allclose(findClumps(t+1, x, y, dx, 2, False), [1, 2, 1, 1, 1])
+    assert np.allclose(findClumps(t+1, x, y, dx, -1, False), [1, 2, 3, 4, 5])
     
     assert np.allclose(findClumps(t, x, y, dx, 0, False), [1, 2, 1, 3, 4])
     assert np.allclose(findClumps(t, x, y, dx, 1, False), [1, 2, 1, 1, 3])
