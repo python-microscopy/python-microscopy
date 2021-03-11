@@ -364,7 +364,7 @@ class PSFTools(HasTraits):
                             'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][int(dz)]})
 
         #generate new tab to show results
-        use_web_view = True
+        use_web_view = False
         if not '_astig_view' in dir(self):
             try:
                 self._astig_view= wx.html2.WebView.New(self.dsviewer)

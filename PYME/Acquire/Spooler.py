@@ -133,14 +133,14 @@ class Spooler:
 
         self.imNum = 0
 
-        # record start time here in case protocol init tasks generate events (prob only effects simulator).
-        self.tStart = time.time()
-
         self.protocol.Init(self)
 
         self._collect_start_metadata()
-   
+        
+        # record start time when we start receiving frames.
+        self.tStart = time.time()
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        
         self.spoolOn = True
        
     def StopSpool(self):
