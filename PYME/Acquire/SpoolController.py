@@ -469,6 +469,7 @@ class SpoolController(object):
         # stop the frameWrangler before we start spooling
         # this serves to ensure that a) we don't accidentally spool frames which were in the camera buffer when we hit start
         # and b) we get a nice clean timestamp for when the actual frames start (after any protocol init tasks)
+        # it might also slightly improve performance.
         self.scope.frameWrangler.stop()
         
         try:
