@@ -19,7 +19,7 @@ import logging
 import json
 import queue
 import logging
-from PYME.IO import clusterIO
+from PYME.IO import clusterIO, PZFFormat
 from PYME.Analysis.tile_pyramid import (
     TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
 )
@@ -62,8 +62,8 @@ def update_partial_pyramid(pyramid, sleep_time=1):
     while not pyramid.all_tiles_received:
         # time.sleep(sleep_time)
         while not pyramid.update_queue.empty():
-            data = pyramid.update_queue.get()
-            pyramid.update_base_tile_from_request(data)
+            request_data, data = pyramid.update_queue.get()
+            pyramid.update_base_tiles_from_request(request_data, data)
     pyramid.update_pyramid()
 
 
@@ -112,7 +112,7 @@ class PartialPyramid(ImagePyramid):
             server_idx=part_params["server_idx"],
         )
 
-    def update_base_tile_from_request(self, data):
+    def update_base_tiles_from_request(self, request_data, data):
         """
         Updates a base tile with the input of a HTTP PUT request.
 
@@ -121,13 +121,37 @@ class PartialPyramid(ImagePyramid):
         data : bytes
             the bytes of a string from which a dictionary can be loaded (via JSON). Contains the input for update_base_tile_from_slices.
         """
-        data_dict = json.loads(data.decode())
-        frame_slice = np.asarray(data_dict["frame_data"])
-        frame_slice = frame_slice.reshape(data_dict["frame_shape"])
-        weights_slice = np.asarray(data_dict["weights_data"])
-        weights_slice = weights_slice.reshape(data_dict["weights_shape"])
-        coords = data_dict["coords"]
-        self.update_base_tile_from_slices(0, coords, frame_slice, weights_slice)
+        frame_slice = PZFFormat.loads(data)[0]
+        if len(frame_slice.shape) > 2:
+            frame_slice = frame_slice.squeeze(axis=2)
+
+        x = int(request_data["x"][0])
+        y = int(request_data["y"][0])
+        chunk_idcs = np.asarray(request_data["chunk_idcs"], dtype=int)
+        frameSizeX = int(request_data["frameSizeX"][0])
+        frameSizeY = int(request_data["frameSizeY"][0])
+        frameOffsetX = int(request_data["frameOffsetX"][0])
+        frameOffsetY = int(request_data["frameOffsetY"][0])
+
+        weights = np.ones((frameSizeX, frameSizeY))
+        edgeRamp = min(100, int(.25 * frameSizeX))
+        weights[:edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[:, None]
+        weights[-edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[:, None]
+        weights[:, :edgeRamp] *= np.linspace(0, 1, edgeRamp)[None, :]
+        weights[:, -edgeRamp:] *= np.linspace(1, 0, edgeRamp)[None, :]
+
+        for tile_x in range(chunk_idcs[0], chunk_idcs[2] + 1):
+            for tile_y in range(chunk_idcs[1], chunk_idcs[3] + 1):
+                if is_server_for_chunk(
+                    self.server_idx, tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=self.nr_servers
+                ):
+                    self.update_base_tile(
+                        0, x, y, chunk_idcs,
+                        frameOffsetX, frameOffsetY,
+                        frameSizeX, frameSizeY,
+                        tile_x, tile_y,
+                        frame_slice, weights
+                    )
 
     def get_tile_at_request(self, request):
         """
@@ -153,14 +177,14 @@ class PartialPyramid(ImagePyramid):
         the values of an empty array.
         This is to ensure there are bytes which can be sent via HTTP.
         """
-        layer = int(request["layer"])
-        x = int(request["x"])
-        y = int(request["y"])
+        layer = int(request["layer"][0])
+        x = int(request["x"][0])
+        y = int(request["y"][0])
         tile = self.get_tile(layer, x, y)
         if tile is None:
-            tile = np.asarray([], dtype=np.double)
+            tile = np.asarray([], dtype=np.float32)
         else:
-            tile = tile.astype(np.double)
+            tile = tile.astype(np.float32)
             assert tile.shape[0] == self.tile_size and tile.shape[1] == self.tile_size
         return tile.tobytes(), tile.dtype, tile.shape
 
@@ -199,7 +223,12 @@ class PartialPyramid(ImagePyramid):
         }
         return json.dumps(status).encode()
 
-    def update_base_tile_from_slices(self, layer, coords, frame_slice, weights_slice):
+    def update_base_tile(
+        self, layer, x, y, chunk_idcs,
+        frameOffsetX, frameOffsetY,
+        frameSizeX, frameSizeY,
+        tile_x, tile_y, frame_slice, weights,
+    ):
         """
         Updates a base tile.
         
@@ -215,20 +244,38 @@ class PartialPyramid(ImagePyramid):
             the weights for this tile update.
         """
 
-        [tile_x, tile_y, xst, xet, yst, yet] = coords
         acc_ = self._acc.get_tile(layer, tile_x, tile_y)
         occ_ = self._occ.get_tile(layer, tile_x, tile_y)
 
         if (acc_ is None) or (occ_ is None):
-            acc_ = np.zeros([self.tile_size, self.tile_size], dtype=np.double)
-            occ_ = np.zeros([self.tile_size, self.tile_size], dtype=np.double)
+            acc_ = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
+            occ_ = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
 
-        acc_[xst:xet, yst:yet] += frame_slice
-        occ_[xst:xet, yst:yet] += weights_slice
+        xs = max(tile_x * self.tile_size - x, 0)
+        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+        xst = max(x - tile_x * self.tile_size, 0)
+        xet = min(xst + (xe - xs), self.tile_size)
+
+        ys = max((tile_y * self.tile_size) - y, 0)
+        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+        yst = max(y - tile_y * self.tile_size, 0)
+        yet = min(yst + (ye - ys), self.tile_size)
+
+        assert isinstance(xs - frameOffsetX, int), "expected type int but got {} of value {}".format(type(xs - frameOffsetX), xs - frameOffsetX)
+        assert isinstance(xe - frameOffsetX, int), "expected type int but got {} of value {}".format(type(xe - frameOffsetX), xe - frameOffsetX)
+        assert isinstance(ys - frameOffsetY, int), "expected type int but got {} of value {}".format(type(ys - frameOffsetY), ys - frameOffsetY)
+        assert isinstance(ye - frameOffsetY, int), "expected type int but got {} of value {}".format(type(ye - frameOffsetY), ye - frameOffsetY)
+        acc_[xst:xet, yst:yet] += frame_slice[
+            xs - frameOffsetX:xe - frameOffsetX,
+            ys - frameOffsetY:ye - frameOffsetY,
+        ]
+        occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
         self._acc.save_tile(layer, tile_x, tile_y, acc_)
         self._occ.save_tile(layer, tile_x, tile_y, occ_)
 
         self._clean_tiles(tile_x, tile_y)
+
+
 
     def rebuild_base(self):
         """
@@ -270,7 +317,7 @@ class PartialPyramid(ImagePyramid):
                 chunk_shape=layer_chunk_shape,
                 nr_servers=self.nr_servers,
             ) and not self._imgs.tile_exists(new_layer, xc, yc):
-                tile = np.zeros([self.tile_size, self.tile_size], dtype=np.double)
+                tile = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
                 
                 NW = self.get_tile(input_level, 2 * xc, 2 * yc)
                 if not NW is None:
@@ -421,7 +468,7 @@ class DistributedImagePyramid(ImagePyramid):
         url = url.encode()
         return url
 
-    def put(self, path_prefix, data, server_idx):
+    def put(self, path_prefix, params, data, server_idx):
         """
         Sends a HTTP PUT request to a specified cluster server.
         """
@@ -429,7 +476,7 @@ class DistributedImagePyramid(ImagePyramid):
         for repeat in range(self.repeats):
             session = self.sessions[server_idx]
             try:
-                response = session.put(url, data=data, timeout=self.timeout)
+                response = session.put(url, params=params, data=data, timeout=self.timeout)
                 if not response.status_code == 200:
                     raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
                 return
@@ -493,30 +540,36 @@ class DistributedImagePyramid(ImagePyramid):
         Initializes PartialPyramid a on the specified server.
         """
         data = json.dumps(self.part_dict(server_idx, backend)).encode()
-        self.put('__part_pyramid_create', data, server_idx)
+        self.put('__part_pyramid_create', {}, data, server_idx)
         logger.debug("Created remote part pyramid for server {}".format(server_idx))
 
-    def get_tile_slices_from(
-        self, x, y, tile_x, tile_y, frameSizeX, frameSizeY, frame, weights
+    def extract_chunk_from(
+        self, x, y, chunk_idcs, frameSizeX, frameSizeY, frame,
     ):
         """
         Extracts the update coordinates and slices from an update frame and its weights.
         Essentially prepares the input for PartialPyramid.update_base_tile_from_slices().
         """
-        xs = max(tile_x * self.tile_size - x, 0)
-        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
-        xst = int(max(x - tile_x * self.tile_size, 0))
-        xet = int(min(xst + (xe - xs), self.tile_size))
+        [min_tile_x, min_tile_y, max_tile_x, max_tile_y] = chunk_idcs
 
-        ys = max((tile_y * self.tile_size) - y, 0)
-        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
-        yst = int(max(y - tile_y * self.tile_size, 0))
-        yet = int(min(yst + (ye - ys), self.tile_size))
+        xs = max(min_tile_x * self.tile_size - x, 0)
+        xe = min((max_tile_x + 1) * self.tile_size - x, frameSizeX)
+
+        ys = max((min_tile_y * self.tile_size) - y, 0)
+        ye = min(((max_tile_y + 1) * self.tile_size) - y, frameSizeY)
 
         frame_slice = frame[xs:xe, ys:ye]
-        weights_slice = weights[xs:xe, ys:ye]
-        coords = [tile_x, tile_y, xst, xet, yst, yet]
-        return frame_slice, weights_slice, coords
+        params = {
+            "x": x,
+            "y": y,
+            "chunk_idcs": chunk_idcs,
+            "frameSizeX": frameSizeX,
+            "frameSizeY": frameSizeY,
+            "frameOffsetX": xs,
+            "frameOffsetY": ys,
+        }
+
+        return frame_slice, params
 
     def update_base_tiles_from_frame(self, x, y, frame, weights):
         frameSizeX, frameSizeY = frame.shape[:2]
@@ -538,36 +591,45 @@ class DistributedImagePyramid(ImagePyramid):
                 np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1
             )
         )
-
         self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
         self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
 
+        server_chunks = {}
         for tile_x in tile_xs:
             for tile_y in tile_ys:
                 server_idx = server_for_chunk(
                     tile_x, tile_y, 0, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)
                 )
-                frame_slice, weights_slice, coords = self.get_tile_slices_from(
-                    x, y, tile_x, tile_y, frameSizeX, frameSizeY, frame, weights
-                )
-                self.update_tile_on_server(coords, frame_slice, weights_slice, server_idx)
+                if server_idx in server_chunks:
+                    server_chunks[server_idx][0] = min(
+                        server_chunks[server_idx][0], tile_x,
+                    )
+                    server_chunks[server_idx][1] = min(
+                        server_chunks[server_idx][1], tile_y,
+                    )
+                    server_chunks[server_idx][2] = max(
+                        server_chunks[server_idx][2], tile_x,
+                    )
+                    server_chunks[server_idx][3] = max(
+                        server_chunks[server_idx][3], tile_y,
+                    )
+                else:
+                    server_chunks[server_idx] = [tile_x, tile_y, tile_x, tile_y]
+        for server_idx in server_chunks:
+            frame_slice, params = self.extract_chunk_from(
+                x, y, server_chunks[server_idx], frameSizeX, frameSizeY, frame,
+            )
+            self.update_tiles_on_server(params, frame_slice, server_idx)
 
         self.pyramid_valid = False
 
-    def update_tile_on_server(self, coords, frame, weights, server_idx):
+    def update_tiles_on_server(self, params, frame_slice, server_idx):
         """
         Sends the output from get_tile_slices_from() to the responsible cluster
         server.
         """
-        data_dict = {
-            "frame_shape": frame.shape,
-            "frame_data": frame.ravel().tolist(),
-            "weights_shape": weights.shape,
-            "weights_data": weights.ravel().tolist(),
-            "coords": coords,
-        }
-        data = json.dumps(data_dict).encode()
-        self.put('__part_pyramid_update_tile', data, server_idx)
+        data = PZFFormat.dumps(frame_slice.astype(np.float32)) # PZFFormat doesn't like double/float64
+        self.put('__part_pyramid_update_tiles', params, data, server_idx)
 
     def finish_base_tiles(self):
         """
@@ -575,7 +637,7 @@ class DistributedImagePyramid(ImagePyramid):
         microscope end.
         """
         for server_idx in range(len(self.servers)):
-            self.put('__part_pyramid_finish', "".encode(), server_idx)
+            self.put('__part_pyramid_finish', {}, "".encode(), server_idx)
 
     def get_status_from_server(self, server_idx):
         """
@@ -593,7 +655,7 @@ class DistributedImagePyramid(ImagePyramid):
         server_idx = server_for_chunk(x, y, chunk_shape=layer_chunk_shape, nr_servers=len(self.servers))
         response = self.get("__part_pyramid_tile", {"layer": layer, "x": x, "y": y}, server_idx)
         tile_data = response.content
-        tile = np.frombuffer(tile_data, dtype=np.double)
+        tile = np.frombuffer(tile_data, dtype=np.float32)
         if len(tile) == 0:
             return None
         tile = tile.reshape((self.tile_size, self.tile_size))
@@ -838,8 +900,10 @@ def create_distributed_pyramid_from_dataset(filename, outdir, tile_size=128, **k
 if __name__ == '__main__':
     import sys
     import time
+    from PYME.util import mProfile
+    mProfile.profileOn(['distributed_pyramid.py',])
     input_stack, output_dir = sys.argv[1:]
     t1 = time.time()
     create_distributed_pyramid_from_dataset(input_stack, output_dir)
     logger.debug(time.time() - t1)
- 
+    mProfile.report()

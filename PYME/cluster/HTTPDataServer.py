@@ -353,8 +353,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def _do_part_pyramid(self):
         if self.path.lstrip('/').startswith('__part_pyramid_create'):
             self._create_part_pyramid()
-        elif self.path.lstrip('/').startswith('__part_pyramid_update_tile'):
-            self._update_base_tile()
+        elif self.path.lstrip('/').startswith('__part_pyramid_update_tiles'):
+            self._update_base_tiles()
         elif self.path.lstrip('/').startswith('__part_pyramid_finish'):
             self._finish_base_tiles()
         elif self.path.lstrip('/').startswith('__part_pyramid_update'):
@@ -374,11 +374,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return
 
-    def _update_base_tile(self):
-        filepath = self.path.lstrip('/')[len('__part_pyramid_update_tile'):]
+    def _update_base_tiles(self):
+        url = self.path.lstrip('/')[len('__part_pyramid_update_tiles'):]
+        parsed = urlparse.urlparse(url)
+        query = parsed.query
+        filepath = parsed.path
+        request_data = urlparse.parse_qs(query)
         data = self._get_data()
         assert filepath in part_pyramids, "PartialPyramid for {} not initialized yet".format(filepath)
-        part_pyramids[filepath].update_queue.put(data)
+        part_pyramids[filepath].update_queue.put((request_data, data))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -588,7 +592,11 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return f
 
     def _get_part_pyramid_status(self):
-        filepath = self.path.lstrip('/')[len('__part_pyramid_status'):]        
+        url = self.path.lstrip('/')[len('__part_pyramid_status'):]
+        parsed = urlparse.urlparse(url)
+        query = parsed.query
+        filepath = parsed.path
+        request_data = urlparse.parse_qs(query)
         status_data = part_pyramids[filepath].get_status_at_request()
 
         f = BytesIO()
@@ -607,7 +615,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse.urlparse(url)
         query = parsed.query
         filepath = parsed.path
-        request_data = dict(qc.split("=") for qc in query.split("&"))
+        request_data = urlparse.parse_qs(query)
         tile_data, dtype, shape = part_pyramids[filepath].get_tile_at_request(request_data)
 
         f = BytesIO()
