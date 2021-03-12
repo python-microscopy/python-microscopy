@@ -355,7 +355,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         cb = event.GetEventObject()
         self.fast_axis = cb.GetValue()
     
-    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=5):
+    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=600):
         from PYME.Acquire.actions import FunctionAction
         from PYME.IO import clusterIO
         import posixpath
