@@ -114,12 +114,19 @@ class PartialPyramid(ImagePyramid):
 
     def update_base_tiles_from_request(self, request_data, data):
         """
-        Updates a base tile with the input of a HTTP PUT request.
+        Updates base tiles with the input of a HTTP PUT request. A chunk
+        of a frame is sent per request and processed here, analoguous to
+        update_base_tiles_from_frame.
 
         Parameters:
         -----------
+        request_data : dict
+            simple parameter values for updating the base tiles.
+            Expects list values for keys `['x', 'y', 'chunk_idcs',
+            'frameSizeY', 'frameOffsetX', 'frameOffsetY']`.
         data : bytes
-            the bytes of a string from which a dictionary can be loaded (via JSON). Contains the input for update_base_tile_from_slices.
+            a chunk of a frame which this server is responsible for.
+            Sent via PZFFormat and loaded within this method.
         """
         frame_slice = PZFFormat.loads(data)[0]
         if len(frame_slice.shape) > 2:
@@ -127,11 +134,12 @@ class PartialPyramid(ImagePyramid):
 
         x = int(request_data["x"][0])
         y = int(request_data["y"][0])
-        chunk_idcs = np.asarray(request_data["chunk_idcs"], dtype=int)
         frameSizeX = int(request_data["frameSizeX"][0])
         frameSizeY = int(request_data["frameSizeY"][0])
         frameOffsetX = int(request_data["frameOffsetX"][0])
         frameOffsetY = int(request_data["frameOffsetY"][0])
+        chunk_idcs = np.asarray(request_data["chunk_idcs"], dtype=int)
+        assert len(chunk_idcs) == 4
 
         weights = np.ones((frameSizeX, frameSizeY))
         edgeRamp = min(100, int(.25 * frameSizeX))
@@ -160,7 +168,8 @@ class PartialPyramid(ImagePyramid):
         Parameters:
         -----------
         request : dictionary
-            Contains coordinates at keys ["layer", "x", "y"].
+            Contains coordinates at keys ["layer", "x", "y"]. Values
+            are expected to be in a list with one element.
         
         Returns
         -------
@@ -201,6 +210,11 @@ class PartialPyramid(ImagePyramid):
         -------
         bytes
             of a JSON string of the coords.
+
+        Notes
+        -----
+        There's probably a more efficient solution than JSON, but the
+        main bottleneck is frame chunk transferal at the moment.
         """
         level = int(request["level"])
         coords = self.get_layer_tile_coords(level)
@@ -230,8 +244,8 @@ class PartialPyramid(ImagePyramid):
         tile_x, tile_y, frame_slice, weights,
     ):
         """
-        Updates a base tile.
-        
+        Updates a base tile with parameters received via HTTP.
+
         Parameters
         ----------
         layer : int
@@ -297,7 +311,7 @@ class PartialPyramid(ImagePyramid):
 
     def make_new_layer(self, input_level):
         """
-        Analoguous to _make_layer from the super class, but only makes the tiles
+        Analoguous to _make_layer from the super class, but only makes the layer tiles
         for which this server is responsible.
         """
         from scipy import ndimage
@@ -438,7 +452,7 @@ class DistributedImagePyramid(ImagePyramid):
 
     def part_dict(self, server_idx, backend):
         """
-        Returns a dict for initializing PartialPyramid on a cluster server. 
+        Returns a dict for initializing a PartialPyramid on a cluster server. 
         """
         part_params = {
             "pyramid_tile_size": self.tile_size,
