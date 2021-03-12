@@ -375,6 +375,18 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         to_pop = [fn.split('_')[0] for fn in imaged_wells]
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, to_pop)
 
+        # if a node dies we might lose the detections file, but likely won't
+        # lose the entire subdirectory
+        to_pop = set()
+        for name in names:
+            if clusterIO.isdir(posixpath.join(spooldir, name)):
+                to_pop.add(name)
+            else:
+                for shame in range(1, self._shame_index):
+                    if clusterIO.isdir(posixpath.join(spooldir, name + '_%d' % shame)):
+                        to_pop.add(name)
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, set(to_pop))
+
         if len(names) < 1:
             return
         
