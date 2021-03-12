@@ -438,7 +438,7 @@ class DistributedImagePyramid(ImagePyramid):
 
     def part_dict(self, server_idx, backend):
         """
-        Returns a dict for initializing PartialPyramid on a cluster server.
+        Returns a dict for initializing PartialPyramid on a cluster server. 
         """
         part_params = {
             "pyramid_tile_size": self.tile_size,
