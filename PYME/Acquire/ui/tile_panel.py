@@ -363,20 +363,12 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         logger.debug('requeuing missed wells')
         time.sleep(sleep)
-
-        spooldir = self.scope.spoolController.dirname
-        detections_pattern = posixpath.join(spooldir, '[A-Z][0-9]*_detections.h5')
-        imaged = clusterIO.cglob(detections_pattern)
-        imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
-        logger.debug('imaged %d wells' % len(imaged_wells))
-
+        
         x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, start_pos)
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, self._drop_wells)
-        to_pop = [fn.split('_')[0] for fn in imaged_wells]
-        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, to_pop)
-
         # if a node dies we might lose the detections file, but likely won't
         # lose the entire subdirectory
+        spooldir = self.scope.spoolController.dirname
         to_pop = set()
         for name in names:
             if clusterIO.isdir(posixpath.join(spooldir, name)):
@@ -385,7 +377,8 @@ class MultiwellProtocolQueuePanel(wx.Panel):
                 for shame in range(1, self._shame_index):
                     if clusterIO.isdir(posixpath.join(spooldir, name + '_%d' % shame)):
                         to_pop.add(name)
-        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, set(to_pop))
+        logger.debug('imaged %d wells' % (len(names) - len(to_pop)))
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, list(to_pop))
 
         if len(names) < 1:
             return
