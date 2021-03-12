@@ -393,7 +393,7 @@ class eventLogPanel(wx.Panel):
         self.Update()
 
 class eventLogTPanel(wx.Panel):
-    def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1)):
+    def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1), activate=False):
         self.eventSource = eventSource
         self.metaData = metaData
         self.maxRange = list(timeRange)
@@ -428,6 +428,10 @@ class eventLogTPanel(wx.Panel):
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
 
         self.initialised = True
+        self.active = activate
+        
+    def activate(self):
+        self.active = True
 
     def DoPaint(self, dc):
         dc.Clear()
@@ -695,6 +699,9 @@ class eventLogTPanel(wx.Panel):
         dc.SetFont(wx.NullFont)
 
     def OnPaint(self,event):
+        if not (self.active and self.IsShownOnScreen()):
+            return
+        
         DC = wx.PaintDC(self)
         #self.PrepareDC(DC)
 

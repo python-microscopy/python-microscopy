@@ -58,8 +58,35 @@ def times_to_frames(t, events, mdh):
 
     #get events corresponding to aquisition starts
     startEvents = np.hstack((se, events[events['EventName'] == b'StartAq'], sf))
+    
+    ### hack to fix timing where there are long protocol init tasks (pre pr #948)
+    protocol_task_events = events[(events['EventName'] == b'ProtocolTask')]
+    try:
+        last_init_event_idx = -1
+        for j, s in enumerate(protocol_task_events['EventDescr']):
+            try:
+                fnum = int(s.decode('ascii').split(',')[0])
+                if fnum == -1:
+                    last_init_event_idx = j
+            except ValueError:
+                pass
+        
+        #print(last_init_event_idx, protocol_task_events[last_init_event_idx])
+        
+        if last_init_event_idx > -1:
+            fake_start_ev = np.empty(1, dtype=events.dtype)
+        
+            fake_start_ev['EventName'] = 'fake_start'
+            fake_start_ev['EventDescr'] = '0'
+            fake_start_ev['Time'] = protocol_task_events[last_init_event_idx]['Time']
+            
+            startEvents = np.hstack([startEvents, fake_start_ev])
+            
+            startEvents = startEvents[np.argsort(startEvents['Time'])]
+    except IndexError:
+        pass
 
-    #print startEvents
+    #print(startEvents)
 
     sfr = np.array([int(e['EventDescr'].decode('ascii')) for e in startEvents])
 
