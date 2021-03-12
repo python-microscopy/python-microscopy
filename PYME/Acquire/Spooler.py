@@ -134,11 +134,10 @@ class Spooler:
         self.imNum = 0
 
         self.protocol.Init(self)
-
-        self._collect_start_metadata()
         
         # record start time when we start receiving frames.
         self.tStart = time.time()
+        self._collect_start_metadata()
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         
         self.spoolOn = True
