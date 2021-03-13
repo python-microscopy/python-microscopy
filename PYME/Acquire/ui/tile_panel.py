@@ -366,6 +366,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         
         x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, start_pos)
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, self._drop_wells)
+        
         # if a node dies we might lose the detections file, but likely won't
         # lose the entire subdirectory
         spooldir = self.scope.spoolController.dirname
@@ -377,7 +378,17 @@ class MultiwellProtocolQueuePanel(wx.Panel):
                 for shame in range(1, self._shame_index):
                     if clusterIO.isdir(posixpath.join(spooldir, name + '_%d' % shame)):
                         to_pop.add(name)
-        logger.debug('imaged %d wells' % (len(names) - len(to_pop)))
+        logger.debug('subdirectories present for  %d wells' % (len(names) - len(to_pop)))
+
+        # Look for h5 detections too - if we just tiled the last well and hit
+        # this call we might have a detection file after the sleep but this
+        # call blocks the acquisition task queue, so we can't have a subdir yet
+        imaged = clusterIO.cglob(posixpath.join(spooldir, 
+                                                '[A-Z][0-9]*_detections.h5'))
+        imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
+        detected = set([fn.split('_')[0] for fn in imaged_wells])
+        logger.debug('detection h5 present for an additional %d wells' % (len(detected) - len(to_pop.intersection(detected))))
+        to_pop.union_update(detected)
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, list(to_pop))
 
         if len(names) < 1:
