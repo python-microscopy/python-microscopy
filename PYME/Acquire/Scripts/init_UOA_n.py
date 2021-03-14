@@ -44,8 +44,8 @@ def pz(scope):
     
 @init_hardware('XY Stage')
 def stage(scope):
-    from PYME.Acquire.Hardware.Mercury import mercuryStepper
-    scope.stage = mercuryStepper.mercuryStepper(comPort=4, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
+    from PYME.Acquire.Hardware.Mercury import mercuryStepperGCS
+    scope.stage = mercuryStepperGCS.mercuryStepper(comPort='COM4', baud=115200, axes=['X', 'Y'], steppers=['M-229.25S', 'M-229.25S'])
     scope.stage.SetSoftLimits(0, [1.06, 20.7])
     scope.stage.SetSoftLimits(1, [.8, 17.6])
 
@@ -155,12 +155,12 @@ def lasers(scope):
     from PYME.Acquire.Hardware import ioslave
     from PYME.Acquire.Hardware import phoxxLaser
 
-    slave = ioslave.IOSlave('COM6')
-    scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
+    #slave = ioslave.IOSlave('COM6')
+    #scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
 
-    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM7', scopeState=scope.state)
+    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM7', scopeState=scope.state, power_fudge=0.98)
     scope.CleanupFunctions.append(scope.l642.Close)
-    scope.lasers = [scope.l642, scope.l671]
+    scope.lasers = [scope.l642, ]#scope.l671]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
@@ -235,7 +235,7 @@ def drift_tracking(MainFrame, scope):
 
     def _drift_init():
         #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
-        scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+        scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     time.sleep(15)
     _drift_init()

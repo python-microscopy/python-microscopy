@@ -23,6 +23,9 @@ import numpy as np
 from . import fluor
 from . import simcontrol
 
+import logging
+logger = logging.getLogger(__name__)
+
 class dSimControl(afp.foldPanel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
@@ -448,7 +451,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.load_fluors(fn)
         
@@ -456,7 +459,7 @@ class dSimControl(afp.foldPanel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.save_points(fn)
   
@@ -470,7 +473,7 @@ class dSimControl(afp.foldPanel):
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf',
                              wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
-        print(fn)
+        logger.debug('Setting PSF from file: %s' %fn)
         if fn == '':
             return
         else:
@@ -580,7 +583,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadEmpiricalHistButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.load_empirical_histogram(fn)
             self.stEmpiricalHist.SetLabel('File: %s' % fn)

@@ -110,9 +110,8 @@ class Spooler(sp.Spooler):
         
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
-    def StopSpool(self):
-        """Stop spooling and close file"""
-        sp.Spooler.StopSpool(self)
+    def finalise(self):
+        """ close files"""
            
         self.h5File.flush()
         self.h5File.close()

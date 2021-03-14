@@ -52,7 +52,7 @@ git+https://github.com/olivierverdier/dispatch.git@master#egg=dispatch; python_v
 # django is used for the full-blown clusterUI (see cluster analysis docs) but is not required for most analysis tasks. Don't install by default as backwards
 # compatibility between django versions is not great and it's hard to keep this tracking the latest security fixes. Installing a (potentially old and insecure)
 # version of django should be a deliberate choice.  
-# django==1.11.29
+# django==2.1
 
 #networkx
 #pywin32 [win]

@@ -227,13 +227,19 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl, nRetries=1, timeout=5):
+def _listSingleDir(dirurl, nRetries=1, timeout=10, strict_caching=False):
     t = time.time()
 
     try:
         dirL, rt, dt = _dirCache[dirurl]
-        if (t - rt) > DIR_CACHE_TIME:
-            raise RuntimeError('key is expired')
+        time_in_cache = t - rt
+        if time_in_cache > DIR_CACHE_TIME:
+            # use cached value if the last request took longer than the length of time we've been expired as it
+            # doesn't make sense to hit the server again
+            if strict_caching or (time_in_cache > (DIR_CACHE_TIME + dt)):
+                raise RuntimeError('key is expired')
+            else:
+                logger.warning('Using expired entry from directory cache on %s as previous request took too long' % dirurl)
         #logger.debug('dir cache hit')
     except (KeyError, RuntimeError):
         #logger.debug('dir cache miss')
@@ -256,7 +262,11 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
                     raise
 
         dt = time.time() - t
-        if not r.status_code == 200:
+        
+        if dt > 1:
+            logger.warning('_listSingleDir(%s) took longer than 1s (%3.2fs)'% (url, dt))
+        
+        if not r.status_code in [200, 404]: # if a directory is only on one node, we'll get 404s from all of the others. This is expected and not worth logging
             logger.debug('Request for %s failed with error: %d' % (url, r.status_code))
 
             #make sure we read a reply so that the far end doesn't hold the connection open
@@ -742,13 +752,13 @@ def get_local_path(filename, serverfilter):
     filename = (filename)
     serverfilter = (serverfilter)
     
-    if serverfilter == local_serverfilter and local_dataroot:
+    if (serverfilter == local_serverfilter or serverfilter == '') and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
         if os.path.exists(localpath):
             return localpath
 
-def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=0.5):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=5):
     """
     Get a file from the cluster.
     
@@ -813,7 +823,11 @@ def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_c
         try:
             nTries += 1
             s = _getSession(url)
+            t = time.time()
             r = s.get(url, timeout=timeout)
+            dt = time.time() - t
+            if dt > 1:
+                logger.warning('get_file(%s) took > 1s (%3.2fs)' % (url, dt))
             haveResult = True
         except (requests.Timeout, requests.ConnectionError):
             # s.get sometimes raises ConnectionError instead of ReadTimeoutError
@@ -923,7 +937,7 @@ def mirror_file(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
+def put_file(filename, data, serverfilter=local_serverfilter, timeout=10):
     """
     Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
     designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
@@ -982,6 +996,9 @@ def put_file(filename, data, serverfilter=local_serverfilter, timeout=1):
                 raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
 
             _lastwritespeed[name] = len(data) / (dt + .001)
+            
+            if dt > 1:
+                logger.warning('put_file(%s) on %s took more than 1s (%3.2f s)' % (filename, url, dt))
             
             success = True
 
@@ -1094,7 +1111,7 @@ if USE_RAW_SOCKETS:
         return status, reason, data
                 
     
-    def put_files(files, serverfilter=local_serverfilter):
+    def put_files(files, serverfilter=local_serverfilter, timeout=30):
         """
         Put a bunch of files to a single server in the cluster (chosen by algorithm)
         
@@ -1132,7 +1149,7 @@ if USE_RAW_SOCKETS:
                 t = time.time()
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                s.settimeout(5.0)
+                s.settimeout(30)
         
                 #conect to the server
                 s.connect((socket.inet_ntoa(info.address), info.port))

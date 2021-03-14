@@ -6,6 +6,12 @@ import json
 import numpy as np
 import time
 
+def format_values(d, context):
+    for k in d.keys():
+            if isinstance(d[k], str):
+                d[k] = d[k].format(**context)
+            elif isinstance(d[k], dict):
+                format_values(d[k], context)
 
 @register_module('QueueAcquisitions')
 class QueueAcquisitions(OutputModule):
@@ -95,13 +101,12 @@ class QueueAcquisitions(OutputModule):
         Notes
         -----
         str spool_settings values can context-substitute templated parameters,
-        e.g. spool_settings = {'subdirectory': '{file_stub}'}
+        e.g. spool_settings = {'subdirectory': '{file_stub}',
+                               'extra_metadata: {'Samples.Well': '{file_stub}'}}
         """
         # substitute spool settings
         spool_settings = self.spool_settings.copy()
-        for k in spool_settings.keys():
-            if isinstance(spool_settings[k], str):
-                spool_settings[k] = spool_settings[k].format(**context)
+        format_values(spool_settings, context)
         
         try:  # get positions in units of micrometers
             positions = np.stack((namespace[self.input_positions]['x_um'], 
@@ -119,29 +124,34 @@ class QueueAcquisitions(OutputModule):
         else:
             positions = positions[::-1, :] if self.lifo else positions
         
-        dest = self.action_server_url + '/queue_action'
+        dest = self.action_server_url + '/queue_actions'
         session = requests.Session()
+        actions = list()
         for ri in range(positions.shape[0]):
-            args = {'function_name': 'centre_roi_on', 
-            'args': {'x': positions[ri, 0], 'y': positions[ri, 1]}, 
-                    'timeout': self.timeout, 'nice': self.nice,
-                    'max_duration': self.max_duration}
-            session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
-            
-            time.sleep(self.between_post_throttle)
-
-            args = {'function_name': 'spoolController.StartSpooling',
-                    'args': spool_settings,
-                    'timeout': self.timeout, 'nice': self.nice,
-                    'max_duration': self.max_duration}
-            session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
-            
-            time.sleep(self.between_post_throttle)
+            actions.append({
+                'CentreROIOn':{
+                    'x': positions[ri, 0], 'y': positions[ri, 1],
+                    'then': {
+                        'SpoolSeries' : spool_settings
+                    }
+                }
+            })
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        self.nice,
+                                                                        self.max_duration),
+                        data=json.dumps(actions),
+                        headers={'Content-Type': 'application/json'})
         
         # queue a high-nice call to shut off all lasers when we're done
-        args = {'function_name': 'turnAllLasersOff',
-                    'timeout': self.timeout, 'nice': np.iinfo(int).max}
-        session.post(dest, data=json.dumps(args), 
-                          headers={'Content-Type': 'application/json'})
+        # FIXME - there has to be a better way of handling this!
+        # a) protocols should turn lasers off anyway
+        # b) maybe have a a specific 'safe state' fallback in the action manager for when the queue is empty?
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        20,
+                                                                        self.max_duration),
+                        data=json.dumps([{
+                            'FunctionAction': {
+                                'functionName': 'turnAllLasersOff', 'args': {}
+                                }
+                            }]),
+                        headers={'Content-Type': 'application/json'})

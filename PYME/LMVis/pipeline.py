@@ -824,7 +824,14 @@ class Pipeline:
         
         self.recipe.execute()
         self.filterKeys = {}
-        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        if 'filtered_localizations' in self.dataSources.keys():
+            self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        else:
+            # TODO - replace / remove this fallback with something better. This is currently required
+            # when we use/abuse the pipeline in dh5view, but that should ideally be replaced with
+            # something cleaner. This (and case above) should probably also be conditional on `clobber_recipe`
+            # as if opening with an existing recipe we would likely want to keep selectedDataSource constant as well.
+            self.selectDataSource('FitResults')
 
         # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
         self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
@@ -1115,7 +1122,6 @@ class Pipeline:
 
         
     
-
 
 
 

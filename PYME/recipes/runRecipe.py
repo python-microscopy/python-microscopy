@@ -78,6 +78,10 @@ def runRecipe(recipe, inputs, outputs, context={}):
                   following execution of the recipe.
     """
     try:
+        if not isinstance(recipe, modules.ModuleCollection):
+            # recipe is a string
+            recipe = modules.ModuleCollection.fromYAML(recipe)
+        
         #the recipe instance might be re-used - clear any previous data
         recipe.namespace.clear()
 

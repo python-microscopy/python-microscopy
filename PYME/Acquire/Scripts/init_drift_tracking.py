@@ -22,7 +22,6 @@
 ##################
 from PYME.Acquire.ExecTools import joinBGInit, HWNotPresent, init_gui, init_hardware
 
-
 from PYME.Acquire.Hardware import fakeShutters
 import time
 import os
@@ -49,14 +48,18 @@ def cam(scope):
 #PIFoc
 @init_hardware('PIFoc')
 def pifoc(scope):
-    from PYME.Acquire.Hardware.Piezos import offsetPiezo
+    import sys
+    if sys.version_info.major > 2:
+        from PYME.Acquire.Hardware.Piezos import offsetPiezoREST as offsetPiezo
+    else:
+        from PYME.Acquire.Hardware.Piezos import offsetPiezo
     scope.piFoc = offsetPiezo.getClient()
     scope.register_piezo(scope.piFoc, 'z')
 
 @init_gui('Drift tracking')
 def drift_tracking(MainFrame, scope):
     from PYME.Acquire.Hardware import driftTracking, driftTrackGUI
-    scope.dt = driftTracking.correlator(scope, scope.piFoc)
+    scope.dt = driftTracking.Correlator(scope, scope.piFoc)
     dtp = driftTrackGUI.DriftTrackingControl(MainFrame, scope.dt)
     MainFrame.camPanels.append((dtp, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(dtp.refresh)

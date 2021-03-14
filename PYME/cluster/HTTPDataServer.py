@@ -211,7 +211,7 @@ class _LimitedSizeDict(OrderedDict):
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
 
-_listDirLock = threading.Lock()
+#_listDirLock = threading.Lock()
 
 from PYME.IO import clusterListing as cl
 
@@ -221,6 +221,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     timeoutTesting = 0
     logrequests = False
     timeout=None
+    
+    def __init__(self, *args, **kwargs):
+        self._path_cache = _LimitedSizeDict(size_limit=1000)
+        http.server.SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
 
 
     def _aggregate_txt(self):
@@ -244,6 +248,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(path):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(path, -1)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -251,9 +259,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
                 f.write(data)
-
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -276,6 +281,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             data = self._gzip_decompress(data)
             
         return data
+    
+    def translate_path(self, path):
+        try:
+            return self._path_cache[path]
+        except KeyError:
+            self._path_cache[path] = http.server.SimpleHTTPRequestHandler.translate_path(self, path)
+            return self._path_cache[path]
 
     def _aggregate_h5r(self):
         """
@@ -302,10 +314,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         data = self._get_data()
 
-        dirname = os.path.dirname(filename)
-        #if not os.path.exists(dirname):
-        #    os.makedirs(dirname)
-        makedirs_safe(dirname)
+        if not os.path.exists(filename):
+            dirname = os.path.dirname(filename)
+            #if not os.path.exists(dirname):
+            #    os.makedirs(dirname)
+            makedirs_safe(dirname)
+        
+            if USE_DIR_CACHE:
+                # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+                cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -335,9 +352,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 h5f.appendToTable(tablename.lstrip('/'), data)
                 #logging.debug('added data to table')
 
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -370,16 +384,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         #if not os.path.exists(dirname):
         #    os.makedirs(dirname)
         makedirs_safe(dirname)
+        
+        if USE_DIR_CACHE and not os.path.exists(filename):
+            # only update directory cache on initial creation to avoid lock thrashing. Use a placeholder size to indicate file is not complete
+            cl.dir_cache.update_cache(filename, -1)
 
         #logging.debug('opening h5r file')
         with h5File.openH5(filename, 'a') as h5f:
             tablename = tablename.lstrip('/')
             h5f.put_file(tablename, data)
             
-
-        #logging.debug('left h5r file')
-        if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -612,18 +626,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         """
         from PYME.IO import clusterListing as cl
+        curTime = time.time()
 
-        with _listDirLock:
-            #make sure only one thread calculates the directory listing
-            curTime = time.time()
+        with cl.dir_cache.dir_lock(path):
+            # if dir is in already in cache, return
             try:
                 js_dir, expiry = _dirCache[path]
                 if expiry < curTime:
-                    raise RuntimeError('Expired')
-                
-                #logger.debug('jsoned dir cache hit')
-            except (KeyError, RuntimeError):
-                #logger.debug('jsoned dir cache miss')
+                    try:
+                        # remove directory entry from cache as it's expired.
+                        _dirCache.pop(path)
+                    except KeyError:
+                        pass
+                    
+                    raise KeyError('Entry expired')
+            
+            except KeyError:
                 try:
                     if USE_DIR_CACHE:
                         l2 = cl.dir_cache.list_directory(path)
@@ -867,6 +885,7 @@ def main(protocol="HTTP/1.0"):
     default_root = config.get('dataserver-root', os.curdir)
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
+    op.add_option('--thread-profile', dest='thread_profile', help="Enable thread profiling", default=False, action="store_true")
     default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
@@ -880,6 +899,12 @@ def main(protocol="HTTP/1.0"):
         mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
+        
+    if options.thread_profile:
+        from PYME.util import fProfile
+        
+        tp = fProfile.ThreadProfiler()
+        tp.profile_on(outfile=options.root + '/LOGS/%s/tProf/dataserver.txt' % compName)
 
     # setup logging to file
     log_dir = '%s/LOGS/%s' % (options.root, compName)
@@ -960,12 +985,21 @@ def main(protocol="HTTP/1.0"):
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)
+            
+        if options.thread_profile:
+            tp.profile_off()
 
         sp.stop()
 
         if GPU_STATS:
             pynvml.nvmlShutdown()
 
+        try:
+            from pytest_cov.embed import cleanup
+            cleanup()
+        except:
+            pass
+        
         sys.exit()
 
 

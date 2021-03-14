@@ -24,11 +24,22 @@ class FocusLockPanel(wx.Panel):
         hsizer.Add(self.set_position_button, 0, wx.ALL, 2)
         self.set_position_button.Bind(wx.EVT_BUTTON, self.OnUpdateSetpoint)
 
+        if self.offset_piezo is not None:
+            self.set_home_button = wx.Button(self, -1, 'Set Home')
+            hsizer.Add(self.set_home_button, 0, wx.ALL, 2)
+            self.set_home_button.Bind(wx.EVT_BUTTON, self.OnUpdateHome)
+
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.set_subtraction_button = wx.Button(self, -1, 'Set Dark')
         hsizer.Add(self.set_subtraction_button, 0, wx.ALL, 2)
         self.set_subtraction_button.Bind(wx.EVT_BUTTON, self.OnSetSubtractionProfile)
+        if hasattr(self.servo, 'subtraction_profile') and self.servo.subtraction_profile is not None:
+            self.set_subtraction_button.SetBackgroundColour("green")
 
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
+        
 
         if self.offset_piezo is not None:
             offset, offset_range = self._get_offset_and_range()
@@ -61,9 +72,14 @@ class FocusLockPanel(wx.Panel):
 
     def OnUpdateSetpoint(self, event):
         self.servo.ChangeSetpoint()
+    
+    def OnUpdateHome(self, wx_event):
+        if self.servo.lock_enabled:
+            self.servo._piezo_home = self.offset_piezo.GetTargetPos()
 
     def OnSetSubtractionProfile(self, event):
         self.servo.SetSubtractionProfile()
+        self.set_subtraction_button.SetBackgroundColour("green")
 
     def refresh(self):
         self.lock_checkbox.SetValue(bool(self.servo.lock_enabled))

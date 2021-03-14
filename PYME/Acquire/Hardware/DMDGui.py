@@ -8,6 +8,9 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 display_mode = [
         'DISP_MODE_IMAGE',      #/* Static Image */
         'DISP_MODE_TEST_PTN',       #/* Internal Test pattern */
@@ -64,7 +67,7 @@ class DMDModeChooserPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMD(self, event):
-        print("Set display mode to: %s"  % self.cDMD.GetStringSelection())
+        logger.debug("Set display mode to: %s"  % self.cDMD.GetStringSelection())
 
     def OnBSetmodeButton(self, event):
         if self.cDMD.GetStringSelection() == 'Image Sequence':
@@ -104,7 +107,7 @@ class DMDTestPattern(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMDtp(self, event):
-        print("select pattern %s" % self.cDMDtp.GetStringSelection())
+        logger.debug("select pattern %s" % self.cDMDtp.GetStringSelection())
 
     def OnBSendButton(self, event):
         self.lc.SetTestPattern(test_pattern.index(self.cDMDtp.GetStringSelection()))

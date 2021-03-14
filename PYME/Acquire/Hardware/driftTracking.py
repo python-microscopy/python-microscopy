@@ -14,10 +14,13 @@ from scipy import ndimage
 from PYME.Acquire import eventLog
 #from PYME.gohlke import tifffile as tif
 
-import Pyro.core
-import Pyro.naming
+#import Pyro.core
+#import Pyro.naming
 import threading
 from PYME.misc.computerName import GetComputerName
+
+import logging
+logger = logging.getLogger(__name__)
 
 def correlateFrames(A, B):
     A = A.squeeze()/A.mean() - 1
@@ -63,9 +66,8 @@ def correlateAndCompareFrames(A, B):
     return (As -B).mean(), dx, dy
     
     
-class correlator(Pyro.core.ObjBase):
+class Correlator(object):
     def __init__(self, scope, piezo=None):
-        Pyro.core.ObjBase.__init__(self)
         self.scope = scope
         self.piezo = piezo
         
@@ -236,7 +238,7 @@ class correlator(Pyro.core.ObjBase):
         #what is the offset between our target position and the calibration position         
         posDelta = nomPos - calPos
         
-        print('%s' % [nomPos, posInd, calPos, posDelta])
+        #print('%s' % [nomPos, posInd, calPos, posDelta])
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -345,7 +347,7 @@ class correlator(Pyro.core.ObjBase):
             if self.lockActive:
                 if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
-                    print("focus lock released")
+                    logger.info("focus lock released")
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
                     zcorr = self.piezo.GetOffset() - dz
                     if zcorr < - self.maxfac*self.focusTolerance:
@@ -394,11 +396,24 @@ class correlator(Pyro.core.ObjBase):
     #     time.sleep(0.5)
     #     self.setRefC()
     #     piezo.MoveTo(0, p)
-    
+
+
+def correlator(scope, piezo=None):
+    # API compatible constructor for Py2
+    import Pyro.core
+    class klass(Pyro.core.ObjBase):
+        def __init__(self, scope, piezo=None):
+            Pyro.core.ObjBase.__init__(self)
+            Correlator.__init__(self, scope, piezo=piezo)
+
+    return klass
+
 
 class ServerThread(threading.Thread):
     def __init__(self, driftTracker):
         threading.Thread.__init__(self)
+        import Pyro.core
+        import Pyro.naming
 
         import socket
         ip_addr = socket.gethostbyname(socket.gethostname())
@@ -443,7 +458,7 @@ class ServerThread(threading.Thread):
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print('Shutting down drift tracking Server')
+        logger.info('Shutting down drift tracking Server')
         self.daemon.shutdown(True)
     
 def getClient(compName = GetComputerName()):

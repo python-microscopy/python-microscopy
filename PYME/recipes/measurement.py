@@ -663,6 +663,13 @@ class Measure2D(ModuleBase):
                     
                     self._keys.remove('euler_number') #buggy!
                     
+                    # remove all the image measurements - as these will potentially generate export errors
+                    # and are not super-useful
+                    self._keys.remove('convex_image')
+                    self._keys.remove('filled_image')
+                    self._keys.remove('image')
+                    self._keys.remove('intensity_image')
+                    
                     if not contours is None:
                         self._keys += ['contour']
                         

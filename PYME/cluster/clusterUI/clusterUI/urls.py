@@ -13,8 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url #, include#, path
-from django.urls import include, path
+from django.conf.urls import url, include#, path
+from django.urls import path
 from django.contrib import admin
 from django.views.generic.base import RedirectView
 
@@ -26,6 +26,6 @@ urlpatterns = [
     url(r'^status/', include('clusterstatus.urls')),
     #url(r'^localization/', include('localization.urls')),
     path('localization/', include('localization.urls')),
-    url(r'^recipes/', include('recipes.urls')),
+    path('recipes/', include('recipes.urls')),
     url(r'^$', RedirectView.as_view(url='/files/')), #redirect the base view to files for now
 ]

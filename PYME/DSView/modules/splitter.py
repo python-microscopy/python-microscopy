@@ -137,7 +137,7 @@ class Unmixer(Plugin):
         else:
             mode = 'lite'
             
-        print(im.data[:,:,1,1].shape)
+        #print(im.data[:,:,0,1].shape)
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 

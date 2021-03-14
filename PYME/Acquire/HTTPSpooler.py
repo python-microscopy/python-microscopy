@@ -217,7 +217,7 @@ class Spooler(sp.Spooler):
             logging.error('An exception occurred in one of the spooling threads')
             raise RuntimeError('An exception occurred in one of the spooling threads')
         else:
-            return self._postQueue.empty() and (self._numThreadsProcessing == 0)
+            return (not self._dPoll) and self._postQueue.empty() and (self._numThreadsProcessing == 0)
 
         
     def getURL(self):
@@ -236,9 +236,7 @@ class Spooler(sp.Spooler):
         else:
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
-    def StopSpool(self):
-        sp.Spooler.StopSpool(self)
-
+    def finalise(self):
         # wait until our input queue is empty rather than immediately stopping saving.
         self._stopping=True
         logger.debug('Stopping spooling %s' % self.seriesName)

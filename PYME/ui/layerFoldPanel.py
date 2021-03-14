@@ -44,7 +44,7 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
         
         #print img.shape, img.strides
         
-        return wx.BitmapFromBuffer(30, 10, img)
+        return wx.Bitmap.FromBuffer(30, 10, img)
     
     @_active_bitmap.setter
     def _active_bitmap(self, val):
