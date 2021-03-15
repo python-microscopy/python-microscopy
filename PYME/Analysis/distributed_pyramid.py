@@ -586,6 +586,32 @@ class DistributedImagePyramid(ImagePyramid):
         return frame_slice, params
 
     def update_base_tiles_from_frame(self, x, y, frame, weights):
+        """
+        Identifiers which server is responsible for which chunk and
+        sends corresponding frame slices to the servers.
+
+        Notes
+        -----
+        At the moment, it is assumed a server is responsible for at most
+        one chunk. For example, given a 2x2 frame, 1x1 chunks and 4
+        servers, one may describe the responsibility via a matrix:
+        `[
+            [1, 2],
+            [3, 4],
+        ]`
+        where matrix values indicate which server is responsible for the
+        tile (and chunk in this case) at their position. However, if only
+        2 servers are present, the matrix may look like this:
+        `[
+            [1, 2],
+            [2, 1],
+        ]`
+        in which case the whole frame is sent to both servers, even though
+        each only needs a part (one half / two quarters) of the frame.
+        The matrix can be built with the `server_for_chunk(...)` function
+        at the top, but a way to differentiate between these chunks is needed
+        for higher efficiency.
+        """
         frameSizeX, frameSizeY = frame.shape[:2]
         
         out_folder = os.path.join(self.base_dir, '0')
@@ -639,7 +665,7 @@ class DistributedImagePyramid(ImagePyramid):
 
     def update_tiles_on_server(self, params, frame_slice, server_idx):
         """
-        Sends the output from get_tile_slices_from() to the responsible cluster
+        Sends the output from `get_tile_slices_from()` to the responsible cluster
         server.
         """
         data = PZFFormat.dumps(frame_slice.astype(np.float32)) # PZFFormat doesn't like double/float64
