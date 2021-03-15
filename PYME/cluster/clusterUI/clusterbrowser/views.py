@@ -31,7 +31,7 @@ def file(request, filename):
         #    file (at the end of the with block)
         # 2) We pass the filename of the temporary file to img.Save. This will mean that a second file object / file handle
         #    gets created, the contents get written, and the file gets closed
-        with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext) as outf:
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext, delete=False) as outf:
             img.Save(outf.name)
 
             #seek to update temporary file (so that it knows the new length)
