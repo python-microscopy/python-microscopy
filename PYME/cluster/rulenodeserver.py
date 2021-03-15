@@ -224,7 +224,8 @@ class NodeServer(object):
                     if n_tasks >= n_tasks_to_request:
                         break
                         
-                if n_tasks < n_tasks_to_request:
+                if n_tasks < 1:
+                    # only bid on non-local if we haven't found any local tasks
                     #logger.debug('Found %d local tasks' % n_tasks)
                     #logger.debug('Could not find enough local tasks, bidding on non-local')
                     #bid for non-local tasks

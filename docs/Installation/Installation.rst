@@ -5,7 +5,7 @@ Installation
 
 The best PYME installation method will depend on your background and whether you are already using python on your computer.
 
-If you have an existing PYME installation, we recommend :ref:`removing it<Removing a PYME install>` before installing a new one.
+If you have an existing PYME installation, we recommend :ref:`removing it <removing>` before installing a new one.
 
 Executable installers (Windows and OSX)
 =======================================
@@ -166,6 +166,8 @@ msvc for python.
 .. rubric:: Footnotes
 
 .. [#anacondaprompt] On OSX or linux this is the command prompt. On Windows, this is accessed from the "Miniconda" or "PYME" folder in the start menu.
+
+.. _removing:
 
 Removing a PYME install
 =======================

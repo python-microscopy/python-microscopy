@@ -209,7 +209,7 @@
         function on_analysis_settings(fitModule='LatGaussFitFR'){
         //console.log('about to reload')
             togglePanel('#localization_form');
-            $('#localization_form').load('/localization/settings/' + fitModule,function () {
+            $('#localization_form').load('/localization/settings/' + fitModule + '/', function () {
                 //alert( "Load was performed." );
                 // $(this).unwrap();
                 //console.log('load performed')
