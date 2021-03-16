@@ -188,7 +188,9 @@ class SpoolController(object):
         
         for k, v in settings.items():
             setattr(self, k, v)
-        
+
+        with self._status_changed_condition:
+            self._status_changed_condition.notify_all()
             
             
         
