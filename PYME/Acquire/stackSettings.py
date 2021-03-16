@@ -51,6 +51,7 @@ class StackSettings(object):
         'NumSlices': 100,
         'ScanMode': SCAN_MODES[0],
         'ScanPiezo': 'z',
+        'DwellFrames': 1,
     }
         
     def __init__(self,scope, **kwargs):
@@ -89,23 +90,30 @@ class StackSettings(object):
         # add webui endpoints (if running under webui)
         webui.add_endpoints(self, '/stack_settings')
 
-    @webframework.register_endpoint('/update', output_is_json=False)
-    def update(self, ScanMode=None, StartPos=None, EndPos=None, StepSize=None, NumSlices=None, ScanPiezo=None):
+    
+    def update(self, ScanMode=None, StartPos=None, EndPos=None, StepSize=None, NumSlices=None, ScanPiezo=None, DwellFrames=None):
         if ScanPiezo is not None:
             self.ScanChan = ScanPiezo
         if ScanMode is not None:
             self.StartMode = self.SCAN_MODES.index(ScanMode)
         if NumSlices is not None:
-            self.SeqLength = NumSlices
+            self.SeqLength = int(NumSlices)
         if StepSize is not None:
-            self.StepSize = StepSize
+            self.StepSize = float(StepSize)
         if StartPos is not None:
-            self.startPos = StartPos
+            self.startPos = float(StartPos)
         if EndPos is not None:
-            self.endPos = EndPos
+            self.endPos = float(EndPos)
+        if DwellFrames is not None:
+            self._dwell_frames = float(DwellFrames)
             
         with self._settings_changed:
             self._settings_changed.notify_all()
+
+    @webframework.register_endpoint('/update', output_is_json=False)
+    def update_json(self, body):
+        import json
+        self.update(**json.loads(body))
 
     @webframework.register_endpoint('/settings', output_is_json=False)
     def settings(self):
@@ -116,6 +124,7 @@ class StackSettings(object):
             'NumSlices' : self.GetSeqLength(),
             'ScanMode': self.SCAN_MODES[self.GetStartMode()],
             'ScanPiezo' : self.GetScanChannel(),
+            'DwellFrames' : self._dwell_frames,
         }
 
     @webframework.register_endpoint('/settings_longpoll', output_is_json=False)
@@ -123,14 +132,7 @@ class StackSettings(object):
         with self._settings_changed:
             self._settings_changed.wait()
         
-        return {
-            'StartPos': self.GetStartPos(),
-            'EndPos': self.GetEndPos(),
-            'StepSize': self.GetStepSize(),
-            'NumSlices': self.GetSeqLength(),
-            'ScanMode': self.SCAN_MODES[self.GetStartMode()],
-            'ScanPiezo': self.GetScanChannel(),
-        }
+        return self.settings()
         
                          
     def GetScanChannel(self):
@@ -146,7 +148,7 @@ class StackSettings(object):
             self._settings_changed.notify_all()
     
     def SetSeqLength(self,iLength):
-        self.SeqLength = iLength
+        self.SeqLength = int(iLength)
         with self._settings_changed:
             self._settings_changed.notify_all()
         
@@ -165,7 +167,7 @@ class StackSettings(object):
         return self.StartMode
     
     def SetStepSize(self, fSize):
-        self.StepSize = fSize
+        self.StepSize = float(fSize)
         with self._settings_changed:
             self._settings_changed.notify_all()
     
@@ -173,7 +175,7 @@ class StackSettings(object):
         return self.StepSize
     
     def SetStartPos(self, sPos):
-        self.startPos = sPos
+        self.startPos = float(sPos)
         with self._settings_changed:
             self._settings_changed.notify_all()
         
@@ -186,7 +188,7 @@ class StackSettings(object):
             return self.startPos
             
     def SetEndPos(self, ePos):
-        self.endPos = ePos
+        self.endPos = float(ePos)
         with self._settings_changed:
             self._settings_changed.notify_all()
         
