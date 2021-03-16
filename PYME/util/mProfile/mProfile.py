@@ -55,6 +55,11 @@ import webbrowser
 import tempfile
 import threading
 
+if sys.version_info[0] >= 3:
+    time_fcn = time.perf_counter
+else:
+    time_fcn = time.clock
+
 #lStore.tPrev = time.time()
 
 #lStore.lPrev = None
@@ -121,7 +126,7 @@ def te(frame, event, arg):
     funcName = fn + ' ' + frame.f_code.co_name 
     #print fn
     if fn in filenames and not lStore.lPrev[funcName] is None:
-        t = time.clock()
+        t = time_fcn()
         files[lStore.lPrev[funcName][0]][lStore.lPrev[funcName][1]] += (t - lStore.tPrev[funcName])
         lStore.lPrev[funcName] = None
     
@@ -133,7 +138,7 @@ def te(frame, event, arg):
             linecounts[fn][frame.f_lineno] += 1
             fullfilenames[fn] = frame.f_code.co_filename
             lStore.lPrev[funcName] = (fn,frame.f_lineno)
-            lStore.tPrev[funcName] = time.clock()
+            lStore.tPrev[funcName] = time_fcn()
 
 
 
