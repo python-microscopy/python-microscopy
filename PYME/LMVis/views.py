@@ -55,9 +55,9 @@ class View(object):
         """
         super(View, self).__init__()
         self._view_id = view_id
-        self.vec_up = np.array(vec_up)  # y-dir
-        self.vec_back = np.array(vec_back)  # z-dir
-        self.vec_right = np.array(vec_right)  # x-dir
+        self.vec_up = np.array(vec_up)
+        self.vec_back = np.array(vec_back)
+        self.vec_right = np.array(vec_right)
         self.translation = np.array(translation)
         self.scale = scale
         if isinstance(clipping, np.ndarray) and (clipping.dtype == clipping_dtype):
