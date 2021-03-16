@@ -61,6 +61,11 @@ import re
 
 import site
 
+if sys.version_info[0] >= 3:
+    time_fcn = time.perf_counter
+else:
+    time_fcn = time.clock
+
 lib_prefix = site.getsitepackages()[0]
 len_lib_prefix = len(lib_prefix)
 
@@ -71,8 +76,11 @@ class ThreadProfiler(object):
         self._do_poll = True
         self._out_queue = Queue.Queue()
 
-    def profile_on(self, regex='.*PYME.*', outfile='profile.txt'):
-        self.regex = re.compile(regex)
+    def profile_on(self, subs=['PYME/',], outfile='profile.txt'):
+        #self.regex = re.compile(regex)
+        self.subs = subs
+        
+        self._test = compile('(' + ' or '.join(["'%s' in fn" % s for s in subs]) + ')', 'fp', 'eval')
         self.outfile = open(outfile, 'w')
 
         sys.setprofile(self.prof_callback)
@@ -109,20 +117,46 @@ class ThreadProfiler(object):
                 pass
 
     def prof_callback(self, frame, event, arg):
-        if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__) and self.regex.match(frame.f_code.co_filename):
+        if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__):
+            fn = frame.f_code.co_filename
+            if eval(self._test):
+                funcName = fn + '\t' + frame.f_code.co_name
+                #stack = '.'.join(frame.f_code.co_names)
+                stack = frame.f_code.co_firstlineno #frame.f_back.f_code.co_name
+    
+                t = time_fcn()
+    
+                self._out_queue.put((t, threading.current_thread().getName(), funcName, event, stack))
+
+class ThreadProfilerRegex(ThreadProfiler):
+
+    def profile_on(self, regex='.*PYME.*', outfile='profile.txt'):
+        self.regex = re.compile(regex)
+        self.outfile = open(outfile, 'w')
+
+        sys.setprofile(self.prof_callback)
+        threading.setprofile(self.prof_callback)
+
+        self._tPoll = threading.Thread(target=self._poll)
+        self._tPoll.start()
+
+
+    def prof_callback(self, frame, event, arg):
+        if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__) and self.regex.match(
+                frame.f_code.co_filename):
             fn = frame.f_code.co_filename #.split(os.sep)[-1]
             if fn.startswith(lib_prefix):
                 fn = fn[len_lib_prefix:]
-
+    
             funcName = fn + '\t' + frame.f_code.co_name
             #stack = '.'.join(frame.f_code.co_names)
             stack = frame.f_code.co_firstlineno #frame.f_back.f_code.co_name
-
-            t = time.clock()
-
+    
+            t = time_fcn()
+    
             self._out_queue.put((t, threading.current_thread().getName(), funcName, event, stack))
 
 
         
 # backwards compat
-thread_profiler = ThreadProfiler
+thread_profiler = ThreadProfilerRegex

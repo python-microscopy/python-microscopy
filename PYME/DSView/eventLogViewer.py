@@ -226,6 +226,9 @@ class eventLogPanel(wx.Panel):
             cname = c[0]
             cmapping = c[1]
             sourceEv = c[2]
+            
+            if not isinstance(sourceEv, bytes):
+                sourceEv = sourceEv.encode()
 
             dc.SetTextForeground(self.lineColours[sourceEv])
 

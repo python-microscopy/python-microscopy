@@ -904,7 +904,9 @@ def main(protocol="HTTP/1.0"):
         from PYME.util import fProfile
         
         tp = fProfile.ThreadProfiler()
-        tp.profile_on(outfile=options.root + '/LOGS/%s/tProf/dataserver.txt' % compName)
+        #tp.profile_on(subs=['PYME/', 'http/server', 'socketserver'],outfile=options.root + '/LOGS/%s/tProf/dataserver.txt' % compName)
+        tp.profile_on(subs=['PYME/', ],
+                  outfile=options.root + '/LOGS/%s/tProf/dataserver.txt' % compName)
 
     # setup logging to file
     log_dir = '%s/LOGS/%s' % (options.root, compName)
