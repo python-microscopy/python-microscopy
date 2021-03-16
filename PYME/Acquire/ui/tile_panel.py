@@ -388,7 +388,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
         detected = set([fn.split('_')[0] for fn in imaged_wells])
         logger.debug('detection h5 present for an additional %d wells' % (len(detected) - len(to_pop.intersection(detected))))
-        to_pop.union_update(detected)
+        to_pop = to_pop.union(detected)
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, list(to_pop))
 
         if len(names) < 1:
