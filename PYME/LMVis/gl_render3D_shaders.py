@@ -635,9 +635,9 @@ class LMGLShaderCanvas(GLCanvas):
         self.ResetView()
 
     def ResetView(self):
-        self.view.vec_up = numpy.array([0, 1, 0])
-        self.view.vec_right = numpy.array([1, 0, 0])
-        self.view.vec_back = numpy.array([0, 0, 1])
+        self.view.vec_up = numpy.array([0, 1, 0])  # y-dir
+        self.view.vec_right = numpy.array([1, 0, 0])  # x-dir
+        self.view.vec_back = numpy.array([0, 0, 1])  # z-dir
 
         self.Refresh()
 
