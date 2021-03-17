@@ -151,10 +151,33 @@ def get_camera_physical_roi_origin(mdh):
         return get_camera_roi_origin(mdh)
 
 def origin_nm(mdh, default_pixel_size=1.):
-    #the origin, in nm from the camera - used for overlaying with different ROIs
-    # transferred from image.ImageStack.origin so that it can be used for tabular data too.
-    # the default_pixel_size parameter only exists for a niche case in ImageStack
+    """ origin, in nm from the camera upper left hand pixel - used for 
+    overlaying with different ROIs
 
+    Parameters
+    ----------
+    mdh : PYME.IO.MetaDataHandler
+    default_pixel_size : float, optional
+        you're going to not to want touch this. Parameter only exists for a 
+        niche case in ImageStack, by default 1.
+
+    Returns
+    -------
+    tuple
+        x, y, z origin in nanometers
+    
+    Notes
+    -----
+    z origin for localizations will be returned as piezo starting position. z
+    positions for localizations in PYME are not referenced to this - they are 
+    relative to the piezo zero. You will likely want to ignore the z origin 
+    returned from this call if you're using it with localizations, however note
+    that e.g. images rendered from localizations will return an origin which
+    will need to be added on to get from the lowest slice back to your
+    localizations.
+
+    transferred from image.ImageStack.origin so that it can be used for tabular data too.
+    """
 
     if 'Origin.x' in mdh.getEntryNames():
         # Used in composite images, cropped images, and renderings. Takes precendence if defined.
