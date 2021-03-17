@@ -210,6 +210,12 @@ def pixel_index_of_points_in_image(image, points):
         y pixel index in image for each point
     z_index: ndarray
         z pixel index in image for each point
+    
+    Notes
+    -----
+    localization orgin is a little funny since we assign it the piezo start
+    position if present in the metadata, though reference localization z
+    positions from 0 (or whatever the piezo origin itself is).
 
     """
     from PYME.IO.MetaDataHandler import origin_nm
@@ -217,13 +223,13 @@ def pixel_index_of_points_in_image(image, points):
     x0, y0, z0 = image.origin
 
     # account for point data ROIs
-    p_ox, p_oy, p_oz = origin_nm(points.mdh)
+    p_ox, p_oy, _ = origin_nm(points.mdh)  # no z origin for localizations
 
     # Image origin is referenced to top-left corner of pixelated image.
     # FIXME - localisations are currently referenced to centre of raw pixels
     x_index = np.floor((points['x'] + p_ox - x0) / image.voxelsize_nm.x).astype('i')
     y_index = np.floor((points['y'] + p_oy - y0) / image.voxelsize_nm.y).astype('i')
-    z_index = np.floor((points['z'] + p_oz - z0) / image.voxelsize_nm.z).astype('i')
+    z_index = np.floor((points['z'] - z0) / image.voxelsize_nm.z).astype('i')
 
     return x_index, y_index, z_index
 
