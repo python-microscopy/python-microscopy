@@ -374,7 +374,7 @@ class ScaledShell(object):
     def _scale_fitting_points(self):
         self.standard_deviations, self.principal_axes = coordinate_tools.find_principle_axes(self.x_c, self.y_c, self.z_c,
                                                                                              sample_fraction=self.sampling_fraction)
-        self.scaling_factors = (self.standard_deviations) / np.max(self.standard_deviations)
+        self.scaling_factors = np.max(self.standard_deviations) /(self.standard_deviations)
         self.x_cs, self.y_cs, self.z_cs, = coordinate_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
                                                                               self.scaling_factors, self.principal_axes)
 
