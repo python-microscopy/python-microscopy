@@ -374,7 +374,7 @@ class ScaledShell(object):
     def _scale_fitting_points(self):
         self.standard_deviations, self.principal_axes = coordinate_tools.find_principle_axes(self.x_c, self.y_c, self.z_c,
                                                                                              sample_fraction=self.sampling_fraction)
-        self.scaling_factors = np.max(self.standard_deviations) / (self.standard_deviations)
+        self.scaling_factors = (self.standard_deviations) / np.max(self.standard_deviations)
         self.x_cs, self.y_cs, self.z_cs, = coordinate_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
                                                                               self.scaling_factors, self.principal_axes)
 
@@ -506,6 +506,37 @@ class ScaledShell(object):
         return dist_flat[min_ind[p_ind], p_ind], (x_shell.reshape(n_shell_coords)[min_ind],
                                                   y_shell.reshape(n_shell_coords)[min_ind],
                                                   z_shell.reshape(n_shell_coords)[min_ind])
+    
+    def radial_distance_to_shell(self, points):
+        """ finds distance to shell along a vector from the centre of the shell to a point.
+        
+        NOTE:
+        -----
+        
+        This is not a geometric/euclidean distance, but should be a good approximation close to the shell (or far away).
+        Over mid-range distances, it will give potentially very distorted distances. It is, however, very much faster and
+        can safely be used in applications where strict scaling is not important - e.g. for a SDF representation of the
+        surface.
+        
+        """
+        x, y, z = points
+
+        # scale the query points and convert them to spherical
+        x_qs, y_qs, z_qs = coordinate_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
+                                                              np.atleast_1d(z - self.z0), self.scaling_factors,
+                                                              self.principal_axes)
+        
+        azimuth_qs, zenith_qs, r_qs = coordinate_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
+
+        # get scaled shell radius at those angles
+        r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
+
+        # return the (scaled space) difference
+        d = r_qs - r_shell
+        
+        #scale distance TODO - actually scale to make slightly closer to being euclidean
+        return d
+        
 
     def approximate_normal(self, x, y, z, d_azimuth=1e-6, d_zenith=1e-6, return_orthogonal_vectors=False):
         """
@@ -677,3 +708,42 @@ class ScaledShell(object):
 
         return guess_distances[np.argmin(np.abs(errors))]
 
+class SHShell(ScaledShell):
+    '''
+    Initial work on a replacement interface for ScaledShell
+    
+    Goals:
+    
+    - can be constructed directly as well as / instead of being fit
+    - fitting is a single function call (rather than 3)
+    - easily serialised (TODO)
+    - does not own/keep a copy of data points (to facilitate serialisation)
+    - when directly constructed, can used to represent synthetic nuclei etc ... whilst retaining distance
+      evaluation functions
+    
+    '''
+    def __init__(self, centre=(0,0,0), principle_axes=((1,0,0), (0,1,0), (0,0,1)), axis_scaling=(1.,1.,1.), modes=((0,0),), coefficients=(1,)):
+        self.x0, self.y0, self.z0 = centre
+        self.principal_axes = np.array(principle_axes)
+        self.axis_scaling = np.array(axis_scaling)
+        self.modes = modes
+        self.coefficients = np.array(coefficients)
+        
+    def fit(self, points, n_max=3, n_iters=2, tol=0.3, principle_axis_sampling=1.0):
+        x, y, z = points
+        self.x0, self.y0, self.z0 = x.mean(), y.mean(), z.mean()
+        x_c, y_c, z_c = x - self.x0, y - self.y0, z - self.z0
+        
+        sig, self.principal_axes = coordinate_tools.find_principle_axes(x_c, y_c, z_c, sample_fraction=principle_axis_sampling)
+        self.axis_scaling = sig/np.max(sig)
+
+        x_cs, y_cs, z_cs, = coordinate_tools.scaled_projection(x_c, y_c, z_c,self.axis_scaling, self.principal_axes)
+
+        self.modes, self.coefficients, _ = sphere_expansion_clean(x_cs, y_cs, z_cs, n_max, n_iters, tol)
+        
+    @property
+    def scaling_factors(self):
+        import warnings
+        warnings.warn(DeprecationWarning('use .axis_scaling instead'))
+        return self.axis_scaling
+        
