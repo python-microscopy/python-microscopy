@@ -21,7 +21,6 @@
 ##################
 
 
-import wx
 try:
     from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
@@ -55,7 +54,7 @@ class WormlikeSource(PointSource):
     #name = Str('Wormlike Chain')
 
     def getPoints(self):
-        from PYME.Acquire.Hardware.Simulator import wormlike2
+        from PYME.simulation import wormlike2
         wc = wormlike2.wormlikeChain(self.kbp, self.steplength, self.lengthPerKbp, self.persistLength)
 
         return wc.xp, wc.yp, wc.zp
@@ -128,7 +127,7 @@ density values therefore give rise to proportionally fewer markers per pixel.
         return cleanupHelpStr(self.helpInfo[name])
 
     def default_traits_view( self ):
-        from traitsui.api import View, Item, EnumEditor, InstanceEditor
+        from traitsui.api import View, Item
 
         traits_view = View(Item('points_per_pixel',help=self.helpStr('points_per_pixel'),
                                 tooltip='mean number of marker points per pixel'),
@@ -230,7 +229,7 @@ There should be no need to modify this from the default and it is accordingly no
         return cleanupHelpStr(self.helpInfo[name])
         
     def default_traits_view( self ):
-        from traitsui.api import View, Item, EnumEditor, InstanceEditor
+        from traitsui.api import View, Item, InstanceEditor
 
         traits_view = View( Item( 'source',
                             label= 'Point source',

@@ -23,21 +23,19 @@
 
 #Boa:Dialog:dSimControl
 
+import json
+import logging
+
+import numpy as np
+import scipy
 import wx
 import wx.grid
+
+import PYME.ui.manualFoldPanel as afp
+from PYME.simulation import wormlike2
 from . import fluor
-from . import wormlike2
-import json
-# import pylab
-import scipy
-import numpy as np
-#import os
 from . import rend_im
 
-#import PYME.ui.autoFoldPanel as afp
-import PYME.ui.manualFoldPanel as afp
-
-import logging
 logger = logging.getLogger(__name__)
 
 def create(parent):
@@ -72,7 +70,7 @@ class PSFSettings(HasTraits):
     four_pi = Bool(False)
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item
         #from PYME.ui.custom_traits_editors import CBEditor
     
         return View(Item(name='wavelength_nm'),
@@ -532,7 +530,7 @@ class dSimControl(afp.foldPanel):
         numFluors = int(self.tNumFluorophores.GetValue())
         persistLength= float(self.tPersist.GetValue())
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
-        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
+        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp / numFluors)
 
         XVals = self.scope.cam.XVals
         YVals = self.scope.cam.YVals

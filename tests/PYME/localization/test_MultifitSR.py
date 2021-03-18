@@ -1,9 +1,10 @@
 import numpy as np
-from scipy import ndimage
 import pytest
+from scipy import ndimage
+
 
 def gen_image(p=.95, disp=False):
-    from PYME.Acquire.Hardware.Simulator import wormlike2
+    from PYME.simulation import wormlike2
 
     wc = wormlike2.wiglyFibre(.5e3, 1e2, 1)
     x = np.mod(wc.xp, 64)
