@@ -26,15 +26,12 @@ from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
 @init_hardware('Camera')
 def cam(scope):
-    from PYME.Acquire.Hardware.uc480 import uCam480
-    uCam480.init()
-    cam = uCam480.uc480Camera(0, nbits=10)
+    from PYME.Acquire.Hardware.ueye import UEyeCamera
+    cam = UEyeCamera(0, 10)
     scope.register_camera(cam, 'Focus')
-    scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
-    scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
+    # scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
+    # scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
     scope.cam.SetROI(289, 827, 1080, 1008)
-    # Can't get frame rate higher than ~297 Hz for the current ROI, so default to just under that
-    scope.cam.SetIntegTime(0.0035)  # [s]
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -71,14 +68,16 @@ def focus_lock(MainFrame, scope):
     scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=kp, i=ki, d=0,
                                             sample_time=0.0035, 
                                             min_amp=0.5 * 10**5,
-                                            max_sigma=14.5)
+                                            max_sigma=14.5,
+                                            min_lateral_sigma=0)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
     # we don't benefit at all from multiple frames piling up in a polling interval, so try and match the camera cycle
+    # Can't get frame rate higher than ~297 Hz for the current ROI, so default to just under that
+    scope.state['Camera.IntegrationTime'] = 0.0035
     scope.frameWrangler._polling_interval = 0.0035
-
     # # display dark-subtracted profile
     # fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
     # MainFrame.AddPage(page=fg, select=False, caption='Profile')
