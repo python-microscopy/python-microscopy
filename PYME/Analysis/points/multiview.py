@@ -93,6 +93,8 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key,
         elif weights == 'min':
             # if None has been passed as the weight for this key, take the minimum
             var = deClump.aggregateMin(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
+        elif weights == 'max':
+            var = deClump.aggregateMax(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         elif weights == 'sum':
             var = deClump.aggregateSum(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         else:

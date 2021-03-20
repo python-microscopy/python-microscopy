@@ -254,6 +254,54 @@ def mergeClumps(datasource, labelKey='clumpIndex'):
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
     return DictSource(grouped)
 
+def mergeClumpsDyeKinetics(datasource, labelKey='clumpIndex'):
+    from PYME.IO.tabular import mappingFilter, resultsFilter
+    from PYME.Analysis.points.multiview import coalesce_dict_sorted
+    import sys
+
+    """
+    adds some steps to the default version for finding dye switching behavior
+    """
+
+    datasource = mappingFilter(datasource)
+    # TODO this is needed for faster off time calculation, but may not be the best place for adding this
+    datasource.addColumn('t2', datasource['t'])
+
+    datasource.addColumn('min_error_x', datasource['error_x'])
+    datasource.addColumn('min_error_y', datasource['error_y'])
+
+    ds_keys = datasource.keys()
+
+    keys_to_aggregate = [k for k in ds_keys if
+                         not (k.startswith('error') or k.startswith('slicesUsed') or k.startswith('fitError'))]
+
+    all_keys = list(keys_to_aggregate)  # this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
+
+    # pair fit results and errors for weighting
+    aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
+    all_keys += aggregation_weights.values()
+
+    aggregation_weights['t'] = 'min'
+    aggregation_weights['t2'] = 'max'
+    aggregation_weights['clumpSize'] = 'max'
+
+    aggregation_weights['nPhotons'] = 'sum'
+    aggregation_weights['A'] = 'mean'
+
+    I = np.argsort(datasource[labelKey])
+    sorted_src = {k: datasource[k][I] for k in all_keys}
+
+    aggregation_weights['min_error_x'] = 'min'
+    aggregation_weights['min_error_y'] = 'min'
+
+    #TODO: make sure we've added all the correct aggregation keys for the datasource
+
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+
+    ds = resultsFilter(grouped, x=[0, sys.maxsize])
+
+    return ds
+
 
 def deClump(fitResults):
     #select those points which fitted and have a reasonable fit error
