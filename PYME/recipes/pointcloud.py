@@ -324,7 +324,8 @@ class Ripleys(ModuleBase):
             raise RuntimeError('Need at least {} simulations to achieve a significance of {}'.format(int(np.ceil(1.0/self.significance)),self.significance))
         
         try:
-            origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
+            ox, oy, _ = MetaDataHandler.origin_nm(points_real.mdh)
+            origin_coords = (ox, oy, 0)  # see origin_nm docs
         except:
             origin_coords = (0, 0, 0)
         

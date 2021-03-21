@@ -210,20 +210,22 @@ def pixel_index_of_points_in_image(image, points):
         y pixel index in image for each point
     z_index: ndarray
         z pixel index in image for each point
-
+    
     """
     from PYME.IO.MetaDataHandler import origin_nm
 
     x0, y0, z0 = image.origin
 
     # account for point data ROIs
-    p_ox, p_oy, p_oz = origin_nm(points.mdh)
+    # NOTE: z-position for **point** data is always absolute (referenced to piezo 0 position) 
+    # and doesn't need correction. We ignore the z component of the image origin when dealing with point data.
+    p_ox, p_oy, _ = origin_nm(points.mdh)  
 
     # Image origin is referenced to top-left corner of pixelated image.
     # FIXME - localisations are currently referenced to centre of raw pixels
     x_index = np.floor((points['x'] + p_ox - x0) / image.voxelsize_nm.x).astype('i')
     y_index = np.floor((points['y'] + p_oy - y0) / image.voxelsize_nm.y).astype('i')
-    z_index = np.floor((points['z'] + p_oz - z0) / image.voxelsize_nm.z).astype('i')
+    z_index = np.floor((points['z'] - z0) / image.voxelsize_nm.z).astype('i') # no origin correction for point, as absolutely referenced.
 
     return x_index, y_index, z_index
 
