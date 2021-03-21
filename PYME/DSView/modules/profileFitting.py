@@ -56,7 +56,7 @@ class Fitter(Plugin):
         
         plt.figure()
         
-        cols = ['b','g','r']
+        cols = ['b','g','r', 'C0', 'C1']
         xv = self.image.xvals
         
         for chan in range(self.image.data.shape[3]):    
