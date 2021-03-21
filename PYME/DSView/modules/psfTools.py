@@ -438,7 +438,11 @@ class PSFTools(HasTraits):
             fid = open(fpath, 'w', encoding='utf8')
             json.dump(results, fid, indent=4, sort_keys=True)
             fid.close()
-
+            if use_web_view:  # save the html too
+                import os
+                fpath = os.path.splitext(fpath)[0] + '.html'
+                with open(fpath, 'wb') as fid:
+                    fid.write(html.encode('utf-8'))
 
         return results
 
