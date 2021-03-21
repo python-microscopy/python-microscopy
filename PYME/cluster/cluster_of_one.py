@@ -1,3 +1,4 @@
+from PYME.misc import big_sur_fix
 import subprocess
 import time
 import sys
