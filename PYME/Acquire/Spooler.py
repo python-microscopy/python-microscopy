@@ -132,6 +132,10 @@ class Spooler:
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
+        
+        # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
+        # **after** protocol.Init() call
+        self.tStart = time.time()
 
         self.protocol.Init(self)
         

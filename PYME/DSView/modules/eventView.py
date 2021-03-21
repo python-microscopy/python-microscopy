@@ -42,7 +42,7 @@ def Plug(dsviewer):
             et = image.mdh.getEntry('EndTime')
         else:
             et = piecewiseMapping.frames_to_times(image.data.getNumSlices(), image.events, image.mdh)
-        dsviewer.elv = eventLogViewer.eventLogTPanel(dsviewer, image.events, image.mdh, [0, et-st]);
+        dsviewer.elv = eventLogViewer.eventLogTPanel(dsviewer, image.events, image.mdh, [0, et-st], activate=True)
         dsviewer.AddPage(dsviewer.elv, False, 'Events')
 
         charts = []
