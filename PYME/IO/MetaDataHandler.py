@@ -151,15 +151,15 @@ def get_camera_physical_roi_origin(mdh):
         return get_camera_roi_origin(mdh)
 
 def origin_nm(mdh, default_pixel_size=1.):
-    """ origin, in nm from the camera upper left hand pixel - used for 
-    overlaying with different ROIs
+    """ origin, in nm of the **image** ROI from the camera upper left hand pixel - used for 
+    overlaying with different ROIs.
 
     Parameters
     ----------
     mdh : PYME.IO.MetaDataHandler
     default_pixel_size : float, optional
-        you're going to not to want touch this. Parameter only exists for a 
-        niche case in ImageStack, by default 1.
+        Safe to ignore. Parameter only exists for a niche case in ImageStack, when no
+        pixel size is defined. Should probably change to emit a warning if we actually use this fallback.
 
     Returns
     -------
@@ -168,13 +168,14 @@ def origin_nm(mdh, default_pixel_size=1.):
     
     Notes
     -----
-    z origin for localizations will be returned as piezo starting position. z
-    positions for localizations in PYME are not referenced to this - they are 
-    relative to the piezo zero. You will likely want to ignore the z origin 
-    returned from this call if you're using it with localizations, however note
-    that e.g. images rendered from localizations will return an origin which
-    will need to be added on to get from the lowest slice back to your
-    localizations.
+    
+    **Use with localisation / point data:** When used with localization data,
+    `origin_nm()` returns the origin of the pixel data in the **raw** image series used 
+    to derive the localisations. Whilst x and y localisations are referenced to the ROI
+    (and hence share an origin with the pixel data) z localisations are absolute
+    (technically referenced to the 0 position of the z-piezo). As a result, the z-component
+    of `origin_nm()` should be ignored when used with localisation data, which does
+    not require z origin correction.
 
     transferred from image.ImageStack.origin so that it can be used for tabular data too.
     """
