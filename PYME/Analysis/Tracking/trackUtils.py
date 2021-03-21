@@ -378,7 +378,7 @@ def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, min
     I = np.argsort(t)
     
     clumpIndices = np.zeros(len(x), dtype='i')
-    clumpIndices[I] = deClump.findClumpsN(t[I], x[I], y[I], delta_x[I], nFrames)
+    clumpIndices[I] = deClump.findClumps(t[I], x[I], y[I], delta_x[I], nFrames)
     
     numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
     
