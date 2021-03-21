@@ -31,7 +31,7 @@ FILTER_FUNCS = {
 def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMultiplier=5.0,
                               timeWindow=25, filter='Gaussian', filterScale=10.0):
     #import PYME.Analysis.trackUtils as trackUtils
-    import PYME.Analysis.points.DeClump.deClump as deClump
+    import PYME.Analysis.points.DeClump as deClump
     from scipy.optimize import fmin
     #track beads through frames
     if clumpRadiusVar == '1.0':
@@ -52,7 +52,7 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
     I = np.argsort(t)
     
     clumpIndex = np.zeros(len(x), dtype='i')
-    clumpIndex[I] = deClump.findClumpsN(t[I], x[I], y[I], delta_x[I], timeWindow)
+    clumpIndex[I] = deClump.findClumps(t[I], x[I], y[I], delta_x[I], timeWindow)
     #trackUtils.findTracks(pipeline, clumpRadiusVar,clumpRadiusMultiplier, timeWindow)
     
     #longTracks = pipeline['clumpSize'] > 50
