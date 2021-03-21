@@ -229,6 +229,16 @@ def origin_nm(mdh, default_pixel_size=1.):
     else:
         return 0, 0, 0
     
+def localisation_origin_nm(mdh):
+    ''' Get the origin of localisation data. 
+    
+    Effectively a shortcut for `origin_nm()`, but discarding the z-component as whilst
+    x and y co-ordinates in localisation data are referenced to the ROI, the z component
+    is absolute.
+    '''
+    ox, oy, _ = origin_nm(mdh)
+    return ox, oy, 0
+    
 def get_voxelsize_nm(mdh):
     '''
     Helper function to obtain the voxel size, in nm, from the metadata (to replace the many 1e3*mdh['voxelsize.x'] calls)
