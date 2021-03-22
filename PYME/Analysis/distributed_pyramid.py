@@ -13,12 +13,14 @@ import collections
 import time
 import six
 import tempfile
+import http.client as httplib
 import socket
 import requests
 import logging
 import json
 import queue
 import logging
+from skimage.measure import label
 from PYME.IO import clusterIO, PZFFormat
 from PYME.Analysis.tile_pyramid import (
     TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
@@ -26,6 +28,7 @@ from PYME.Analysis.tile_pyramid import (
 
 
 logger = logging.getLogger(__name__)
+MAXLINE = 65536
 
 
 def server_for_chunk(x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
@@ -469,15 +472,19 @@ class DistributedImagePyramid(ImagePyramid):
         }
         return part_params
 
+    def make_url_path(self, path_prefix):
+        url_path = (path_prefix + "{}" + self.base_dir).format(
+            '/' if self.base_dir[0] != '/' else ""
+        )
+        return url_path
+
     def make_url(self, path_prefix, server_idx):
         """
         Generates a URL to a specified cluster server for a request
         indicated by the path prefix.
         """
         address, port = self.servers[server_idx]
-        path = (path_prefix + "{}" + self.base_dir).format(
-            '/' if self.base_dir[0] != '/' else ""
-        )
+        path = self.make_url_path(path_prefix)
         url = 'http://%s:%d/%s' % (address, port, path)
         url = url.encode()
         return url
@@ -505,6 +512,95 @@ class DistributedImagePyramid(ImagePyramid):
                     response.close()
                 except:
                     pass
+
+    def _read_status(self, fp):
+        line = fp.readline()
+        try:
+            [version, status, reason] = line.split(None, 2)
+        except ValueError:
+            [version, status] = line.split(None, 1)
+            reason = ""
+        status = int(status)
+        return version, status, reason
+
+    def _parse_response(self, fp):
+        '''A striped down version of httplib.HttpResponse.begin'''
+        status = httplib.CONTINUE
+        while status == httplib.CONTINUE:
+            version, status, reason = self._read_status(fp)
+            skip = True
+            while status == httplib.CONTINUE and skip:
+                skip = fp.readline(MAXLINE + 1)
+                if len(skip) > MAXLINE:
+                    raise httplib.LineTooLong("header line")
+                skip = skip.strip()
+        headers = {}
+        n_headers = 0
+        is_empty_line = False
+        while not is_empty_line:
+            line = fp.readline(MAXLINE +1)
+            if len(line) > MAXLINE:
+                raise httplib.LineTooLong("header line")
+            line = line.strip()
+            is_empty_line = line in (b'\r\n', b'\n', b'')
+            if not is_empty_line:
+                n_headers += 1
+                if n_headers > httplib._MAXHEADERS:
+                    raise httplib.HTTPException("got more than %d headers" % httplib._MAXHEADERS)
+                key, value = line.split(b': ')
+                headers[key.strip().lower()] = value.strip()
+        length = int(headers.get(b'content-length', 0))
+        data = fp.read(length) if length > 0 else b''
+        return status, reason, data
+
+    def multi_put(self, path_prefix, tuples, server_idx):
+        """
+        Sends a HTTP PUT request to a specified cluster server.
+        """
+        if len(tuples) == 0:
+            return
+        from urllib.parse import urlencode
+        for repeat in range(self.repeats):
+            address, port = self.servers[server_idx]
+            header = 'PUT /{} HTTP/1.1\r\nConnection: {}\r\nContent-Length: {}\r\n\r\n'
+            path = self.make_url_path(path_prefix) + '?'
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                s.settimeout(30)
+                s.connect((address, port))
+                for i, (data, params) in enumerate(tuples):
+                    s.sendall(
+                        header.format(
+                            path + urlencode(params, doseq=True),
+                            'keep-alive' if i < len(tuples) - 1 else 'close',
+                            len(data),
+                        ).encode()
+                    )
+                    s.sendall(data)
+                fp = s.makefile('rb', 65536)
+                try:
+                    for i in range(len(tuples)):
+                        status, reason, msg = self._parse_response(fp)
+                        if not status == 200:
+                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + str(msg))
+                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, str(msg)))
+                finally:
+                    fp.close()
+            except socket.timeout:
+                if repeat == self.repeats - 1:
+                    logger.exception('Timeout writing to {} after {} retries, aborting - DATA WILL BE LOST'.format(address, self.repeats))
+                    raise
+                else:
+                    logger.error('Timeout writing to {}'.format(address))
+            except socket.error:
+                if repeat == self.repeats - 1:
+                    logger.exception('Error writing to {} after {} retries, aborting - DATA WILL BE LOST'.format(address, self.repeats))
+                    raise
+                else:
+                    logger.exception('Error writing to {}'.format(address))
+            finally:
+                s.close()
 
     def get(self, path_prefix, request_data, server_idx):
         """
@@ -592,25 +688,21 @@ class DistributedImagePyramid(ImagePyramid):
 
         Notes
         -----
-        At the moment, it is assumed a server is responsible for at most
-        one chunk. For example, given a 2x2 frame, 1x1 chunks and 4
-        servers, one may describe the responsibility via a matrix:
+        Given a 2x2 frame, 1x1 chunks and 4 servers, one may describe the
+        responsibility of the servers via a matrix:
         `[
             [1, 2],
             [3, 4],
         ]`
         where matrix values indicate which server is responsible for the
-        tile (and chunk in this case) at their position. However, if only
+        tile (and chunk in this case) at their position. If only
         2 servers are present, the matrix may look like this:
         `[
             [1, 2],
             [2, 1],
         ]`
-        in which case the whole frame is sent to both servers, even though
-        each only needs a part (one half / two quarters) of the frame.
-        The matrix can be built with the `server_for_chunk(...)` function
-        at the top, but a way to differentiate between these chunks is needed
-        for higher efficiency.
+        In this case, a server's chunks are extracted into masks and then
+        separated with `skimage.measure.label`.
         """
         frameSizeX, frameSizeY = frame.shape[:2]
         
@@ -634,42 +726,45 @@ class DistributedImagePyramid(ImagePyramid):
         self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
         self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
 
-        server_chunks = {}
-        for tile_x in tile_xs:
-            for tile_y in tile_ys:
-                server_idx = server_for_chunk(
+        array = [
+                server_for_chunk(
                     tile_x, tile_y, 0, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)
+                ) for tile_x in tile_xs for tile_y in tile_ys
+        ]
+        responsibility_matrix = np.asarray(
+            array,
+            dtype=int,
+        )
+        responsibility_matrix = responsibility_matrix.reshape((len(tile_xs), len(tile_ys)))
+        for server_idx in range(len(self.sessions)):
+            server_chunks = responsibility_matrix == server_idx
+            chunk_masks, nr_chunks = label(server_chunks, return_num=True, connectivity=1)
+            chunk_tuples = []
+            for chunk in np.arange(nr_chunks) + 1:
+                chunk_mask = chunk_masks == chunk
+                chunk_coords = np.where(chunk_mask)
+                chunk_coords = [
+                    chunk_coords[0].min(),
+                    chunk_coords[0].max(),
+                    chunk_coords[1].min(),
+                    chunk_coords[1].max(),
+                ]
+                frame_slice, chunk_params = self.extract_chunk_from(
+                    x, y, chunk_coords, frameSizeX, frameSizeY, frame,
                 )
-                if server_idx in server_chunks:
-                    server_chunks[server_idx][0] = min(
-                        server_chunks[server_idx][0], tile_x,
-                    )
-                    server_chunks[server_idx][1] = min(
-                        server_chunks[server_idx][1], tile_y,
-                    )
-                    server_chunks[server_idx][2] = max(
-                        server_chunks[server_idx][2], tile_x,
-                    )
-                    server_chunks[server_idx][3] = max(
-                        server_chunks[server_idx][3], tile_y,
-                    )
-                else:
-                    server_chunks[server_idx] = [tile_x, tile_y, tile_x, tile_y]
-        for server_idx in server_chunks:
-            frame_slice, params = self.extract_chunk_from(
-                x, y, server_chunks[server_idx], frameSizeX, frameSizeY, frame,
-            )
-            self.update_tiles_on_server(params, frame_slice, server_idx)
-
+                chunk_tuples.append((
+                    PZFFormat.dumps(frame_slice.astype(np.float32)),
+                    chunk_params,
+                ))
+            self.update_tiles_on_server(chunk_tuples, server_idx)
         self.pyramid_valid = False
 
-    def update_tiles_on_server(self, params, frame_slice, server_idx):
+    def update_tiles_on_server(self, chunk_tuples, server_idx):
         """
-        Sends the output from `get_tile_slices_from()` to the responsible cluster
+        Sends the output from `extract_chunk_from()` to the responsible cluster
         server.
         """
-        data = PZFFormat.dumps(frame_slice.astype(np.float32)) # PZFFormat doesn't like double/float64
-        self.put('__part_pyramid_update_tiles', params, data, server_idx)
+        self.multi_put('__part_pyramid_update_tiles', chunk_tuples, server_idx)
 
     def finish_base_tiles(self):
         """
@@ -940,10 +1035,14 @@ def create_distributed_pyramid_from_dataset(filename, outdir, tile_size=128, **k
 if __name__ == '__main__':
     import sys
     import time
-    from PYME.util import mProfile
-    mProfile.profileOn(['distributed_pyramid.py',])
+    # import profile, cProfile, pstats
     input_stack, output_dir = sys.argv[1:]
     t1 = time.time()
+    # profiler = cProfile.Profile()
+    # profiler.enable()
     create_distributed_pyramid_from_dataset(input_stack, output_dir)
+    # profiler.disable()
     logger.debug(time.time() - t1)
-    mProfile.report()
+    # stats = pstats.Stats(profiler).sort_stats('cumtime')
+    # stats.print_stats("distributed_pyramid")
+    # stats.dump_stats(filename="profile.dmp")

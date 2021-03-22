@@ -1,0 +1,2 @@
+filename == /home/tphan/PYMEData/tphan/2021_3_4/4_3_series_A.h5
+/home/tphan/PYMEData/tphan/analysis/2021_3_4/4_3_series_A.h5r

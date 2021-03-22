@@ -368,7 +368,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         part_pyramids[filepath] = PartialPyramid.build_from_request(filepath, data)
         logger.debug("Created PartialPyramid for {}".format(filepath))
         part_pyramids[filepath].update_thread.start()
-
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
@@ -559,8 +558,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 f.close()
 
     def get_status(self):
-
-
         f = BytesIO()
         f.write(json.dumps(status).encode())
         length = f.tell()

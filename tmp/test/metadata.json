@@ -1,0 +1,21 @@
+{
+  "Pyramid.ChunkShape": [
+    8,
+    8,
+    1
+  ],
+  "Pyramid.Depth": 3,
+  "Pyramid.NTilesX": 77,
+  "Pyramid.NTilesY": 77,
+  "Pyramid.PixelSize": 0.07,
+  "Pyramid.PixelsX": 9856,
+  "Pyramid.PixelsY": 9856,
+  "Pyramid.Repeats": 3,
+  "Pyramid.Servers": {
+    "127.0.0.1": 42109
+  },
+  "Pyramid.TileSize": 128,
+  "Pyramid.Timeout": 10,
+  "Pyramid.x0": -577.2,
+  "Pyramid.y0": -577.2
+}

@@ -1,0 +1,75 @@
+         332 function calls in 265.962 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  265.957  265.957 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:385(handle_one_request)
+        8    0.000    0.000  265.956   33.245 {method 'readline' of '_io.BufferedReader' objects}
+        1    0.000    0.000  265.956  265.956 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/socket.py:575(readinto)
+        1  265.956  265.956  265.956  265.956 {method 'recv_into' of '_socket.socket' objects}
+        1    0.000    0.000    0.005    0.005 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:524(end_headers)
+        1    0.000    0.000    0.005    0.005 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:530(flush_headers)
+        1    0.000    0.000    0.005    0.005 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/socketserver.py:798(write)
+        1    0.005    0.005    0.005    0.005 {method 'sendall' of '_socket.socket' objects}
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:268(parse_request)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/client.py:207(parse_headers)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/parser.py:59(parsestr)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/parser.py:41(parse)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:173(feed)
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:178(_call_parse)
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:218(_parsegen)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:483(send_response)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:471(_parse_headers)
+        9    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:128(__next__)
+        1    0.000    0.000    0.000    0.000 /home/tphan/thesis/python-microscopy/PYME/cluster/HTTPDataServer.py:473(do_PUT)
+        8    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:462(get)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:586(date_time_string)
+        1    0.000    0.000    0.000    0.000 /home/tphan/thesis/python-microscopy/PYME/cluster/HTTPDataServer.py:353(_do_part_pyramid)
+        1    0.000    0.000    0.000    0.000 /home/tphan/thesis/python-microscopy/PYME/cluster/HTTPDataServer.py:394(_finish_base_tiles)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:184(close)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/utils.py:126(formatdate)
+        4    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:564(get_content_type)
+        6    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/_policybase.py:293(header_source_parse)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:101(push)
+        3    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:588(get_content_maintype)
+        1    0.000    0.000    0.000    0.000 /home/tphan/thesis/python-microscopy/PYME/cluster/HTTPDataServer.py:277(_get_data)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/utils.py:155(format_datetime)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:496(send_response_only)
+        9    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:78(readline)
+        3    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:510(send_header)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:139(__init__)
+       12    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/_policybase.py:311(header_fetch_parse)
+        8    0.000    0.000    0.000    0.000 {method 'match' of 're.Pattern' objects}
+       61    0.000    0.000    0.000    0.000 {method 'lower' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:382(__getitem__)
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/_policybase.py:281(_sanitize_header)
+       12    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:70(close)
+        1    0.000    0.000    0.000    0.000 {method 'timetuple' of 'datetime.datetime' objects}
+        2    0.000    0.000    0.000    0.000 {method 'readlines' of '_io._IOBase' objects}
+        1    0.000    0.000    0.000    0.000 {built-in method fromtimestamp}
+        6    0.000    0.000    0.000    0.000 {method 'encode' of 'str' objects}
+       25    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:197(_new_message)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/utils.py:117(_format_timetuple_and_zone)
+       21    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+        7    0.000    0.000    0.000    0.000 {method 'join' of 'str' objects}
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:120(__init__)
+        6    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:479(set_raw)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:53(__init__)
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:122(pushlines)
+        4    0.000    0.000    0.000    0.000 {method 'seek' of '_io.StringIO' objects}
+        1    0.000    0.000    0.000    0.000 {method 'read' of '_io.BufferedReader' objects}
+        2    0.000    0.000    0.000    0.000 {method 'extend' of 'collections.deque' objects}
+        7    0.000    0.000    0.000    0.000 {built-in method builtins.hasattr}
+        6    0.000    0.000    0.000    0.000 {method 'find' of 'str' objects}
+       12    0.000    0.000    0.000    0.000 {method 'lstrip' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 {method '_checkReadable' of '_io._IOBase' objects}
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:303(set_payload)
+        4    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/message.py:606(get_default_type)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/feedparser.py:210(_pop_message)
+        2    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/email/utils.py:51(_has_surrogates)
+        1    0.000    0.000    0.000    0.000 /home/tphan/miniconda3/envs/mypyme/lib/python3.7/http/server.py:582(version_string)
+        2    0.000    0.000    0.000    0.000 {method 'read' of '_io.StringIO' objects}
+        1    0.000    0.000
