@@ -10,18 +10,21 @@
 ##################
  */
 
-
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include "Python.h"
 //#include <complex.h>
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 #define MAX_RECURSION_DEPTH 10000
 
 #define MIN(a, b) ((a<b) ? a : b)
 #define MAX(a, b) ((a>b) ? a : b)
 
+
+/* older, recursive version of findConnected. No longer used.*/
 int findConnected(int i, int nPts, int *t, float *x, float *y,float *delta_x, int *frameIndices, int *assigned, int clumpNum, int nFrames, int *recDepth)
 {
     //float dis;
@@ -65,26 +68,45 @@ int findConnected(int i, int nPts, int *t, float *x, float *y,float *delta_x, in
 
 }
 
-int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, int *frameIndices, int *assigned, int clumpNum, int nFrames, int *recDepth)
+
+/* newer, non-recursive version of findConnected*/
+int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, int *frameIndices, int *assigned, int clumpNum, int nFrames, bool link_within_frame)
 {
-    //float dis;
     float dx;
     float dy;
-    int j;
-
-    //printf("bar\n");
-    /*(*recDepth)++;
-    if (*recDepth > MAX_RECURSION_DEPTH)
-    {
-        //PyErr_Format(PyExc_RuntimeError, "Exceeded max recursion depth");
-        printf("Warning: max recursion depth reached - objects might be artificially divided\n");
-        return -1;
-    }*/
+    int j, start_idx, stop_idx, ts;
 
     //look backwards at already assigned frames
     //As frameIndices[t_i] gives you the first event *after* the timepoint t_i, nFrames=1 means look in current frame
     //etc ...
-    for (j = MAX(frameIndices[MAX(t[i] - nFrames, 0)], 0); j < i; j++)
+
+    if (!link_within_frame)
+    {
+        if (t[i] == 0)
+        {
+         stop_idx = 0;
+        } else
+        {
+        stop_idx = MAX(frameIndices[MAX(t[i]-1, 0)], 0);
+        }
+    } else
+    {
+        stop_idx = i;
+    }
+
+
+    ts = t[i] - (nFrames + 2);
+    if (ts <= -1)
+    {
+        start_idx = 0;
+    } else
+    {
+        start_idx = MAX(frameIndices[MAX(ts, 0)], 0);
+    }
+
+    //printf("t_i, nFrams, start_idx, stop_idx: %d, %d, %d, %d\n", t[i], nFrames, start_idx, stop_idx);
+
+    for (j = start_idx; j < stop_idx; j++)
     {      
         if (assigned[j]!=0)
         {
@@ -102,7 +124,10 @@ int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, i
 
 }
 
-
+/*
+Old, recursive findClumps. NOTE - this is no longer bound and accessible within python - both findClumps and findClumpsN
+now resolve to the faster, non-recursive version (findClumpsN)
+*/
 static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
 {
     PyObject *tO = 0;
@@ -299,6 +324,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
     int tMax = 0;
 
     int nFrames = 10;
+    int link_within_frame = 1;
 
     int *frameIndices = 0;
 
@@ -312,19 +338,20 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
     int j = 0;
     int t_last = 0;
     int t_i = 0;
-    int recDepth = 0;
 
-    static char *kwlist[] = {"t", "x", "y", "delta_x", "nFrames", NULL};
+    static char *kwlist[] = {"t", "x", "y", "delta_x", "n_frames", "link_within_frame", NULL};
 
     dims[0] = 0;
     dims[1] = 0;
 
 
-    
+    //printf("nFrames: %d\n", nFrames);
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOO|i", kwlist,
-         &tO, &xO, &yO, &delta_xO, &nFrames))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOO|ii", kwlist,
+         &tO, &xO, &yO, &delta_xO, &nFrames, &link_within_frame))
         return NULL;
+
+    //printf("nFrames: %d\n", nFrames);
 
     tA = (PyArrayObject *) PyArray_ContiguousFromObject(tO, PyArray_INT, 0, 1);
     if (tA == NULL)
@@ -424,7 +451,10 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
     }
 
     printf("\n");
+
 */
+
+    //printf("nFrames: %d\n", nFrames);
 
     //i = 0;
 
@@ -434,9 +464,9 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
         if (assigned[i] == 0)
         {
             //assigned[i] = clumpNum;
-            recDepth = 0;
 
-            clump = findConnectedN(i, nPts, t, x, y, delta_x, frameIndices, assigned, clumpNum, nFrames, &recDepth);
+
+            clump = findConnectedN(i, nPts, t, x, y, delta_x, frameIndices, assigned, clumpNum, nFrames, link_within_frame);
             if (clump > 0)
             {
                 assigned[i] = clump;
@@ -1046,17 +1076,17 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
 
 
 static PyMethodDef deClumpMethods[] = {
-    {"findClumps",  findClumps, METH_VARARGS | METH_KEYWORDS,
+    {"findClumps",  (PyCFunction) (void(*)(void)) findClumpsN, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"findClumpsN",  findClumpsN, METH_VARARGS | METH_KEYWORDS,
+    {"findClumpsN",  (PyCFunction) (void(*)(void)) findClumpsN, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"aggregateWeightedMean",  aggregateWeightedMean, METH_VARARGS | METH_KEYWORDS,
+    {"aggregateWeightedMean",  (PyCFunction) aggregateWeightedMean, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking a weighted mean. This assumes data has been sorted by clumpIndex."},
-    {"aggregateMean",  aggregateMean, METH_VARARGS | METH_KEYWORDS,
+    {"aggregateMean",  (PyCFunction) aggregateMean, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking an unweighted mean. This assumes data has been sorted by clumpIndex."},
-    {"aggregateMin",  aggregateMin, METH_VARARGS | METH_KEYWORDS,
+    {"aggregateMin",  (PyCFunction) aggregateMin, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking the minimum. This assumes data has been sorted by clumpIndex."},
-    {"aggregateSum",  aggregateSum, METH_VARARGS | METH_KEYWORDS,
+    {"aggregateSum",  (PyCFunction) aggregateSum, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking the sum. This assumes data has been sorted by clumpIndex."},
     
     {NULL, NULL, 0, NULL}        /* Sentinel */

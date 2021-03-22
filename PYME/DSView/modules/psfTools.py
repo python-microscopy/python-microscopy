@@ -364,7 +364,7 @@ class PSFTools(HasTraits):
                             'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][int(dz)]})
 
         #generate new tab to show results
-        use_web_view = True
+        use_web_view = False
         if not '_astig_view' in dir(self):
             try:
                 self._astig_view= wx.html2.WebView.New(self.dsviewer)
@@ -438,7 +438,11 @@ class PSFTools(HasTraits):
             fid = open(fpath, 'w', encoding='utf8')
             json.dump(results, fid, indent=4, sort_keys=True)
             fid.close()
-
+            if use_web_view:  # save the html too
+                import os
+                fpath = os.path.splitext(fpath)[0] + '.html'
+                with open(fpath, 'wb') as fid:
+                    fid.write(html.encode('utf-8'))
 
         return results
 

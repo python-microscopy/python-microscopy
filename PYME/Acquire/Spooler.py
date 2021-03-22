@@ -132,15 +132,18 @@ class Spooler:
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
-
-        # record start time here in case protocol init tasks generate events (prob only effects simulator).
+        
+        # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
+        # **after** protocol.Init() call
         self.tStart = time.time()
 
         self.protocol.Init(self)
-
+        
+        # record start time when we start receiving frames.
+        self.tStart = time.time()
         self._collect_start_metadata()
-   
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        
         self.spoolOn = True
        
     def StopSpool(self):
