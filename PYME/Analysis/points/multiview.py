@@ -354,6 +354,7 @@ def raw_shifts_by_frame(x0, y0, t0, x0err, y0err, x1, y1, t1, x1err, y1err,
     dyerr : ndarray
         uncertainty in `dy`
     """
+    from PYME.Analysis.points.DeClump import findClumps
     # take out any large linear shifts for the sake of easier pairing
     # x, y = correlative_shift(x0, y0, which_chan, clump_distance / 10)
 
@@ -376,9 +377,7 @@ def raw_shifts_by_frame(x0, y0, t0, x0err, y0err, x1, y1, t1, x1err, y1err,
     if np.isscalar(clump_distance):
         clump_distance = clump_distance*np.ones_like(x)
     
-    # TODO - update this call when we rework nFrames. 1 currently means same
-    # frame only, which is what we want here.
-    assigned = deClump.findClumpsN(t.astype(np.int32), x, y, clump_distance, 1)
+    assigned = findClumps(t.astype(np.int32), x, y, clump_distance, -1, True)
     ids, count = np.unique(assigned, return_counts=True)
 
     # reorder by id (is this already done actually?)
