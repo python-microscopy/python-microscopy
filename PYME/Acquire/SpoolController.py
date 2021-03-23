@@ -346,7 +346,7 @@ class SpoolController(object):
                       zDwellTime=None, doPreflightCheck=True, 
                       maxFrames=sys.maxsize, pzf_compression_settings=None, 
                       cluster_h5=None, protocol=None, subdirectory=None,
-                      extra_metadata=None):
+                      extra_metadata=None, preflight_mode='interactive'):
         """
 
         Parameters
@@ -388,6 +388,11 @@ class SpoolController(object):
         extra_metadata : dict, optional
             metadata to supplement this series for entries known prior to
             acquisition which do not have handlers to hook start metadata
+        preflight_mode : str (default='interactive')
+            What to do when the preflight check fails. Options are 'interactive', 'warn', 'abort' which will
+            display a dialog and prompt the user, log a warning and continue, and log an error and abort. The former is
+            suitable for interactive acquisition, whereas one of the latter modes is likely better for automated spooling
+            via the action manager.
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -420,7 +425,7 @@ class SpoolController(object):
         else:
             protocol = protocol
 
-        if doPreflightCheck and not preflight.ShowPreflightResults(None, protocol.PreflightCheck()):
+        if doPreflightCheck and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
