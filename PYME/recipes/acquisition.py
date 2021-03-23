@@ -5,6 +5,9 @@ import requests
 import json
 import numpy as np
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 def format_values(d, context):
     for k in d.keys():
@@ -154,4 +157,125 @@ class QueueAcquisitions(OutputModule):
                                 'functionName': 'turnAllLasersOff', 'args': {}
                                 }
                             }]),
+                        headers={'Content-Type': 'application/json'})
+
+
+@register_module('QueueZAcquisition')
+class QueueZAcquisition(OutputModule):
+    """
+    Queue move-to and start-spool acquisition tasks for each input position
+    using the ActionServer web wrapper queue_action endpoint.
+
+    Parameters
+    ----------
+    input_positions : Input
+        PYME.IO.tabular containing 'x_um' and 'y_um' coordinates in units of 
+        micrometers (preferred) *or* 'x' and 'y' coordinates in units of 
+        nanometers.
+    action_server_url : CStr
+        URL of the microscope-side action server process.
+    spool_settings : DictStrAny
+        settings to be passed to `PYME.Acquire.SpoolController.StartSpooling` as
+        key-word arguments. Ones that make sense in the context of this recipe
+        module include:
+            max_frames : int
+                number of frames to spool per series
+            method : str
+                'File', 'Queue' (py2 only), or 'Cluster'. 
+            hdf_compression_level: int
+                pytables compression level, valid for file/queue methods only.
+            z_stepped : bool
+                flag to toggle z stepping or standard protocol during spool
+            z_dwell : int
+                number of frames to acquire at each z position for z-stepped 
+                spools
+            cluster_h5 : bool
+                spool to single h5 file on cluster (True) or pzf files (False).
+                Only relevant for `Cluster` method.
+            pzf_compression_settings : dict
+                see PYME.Acquire.HTTPSpooler
+            protocol_name : str
+                filename of the acquisition protocol to follow while spooling
+            subdirectory : str
+                firectory within current SpoolController set directory to spool
+                a given series. The directory will be created if it doesn't 
+                already exist.
+    timeout : Float
+        time in seconds after which the acquisition tasks associated with these
+        positions will be ignored/unqueued from the action manager.
+    nice: Int
+        priority at which acquisition tasks should execute (default=10)
+    max_duration : float
+        A generous estimate, in seconds, of how long the task might take, after
+        which the lasers will be automatically turned off and the action queue
+        paused.
+    """
+    input_positions = Input('input')
+    action_server_url = CStr('http://127.0.0.1:9393')
+    spool_settings = DictStrAny()
+    timeout = Float(np.finfo(float).max)
+    max_duration = Float(np.finfo(float).max)
+    nice = Int(10)
+
+    def save(self, namespace, context={}):
+        """
+        Parameters
+        ----------
+        namespace : dict
+            The recipe namespace
+        context : dict
+            Information about the source file to allow pattern substitution to 
+            generate the output name. At least 'basedir' (which is the fully 
+            resolved directory name in which the input file resides) and 
+            'file_stub' (which is the filename without any extension) should be 
+            resolved.
+        
+        Notes
+        -----
+        str spool_settings values can context-substitute templated parameters,
+        e.g. spool_settings = {'subdirectory': '{file_stub}',
+                               'extra_metadata: {'Samples.Well': '{file_stub}'}}
+        """
+        # substitute spool settings
+        spool_settings = self.spool_settings.copy()
+        format_values(spool_settings, context)
+        pos = namespace[self.input_positions]
+        stack_settings = dict()
+        for k in pos.mdh.keys():
+            if k.startswith('StackSettings'):
+                stack_settings[k] = pos.mdh[k]
+        logger.debug('stack settings: %s' % str(stack_settings))
+        spool_settings['stack'] = stack_settings
+
+        if 'Sample.Well' in pos.mdh.keys():
+            if 'extra_metadata' not in spool_settings.keys():
+                spool_settings['extra_metadata'] = {}
+            spool_settings['extra_metadata']['Sample.Well'] = pos.mdh['Sample.Well']
+            spool_settings['subdirectory'] = pos.mdh['Sample.Well']
+        
+        try:  # get positions in units of micrometers
+            positions = np.stack((pos['x_um'], 
+                                  pos['y_um']), 
+                                 axis=1) # (N, 2), [um]
+        except KeyError:  # assume x and y are in nanometers
+            positions = np.stack((pos['x'], 
+                                  pos['y']), 
+                                 axis=1) / 1e3  # (N, 2), [nm] -> [um]
+        
+        dest = self.action_server_url + '/queue_actions'
+        session = requests.Session()
+        actions = list()
+        for ri in range(positions.shape[0]):
+            actions.append({
+                'CentreROIOn':{
+                    'x': positions[ri, 0], 'y': positions[ri, 1],
+                    'then': {
+                        'SpoolSeries' : spool_settings
+                    }
+                }
+            })
+        session.post(dest + '?timeout=%f&nice=%d&max_duration=%f' % (self.timeout,
+                                                                        self.nice,
+                                                                        self.max_duration),
+                        data=json.dumps(actions),
                         headers={'Content-Type': 'application/json'})

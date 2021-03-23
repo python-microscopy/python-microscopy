@@ -414,7 +414,8 @@ class SpoolController(object):
         if stack:
             protocol = protocol_z
             protocol.dwellTime = z_dwell
-            #print(protocol)
+            stack_settings = stack if hasattr(stack, 'keys') else None
+            protocol.set_stack_positions(stack_settings)
         else:
             protocol = protocol
 
