@@ -27,6 +27,7 @@ from PYME.IO import unifiedIO, MetaDataHandler
 #import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
 from PYME.Acquire.ui import preflight
+from PYME.Acquire import stackSettings
 from PYME import config
 
 from PYME.misc import hybrid_ns
@@ -389,10 +390,42 @@ class SpoolController(object):
         fn = self.seriesName if fn in ['', None] else fn
         stack = settings.get('z_stepped', self.z_stepped)
         compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
-        z_dwell = settings.get('z_dwell', self.z_dwell)
         pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         cluster_h5 = settings.get('cluster_h5', self.cluster_h5)
         maxFrames = settings.get('max_frames', sys.maxsize)
+        stack_settings = settings.get('stack_settings', None)
+        
+        
+        # try stack settings for z_dwell, then aq settings.
+        # for backwards compatibility, precedence is settings > stack_settings > self.z_dwell, but use of
+        # stack_settings['z_dwell'] is encouraged.
+        if stack_settings:
+            if isinstance(stack_settings, dict):
+                z_dwell = stack_settings.get('DwellFrames', self.z_dwell)
+            else:
+                # have a StackSettings object
+                # TODO - fix this to be a bit more sane and not use private attributes etc ...
+                z_dwell = stack_settings._dwell_frames
+                # z_dwell defaults to 1 in StackSettings objects if not value is provided, but a value of 1 is not
+                # generally useful for localisation series. Assume a value of 1 means not explicitly set and use our
+                # internal value instead.
+                # NOTE: This has the potential to result in potentially unexpected behaviour if you have explicitly set
+                # a dwell time of 1 in a StackSettings object, but is probably the safest of the unexpected behaviours.
+                # Note that passing stack_settings as a dict with DwellTime=1 will give the expected behaviour in this
+                # case.
+                # FIXME - make this less gross. Ultimate solution is likely to specify dwell time in one place and/or
+                # make the spool controller own a StackSettings object rather than using the global one and having a
+                # z_dwell parameter.
+                if z_dwell == 1:
+                    z_dwell = self.z_dwell
+        else:
+            z_dwell = self.z_dwell
+        
+        z_dwell = settings.get('z_dwell', z_dwell)
+        
+        if (stack_settings is not None) and (not isinstance(stack_settings, stackSettings.StackSettings)):
+            # let us pass stack settings as a dict, constructing a StackSettings instance as needed
+            stack_settings = stackSettings.StackSettings(**dict(stack_settings))
         
         protocol_name = settings.get('protocol_name')
         if protocol_name is None:
@@ -437,7 +470,7 @@ class SpoolController(object):
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
+                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
         elif self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
@@ -446,7 +479,7 @@ class SpoolController(object):
                                                frameShape = frameShape, protocol=protocol,
                                                guiUpdateCallback=self._ProgressUpate,
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5)
+                                               compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, stack_settings=stack_settings)
            
         else:
             from PYME.Acquire import HDFSpooler
@@ -454,7 +487,7 @@ class SpoolController(object):
                                               self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                              fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
+                                              fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
 
         #TODO - sample info is probably better handled with a metadata hook
         #if sampInf:
