@@ -342,7 +342,7 @@ class SpoolController(object):
         return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
 
-    def StartSpooling(self, fn=None, settings={}, preflight_mode='interactive'):
+    def start_spooling(self, fn=None, settings={}, preflight_mode='interactive'):
         """
 
         Parameters
@@ -632,11 +632,7 @@ class SpoolControllerWrapper(object):
         return 'OK'
 
     @webframework.register_endpoint('/start_spooling', output_is_json=False)
-    def start_spooling(self, filename=None, stack=None, hdf_comp_level=None, 
-                      z_dwell=None, preflight_check=True, 
-                      max_frames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None,
-                      extra_metadata=None):
+    def start_spooling(self, body, filename=None, preflight_mode='abort'):
         """
 
         Parameters
@@ -681,10 +677,10 @@ class SpoolControllerWrapper(object):
             
             FIXME: dict parameters will likely not be setable through the HTTP endpoint - change signature to accept json body instead? 
         """
-        self.spool_controller.StartSpooling(filename, stack, hdf_comp_level, 
-                                            z_dwell, preflight_check,
-                                            max_frames, 
-                                            pzf_compression_settings, 
-                                            cluster_h5, protocol, subdirectory,
-                                            extra_metadata)
+        import json
+        if len(body) > 0:
+            # have settings in message body
+            self.spool_controller.start_spooling(filename, settings=json.loads(body), preflight_mode=preflight_mode)
+        else:
+            self.spool_controller.start_spooling(filename, preflight_mode=preflight_mode)
         return 'OK'

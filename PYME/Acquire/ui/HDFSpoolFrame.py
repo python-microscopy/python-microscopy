@@ -472,10 +472,7 @@ class PanSpool(afp.foldingPane):
         
 
         try:
-            self.spoolController.StartSpooling(fn, #stack=stack, #compLevel = compLevel,
-                                               #pzf_compression_settings=self.get_compression_settings(),
-                                               #cluster_h5=self.cbClusterh5.GetValue()
-                                               )
+            self.spoolController.start_spooling(fn)
         except IOError as e:
             logger.exception('IO error whilst spooling')
             ans = wx.MessageBox(str(e.message), 'Error', wx.OK)

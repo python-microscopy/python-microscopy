@@ -94,7 +94,7 @@ class SpoolSeries(Action):
         Action.__init__(self, **kwargs)
     
     def __call__(self, scope):
-        return scope.spoolController.StartSpooling(**self._args)
+        return scope.spoolController.start_spooling(**self._args)
     
     def __repr__(self):
         return 'SpoolSeries(%s)' % (self._args)
