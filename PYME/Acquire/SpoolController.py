@@ -342,11 +342,7 @@ class SpoolController(object):
         return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
 
-    def StartSpooling(self, fn=None, stack=None, compLevel=None, 
-                      zDwellTime=None, doPreflightCheck=True, 
-                      maxFrames=sys.maxsize, pzf_compression_settings=None, 
-                      cluster_h5=None, protocol=None, subdirectory=None,
-                      extra_metadata=None, preflight_mode='interactive'):
+    def StartSpooling(self, fn=None, settings={}, preflight_mode='interactive'):
         """
 
         Parameters
@@ -354,60 +350,58 @@ class SpoolController(object):
         fn : str, optional
             fn can be hardcoded here, otherwise differs to the seriesName
             property which will create one if need-be.
-        stack : bool, optional
-            toggle z-stepping during acquisition. By default None, which differs
-            to current `SpoolController` state.
-        compLevel : int, optional
-            zlib compression level for pytables. Not relevant for `Cluster`
-            spool method unless `cluster_h5` is True. By default None, which 
-            differs to current `SpoolController` state.
-        zDwellTime : int, optional
-            frames per z-step. By default None, which differs to current 
-            `SpoolController` state.
-        doPreflightCheck : bool, optional
-            toggle performing pre-flights specified in the acquisition protocol,
-            by default True.
-        maxFrames : int, optional
-            point at which to end the series automatically, by default 
-            sys.maxsize
-        pzf_compression_settings : dict, optional
-            Compression settings relevant for 'Cluster' `method` if `cluster_h5`
-            is False. See HTTPSpooler.defaultCompSettings. By default None, 
-            which differs to current `SpoolController` state.
-        cluster_h5 : bool, optional
-            Toggle spooling to single h5 file on cluster rather than pzf file 
-            per frame. Only applicable to 'Cluster' `method` and preferred for 
-            PYMEClusterOfOne. By default None, which differs to current 
-            `SpoolController` state.
-        protocol : str, optional
-            path to acquisition protocol. By default None which differs to 
-            current `SpoolController` state.
-        subdirectory : str, optional
-            Directory within current set directory to spool this series. The
-            directory will be created if it doesn't already exist.
-        extra_metadata : dict, optional
-            metadata to supplement this series for entries known prior to
-            acquisition which do not have handlers to hook start metadata
+        settings : dict
+            keys should be `SpoolController` attributes or properties with
+            setters. Not all keys must be present, and example keys include:
+                method : str
+                    One of 'File', 'Cluster', or 'Queue'(py2 only)
+                hdf_compression_level: int
+                    zlib compression level that pytables should use (spool to
+                    file and queue)
+                z_stepped : bool
+                    toggle z-stepping during acquisition
+                z_dwell : int
+                    number of frames to acquire at each z level (predicated on
+                    `SpoolController.z_stepped` being True)
+                cluster_h5 : bool
+                    Toggle spooling to single h5 file on cluster rather than pzf
+                    file per frame. Only applicable to 'Cluster' `method` and
+                    preferred for PYMEClusterOfOne.
+                pzf_compression_settings : dict
+                    Compression settings relevant for 'Cluster' `method` if
+                    `cluster_h5` is False. See HTTPSpooler.defaultCompSettings.
+                protocol_name : str
+                    Note that passing the protocol name will force a (re)load of
+                    the protocol file (even if it is already selected).
+                max_frames : int, optional
+                    point at which to end the series automatically, by default
+                    sys.maxsize
         preflight_mode : str (default='interactive')
-            What to do when the preflight check fails. Options are 'interactive', 'warn', 'abort' which will
-            display a dialog and prompt the user, log a warning and continue, and log an error and abort. The former is
-            suitable for interactive acquisition, whereas one of the latter modes is likely better for automated spooling
+            What to do when the preflight check fails. Options are 'interactive', 'warn', 'abort' and 'skip' which will
+            display a dialog and prompt the user, log a warning and continue, and log an error and abort, or skip completely.
+            The former is suitable for interactive acquisition, whereas one of the latter modes is likely better for automated spooling
             via the action manager.
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
+        
+        
         fn = self.seriesName if fn in ['', None] else fn
-        stack = self.z_stepped if stack is None else stack
-        compLevel = self.hdf_compression_level if compLevel is None else compLevel
-        z_dwell = self.z_dwell if zDwellTime is None else zDwellTime
-        pzf_compression_settings = self.pzf_compression_settings if pzf_compression_settings is None else pzf_compression_settings
-        cluster_h5 = self.cluster_h5 if cluster_h5 is None else cluster_h5
-        if protocol is None:
+        stack = settings.get('z_stepped', self.z_stepped)
+        compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
+        z_dwell = settings.get('z_dwell', self.z_dwell)
+        pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
+        cluster_h5 = settings.get('cluster_h5', self.cluster_h5)
+        maxFrames = settings.get('max_frames', sys.maxsize)
+        
+        protocol_name = settings.get('protocol_name')
+        if protocol_name is None:
             protocol, protocol_z = self.protocol, self.protocolZ
         else:
-            pmod = prot.get_protocol(protocol)
+            pmod = prot.get_protocol(protocol_name)
             protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
 
+        subdirectory  = settings.get('subdirectory', None)
         # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
         if (self.spoolType != 'Cluster') and (not os.path.exists(self.get_dirname(subdirectory))):
                 os.makedirs(self.get_dirname(subdirectory))
@@ -425,7 +419,7 @@ class SpoolController(object):
         else:
             protocol = protocol
 
-        if doPreflightCheck and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
+        if (preflight_mode != 'skip') and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
             return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
@@ -470,6 +464,7 @@ class SpoolController(object):
         #        #the connection to the database will timeout if not present
         #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
         #        pass
+        extra_metadata = settings.get('extra_metadata')
         if extra_metadata is not None:
             self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(extra_metadata))
             
