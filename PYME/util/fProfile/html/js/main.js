@@ -127,7 +127,7 @@ function colorHashWarm(thread) {
 //### - end from d3-flame-graph
 
 function label_0(d) {
-    return d.n + '\n' + ((d.tf -d.ts)*1000).toFixed() + ' ms\n\n' + d.ns + '\n' + d.f
+    return d.n + '\n' + ((d.tf -d.ts)*1000).toPrecision(2) + ' ms\n\n' + d.ns + '\n' + d.f
 }
 
 function label_1(d) {

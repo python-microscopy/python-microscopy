@@ -5,6 +5,7 @@ Created on Mon Jun  8 16:06:17 2015
 
 @author: david
 """
+from PYME.misc import big_sur_fix
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 

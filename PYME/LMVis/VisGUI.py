@@ -390,9 +390,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             
         #print 'ev'
         if not self.pipeline.events is None:
-            self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events, 
-                                                        self.pipeline.mdh, 
-                                                        [0, self.pipeline.selectedDataSource['tIndex'].max()])
+            #self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events,
+            #                                            self.pipeline.mdh,
+            #                                            [0, self.pipeline.selectedDataSource['tIndex'].max()])
+
+            st = max(self.pipeline.events['Time'].min() - self.pipeline.mdh['StartTime'], 0)
+            et = 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime']
+            print(st, et)
+            
+            self.elv = eventLogViewer.eventLogTPanel(self, self.pipeline.events,self.pipeline.mdh,[st, et])
     
             self.elv.SetCharts(self.pipeline.eventCharts)
             
