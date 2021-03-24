@@ -68,7 +68,7 @@ class PcoCam(Camera):
         self.desc = self.cam.sdk.get_camera_description()
 
     def ExpReady(self):
-        return self.GetNumImsBuffered() >= 1
+        return self.recording and (self.GetNumImsBuffered() >= 1)
 
     def GetName(self):
         return self.cam.sdk.get_camera_name()['camera name']
@@ -282,7 +282,6 @@ class PcoCam(Camera):
         self.StopAq()
         self.GetTemps()
 
-        self.n_read = 0
         d = self.cam.sdk.get_delay_exposure_time()
         self._integ_time = d['exposure']*timebase[d['exposure timebase']] 
         self._cycle_time = self._integ_time \
@@ -301,7 +300,11 @@ class PcoCam(Camera):
 
     def StopAq(self):
         self.recording = False
-        self.cam.stop()
+        if self.cam.rec.recorder_handle.value is not None:
+            # NOTE: probably don't need this if statement thanks to the self.recording flag,
+            # but better to be safe
+            self.cam.rec.stop_record()
+            self.cam.rec.delete()
 
         self._integ_time = 0
         self._cycle_time = 0
