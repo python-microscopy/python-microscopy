@@ -397,8 +397,13 @@ class SpoolController(object):
         
         
         # try stack settings for z_dwell, then aq settings.
-        # for backwards compatibility, precedence is settings > stack_settings > self.z_dwell, but use of
-        # stack_settings['z_dwell'] is encouraged.
+        # precedence is settings > stack_settings > self.z_dwell
+        # The reasoning for allowing the dwell time to be set in either the spooling or stack settings is to allow
+        # API users to choose which is most coherent for their use case (it would seem logical to put dwell time with
+        # the other stack settings, but this becomes problematic when sharing stack settings across modalities - e.g.
+        # PALM/STORM and widefield stacks which are likely to share most of the stack settings but have greatly different
+        # z dwell times). PYMEAcquire specifies it in the spooling/series settings by default to allow shared usage
+        # between modalities.
         if stack_settings:
             if isinstance(stack_settings, dict):
                 z_dwell = stack_settings.get('DwellFrames', self.z_dwell)
@@ -406,17 +411,11 @@ class SpoolController(object):
                 # have a StackSettings object
                 # TODO - fix this to be a bit more sane and not use private attributes etc ...
                 z_dwell = stack_settings._dwell_frames
-                # z_dwell defaults to 1 in StackSettings objects if not value is provided, but a value of 1 is not
-                # generally useful for localisation series. Assume a value of 1 means not explicitly set and use our
-                # internal value instead.
-                # NOTE: This has the potential to result in potentially unexpected behaviour if you have explicitly set
-                # a dwell time of 1 in a StackSettings object, but is probably the safest of the unexpected behaviours.
-                # Note that passing stack_settings as a dict with DwellTime=1 will give the expected behaviour in this
-                # case.
-                # FIXME - make this less gross. Ultimate solution is likely to specify dwell time in one place and/or
-                # make the spool controller own a StackSettings object rather than using the global one and having a
-                # z_dwell parameter.
-                if z_dwell == 1:
+                # z_dwell defaults to -1  (with a meaning of ignore) in StackSettings objects if not value is not
+                # explicitly provided. In this case, use our internal value instead. The reason for the 'ignore'
+                # special value is to allow the same StackSettings object to be used for widefield stacks and
+                # localization series (where sharing everything except dwell time makes sense).
+                if z_dwell < 1:
                     z_dwell = self.z_dwell
         else:
             z_dwell = self.z_dwell

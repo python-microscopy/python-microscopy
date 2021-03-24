@@ -51,7 +51,7 @@ class StackSettings(object):
         'NumSlices': 100,
         'ScanMode': SCAN_MODES[0],
         'ScanPiezo': 'z',
-        'DwellFrames': 1,
+        'DwellFrames': -1,
     }
         
     def __init__(self,scope, **kwargs):
