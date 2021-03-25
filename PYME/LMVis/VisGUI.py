@@ -394,7 +394,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             #                                            self.pipeline.mdh,
             #                                            [0, self.pipeline.selectedDataSource['tIndex'].max()])
 
-            st = max(self.pipeline.events['Time'].min() - self.pipeline.mdh['StartTime'], 0)
+            st = min(self.pipeline.events['Time'].min() - self.pipeline.mdh['StartTime'], 0)
             et = 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime']
             print(st, et)
             
