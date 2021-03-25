@@ -42,6 +42,7 @@ from PYME.util import webframework
 import threading
 
 from PYME.Acquire import event_loop
+#from PYME.Acquire import webui
 
 class PYMEAcquireServer(event_loop.EventLoop):
     def __init__(self, options = None):
@@ -331,7 +332,10 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         self.daemon_threads = True
         
         self.add_endpoints(SpoolController.SpoolControllerWrapper(self.scope.spoolController), '/spool_controller')
+        #self.add_endpoints(self.scope.stackSettings, '/stack_settings')
         self.add_static_handler('static', webframework.StaticFileHandler(os.path.join(os.path.dirname(__file__), 'webui', 'static')))
+        
+        webui.set_server(self)
         
         self._main_page = webui.load_template('PYMEAcquire.html')
         
@@ -397,6 +401,7 @@ def main():
     parser.add_option("-i", "--init-file", dest="initFile",
                       help="Read initialisation from file [defaults to init.py]",
                       metavar="FILE", default='init.py')
+    parser.add_option('-b', '--reuse-browser', dest="browser", default=True, action="store_false")
     
     (options, args) = parser.parse_args()
     
@@ -414,12 +419,13 @@ def main():
     logger.info('using initialization script %s' % init_file)
     
     server = AcquireHTTPServer(options, 8999)
-    ns = dict(scope=server.scope)
+    ns = dict(scope=server.scope, server=server)
     print('namespace:', ns)
     ipy.launch_ipy_server_thread(user_ns=ns)
     
-    import webbrowser
-    webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up
+    if options.browser:
+        import webbrowser
+        webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up
     
     server.run()
     

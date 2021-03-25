@@ -25,9 +25,12 @@ import math
 
 import time
 from PYME.IO import MetaDataHandler
+from PYME.util import webframework
 
 import logging
 logger = logging.getLogger(__name__)
+
+import threading
 
 class StackSettings(object):
     """A class to keep settings for acquiring z-stacks"""
@@ -38,23 +41,98 @@ class StackSettings(object):
     START_AND_END = 1
     FORWARDS = 1
     BACKWARDS = -1
+    
+    SCAN_MODES = ['Middle and Number', 'Start and End']
+    
+    DEFAULTS = {
+        'StartPos': 0,
+        'EndPos': 0,
+        'StepSize': 0.2,
+        'NumSlices': 100,
+        'ScanMode': SCAN_MODES[0],
+        'ScanPiezo': 'z',
+        'DwellFrames': -1,
+    }
         
-    def __init__(self,scope):
+    def __init__(self,scope, **kwargs):
+        """
+        Create a stack settings object.
+        
+        NB - extra args map 1:1 to stack metadata entries. Start and end pos are ignored if ScanMode = 'Middle and Number'
+        
+        Parameters
+        ----------
+        scope
+        ScanMode
+        StartPos
+        EndPos
+        StepSize
+        NumSlices
+        ScanPiezo
+        """
         #PreviewAquisator.__init__(self, chans, cam, shutters, None)
         self.scope= scope 
         #self.log = _log
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.ProvideStackMetadata)
+
+        self._settings_changed = threading.Condition()
         
-        self.ScanChan  = 'z'
-        self.StartMode = self.CENTRE_AND_LENGTH
-        self.SeqLength = 100  
-        self.StepSize  = 0.2
-        self.startPos = 0
-        self.endPos = 0
+        d1 = dict(self.DEFAULTS)
+        d1.update(kwargs)
+        
+        self.update(**d1)
         
         self.direction = self.FORWARDS
+        
+        from PYME.Acquire import webui
+        # add webui endpoints (if running under webui)
+        webui.add_endpoints(self, '/stack_settings')
+
+    
+    def update(self, ScanMode=None, StartPos=None, EndPos=None, StepSize=None, NumSlices=None, ScanPiezo=None, DwellFrames=None):
+        if ScanPiezo is not None:
+            self.ScanChan = ScanPiezo
+        if ScanMode is not None:
+            self.StartMode = self.SCAN_MODES.index(ScanMode)
+        if NumSlices is not None:
+            self.SeqLength = int(NumSlices)
+        if StepSize is not None:
+            self.StepSize = float(StepSize)
+        if StartPos is not None:
+            self.startPos = float(StartPos)
+        if EndPos is not None:
+            self.endPos = float(EndPos)
+        if DwellFrames is not None:
+            self._dwell_frames = float(DwellFrames)
+            
+        with self._settings_changed:
+            self._settings_changed.notify_all()
+
+    @webframework.register_endpoint('/update', output_is_json=False)
+    def update_json(self, body):
+        import json
+        self.update(**json.loads(body))
+
+    @webframework.register_endpoint('/settings', output_is_json=False)
+    def settings(self):
+        return {
+            'StartPos' : self.GetStartPos(),
+            'EndPos' : self.GetEndPos(),
+            'StepSize': self.GetStepSize(),
+            'NumSlices' : self.GetSeqLength(),
+            'ScanMode': self.SCAN_MODES[self.GetStartMode()],
+            'ScanPiezo' : self.GetScanChannel(),
+            'DwellFrames' : self._dwell_frames,
+        }
+
+    @webframework.register_endpoint('/settings_longpoll', output_is_json=False)
+    def settings_longpoll(self):
+        with self._settings_changed:
+            self._settings_changed.wait()
+        
+        return self.settings()
         
                          
     def GetScanChannel(self):
@@ -66,9 +144,13 @@ class StackSettings(object):
     
     def SetScanChannel(self,iMode):
         self.ScanChan = iMode
+        with self._settings_changed:
+            self._settings_changed.notify_all()
     
     def SetSeqLength(self,iLength):
-        self.SeqLength = iLength
+        self.SeqLength = int(iLength)
+        with self._settings_changed:
+            self._settings_changed.notify_all()
         
     def GetSeqLength(self):
         if (self.StartMode == 0):
@@ -78,15 +160,24 @@ class StackSettings(object):
             
     def SetStartMode(self, iMode):
         self.StartMode = iMode
+        with self._settings_changed:
+            self._settings_changed.notify_all()
         
     def GetStartMode(self):
         return self.StartMode
+    
     def SetStepSize(self, fSize):
-        self.StepSize = fSize
+        self.StepSize = float(fSize)
+        with self._settings_changed:
+            self._settings_changed.notify_all()
+    
     def GetStepSize(self):
         return self.StepSize
+    
     def SetStartPos(self, sPos):
-        self.startPos = sPos
+        self.startPos = float(sPos)
+        with self._settings_changed:
+            self._settings_changed.notify_all()
         
     def GetStartPos(self):
         if (self.GetStartMode() == 0):
@@ -97,7 +188,10 @@ class StackSettings(object):
             return self.startPos
             
     def SetEndPos(self, ePos):
-        self.endPos = ePos
+        self.endPos = float(ePos)
+        with self._settings_changed:
+            self._settings_changed.notify_all()
+        
     def GetEndPos(self):
         if (self.GetStartMode() == 0):
             return self._CurPos() + (self.GetStepSize()*(self.GetSeqLength() - 1)*self.GetDirection()/2)
@@ -105,15 +199,20 @@ class StackSettings(object):
             if not ("endPos" in dir(self)):
                 raise RuntimeError("Please call SetEndPos first !!")
             return self.endPos
+        
     def SetPrevPos(self, sPos):
         self.prevPos = sPos
+        
     def GetPrevPos(self):
         if not ("prevPos" in dir(self)):
             raise RuntimeError("Please call SetPrevPos first !!")
         return self.prevPos
+    
     def SetDirection(self, dir):
         " Fowards = 1, backwards = -1 "
         self.direction = dir
+        with self._settings_changed:
+            self._settings_changed.notify_all()
         
     def GetDirection(self):
         if (self.GetStartMode() == 0):
@@ -162,7 +261,7 @@ class StackSettings(object):
             mdh.setEntry('StackSettings.EndPos', self.GetEndPos())
             mdh.setEntry('StackSettings.StepSize', self.GetStepSize())
             mdh.setEntry('StackSettings.NumSlices', self.GetSeqLength())
-            mdh.setEntry('StackSettings.ScanMode', ['Middle and Number', 'Start and End'][self.GetStartMode()])
+            mdh.setEntry('StackSettings.ScanMode', self.SCAN_MODES[self.GetStartMode()])
             mdh.setEntry('StackSettings.ScanPiezo', self.GetScanChannel())
     
             mdh.setEntry('voxelsize.z', self.GetStepSize())

@@ -8,6 +8,8 @@ import wx
 import numpy as np
 import logging
 
+from PYME.Acquire import actions
+
 logger = logging.getLogger(__name__)
 
 class ActionList(wx.ListCtrl):
@@ -179,28 +181,26 @@ class ActionPanel(wx.Panel):
 
     def OnAddMove(self, event):
         nice = float(self.tNice.GetValue())
-        #functionName = self.tFunction.GetValue()
-        #args = eval('dict(%s)' % self.tArgs.GetValue())
-
-        functionName = 'state.update'
-        args = {'state' : {'Positioning.x': self.scope.state['Positioning.x'], 
-                           'Positioning.y': self.scope.state['Positioning.y'], 
-                           'Positioning.z': self.scope.state['Positioning.z']}}
-
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout, 
-                                       max_duration)
+
+        state =  {'Positioning.x': self.scope.state['Positioning.x'],
+                  'Positioning.y': self.scope.state['Positioning.y'],
+                  'Positioning.z': self.scope.state['Positioning.z']}
+
+        self.actionManager.queue_actions([actions.UpdateState(state),],
+                                         nice, timeout, max_duration)
         
 
     def OnAddSequence(self, event):
         nice = float(self.tNice.GetValue())
-        functionName = 'spoolController.StartSpooling'
-        args = {'maxFrames' : int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout,
-                                       max_duration)
+
+        settings = {'max_frames': int(self.tNumFrames.GetValue()), 'z_stepped': bool(self.rbZStepped.GetValue())}
+        
+        self.actionManager.queue_actions([actions.SpoolSeries(settings=settings, preflight_mode='warn'),],
+                                         nice , timeout,max_duration)
         
     
     def _add_ROIs(self, rois):

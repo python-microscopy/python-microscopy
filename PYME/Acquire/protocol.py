@@ -194,9 +194,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.require_camera_restart = require_camera_restart
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.stackSettings.GetStartPos(),
-                               scope.stackSettings.GetEndPos() + .95 * scope.stackSettings.GetStepSize(),
-                               scope.stackSettings.GetStepSize() * scope.stackSettings.GetDirection())
+        stack_settings = getattr(spooler, 'stack_settings', scope.stackSettings)
+        
+        self.zPoss = np.arange(stack_settings.GetStartPos(),
+                               stack_settings.GetEndPos() + .95 * stack_settings.GetStepSize(),
+                               stack_settings.GetStepSize() * stack_settings.GetDirection())
 
         if self.slice_order != 'saw':
             if self.slice_order == 'random':
@@ -210,7 +212,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
 
 
-        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
+        self.piezoName = 'Positioning.%s' % stack_settings.GetScanChannel()
         self.startPos = scope.state[self.piezoName + '_target'] #FIXME - _target positions shouldn't be part of scope state
         self.pos = 0
 
