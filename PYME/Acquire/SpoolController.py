@@ -377,6 +377,12 @@ class SpoolController(object):
                 max_frames : int, optional
                     point at which to end the series automatically, by default
                     sys.maxsize
+                subdirectory : str, optional
+                    Directory within current set directory to spool this series. The
+                    directory will be created if it doesn't already exist.
+                extra_metadata : dict, optional
+                    metadata to supplement this series for entries known prior to
+                    acquisition which do not have handlers to hook start metadata
         preflight_mode : str (default='interactive')
             What to do when the preflight check fails. Options are 'interactive', 'warn', 'abort' and 'skip' which will
             display a dialog and prompt the user, log a warning and continue, and log an error and abort, or skip completely.
@@ -676,13 +682,20 @@ class SpoolControllerWrapper(object):
     @webframework.register_endpoint('/start_spooling', output_is_json=False)
     def start_spooling(self, body, filename=None, preflight_mode='abort'):
         """
+        See also SpoolController.start_spooling()
 
         Parameters
         ----------
         filename : str, optional
             fn can be hardcoded here, otherwise differs to the seriesName
             property which will create one if need-be.
-        stack : bool, optional
+        preflight_mode : str, default == 'abort'
+             One of 'warn', 'abort', 'skip, or 'interactive'. Note that 'interactive' requires an active wx.App
+             
+        The majority of parameters are passed in the request body, which should be a json-formatted dictionary with the
+        the following keys (see also `settings` parameter to `SpoolController.start_spooling`
+        
+        z_stepped : bool, optional
             toggle z-stepping during acquisition. By default None, which differs
             to current `SpoolController` state.
         hdf_comp_level : int, optional
@@ -692,9 +705,6 @@ class SpoolControllerWrapper(object):
         z_dwell : int, optional
             frames per z-step. By default None, which differs to current 
             `SpoolController` state.
-        preflight_check : bool, optional
-            toggle performing pre-flights specified in the acquisition protocol,
-            by default True.
         max_frames : int, optional
             point at which to end the series automatically, by default 
             sys.maxsize
@@ -716,8 +726,10 @@ class SpoolControllerWrapper(object):
         extra_metadata : dict, optional
             metadata to supplement this series for entries known prior to
             acquisition which do not have handlers to hook start metadata
-            
-            FIXME: dict parameters will likely not be setable through the HTTP endpoint - change signature to accept json body instead? 
+        stack_settings : dict, optional
+            The stack settings. See PYME.Acquire.stackSettings.StackSettings. By default the global StackSettings instance
+            is used.
+             
         """
         import json
         if len(body) > 0:
