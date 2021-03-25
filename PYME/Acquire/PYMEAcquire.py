@@ -32,6 +32,7 @@ This is the principle entry point for `PYMEAcquire`, the acquisition component o
     
 If run without an intialisation file it defaults to using simulated hardware.
 """
+from PYME.misc import big_sur_fix
 
 #!/usr/bin/python
 import wx
