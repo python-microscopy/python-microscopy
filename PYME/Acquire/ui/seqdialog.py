@@ -262,43 +262,67 @@ class seqPanel(wx.Panel):
 
                  
 
+    def _update_disp(self, *args, **kwargs):
+       wx.CallAfter(self.__update_disp)
+       
+    def __update_disp(self):
+       #print('vrf')
+       self._view.view.Redraw()
+       #print('vrf_')
+       
+       if self._aq_type_single:
+           self.dlgAqProg.Tick()
+        
+    
     def OnBSingle(self, event):
         self.OnBLive(event, True)
         
         #monkey patch in a progress panel        
-        self.dlgAqProg = SeqProgressPanel(self.scope.zs)
+        self.dlgAqProg = SeqProgressPanel(self.scope.zs, self._view)
 
         self.pinfo1 = aui.AuiPaneInfo().Name("deconvPanel").Top().Caption('Acquisition Progress').DestroyOnClose(True).CloseButton(False)#.MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        self.scope.zs.view._mgr.AddPane(self.dlgAqProg, self.pinfo1)
-        self.scope.zs.view._mgr.Update()
+        self._view._mgr.AddPane(self.dlgAqProg, self.pinfo1)
+        self._view._mgr.Update()
         
-        #self.scope.zs.WantTickNotification.append(self.dlgAqProg.Tick)
-        self.scope.zs.onSingleFrame.connect(self.dlgAqProg.Tick)
         
+        
+    def _single_end(self):
+        self.__update_disp()
+
+        self.bStart.Enable(True)
+        self.bLive.SetLabel('Live')
+
+        #self.dlgAqProg.gProgress.Destroy()
+        self._view._mgr.ClosePane(self.pinfo1)
+        self._view._mgr.Update()
+        
+    
     def OnSingleEnd(self, **kwargs):
         #wx.MessageBox('Acquisition Finished')
         #self.scope.zs.WantFrameNotification.remove(self.OnSingleEnd)
         #self.scope.zs.WantTickNotification.remove(self.dlgAqProg.Tick)
         
+        
         self.scope.zs.onStack.disconnect(self.OnSingleEnd)
-        self.scope.zs.onSingleFrame.disconnect(self.dlgAqProg.Tick)
+        self.scope.frameWrangler.onFrameGroup.disconnect(self._update_disp)
         
-        self.bStart.Enable(True)
-        self.bLive.SetLabel('Live')
+        wx.CallAfter(self._single_end)
         
-        self.scope.zs.view._mgr.ClosePane(self.pinfo1)
-        self.scope.zs.view._mgr.Update()
         #print('se')
         
         
         
     def OnBLive(self, event, single=False):
         from PYME.Acquire import zScanner
+        from PYME.DSView import ViewIm3D
+        
+        self._aq_type_single = single
         
         if 'zs' in dir(self.scope) and self.scope.zs.running: #stop
             self.scope.zs.Stop()
             self.bLive.SetLabel('Live')
             self.bStart.Enable(True)
+            self.scope.frameWrangler.onFrameGroup.disconnect(self._update_disp)
             
         else:
             res = self.stackSettings.Verify()
@@ -323,9 +347,13 @@ class seqPanel(wx.Panel):
                     self.scope.zs.Single()
                 else:
                     self.scope.zs.Start()
+                
                 self.bLive.SetLabel('Stop')
                 self.bStart.Enable(False)
-    
+                
+                self._view = ViewIm3D(self.scope.zs.img, 'Z Stack')
+                self.scope.frameWrangler.onFrameGroup.connect(self._update_disp)
+                
             else:
                 dialog = wx.MessageDialog(None, res[2] + ' (%2.3f)'% res[3], "Parameter Error", wx.OK)
                 dialog.ShowModal()
@@ -432,8 +460,8 @@ class seqPanel(wx.Panel):
 
 
 class SeqProgressPanel(wx.Panel):
-    def __init__(self, zscanner):
-        wx.Panel.__init__(self, zscanner.view)
+    def __init__(self, zscanner, parent=None):
+        wx.Panel.__init__(self, parent)
         self.cancelled = False
         
         self.zs = zscanner
