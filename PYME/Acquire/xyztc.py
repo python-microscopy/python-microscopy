@@ -2,14 +2,21 @@ import numpy as np
 from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
 from PYME.IO import image
+from PYME.IO.DataSources.BaseDataSource import XYZTCDataSource
+from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 
 import time
 
 class MemoryBackend(object):
-    def __init__(self, size_x, size_y, n_frames, dtype='uint16'):
+    def __init__(self, size_x, size_y, n_frames, dtype='uint16', dim_order='XTCZT', shape=[-1, -1,1,1,1]):
         self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
         self.mdh = MetaDataHandler.DictMDHandler()
         
+        # once we have proper xyztc support in the image viewer
+        #ds = XYZTCDataSource(ArrayDataSource(self.data), dim_order, shape[2], shape[3], shape[4])
+        #self.image = image.ImageStack(data=ds, mdh=self.mdh)
+        
+        # in the meantime - note that this will flatten the ctz dimensions
         self.image = image.ImageStack(data=self.data, mdh=self.mdh)
         
     def store_frame(self, n, frame_data):
@@ -28,14 +35,14 @@ class XYZTCAcquisition(object):
         
         self.shape_x, self.shape_y = scope.frameWrangler.currentFrame.shape[:2]
         self.shape_z = stack_settings.GetSeqLength()
-        self.shape_t = getattr(time_settings, 'sequence_length', 1)
+        self.shape_t = getattr(time_settings, 'num_timepoints', 1)
         self.shape_c = getattr(channel_settings, 'num_channels', 1)
         
         # note shape_t can be negative if we want to run until explicitly stopped
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
         self.frame_num = 0
         
-        self.storage = backend(self.shape_x, self.shape_y, self.n_frames)
+        self.storage = backend(self.shape_x, self.shape_y, self.n_frames, dim_order=dim_order, shape=self.shape)
         
         #do any precomputation
         self._init_z(stack_settings)
@@ -44,7 +51,10 @@ class XYZTCAcquisition(object):
 
         self.on_single_frame = dispatch.Signal()  #dispatched when a frame is ready
         self.on_series_end = dispatch.Signal()  #dispatched when a sequence is complete
-        
+    
+    @property
+    def shape(self):
+        return self.shape_x, self.shape_y, self.shape_z, self.shape_t, self.shape_c
         
     def _zct_indices(self, frame_no):
         if self.dim_order == 'XYCZT':
@@ -58,8 +68,8 @@ class XYZTCAcquisition(object):
             # TODO - fix for other modes
         
         
-    def on_frame(self, sender, frame_data, **kwargs):
-        self.storage.store_frame(self.frame_num, frame_data)
+    def on_frame(self, sender, frameData, **kwargs):
+        self.storage.store_frame(self.frame_num, frameData)
         
         self.frame_num += 1
         
@@ -112,17 +122,16 @@ class XYZTCAcquisition(object):
         self.on_series_end.send(self)
         
     def _init_z(self, stack_settings):
-        self.zposs = np.arange(stack_settings.GetStartPos(),
+        self._z_poss = np.arange(stack_settings.GetStartPos(),
                                stack_settings.GetEndPos() + .95 * stack_settings.GetStepSize(),
                                stack_settings.GetStepSize() * stack_settings.GetDirection())
 
-        self.posChan = stack_settings.GetScanChannel()
-        #self.startPos = self.piezo.GetPos(self.piezoChan)
-        self.startPos = self.scope.GetPos()[self.posChan]
+        self._z_chan = stack_settings.GetScanChannel()
+        self._z_initial_pos = self.scope.GetPos()[self._z_chan]
         
     
     def set_z(self, z_idx):
-        self.scope.SetPos(**{self.posChan: self.zPoss[z_idx]})
+        self.scope.SetPos(**{self._z_chan: self._z_poss[z_idx]})
         
     def _init_c(self, channel_settings):
         pass
