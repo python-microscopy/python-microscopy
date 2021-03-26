@@ -171,7 +171,7 @@ class XYZTCDataSource(object):
         if not input_order.startswith('XY'):
             raise RuntimeError('First 2 dimensions of input must be X and Y')
         
-        self.shape = self._datasource.getSliceShape() + [size_z, size_t, size_c]
+        self.shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
         self.dtype = self._datasource.dtype
         
         if input_order == 'XYZTC':

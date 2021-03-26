@@ -77,7 +77,7 @@ def _get_token_secret():
         
     
 def hash_password(password):
-    return binascii.hexlify(hashlib.pbkdf2_hmac('sha256', bytes(password), bytes(get_salt()), 100000))
+    return binascii.hexlify(hashlib.pbkdf2_hmac('sha256', password.encode('utf8'), get_salt().encode('utf8'), 100000))
 
 def authenticate_hash(email, password_hash):
     auth_db = sqlite3.connect(auth_db_path)

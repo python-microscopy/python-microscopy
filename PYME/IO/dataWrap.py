@@ -22,7 +22,7 @@
 """Classes to wrap a source of data so that it looks like an array"""
 import numpy as np
 import tables
-from PYME.IO.DataSources.BaseDataSource import BaseDataSource, DefaultList
+from PYME.IO.DataSources.BaseDataSource import BaseDataSource, DefaultList, XYZTCDataSource
 from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 
 class ListWrap:
@@ -173,7 +173,7 @@ def Wrap(datasource):
     
     if isinstance(datasource, list):
         datasource = ListWrap(datasource)
-    elif not isinstance(datasource, (ListWrap, BaseDataSource)): #only if not already wrapped
+    elif not isinstance(datasource, (ListWrap, BaseDataSource, XYZTCDataSource)): #only if not already wrapped
         if isinstance(datasource, tables.EArray):
             datasource = ArrayDataSource(datasource, dim_1_is_z=True)
         else:

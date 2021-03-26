@@ -94,10 +94,10 @@ class SpoolSeries(Action):
         Action.__init__(self, **kwargs)
     
     def __call__(self, scope):
-        return scope.spoolController.StartSpooling(**self._args)
+        return scope.spoolController.start_spooling(**self._args)
     
     def __repr__(self):
-        return 'SpoolSeries(%s)' % (self._args)
+        return 'SpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
 
 
 def action_from_dict(serialised):

@@ -158,6 +158,7 @@ class IPYWithClients(object):
         # it can show e.g. the most recent prompt, rather than absolutely
         # nothing.
         self.read_buffer = deque([], maxlen=10)
+        self.preopen_buffer = deque([])
         
     @property
     def ptyproc(self):
@@ -235,9 +236,15 @@ class IPYTermManager(object):
         ptywclients = self.ptys_by_fd[fd]
         try:
             s = ptywclients.ipy.fr_out.read(65536)
+            client_list = ptywclients.clients
             self.log.debug(s)
             ptywclients.read_buffer.append(s)
-            for client in ptywclients.clients:
+            if not client_list:
+                # No one to consume our output: buffer it.
+                ptywclients.preopen_buffer.append(s)
+                return
+            
+            for client in client_list:
                 client.on_pty_read(s)
         except EOFError:
             self.on_eof(ptywclients)
