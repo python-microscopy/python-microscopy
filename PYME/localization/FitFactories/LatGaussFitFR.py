@@ -119,7 +119,24 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
     #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
     #print res
     return res
-		
+
+def genFitImage(fitResults, metadata):
+#    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+
+    xslice = slice(*fitResults['slicesUsed']['x'])
+    yslice = slice(*fitResults['slicesUsed']['y'])
+
+    x0 = xslice.start + (xslice.stop - xslice.start) // 2
+    y0 = yslice.start + (yslice.stop - yslice.start) // 2
+
+    if 'Analysis.ROISize' in metadata.getEntryNames():
+        rs = metadata.getEntry('Analysis.ROISize')
+        im = GaussianFitFactory.evalModel(fitResults['fitResults'], metadata,x=x0,y=y0,roiHalfSize=rs)
+    else:
+        im = GaussianFitFactory.evalModel(fitResults['fitResults'], metadata,x=x0,y=y0)
+    
+    return im[0].squeeze()
+
 
 class GaussianFitFactory(FFBase.FitFactory):
     def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None, **kwargs):
@@ -181,7 +198,7 @@ class GaussianFitFactory(FFBase.FitFactory):
         #generate grid to evaluate function on
         vs = md.voxelsize_nm
         X = vs.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = vs.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = vs.y*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
 
         return (f_gauss2d(params, X, Y), X[0], Y[0], 0)
 
