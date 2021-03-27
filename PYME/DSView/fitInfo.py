@@ -408,6 +408,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
             if not i is None:
+                # only clear the panels if we have been called with a valid fitResults index
                 self.subplot1.cla()
                 self.subplot2.cla()
                 self.subplot3.cla()
