@@ -208,33 +208,33 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
         
         if 'Analysis.EstimatorModule' in md.getEntryNames():
-            estimatorModule = md.Analysis.EstimatorModule
+            estimatorModule = md['Analysis.EstimatorModule']
         else:
             estimatorModule = 'astigEstimator'
 
         #this is just here to make sure we clear our calibration when we change models        
         startPosEstimator = __import__('PYME.localization.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'localization', 'FitFactories', 'zEstimators'])        
         
-        if interpolator.setModelFromFile(md.PSFFile, md):
+        if interpolator.setModelFromFile(md['PSFFile'], md):
             print('model changed')
             startPosEstimator.splines.clear()
 
         Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
         
-        DeltaX = md.chroma.dx.ev(x, y)
-        DeltaY = md.chroma.dy.ev(x, y)
+        DeltaX = md['chroma.dx'].ev(x, y)
+        DeltaY = md['chroma.dy'].ev(x, y)
         
-        vx, vy, _ = md.voxelsize_nm
+        vx, vy, _ = md['voxelsize_nm']
         
         dxp = int(DeltaX/vx)
         dyp = int(DeltaY/vy)
 
         Xr = Xg + DeltaX - vx*dxp
         Yr = Yg + DeltaY - vx*dyp
-        Zr = Zg + md.Analysis.AxialShift
+        Zr = Zg + md['Analysis.AxialShift']
         #print ratio
 
-        return f_Interp3d2cr(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, ratio), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
+        return f_Interp3d2cr(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md['Analysis.AxialShift'], ratio), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
