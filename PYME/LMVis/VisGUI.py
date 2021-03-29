@@ -276,6 +276,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         wx.adv.AboutBox(dlg)
 
+    def OnDocumentation(self, event):
+        import webbrowser
+        webbrowser.open('https://python-microscopy.org/doc/')
+        event.Skip()
+
 #    def OnToggleWindow(self, event):
 #        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
 #        self.glCanvas.Refresh()  
