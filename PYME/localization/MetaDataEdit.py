@@ -10,6 +10,8 @@
 #
 ##################
 
+from PYME.IO.FileUtils.pickledLoad import np_load_legacy
+
 class MDParam(object):
     def __init__(self):
         pass
@@ -396,7 +398,7 @@ class ShiftFieldParam(FilenameParam):
         FilenameParam.retrieveValue(self, mdh, *args, **kwargs)
         
         if not self.filename == oldfn and not self.filename in ['<none>', '']:
-            dx, dy = np.load(self.filename, allow_pickle=True)
+            dx, dy = np_load_legacy(self.filename)
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
         

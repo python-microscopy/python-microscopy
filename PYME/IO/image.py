@@ -43,6 +43,7 @@ from PYME.IO.DataSources import BufferedDataSource
 #from PYME.LMVis.visHelpers import ImageBounds
 
 from PYME.IO.FileUtils.nameUtils import getRelFilename
+from PYME.IO.FileUtils.pickledLoad import np_load_legacy
 from collections import namedtuple
 from six import string_types
 
@@ -527,7 +528,8 @@ class ImageStack(object):
         """
         from PYME.IO import unifiedIO
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data, vox = numpy.load(fn)
+            self.data, vox = np_load_legacy(fn)
+                
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
@@ -543,7 +545,8 @@ class ImageStack(object):
     def _loadSF(self, filename):
         self.mdh =MetaDataHandler.NestedClassMDHandler( MetaData.BareBones)
         self.mdh.setEntry('chroma.ShiftFilename', filename)
-        dx, dy = numpy.load(filename)
+        dx, dy = np_load_legacy(filename)
+            
         self.mdh.setEntry('chroma.dx', dx)
         self.mdh.setEntry('chroma.dy', dy)
         
@@ -579,7 +582,7 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
 
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data = numpy.load(fn)
+            self.data = numpy.load(fn,allow_pickle=True)
 
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
