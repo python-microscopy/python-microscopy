@@ -10,7 +10,7 @@
 #
 ##################
 
-from PYME.IO.FileUtils.pickledLoad import np_load_legacy
+from PYME.IO.compatibility import np_load_legacy
 
 class MDParam(object):
     def __init__(self):
@@ -388,8 +388,7 @@ class FilenameParam(MDParam):
 
 class ShiftFieldParam(FilenameParam):    
     def retrieveValue(self, mdh, *args, **kwargs):
-        import numpy as np
-        
+    
         oldfn = mdh.getOrDefault(self.paramName, None)
         if 'chroma.dx' in mdh.getEntryNames():
             if self.filename == self.default:

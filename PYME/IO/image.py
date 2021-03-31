@@ -31,23 +31,21 @@
 #    pass
 
 from __future__ import print_function
-import os
-import numpy
-
-import weakref
-
-from PYME.IO import MetaDataHandler
-from PYME.Analysis import MetaData
-from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource
-#from PYME.LMVis.visHelpers import ImageBounds
-
-from PYME.IO.FileUtils.nameUtils import getRelFilename
-from PYME.IO.FileUtils.pickledLoad import np_load_legacy
-from collections import namedtuple
-from six import string_types
 
 import logging
+import os
+import weakref
+
+import numpy
+from six import string_types
+
+from PYME.Analysis import MetaData
+from PYME.IO import MetaDataHandler
+from PYME.IO import dataWrap
+from PYME.IO.DataSources import BufferedDataSource
+from PYME.IO.FileUtils.nameUtils import getRelFilename
+from PYME.IO.compatibility import np_load_legacy
+
 logger = logging.getLogger(__name__)
 import warnings
 
@@ -466,7 +464,6 @@ class ImageStack(object):
     def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
-        import tables
         from PYME.IO.DataSources import HTTPDataSource, BGSDataSource
         #from PYME.LMVis import inpFilt
         
