@@ -433,9 +433,14 @@ class fitTask(taskDef.Task):
         self.bg = 0
 
         if 'GPU_PREFIT' in dir(self.fitMod):
-            if len(self.bgindices) != 0:  # asynchronously calculate background
-                bufferManager.bBuffer.calc_background(self.bgindices)
-                self.bg = bufferManager.bBuffer
+            if len(self.bgindices) != 0:
+                if md.get('Analysis.GPUPCTBackground', False):
+                    # asynchronous background calc on the GPU
+                    bufferManager.bBuffer.calc_background(self.bgindices)
+                    self.bg = bufferManager.bBuffer
+                else:
+                    # calculate now on the CPU
+                    self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
             # fit module does its own prefit steps on the GPU
             self.data = self.data.squeeze()
             ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=None)
