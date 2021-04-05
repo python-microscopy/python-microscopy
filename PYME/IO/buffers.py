@@ -23,7 +23,7 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
         #return self.dataSource.getSlice(ind)
         if ind in self.bufferedSlices: #return from buffer
             #print int(np.where(self.bufferedSlices == ind)[0])
-            return self.buffer[int(np.where(self.bufferedSlices == ind)[0]),:,:]
+            return np.copy(self.buffer[int(np.where(self.bufferedSlices == ind)[0]),:,:])
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
@@ -40,7 +40,7 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             #if bufferMisses % 10 == 0:
             #    print nTasksProcessed, bufferMisses
 
-            return sl
+            return np.copy(sl)
         
 class backgroundBuffer:
     def __init__(self, dataBuffer):
