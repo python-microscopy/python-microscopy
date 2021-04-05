@@ -594,7 +594,7 @@ class fitTask(taskDef.Task):
             (per-pixel) variance, readout noise [e-^2]
         """
         var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
-        return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
+        return np.sqrt(var + (float(md['Camera.NoiseFactor'])**2)*(float(md['Camera.ElectronsPerCount'])*float(md['Camera.TrueEMGain'])*np.maximum(data, 1.0) + float(md['Camera.TrueEMGain'])*float(md['Camera.TrueEMGain'])))/float(md['Camera.ElectronsPerCount'])
     
     def calcThreshold(self):
         #from scipy import ndimage
