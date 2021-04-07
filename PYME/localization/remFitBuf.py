@@ -91,7 +91,7 @@ class BufferManager(object):
 
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
-            self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
+            self.dBuffer = buffers.SliceBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
             self.bBuffer = None
         
         #fix our background buffers
@@ -343,7 +343,7 @@ class fitTask(taskDef.Task):
             drift_ind = [0,0]
         # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
         # makes bufferLen at least 1
-        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
+        self.bufferLen = max(0, max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])) + 1
         
     @property
     def fitMod(self):
