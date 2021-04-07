@@ -81,12 +81,12 @@ class ActionManager(object):
         
         functionName : string
             The name of a function relative to the microscope object.
-            e.g. to `call scope.spoolController.StartSpooling()`, you would use
-            a functionName of 'spoolController.StartSpooling'.
+            e.g. to `call scope.spoolController.start_spooling()`, you would use
+            a functionName of 'spoolController.start_spooling'.
             
             The function should either return `None` if the operation has already
             completed, or function which evaluates to True once the operation
-            has completed. See `scope.spoolController.StartSpooling()` for an
+            has completed. See `scope.spoolController.start_spooling()` for an
             example.
             
         args : dict
@@ -286,13 +286,13 @@ class ActionManagerWebWrapper(object):
             json.dumps(dict) with the following keys:
                 function_name : str
                     The name of a function relative to the microscope object.
-                    e.g. to `call scope.spoolController.StartSpooling()`, you 
-                    would use a functionName of 'spoolController.StartSpooling'.
+                    e.g. to `call scope.spoolController.start_spooling()`, you 
+                    would use a functionName of 'spoolController.start_spooling'.
                     
                     The function should either return `None` if the operation 
                     has already completed, or function which evaluates to True 
                     once the operation has completed. See 
-                    `scope.spoolController.StartSpooling()` for an example.
+                    `scope.spoolController.start_spooling()` for an example.
                 args : dict, optional
                     a dictionary of arguments to pass to `function_name`
                 nice : int, optional

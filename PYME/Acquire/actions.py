@@ -46,7 +46,7 @@ class StateAction(Action):
     ''' Base class for actions which modify scope state, with chaining support
 
     NOTE: we currently do not support chaining off the end of actions (e.g. spooling) which are likely to take some time.
-    This is because functions such as StartSpooling are non-blocking - they return a callback instead.
+    This is because functions such as start_spooling are non-blocking - they return a callback instead.
     '''
     
     def __init__(self, **kwargs):

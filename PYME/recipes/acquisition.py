@@ -28,7 +28,7 @@ class QueueAcquisitions(OutputModule):
     action_server_url : CStr
         URL of the microscope-side action server process.
     spool_settings : DictStrAny
-        settings to be passed to `PYME.Acquire.SpoolController.StartSpooling` as
+        settings to be passed to `PYME.Acquire.SpoolController.start_spooling` as
         key-word arguments. Ones that make sense in the context of this recipe
         module include:
             max_frames : int
