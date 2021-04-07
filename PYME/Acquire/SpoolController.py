@@ -291,7 +291,7 @@ class SpoolController(object):
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
             # avoid dirname property here so we can differ building
-            # 'acquire-spool_subdirectories' to `StartSpooling`
+            # 'acquire-spool_subdirectories' to `start_spooling`
             return get_free_space(self._dirname)/1e9
         
     def _update_series_counter(self):

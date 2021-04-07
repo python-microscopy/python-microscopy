@@ -45,7 +45,7 @@ class ActionList(wx.ListCtrl):
         self.SetItemCount(len(self._queueItems))
         self.Refresh()
 
-ACTION_DEFAULTS = ['spoolController.StartSpooling',
+ACTION_DEFAULTS = ['spoolController.start_spooling',
                    'state.update',
                    ]
 
@@ -242,7 +242,7 @@ class ActionPanel(wx.Panel):
             args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout, 10)
             args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout, 2 * time_est)
+            self.actionManager.QueueAction('spoolController.start_spooling', args, nice, timeout, 2 * time_est)
     
     def OnROIsFromFile(self, event):
         import wx
