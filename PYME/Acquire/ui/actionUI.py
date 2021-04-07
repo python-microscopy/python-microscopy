@@ -238,11 +238,15 @@ class ActionPanel(wx.Panel):
         # allow enough time for what we queue
         timeout = max(float(self.tTimeout.GetValue()), 
                       positions.shape[0] * time_est)
+        
+        acts = []
         for ri in range(positions.shape[0]):
-            args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
-            self.actionManager.QueueAction('state.update', args, nice, timeout, 10)
-            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.start_spooling', args, nice, timeout, 2 * time_est)
+            state = {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}
+            settings = {'max_frames': n_frames, 'z_stepped': bool(self.rbZStepped.GetValue())}
+            
+            acts.append(actions.UpdateState(state).then(actions.SpoolSeries(settings=settings, preflight_mode='warn')))
+            
+        self.actionManager.queue_actions(acts, nice, timeout, 2 * time_est)
     
     def OnROIsFromFile(self, event):
         import wx
