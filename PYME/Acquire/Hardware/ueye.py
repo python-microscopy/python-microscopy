@@ -1,4 +1,13 @@
+'''
+Alternative bindings for IDS ueye cameras using the pyueye module.
 
+See also the uc480 module which talks directly to the ueye DLLs without an intermediate python shim. The uc480
+implementation has been more widely used and tested and might be more complete. At present, however, there might be issues using
+uc480 with the most recent versions of the ueye SDK, hence this module. As we don't want to maintain 2 drivers
+for the same camera, this module might disappear once api compatibility issues in uc480 are resolved (i.e. use
+uc480 instead of this if at all possible).
+
+'''
 from PYME.Acquire.Hardware.Camera import Camera
 from pyueye import ueye
 import ctypes
