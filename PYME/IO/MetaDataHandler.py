@@ -256,6 +256,30 @@ def get_voxelsize_nm(mdh):
     
     return VoxelSize(1e3*mdh['voxelsize.x'], 1e3*mdh['voxelsize.y'], 1e3*mdh.get('voxelsize.z', 0))
 
+
+# compatibility stubs to permit attribute based access while we transition away from NestedClassMDHandler
+class _AttrProxy(object):
+    def __init__(self, mdh, parent=None):
+        self._mdh = mdh
+        self._parent = parent
+    
+    def __getattr__(self, item):
+        if self._parent is not None:
+            item = '.'.join([self._parent, item])
+        
+        return _attr_access(self._mdh, item)
+
+
+def _attr_access(mdh, key):
+    try:
+        return mdh[key]
+    except KeyError:
+        if any([k.startswith(key) for k in mdh.keys()]):
+            return _AttrProxy(mdh, parent=key)
+        else:
+            raise
+
+
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.
 
@@ -482,6 +506,12 @@ class MDHandlerBase(DictMixin):
         d = {k: self.getEntry(k) for k in self.getEntryNames()}
         
         return json.dumps(d, indent=2, sort_keys=True, cls=CustomEncoder)
+    
+    def __getattr__(self, key):
+        """ Compatibility stub to support transition away from NestedClassMDHandler"""
+        import warnings
+        warnings.warn('Metadata access should use dictionary based or getEntry() syntax, not attribute based access', DeprecationWarning)
+        _attr_access(self, key)
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
@@ -594,6 +624,13 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
+    
+    def __getattr__(self, item):
+        '''Replace __getattr__ of base class which spoofs nested class like attribute access with a move vanilla implementation'''
+        try:
+            return self.__dict__[item]
+        except KeyError:
+            raise AttributeError('NestedClassMDHandler has no attribute "%s"' % item)
 
 class DictMDHandler(MDHandlerBase):
     """Simple implementation using a dict.
@@ -611,6 +648,9 @@ class DictMDHandler(MDHandlerBase):
         
         # set our writable after we've done the initial copy
         self._writable = writable
+        
+        import warnings
+        warnings.warn('DictMDHandler is not yet fully supported, and will likely cause failures for anything related to localisation fitting')
     
     def setEntry(self, entryName, value):
         if not self._writable:
