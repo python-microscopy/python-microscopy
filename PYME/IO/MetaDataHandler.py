@@ -624,6 +624,13 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
+    
+    def __getattr__(self, item):
+        '''Replace __getattr__ of base class which spoofs nested class like attribute access with a move vanilla implementation'''
+        try:
+            return self.__dict__[item]
+        except KeyError:
+            raise AttributeError('NestedClassMDHandler has no attribute "%s"' % item)
 
 class DictMDHandler(MDHandlerBase):
     """Simple implementation using a dict.
