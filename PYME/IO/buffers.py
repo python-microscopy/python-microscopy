@@ -63,7 +63,7 @@ class SliceBuffer(object): #buffer our io to avoid decompressing multiple times
     
     def getSlice(self, ind):
         try:
-            sl = self.buffer[ind]
+            sl = self._buffer[ind]
             return sl
         except KeyError:
             #get from our data source and store in buffer
@@ -72,7 +72,7 @@ class SliceBuffer(object): #buffer our io to avoid decompressing multiple times
             self._bufferedSlices.append(ind)
             
             # if our buffer is now full, drop the oldest entry
-            if len(self._bufferedSlices > self._bLen):
+            if len(self._bufferedSlices) > self._bLen:
                 ind_to_remove = self._bufferedSlices.pop(0)
                 self._buffer.pop(ind_to_remove)
             
