@@ -262,9 +262,12 @@ class PcoCam(Camera):
 
         self.cam.sdk.set_cooling_setpoint_temperature(temp)
         self._ccd_temp_set_point = temp
-        self.GetTemps()
+        self._get_temps()
 
-    def GetTemps(self):
+    def _get_temps(self):
+        # NOTE: temperature only gets probed when acquisition starts/stops (which can be fairly
+        # irregularly - to the point of not being useful).
+        # TODO - find a way to safely call this while the camera is running
         d = self.cam.sdk.get_temperature()
         self._ccd_temp = d['sensor temperature']
         self._electr_temp = d['camera temperature']  # FIXME: should this be 'power temperature'?
@@ -280,7 +283,7 @@ class PcoCam(Camera):
 
     def StartExposure(self):
         self.StopAq()
-        self.GetTemps()
+        self._get_temps()
 
         d = self.cam.sdk.get_delay_exposure_time()
         self._integ_time = d['exposure']*timebase[d['exposure timebase']] 
@@ -310,6 +313,11 @@ class PcoCam(Camera):
         self._cycle_time = 0
         self.buffer_size = 0
         self.n_read = 0
+        
+        # read the temp in StopAq too, as this has the side effect of making sure we have
+        # a reasonably correct temperature in acquisition metadata (as we
+        # stop acquisition, record metadata, and then restart)
+        self._get_temps()
 
     def GetNumImsBuffered(self):
         if self.recording:
