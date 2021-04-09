@@ -355,7 +355,7 @@ class MultiwellProtocolQueuePanel(wx.Panel):
         cb = event.GetEventObject()
         self.fast_axis = cb.GetValue()
     
-    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=5):
+    def requeue_missed(self, n_x, n_y, x_spacing, y_spacing, start_pos, protocol_name, nice=20, sleep=1000):
         from PYME.Acquire.actions import FunctionAction
         from PYME.IO import clusterIO
         import posixpath
@@ -363,17 +363,33 @@ class MultiwellProtocolQueuePanel(wx.Panel):
 
         logger.debug('requeuing missed wells')
         time.sleep(sleep)
-
-        spooldir = self.scope.spoolController.dirname
-        detections_pattern = posixpath.join(spooldir, '[A-Z][0-9]*_detections.h5')
-        imaged = clusterIO.cglob(detections_pattern)
-        imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
-        logger.debug('imaged %d wells' % len(imaged_wells))
-
+        
         x_wells, y_wells, names = self._get_positions(n_x, n_y, x_spacing, y_spacing, start_pos)
         x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, self._drop_wells)
-        to_pop = [fn.split('_')[0] for fn in imaged_wells]
-        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, to_pop)
+        
+        # if a node dies we might lose the detections file, but likely won't
+        # lose the entire subdirectory
+        spooldir = self.scope.spoolController.dirname
+        to_pop = set()
+        for name in names:
+            if clusterIO.isdir(posixpath.join(spooldir, name)):
+                to_pop.add(name)
+            else:
+                for shame in range(1, self._shame_index):
+                    if clusterIO.isdir(posixpath.join(spooldir, name + '_%d' % shame)):
+                        to_pop.add(name)
+        logger.debug('subdirectories present for  %d wells' % (len(names) - len(to_pop)))
+
+        # Look for h5 detections too - if we just tiled the last well and hit
+        # this call we might have a detection file after the sleep but this
+        # call blocks the acquisition task queue, so we can't have a subdir yet
+        imaged = clusterIO.cglob(posixpath.join(spooldir, 
+                                                '[A-Z][0-9]*_detections.h5'))
+        imaged_wells = [im.split('/')[-1].split('_detections.h5')[0] for im in imaged]
+        detected = set([fn.split('_')[0] for fn in imaged_wells])
+        logger.debug('detection h5 present for an additional %d wells' % (len(detected) - len(to_pop.intersection(detected))))
+        to_pop = to_pop.union(detected)
+        x_wells, y_wells, names = self._pop_wells(x_wells, y_wells, names, list(to_pop))
 
         if len(names) < 1:
             return
