@@ -10,7 +10,7 @@
 #
 ##################
 
-import scipy
+import numpy as np
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 # from pylab import *
@@ -21,7 +21,7 @@ from _fithelpers import *
 def f_SMIAxial(p, z, ysmooth, background=0):
     """model fcn for SMI axial profile"""
     k, z0, A, r = p
-    return A*ysmooth*(1 - r + r*scipy.cos(k*(z - z0))**2) + background
+    return A*ysmooth*(1 - r + r*np.cos(k*(z - z0))**2) + background
 
 class SMIAxialFitResult:
     def __init__(self, fitResults, metadata, background, ysmooth, ind3, pos=None, resultCode=None, profile=None, startParams=None, peakPoss=None):
@@ -62,7 +62,7 @@ class SMIAxialFitResult:
                 self.k = k
                 self.umod = umod
             def __call__(self, r):
-                return 2*scipy.sqrt(4*scipy.log(0.5)*scipy.log(r + self.umod)/(self.k**2))
+                return 2*np.sqrt(4*np.log(0.5)*np.log(r + self.umod)/(self.k**2))
         return fwhm_calc(k, umod)
 
     def calibrationCurveSphere(self):
@@ -76,8 +76,8 @@ class SMIAxialFitResult:
 
         k = self.k()/(self.metadata.voxelsize.z*1e3)
         #for a range of diameters up to the first zero of the calibration curve (the position of the zero crossing at k*d = 4.5 was determined graphicaly)
-        d =  scipy.arange( (4.51 + .1)/k, 0, -.1/k) # note reversed order s.t. mod will be monotonically increasing (as required by interp1d of its x values)
-        mod = (3*(1-unmod)*(scipy.sin(k*d) - k*d*scipy.cos(k*d))/((k**3)*(d**3)))
+        d =  np.arange( (4.51 + .1)/k, 0, -.1/k) # note reversed order s.t. mod will be monotonically increasing (as required by interp1d of its x values)
+        mod = (3*(1-unmod)*(np.sin(k*d) - k*d*np.cos(k*d))/((k**3)*(d**3)))
         return interpolate.interp1d(mod,d, bounds_error=False)
         
     def evalFit(self):
@@ -103,19 +103,19 @@ class SMIAxialFitFactory:
         self.backRoi = backgroundHalfSize
 
     def __FindFitRegion(self, ysmooth, ysmooth2):
-        ind3 = scipy.where((ysmooth.__gt__(ysmooth2)) * (ysmooth > ysmooth.max()/3))[0]
+        ind3 = np.where((ysmooth.__gt__(ysmooth2)) * (ysmooth > ysmooth.max()/3))[0]
         
         #print ind3
         #Take only the longest peak
         idiff = ind3[2:] - ind3[1:-1]
         idiff[-1] = 1
         
-        i4 = (scipy.array(idiff) - 1).cumsum()
+        i4 = (np.array(idiff) - 1).cumsum()
         max_i = 0
         nm = 0
 
         for i in range(i4.max() + 1):# which is longest
-            ni = len(scipy.where(i4 == i)[0])
+            ni = len(np.where(i4 == i)[0])
             if (ni > nm):
                 max_i = i
                 nm = ni
@@ -125,7 +125,7 @@ class SMIAxialFitFactory:
         return ind3
 
     def __CalcStartParams(self, profile):
-        xi = scipy.arange(0, len(profile) - 1, .1)
+        xi = np.arange(0, len(profile) - 1, .1)
         ti = interpolate.interp1d(range(len(profile)), profile, 'cubic')(xi)
 
         i_ = ti.argmax()
@@ -162,7 +162,7 @@ class SMIAxialFitFactory:
         v2 = ti[i2_]
         i2 = xi[i2_]
 
-        return ([scipy.pi/dx,scipy.mod(i,dx),2/(1+v2/v),1-v2/v], {'i':i, 'v':v, 'i2':i2,'v2':v2, 'i3':i3,'v3':v3})
+        return ([np.pi/dx,np.mod(i,dx),2/(1+v2/v),1-v2/v], {'i':i, 'v':v, 'i2':i2,'v2':v2, 'i3':i3,'v3':v3})
         
 
     def FromPoint(self, xpos, ypos, gaussFitBackground=None):
