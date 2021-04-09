@@ -111,24 +111,13 @@ def main():
     nodeserverLog.debug('Launching worker processors')
     numWorkers = conf.get('nodeserver-num_workers', cpu_count())
 
+    workerProcs = [subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
+                   for i in range(numWorkers -1)]
+
+    #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')
-
-    if 'win' in sys.platform:
-        workerProcs = [subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
-                    for i in range(numWorkers -1)]
-
-        #last worker has profiling enabled
-        workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir="%s"' % (sys.executable, serverPort, profiledir), shell=True,
-                                            stdin=subprocess.PIPE))
-    else: # ulimit at 90% of system RAM so we fail tasks instead of crashing computers
-        import psutil
-        ram_limit = int(0.9 * psutil.virtual_memory()[0])
-        workerProcs = [subprocess.Popen('ulimit -v %d; "%s" -m PYME.cluster.taskWorkerHTTP -s %d' % (ram_limit, sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
-                    for i in range(numWorkers -1)]
-
-        #last worker has profiling enabled
-        workerProcs.append(subprocess.Popen('ulimit -v %d; "%s" -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir="%s"' % (ram_limit, sys.executable, serverPort, profiledir), shell=True,
-                                            stdin=subprocess.PIPE))
+    workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s % d -p --profile-dir="%s"' % (sys.executable, serverPort, profiledir), shell=True,
+                                        stdin=subprocess.PIPE))
 
     try:
         while proc.is_alive():
