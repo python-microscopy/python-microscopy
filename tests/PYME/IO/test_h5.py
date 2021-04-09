@@ -17,10 +17,10 @@ def test_h5_export_uint16():
 
     '''
     from PYME.IO import dataExporter
-    from PYME.IO import h5File
+    from PYME.IO import events
     
     data = (1e3*np.random.rand(100,100,50)).astype('uint16')
-    evts = np.zeros(3, dtype=h5File.EVENTS_DTYPE)
+    evts = np.zeros(3, dtype=events.EVENTS_DTYPE)
     
     tempdir = tempfile.mkdtemp()
     filename = os.path.join(tempdir, 'test_h5.h5')
@@ -42,10 +42,10 @@ def test_h5_export_uint16_multicolour():
 
     '''
     from PYME.IO import dataExporter
-    from PYME.IO import h5File
+    from PYME.IO import events
     
     data = (1e3 * np.random.rand(100, 100, 50, 2)).astype('uint16')
-    evts = np.zeros(3, dtype=h5File.EVENTS_DTYPE)
+    evts = np.zeros(3, dtype=events.EVENTS_DTYPE)
     
     tempdir = tempfile.mkdtemp()
     filename = os.path.join(tempdir, 'test_h5.h5')
