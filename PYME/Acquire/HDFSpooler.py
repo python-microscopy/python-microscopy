@@ -24,77 +24,13 @@
 import datetime
 import tables
 from PYME.IO import MetaDataHandler
-
+from PYME.IO.events import HDFEventLogger
 
 import time
 
-#from PYME.Acquire import eventLog
 import PYME.Acquire.Spooler as sp
-#from PYME.Acquire import protocol as p
 
 from PYME.IO.FileUtils import fileID
-
-class SpoolEvent(tables.IsDescription):
-    """Pytables description for Events table in spooled dataset"""
-    EventName = tables.StringCol(32)
-    Time = tables.Time64Col()
-    EventDescr = tables.StringCol(256)
-
-class EventLogger:
-    """Event logging backend for hdf/pytables data storage
-        
-    Parameters
-    ----------
-    spool : instance of HDFSpooler.Spooler
-        The spooler to ascociate this logger with
-    
-    hdf5File : pytables hdf file 
-        The open HDF5 file to write to
-    """
-    def __init__(self, spool, hdf5File):
-      """Create a new Events table.
-      
-      
-      """
-      self.spooler = spool
-      #self.scope = scope
-      self.hdf5File = hdf5File
-    
-      self.evts = self.hdf5File.create_table(hdf5File.root, 'Events', SpoolEvent)
-
-    def logEvent(self, eventName, eventDescr = '', timestamp=None):
-        """Log an event.
-          
-        Parameters
-        ----------
-        eventName : string
-            short event name - < 32 chars and should be shared by events of the
-            same type.
-        eventDescr : string
-            description of the event - additional, even specific information
-            packaged as a string (<255 chars). This is commonly used to store 
-            parameters - e.g. z positions, and should be both human readable and 
-            easily parsed.
-        
-        
-        In addition to the name and description, timing information is recorded
-        for each event.
-        """
-        if eventName == 'StartAq':
-            eventDescr = '%d' % self.spooler.imNum
-              
-        ev = self.evts.row
-        
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-
-        if timestamp is None:
-            ev['Time'] = sp.timeFcn()
-        else:
-            ev['Time'] = timestamp
-        
-        ev.append()
-        self.evts.flush()
 
 class Spooler(sp.Spooler):
     """Responsible for the mechanics of spooling to a pytables/hdf file.
@@ -106,7 +42,7 @@ class Spooler(sp.Spooler):
         
         self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,frameShape[0],frameShape[1]), filters=filt)
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
-        self.evtLogger = EventLogger(self, self.h5File)
+        self.evtLogger = HDFEventLogger(self, self.h5File)
         
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
