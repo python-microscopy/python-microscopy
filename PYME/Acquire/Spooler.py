@@ -46,34 +46,8 @@ from PYME.Acquire import protocol as p
 import logging
 logger = logging.getLogger(__name__)
 
-class EventLogger:
-    """Event logging backend base class"""
-    def __init__(self, scope, hdf5File):
-        self.scope = scope      
 
-    def logEvent(self, eventName, eventDescr = '', timestamp=None):
-        """Log an event. Should be overriden in derived classes.
-        
-        .. note::
-        
-          In addition to the name and description, timing information is recorded for each event.
-          
-        Parameters
-        ----------
-        eventName : string
-            short event name - < 32 chars and should be shared by events of the
-            same type.
-        eventDescr : string
-            description of the event - additional, even specific information
-            packaged as a string (<255 chars). This is commonly used to store 
-            parameters - e.g. z positions, and should be both human readable and 
-            easily parsed.
-        
-        """
-        pass
-
-
-class Spooler:
+class Spooler(object):
     """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
                  guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):

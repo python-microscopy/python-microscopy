@@ -664,24 +664,7 @@ class SpoolLocalLocalizationRule(LocalisationRule):
             return True
     
     def on_data_complete(self):
-        import pandas
-        import numpy as np
-
-        # get events as structured array. TODO - reduce duplication with
-        # ClusterPZFDataSource and move somewhere sensible. PYME.IO.events?
-        ev = pandas.read_json(self.spooler.evtLogger.to_JSON())
-        if len(ev) == 0:
-            logger.debug('Data complete, no events to copy to output file')
-            return
-        
-        logger.debug('Data complete, copying events to output file')
-        ev.columns = ['EventName', 'EventDescr', 'Time']
-        events = np.empty(len(ev), dtype=[('EventName', 'S32'), ('Time', 'f8'),
-                                          ('EventDescr', 'S256')])
-        events['EventName'] = ev['EventName']
-        events['EventDescr'] = ev['EventDescr']
-        events['Time'] = ev['Time']
-        
+        events = self.spooler.evtLogger.to_recarray()
         clusterResults.fileResults(self.worker_resultsURI + '/Events', events)
 
 
