@@ -73,15 +73,15 @@ class AndorPanel(afp.foldingPane):
         self.rbSingleShot.SetValue(False)
         #self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
         self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,self.OnRbSingleShotRadiobutton)
-        sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND, 0)
 
         self.rbContin = wx.RadioButton(cp, -1, 'Continuous')
         self.rbContin.SetValue(True)
         #self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
         self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton)
-        sbAqMode.Add(self.rbContin, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        sbAqMode.Add(self.rbContin, 1, wx.EXPAND, 0)
 
-        vsizer.Add(sbAqMode, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
+        vsizer.Add(sbAqMode, 0, wx.EXPAND|wx.TOP, 5)
 
         #self.bUpdateInt = wx.Button(id=wxID_ANDORFRAMEBUPDATEINT,
         #      label='Update Integration Time', name='bUpdateInt',
@@ -127,7 +127,7 @@ class AndorPanel(afp.foldingPane):
         hsizer.Add(self.cbBaselineClamp, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sbReadout.Add(hsizer, 0, wx.TOP, 2)
-        vsizer.Add(sbReadout, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL|wx.TOP, 5)
+        vsizer.Add(sbReadout, 0, wx.EXPAND|wx.TOP, 5)
 
         cp.SetSizer(vsizer)
 
@@ -148,7 +148,7 @@ class AndorPanel(afp.foldingPane):
 
         self.tCCDTemp = wx.TextCtrl(pan, -1, '0', size=(30, -1))
         hsizer2.Add(self.tCCDTemp, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        sbCooling.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbCooling.Add(hsizer2, 0, wx.EXPAND, 0)
 
         self.bSetTemp = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetTemp.Bind(wx.EVT_BUTTON, self.OnBSetTempButton)
@@ -164,25 +164,25 @@ class AndorPanel(afp.foldingPane):
         self.tEMGain.Bind(wx.EVT_TEXT, self.OnEMGainTextChange)
         self.tEMGain.Bind(wx.EVT_TEXT_ENTER, self.OnBSetGainButton)
         self.tEMGain.Bind(wx.EVT_COMBOBOX, self.OnBSetGainButton)
-        hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT, 5)
 
         self.bSetGain = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetGain.Bind(wx.EVT_BUTTON, self.OnBSetGainButton)
-        hsizer2.Add(self.bSetGain, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer2.Add(self.bSetGain, 0, wx.EXPAND, 0)
 
-        sbEMGain.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbEMGain.Add(hsizer2, 0, wx.EXPAND, 0)
 
         self.stTrueEMGain = wx.StaticText(pan, -1, '????')
         self.stTrueEMGain.SetForegroundColour(wx.RED)
-        sbEMGain.Add(self.stTrueEMGain, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        sbEMGain.Add(self.stTrueEMGain, 0, wx.EXPAND, 0)
 
-        hsizer.Add(sbEMGain, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        hsizer.Add(sbEMGain, 1, wx.EXPAND, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
         self.cbShutter = wx.CheckBox(pan, -1, u'Camera Shutter Open')
         self.cbShutter.SetValue(True)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
-        vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+        vsizer.Add(self.cbShutter, 0, wx.TOP, 5)
 
         #self.cp = self._createCollapsingPane(self)
 

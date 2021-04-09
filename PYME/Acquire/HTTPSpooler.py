@@ -76,8 +76,6 @@ class EventLogger:
         return json.dumps(self._events)
           
 
-CLUSTERID=''  
-
 def genSequenceID(filename=''):
     return  int(time.time()) & random.randint(0, 2**31) << 31 
     
@@ -123,7 +121,8 @@ class Spooler(sp.Spooler):
         #print filename, self.seriesName
         self._aggregate_h5 = kwargs.get('aggregate_h5', False)
         
-        self.clusterFilter = kwargs.get('serverfilter', CLUSTERID)
+        self.clusterFilter = kwargs.get('serverfilter', 
+                                        config.get('dataserver-filter', ''))
         self._buffer = []
         
         self.buflen = config.get('httpspooler-chunksize', 50)
@@ -218,7 +217,7 @@ class Spooler(sp.Spooler):
             logging.error('An exception occurred in one of the spooling threads')
             raise RuntimeError('An exception occurred in one of the spooling threads')
         else:
-            return self._postQueue.empty() and (self._numThreadsProcessing == 0)
+            return (not self._dPoll) and self._postQueue.empty() and (self._numThreadsProcessing == 0)
 
         
     def getURL(self):
@@ -237,9 +236,7 @@ class Spooler(sp.Spooler):
         else:
             clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
-    def StopSpool(self):
-        sp.Spooler.StopSpool(self)
-
+    def finalise(self):
         # wait until our input queue is empty rather than immediately stopping saving.
         self._stopping=True
         logger.debug('Stopping spooling %s' % self.seriesName)
@@ -255,22 +252,27 @@ class Spooler(sp.Spooler):
             # TODO - is there actually a performance impact that justifies this config option, or is it purely theoretical
             for pt in self._pollThreads:
                 pt.join()
+
+        # remove our reference to the threads which hold back-references preventing garbage collection
+        del(self._pollThreads)
         
+        # save events and final metadata
+        # TODO - use a binary format for saving events - they can be quite
+        # numerous, and can trip the standard 1 s clusterIO.put_file timeout.
+        # Use long timeouts as a temporary hack because failing these can ruin
+        # a dataset
         if self._aggregate_h5:
-            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(),
-                               serverfilter=self.clusterFilter)
-    
-            #save the acquisition events as json - TODO - consider a binary format as the events
-            #can be quite numerous
-            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json', self.evtLogger.to_JSON().encode(),
-                               serverfilter=self.clusterFilter)
-        
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json', 
+                               self.md.to_JSON().encode(), self.clusterFilter)
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json', 
+                               self.evtLogger.to_JSON().encode(),
+                               self.clusterFilter, timeout=10)
         else:
-            clusterIO.put_file(self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
-            
-            #save the acquisition events as json - TODO - consider a binary format as the events
-            #can be quite numerous
-            clusterIO.put_file(self.seriesName + '/events.json', self.evtLogger.to_JSON().encode(), serverfilter=self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/final_metadata.json', 
+                               self.md.to_JSON().encode(), self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/events.json', 
+                               self.evtLogger.to_JSON().encode(), 
+                               self.clusterFilter, timeout=10)
         
         
     def OnFrame(self, sender, frameData, **kwargs):

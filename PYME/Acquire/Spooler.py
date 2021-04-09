@@ -37,7 +37,7 @@ import time
 global timeFcn
 timeFcn = time.time
 
-import dispatch
+from PYME.contrib import dispatch
 import uuid
 
 from PYME.Acquire import eventLog
@@ -104,6 +104,12 @@ class Spooler:
         
         self.maxFrames = maxFrames
         
+        stack_settings = kwargs.get('stack_settings', None)
+        if stack_settings:
+            # only record stack settings if provided (letting protocol fall through to global stack settings,
+            # if not provided / None)
+            self.stack_settings = stack_settings
+        
         self.onSpoolStop = dispatch.Signal()
     
         #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
@@ -114,6 +120,8 @@ class Spooler:
         self.spoolOn = False
         self.imNum = 0
         
+        self.spool_complete = False
+        
         self._spooler_uuid = uuid.uuid4()
             
         if not fakeCamCycleTime is None:
@@ -123,16 +131,25 @@ class Spooler:
        
 
     def StartSpool(self):
+        """ Perform protocol 'frame -1' tasks, log start metadata, then connect
+        to the frame source.
+        """
         self.watchingFrames = True
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
-   
-        self.doStartLog()
+        
+        # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
+        # **after** protocol.Init() call
+        self.tStart = time.time()
 
         self.protocol.Init(self)
-   
+        
+        # record start time when we start receiving frames.
+        self.tStart = time.time()
+        self._collect_start_metadata()
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        
         self.spoolOn = True
        
     def StopSpool(self):
@@ -150,7 +167,7 @@ class Spooler:
         try:
             self.protocol.OnFinish()#this may still cause events
             self.FlushBuffer()
-            self.doStopLog()
+            self._collect_stop_metadata()
         except:
             import traceback
             traceback.print_exc()
@@ -163,8 +180,17 @@ class Spooler:
         self.spoolOn = False
         if not self.guiUpdateCallback is None:
             self.guiUpdateCallback()
-            
+        
+        self.finalise()
         self.onSpoolStop.send(self)
+        self.spool_complete = True
+        
+    def finalise(self):
+        """
+        Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
+
+        """
+        pass
         
     def abort(self):
         """
@@ -219,7 +245,7 @@ class Spooler:
             self.StopSpool()
             
 
-    def doStartLog(self):
+    def _collect_start_metadata(self):
         """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -232,7 +258,7 @@ class Spooler:
         
         self.dtStart = dt
         
-        self.tStart = time.time()
+        #self.tStart = time.time()
         
         # create an in-memory metadata handler and populate this prior to copying data over to the spooler
         # metadata handler. This significantly improves performance if the spooler metadata handler has high latency
@@ -247,7 +273,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-    def doStopLog(self):
+    def _collect_stop_metadata(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
@@ -275,7 +301,9 @@ class Spooler:
     def finished(self):
         """ over-ride in derived classes to indicate when buffers flushed"""
         return True
-        
+    
+    def get_n_frames(self):
+        return self.imNum
         
     def __del__(self):
         if self.spoolOn:

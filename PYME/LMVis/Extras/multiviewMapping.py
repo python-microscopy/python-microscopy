@@ -120,12 +120,11 @@ class MultiviewMapper:
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
-        #TODO - move me to building the pipeline
-        recipe.add_module(FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='filtered_input',
-                                      filters={'error_x':[0, 30.], 'error_y':[0,30.]}))
-        recipe.add_module(Fold(recipe, input_name='filtered_input',
-                                                      output_name='folded'))
-        recipe.execute()
+        
+        recipe.add_modules_and_execute([Fold(recipe,
+                                             input_name=self.pipeline.selectedDataSourceKey, 
+                                             output_name='folded')])
+        
         self.pipeline.selectDataSource('folded')
 
     def OnShiftCorrectFolded(self, event=None):
@@ -160,9 +159,9 @@ class MultiviewMapper:
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        recipe.add_module(ShiftCorrect(recipe, input_name=pipeline.selectedDataSourceKey,
-                          shift_map_path=fpath, output_name='shift_corrected'))
-        recipe.execute()
+        recipe.add_modules_and_execute([ShiftCorrect(recipe, input_name=pipeline.selectedDataSourceKey,
+                          shift_map_path=fpath, output_name='shift_corrected'),])
+        
         self.pipeline.selectDataSource('shift_corrected')
 
     def OnCalibrateShifts(self, event):
@@ -182,21 +181,28 @@ class MultiviewMapper:
         """
         from PYME.recipes.multiview import CalibrateShifts
 
-        recipe = self.pipeline.recipe
-        # hold off auto-running the recipe until we configure things
-        recipe.trait_set(execute_on_invalidation=False)
-        try:
-            calibration_module = CalibrateShifts(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                             output_name='shiftmap')
+        # recipe = self.pipeline.recipe
+        # # hold off auto-running the recipe until we configure things
+        # recipe.trait_set(execute_on_invalidation=False)
+        # try:
+        #     calibration_module = CalibrateShifts(recipe, input_name=self.pipeline.selectedDataSourceKey,
+        #                                      output_name='shiftmap')
+        #
+        #     recipe.add_module(calibration_module)
+        #     if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+        #         return
+        #
+        #     recipe.execute()
+        #     sm = recipe.namespace['shiftmap']
+        # finally:  # make sure that we configure the pipeline recipe as it was
+        #     recipe.trait_set(execute_on_invalidation=True)
 
-            recipe.add_module(calibration_module)
-            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
-                return
 
-            recipe.execute()
-            sm = recipe.namespace['shiftmap']
-        finally:  # make sure that we configure the pipeline recipe as it was
-            recipe.trait_set(execute_on_invalidation=True)
+        calibration_module = CalibrateShifts()
+        if not calibration_module.configure_traits(kind='modal'):
+            return
+        
+        sm = calibration_module.apply_simple(self.pipeline.selectedDataSource)
 
 
         # save the file
@@ -271,10 +277,10 @@ class MultiviewMapper:
         """
         from PYME.recipes.multiview import FindClumps
         recipe = self.pipeline.recipe
-        recipe.add_module(FindClumps(recipe, input_name=self.pipeline.selectedDataSourceKey, output_name='with_clumps',
+        recipe.add_modules_and_execute([FindClumps(recipe, input_name=self.pipeline.selectedDataSourceKey, output_name='with_clumps',
                                      time_gap_tolerance=self.clump_gap_tolerance, radius_scale=self.clump_radius_scale,
-                                     radius_offset=self.clump_radius_offset, probe_aware=True))
-        recipe.execute()
+                                     radius_offset=self.clump_radius_offset, probe_aware=True),])
+        
         self.pipeline.selectDataSource('with_clumps')
 
     def OnMergeClumps(self, event=None):
@@ -302,9 +308,8 @@ class MultiviewMapper:
 
         recipe = self.pipeline.recipe
 
-        recipe.add_module(MergeClumps(recipe, input_name='with_clumps', output_name='clumped'))
+        recipe.add_modules_and_execute([MergeClumps(recipe, input_name='with_clumps', output_name='clumped'),])
 
-        recipe.execute()
         self.pipeline.selectDataSource('clumped')
 
         # make sure the colour filter knows about the new probe key
@@ -359,29 +364,61 @@ class MultiviewMapper:
 
         recipe = self.pipeline.recipe
         
-        # hold off auto-running the recipe until we configure things
-        recipe.trait_set(execute_on_invalidation=False)
-        try:
-            mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                       astigmatism_calibration_location=pathToMap, output_name='z_mapped')
+        # # hold off auto-running the recipe until we configure things
+        # recipe.trait_set(execute_on_invalidation=False)
+        # try:
+        #     mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
+        #                                astigmatism_calibration_location=pathToMap, output_name='z_mapped')
+        #
+        #     recipe.add_module(mapping_module)
+        #     if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+        #         return
+        #
+        #     # FIXME - figure out why configuring just the new module doesn't give us an OK button
+        #     # if not mapping_module.configure_traits(view=mapping_module.pipeline_view):
+        #     #     return #handle cancel
+        #     # recipe.add_module(mapping_module)
+        #
+        #     recipe.execute()
+        # finally:  # make sure that we configure the pipeline recipe as it was
+        #     recipe.trait_set(execute_on_invalidation=True)
 
-            recipe.add_module(mapping_module)
-            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
-                return
+        mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                   astigmatism_calibration_location=pathToMap, output_name='z_mapped')
 
-            # FIXME - figure out why configuring just the new module doesn't give us an OK button
-            # if not mapping_module.configure_traits(view=mapping_module.pipeline_view):
-            #     return #handle cancel
-            # recipe.add_module(mapping_module)
-
-            recipe.execute()
-        finally:  # make sure that we configure the pipeline recipe as it was
-            recipe.trait_set(execute_on_invalidation=True)
-        
-        self.pipeline.selectDataSource('z_mapped')
-
-        self.visFr.RefreshView() #TODO - is this needed?
+        if mapping_module.configure_traits(kind='modal'):
+            recipe.add_modules_and_execute([mapping_module,])
+            
+            # keep a reference for debugging
+            
+            self._amm = mapping_module
+            
+            self.pipeline.selectDataSource('z_mapped')
+            self.visFr.RefreshView() #TODO - is this needed?
         #self.visFr.CreateFoldPanel()
+            
+    def OnAstigQualityControl(self, event=None):
+        import matplotlib.pyplot as plt
+        import json
+
+        with open(self._amm.astigmatism_calibration_location, 'r') as f:
+            acal = json.loads(f.read())
+            
+        
+        plt.figure()
+
+        for i in range(4):
+            plt.subplot(4, 2, 2 * i + 1)
+            plt.plot(acal[i]['z'], acal[i]['sigmax'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmax%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmax%d' % i)
+            plt.grid()
+            plt.subplot(4, 2, 2 * i + 2)
+            plt.plot(acal[i]['z'], acal[i]['sigmay'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmay%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmay%d' % i)
+            plt.grid()
+        
 
     def OnCheckAstigmatismCalibration(self, event=None):
         """

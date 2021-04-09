@@ -25,6 +25,8 @@ import tables
 import numpy as np
 from six.moves import xrange
 
+import warnings
+
 
 def findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames=5):
     #get the indices of all the points in the next n frames
@@ -97,9 +99,12 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def findClumps(t, x, y, delta_x, nFrames=5):
+
+def _findClumps(t, x, y, delta_x, nFrames=5):
     """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
+    
+    OLD, reference implementation - use the optimised DeClump.findClumps instead.
     """
 
     nRes = len(t)
@@ -243,9 +248,10 @@ def mergeClumps(datasource, labelKey='clumpIndex'):
     aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
     all_keys += aggregation_weights.values()
 
-    #aggregation_weights['A'] = 'sum'
-    #aggregation_weights['Ag'] = 'sum'
-    #aggregation_weights['Ar'] = 'sum'
+    for k in ('A', 'Ag', 'Ar', 'nPhotons'):
+        # aggregation_weights only get queried in coalesce if keys are present
+        # so we can add them all
+        aggregation_weights[k] = 'sum'
 
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}

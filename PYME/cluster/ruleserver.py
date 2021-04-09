@@ -55,6 +55,10 @@ class Rule(object):
 
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
+Bid = collections.namedtuple('Bid', 'bidder_id, cost')
+
+DEFAULT_BID = Bid(0, sys.maxsize)
+
 class IntegerIDRule(Rule):
     """
     A rule which generates tasks based on a template.
@@ -101,6 +105,7 @@ class IntegerIDRule(Rule):
                       "driftResults" : "PYME-CLUSTER://__aggregate_h5r/path/to/analysis.h5r/DriftResults"}
         }
     
+    
     **Recipes**
     The recipe can either be specified inline:
     
@@ -113,6 +118,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+    
         
     or using a cluster URI:
     
@@ -125,6 +131,7 @@ class IntegerIDRule(Rule):
          "inputs" : {{taskInputs}},
          "output_dir" : "PYME-CLUSTER://path/to/output/dir",
         }
+     
         
     The rule will substitute ``{{taskInputs}}`` with a dictionary mapping integer task IDs to recipe input files, e.g.
     
@@ -134,6 +141,7 @@ class IntegerIDRule(Rule):
          1 : {"recipe_input_0" : "input_0_URI_1","recipe_input_1" : "input_1_URI_1"},
          2 : {"recipe_input_0" : "input_0_URI_2","recipe_input_1" : "input_1_URI_2"},
          }
+       
          
     Alternatively the inputs dictionary can be supplied directly (without relying on the taskInputs substitution).
     
@@ -152,6 +160,11 @@ class IntegerIDRule(Rule):
     """
     TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
     
+    # task cost threshold below which tasks are deemed 'local' and directly awarded to the first bidder
+    # rather than going to "auction" - ie. the "Buy Now" price
+    # TODO - Revisit - should this be a settable rule parameter rather than a constant?
+    COST_THRESHOLD = 0.2
+    
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
                  max_task_ID=100000, task_timeout=600, rule_timeout=3600, 
@@ -166,7 +179,19 @@ class IntegerIDRule(Rule):
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
-        self._n_retries =  config.get('ruleserver-retries', 3)
+        # Number of times to re-queue a task if it times out is set by the 'ruleserver-retries' config option
+        # Setting a value of 0 effectively disables re-trying and makes analysis less robust.
+        # Note that a timeout is different to a failure - failing tasks will be marked as having failed and will not be re-tried. Timeouts will
+        # occur in one of 4 scenarios:
+        # - a worker falls over completely or is disconnected from the network
+        # - an unhandled exception - e.g. due to an IO error connecting to the ruleserver in `taskWorkerHTTP.taskWorker._return_task_results()`
+        # - analysis is getting massively bogged down and nothing is keeping up
+        # - the task timeout is unrealistically short for a given processing task
+        # 
+        # In scenarios 1 & 2 it's reasonable to expect that retrying will result in success. In scenarios 3 & 4 it's a bit muddier, but seeing as a) these kind of
+        # failures tend to be a bit stochastic and b) the retries get punted to the back of the queue, when the load might have let up a bit, the odds are
+        # reasonably good.
+        self._n_retries = config.get('ruleserver-retries', 1)
         self._timeout = task_timeout
         
         self._rule_timeout = rule_timeout
@@ -178,6 +203,8 @@ class IntegerIDRule(Rule):
         self.nAvailable = 0
         self.nCompleted = 0
         self.nFailed = 0
+        self.n_returned_after_timeout = 0
+        self.n_timed_out = 0
         
         self._n_max = max_task_ID
         
@@ -186,6 +213,10 @@ class IntegerIDRule(Rule):
         self.avCost = 0
         
         self.expiry = time.time() + self._rule_timeout
+        
+        # store pending bids
+        self._pending_bids = {}
+        self._current_bidder_id = 0
               
         self._info_lock = threading.Lock()
         self._advert_lock = threading.Lock()
@@ -297,6 +328,39 @@ class IntegerIDRule(Rule):
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         costs = np.array(bid['costs'], 'f4')
+        
+        if np.all(costs < self.COST_THRESHOLD):
+            # all tasks are below the "Buy Now" threshold, take a shortcut and directly award them to the bidder bypassing
+            # the rest of the biddng process. This enables high performance on localisation tasks
+            pass
+        else:
+            # NOTE: this bidding code is not high-performance. This is probably OK as code is bypassed in normal
+            # localisation scenario but might need to be revisited as it will be triggered in mixed cases where
+            # some bids are local and some are not.
+            with self._info_lock:
+                # get a unique bidder ID
+                self._current_bidder_id += 1
+                bidder_id = self._current_bidder_id
+                
+                # record bids
+                for taskID, cost in zip(taskIDs, costs):
+                    # get existing winning bid
+                    _, winning_cost = self._pending_bids.get(taskID, DEFAULT_BID)
+                    if cost < winning_cost:
+                        # if we have a lower cost, over-write the winning bid
+                        self._pending_bids[taskID] = Bid(bidder_id, cost)
+            
+            #wait for other bids
+            time.sleep(0.2) #TODO - make this time configurable??
+            
+            with self._info_lock:
+                # filter our tasks to only keep the wining ones
+                winners = [self._pending_bids[taskID].bidder_id==bidder_id for taskID in taskIDs]
+                
+                taskIDs = taskIDs[winners]
+                costs = costs[winners]
+        
+        
         with self._info_lock:
             successful_bid_mask = self._task_info['status'][taskIDs] == STATUS_AVAILABLE
             successful_bid_ids = taskIDs[successful_bid_mask]
@@ -337,12 +401,19 @@ class IntegerIDRule(Rule):
         status = np.array(info['status'], 'uint8')
         
         with self._info_lock:
+            old_status = self._task_info['status'][taskIDs]
             self._task_info['status'][taskIDs] = status
             
-            self.nCompleted += int((status ==STATUS_COMPLETE).sum())
-            self.nFailed += int((status == STATUS_FAILED).sum())
+            # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice
+            n_already_complete = int((old_status == STATUS_COMPLETE).sum())
+            n_already_failed = int((old_status == STATUS_FAILED).sum())
             
-            nTasks = len(taskIDs)
+            self.nCompleted += (int((status == STATUS_COMPLETE).sum()) - n_already_complete)
+            self.nFailed += (int((status == STATUS_FAILED).sum()) - n_already_failed)
+            
+            self.n_returned_after_timeout += (n_already_complete + n_already_failed)
+            
+            nTasks = len(taskIDs) - (n_already_complete + n_already_failed)
             self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
@@ -411,7 +482,7 @@ class IntegerIDRule(Rule):
         # To fix: Potentially replace with `np.all(self._task_info['status']>=STATUS_COMPLETE)` (although this would need to be cached and refreshed - property access should be cheap). 
         # combined with a new enum value STATUS_INVALID==6 -  `self.mark_release_complete()` could be re-written as `self._task_info['status'][self._task_info['status'] == 0] = STATUS_INVALID`
         
-        return (self.nCompleted >= self._n_max)
+        return (self.nAvailable == 0) and ((self.nCompleted + self.nFailed) >= self._n_max)
     
     def inactivate(self):
         """
@@ -436,7 +507,9 @@ class IntegerIDRule(Rule):
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
                   'averageExecutionCost' : self.avCost,
-                  'active' : self._active
+                  'active' : self._active,
+                  'tasksTimedOut' : self.n_timed_out,
+                  'tasksCompleteAfterTimeout' : self.n_returned_after_timeout,
                 }
     
     def poll_timeouts(self):
@@ -453,10 +526,13 @@ class IntegerIDRule(Rule):
                 
                 self.nAssigned -= nTimedOut
                 self.nAvailable += nTimedOut
+                
+                self.n_timed_out += nTimedOut
     
-                retry_failed = self._task_info['nRetries'] > self._n_retries
-                self._task_info['status'][retry_failed] = STATUS_FAILED
+                retry_failed = self._task_info['nRetries'][timed_out] > self._n_retries
+                self._task_info['status'][timed_out[retry_failed]] = STATUS_FAILED
                 self.nAvailable -= int(retry_failed.sum())
+                self.nFailed += int(retry_failed.sum())
                 
                 #self._update_nums()
             
@@ -715,6 +791,8 @@ class RuleServer(object):
             # take out the lock in case the rule is still being added in another
             # request and we are already trying to release tasks
             rule = self._rules[ruleID]
+            
+        logger.debug('release_rule_tasks(ruleID = %s, release_start=%d, release_end=%d)' % (ruleID, int(release_start), int(release_end )))
         
         rule.make_range_available(int(release_start), int(release_end))
     
@@ -768,7 +846,7 @@ class RuleServer(object):
             return json.dumps({'ok': 'False', 'error': str(expired_rules)})
     
     @webframework.register_endpoint('/mark_release_complete')
-    def mark_release_complete(self, rule_id, n_tasks=None):
+    def mark_release_complete(self, ruleID, n_tasks=None):
         """
         
         HTTP Endpoint (POST) to signal that no more tasks will be released for a rule and the rule can be regarded as finished once the previously released
@@ -801,7 +879,7 @@ class RuleServer(object):
         # take out the rule lock in case we are still creating the rule and the
         # client POSTs this (e.g. if a series is started/stopped quickly)
         with self._rule_lock:
-            self._rules[rule_id].mark_release_complete(n_tasks)
+            self._rules[ruleID].mark_release_complete(n_tasks)
         return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/distributor/queues')

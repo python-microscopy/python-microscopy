@@ -2,6 +2,7 @@ from .base import register_module, ModuleBase, Filter
 from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
 import numpy as np
 from PYME.IO import tabular
+from PYME.IO import MetaDataHandler
 from PYME.Analysis.points import multiview
 
 
@@ -88,7 +89,7 @@ class ShiftCorrect(ModuleBase):
 
         multiview.apply_shifts_to_points(mapped, shift_map)
         # propagate metadata
-        mapped.mdh = inp.mdh
+        mapped.mdh = MetaDataHandler.NestedClassMDHandler(inp.mdh) #copy as we are going to modify
         mapped.mdh['Multiview.shift_map.location'] = loc
 
         namespace[self.output_name] = mapped
@@ -250,7 +251,7 @@ class MapAstigZ(ModuleBase):
         mapped.addColumn('astigmatic_z_lookup_error', zerr)
         mapped.setMapping('z', 'astigmatic_z + z')
 
-        mapped.mdh = inp.mdh
+        mapped.mdh = MetaDataHandler.NestedClassMDHandler(inp.mdh)
         mapped.mdh['Analysis.astigmatism_calibration_used'] = calibration_location
 
         namespace[self.output_name] = mapped
@@ -317,6 +318,8 @@ class CalibrateShifts(ModuleBase):
         # Generate raw shift vectors (map of displacements between channels) for each channel
         mol_list = np.unique(clump_id)
         n_mols = len(mol_list)
+        if n_mols < 3:
+            raise ValueError('Need at 3 clusters containing points from each channel - try increasing search radius')
 
         dx = np.zeros((n_chan - 1, n_mols))
         dy = np.zeros_like(dx)
@@ -377,3 +380,46 @@ class CalibrateShifts(ModuleBase):
 
         namespace[self.output_name] = tabular.RecArraySource(shift_maps)
         namespace[self.output_name].mdh = mdh
+
+
+@register_module('ExtractMultiviewChannel')
+class ExtractMultiviewChannel(ModuleBase):
+    """Extract a single multiview channel
+
+    Parameters
+    ----------
+    input_name : PYME.IO.image.ImageStack
+        input, with multiview metadata
+    view_number : int
+        which multiview view to extract for the new ImageStack. Number should
+        match the multiview ROI number, not the number within the subset of
+        active views. By default, 0
+    output_name : PYME.IO.image.ImageStack
+        image cropped to contain a single multiview channel
+    
+    Notes
+    -----
+    Multiview metadata of the output image will not be updated other than to
+    note which channel has been extracted. All downstream analyses should be
+    not be multiview specific.
+    
+    """
+    input_name = Input('input')
+    view_number = Int(0)
+    output_name = Output('extracted')
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources.CropDataSource import DataSource
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        from PYME.IO.image import ImageStack
+
+        source = namespace[self.input_name]
+        roi_size = source.mdh['Multiview.ROISize']
+        ind = np.argwhere(np.asarray(source.mdh['Multiview.ActiveViews']) == self.view_number)[0][0]
+        x_i, x_f = int(ind * roi_size[0]), int((ind + 1 ) * roi_size[0])
+        extracted = DataSource(source.data, (x_i, x_f))
+
+        mdh = DictMDHandler(source.mdh)
+        mdh['Multiview.Extracted'] = ind
+        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh, 
+                                                 events=source.events)

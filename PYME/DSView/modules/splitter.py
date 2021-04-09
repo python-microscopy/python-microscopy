@@ -137,7 +137,7 @@ class Unmixer(Plugin):
         else:
             mode = 'lite'
             
-        print(im.data[:,:,1,1].shape)
+        #print(im.data[:,:,0,1].shape)
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -150,7 +150,7 @@ class Unmixer(Plugin):
             
         fns = os.path.split(self.image.filename)[1]
 
-        zm = usds[0].shape[2]/2
+        zm = int(usds[0].shape[2]/2)
 
         maxs = [u[:,:,zm].max() for u in usds]
         im = ImageStack(usds[np.argmax(maxs)], titleStub = '%s - unsplit' % fns)

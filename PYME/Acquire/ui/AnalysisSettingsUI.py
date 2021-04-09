@@ -8,10 +8,12 @@ import wx
 
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
-
+from  PYME.ui import manualFoldPanel
 from PYME.IO import MetaDataHandler
+import logging
+from PYME.contrib import dispatch
 
-import dispatch
+logger = logging.getLogger(__name__)
 
 class AnalysisSettingsPanel(wx.Panel):
     def __init__(self, parent, analysisSettings, mdhChangedSignal=None):
@@ -85,7 +87,7 @@ class AnalysisDetailsPanel(wx.Panel):
     def __init__(self, parent, analysisSettings, mdhChangedSignal=None):
         wx.Panel.__init__(self, parent, -1)
 
-        self.analysisSettings = analysisSettings
+        #self.analysisSettings = analysisSettings
         self.analysisMDH = analysisSettings.analysisMDH
         self.mdhChangedSignal = mdhChangedSignal
         
@@ -129,7 +131,7 @@ class AnalysisDetailsPanel(wx.Panel):
             self.Layout()
             self.SetMinSize([200, self.GetBestSize()[1]])
             self.GetParent().Layout()
-            print('custom analysis settings populated')
+            logger.debug('custom analysis settings populated')
                 
         except (KeyError, AttributeError):
             pass
@@ -142,6 +144,9 @@ class AnalysisDetailsPanel(wx.Panel):
             self.GetParent().fold1(self)
             self.GetParent().fold1(self)
 
+
+
+    
 
 class AnalysisSettings(object):
     def __init__(self):

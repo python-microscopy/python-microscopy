@@ -7,7 +7,7 @@ import socket
 import subprocess
 import tempfile
 import time
-
+from PYME.IO.FileUtils.nameUtils import get_service_name
 import yaml
 from PYME import config as conf
 from PYME.misc import pyme_zeroconf
@@ -100,19 +100,20 @@ def main():
     t_log_stdout.setDaemon(False)
     t_log_stdout.start()
 
-    ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
+    service_name = get_service_name('PYMENodeServer')
+    ns.register_service(service_name, externalAddr, int(serverPort))
 
     time.sleep(2)
     logging.debug('Launching worker processors')
     numWorkers = config.get('numWorkers', cpu_count())
-
-    workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
+    subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
+    workerProcs = [subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP' % sys.executable, shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -p %s' % profiledir, shell=True,
-                                        stdin=subprocess.PIPE))
+    workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -p "%s"' % (sys.executable, profiledir),
+                                        shell=True, stdin=subprocess.PIPE))
 
     try:
         while not proc.poll():
@@ -127,7 +128,7 @@ def main():
         LOG_STREAMS = False
         logging.info('Shutting down workers')
         try:
-            ns.unregister('PYMENodeServer: ' + GetComputerName())
+            ns.unregister(service_name)
         except:
             pass
 

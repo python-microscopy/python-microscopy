@@ -34,7 +34,7 @@ PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
 
 def ColourFromStyle(col):
     if isinstance(col, six.string_types):
-        col = wx.NamedColour(col)
+        col = wx.Colour(col)
     else:
         col = wx.Colour(*col)
 
@@ -173,7 +173,7 @@ class CaptionBar(wx.Window):
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
 
-        self.style = cbstyle
+        self.style = dict(cbstyle)
         self.parent = parent
         self.caption = caption
         self.foldIcons = foldIcons
@@ -606,7 +606,7 @@ class collapsingPane(foldingPane):
 
 
 
-import dispatch
+from PYME.contrib import dispatch
 class foldPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         try:

@@ -131,9 +131,13 @@ class taskWorker(object):
         self.tCompute.daemon = True
         self.tCompute.start()
 
-        self.tIO = threading.Thread(target=self.ioLoop)
-        self.tIO.daemon = True
-        self.tIO.start()
+        self.tI = threading.Thread(target=self.tasksLoop)
+        self.tI.daemon = True
+        self.tI.start()
+
+        self.tO = threading.Thread(target=self.returnLoop)
+        self.tO.daemon = True
+        self.tO.start()
 
         try:
             while True:
@@ -206,15 +210,11 @@ class taskWorker(object):
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
 
-    def _get_tasks(self, local_queue_name):
+    def _get_tasks(self):
         """
 
-        Query nodeserver for tasks and place them in the queue for this worker, if available
-
-        Parameters
-        ----------
-        local_queue_name : str
-            computer name prepended by 'PYMENodeServer: '
+        Query nodeserver for tasks and place them in the queue for this worker,
+        if available
 
         Returns
         -------
@@ -222,42 +222,27 @@ class taskWorker(object):
             flag to report whether _get_tasks added new tasks to the taskWorker queue
 
         """
-        #queue_URLs = distribution.getNodeInfo()
-        #queue_URLs = {k: v for k, v in queue_URLs.items() if k == local_queue_name}
-
-        # loop over all queues, looking for tasks to process
         tasks = []
-        
-        while len(tasks) == 0:# and len(queue_URLs) > 0:
-            # try queue on current machine first
-            # print queueNames
+        queueURL = self._local_queue_url
 
-            # if local_queue_name in queue_URLs.keys():
-            #     qName = local_queue_name
-            #     queueURL = queue_URLs.pop(qName)
-            # else:
-            #     logger.error('Could not find local node server')
-                
-            queueURL = self._local_queue_url
+        try:
+            # ask the queue for tasks
+            s = clusterIO._getSession(queueURL)
+            r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)
+            if r.status_code == 200:
+                resp = r.json()
+                if resp['ok']:
+                    res = resp['result']
+                    if isinstance(res, list):
+                        tasks += [(queueURL, t) for t in res]
+                    else:
+                        tasks.append((queueURL, res))
+        except requests.Timeout:
+            logger.info('Read timout requesting tasks from %s' % queueURL)
 
-            try:
-                # ask the queue for tasks
-                s = clusterIO._getSession(queueURL)
-                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)  # , timeout=0)
-                if r.status_code == 200:
-                    resp = r.json()
-                    if resp['ok']:
-                        res = resp['result']
-                        if isinstance(res, list):
-                            tasks += [(queueURL, t) for t in res]
-                        else:
-                            tasks.append((queueURL, res))
-            except requests.Timeout:
-                logger.info('Read timout requesting tasks from %s' % queueURL)
-
-            except Exception:
-                import traceback
-                logger.exception(traceback.format_exc())
+        except Exception:
+            import traceback
+            logger.exception(traceback.format_exc())
 
         if len(tasks) != 0:
             for t in tasks:
@@ -267,7 +252,7 @@ class taskWorker(object):
             # flag that there were no new tasks
             return False
 
-    def ioLoop(self):
+    def tasksLoop(self):
         """
 
         Loop forever asking for tasks to queue up for this worker
@@ -276,7 +261,28 @@ class taskWorker(object):
         -------
 
         """
-        localQueueName = 'PYMENodeServer: ' + compName
+        while True:
+            if not self._loop_alive:
+                break
+
+            # if our queue for computing is empty, try to get more tasks
+            if self.inputQueue.empty():
+                # if we don't have any new tasks, sleep to avoid constant polling
+                if not self._get_tasks():
+                    # no queues had tasks
+                    time.sleep(0.1)
+            else:
+                time.sleep(0.1)
+                    
+    def returnLoop(self):
+        """
+
+        Loop forever returning task results
+
+        Returns
+        -------
+
+        """
         while True:
             # turn in completed tasks
             try:
@@ -288,12 +294,7 @@ class taskWorker(object):
             if not self._loop_alive:
                 break
 
-            # if our queue for computing is empty, try to get more tasks
-            if self.inputQueue.empty():
-                # if we don't have any new tasks, sleep to avoid constant polling
-                if not self._get_tasks(localQueueName):
-                    # no queues had tasks
-                    time.sleep(0.1)
+            time.sleep(1)
 
 
     def computeLoop(self):

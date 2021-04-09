@@ -10,6 +10,8 @@
 #
 ##################
 
+from PYME.IO.compatibility import np_load_legacy
+
 class MDParam(object):
     def __init__(self):
         pass
@@ -386,8 +388,7 @@ class FilenameParam(MDParam):
 
 class ShiftFieldParam(FilenameParam):    
     def retrieveValue(self, mdh, *args, **kwargs):
-        import numpy as np
-        
+    
         oldfn = mdh.getOrDefault(self.paramName, None)
         if 'chroma.dx' in mdh.getEntryNames():
             if self.filename == self.default:
@@ -396,7 +397,7 @@ class ShiftFieldParam(FilenameParam):
         FilenameParam.retrieveValue(self, mdh, *args, **kwargs)
         
         if not self.filename == oldfn and not self.filename in ['<none>', '']:
-            dx, dy = np.load(self.filename)
+            dx, dy = np_load_legacy(self.filename)
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
         

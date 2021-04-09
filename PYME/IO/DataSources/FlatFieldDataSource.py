@@ -24,36 +24,40 @@
 #from PYME.IO.FileUtils.nameUtils import getFullFilename
 from .BaseDataSource import BaseDataSource
 #import tables
-from PYME.IO.MetaDataHandler import get_camera_roi_origin
+from PYME.localization.remFitBuf import CameraInfoManager
+import numpy as np
 
 class DataSource(BaseDataSource):
     moduleName = 'FlatFieldDataSource'
-    def __init__(self, parentSource, mdh, flatfield, dark = None):
+    def __init__(self, parentSource, mdh, flatfield=None, dark = None):
         #self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
         #self.h5File = tables.openFile(self.h5Filename)
         self.source = parentSource
         self.mdh = mdh
         #self.flat = flatfield
         
-        x0, y0 = get_camera_roi_origin(mdh)
-        x1 = x0 + mdh.getOrDefault('Camera.ROIWidth', self.source.shape[0]) + 1
-        y1 = y0 + mdh.getOrDefault('Camera.ROIHeight', self.source.shape[1]) + 1
+        slices = CameraInfoManager._parseROI(mdh)
 
         #print((x0, x1, y0, y1))
 
         #self.offset = mdh.getEntry()
-
-        self.flat = flatfield[x0:x1, y0:y1]
+        if flatfield is None:
+            self.flat = 1.
+        else:
+            self.flat = np.concatenate([flatfield[sl].astype('f') for sl in slices], 
+                                       axis=0)
+        
         if dark is None:
             self.dark = self.mdh.getEntry('Camera.ADOffset')
         else:
-            self.dark = dark[x0:x1, y0:y1]
+            self.dark = np.concatenate([dark[sl].astype('f') for sl in slices], 
+                                       axis=0)
 
 
     def getSlice(self, ind):
         #if ind >= self.h5File.root.ImageData.shape[0]:
         #        self.reloadData() #try reloading the data in case it's grown
-        print((self.getSliceShape(), self.flat.shape))
+        # print((self.getSliceShape(), self.flat.shape))
         
         return (self.source.getSlice(ind) - self.dark)*self.flat
 

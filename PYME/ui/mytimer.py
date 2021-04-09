@@ -38,11 +38,11 @@ class MultiTimer(wx.Timer):
 
     def Notify(self):
         for a in self.WantNotification:
-            ts = time.clock()
+            ts = time.time()
             a()
             
             if self.PROFILE:
-                te = time.clock() - ts
+                te = time.time() - ts
                 ar = repr(a)
                 #if ar in times.keys():
                 #    self.times[ar] = self.times[ar]+ te

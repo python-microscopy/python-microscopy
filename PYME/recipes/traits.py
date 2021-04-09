@@ -2,17 +2,74 @@
 from __future__ import absolute_import
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     from enthought.traits.api import *
 except ImportError:
     from traits.api import *
 
 
+#Monkey-patch traits so that editors need enter / focus change to update by default
+from traits import trait_types
+trait_types.TraitType.auto_set = False
+trait_types.TraitType.enter_set = True
+
 class Input(CStr):
-    pass
+    fast_validate = None
+    
+    def validate(self, object, name, value):
+        value = CStr.validate(self, object, name, value)
+
+        if getattr(object, '_initial_set', False):
+            # defer validation when performed in constructor to avoid detection of spurious circular references with default values (see issue #695)
+            
+            # make sure we're not assigning to an output of this module
+            mod_outputs = getattr(object, 'outputs', [])
+            if value in mod_outputs:
+                # trying to assign input to output
+                raise TraitError('Assigning "%s" to input "%s" would result in a circular reference (value is in module outputs).' % (value, name))
+                
+            # make sure we are not assigning to any downstream outputs
+            recipe = getattr(object, '_parent', None)
+            if recipe is not None:
+                if value in recipe.downstream_outputs(list(object.outputs)):
+                    # trying to assign input to output
+                    raise TraitError('Assigning "%s" to input "%s" would result in a circular reference (value is in downstream outputs).' % (value, name))
+                
+        return value
+    
+        
 
 class Output(CStr):
-    pass
+    fast_validate = None
+    
+    def validate(self, object, name, value):
+        value = CStr.validate(self, object, name, value)
+        
+        if getattr(object, '_initial_set', False):
+            # defer validation when performed in constructor to avoid detection of spurious circular references with default values (see issue #695)
+        
+            # make sure we're not assigning to an input of this module
+            mod_inputs = getattr(object, 'inputs', [])
+            if value in mod_inputs:
+                # trying to assign input to output
+                raise TraitError(
+                    'Assigning "%s" to output "%s" would result in a circular reference (value is in module inputs).' % (value, name))
+                
+            
+            # make sure we are not assigning to any downstream outputs
+            recipe = getattr(object, '_parent', None)
+            if recipe is not None:
+                if value in recipe.upstream_inputs(list(object.inputs)):
+                    # trying to assign input to output
+                    raise TraitError(
+                        'Assigning "%s" to output "%s" would result in a circular reference (value is in upstream inputs).' % (
+                        value, name))
+                
+        
+        return value
 
 class FileOrURI(File):
     '''Custom trait for files that can either be on disk or on the cluster

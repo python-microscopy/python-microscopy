@@ -8,7 +8,7 @@ Created on Sun May 22 17:13:51 2016
 from PYME.Acquire import HTTPSpooler
 from PYME.IO import MetaDataHandler
 
-import dispatch
+from PYME.contrib import dispatch
 
 class ImageFrameSource(object):
     def __init__(self):

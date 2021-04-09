@@ -16,11 +16,10 @@ particular could use a lot of work. Hopefully it's enough to get you started.
 
 
 .. toctree::
-   :caption: Installation
-   :maxdepth: 1
+    :caption: Installation
+    :maxdepth: 1
 
-   Installation/InstallationWithAnaconda
-   Installation/InstallationFromSource
+    Installation/Installation
 
 .. toctree::
    :caption: User Guide

@@ -30,6 +30,7 @@ def configuration(parent_package = '', top_path = None):
     config.add_data_dir('icons')
     config.add_data_dir('config_template')
     config.add_data_dir('web')
+    config.add_data_dir('test_datasets')
 
     #if sys.platform == 'win32':
     #    config.add_scripts(['dh5view.cmd'])

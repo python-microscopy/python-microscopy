@@ -12,10 +12,10 @@ run:
 
 .. code-block:: bash
 
-   dh5view path/to/filename.tif
+   pymeimage path/to/filename.tif
 
-Alternatively, just run dh5view without arguments and use the file open
-dialog which is displayed to find and open your image. dh5view should be
+Alternatively, just run ``pymeimage`` without arguments and use the file open
+dialog which is displayed to find and open your image. ``pymeimage`` should be
 able to read anything that bioformats can, and a couple of extras.
 
 The viewer
@@ -23,7 +23,7 @@ The viewer
 
 You should get an image viewer like the one shown below. There is
 currently support for 3 dimensions + colour, and the 3\ :sup:`rd`
-dimension can be either time or Z (ie XYZC or XYTC). The red lines in
+dimension can be either time or Z (i.e. XYZC or XYTC). The red lines in
 the histograms on the right adjust the display scaling. Clicking on one
 of these histograms and pressing ‘m’ will scale that channel so that the
 display stretches between the minimum and maximum value. Pressing ‘p’
@@ -39,7 +39,7 @@ in the stack.
 Loading the colocalization module
 ---------------------------------
 
-Dhview doesn’t load all it’s modules at startup. To load the
+``pymeimage`` doesn’t load all it’s modules at startup. To load the
 colocalization module, choose `coloc` from the `Modules` menu.
 
 Choosing thresholds
@@ -64,7 +64,7 @@ signal.
 Performing the analysis
 -----------------------
 
-Once you are happy with the thresholds, chose `Processing->EDT
+Once you are happy with the thresholds, choose `Processing->EDT
 Colocalisation` from the menu. NB: this won’t show up unless you have
 loaded the `coloc` module. You should get the dialog shown in the next
 figure. You can choose which channel to use as a reference (1:sup:`st`
@@ -78,8 +78,8 @@ When you click OK, it will calculate a distance transform from the mask
 of the first channel and measure the distribution of the (unthresholded)
 second channel with respect to that mask. It then swaps the order, and
 calculates the distribution of the first channel with respect to the
-second channels mask. **Note that if you have a stack (either 3D or time
-series) dh5view will assume it is a z-stack, and calculate distances in
+second channel's mask. **Note that if you have a stack (either 3D or time
+series) ``pymeimage`` will assume it is a z-stack, and calculate distances in
 3D**.
 
 When calculations are complete, 3 windows will be displayed.
@@ -92,19 +92,20 @@ The first window shows the *relative enrichment* (comparing the density
 to an assumption of uniform spatial randomness) of label B at a given
 distance from label As mask (top panel), and the total fraction enclosed
 at a given distance (bottom panel). Negative distances are inside the
-mask, and Manders and Pearsons coefficients are displayed at the top of
+mask, and Manders and Pearson coefficients are displayed at the top of
 the figure. The *50% of X within Ynm* metric is my candidate for a new
 colocalization metric which will still work for super-resolution methods
 where nothing really colocalizes. The dotted line shows a comparison of
-the label used to define the mask with it’s own mask, and essentially
-functions as a control for how good the thresholding is. The second
-window is a repeat of the first with the labels switched, and the
-3\ :sup:`rd` window just displays the raw histogram data. The
-3\ :sup:`rd` window is mainly interesting if you want to access the raw
-histogram data, which can be saved in a format which can be imported
-into excel by bring this window to the front and then selecting `File->
-Save as` from the menu. **NOTE: when saving histograms you must set the
-`File type` in the Save as dialog to `Tab formatted text - .txt`.**
+same analysis performed on the raw intensities in the channel used to 
+generate the mask, and essentially 
+functions as a control for how good the thresholding is. The second window 
+is a repeat of the first with the labels switched, and the 3\ :sup:`rd` 
+window just displays the raw histogram data. The 3\ :sup:`rd` window is 
+mainly interesting if you want to access the raw histogram data, which can 
+be saved in a format which can be imported into Excel by bring this window 
+to the front and then selecting `File-> Save as` from the menu. **NOTE: when 
+saving histograms you must set the `File type` in the Save as dialog to 
+`Tab formatted text - .txt`.**
 
 .. |image0| image:: media/image1.png
    :width: 6.50000in

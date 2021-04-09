@@ -119,7 +119,7 @@ class Deconvolver(Plugin):
             if psf.shape[2] > self.image.data.shape[2]:
                 dz = psf.shape[2] - self.image.data.shape[2]
 
-                psf = psf[:, :, numpy.floor(dz / 2):(psf.shape[2] - numpy.ceil(dz / 2))]
+                psf = psf[:, :, int(numpy.floor(dz / 2)):int(psf.shape[2] - numpy.ceil(dz / 2))]
 
 
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
@@ -193,7 +193,7 @@ class Deconvolver(Plugin):
                 if beadMode and self.image.data.shape[3] > 1:
                     #special case for bead deconvolution - unwind the stacking
                     nChans = self.image.data.shape[3]
-                    xs = fs.shape[0]/nChans
+                    xs = int(fs.shape[0]/nChans)
                     #NOTE: this relies on the slicing returning a view into the underlying data, not a copy
 
                     fs = [fs[(i*xs):((i+1)*xs), :, :] for i in range(nChans)]

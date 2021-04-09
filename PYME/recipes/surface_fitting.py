@@ -1,8 +1,12 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr
+from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
 import numpy as np
 from PYME.IO import tabular
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 @register_module('FitSurfaceWithPatches')
 class FitSurfaceWithPatches(ModuleBase):
@@ -132,8 +136,9 @@ class DualMarchingCubes(ModuleBase):
     output = Output('mesh')
     
     threshold_density = Float(2e-5)
-    n_points_min = Int(5) # lets us truncate on SNR
+    n_points_min = Int(50) # lets us truncate on SNR
     
+    smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
     repair = Bool(False)
     remesh = Bool(False)
     
@@ -148,7 +153,7 @@ class DualMarchingCubes(ModuleBase):
         tris = dmc.march(dual_march=False)
 
         print('Generating TriangularMesh object')
-        surf = triangle_mesh.TriangleMesh.from_np_stl(tris)
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=self.smooth_curvature)
         
         print('Generated TriangularMesh object')
         
@@ -156,15 +161,14 @@ class DualMarchingCubes(ModuleBase):
             surf.repair()
             
         if self.remesh:
-            #target_length = np.mean(surf._halfedges['length'][surf._halfedges['length'] != -1])
+            # target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
             surf.remesh(5, l=0.5, n_relax=10)
-            
-            
+
         namespace[self.output] = surf
-        
-        
-@register_module('MarchingTetrahedra')
-class MarchingTetrahedra(ModuleBase):
+
+
+@register_module('DelaunayMarchingTetrahedra')
+class DelaunayMarchingTetrahedra(ModuleBase):
     input = Input('delaunay0')
     output = Output('mesh')
     
@@ -176,11 +180,12 @@ class MarchingTetrahedra(ModuleBase):
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
         from PYME.experimental import marching_tetrahedra
-        from PYME.experimental import triangle_mesh
+        from PYME.experimental import _triangle_mesh as triangle_mesh
         import time
 
-        vertices = namespace[self.input].T.points[namespace[self.input].T.simplices]
-        values = namespace[self.input].dn[namespace[self.input].T.simplices]
+        simplices = namespace[self.input].T.simplices
+        vertices = namespace[self.input].T.points[simplices]
+        values = namespace[self.input].dn[simplices]
         
         
         mt = marching_tetrahedra.MarchingTetrahedra(vertices, values, self.threshold_density)
@@ -299,3 +304,69 @@ class SphericalHarmonicShell(ModuleBase):
 
         namespace[self.output_name] = shell
         namespace[self.output_name_mapped] = points
+
+
+@register_module('ImageMaskFromSphericalHarmonicShell')
+class ImageMaskFromSphericalHarmonicShell(ModuleBase):
+    """
+
+    Parameters
+    ----------
+    input_shell: spherical_harmonics.ScaledShell()
+        input localizations to fit a shell to
+    bounds_source: PYME.IO.tabular
+        optional input to estimate image bounds from, otherwise the points
+        used to fit the shell are used
+    voxelsize_nm: list
+        x, y, z pixel size in nm
+
+
+    Returns
+    ------
+    output: PYME.IO.image.ImageStack
+        boolean mask True inside, False outside
+    """
+    input_shell = Input('harmonic_shell')
+    input_image_bound_source = Input('input')
+    voxelsize_nm = ListFloat([75, 75, 75])
+    output = Output('output')
+
+
+    def execute(self, namespace):
+        from PYME.IO.image import ImageBounds, ImageStack
+        from PYME.IO.MetaDataHandler import DictMDHandler, origin_nm
+
+        shell = namespace[self.input_shell]
+        image_bound_source = namespace[self.input_image_bound_source]
+        # TODO - make bounds estimation more generic - e.g. to match an existing image.
+        b = ImageBounds.estimateFromSource(image_bound_source)
+        ox, oy, _ = origin_nm(image_bound_source.mdh)
+        
+        nx = np.ceil((np.ceil(b.x1) - np.floor(b.x0)) / self.voxelsize_nm[0]) + 1
+        ny = np.ceil((np.ceil(b.y1) - np.floor(b.y0)) / self.voxelsize_nm[1]) + 1
+        nz = np.ceil((np.ceil(b.z1) - np.floor(b.z0)) / self.voxelsize_nm[2]) + 1
+        
+        x = np.arange(np.floor(b.x0), b.x0 + nx * self.voxelsize_nm[0], self.voxelsize_nm[0])
+        y = np.arange(np.floor(b.y0), b.y0 + ny * self.voxelsize_nm[1], self.voxelsize_nm[1])
+        z = np.arange(np.floor(b.z0), b.z0 + nz * self.voxelsize_nm[2], self.voxelsize_nm[2])
+        logger.debug('mask size %s' % ((len(x), len(y), len(z)),))
+
+        xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+
+        inside = shell.check_inside(xx.ravel(), yy.ravel(), zz.ravel())
+        inside = np.reshape(inside, xx.shape)
+        
+        mdh = DictMDHandler({
+            'voxelsize.x': self.voxelsize_nm[0] / 1e3,
+            'voxelsize.y': self.voxelsize_nm[1] / 1e3,
+            'voxelsize.z': self.voxelsize_nm[2] / 1e3,
+            'ImageBounds.x0': x.min(), 'ImageBounds.x1': x.max(),
+            'ImageBounds.y0': y.min(), 'ImageBounds.y1': y.max(),
+            'ImageBounds.z0': z.min(), 'ImageBounds.z1': z.max(),
+            'Origin.x': ox + b.x0,
+            'Origin.y': oy + b.y0,
+            'Origin.z': b.z0
+        })
+
+        namespace[self.output] = ImageStack(data=inside, mdh=mdh, 
+                                            haveGUI=False)

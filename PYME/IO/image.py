@@ -31,22 +31,21 @@
 #    pass
 
 from __future__ import print_function
-import os
-import numpy
-
-import weakref
-
-from PYME.IO import MetaDataHandler
-from PYME.Analysis import MetaData
-from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource
-#from PYME.LMVis.visHelpers import ImageBounds
-
-from PYME.IO.FileUtils.nameUtils import getRelFilename
-from collections import namedtuple
-from six import string_types
 
 import logging
+import os
+import weakref
+
+import numpy
+from six import string_types
+
+from PYME.Analysis import MetaData
+from PYME.IO import MetaDataHandler
+from PYME.IO import dataWrap
+from PYME.IO.DataSources import BufferedDataSource
+from PYME.IO.FileUtils.nameUtils import getRelFilename
+from PYME.IO.compatibility import np_load_legacy
+
 logger = logging.getLogger(__name__)
 import warnings
 
@@ -212,6 +211,12 @@ class ImageStack(object):
         self.events = events  #events
 
         self.queueURI = queueURI
+        
+        if filename is not None and os.path.exists(filename): # is a real filename on disk, rather than a schemified one e.g. pyme-cluster://
+            # make the filename fully resolved rather than relative to the directory we launched from (if we launched with a partial filename)
+            # TODO: does this belong here, or should this logic be elsewhere
+            filename = os.path.abspath(filename)
+            
         self.filename = filename
 
         self.haveGUI = haveGUI
@@ -459,7 +464,6 @@ class ImageStack(object):
     def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
-        import tables
         from PYME.IO.DataSources import HTTPDataSource, BGSDataSource
         #from PYME.LMVis import inpFilt
         
@@ -521,7 +525,8 @@ class ImageStack(object):
         """
         from PYME.IO import unifiedIO
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data, vox = numpy.load(fn)
+            self.data, vox = np_load_legacy(fn)
+                
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
@@ -537,7 +542,8 @@ class ImageStack(object):
     def _loadSF(self, filename):
         self.mdh =MetaDataHandler.NestedClassMDHandler( MetaData.BareBones)
         self.mdh.setEntry('chroma.ShiftFilename', filename)
-        dx, dy = numpy.load(filename)
+        dx, dy = np_load_legacy(filename)
+            
         self.mdh.setEntry('chroma.dx', dx)
         self.mdh.setEntry('chroma.dy', dy)
         
@@ -561,7 +567,7 @@ class ImageStack(object):
         
         self.data = SupertileDatasource.DataSource(filename)
         self.mdh = self.data.mdh
-    
+        self.seriesName = filename
         self.mode = 'default'
         
     def _loadNPY(self, filename):
@@ -573,7 +579,7 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
 
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data = numpy.load(fn)
+            self.data = numpy.load(fn,allow_pickle=True)
 
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
@@ -1129,7 +1135,12 @@ class ImageStack(object):
             if not (self.filename is None):
                 self.saved = True
 
-                openImages.pop(ofn)
+                try:
+                    openImages.pop(ofn)
+                except KeyError:
+                    # if the image does not already have a filename / is not in the list of exisiting images ignore and continue
+                    pass
+                
                 openImages[self.filename] = self
 
             else:

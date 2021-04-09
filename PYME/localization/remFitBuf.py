@@ -91,7 +91,7 @@ class BufferManager(object):
 
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
-            self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
+            self.dBuffer = buffers.SliceBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
             self.bBuffer = None
         
         #fix our background buffers
@@ -115,8 +115,9 @@ class BufferManager(object):
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
-                # we already have a percentile buffer - just change the settings. TODO - Does this need to change to reflect introduction of GPU based buffering?
-                self.bBuffer.pctile = md['Analysis.PCTBackground']
+                # we already have a percentile buffer - just change the settings
+                self.bBuffer.refresh_settings(md['Analysis.PCTBackground'],
+                                              bufferLen)
         else:
             if not isinstance(self.bBuffer, buffers.backgroundBuffer):
                 self.bBuffer = buffers.backgroundBuffer(self.dBuffer)
@@ -131,9 +132,12 @@ class CameraInfoManager(object):
     def __init__(self):
         self._cache = {}
 
-    def _parseROI(self, md):
+    @staticmethod
+    def _parseROI(md):
         """
         Extract ROI coordinates from metadata
+
+        TODO - refactor out of here as it is being used in non-fitting code
 
         Parameters
         ----------
@@ -151,14 +155,14 @@ class CameraInfoManager(object):
             #special case handling for multiview ROIs
             origins = [md['Multiview.ROI%dOrigin' % ind] for ind in md['Multiview.ActiveViews']]
             size_x, size_y = md['Multiview.ROISize']
-            return [(slice(ox, ox + size_x), slice(oy, oy + size_y)) for ox, oy in origins]
+            return [(slice(int(ox), int(ox + size_x)), slice(int(oy), int(oy + size_y))) for ox, oy in origins]
         
         x0, y0 = get_camera_roi_origin(md)
 
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
-        return [(slice(x0, x1), slice(y0, y1))]
+        return [(slice(int(x0), int(x1)), slice(int(y0), int(y1)))]
 
     def _fetchMap(self, md, mapName):
         """retrive a map, with a given name. First try and get it from the Queue,
@@ -339,7 +343,7 @@ class fitTask(taskDef.Task):
             drift_ind = [0,0]
         # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
         # makes bufferLen at least 1
-        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
+        self.bufferLen = max(0, max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])) + 1
         
     @property
     def fitMod(self):
@@ -429,9 +433,14 @@ class fitTask(taskDef.Task):
         self.bg = 0
 
         if 'GPU_PREFIT' in dir(self.fitMod):
-            if len(self.bgindices) != 0:  # asynchronously calculate background
-                bufferManager.bBuffer.calc_background(self.bgindices)
-                self.bg = bufferManager.bBuffer
+            if len(self.bgindices) != 0:
+                if md.get('Analysis.GPUPCTBackground', False):
+                    # asynchronous background calc on the GPU
+                    bufferManager.bBuffer.calc_background(self.bgindices)
+                    self.bg = bufferManager.bBuffer
+                else:
+                    # calculate now on the CPU
+                    self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
             # fit module does its own prefit steps on the GPU
             self.data = self.data.squeeze()
             ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=None)
@@ -585,7 +594,7 @@ class fitTask(taskDef.Task):
             (per-pixel) variance, readout noise [e-^2]
         """
         var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
-        return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
+        return np.sqrt(var + (float(md['Camera.NoiseFactor'])**2)*(float(md['Camera.ElectronsPerCount'])*float(md['Camera.TrueEMGain'])*np.maximum(data, 1.0) + float(md['Camera.TrueEMGain'])*float(md['Camera.TrueEMGain'])))/float(md['Camera.ElectronsPerCount'])
     
     def calcThreshold(self):
         #from scipy import ndimage

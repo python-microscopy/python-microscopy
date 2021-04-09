@@ -117,10 +117,33 @@ class TabularBase(object):
         #print(dt)
         return records.fromarrays(cols, names=keys_, dtype=dt)
 
-    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
+    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None,
+               keep_alive_timeout=0):
+        """
+        Writes data to a table in an HDF5 file
+        
+        Parameters
+        ----------
+        
+        filename: string
+            the name of the file to save to
+        tablename: string [optional]
+            the name of the table within the file to save to. Defaults to "Data"
+        keys: list [optional]
+            a list of column names to save (if keys == None, all columns are saved)
+        metadata: a MetaDataHandler instance [optional]
+            associated metadata to write to the file
+        keep_alive_timeout: float
+            a timeout in seconds. If non-zero, the file is held open after we have finished writing to it until the
+            timeout elapses. Useful as a performance optimisation when making multiple writes to a single file,
+            potentially across multiple threads. NOTE: the keep_alive_timeout is not garuanteed to be observed - it
+            gets set by the first open call of a given session, so if the file is already open due to a previous openH5R
+            call, the timeout requested by that call will be used.
+            
+        """
         from PYME.IO import h5rFile
 
-        with h5rFile.openH5R(filename, 'a') as f:
+        with h5rFile.openH5R(filename, 'a', keep_alive_timeout=keep_alive_timeout) as f:
             f.appendToTable(tablename, self.to_recarray(keys))
 
             if metadata is not None:
@@ -128,6 +151,37 @@ class TabularBase(object):
                 
             #wait until data is written
             f.flush()
+
+    def to_csv(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+    
+        if keys is None:
+            keys = self.keys()
+    
+        #nRecords = len(ds[keys[0]])
+        
+        def fmt(d):
+            if np.isscalar(d):
+                if isinstance(d, six.string_types):
+                    return str(d)
+                else:
+                    return '%e' % d
+            else:
+                # try to make sure odd objects don't break file formatting
+                return ('"%s"' % str(d).replace(delim,' ').replace('\n',' '))
+    
+        of = open(outFile, 'w')
+    
+        of.write('# ' + delim.join(['%s' % k for k in keys]) + '\n')
+    
+        for row in zip(*[self[k] for k in keys]):
+            of.write(delim.join([fmt(c) for c in row]) + '\n')
+    
+        of.close()
+            
                 
     def keys(self):
         raise NotImplementedError('Should be over-ridden in derived class')
@@ -619,7 +673,7 @@ class RecArraySource(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
-        self._keys = self.recArray.dtype.names
+        self._keys = list(self.recArray.dtype.names)
 
     def keys(self):
         return self._keys
@@ -662,7 +716,7 @@ class DictSource(TabularBase):
                 raise ValueError('Columns are different lengths')
         
     def keys(self):
-        return self._source.keys()
+        return list(self._source.keys())
     
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -699,7 +753,7 @@ class SelectionFilter(TabularBase):
         return self.resultsSource[key][self.Index][sl]
     
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
 @deprecated_name('resultsFilter')
 class ResultsFilter(SelectionFilter):
@@ -857,7 +911,11 @@ class CachingResultsFilter(TabularBase):
             return res[sl]
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
+    
+    @property
+    def mdh(self):
+        return self.resultsSource.mdh
 
 @deprecated_name('mappingFilter')
 class MappingFilter(TabularBase):
@@ -993,7 +1051,7 @@ class _ChannelFilter(TabularBase):
         return self.colour_filter.get_channel_column(self.channel, keys)
     
     def keys(self):
-        return self.colour_filter.keys()
+        return list(self.colour_filter.keys())
 
 @deprecated_name('colourFilter')
 class ColourFilter(TabularBase):
@@ -1070,7 +1128,7 @@ class ColourFilter(TabularBase):
         self.currentColour = colour
 
     def keys(self):
-        return self.resultsSource.keys()
+        return list(self.resultsSource.keys())
 
     
 @deprecated_name('cloneSource')
@@ -1096,5 +1154,5 @@ class CloneSource(TabularBase):
         return self.cache[key][sl]
 
     def keys(self):
-        return self.cache.keys()
+        return list(self.cache.keys())
 

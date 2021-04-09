@@ -32,9 +32,11 @@ from sys import maxsize as maxint
 
 #minimal protocol which does nothing
 class Protocol:
-    filename=None
-    def __init__(self):
-        pass
+    def __init__(self, filename=None):
+        # NOTE: .filename attribute is currently set in the spool controller, and will over-ride the filename passed to the constructor.
+        # The filename parameter exists to allow setting the filename in protocols which are not instantiated through the spool controller, and
+        # requires passing __name__ to the constructor in the protocol itself. Both solutions are a bit gross, and may be revisited in the future.
+        self.filename = filename
 
     def Init(self, spooler):
         pass
@@ -100,9 +102,10 @@ def SetContinuousMode(contMode):
 
 
 class TaskListProtocol(Protocol):
-    def __init__(self, taskList, metadataEntries = [], preflightList=[]):
+    def __init__(self, taskList, metadataEntries = [], preflightList=[], 
+                 filename=None):
         self.taskList = taskList
-        Protocol.__init__(self)
+        Protocol.__init__(self, filename)
         self.listPos = 0
 
         self.metadataEntries = metadataEntries
@@ -129,7 +132,7 @@ class TaskListProtocol(Protocol):
         while not self.listPos >= len(self.taskList) and frameNum >= self.taskList[self.listPos].when:
             t = self.taskList[self.listPos]
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join([str(p) for p in t.params]))
             self.listPos += 1
 
     def OnFinish(self):
@@ -137,7 +140,7 @@ class TaskListProtocol(Protocol):
             t = self.taskList[self.listPos]
             self.listPos += 1
             t.what(*t.params)
-            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join(['%s' % p for p in t.params]))
+            eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join([str(p) for p in t.params]))
             
 
 
@@ -146,7 +149,7 @@ class TaskListProtocol(Protocol):
 
 class ZStackTaskListProtocol(TaskListProtocol):
     def __init__(self, taskList, startFrame, dwellTime, metadataEntries=[], preflightList=[], randomise=False,
-                 slice_order='saw', require_camera_restart=True):
+                 slice_order='saw', require_camera_restart=True, filename=None):
         """
 
         Parameters
@@ -171,7 +174,13 @@ class ZStackTaskListProtocol(TaskListProtocol):
         require_camera_restart: bool
             Flag to toggle restarting the camera/frameWrangler on each step (True) or leave the camera running (False)
         """
-        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList)
+        
+        # add a check to ensure that dwell times are sensible
+        preflightList.append(C('(self.dwellTime*scope.cam.GetIntegTime() > .1) or not scope.cam.contMode',
+                               'Z step dwell time too short - increase either dwell time or integration time, or set camera mode to single shot / software triggered'))
+        
+        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList,
+                                  filename)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime
@@ -185,9 +194,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.require_camera_restart = require_camera_restart
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.stackSettings.GetStartPos(),
-                               scope.stackSettings.GetEndPos() + .95 * scope.stackSettings.GetStepSize(),
-                               scope.stackSettings.GetStepSize() * scope.stackSettings.GetDirection())
+        stack_settings = getattr(spooler, 'stack_settings', scope.stackSettings)
+        
+        self.zPoss = np.arange(stack_settings.GetStartPos(),
+                               stack_settings.GetEndPos() + .95 * stack_settings.GetStepSize(),
+                               stack_settings.GetStepSize() * stack_settings.GetDirection())
 
         if self.slice_order != 'saw':
             if self.slice_order == 'random':
@@ -195,21 +206,23 @@ class ZStackTaskListProtocol(TaskListProtocol):
             elif self.slice_order == 'triangle':
                 if len(self.zPoss) % 2:
                     # odd
-                    self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
+                    self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-2::-2]])
                 else:
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
 
 
-        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
+        self.piezoName = 'Positioning.%s' % stack_settings.GetScanChannel()
         self.startPos = scope.state[self.piezoName + '_target'] #FIXME - _target positions shouldn't be part of scope state
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
         spooler.md.setEntry('Protocol.ZStack', True)
         
-        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
-        eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
+        # Starting move relocated to execute after other -1 tasks as workaround for HTSMS system (see issue 766)
+        # TODO - revisit the move
+        #scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
+        #eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
 
         TaskListProtocol.Init(self,spooler)
 
@@ -223,6 +236,14 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
+        
+        if frameNum == -1:
+            # Make move to initial position **after** all other -1 setup tasks have been performed (in super-class
+            # OnFrame() call above).
+            # This is currently required as a work-around on the HTSMS system which needs to unlock the focus
+            # lock before changing focus (issue 766).
+            scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
+            eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (-1, self.zPoss[self.pos]))
 
     def OnFinish(self):
         #return piezo to start position

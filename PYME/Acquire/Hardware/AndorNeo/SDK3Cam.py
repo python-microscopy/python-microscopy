@@ -149,7 +149,7 @@ class SDK3Camera(Camera):
         
         
     def Init(self):
-        print('Foo')        
+        #print('Foo')
         self.handle = SDK3.Open(self.camNum)
         self.connectProperties()
         

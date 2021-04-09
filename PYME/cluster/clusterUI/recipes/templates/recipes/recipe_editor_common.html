@@ -1,0 +1,46 @@
+{% verbatim %}
+
+<div id="app" class="container-fluid fullheight">
+    <div class="row fullheight">
+
+        <div id="dlg-placeholder"></div>
+        <div class="col-md-7 vertscroll well">
+<div id="recipe">
+      <!--Execute on invalidation: <input v-model="recipe.execute_on_invalidation" type='checkbox'><br>-->
+
+      <!--<div v-html="recipe.to_svg()"></div> -->
+
+      <svg viewBox="-1,0, 2, 7" width="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+      <g v-for="(line, index) in recipe.layout().connecting_lines">
+        <polyline :points="line_fmt(line)" :class="[get_colour(index), 'connecting-line']" ></polyline>
+      </g>
+          <g v-for="(node, index) in recipe.layout().node_positions">                                                                                                    <!--<text v-if="node.key.__type__" :x="node.pos[0]" :y="node.pos[1]" style="font-size: 0.1px">{{ node.key.get_name() }}</text>-->
+          <svg v-if="node.key.__type__" :y="cond(node.pos[0])-0.375 " :x="node.pos[1]-0.5" width="1" height="0.75" viewBox="0,0,400,300">
+          <foreignObject  x="0" y="0" width="400" height="300">
+              <rec-module :module="node.key"></rec-module>
+        </foreignObject>
+              </svg>
+          <text v-else :y="cond(node.pos[0])" :x="node.pos[1]" :class="['link-label', ]">{{ node.key }}</text>
+      </g>
+
+      </svg>
+
+    </div>
+        </div><div class="col-md-5">
+            <div id="editor">function foo(items) {
+    var x = "All this is syntax highlighted";
+    return x;
+    }
+    </div>
+        <div id="editor-buttons">
+        <button type="button" class="btn btn-default" onclick="load_recipe()">Load</button>
+        <button type="button" class="btn btn-primary" onclick="save_recipe()">Save</button>
+        <button type="button" class="btn btn-danger" onclick="vm.recipe.update_from_yaml('')">Clear</button>
+            </div>
+    </div>
+
+
+    </div>
+</div>
+
+{% endverbatim %}

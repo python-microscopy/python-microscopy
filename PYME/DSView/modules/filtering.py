@@ -46,7 +46,11 @@ class Filterer(Plugin):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
 
-        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', '[1,1,1]')
+        filter_size = '[1,1,1]'
+        if self.image.data.shape[2] == 1:
+            filter_size = '[1,1]'
+
+        dlg = wx.TextEntryDialog(self.dsviewer, 'Blur size [pixels]:', 'Gaussian Blur', filter_size)
 
         if dlg.ShowModal() == wx.ID_OK:
             sigmas = eval(dlg.GetValue())
@@ -319,7 +323,7 @@ class Filterer(Plugin):
 
         dialog = wx.TextEntryDialog(None, 'Z Spacing [um]:', 'Enter Desired Spacing', str(0.05))
         if dialog.ShowModal() == wx.ID_OK:
-            regular = ResampleZ().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
+            regular = ResampleZ(z_sampling=float(dialog.GetValue())).apply_simple(input=self.image)
 
             ViewIm3D(regular, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 

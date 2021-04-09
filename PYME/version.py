@@ -1,5 +1,5 @@
 #PYME uses date based versions (yy.m.d)
-version = '20.07.29'
+version = '21.03.10'
 
 #Git changeset id
-changeset = 'ce54ff26a165+'
+changeset = '333ba3f247d2'

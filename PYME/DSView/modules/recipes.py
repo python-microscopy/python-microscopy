@@ -25,6 +25,7 @@ from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import wx
 import numpy as np
+import six
 
 #from PYME.recipes import modules
 from PYME.recipes import recipeGui
@@ -97,7 +98,13 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 self.outp = self.activeRecipe.execute(input=self.image)
                 
                 if saveResults:
-                    self.activeRecipe.save() #FIXME - set context
+                    dir_dialog = wx.DirDialog(None, 'Set output directory', style=wx.FD_OPEN)
+                    succ = dir_dialog.ShowModal()
+                    if (succ == wx.ID_OK):
+                        output_dir = dir_dialog.GetPath()
+                        file_stub = os.path.splitext(os.path.split(self.image.filename)[-1])[0]
+                        self.activeRecipe.save({'output_dir': output_dir, 
+                                                'file_stub': file_stub})
                     
                     
             def _display_output_image(outp):
@@ -146,10 +153,10 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 _display_output_image(self.outp)
             elif not self.outp is None:
                 from PYME.IO import tabular
-                import six
+                
                 
                 cache = tabular.CachingResultsFilter(self.outp)
-                self.dsviewer.pipeline.OpenFile(ds = cache)
+                self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
@@ -238,7 +245,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
 
 
 def Plug(dsviewer):
-    dsviewer.create_overlay_panel()
+    # dsviewer.create_overlay_panel()
     return RecipePlugin(dsviewer)
     
 

@@ -20,11 +20,11 @@
 #
 ##################
 import os
-
+import posixpath
 import PYME.localization.FitFactories
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
-import dispatch
+from PYME.contrib import dispatch
 import numpy as np
 import wx
 import wx.lib.agw.aui as aui
@@ -93,17 +93,17 @@ def _verifyClusterResultsFilename(resultsFilename):
     resultsFilename = unifiedIO.verbose_fix_name(resultsFilename) # fix any spaces in the input filename
     
     if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
+        di, fn = posixpath.split(resultsFilename)
         i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+        stub = posixpath.splitext(fn)[0]
+        while clusterIO.exists(posixpath.join(di, stub + '_%d.h5r' % i)):
             i += 1
 
         fdialog = wx.TextEntryDialog(None, 'Analysis file already exists, please select a new filename')#,
         fdialog.SetValue(stub + '_%d.h5r' % i)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = os.path.join(di, str(fdialog.GetValue()))
+            resultsFilename = posixpath.join(di, str(fdialog.GetValue()))
         else:
             raise RuntimeError('Invalid results file - not running')
 
@@ -723,6 +723,7 @@ class LMAnalyser2(Plugin):
             if len(self.fitResults) == 0:
                 self.fitResults = newResults
                 self.ds = tabular.FitResultsSource(self.fitResults)
+                self.ds.mdh = self.resultsMdh
                 self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
                 self.dsviewer.pipeline.mdh = self.resultsMdh
                 try:
@@ -922,7 +923,18 @@ class LMAnalyser2(Plugin):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
+        mdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+        if zp < mdh['Analysis.StartAt']:
+            # check to see if we're analysing a frame that would not normally be analysed and complain
+            if wx.MessageBox('Testing a frame that would not normally be analysed (before StartAt)\n'
+                             'This may not work properly and will not be representative of how a frame in the middle of the series'
+                             'would behave. Continue anyway?','Warning', style=wx.OK | wx.CANCEL |wx.ICON_ERROR) != wx.OK:
+                return #get out of here
+            else:
+                # fudge it and continue, reluctantly
+                mdh['Analysis.StartAt'] = zp
+            
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:

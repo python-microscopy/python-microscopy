@@ -279,6 +279,8 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
 
     b1 = bins[:-1]
     Nm = n.max()
+    
+    bin_width = bins[1] - bins[0] #bin width in seconds
 
     res = FitModel(e2mod, [Nm*2, 15, -3, Nm*3, n[1]/1], n[1:], b1[1:], Nm)
     #mse = (res[2]['fvec']**2).mean()
@@ -303,19 +305,19 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
     PL.AddRecord('/Photophysics/Decay/e2mod_p', munge_res(e2mod, r4, mse=mse, ch2=ch2))
 
     if USE_GUI:        
-        plt.bar(b1/60, n, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
-        plt.plot(b1/60, e2mod(res[0], b1, Nm), colours[i], lw=3)
-        plt.plot(b1/60, emod(res2[0], b1, Nm), colours[i], lw=2, ls='--')
-        plt.plot(b1/60, hmod(res3[0], b1, Nm), colours[i], lw=2, ls=':')
-        plt.plot(b1/60, e2mod(r4[0], b1, Nm), colours[i], lw=1)
-        plt.ylim(0, 1.2*n.max())
-        plt.ylabel('Events')
+        plt.bar(b1/60, n/bin_width, width=(b1[1]-b1[0])/60, alpha=0.4, fc=colours[i])
+        plt.plot(b1/60, e2mod(res[0], b1, Nm)/bin_width, colours[i], lw=3)
+        plt.plot(b1/60, emod(res2[0], b1, Nm)/bin_width, colours[i], lw=2, ls='--')
+        plt.plot(b1/60, hmod(res3[0], b1, Nm)/bin_width, colours[i], lw=2, ls=':')
+        plt.plot(b1/60, e2mod(r4[0], b1, Nm)/bin_width, colours[i], lw=1)
+        plt.ylim(0, 1.2*n.max()/bin_width)
+        plt.ylabel('Events/s')
         plt.xlabel('Acquisition Time [mins]')
         plt.title('Event Rate')
         
         b = 0.5*(1+erf(res[0][2]))*Nm
     
-        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return 0
 
@@ -356,7 +358,7 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
         plt.ylim((1, plt.ylim()[1]))
         plt.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
-        plt.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
     return 0
 
 
@@ -390,7 +392,7 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None, qui
         plt.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
         #print res[0][2]
     
-        plt.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i])
+        plt.figtext(.4,.8 -.15*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i], verticalalignment='top', horizontalalignment='left')
 
     return [channame, res[0][3], NEvents]
 

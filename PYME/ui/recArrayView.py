@@ -22,30 +22,14 @@
 ##################
 
 import wx
-import  wx.grid as  gridlib
+import wx.grid as gridlib
+import numpy as np
+from PYME.IO import tabular
 
 class RecArrayTable(gridlib.PyGridTableBase):
-
     def __init__(self, recarray):
         gridlib.PyGridTableBase.__init__(self)
         self.recarray = recarray
-
-#        self.odd=gridlib.GridCellAttr()
-#        self.odd.SetBackgroundColour("sky blue")
-#        self.even=gridlib.GridCellAttr()
-#        self.even.SetBackgroundColour("sea green")
-#
-#    def GetAttr(self, row, col, kind):
-#        attr = [self.even, self.odd][row % 2]
-#        attr.IncRef()
-#        return attr
-
-
-
-    # This is all it takes to make a custom data table to plug into a
-    # wxGrid.  There are many more methods that can be overridden, but
-    # the ones shown below are the required ones.  This table simply
-    # provides strings containing the row and column values.
 
     def GetNumberRows(self):
         return len(self.recarray)
@@ -57,53 +41,77 @@ class RecArrayTable(gridlib.PyGridTableBase):
         return False
 
     def GetValue(self, row, col):
-        return str( self.recarray[row][col] )
+        return str(self.recarray[row][col] )
 
     def SetValue(self, row, col, value):
         pass
-        #self.log.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
 
     def GetColLabelValue(self, col):
         return self.recarray.dtype.names[col]
 
 
+class TabularTable(gridlib.PyGridTableBase):
+    def __init__(self, tabular):
+        gridlib.PyGridTableBase.__init__(self)
+        self._tabular = tabular
+
+    def GetNumberRows(self):
+        return len(self._tabular)
+
+    def GetNumberCols(self):
+        return len(self._tabular.keys())
+
+    def IsEmptyCell(self, row, col):
+        return False
+
+    def GetValue(self, row, col):
+        return str(self._tabular[self._tabular.keys()[col]][row])
+
+    def SetValue(self, row, col, value):
+        pass
+
+    def GetColLabelValue(self, col):
+        return self._tabular.keys()[col]
 
 
-class RecarrayTableGrid(gridlib.Grid):
-    def __init__(self, parent, recarray):
+class ArrayTableGrid(gridlib.Grid):
+    def __init__(self, parent, data):
         gridlib.Grid.__init__(self, parent, -1, size = (-1,-1))
+        
+        self.SetData(data)
 
-        table = RecArrayTable(recarray)
-
-        # The second parameter means that the grid is to take ownership of the
-        # table and will destroy it when done.  Otherwise you would need to keep
-        # a reference to it and call it's Destroy method later.
-        self.SetTable(table, True)
-
-    def SetData(self, recarray):
-        table = RecArrayTable(recarray)
+    def SetData(self, data):
+        if isinstance(data, tabular.TabularBase):
+            table = TabularTable(tabular.CachingResultsFilter(data))
+        else:
+            table = RecArrayTable(data)
 
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done.  Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
-    
 
-class recArrayPanel(wx.Panel):
+
+class ArrayPanel(wx.Panel):
     def __init__(self, parent, recarray):
         wx.Panel.__init__(self, parent)
 
-        self.recarray = recarray
+        self.data = recarray
 
-        #sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        tool_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        bSave = wx.BitmapButton(self, -1, wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE), style=wx.NO_BORDER | wx.BU_AUTODRAW, name='Save')
+        bSave.Bind(wx.EVT_BUTTON, self.OnSave)
+        tool_sizer.Add(bSave)
+        
+        sizer.Add(tool_sizer)
 
-        self.grid = RecarrayTableGrid(self, recarray)
-
+        self.grid = ArrayTableGrid(self, recarray)
         self.grid.SetSize((10,10))
 
-        #sizer.Add(self.grid, 1, wx.EXPAND, 0)
-
-        #self.SetSizerAndFit(sizer)
+        sizer.Add(self.grid, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer)
         #self.SetAutoLayout(True)
 
         wx.EVT_SIZE(self, self.OnSize)
@@ -112,3 +120,26 @@ class recArrayPanel(wx.Panel):
         self.grid.SetSize(self.GetClientSize())
         #self.Refresh()
         event.Skip()
+        
+    def OnSave(self, event):
+        filename = wx.SaveFileSelector("Save data as ...", 'HDF (*.hdf)|*.hdf|Comma separated text (*.csv)|*.csv')
+        if not filename == '':
+            if isinstance(self.data, tabular.TabularBase):
+                data = self.data
+            else:
+                data = tabular.RecArraySource(self.data)
+                
+            if filename.endswith('.hdf'):
+                data.to_hdf(filename)
+            else:
+                data.to_csv(filename)
+
+                
+class ArrayFrame(wx.Frame):
+    def __init__(self, data, title='Data table', parent=-1):
+        wx.Frame.__init__(self, parent, title=title, size=(800,600))
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self._array_pan = ArrayPanel(self, data)
+        sizer.Add(self._array_pan, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer)

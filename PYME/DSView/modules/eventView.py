@@ -37,12 +37,13 @@ def Update(dsviewer):
 def Plug(dsviewer):
     image = dsviewer.image
     if 'events' in dir(image) and len(image.events) > 0:
-        st = image.mdh.getEntry('StartTime')
+        st = min(image.events['Time'].min() - image.mdh['StartTime'], 0)
+        stt = image.mdh.getEntry('StartTime')
         if 'EndTime' in image.mdh.getEntryNames():
             et = image.mdh.getEntry('EndTime')
         else:
             et = piecewiseMapping.frames_to_times(image.data.getNumSlices(), image.events, image.mdh)
-        dsviewer.elv = eventLogViewer.eventLogTPanel(dsviewer, image.events, image.mdh, [0, et-st]);
+        dsviewer.elv = eventLogViewer.eventLogTPanel(dsviewer, image.events, image.mdh, [st, et-stt], activate=True)
         dsviewer.AddPage(dsviewer.elv, False, 'Events')
 
         charts = []
