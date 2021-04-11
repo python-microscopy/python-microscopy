@@ -1,7 +1,7 @@
 import threading
 import numpy as np
 import tables
-
+import time
 
 # numpy/pytables event representation
 EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', '<f8')])
@@ -16,6 +16,17 @@ class SpoolEvent(tables.IsDescription):
 
 class EventLogger(object):
     """Event logging backend base class"""
+    
+    def __init__(self, time_fcn=time.time):
+        """
+        
+        Parameters
+        ----------
+        time_fcn : function, default=time.time
+            function used to generate event timestamps. Pass a different function to, e.g.
+            spoof timestamps when simulating.
+        """
+        self._time_fcn = time_fcn
     
     def logEvent(self, eventName, eventDescr='', timestamp=None):
         """Log an event. Should be overriden in derived classes.
@@ -60,14 +71,16 @@ class HDFEventLogger(EventLogger):
         The open HDF5 file to write to
     """
     
-    def __init__(self, spool, hdf5File):
+    def __init__(self, spool, hdf5File, time_fcn=time.time):
         """Create a new Events table.
   
   
         """
+        EventLogger.__init__(self, time_fcn=time_fcn)
         self.spooler = spool
         #self.scope = scope
         self.hdf5File = hdf5File
+        self._event_lock = threading.Lock()
         
         self.evts = self.hdf5File.create_table(hdf5File.root, 'Events', SpoolEvent)
     
@@ -92,36 +105,37 @@ class HDFEventLogger(EventLogger):
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
         
-        ev = self.evts.row
-        
-        ev['EventName'] = eventName
-        ev['EventDescr'] = eventDescr
-        
-        if timestamp is None:
-            ev['Time'] = sp.timeFcn()
-        else:
-            ev['Time'] = timestamp
-        
-        ev.append()
-        self.evts.flush()
+        with self._event_lock:
+            ev = self.evts.row
+            
+            ev['EventName'] = eventName
+            ev['EventDescr'] = eventDescr
+            
+            if timestamp is None:
+                ev['Time'] = self._time_fcn()
+            else:
+                ev['Time'] = timestamp
+            
+            ev.append()
+            print(ev, (eventName, eventDescr, timestamp))
+            self.evts.flush()
 
 class MemoryEventLogger(EventLogger):
     """ Event backend which records events to memory, to be saved at a later time"""
-    def __init__(self, spool):#, scope):
-        self.spooler = spool
+    def __init__(self, spooler, time_fcn=time.time):#, scope):
+        EventLogger.__init__(self, time_fcn=time_fcn)
+        self.spooler = spooler
         #self.scope = scope
         
         self._events = []
         self._event_lock = threading.Lock()
     
     def logEvent(self, eventName, eventDescr='', timestamp=None):
-        from PYME.Acquire import Spooler as sp
-        
         if eventName == 'StartAq' and eventDescr == '':
             eventDescr = '%d' % self.spooler.imNum
         
         if timestamp is None:
-            timestamp = sp.timeFcn()
+            timestamp = self._time_fcn()
         
         with self._event_lock:
             self._events.append((eventName, eventDescr, timestamp))
@@ -132,3 +146,24 @@ class MemoryEventLogger(EventLogger):
     
     def to_recarray(self):
         return self.list_to_array(self._events)
+    
+    
+class QueueEventLogger(EventLogger):
+    """ Event backend for TaskQueue (Pyro) based spooling
+    
+    Exists for Py27 backwards compatibility and does not work on py3. Don't use in new code.
+    """
+    def __init__(self, spool, tq, queueName, time_fcn=time.time):
+      EventLogger.__init__(self, time_fcn=time_fcn)
+      self.spooler = spool
+      #self.scope = scope
+      self.tq = tq
+      self.queueName = queueName
+    
+    def logEvent(self, eventName, eventDescr = '', timestamp=None):
+      if eventName == 'StartAq':
+          eventDescr = '%d' % self.spooler.imNum
+    
+      if timestamp is None:
+          timestamp = self._time_fcn()
+      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, timestamp))

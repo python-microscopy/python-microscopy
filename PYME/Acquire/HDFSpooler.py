@@ -36,15 +36,15 @@ class Spooler(sp.Spooler):
     """Responsible for the mechanics of spooling to a pytables/hdf file.
     """
     def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         self.h5File = tables.open_file(filename, 'w')
            
         filt = tables.Filters(complevel, complib, shuffle=True)
         
         self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,frameShape[0],frameShape[1]), filters=filt)
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
-        self.evtLogger = HDFEventLogger(self, self.h5File)
+        self.evtLogger = HDFEventLogger(self, self.h5File, time_fcn=self._time_fcn)
         
-        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
     def finalise(self):
         """ close files"""
