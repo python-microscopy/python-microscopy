@@ -74,7 +74,7 @@ defaultCompSettings = {
 
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
-        
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         #filename = filename[len(nameUtils.datadir):]
         
         #filename, 
@@ -109,12 +109,10 @@ class Spooler(sp.Spooler):
             self._pollThreads.append(pt)
         
         self.md = MetaDataHandler.NestedClassMDHandler()
-        self.evtLogger = MemoryEventLogger(self)
+        self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)
         
         self.sequenceID = genSequenceID()
-        self.md['imageID'] = self.sequenceID  
-        
-        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
+        self.md['imageID'] = self.sequenceID
 
         self._lastFrameTime = 1e12
 

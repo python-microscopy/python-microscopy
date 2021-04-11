@@ -34,9 +34,6 @@ except:
 
 import time
 
-global timeFcn
-timeFcn = time.time
-
 from PYME.contrib import dispatch
 import uuid
 
@@ -69,7 +66,6 @@ class Spooler(object):
             a function to call when the spooling GUI needs updating
             
         """
-        global timeFcn
         #self.scope = scope
         self.filename=filename
         self.frameSource = frameSource
@@ -85,10 +81,6 @@ class Spooler(object):
             self.stack_settings = stack_settings
         
         self.onSpoolStop = dispatch.Signal()
-    
-        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
-        #if scope.cam.__class__.__name__ == 'FakeCamera':
-        #    timeFcn = self.fakeTime
 
         self._last_gui_update = 0
         self.spoolOn = False
@@ -98,11 +90,7 @@ class Spooler(object):
         
         self._spooler_uuid = uuid.uuid4()
             
-        if not fakeCamCycleTime is None:
-            self.fakeCamCycleTime = fakeCamCycleTime
-            timeFcn = self.fakeTime
-
-       
+        self._fakeCamCycleTime = fakeCamCycleTime
 
     def StartSpool(self):
         """ Perform protocol 'frame -1' tasks, log start metadata, then connect
@@ -255,11 +243,18 @@ class Spooler(object):
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
 
-    def fakeTime(self):
+    def _fake_time(self):
         """Generate a fake timestamp for use with the simulator where the camera
         cycle time does not match the actual time elapsed to generate the frame"""
         #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
-        return self.tStart + self.imNum*self.fakeCamCycleTime
+        return self.tStart + self.imNum*self._fakeCamCycleTime
+    
+    @property
+    def _time_fcn(self):
+        if self._fakeCamCycleTime:
+            return self._fake_time
+        else:
+            return time.time
 
     def FlushBuffer(self):
         pass
