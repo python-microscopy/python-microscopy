@@ -475,7 +475,7 @@ class PanSpool(afp.foldingPane):
             self.spoolController.start_spooling(fn)
         except IOError as e:
             logger.exception('IO error whilst spooling')
-            ans = wx.MessageBox(str(e.message), 'Error', wx.OK)
+            ans = wx.MessageBox(str(e.strerror), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             
     def update_ui(self):
