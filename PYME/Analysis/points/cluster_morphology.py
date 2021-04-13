@@ -74,6 +74,7 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
 measurement_dtype = [('count', '<i4'),
                      ('x', '<f4'), ('y', '<f4'), ('z', '<f4'),
                      ('gyrationRadius', '<f4'),
+                     ('median_abs_deviation', '<f4'),
                      ('axis0', '<3f4'), ('axis1', '<3f4'), ('axis2', '<3f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
                      ('sigma_x', '<f4'), ('sigma_y', '<f4'), ('sigma_z', '<f4'),
@@ -113,6 +114,9 @@ def measure_3d(x, y, z, output=None):
         gyrationRadius : float
             root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
             supplemental text of DOI: 10.1038/nature16496
+        median_abs_deviation : float
+            median absolute deviation, i.e. median of the radius from the 
+            median (x, y, z) position of the cluster
         axis0 : ndarray, shape (3,)
             principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
             eigenvalue
@@ -165,8 +169,11 @@ def measure_3d(x, y, z, output=None):
     output['sigma_y'] = np.sqrt(yy_c.sum() / (N - 1))
     output['sigma_z'] = np.sqrt(zz_c.sum() / (N - 1))
     
-    #radius of gyration
+    #radius of gyration and median absolute deviation
     output['gyrationRadius'] = np.sqrt(np.mean(xx_c + yy_c + zz_c))
+    output['median_abs_deviation'] = np.median(np.sqrt(
+        (x - np.median(x)) ** 2 + (y - np.median(y)) ** 2 + (z - np.median(z)) ** 2
+    ))
 
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_c, y_c, z_c]).T)

@@ -134,7 +134,7 @@ just running the extra processes but it could also be a standalone machine.
 
 #. Checkout the PYME source from [github](github.com/python-microscopy/python-microscopy) to get the ``clusterUI`` sources. ``clusterUI`` is a Django web app for browsing the cluster.
 
-#. ``conda install django=1.11``
+#. ``conda install django=2.1``
 
 
 Running the software

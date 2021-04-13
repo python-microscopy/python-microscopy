@@ -140,13 +140,12 @@ Library support
 
 Ultimately we would like to drop support for both python <3.6 and wxpython <4. There are a number of things we need to
 address first. Several bits of the GUI are still broken on wx4 (most notably anything which uses TraitsUI, but also some
-of the less used bits of our GUI code). We also rely on python 2.7 libraries for spooling and localisation analysis on
-windows - we are pretty close to having an alternative, but are not quite there yet. There also needs to be a lot more
-testing on Py3.
+of the less used bits of our GUI code).
 
-A tentative timeline would see us shifting the default install to py3 around 1 Sept 2020 and ceasing python 2 & wx3
-support around 1 Feb 2021. Note that these dates are targets, not deadlines, and will be extended if things are not fully
-functional by that time.
+We are currently around 98% done with the transition, with [3.6 <= python <= 3.7] and wx=4.0.x recommended for new installs,
+but maintaining code compatibility with existing python 2.7 and wx3 installs for another few months
+(targeting end of March 2021, extended from Feb 1 2021). There are a bunch of deprecation warnings on wx4.0.x which
+become errors on 4.1.x which need addressing once we drop wx3 support.
 
 Documentation
 =============

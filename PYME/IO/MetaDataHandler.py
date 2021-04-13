@@ -151,10 +151,34 @@ def get_camera_physical_roi_origin(mdh):
         return get_camera_roi_origin(mdh)
 
 def origin_nm(mdh, default_pixel_size=1.):
-    #the origin, in nm from the camera - used for overlaying with different ROIs
-    # transferred from image.ImageStack.origin so that it can be used for tabular data too.
-    # the default_pixel_size parameter only exists for a niche case in ImageStack
+    """ origin, in nm of the **image** ROI from the camera upper left hand pixel - used for 
+    overlaying with different ROIs.
 
+    Parameters
+    ----------
+    mdh : PYME.IO.MetaDataHandler
+    default_pixel_size : float, optional
+        Safe to ignore. Parameter only exists for a niche case in ImageStack, when no
+        pixel size is defined. Should probably change to emit a warning if we actually use this fallback.
+
+    Returns
+    -------
+    tuple
+        x, y, z origin in nanometers
+    
+    Notes
+    -----
+    
+    **Use with localisation / point data:** When used with localization data,
+    `origin_nm()` returns the origin of the pixel data in the **raw** image series used 
+    to derive the localisations. Whilst x and y localisations are referenced to the ROI
+    (and hence share an origin with the pixel data) z localisations are absolute
+    (technically referenced to the 0 position of the z-piezo). As a result, the z-component
+    of `origin_nm()` should be ignored when used with localisation data, which does
+    not require z origin correction.
+
+    transferred from image.ImageStack.origin so that it can be used for tabular data too.
+    """
 
     if 'Origin.x' in mdh.getEntryNames():
         # Used in composite images, cropped images, and renderings. Takes precendence if defined.
@@ -205,6 +229,16 @@ def origin_nm(mdh, default_pixel_size=1.):
     else:
         return 0, 0, 0
     
+def localisation_origin_nm(mdh):
+    ''' Get the origin of localisation data. 
+    
+    Effectively a shortcut for `origin_nm()`, but discarding the z-component as whilst
+    x and y co-ordinates in localisation data are referenced to the ROI, the z component
+    is absolute.
+    '''
+    ox, oy, _ = origin_nm(mdh)
+    return ox, oy, 0
+    
 def get_voxelsize_nm(mdh):
     '''
     Helper function to obtain the voxel size, in nm, from the metadata (to replace the many 1e3*mdh['voxelsize.x'] calls)
@@ -221,6 +255,30 @@ def get_voxelsize_nm(mdh):
     '''
     
     return VoxelSize(1e3*mdh['voxelsize.x'], 1e3*mdh['voxelsize.y'], 1e3*mdh.get('voxelsize.z', 0))
+
+
+# compatibility stubs to permit attribute based access while we transition away from NestedClassMDHandler
+class _AttrProxy(object):
+    def __init__(self, mdh, parent=None):
+        self._mdh = mdh
+        self._parent = parent
+    
+    def __getattr__(self, item):
+        if self._parent is not None:
+            item = '.'.join([self._parent, item])
+        
+        return _attr_access(self._mdh, item)
+
+
+def _attr_access(mdh, key):
+    try:
+        return mdh[key]
+    except KeyError:
+        if any([k.startswith(key) for k in mdh.keys()]):
+            return _AttrProxy(mdh, parent=key)
+        else:
+            raise
+
 
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.
@@ -448,6 +506,12 @@ class MDHandlerBase(DictMixin):
         d = {k: self.getEntry(k) for k in self.getEntryNames()}
         
         return json.dumps(d, indent=2, sort_keys=True, cls=CustomEncoder)
+    
+    def __getattr__(self, key):
+        """ Compatibility stub to support transition away from NestedClassMDHandler"""
+        import warnings
+        warnings.warn('Metadata access should use dictionary based or getEntry() syntax, not attribute based access', DeprecationWarning)
+        _attr_access(self, key)
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):
@@ -560,6 +624,13 @@ class NestedClassMDHandler(MDHandlerBase):
                 en.append(k)
 
         return en
+    
+    def __getattr__(self, item):
+        '''Replace __getattr__ of base class which spoofs nested class like attribute access with a move vanilla implementation'''
+        try:
+            return self.__dict__[item]
+        except KeyError:
+            raise AttributeError('NestedClassMDHandler has no attribute "%s"' % item)
 
 class DictMDHandler(MDHandlerBase):
     """Simple implementation using a dict.
@@ -577,6 +648,9 @@ class DictMDHandler(MDHandlerBase):
         
         # set our writable after we've done the initial copy
         self._writable = writable
+        
+        import warnings
+        warnings.warn('DictMDHandler is not yet fully supported, and will likely cause failures for anything related to localisation fitting')
     
     def setEntry(self, entryName, value):
         if not self._writable:

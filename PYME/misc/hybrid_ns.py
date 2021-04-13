@@ -33,10 +33,27 @@ class HybridNS(object):
         return list(services.items())
     
     def register_service(self, name, address, port, desc={}, URI=''):
+        """
+
+        Parameters
+        ----------
+        name : str
+            Max 63 chars long due to zeroconf requirements. PYME.IO.FileUtils.nameUtils.get_service_name can be used to get a suitable (truncated if necessary)
+            name.
+
+        """
         self._zc_ns.register_service(name, address, desc)
         self._sqlite_ns.register_service(name, address, desc, URI)
     
     def unregister(self, name):
+        """
+
+        Parameters
+        ----------
+        name : str
+            must be the same service name used to register
+
+        """
         self._zc_ns.unregister(name)
         self._sqlite_ns.unregister(name)
     

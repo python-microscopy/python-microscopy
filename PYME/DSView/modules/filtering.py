@@ -323,7 +323,7 @@ class Filterer(Plugin):
 
         dialog = wx.TextEntryDialog(None, 'Z Spacing [um]:', 'Enter Desired Spacing', str(0.05))
         if dialog.ShowModal() == wx.ID_OK:
-            regular = ResampleZ().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
+            regular = ResampleZ(z_sampling=float(dialog.GetValue())).apply_simple(input=self.image)
 
             ViewIm3D(regular, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 

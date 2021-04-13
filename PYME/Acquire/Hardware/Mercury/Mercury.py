@@ -132,7 +132,7 @@ class StringGetter(fcnWrap):
         if not succ:
             self.HandleError(ID)
 
-        return buff.value
+        return buff.value.decode()
 
 class AxesStringGetter(fcnWrap):
     def __call__(self, ID, szAxes):
@@ -141,7 +141,7 @@ class AxesStringGetter(fcnWrap):
         if not succ:
             self.HandleError(ID)
 
-        return buff.value
+        return buff.value.decode()
 
 class ValGetter(fcnWrap):
     def __call__(self, ID):

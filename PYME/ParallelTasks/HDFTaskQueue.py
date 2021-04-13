@@ -657,7 +657,7 @@ class HDFResultsTaskQueue(TaskQueue):
     def checkTimeouts(self):
         self.flushMetaData()
         with self.inProgressLock:
-            curTime = time.clock()
+            curTime = time.time()
             for it in self.tasksInProgress:
                 if 'workerTimeout' in dir(it):
                     if curTime > it.workerTimeout:

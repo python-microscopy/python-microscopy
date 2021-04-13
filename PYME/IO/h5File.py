@@ -6,8 +6,7 @@ import numpy as np
 import traceback
 from . import h5rFile
 
-EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', '<f8')])
-
+from PYME.IO import events
 #file_cache = {}
 
 #openLock = threading.Lock()
@@ -109,7 +108,7 @@ class H5File(h5rFile.H5RFile):
         elif filename == 'events.json':
             try:
                 events = self._h5file.root.Events[:]
-                return json.dumps(list(zip(events['EventName'], events['EventDescr'], events['Time'])))
+                return json.dumps(list(zip(events['EventName'], events['EventDescr'], events['Time'])), reject_bytes=False)
             except AttributeError:
                 raise IOError('File has no events')
             #raise NotImplementedError('reading events not yet implemented')
@@ -127,12 +126,8 @@ class H5File(h5rFile.H5RFile):
         if filename in ['metadata.json', 'MetaData']:
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
-            events = json.loads(data)
-            
-            events_array = np.empty(len(events), dtype=EVENTS_DTYPE)
-            
-            for j, ev in enumerate(events):
-                events_array['EventName'][j], events_array['EventDescr'][j], events_array['Time'][j] = ev
+            evts = json.loads(data)
+            events_array = events.EventLogger.list_to_array(evts)
                 
             self.addEvents(events_array)
         

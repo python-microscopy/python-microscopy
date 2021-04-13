@@ -21,7 +21,7 @@
 #
 ##################
 
-from scipy import * 
+import numpy as np
 from scipy.linalg import *
 from numpy.fft import *
 from scipy import ndimage
@@ -30,29 +30,29 @@ from scipy import ndimage
 
 class dec:
     def subsearch(self, f0, res, fdef, Afunc, Lfunc, lam, S):
-        nsrch = size(S,1)
+        nsrch = np.size(S,1)
         pref = Lfunc(f0-fdef)
-        w0 = dot(pref, pref)
-        c0 = dot(res,res)
+        w0 = np.dot(pref, pref)
+        c0 = np.dot(res,res)
 
-        AS = zeros((size(res), nsrch), 'f')
-        LS = zeros((size(pref), nsrch), 'f')
+        AS = np.zeros((np.size(res), nsrch), 'f')
+        LS = np.zeros((np.size(pref), nsrch), 'f')
 
         for k in range(nsrch):
-            AS[:,k] = cast['f'](Afunc(S[:,k]))
-            LS[:,k] = cast['f'](Lfunc(S[:,k]))
+            AS[:,k] = np.cast['f'](Afunc(S[:,k]))
+            LS[:,k] = np.cast['f'](Lfunc(S[:,k]))
 
-        Hc = dot(transpose(AS), AS)
-        Hw = dot(transpose(LS), LS)
-        Gc = dot(transpose(AS), res)
-        Gw = dot(transpose(-LS), pref)
+        Hc = np.dot(np.transpose(AS), AS)
+        Hw = np.dot(np.transpose(LS), LS)
+        Gc = np.dot(np.transpose(AS), res)
+        Gw = np.dot(np.transpose(-LS), pref)
 
         c = solve(Hc + pow(lam, 2)*Hw, Gc + pow(lam, 2)*Gw)
 
-        cpred = c0 + dot(dot(transpose(c), Hc), c) - dot(transpose(c), Gc)
-        wpred = w0 + dot(dot(transpose(c), Hw), c) - dot(transpose(c), Gw)
+        cpred = c0 + np.dot(np.dot(np.transpose(c), Hc), c) - np.dot(np.transpose(c), Gc)
+        wpred = w0 + np.dot(np.dot(np.transpose(c), Hw), c) - np.dot(np.transpose(c), Gw)
 
-        fnew = f0 + dot(S, c)
+        fnew = f0 + np.dot(S, c)
 
         return (fnew, cpred, wpred)
 
@@ -62,17 +62,17 @@ class dec:
         #lamb = 2e-2
         if (not alpha is None):
             self.alpha = alpha
-            self.e1 = fftshift(exp(1j*self.alpha))
-            self.e2 = fftshift(exp(2j*self.alpha))
+            self.e1 = fftshift(np.exp(1j*self.alpha))
+            self.e2 = fftshift(np.exp(2j*self.alpha))
 
-        fdef = zeros(self.sliceShape, 'f').ravel()
+        fdef = np.zeros(self.sliceShape, 'f').ravel()
         f = data.reshape(self.height, self.width, -1).mean(2).ravel()
         f = f/f.max()
-        f = rand(*self.sliceShape).ravel()
+        f = np.random.RandomState().rand(*self.sliceShape).ravel()  # replace with np.random.default_rng() on later numpy versions
 #        f[self.height/2, self.width/2] = 1
 #        f = f.ravel()
 
-        S = zeros((size(f), 3), 'f')
+        S = np.zeros((np.size(f), 3), 'f')
     
         #print type(S)
         #print shape(S)
@@ -90,30 +90,30 @@ class dec:
             
             #print pref.typecode()
             
-            S[:,0] = cast['f'](self.Ahfunc(res))
-            S[:,1] = cast['f'](-self.Lhfunc(pref))
+            S[:,0] = np.cast['f'](self.Ahfunc(res))
+            S[:,1] = np.cast['f'](-self.Lhfunc(pref))
 
             #print S
 
-            test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
+            test = 1 - abs(np.dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
 
             print(('Test Statistic %f\n' % (test,)))
 
             (fnew, cpred, spred) = self.subsearch(f, res, fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
-            fnew = cast['f'](fnew*(fnew > 0))
+            fnew = np.cast['f'](fnew*(fnew > 0))
 
-            S[:,2] = cast['f'](fnew - f)
+            S[:,2] = np.cast['f'](fnew - f)
             nsrch = 3
 
             f = fnew
 
-        return real(f)
+        return np.real(f)
         
     def sim_pic(self,data,alpha):
         self.alpha = alpha
-        self.e1 = fftshift(exp(1j*self.alpha))
-        self.e2 = fftshift(exp(2j*self.alpha))
+        self.e1 = fftshift(np.exp(1j*self.alpha))
+        self.e2 = fftshift(np.exp(2j*self.alpha))
         
         return self.Afunc(data)
 
@@ -197,7 +197,7 @@ class dec_psf(dec):
         pass
 
     def prepare(self):
-        kx,ky = mgrid[:self.sliceShape[0],:self.sliceShape[1]]#,:self.sliceShape[2]]
+        kx,ky = np.mgrid[:self.sliceShape[0],:self.sliceShape[1]]#,:self.sliceShape[2]]
 
         self.kx = fftshift(kx - self.sliceShape[0]/2.)/self.sliceShape[0]
         self.ky = fftshift(ky - self.sliceShape[1]/2.)/self.sliceShape[1]
@@ -221,7 +221,7 @@ class dec_psf(dec):
 #        return ravel(cast['f'](a))
 
     def Lfunc(self, f):
-        fs = reshape(f, (self.height, self.width))
+        fs = np.reshape(f, (self.height, self.width))
 #        a = -4*fs
 #
 #        a[:,0:-1] += fs[:,1:]
@@ -230,36 +230,36 @@ class dec_psf(dec):
 #        a[0:-1,:] += fs[1:,:]
 #        a[1:,:] += fs[0:-1,:]
 
-        a = ndimage.convolve(fs, array([[0, -1, 0], [-1, 4, -1],[0,-1,0]]))
+        a = ndimage.convolve(fs, np.array([[0, -1, 0], [-1, 4, -1],[0,-1,0]]))
 
-        return ravel(cast['f'](a))
+        return np.ravel(np.cast['f'](a))
 
     Lhfunc=Lfunc
 
     def Afunc(self, f):
-        fs = reshape(f, (self.height, self.width))
+        fs = np.reshape(f, (self.height, self.width))
 
         F = fftn(fs)
 
-        d = zeros((self.height, self.width, len(self.points)))
+        d = np.zeros((self.height, self.width, len(self.points)))
 
         for i in range(len(self.points)):
             p = self.points[i,:]
-            d[:,:,i] = p[2]*ifftn(F*exp(-2j*pi*(self.kx*p[0] + self.ky*p[1]))).real
+            d[:,:,i] = p[2]*ifftn(F*np.exp(-2j*np.pi*(self.kx*p[0] + self.ky*p[1]))).real
 
-        return ravel(d)
+        return np.ravel(d)
 
     def Ahfunc(self, f):
-        fs = reshape(f, (self.height, self.width, len(self.points)))
+        fs = np.reshape(f, (self.height, self.width, len(self.points)))
 
-        d = zeros((self.height, self.width))
+        d = np.zeros((self.height, self.width))
 
         for i in range(len(self.points)):
             F = fftn(fs[:,:,i])
             p = self.points[i,:]
-            d = d + ifftn(F*exp(-2j*pi*(self.kx*-p[0] + self.ky*-p[1]))).real
+            d = d + ifftn(F*np.exp(-2j*np.pi*(self.kx*-p[0] + self.ky*-p[1]))).real
         
-        return ravel(d/(self.points[:,2].sum()))
+        return np.ravel(d/(self.points[:,2].sum()))
     
 #class dec_4pi_c(dec_4pi):
 #    def prepare(self):

@@ -262,9 +262,8 @@ class VisGUICore(object):
             self.AddMenuItem('File', itemType='separator')
             self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurements)
 
-            self.AddMenuItem('File', itemType='separator')
-
-            self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
+            #self.AddMenuItem('File', itemType='separator')
+            #self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
         if not self._new_layers:
@@ -314,6 +313,7 @@ class VisGUICore(object):
             pass
 
         if not subMenu:
+            self.AddMenuItem('Help', "&Documentation", self.OnDocumentation)
             self.AddMenuItem('Help', "&About", self.OnAbout)
             
     def create_tool_bar(self, parent):
@@ -398,7 +398,7 @@ class VisGUICore(object):
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
-                                   wildcard='All supported formats|(*.h5r;*.txt;*.mat;*.csv;*.hdf)|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
+                                   wildcard='All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
 
         #print filename
         if not filename == '':
@@ -430,7 +430,6 @@ class VisGUICore(object):
     
         self.layer_added.send(self)
 
-    
     @property
     def layers(self):
         return self.glCanvas.layers
@@ -744,10 +743,16 @@ class VisGUICore(object):
         return args
 
     def OpenFile(self, filename, recipe_callback=None):
-        args = self._populate_open_args(filename)
-
+        # get rid of any old layers
+        while len(self.layers) > 0:
+            self.layers.pop()
+        
         print('Creating Pipeline')
-        self.pipeline.OpenFile(filename, **args)
+        if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds)
+        else:
+            args = self._populate_open_args(filename)
+            self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
         #############################

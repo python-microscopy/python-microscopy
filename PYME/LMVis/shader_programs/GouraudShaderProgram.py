@@ -84,6 +84,19 @@ class GouraudSphereShaderProgram(GouraudShaderProgram):
     def __init__(self):
         GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl")
 
+    def __enter__(self):
+        self.get_shader_program().use()
+        GouraudShaderProgram.__enter__(self)
+    
+        glEnable(GL_POINT_SPRITE)
+        glEnable(GL_PROGRAM_POINT_SIZE)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        glDisable(GL_POINT_SPRITE)
+        glDisable(GL_PROGRAM_POINT_SIZE)
+        
+
 class OITGouraudShaderProgram(GouraudShaderProgram):
     def __init__(self):
         GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl")

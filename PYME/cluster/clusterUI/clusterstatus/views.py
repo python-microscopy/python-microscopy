@@ -4,8 +4,8 @@ from django.shortcuts import render
 # Create your views here.
 
 def status(request):
-    from PYME.IO import clusterIO
-    nodes = clusterIO.get_status()
+    from PYME.cluster.status import get_polled_status
+    nodes = get_polled_status()
 
     total_storage = 0
     free_storage = 0
@@ -28,9 +28,9 @@ def status(request):
 
 
 def load(request):
-    from PYME.IO import clusterIO
-
-    nodes = clusterIO.get_status()
+    from PYME.cluster.status import get_polled_status
+    
+    nodes = get_polled_status()
 
     total_storage = 0
     free_storage = 0

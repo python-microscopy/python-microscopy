@@ -850,19 +850,21 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         #print(pos)
         self.do.inOnChange = True
-        sc = pow(2.0,(self.do.scale))
-        #print(sc)
-        if (self.do.slice == self.do.SLICE_XY):
-            self.do.xp =int(pos[0]/sc)
-            self.do.yp = int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.xp =int(pos[0]/sc)
-            self.do.zp =int(pos[1]/(sc*self.aspect))
-        elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.yp =int(pos[0]/sc)
-            self.do.zp =int(pos[1]/(sc*self.aspect))
+        try:
+            sc = pow(2.0,(self.do.scale))
+            #print(sc)
+            if (self.do.slice == self.do.SLICE_XY):
+                self.do.xp =int(pos[0]/sc)
+                self.do.yp = int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_XZ):
+                self.do.xp =int(pos[0]/sc)
+                self.do.zp =int(pos[1]/(sc*self.aspect))
+            elif (self.do.slice == self.do.SLICE_YZ):
+                self.do.yp =int(pos[0]/sc)
+                self.do.zp =int(pos[1]/(sc*self.aspect))
+        finally:
+            self.do.inOnChange = False
             
-        self.do.inOnChange = False
         self.do.OnChange()
         
         for cb in self.selectHandlers:

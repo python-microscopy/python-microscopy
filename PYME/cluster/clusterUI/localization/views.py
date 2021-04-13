@@ -135,6 +135,11 @@ def localize(request, analysisModule='LatGaussFitFR'):
     nSeries = len(remaining_series)
     
     nAttempts = 0
+
+    if USE_RULES:
+        import posixpath
+        from PYME.cluster.rules import LocalisationRuleFactory
+        rule_factory = LocalisationRuleFactory(analysisMetadata=analysisMDH)
     
     while len(remaining_series) > 0 and nAttempts < 3:
         nAttempts += 1
@@ -145,7 +150,8 @@ def localize(request, analysisModule='LatGaussFitFR'):
         for seriesName in seriesToLaunch:
             try:
                 if USE_RULES:
-                    HTTPRulePusher.launch_localize(analysisMDH, seriesName)
+                    context = {'seriesName': seriesName}
+                    rule_factory.get_rule(context=context).push()
                 else:
                     HTTPTaskPusher.launch_localize(analysisMDH, seriesName)
             except:
@@ -162,4 +168,3 @@ def localize(request, analysisModule='LatGaussFitFR'):
         raise RuntimeError('Failed to push %d of %d series' % (nFailed, nSeries))
 
     return HttpResponseRedirect('/status/queues/')
-

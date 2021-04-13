@@ -58,6 +58,8 @@ class PlayPanel(wx.Panel):
 
         self.slPlayPos = wx.Slider(self, -1, 0, 0, 100, style=wx.SL_HORIZONTAL)
         self.slPlayPos.Bind(wx.EVT_SCROLL_THUMBRELEASE, self.OnPlayPosChanged)
+        self.slPlayPos.Bind(wx.EVT_SCROLL_LINEUP, self.OnPlayPosChanged)
+        self.slPlayPos.Bind(wx.EVT_SCROLL_LINEDOWN, self.OnPlayPosChanged)
 
         self.bSeekStart = wx.BitmapButton(self, -1, self.bmStartSeek)
         self.bSeekStart.Bind(wx.EVT_BUTTON, self.OnSeekStart)

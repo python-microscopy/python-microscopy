@@ -73,51 +73,91 @@ measureDType = [('objID', 'i4'),('xPos', 'f4'), ('yPos', 'f4'), ('NEvents', 'i4'
     ('Perimeter', 'f4'), ('majorAxisAngle', 'f4'), ('stdMajor', 'f4'), ('stdMinor', 'f4'),
     ('lengthMajor', 'f4'), ('lengthMinor', 'f4'), ('moments', '25f4'), ('momentErrors', '25f4')]
 
-def measure(object, sizeCutoff, measurements = np.zeros(1, dtype=measureDType)):
+def measure(object, min_edge_length, output=np.zeros(1, dtype=measureDType)):
+    """
+    Calculates a number of measurements for a collection of points (as outlined in dtype above).
+    
+    **Note:** All parameters except `Area` and `Perimeter` do not require any form of segmentation and are parameter
+    free. `Area` and `Perimeter` are calculated using a Delaunay triangulation of the points. To allow accurate
+    measurements of non-convex objects, triangles are cropped from the tessellation if their edge length
+    exceeds a threshold given by `min_edge_length`. The value of `min_edge_length` determines a length scale over
+    which concave regions of the object border are smoothed out. For large `min_edge_length` you get the
+    convex hull of the object points. A reasonable value for min_edge_length is probably in the range
+    10 <= min_edge_length <= 100, depending on object size, and localisation density.
+    
+    For objects with a small number of points, the `Area` and `Perimeter` values will be highly influenced by
+    localisation stochasticity and unreliable. A rough rule of thumb is that you should have at least 50
+    localisation events in an object before you can start to trust areas and perimeters. For lower event counts,
+    the only (semi-)reliable metrics for object size are the std. deviations of the point positions
+    (`stdMajor` and `stdMinor`) or the radius of gyration (TODO- ADD radius of gyration as a computed parameter).
+    
+    For roughly circular clusters, an approximate 'Area' parameter can be derived from these as follows:
+     
+     r = (2.35*((stdMajor + stdMinor)/2))/2 #calculate a FWHM based on the average std. dev, and divide by 2 to get a radius
+     A = pi*r^2
+     
+    For elongated clusters, a rectangular model and the product or the major and minor axis FWHMs might be better.
+    
+    
+    Parameters
+    ----------
+    object : shape [N, 2] numpy array
+             x, y positions of object localisations
+    min_edge_length: float
+             edge length in nm at which to cull triangles from the point convex hull when estimating cluster areas
+    output : [optional] pre-allocated output array
+
+    Returns
+    -------
+    
+    an ndarray with dtype=measureDType containing the object measurements. Note that entries which are impossible to
+    compute (e.g. areas with nEvents < 3 and aligned measures with nEvents < 2) will be returned as 0.
+
+    """
     #measurements = {}
 
-    measurements['NEvents'] = object.shape[0]
-    measurements['xPos'] = object[:,0].mean()
-    measurements['yPos'] = object[:,1].mean()
+    output['NEvents'] = object.shape[0]
+    output['xPos'] = object[:, 0].mean()
+    output['yPos'] = object[:, 1].mean()
 
     if object.shape[0] > 3:
         # T = tri.Triangulation(object.ravel(),2)
         T = Delaunay(object)
-        P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
+        P, A, triI = gen3DTriangs.cull_triangles_2D(T, min_edge_length)
 
         if not len(P) == 0:
-            measurements['Area'] = A.sum()/3
+            output['Area'] = A.sum() / 3
 
             #print triI
 
             extEdges = gen3DTriangs.getExternalEdges(triI)
 
-            measurements['Perimeter'] = gen3DTriangs.getPerimeter(extEdges, T)
+            output['Perimeter'] = gen3DTriangs.getPerimeter(extEdges, T)
         else:
-            measurements['Area'] = 0
-            measurements['Perimeter'] = 0
+            output['Area'] = 0
+            output['Perimeter'] = 0
 
         ms, sm = moments.calcMCCenteredMoments(object[:,0], object[:,1])
         #print ms.ravel()[3]
         #print ms.shape, measurements['moments'].shape
-        measurements['moments'][:] = ms.ravel()
-        measurements['momentErrors'][:] = sm.ravel()
+        output['moments'][:] = ms.ravel()
+        output['momentErrors'][:] = sm.ravel()
 
     if object.shape[0] > 1:
-        measureAligned(object, measurements)
+        measureAligned(object, output)
     #measurements.update(measureAligned(object))
-    return measurements
+    return output
 
 
-def measureObjects(objects, sizeCutoff):
+def measureObjects(objects, min_edge_length):
     measurements = np.zeros(len(objects), dtype=measureDType)
 
     for i, obj in enumerate(objects):
-        measure(obj, sizeCutoff, measurements[i])
+        measure(obj, min_edge_length, measurements[i])
 
     return measurements
 
-def measureObjectsByID(filter, sizeCutoff, ids, key='objectID'):
+def measureObjectsByID(filter, min_edge_length, ids, key='objectID'):
     x = filter['x'] #+ 0.1*random.randn(filter['x'].size)
     y = filter['y'] #+ 0.1*random.randn(x.size)
     # id = filter['objectID'].astype('i')
@@ -132,7 +172,7 @@ def measureObjectsByID(filter, sizeCutoff, ids, key='objectID'):
             ind = id == i
             obj = np.vstack([x[ind],y[ind]]).T
             #print obj.shape
-            measure(obj, sizeCutoff, measurements[j])
+            measure(obj, min_edge_length, measurements[j])
             measurements[j]['objID'] = i
 
     return measurements

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.core.files.uploadhandler import TemporaryFileUploadHandler
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 
 from wsgiref.util import FileWrapper
 
@@ -89,6 +89,7 @@ def _get_listing(filename):
                'parent': parent}
 
 
+@ensure_csrf_cookie
 def listing(request, filename):
     context = _get_listing(filename)
     return render(request, 'clusterbrowser/dirlisting.html', context)

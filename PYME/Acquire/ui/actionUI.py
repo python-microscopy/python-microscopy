@@ -8,6 +8,8 @@ import wx
 import numpy as np
 import logging
 
+from PYME.Acquire import actions
+
 logger = logging.getLogger(__name__)
 
 class ActionList(wx.ListCtrl):
@@ -19,16 +21,16 @@ class ActionList(wx.ListCtrl):
         self.actionManager.onQueueChange.connect(self.update)
         
         self.InsertColumn(0, "Priority")
-        self.InsertColumn(1, "Function")
-        self.InsertColumn(2, "Args")
-        self.InsertColumn(3, "Expiry")
-        self.InsertColumn(4, 'Max Duration')
+        self.InsertColumn(1, "Action")
+        #self.InsertColumn(2, "Args")
+        self.InsertColumn(2, "Expiry")
+        self.InsertColumn(3, 'Max Duration')
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 150)
-        self.SetColumnWidth(2, 450)
-        self.SetColumnWidth(3, 50)
-        self.SetColumnWidth(4, 200)
+        self.SetColumnWidth(1, 600)
+        #self.SetColumnWidth(2, 450)
+        self.SetColumnWidth(2, 50)
+        self.SetColumnWidth(3, 200)
 
 
     def OnGetItemText(self, item, col):
@@ -39,11 +41,11 @@ class ActionList(wx.ListCtrl):
         
     def update(self, **kwargs):
         self._queueItems = list(self.actionManager.actionQueue.queue)
-        self._queueItems.sort()
+        self._queueItems.sort(key=lambda a : a[0])
         self.SetItemCount(len(self._queueItems))
         self.Refresh()
 
-ACTION_DEFAULTS = ['spoolController.StartSpooling',
+ACTION_DEFAULTS = ['spoolController.start_spooling',
                    'state.update',
                    ]
 
@@ -179,28 +181,26 @@ class ActionPanel(wx.Panel):
 
     def OnAddMove(self, event):
         nice = float(self.tNice.GetValue())
-        #functionName = self.tFunction.GetValue()
-        #args = eval('dict(%s)' % self.tArgs.GetValue())
-
-        functionName = 'state.update'
-        args = {'state' : {'Positioning.x': self.scope.state['Positioning.x'], 
-                           'Positioning.y': self.scope.state['Positioning.y'], 
-                           'Positioning.z': self.scope.state['Positioning.z']}}
-
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout, 
-                                       max_duration)
+
+        state =  {'Positioning.x': self.scope.state['Positioning.x'],
+                  'Positioning.y': self.scope.state['Positioning.y'],
+                  'Positioning.z': self.scope.state['Positioning.z']}
+
+        self.actionManager.queue_actions([actions.UpdateState(state),],
+                                         nice, timeout, max_duration)
         
 
     def OnAddSequence(self, event):
         nice = float(self.tNice.GetValue())
-        functionName = 'spoolController.StartSpooling'
-        args = {'maxFrames' : int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
-        self.actionManager.QueueAction(functionName, args, nice, timeout,
-                                       max_duration)
+
+        settings = {'max_frames': int(self.tNumFrames.GetValue()), 'z_stepped': bool(self.rbZStepped.GetValue())}
+        
+        self.actionManager.queue_actions([actions.SpoolSeries(settings=settings, preflight_mode='warn'),],
+                                         nice , timeout,max_duration)
         
     
     def _add_ROIs(self, rois):
@@ -238,11 +238,15 @@ class ActionPanel(wx.Panel):
         # allow enough time for what we queue
         timeout = max(float(self.tTimeout.GetValue()), 
                       positions.shape[0] * time_est)
+        
+        acts = []
         for ri in range(positions.shape[0]):
-            args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
-            self.actionManager.QueueAction('state.update', args, nice, timeout, 10)
-            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout, 2 * time_est)
+            state = {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}
+            settings = {'max_frames': n_frames, 'z_stepped': bool(self.rbZStepped.GetValue())}
+            
+            acts.append(actions.UpdateState(state).then(actions.SpoolSeries(settings=settings, preflight_mode='warn')))
+            
+        self.actionManager.queue_actions(acts, nice, timeout, 2 * time_est)
     
     def OnROIsFromFile(self, event):
         import wx
@@ -263,5 +267,5 @@ class ActionPanel(wx.Panel):
             raise requests.HTTPError('Could not get ROI locations')
 
         rois = np.array(resp.json())
-        print(rois.shape)
+        #print(rois.shape)
         self._add_ROIs(rois)

@@ -99,6 +99,7 @@ class GLImageView(LMGLShaderCanvas):
         
     def _add_layers(self):
         from PYME.LMVis.layers import image_layer
+        self.SetCurrent(self.gl_context)
         for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
             l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
         
@@ -136,7 +137,9 @@ def Plug(dsviewer):
         dsviewer.civp.ivps = dsviewer.ivps
         dsviewer.AddPage(page=dsviewer.civp, select=False, caption='Composite')
 
-    dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
-    dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
+    if dsviewer.image.data.shape[2] == 1:
+        # gl canvas doesn't currently work for 3D images, crashes on linux
+        dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
+        dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
     
 

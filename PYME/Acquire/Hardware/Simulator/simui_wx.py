@@ -23,6 +23,9 @@ import numpy as np
 from . import fluor
 from . import simcontrol
 
+import logging
+logger = logging.getLogger(__name__)
+
 class dSimControl(afp.foldPanel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
@@ -212,13 +215,13 @@ class dSimControl(afp.foldPanel):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(pFirstPrinciples, -1, 'Generate matrix for:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+        hsizer.Add(wx.StaticText(pFirstPrinciples, -1, 'Generate matrix for:'), 0, wx.ALL,
                    2)
         
         self.cModelPresets = wx.Choice(pFirstPrinciples, -1, choices=['STORM', 'PALM', 'PAINT'])
         self.cModelPresets.Bind(wx.EVT_CHOICE, self.OnModelPresets)
         
-        hsizer.Add(self.cModelPresets, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.cModelPresets, 0, wx.ALL, 2)
         
         sbsizer2.Add(hsizer, 0, wx.ALL, 2)
         
@@ -284,7 +287,7 @@ class dSimControl(afp.foldPanel):
         self.bLoadEmpiricalHist = wx.Button(pEmpiricalModel, -1, 'Load')
         self.bLoadEmpiricalHist.Bind(wx.EVT_BUTTON, self.OnBLoadEmpiricalHistButton)
         sbsizer2.Add(self.bLoadEmpiricalHist, 0,
-                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                     wx.ALIGN_CENTER_VERTICAL, 2)
         
         pEmpiricalModelSizer.Add(sbsizer2, 0, wx.ALL | wx.EXPAND, 2)
         
@@ -293,7 +296,7 @@ class dSimControl(afp.foldPanel):
         self.bGenEmpiricalHistFluors = wx.Button(pEmpiricalModel, -1, 'Go')
         self.bGenEmpiricalHistFluors.Bind(wx.EVT_BUTTON, self.OnBGenEmpiricalHistFluorsButton)
         hsizer.Add(self.bGenEmpiricalHistFluors, 1,
-                   wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                   wx.ALIGN_CENTER_VERTICAL, 2)
         
         pEmpiricalModelSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
         
@@ -448,7 +451,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.load_fluors(fn)
         
@@ -456,7 +459,7 @@ class dSimControl(afp.foldPanel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.save_points(fn)
   
@@ -470,7 +473,7 @@ class dSimControl(afp.foldPanel):
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf',
                              wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
-        print(fn)
+        logger.debug('Setting PSF from file: %s' %fn)
         if fn == '':
             return
         else:
@@ -580,7 +583,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadEmpiricalHistButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected')
         else:
             self.sim_controller.load_empirical_histogram(fn)
             self.stEmpiricalHist.SetLabel('File: %s' % fn)

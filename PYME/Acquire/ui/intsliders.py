@@ -106,7 +106,7 @@ class IntegrationSliders_(wx.Panel):
     def onCombobox(self, event):
         cb = event.GetEventObject()
         ind = self.cboxes.index(cb)
-        print((cb.GetValue()))
+        #print((cb.GetValue()))
         self.chaninfo.itimes[ind] = float(cb.GetValue())
         self.sliders[ind].SetValue(self.chaninfo.itimes[ind])
         self.sliders[ind].SetRange(1, min(5*self.chaninfo.itimes[ind], 10000))
@@ -157,7 +157,7 @@ class IntegrationSliders(wx.Panel):
         else:
             sz = wx.BoxSizer(wx.HORIZONTAL)
 
-        sz.Add(sl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 2)
+        sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
         sz.Add(sl_val, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         sz.Add(wx.StaticText(self, -1, 'ms'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         sizer_2.Add(sz,1,wx.EXPAND,0)

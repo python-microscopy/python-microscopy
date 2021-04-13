@@ -34,9 +34,6 @@ except:
 
 import time
 
-global timeFcn
-timeFcn = time.time
-
 from PYME.contrib import dispatch
 import uuid
 
@@ -46,34 +43,8 @@ from PYME.Acquire import protocol as p
 import logging
 logger = logging.getLogger(__name__)
 
-class EventLogger:
-    """Event logging backend base class"""
-    def __init__(self, scope, hdf5File):
-        self.scope = scope      
 
-    def logEvent(self, eventName, eventDescr = '', timestamp=None):
-        """Log an event. Should be overriden in derived classes.
-        
-        .. note::
-        
-          In addition to the name and description, timing information is recorded for each event.
-          
-        Parameters
-        ----------
-        eventName : string
-            short event name - < 32 chars and should be shared by events of the
-            same type.
-        eventDescr : string
-            description of the event - additional, even specific information
-            packaged as a string (<255 chars). This is commonly used to store 
-            parameters - e.g. z positions, and should be both human readable and 
-            easily parsed.
-        
-        """
-        pass
-
-
-class Spooler:
+class Spooler(object):
     """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
                  guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):
@@ -95,7 +66,6 @@ class Spooler:
             a function to call when the spooling GUI needs updating
             
         """
-        global timeFcn
         #self.scope = scope
         self.filename=filename
         self.frameSource = frameSource
@@ -104,23 +74,23 @@ class Spooler:
         
         self.maxFrames = maxFrames
         
+        stack_settings = kwargs.get('stack_settings', None)
+        if stack_settings:
+            # only record stack settings if provided (letting protocol fall through to global stack settings,
+            # if not provided / None)
+            self.stack_settings = stack_settings
+        
         self.onSpoolStop = dispatch.Signal()
-    
-        #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
-        #if scope.cam.__class__.__name__ == 'FakeCamera':
-        #    timeFcn = self.fakeTime
 
         self._last_gui_update = 0
         self.spoolOn = False
         self.imNum = 0
         
+        self.spool_complete = False
+        
         self._spooler_uuid = uuid.uuid4()
             
-        if not fakeCamCycleTime is None:
-            self.fakeCamCycleTime = fakeCamCycleTime
-            timeFcn = self.fakeTime
-
-       
+        self._fakeCamCycleTime = fakeCamCycleTime
 
     def StartSpool(self):
         """ Perform protocol 'frame -1' tasks, log start metadata, then connect
@@ -130,12 +100,18 @@ class Spooler:
         eventLog.WantEventNotification.append(self.evtLogger)
 
         self.imNum = 0
+        
+        # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
+        # **after** protocol.Init() call
+        self.tStart = time.time()
 
         self.protocol.Init(self)
-
-        self.doStartLog()
-   
+        
+        # record start time when we start receiving frames.
+        self.tStart = time.time()
+        self._collect_start_metadata()
         self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        
         self.spoolOn = True
        
     def StopSpool(self):
@@ -153,7 +129,7 @@ class Spooler:
         try:
             self.protocol.OnFinish()#this may still cause events
             self.FlushBuffer()
-            self.doStopLog()
+            self._collect_stop_metadata()
         except:
             import traceback
             traceback.print_exc()
@@ -166,8 +142,17 @@ class Spooler:
         self.spoolOn = False
         if not self.guiUpdateCallback is None:
             self.guiUpdateCallback()
-            
+        
+        self.finalise()
         self.onSpoolStop.send(self)
+        self.spool_complete = True
+        
+    def finalise(self):
+        """
+        Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
+
+        """
+        pass
         
     def abort(self):
         """
@@ -222,7 +207,7 @@ class Spooler:
             self.StopSpool()
             
 
-    def doStartLog(self):
+    def _collect_start_metadata(self):
         """Record pertinant information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
@@ -235,7 +220,7 @@ class Spooler:
         
         self.dtStart = dt
         
-        self.tStart = time.time()
+        #self.tStart = time.time()
         
         # create an in-memory metadata handler and populate this prior to copying data over to the spooler
         # metadata handler. This significantly improves performance if the spooler metadata handler has high latency
@@ -250,7 +235,7 @@ class Spooler:
         self.md.copyEntriesFrom(mdt)
        
 
-    def doStopLog(self):
+    def _collect_stop_metadata(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
@@ -258,11 +243,18 @@ class Spooler:
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
 
-    def fakeTime(self):
+    def _fake_time(self):
         """Generate a fake timestamp for use with the simulator where the camera
         cycle time does not match the actual time elapsed to generate the frame"""
         #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
-        return self.tStart + self.imNum*self.fakeCamCycleTime
+        return self.tStart + self.imNum*self._fakeCamCycleTime
+    
+    @property
+    def _time_fcn(self):
+        if self._fakeCamCycleTime:
+            return self._fake_time
+        else:
+            return time.time
 
     def FlushBuffer(self):
         pass
@@ -278,7 +270,9 @@ class Spooler:
     def finished(self):
         """ over-ride in derived classes to indicate when buffers flushed"""
         return True
-        
+    
+    def get_n_frames(self):
+        return self.imNum
         
     def __del__(self):
         if self.spoolOn:
