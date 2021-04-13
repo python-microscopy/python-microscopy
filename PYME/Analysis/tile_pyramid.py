@@ -1,5 +1,6 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
+
 import os
 import glob
 import collections
@@ -254,12 +255,44 @@ class SqliteTileIO(TileIO):
     def __del__(self):
         self._cur.close()
         self._conn.close()
-    
+
+
+TILEIO_EXT = {
+    '.pzf': PZFTileIO,
+    '.npy': NumpyTileIO,
+    '.db': SqliteTileIO,
+}
+
+def infer_tileio_backend(base_directory):
+    """ find TileIO backend for a given ImagePyramid
+
+    Parameters
+    ----------
+    base_directory : str
+        root directory of an ImagePyramid instance
+
+    Returns
+    -------
+    class
+        which TileIO derived class the ImagePyramid can be
+        built with.
+
+    Raises
+    ------
+    IOError
+        If no file with an extension in TILEIO_EXT is found.
+    """
+    for root, dirs, files in os.walk(base_directory):
+        for file in files:
+            file_extension = os.path.splitext(file)[-1]
+            if file_extension in TILEIO_EXT.keys():
+                return TILEIO_EXT[file_extension]
+    raise IOError("No files found for loading ImagePyramid.")
 
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
-                 pixel_size=1):
+                 pixel_size=1, backend=PZFTileIO):
         
         if isinstance(storage_directory, tempfile.TemporaryDirectory):
             # If the storage directory is a temporary directory, keep a reference and cleanup the directory when we delete the pyramid
@@ -278,7 +311,7 @@ class ImagePyramid(object):
         self.n_tiles_x = n_tiles_x
         self.n_tiles_y = n_tiles_y
         self.depth = depth
-        
+
         self.x0 = x0
         self.y0 = y0
         self.pixel_size=pixel_size
@@ -286,20 +319,49 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
-        
+
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
-            
-        #self._tilecache = TileCache()
-            
-        self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
-        self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
-        self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
 
-        # self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
-        # self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
-        # self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
-    
+        #self._tilecache = TileCache()
+
+        if backend is None:
+            backend = infer_tileio_backend(self.base_dir)
+
+        self._imgs = backend(base_dir=self.base_dir, suff='img')
+        self._acc = backend(base_dir=self.base_dir, suff='acc')
+        self._occ = backend(base_dir=self.base_dir, suff='occ')
+
+    @classmethod
+    def load_existing(cls, storage_directory):
+        """ loads an ImagePyramid from a given directory.
+
+        Parameters
+        ----------
+        storage_directory : str
+            root directory of an ImagePyramid instance.
+
+        Returns
+        -------
+        ImagePyramid
+            based on storage_directory contents.
+        """
+
+        mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
+
+        return ImagePyramid(
+            storage_directory,
+            pyramid_tile_size=mdh['Pyramid.TileSize'],
+            mdh=mdh,
+            n_tiles_x=mdh["Pyramid.NTilesX"],
+            n_tiles_y=mdh["Pyramid.NTilesY"],
+            depth=mdh["Pyramid.Depth"],
+            x0=mdh['Pyramid.x0'],
+            y0=mdh['Pyramid.y0'],
+            pixel_size=mdh["Pyramid.PixelSize"],
+            backend=TILEIO_EXT.get(mdh.get("Pyramid.Backend", None),None)
+        )
+
     def __del__(self):
         try:
             self._temp_directory.cleanup()
@@ -420,13 +482,30 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        #print('add_base_tile(%d, %d)' % (x, y))
+        """add tile to the pyramid
+
+        Parameters
+        ----------
+        x : int
+            x origin of the tile (`frame`), relative to minimum x position of
+            all tiles, in units of pixels
+        y : int
+            y origin of the tile (`frame`), relative to minimum y position of
+            all tiles, in units of pixels
+        frame : ndarray
+            the tile frame to add
+        weights : ndarray
+            weights for averaging with overlapping base tiles
+        """
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
         out_folder = os.path.join(self.base_dir, '0')
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
+        
+        if (x < 0) or (y < 0):
+            raise ValueError('base tile origin positions must be >=0')
         
         tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
         tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
@@ -470,6 +549,9 @@ class ImagePyramid(object):
 
 
 def get_position_from_events(events, mdh):
+    """Use acquisition events to create a mapping between frame number and
+    stage position
+    """
     from PYME.Analysis import piecewiseMapping
     x0 = mdh.getOrDefault('Positioning.x', 0)
     y0 = mdh.getOrDefault('Positioning.y', 0)
@@ -483,6 +565,64 @@ def get_position_from_events(events, mdh):
 def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False, shiftfield=None,
                  mixmatrix=[[1., 0.], [0., 1.]],
                  correlate=False, dark=None, flat=None, pyramid_tile_size=256):
+    """Create a tile pyramid from which an ImagePyramid can be created
+
+    Parameters
+    ----------
+    out_folder : str
+        directory to save pyramid tiles(/directories)
+    ds : PYME.IO.DataSources.BaseDataSource, np.ndarray
+        array-like image
+    xm : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
+        x positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum x, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
+        to the camera chip origin.
+    ym : np.ndarray or PYME.Analysis.piecewiseMapping.piecewiseMap
+        y positions of frames in ds. Raw stage positions in [um]. ImagePyramid
+        origin will be at at minimum y, and offset to camera chip origin will
+        be handled in SupertileDatasource tile_coords_um method.
+    mdh : PYME.IO.MetaDataHandler.MDataHandlerBase
+        metadata for ds
+    split : bool, optional
+        whether this is a splitter datasource and should be treated like one,
+        by default False
+    skipMoveFrames : bool, optional
+        flag to drop frames which are the first frame acquired at a given
+        position, by default False
+    shiftfield : [type], optional
+        required for splitter data, see PYME.Acquire.Hardware.splitter, by 
+        default None
+    mixmatrix : list, optional
+        for splitter data, see PYME.Acquire.Hardware.splitter, by 
+        default [[1., 0.], [0., 1.]]
+    correlate : bool, optional
+        whether to add a 300 pixel padding to the edges, by default False
+    dark : ndarray, float, optional
+        (appropriately-cropped or scalar) dark frame (analog-digital offset)
+        calibration to subtract when adding frames to the pyramid, by default
+        None, in which case Camera.ADOffset from metadata will be used, if 
+        available
+    flat : ndarray, optional
+        (appropriately-cropped or scalar) flatfield calibration to apply to 
+        frames when adding them to the pyramid, by default None
+    pyramid_tile_size : int, optional
+        base tile size, by default 256 pixels
+
+    Returns
+    -------
+    ImagePyramid
+        coalesced/averaged/etc multilevel ImagePyramid instance
+    
+    Notes
+    -----
+    Code is currently somewhat alpha in that the splitter functionality is 
+    more or less untested, and we only get tile orientations right for primary
+    cameras (i.e. when the stage is registered with multipliers to match the
+    camera, rather than camera registered with orientation metadata to match it
+    to the stage)
+
+    """
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
     
     if split:
@@ -494,27 +634,25 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         nchans = 1
     
     #x & y positions of each frame
-    xps = xm(np.arange(numFrames))
-    yps = ym(np.arange(numFrames))
-
-    if mdh.getOrDefault('CameraOrientation.FlipX', False):
-        xps = -xps
-    
-    if mdh.getOrDefault('CameraOrientation.FlipY', False):
-        yps = -yps
-
-    rotate_cam = mdh.getOrDefault('CameraOrientation.Rotate', False)
+    xps = xm(np.arange(numFrames)) if not isinstance(xm, np.ndarray) else xm
+    yps = ym(np.arange(numFrames)) if not isinstance(ym, np.ndarray) else ym
 
     #give some room at the edges
     bufSize = 0
     if correlate:
         bufSize = 300
     
+    # to avoid building extra, empty tiles, the pyramid origin is the minimum
+    # x and y position present in the tiles
+    x0_pyramid, y0_pyramid = xps.min(), yps.min()
+    xps -= x0_pyramid
+    yps -= y0_pyramid
 
-    x0 = xps.min()
-    y0 = yps.min()
-    xps -= x0
-    yps -= y0
+    # calculate origin independent of the camera ROI setting to store in
+    # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
+    x0_cam, y0_cam = get_camera_physical_roi_origin(mdh)
+    x0 = x0_pyramid + mdh.voxelsize_nm.x / 1e3 * x0_cam
+    y0 = y0_pyramid + mdh.voxelsize_nm.y / 1e3 * y0_cam
 
     #convert to pixels
     xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
@@ -532,18 +670,14 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
     weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
     
-    roi_x0, roi_y0 = get_camera_roi_origin(mdh)
-    
-    ROIX1 = roi_x0 + 1
-    ROIY1 = roi_y0 + 1
-    
+    # get splitter ROI coordinates in units of pixels
+    ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
+    ROIY1 = y0_cam + 1
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
     
     if dark is None:
-        offset = float(mdh.getEntry('Camera.ADOffset'))
-    else:
-        offset = 0.
+        dark = float(mdh.getOrDefault('Camera.ADOffset', 0))
 
     P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, 
                      pixel_size=mdh.getEntry('voxelsize.x'))
@@ -555,25 +689,16 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
             y_i = ydp[i]
-            d = ds[:, :, i].astype('f')
-            if not dark is None:
-                d = d - dark
+            d = ds[:, :, i].astype('f') - dark
             if not flat is None:
                 d = d * flat
             
             if split:
-                d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
+                d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
             d_weighted = weights * d
-
-
-            # orient frame - TODO - check if we need to flip x and y?!
-            if rotate_cam:
-                #print('adding base tile from frame %d [transposed]' % i)
-                P.add_base_tile(x_i, y_i, d_weighted.T.squeeze(), weights.T.squeeze())
-            else:
-                #print('adding base tile from frame %d' % i)
-                P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            # TODO - account for orientation so this works for non-primary cams
+            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
                 
     
     t2 = time.time()

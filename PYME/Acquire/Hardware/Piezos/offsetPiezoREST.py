@@ -93,13 +93,14 @@ class OffsetPiezo(PiezoBase):
             self.offset += correction
             # self.MoveTo(0, target)  # move the base piezo to correct position
             self.basePiezo.MoveTo(0, target + self.offset, True)
+            self.LogFocusCorrection(self.offset)
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):
         import wx
         #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
-        wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (float(dx), float(dy), float(dz)))
-        wx.CallAfter(eventLog.logEvent, 'PiezoOffset', '%3.4f, %d' % (self.GetOffset(), active))
+        wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (float(dx), float(dy), float(dz)), time.time())
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffset', '%3.4f, %d' % (self.GetOffset(), int(active)), time.time())
 
     @webframework.register_endpoint('/OnTarget', output_is_json=False)
     def OnTarget(self):
@@ -108,7 +109,7 @@ class OffsetPiezo(PiezoBase):
     @webframework.register_endpoint('/LogFocusCorrection', output_is_json=False)
     def LogFocusCorrection(self, offset):
         import wx
-        wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset))
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset), time.time())
     
     @webframework.register_endpoint('/GetMaxOffset', output_is_json=False)
     def GetMaxOffset(self):
@@ -167,16 +168,29 @@ class OffsetPiezoClient(PiezoBase):
 
     def LogShifts(self, dx, dy, dz, active=True):
         res = self._session.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
-        return float(res.json())
 
     def OnTarget(self):
         res = self._session.get(self.urlbase + '/OnTarget')
         return bool(res.json())
 
     def LogFocusCorrection(self, offset):
+        logger.warning('timestamp will be off, log focus corrections directly in the server process')
         self._session.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
+    
+    def GetMaxOffset(self):
+        res = self._session.get(self.urlbase + '/GetMaxOffset')
+        return float(res.json())
+    
+    def GetMinOffset(self):
+        res = self._session.get(self.urlbase + '/GetMinOffset')
+        return float(res.json())
 
-def generate_offset_piezo_server(offset_piezo_base_class):
+def getClient():
+    #TODO - move away from hard-coded ports!!!
+    return OffsetPiezoClient()
+
+
+def server_class(offset_piezo_base_class=OffsetPiezo):
     """
     Class factory to return class which inherits from the desired style of OffsetPiezo
 
@@ -203,7 +217,7 @@ def generate_offset_piezo_server(offset_piezo_base_class):
             self.daemon_threads = True
 
             self._server_thread = threading.Thread(target=self._thread_target)
-            self._server_thread.daemon_threads = True
+            self._server_thread.daemon = True
 
             self._server_thread.start()
 
@@ -217,6 +231,11 @@ def generate_offset_piezo_server(offset_piezo_base_class):
                 self.server_close()
 
     return OffsetPiezoServer
+
+def generate_offset_piezo_server(piezo_class):
+    import warnings
+    warnings.warn(DeprecationWarning('Use `server_class() instead'))
+    return server_class(piezo_class)
 
 class TargetOwningOffsetPiezo(OffsetPiezo):
     """
@@ -249,7 +268,7 @@ class TargetOwningOffsetPiezo(OffsetPiezo):
     def MoveRel(self, iChannel, incr, bTimeOut=True):
         with self._move_lock:
             self._target_position += float(incr)
-            print('here - moving to %f' % self._target_position)
+            #print('here - moving to %f' % self._target_position)
             p = self.basePiezo.MoveTo(int(iChannel), 
                                       self._target_position + self.offset, 
                                       bool(bTimeOut))
@@ -263,9 +282,21 @@ class TargetOwningOffsetPiezo(OffsetPiezo):
     def GetTargetPos(self, iChannel=0):
         return self._target_position
 
-                
-    
-    
+
+class FocusLockingOffsetPiezo(TargetOwningOffsetPiezo):
+    def __init__(self, base_piezo, focus_lock):
+        TargetOwningOffsetPiezo.__init__(self, base_piezo)
+        self.focus_lock = focus_lock
+        
+    @webframework.register_endpoint('/CorrectOffset', output_is_json=False)
+    def CorrectOffset(self, correction):
+        if not self.focus_lock.lock_enabled:
+            logger.warning('focus lock is disabled, offset correction ignored')
+            return
+
+        OffsetPiezo.CorrectOffset(self, correction)
+
+
 def main():
     """For testing only"""
     from PYME.Acquire.Hardware.Simulator import fakePiezo

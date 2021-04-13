@@ -127,7 +127,7 @@ function colorHashWarm(thread) {
 //### - end from d3-flame-graph
 
 function label_0(d) {
-    return d.n + '\n' + ((d.tf -d.ts)*1000).toFixed() + ' ms\n\n' + d.ns + '\n' + d.f
+    return d.n + '\n' + ((d.tf -d.ts)*1000).toPrecision(2) + ' ms\n\n' + d.ns + '\n' + d.f
 }
 
 function label_1(d) {
@@ -137,7 +137,7 @@ function label_1(d) {
 d3.select("#chart_d3 svg").remove();
 var svg = d3.select("#chart_d3").append("svg")
     .style("position", "relative")
-    .attr("width", 100 + "pc")
+    .attr("width", 100 + "%")
     .attr("height", 600 + "px");
 
 

@@ -274,7 +274,7 @@ class SampleInfoDialog(wx.Dialog):
         if acquiring and self.lSlides.GetItemCount() == 1:
             self.lSlides.Select(0)
 
-        print('foo;')
+        #print('foo;')
 
     def OnAddSlide(self, event):
         import webbrowser
@@ -288,13 +288,13 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnSelectSlide(self, event):
         i = event.GetIndex()
-        print(i)
+        #print(i)
         #self.slide = self.lSlides.qs[i]
         #r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
         #resp = r.json()
         resp = self.lSlides._getSlideInfo(i)
         self.slide = resp['info']
-        print((self.slide))
+        #print((self.slide))
         self.bOK.Enable()
 
     def OnFilterChange(self, event):
@@ -469,10 +469,10 @@ def prefillSampleData(parent):
 
     if dlg.ShowModal() == wx.ID_OK:
         dlg.PopulateMetadata(slideMD, False)
-        print('bar')
-        print((dlg.slide))
+        #print('bar')
+        #print((dlg.slide))
         currentSlide[0] = dlg.slide
-        print(currentSlide)
+        #print(currentSlide)
     else:
         currentSlide[0] = None
 
@@ -482,7 +482,7 @@ def prefillSampleData(parent):
 def getSampleData(parent, mdh):
     #global currentSlide
 
-    print(('currSlide:', currentSlide))
+    #print(('currSlide:', currentSlide))
     cs = currentSlide[0]
 
     if cs:
@@ -493,7 +493,7 @@ def getSampleData(parent, mdh):
         dlg = SampleInfoDialog(parent)
 
         if dlg.ShowModal() == wx.ID_OK:
-            print('populating metadata')
+            #print('populating metadata')
             dlg.PopulateMetadata(mdh)
 
             currentSlide[0] = dlg.slide
@@ -521,3 +521,71 @@ def createImage(mdh, slide, comments=''):
     pass
 
 #MetaDataHandler.provideStartMetadata.append(lambda mdh: getSampleDataFailsafe)
+
+
+class SimpleSampleInfoPanel(wx.Panel):
+    def __init__(self, parent):
+        """Simple sample info panel to tide over until the SampleInfoDialog is
+        refactored to work independently of a sampleDB database.
+
+TODOS/LIMITATIONS: potentially better addressed by the full refactor rather than by modifying this class, but included here for information / to reinforce that this should ideally be replaced at some point in the future.
+
+ - auto-populate and/or hide acquiring user using logon name on multi-user systems (preference would be to have a config option which can be set on a single user system, but which defaults to false)
+ - include info on what is labelled (i.e. Sample.Labelling entries). This is super,super useful to have in the metadata
+ - because there is no sanity checking / database backend etc ... you will likely get subtly differing values for acquiring user and creator which will make it hard to search on these if the data ever gets ingested into a database in the future.
+ 
+        Parameters
+        ----------
+        parent : wx parent
+        """
+        wx.Panel.__init__(self, parent)
+        from PYME.IO import MetaDataHandler
+
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Slide:'), 0, wx.ALL, 2)
+        self.slide = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.slide, 1, wx.EXPAND)
+        vsizer.Add(hsizer, 1, wx.EXPAND)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Creator:'), 0, wx.ALL, 2)
+        self.creator = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.creator, 1, wx.EXPAND)
+        vsizer.Add(hsizer, 1, wx.EXPAND)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Imager:'), 0, wx.ALL, 2)
+        self.imager = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.imager, 1, wx.EXPAND)
+        vsizer.Add(hsizer, 1, wx.EXPAND)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Notes:'), 0, wx.ALL, 2)
+        self.notes = wx.TextCtrl(self, -1, value='')
+        hsizer.Add(self.notes, 1, wx.EXPAND)
+        vsizer.Add(hsizer, 1, wx.EXPAND)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.save = wx.CheckBox(self, -1, 'Save to metadata')
+        hsizer.Add(self.save, 1, wx.EXPAND)
+        vsizer.Add(hsizer, 1, wx.EXPAND)
+
+        self.SetSizerAndFit(vsizer)
+
+    def GenStartMetadata(self, mdh):
+        """Collects the metadata we want to record at the start of a sequence
+        
+        Parameters
+        ----------
+        mdh : PYME.IO.MetaDataHandler.MDHandlerBase
+            The metadata handler to which we should write our metadata         
+        """
+        if self.save.GetValue():
+            mdh['Sample.SlideRef'] = self.slide.GetValue()
+            mdh['Sample.Creator'] = self.creator.GetValue()
+            mdh['Sample.Notes'] = self.notes.GetValue()
+            mdh['AcquiringUser'] = self.imager.GetValue()

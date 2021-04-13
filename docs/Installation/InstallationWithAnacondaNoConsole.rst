@@ -1,5 +1,10 @@
 .. _installationanacondagui:
 
+.. warning::
+
+    These installation instructions are outdated, and will likely not work. Use the
+    :ref:`new instructions<installation>` instead. TODO: remove this page and all links.
+
 Completely graphical installation of PYME on OSX
 ################################################
 

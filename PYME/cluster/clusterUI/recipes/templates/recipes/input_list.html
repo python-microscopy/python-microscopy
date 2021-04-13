@@ -1,5 +1,7 @@
 <table>
+    <p>Found {{ filepaths|length }} files</p>
+    <br>
     {% for file in filepaths %}
-        <tr><td>{{ file }}<input name="files" class="cu-hidden-filename" type="hidden" value="pyme-cluster:///{{ file }}"></td></tr>
+        {{ file }}<input name="files" class="cu-hidden-filename" type="hidden" value="pyme-cluster:///{{ file }}">,
     {% endfor %}
 </table>

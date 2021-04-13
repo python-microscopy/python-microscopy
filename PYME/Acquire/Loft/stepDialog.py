@@ -144,7 +144,7 @@ class stepPanel(wx.Panel):
         y = float(self.tYPos.GetValue())
         z = float(self.tZPos.GetValue())
         
-        print(('(%s, %s, %s)\n' % (x,y,z)))
+        #print(('(%s, %s, %s)\n' % (x,y,z)))
         
         #dodgy hack ...
         dist = math.sqrt(math.pow(x - x0, 2) + math.pow(y - y0,2) + math.pow(z - z0,2))
@@ -190,11 +190,11 @@ class stepPanel(wx.Panel):
         #z = float(self.tZPos.GetValue())
         z = self.scope.step.GetPosZ()
         
-        print(('(%s, %s, %s)\n' % (x,y,z)))
+        #print(('(%s, %s, %s)\n' % (x,y,z)))
         
         #dodgy hack ...
         dist = math.sqrt(math.pow(x - x0, 2) + math.pow(y - y0,2) + math.pow(z - z0,2))
-        print(( 'dist = %s' % (dist)))
+        #print(( 'dist = %s' % (dist)))
         
 ##        while (dist > 4000):
 ##            xt = x0 + (x - x0)*4000/dist

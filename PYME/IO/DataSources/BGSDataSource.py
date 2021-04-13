@@ -229,6 +229,14 @@ class DataSource(BaseDataSource):
         self.bgRange = bgRange
         self.dataStart = 0
         
+    @property
+    def additionalDims(self):
+        return self.datasource.additionalDims
+    
+    @property
+    def sizeC(self):
+        return self.datasource.sizeC
+        
     def setBackgroundBufferPCT(self, pctile=0):
         if not pctile == 0:
             self.bBufferP.pctile = pctile

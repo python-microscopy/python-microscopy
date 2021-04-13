@@ -26,7 +26,7 @@
     </ul>
 </nav>
 
-<div class="container-fluid">
+<div class="container-fluid" id="app">
     <div class="row">
         <nav class="col-md-3 col-lg-3 d-md-block sidebar">
             <div class="sidebar-sticky">
@@ -91,16 +91,43 @@
 
                     </form>
 
-                    <h6 class="sidebar-heading"><span>Acquisition</span></h6>
+                    <h4 class="sidebar-heading"><span>Acquisition</span></h4>
 
-                    <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
+                    <h6 class="sidebar-heading"><span>Type</span></h6>
+
+                    <form class="form mt-1 ml-2" action="javascript:void(0);">
+                        <div class="form-check">
+                        <input class="form-check-input" type="radio" id="aq_stack" disabled>
+                        <label class="form-check-label" for="aq_stack">Z Stack</label>
+                        </div>
+                        <div class="form-check">
+                        <input class="form-check-input" type="radio" id="aq_series" checked>
+                        <label class="form-check-label" for="aq_series">PALM/STORM/PAINT</label>
+                        </div>
+                        <div class="form-check">
+                        <input class="form-check-input" type="radio" id="aq_tiles" disabled>
+                        <label class="form-check-label" for="aq_tiles">Tiled</label>
+                        </div>
+
+                    </form>
+
+<!--
+                    <h6 class="sidebar-heading"><span>Save to</span></h6> -->
+                    <div v-if="spooler.settings">
+                        <p class="mt-2 text-center"> Spool to: {{ spooler.settings.series_name }}</p>
+
                     <div v-if="spooler.status.spooling" class="mt-1 text-center">
+
+
                         <p>Currently spooling, {{ spooler.status.frames_spooled }} frames spooled</p>
-                        <button class="btn btn-danger" onclick="$.ajax('/spool_controller/stop_spooling');">Stop spooling</button>
+                        <button class="btn btn-danger" onclick="$.ajax('/spool_controller/stop_spooling');">Stop</button>
                     </div>
                     <div v-else class="mt-1 text-center">
-                        <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start spooling</button>
+                        <button class="btn btn-primary" onclick="$.ajax('/spool_controller/start_spooling');">Start</button>
                     </div>
+                    </div>
+
+
 
                 </div>
                 {% endraw %}
@@ -117,8 +144,58 @@
 
                 <div class="tab-content uitabs" id="myTabContent">
                     <div class="tab-pane fade uitab" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
+
+                    <div class="tab-pane fade uitab bg-dark" id="aq_settings" role="tabpanel" aria-labelledby="aq-tab">
+                        <div style=" width: 100%; height: 400px;  overflow: scroll;">
+                            {% raw %}
+                            <h3>PALM/STORM/PAINT Settings</h3>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Protocol</h6>
+                                        <form class="form">
+                                            <div class="input-group input-group-sm">
+                                                <span class="form-control-sm">Protocol File: </span>
+                                                <select id="inputState" class="form-control form-control-sm">
+                                                    <option selected>None chosen...</option>
+                                                    <option>...</option>
+                                                  </select>
+                                            </div>
+                                            <div class="input-group input-group-sm ml-2 mt-1">
+                                                <div class="form-check-inline">
+                                                <input class="form-check-input" type="radio" id="aq_standard" v-model="spool_z_stepping" value=false>
+                                                <label class="form-check-label" for="aq_standard">Standard</label>
+                                                </div>
+                                                <div class="form-check-inline">
+                                                <input class="form-check-input" type="radio" id="aq_zs" v-model="spool_z_stepping" value=true>
+                                                <label class="form-check-label" for="aq_zs">Z stepped</label>
+                                                </div>
+                                            </div>
+
+                                            <stack-settings v-if="spooler.settings.z_stepped" v-model="stack" class="mt-1"></stack-settings>
+
+                                        </form>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Spooling</h6>
+                                        <form action="javascript:void(0);">
+                                            <div class="input-group input-group-sm">
+                                                <span class="form-control-sm">Spool to: </span>
+                                        <div class=" ml-2 form-check form-check-inline"  v-for="method in spooler.available_spool_methods">
+                                            <input class="form-check-input" type="radio" :id="method" :value="method" v-model="spooler.settings.method">
+                                            <label class="form-check-label" :for="method">{{ method }}</label>
+                                        </div>
+                                                </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            {%  endraw %}
+                        </div>
+                    </div>
+
                     <div class="tab-pane fade uitab bg-dark" id="state" role="tabpanel" aria-labelledby="state-tab">
-                        <div id="app" style=" width: 100%; height: 400px;  overflow: scroll;">
+                        <div style=" width: 100%; height: 400px;  overflow: scroll;">
                             <table class="table table-sm table-dark">
                                 {% raw %}
                                 <tr v-for="(val, prop_name) in state" :key="prop_name">
@@ -144,6 +221,10 @@
                     <li class="nav-item">
                         <a class="nav-link" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
                            aria-selected="false">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="aq-tab" data-toggle="tab" href="#aq_settings" role="tab"
+                           aria-controls="aq_settings" aria-selected="false">Acquisition</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" id="state-tab" data-toggle="tab" href="#state" role="tab"

@@ -42,7 +42,7 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         #print keys
         
         #if self.type == 'Array':
-        r = self.data.__getitem__(keys)
+        r = self.data.__getitem__(tuple(keys))
         #else:
         #    raise DeprecationWarning('We should only be wrapping arrays')
         #r = np.concatenate([np.atleast_2d(self.data.getSlice(i)[keys[0], keys[1]])[:, :, None] for i in

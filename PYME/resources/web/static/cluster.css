@@ -109,6 +109,18 @@
     color: #FFFFFF;
 }
 
+.subnav {
+   list-style: none;
+}
+
+.subnav>li>a {
+    position: relative;
+    display: block;
+    padding: 2px;
+    padding-left: 10px;
+}
+
+/*
 circle {
 
   -webkit-transition: stroke-dasharray .3s ease;
@@ -122,4 +134,4 @@ svg {
   background: #ddd;
   border-radius: 50%;
   display: block;
-}
+}*/

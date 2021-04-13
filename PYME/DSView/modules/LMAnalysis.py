@@ -923,7 +923,18 @@ class LMAnalyser2(Plugin):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
+        mdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+        if zp < mdh['Analysis.StartAt']:
+            # check to see if we're analysing a frame that would not normally be analysed and complain
+            if wx.MessageBox('Testing a frame that would not normally be analysed (before StartAt)\n'
+                             'This may not work properly and will not be representative of how a frame in the middle of the series'
+                             'would behave. Continue anyway?','Warning', style=wx.OK | wx.CANCEL |wx.ICON_ERROR) != wx.OK:
+                return #get out of here
+            else:
+                # fudge it and continue, reluctantly
+                mdh['Analysis.StartAt'] = zp
+            
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:

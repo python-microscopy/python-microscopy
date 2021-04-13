@@ -19,12 +19,15 @@ Subpackages
     PYME.IO
     PYME.LMVis
     PYME.ParallelTasks
+    PYME.cluster
     PYME.contrib
     PYME.localization
     PYME.misc
     PYME.recipes
+    PYME.reports
     PYME.resources
     PYME.simulation
+    PYME.tileviewer
     PYME.ui
     PYME.util
 

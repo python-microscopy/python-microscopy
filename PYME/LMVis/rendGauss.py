@@ -22,7 +22,6 @@
 ##################
 from scipy import ndimage
 
-from scipy import *
 from PYME.localization.cModels.gauss_app import *
 import numpy as np
 
@@ -41,10 +40,10 @@ def Gauss2D(Xv,Yv, A,x0,y0,s):
     return r
 
 def rendHist(xs,ys, dsShape, pixSize=1):
-    return histogram2d(xs,ys,[arange(0, dsShape[0], pixSize), arange(0, dsShape[1], pixSize)])[0]
+    return np.histogram2d(xs,ys,[np.arange(0, dsShape[0], pixSize), np.arange(0, dsShape[1], pixSize)])[0]
 
 def rendGauss(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSigma = 3):
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = abs(X[1] - X[0]) 
@@ -63,11 +62,11 @@ def rendHistF(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSigma = 
     xs = [r.x0() for r in res if not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma]
     ys = [r.y0() for r in res if not r.fitErr is None and r.fitErr[1] < cutoffErr and r.sigma() < cutoffSigma]
 
-    return histogram2d(xs,ys,[X, Y])[0]
+    return np.histogram2d(xs,ys,[X, Y])[0]
 
 
 def rendGaussP(x,y, sx, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSigma = 3):
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = abs(X[1] - X[0]) 
@@ -84,7 +83,7 @@ def rendGaussP(x,y, sx, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffSig
 
 
 def rendGaussNested(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=[0,100], cutoffSigma = [200/2.35, 400/2.35], cutoffA = [10, 200]):
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = abs(X[1] - X[0]) 
@@ -103,7 +102,7 @@ def rendGaussNested(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=[0,100], cut
 
 
 def rendGaussNestedPS(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoffZ0 = 1000, cutoffA = 0.02):
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = abs(X[1] - X[0]) 
@@ -121,7 +120,7 @@ def rendGaussNestedPS(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=10, cutoff
 
 
 def rendGaussNestedXYCorr(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=100, cutoffSigma = 400/2.35):
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
     delX = abs(X[1] - X[0]) 

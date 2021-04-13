@@ -110,7 +110,8 @@ class ReflectedLinePIDFocusLock(PID):
     """
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
-                 max_sigma=np.finfo(float).max):
+                 max_sigma=np.finfo(float).max, min_lateral_sigma=0,
+                 trigger_failsafe=True):
         """
 
         Parameters
@@ -134,20 +135,31 @@ class ReflectedLinePIDFocusLock(PID):
         max_sigma : float
             maximum fit result sigma which we are willing to accept as a valid
             peak measurement we can use to correct the focus.
+        min_lateral_sigma : float
+            minimum standard dev along the dimension we sum (squash) to get the
+            profile. If the lateral sigma is below this we reject the frame for
+            fitting because we expect a long spread profile.
+        trigger_failsafe : bool
+            if True, try to kill lasers if the profile intensity saturates a
+            majority of the pixels on the focus lock camera
         
         """
         self.scope = scope
         self.piezo = piezo
-        # self._last_offset = self.piezo.GetOffset()
+        self._piezo_control_lock = threading.Lock()
+        self._piezo_home = 0.5 * (self.piezo.GetMax() - self.piezo.GetMin())
 
         self._lock_ok = False
         self._ok_tolerance = 5
 
         self.fit_roi_size = fit_roi_size
         self._fitter = GaussFitter1D(min_amp=min_amp, max_sigma=max_sigma)
+        self._min_lateral_sigma = min_lateral_sigma
         
         self.peak_position = self.scope.frameWrangler.currentFrame.shape[1] * 0.5  # default to half of the camera size
         self.subtraction_profile = None
+
+        self.use_failsafe = trigger_failsafe and hasattr(scope, 'failsafe')
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
 
@@ -198,17 +210,26 @@ class ReflectedLinePIDFocusLock(PID):
         off the setpoint, and then slam it on again. This just makes the slam small.
         """
         # make sure piezo is ready
-        while not self.piezo.OnTarget():
+        retry = 0
+        while not self.piezo.OnTarget() and retry < 3:
             logger.debug('waiting for piezo to stop moving')
-            time.sleep(0.01)
+            time.sleep(0.1)
+            retry += 1
         logger.debug('Enabling focus lock')
         self.set_auto_mode(True)
+    
+    @webframework.register_endpoint('/EnableLockAndHome', output_is_json=False)
+    def EnableLockAndHome(self):
+        self.EnableLock()
+        self.piezo.MoveTo(0, self._piezo_home)
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
-        self.set_auto_mode(False)
-        logger.debug('Disabling focus lock')
-        self.piezo.LogFocusCorrection(self.piezo.GetOffset())
+        # take out the lock so we can log offset and disable 'at once'
+        with self._piezo_control_lock:
+            self.piezo.LogFocusCorrection(self.piezo.GetOffset())
+            self.set_auto_mode(False)
+            logger.debug('Disabling focus lock')
 
     def register(self):
         if self.mode == 'time':
@@ -232,6 +253,10 @@ class ReflectedLinePIDFocusLock(PID):
             self.setpoint = self.peak_position
         else:
             self.setpoint = float(setpoint)
+    
+    @webframework.register_endpoint('/UpdateHome', output_is_json=False)
+    def UpdateHome(self, home):
+        self._piezo_home = float(home)
 
     @webframework.register_endpoint('/SetSubtractionProfile', output_is_json=False)
     def SetSubtractionProfile(self):
@@ -255,7 +280,153 @@ class ReflectedLinePIDFocusLock(PID):
     
     @webframework.register_endpoint('/LockOK', output_is_json=False)
     def LockOK(self):
-        return self.LockEnabled() and self._lock_ok and bool(abs(self.peak_position - self.setpoint) < self._ok_tolerance)
+        """Check whether the lock is enabled, and the lock is on target
+
+        Returns
+        -------
+        bool
+            lock is enabled and on-target
+        """
+        return self.LockEnabled() and self.lockable()
+    
+    def lockable(self, tolerance=None):
+        """check whether the profile is being fit OK and within tolerance of the
+        setpoint
+
+        Parameters
+        ----------
+        tolerance : float, optional
+            maximum deviation, in pixels, to be considered 'lockable', by 
+            default None
+
+        Returns
+        -------
+        bool
+            whether the focus lock _could_ lock easily if we enabled it
+        """
+        return self._lock_ok and self.on_target(tolerance)
+    
+    def on_target(self, tolerance=None):
+        """check whether the focus lock profile is within a target tolerance of
+        the setpoint
+
+        Parameters
+        ----------
+        tolerance : float, optional
+            maximum deviation, in pixels, to be considered 'lockable', by 
+            default None
+
+        Returns
+        -------
+        bool
+            whether the last-updated focus lock profile was sufficiently close 
+            to where we want it
+        """
+        if tolerance == None:
+            tolerance = self._ok_tolerance
+        return bool(abs(self.peak_position - self.setpoint) < tolerance)
+    
+    @webframework.register_endpoint('/ReacquireLock', output_is_json=False)
+    def ReacquireLock(self, start_at=0.0, step_size=3., pause=0.75, retries=0):
+        """Routine to call if we've lost the lock. The lock is disabled,
+        objective is moved to its lowest position, and we step upwards gradually
+        until we get decent fits on the profile and the profile is sufficiently
+        close to where we think it should be, then we renabled. Objective will
+        be sent back to its lowest position if we cannot reacquire the lock.
+
+        Parameters
+        ----------
+        start_at: float, optional
+            offset to start the scan at (10 positions chosen 'spirally' out
+            before linearly stepping through the range from bottom up)
+        step_size : float, optional
+            number of microns to step the objective position by when searching, 
+            by default 3.
+        pause : float, optional
+            seconds to pause after each offset change before checking if we can
+            lock
+        """
+        from itertools import zip_longest
+        step_size = float(step_size)
+        start_at = float(start_at)
+        pause = float(pause)
+        logger.info('reacquiring lock')
+        self.DisableLock()
+
+        # get our range
+        min_offset = self.piezo.GetMinOffset()
+        max_offset = self.piezo.GetMaxOffset()
+        start_at = max(min_offset, min(max_offset, start_at))  # clip
+        
+        # set up scan positions
+        scan_up = np.arange(start_at, max_offset + step_size, step_size).tolist()
+        scan_up.append(max_offset)
+        scan_down = np.arange(start_at - step_size, min_offset, -step_size).tolist()
+        scan_down.append(min_offset)
+        scan_positions = [item for sub in zip_longest(scan_up, scan_down) for item in sub]
+        scan_positions = [pos for pos in scan_positions if pos is not None]
+        assert len(scan_positions) > 0
+        cut = min(len(scan_positions), 10)
+        # try not to be overly mean to the pifoc, step small after first 10
+        scan_positions = scan_positions[:cut] + sorted(scan_positions)
+
+        n = -1
+        while n < retries:
+            n += 1
+            for pos in scan_positions:
+                logger.debug('looking for focus, offset: %.1f' % pos)
+                self.piezo.SetOffset(pos)
+
+                time.sleep(pause)
+                if self.lockable(self._ok_tolerance):
+                    logger.info('found focus, offset %.1f' % pos)
+                    self.EnableLock()
+                    return
+        
+        logger.debug('failed to find focus, lowering objective')
+        self.piezo.SetOffset(min_offset)
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiring', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiring(self, target_tolerance=1):
+        self.EnableLock()  # make sure we have the lock on
+        if not self.on_target(float(target_tolerance)):
+            logger.info('not locked to target tolerance, waiting 0.5 s')
+            time.sleep(0.5)
+        if not self.LockOK():
+            logger.info('lock not OK, pausing for 5 s')
+            time.sleep(5)
+            if not self.LockOK():
+                logger.info('still not OK, starting pause/reacquire sequence')
+                time.sleep(5)
+                if hasattr(self.scope, '_stage_leveler'):
+                    pos = self.scope.GetPos()
+                    offset = self.scope._stage_leveler.lookup_offset(pos['x'],
+                                                                     pos['y'])
+                    self.ReacquireLock(start_at=offset)
+                else:
+                    self.ReacquireLock()
+                time.sleep(0.5)
+            else:
+                logger.debug('lock OK')
+        
+        self.DisableLock()
+    
+    @webframework.register_endpoint('/DisableLockAfterAcquiringIfEnabled', 
+                                    output_is_json=False)
+    def DisableLockAfterAcquiringIfEnabled(self, target_tolerance=1):
+        """
+        Helper function to allow protocols used in automated workflows to make 
+        sure they have the right focal plane without barring that protocols
+        use for manual imaging without the focus lock on/set up
+        """
+        if self.LockEnabled():
+            self.DisableLockAfterAcquiring(float(target_tolerance))
+    
+    @property
+    def _failsafe_threshold(self):
+        frame_shape = self.scope.frameWrangler.currentFrame.shape
+        return 0.5 * frame_shape[0] * frame_shape[1] * self.scope.cam.noise_properties['SaturationThreshold']
 
     def find_peak(self, profile):
         """
@@ -277,19 +448,25 @@ class ReflectedLinePIDFocusLock(PID):
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
         start, stop = max(crop_start, 0), min(crop_start + self.fit_roi_size, profile.shape[0])
         self._fit_results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
-        if not success:
-            logger.debug('Focus lock fit error')
         return self._fit_results[1] + start, success
 
     def on_frame(self, **kwargs):
         # get focus position
-        profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
-        if self.subtraction_profile is not None:
-            peak_position, success = self.find_peak(profile - self.subtraction_profile)
-        else:
-            peak_position, success = self.find_peak(profile)
-
-        if not success:
+        cf = self.scope.frameWrangler.currentFrame.squeeze()
+        profile = cf.sum(axis=0).astype(float)
+        
+        if self.use_failsafe and profile.sum() > self._failsafe_threshold:
+            self.scope.failsafe.kill(message='focus lock profile suggests heat danger')
+        
+        try:
+            assert np.std(cf.sum(axis=1)) > self._min_lateral_sigma
+            
+            if self.subtraction_profile is not None:
+                peak_position, success = self.find_peak(profile - self.subtraction_profile)
+            else:
+                peak_position, success = self.find_peak(profile)
+            assert success
+        except AssertionError:
             self._lock_ok = False
             # restart the integration / derivatives so we don't go wild when we
             # eventually get a good fit again
@@ -303,10 +480,11 @@ class ReflectedLinePIDFocusLock(PID):
         elapsed_time =_current_time() - self._last_time
         correction = self(self.peak_position)
         # note that correction only updates if elapsed_time is larger than sample time - don't apply same correction 2x.
-        if self.auto_mode and elapsed_time > self.sample_time:
-            # logger.debug('Correction: %.2f' % correction)
-            # logger.debug('components %s' % (self.components,))
-            self.piezo.CorrectOffset(correction)
+        with self._piezo_control_lock:
+            if self.auto_mode and elapsed_time > self.sample_time:
+                # logger.debug('Correction: %.2f' % correction)
+                # logger.debug('components %s' % (self.components,))
+                self.piezo.CorrectOffset(correction)
 
 
 class RLPIDFocusLockClient(object):
@@ -317,24 +495,41 @@ class RLPIDFocusLockClient(object):
 
         self.base_url = 'http://%s:%d' % (host, port)
         self._session = requests.Session()
+        self._enabled = False
 
     @property
     def lock_enabled(self):
-        return self.LockEnabled()
+        """Returns a cached version of the lock state, which while helpful in
+        some instances (notably whether to accept a correction from the server)
+        should usually not replace `LockEnabled`
+
+        Returns
+        -------
+        bool
+        """
+        return self._enabled
 
     def LockEnabled(self):
         response = self._session.get(self.base_url + '/LockEnabled')
-        return bool(response.json())
+        self._enabled = bool(response.json())
+        return self.lock_enabled
     
     def LockOK(self):
         response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
     def EnableLock(self):
+        self._enabled = True
         return self._session.get(self.base_url + '/EnableLock')
+    
+    def EnableLockAndHome(self):
+        self._enabled = True
+        return self._session.get(self.base_url + '/EnableLockAndHome')
 
     def DisableLock(self):
-        return self._session.get(self.base_url + '/DisableLock')
+        self._enabled = False
+        r = self._session.get(self.base_url + '/DisableLock')
+        return r
 
     def GetPeakPosition(self):
         response = self._session.get(self.base_url + '/GetPeakPosition')
@@ -344,6 +539,9 @@ class RLPIDFocusLockClient(object):
         if setpoint is None:
             setpoint = self.GetPeakPosition()
         return self._session.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+    
+    def UpdateHome(self, home):
+        return self._session.get(self.base_url + '/UpdateHome?home=%3.3f' % (home,))
 
     def ToggleLock(self):
         if self.lock_enabled:
@@ -353,6 +551,19 @@ class RLPIDFocusLockClient(object):
 
     def SetSubtractionProfile(self):
         return self._session.get(self.base_url + '/SetSubtractionProfile')
+    
+    def ReacquireLock(self, start_at=0, step_size=3):
+        return self._session.get(self.base_url + '/ReacquireLock?step_size=%3.3f&start_at=%3.3f' % (step_size, start_at))
+    
+    def DisableLockAfterAcquiring(self, target_tolerance=1):
+        self._enabled = False
+        r = self._session.get(self.base_url + '/DisableLockAfterAcquiring?target_tolerance=%3.3f' % target_tolerance)
+        return r
+    
+    def DisableLockAfterAcquiringIfEnabled(self, target_tolerance=1):
+        self._enabled = False
+        r = self._session.get(self.base_url + '/DisableLockAfterAcquiringIfEnabled?target_tolerance=%3.3f' % target_tolerance)
+        return r
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):

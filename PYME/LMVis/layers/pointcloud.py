@@ -25,6 +25,9 @@ class Points3DEngine(BaseEngine):
     
         with self.shader_program:
             vertices = layer.get_vertices()
+            if vertices is None:
+                return False
+            
             n_vertices = vertices.shape[0]
         
             glVertexPointerf(vertices)
@@ -39,6 +42,7 @@ class Points3DEngine(BaseEngine):
             else:
                 glPointSize(layer.point_size*self.point_scale_correction)
             glDrawArrays(GL_POINTS, 0, n_vertices)
+            
 
 
 class PointSpritesEngine(Points3DEngine):
@@ -155,7 +159,7 @@ class PointCloudRenderLayer(EngineLayer):
 
     def _update(self, *args, **kwargs):
         cdata = self._get_cdata()
-        self.clim = [float(np.nanmin(cdata)), float(np.nanmax(cdata))]
+        self.clim = [float(np.nanmin(cdata)), float(np.nanmax(cdata))+1e-9]
         #self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -205,7 +209,8 @@ class PointCloudRenderLayer(EngineLayer):
         self._color_map = None
         self._color_limit = 0
         self._alpha = 0
-        if x is not None and y is not None and z is not None:
+        
+        if x is not None and y is not None and z is not None and len(x) > 0:
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             
@@ -227,14 +232,11 @@ class PointCloudRenderLayer(EngineLayer):
             
             cs = cs.ravel().reshape(len(colors), 4)
         else:
-            #cs = None
             if not vertices is None:
                 cs = np.ones((vertices.shape[0], 4), 'f')
             else:
                 cs = None
-            color_map = None
-            color_limit = None
-        
+
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):

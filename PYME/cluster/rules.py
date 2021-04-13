@@ -40,7 +40,7 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-from PYME.IO import DataSources, clusterIO, clusterResults
+from PYME.IO import DataSources, clusterIO, clusterResults, unifiedIO
 
 class NoNewTasks(Exception):
     pass
@@ -87,7 +87,7 @@ class Rule(object):
         on_completion : RuleFactory instance
             A rule to run after this one has completed (also setable using the `.chain()` method)
 
-        kwargs : any additional arguments (ignored in base class)
+        kwargs : any additional arguments, available in the context used when creating the rule template
 
         """
         
@@ -112,7 +112,13 @@ class Rule(object):
         
         if on_completion:
             chained_context = dict(**context)
-            chained_context['rule_outputs'] = self.output_files
+            # standard recipe single-input key is 'input'. Set up 'results'
+            # as alt key so we can use the same recipe in clusterUI views
+            out_files = self.output_files
+            if 'results' in out_files.keys() and 'input' not in out_files.keys():
+                out_files = out_files.copy()
+                out_files['input'] = out_files.pop('results')
+            chained_context['rule_outputs'] = out_files
             rule['on_completion'] = on_completion.get_rule(chained_context).rule
         
         return rule
@@ -174,6 +180,15 @@ class Rule(object):
 
         """
         return True
+
+    @property
+    def data_complete(self):
+        """ Is the underlying data complete?"""
+        return True
+    
+    def on_data_complete(self):
+        '''Over-ride in derived rules so that, e.g. events can be written at the end of a real-time acquisition '''
+        pass
     
     def get_new_tasks(self):
         """
@@ -238,8 +253,10 @@ class Rule(object):
         if not self.complete:
             #we haven't released all the frames yet, start a loop to poll and release frames as they become available.
             self.doPoll = True
-            self.pollT = threading.Thread(target=self._poll_loop())
+            self.pollT = threading.Thread(target=self._poll_loop)
             self.pollT.start()
+        else:
+            self.on_data_complete()
 
     def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
         """ wrapper around add_integer_rule api endpoint"""
@@ -294,9 +311,6 @@ class Rule(object):
 
     def _poll_loop(self):
         logging.debug('task pusher poll loop started')
-        # wait until clusterIO caches clear to avoid replicating the results file.
-        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
-        time.sleep(1.5)
     
         while (self.doPoll == True):
             try:
@@ -305,8 +319,18 @@ class Rule(object):
             except NoNewTasks:
                 pass
         
+            if self.data_complete and not hasattr(self, '_data_comp_callback_res'):
+                logger.debug('input data complete, calling on_data_complete')
+                self._data_comp_callback_res=self.on_data_complete()
+            
             if self.complete:
-                logging.debug('input data complete and all tasks pushed, marking rule as complete')
+                logger.debug('input data complete')
+                try:  # check/relase one more time to avoid race condition
+                    rel_start, rel_end = self.get_new_tasks()
+                    self._release_tasks(rel_start, rel_end)
+                except NoNewTasks:
+                    pass
+                logger.debug('all tasks pushed, marking rule as complete')
                 self._mark_complete()
                 logging.debug('ending polling loop.')
                 self.doPoll = False
@@ -330,8 +354,23 @@ class RecipeRule(Rule):
             A cluster URI for the recipe text (if `recipe` not provided directly)
         output_dir : str
             The directory to put the recipe output TODO: should this be templated based on context?
-        kwargs : any additional args to get passed to base class - e.g. on_completion
-
+        kwargs : dict
+            Parameters for the base `Rule` class (notably `on_completion`, which, if provided, should be a RuleFactory instance).
+            Additional parameters, not consumed by `Rule` are accessible in the context used for creating rule templates.  
+            
+            One (and only one) of the following keyword parameters should be provided to specify the recipe inputs:
+                inputs : dict
+                    keys are recipe namespace keys, values are either lists of file URIs, or globs which will be expanded 
+                    to a list of URIs. Corresponds to the `inputsByTask` property in the recipe description (see `ruleserver` docs).
+                    `inputsByTask` will be used by the server to populate the inputs for individual tasks 
+                input_templates : dict
+                    simplar to inputs, except that dictionary substitution with the rule context is perfromed on the values before
+                    they are written to `inputsByTasks`
+                rule_outputs :  dict
+                    used with chained recipes, this is the outputs of the previous recipe step. Unlike `inputs` and `input_templates`
+                    this is a dict of str, rather than of list (or glob-implied list) and is written directly to the `"inputs"` section
+                    of the template, rather than to the `inputsByTask` property of the rule, short-circuiting server side input filling.
+        
         TODO - support for templated recipes? Subclass?
         """
         
@@ -368,12 +407,22 @@ class RecipeRule(Rule):
 
         if not inputs:
             if not context.get('rule_outputs', False):
+                # NOTE - rule_outputs is handled in _task_template.
                 raise RuntimeError('No inputs found, one of "inputs", "input_templates", or "rule_outputs" must be present in context')
             inputs_by_task = None
         else:
             input_names = inputs.keys()
-            inputs = {k: inputs[k] if isinstance(inputs[k], list) else clusterIO.cglob(inputs[k], include_scheme=True) for k
-                      in input_names}
+            
+            def _to_input_list(v):
+                # TODO - move this fcn definition??
+                if isinstance(v, list):
+                    return v
+                else:
+                    # value is a string glob
+                    name, serverfilter = unifiedIO.split_cluster_url(v)
+                    return clusterIO.cglob(name, serverfilter)
+                    
+            inputs = {k: _to_input_list(inputs[k]) for k in input_names}
     
             self._num_recipe_tasks = len(list(inputs.values())[0])
     
@@ -396,21 +445,20 @@ class RecipeRule(Rule):
     
     def _task_template(self, context):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
-                      "type": "recipe",
-                      "inputs" : {{taskInputs}},
-                      %s,
-                      %s
-                      }'''
+                    "type": "recipe",
+                    "inputs" : {{taskInputs}},
+                    %s
+                }'''
         
         if self.output_dir is None:
             output_dir_n = ''
         else:
-            output_dir_n = '"output_dir": "%s",' % self.output_dir
-        
+            output_dir_n = '"output_dir": "%s",\n    ' % self.output_dir
+    
         if self.recipeURI:
-            task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
+            task = task % (output_dir_n + '"taskdefRef" : "%s"' % self.recipeURI)
         else:
-            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text, output_dir_n)
+            task = task % (output_dir_n + '"taskdef" : {"recipe": "%s"}' % self.recipe_text)
             
         #if we are a chained rule, hard-code inputs
         rule_outputs = context.get('rule_outputs', None)
@@ -424,7 +472,7 @@ class RecipeRule(Rule):
 
 
 class LocalisationRule(Rule):
-    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
+    def __init__(self, seriesName, analysisMetadata, resultsFilename=None, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter, **kwargs):
         from PYME.IO import MetaDataHandler
         from PYME.Analysis import MetaData
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
@@ -448,18 +496,28 @@ class LocalisationRule(Rule):
         MetaData.fixEMGain(resultsMdh)
         
         
-        self._setup(seriesName, resultsMdh, resultsFilename, startAt, dataSourceModule, serverfilter)
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
+
+        #load data source
+        if dataSourceModule is None:
+            DataSource = DataSources.getDataSourceForFilename(seriesName)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
+                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+    
+        self.ds = DataSource(seriesName)
+    
+        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
         
         Rule.__init__(self, **kwargs)
         
     def _output_files(self):
         return {'results' : self.resultsURI}
     
-    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
+    def _setup(self, dataSourceID, metadata, resultsFilename, startAt=0, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
-    
         
         #where the results are when we want to read them
         self.resultsURI = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsFilename)
@@ -474,17 +532,6 @@ class LocalisationRule(Rule):
         self.mdh = metadata
         self.start_at = startAt
         self.serverfilter = serverfilter
-    
-        #load data source
-        if dataSourceModule is None:
-            DataSource = DataSources.getDataSourceForFilename(dataSourceID)
-        else:
-            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
-                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
-    
-        self.ds = DataSource(self.dataSourceID)
-    
-        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
     
     def _task_template(self, context):
         tt = {'id': '{{ruleID}}~{{taskID}}',
@@ -510,7 +557,9 @@ class LocalisationRule(Rule):
         #set up results file:
         logging.debug('resultsURI: ' + self.worker_resultsURI)
         clusterResults.fileResults(self.worker_resultsURI + '/MetaData', self.mdh)
-        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
+        
+        # defer copying events to after series completion
+        #clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.put_file(self.resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=self.serverfilter)
@@ -519,11 +568,19 @@ class LocalisationRule(Rule):
         #time.sleep(1.5) #moved inside polling thread so launches will run quicker
 
         self._next_release_start = self.start_at
-        numTotalFrames = self.ds.getNumSlices()
-        self.frames_outstanding=numTotalFrames - self._next_release_start
-        
+        self.frames_outstanding=self.total_frames - self._next_release_start
+        if self.data_complete:
+            return dict(max_tasks=self.total_frames)
         return {}
+    
+    @property
+    def total_frames(self):
+        return self.ds.getNumSlices()
 
+    @property
+    def data_complete(self):
+        return self.ds.is_complete
+    
     @property
     def complete(self):
         """
@@ -534,7 +591,11 @@ class LocalisationRule(Rule):
         -------
 
         """
-        return self.ds.is_complete and not (self.frames_outstanding  > 0)
+        return self.data_complete and self.total_frames == self._next_release_start
+    
+    def on_data_complete(self):
+        logger.debug('Data complete, copying events to output file')
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
     def get_new_tasks(self):
         """
@@ -546,7 +607,7 @@ class LocalisationRule(Rule):
         release_start, release_end : the indices of starting and ending tasks to release
 
         """
-        numTotalFrames = self.ds.getNumSlices()
+        numTotalFrames = self.total_frames
         logging.debug('numTotalFrames: %s, _next_release_start: %d' % (numTotalFrames, self._next_release_start))
 
         if numTotalFrames <= self._next_release_start:
@@ -560,10 +621,55 @@ class LocalisationRule(Rule):
             
             return release_start, release_end
         
+
+class SpoolLocalLocalizationRule(LocalisationRule):
+    def __init__(self, spooler, seriesName, analysisMetadata, resultsFilename=None, startAt=0, serverfilter=clusterIO.local_serverfilter, **kwargs):
+        # TODO - reduce duplication of `LocalisationRule.__init__()` and `LocalisationRule._setup()`
+        from PYME.IO import MetaDataHandler
+        from PYME.Analysis import MetaData
+        from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
+        from PYME.IO import unifiedIO
+
+        self.spooler = spooler
+    
+        if resultsFilename is None:
+            resultsFilename = genClusterResultFileName(seriesName)
         
+        resultsFilename = verify_cluster_results_filename(resultsFilename)
+        logger.info('Results file: ' + resultsFilename)
+    
+        resultsMdh = MetaDataHandler.DictMDHandler()
+        # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
+        resultsMdh.update(self.spooler.md)
+        resultsMdh.update(analysisMetadata)
+        resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo',
+                                                                        resultsMdh.getOrDefault('Analysis.StartAt', 0))
+        MetaData.fixEMGain(resultsMdh)
         
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
+        
+        Rule.__init__(self, **kwargs)
+    
+    @property
+    def total_frames(self):
+        return self.spooler.get_n_frames()
+
+    @property
+    def data_complete(self):
+        try:
+            return self.spooler.finished()
+        except RuntimeError as e:
+            logger.error(str(e))
+            logger.info('marking data as complete')
+            return True
+    
+    def on_data_complete(self):
+        events = self.spooler.evtLogger.to_recarray()
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', events)
+
 
 class RuleFactory(object):
+    _type = ''
     def __init__(self, on_completion=None, rule_class = Rule, **kwargs):
         """
         Create a new rule factory. Sub-classed for specific rule types
@@ -583,7 +689,10 @@ class RuleFactory(object):
         
     def get_rule(self, context):
         """
-        Populate a rule using series specific info from context
+        Populate a rule using series specific info from context. Note that
+        the the rule class initialization arguments should be passed in the
+        RuleFactory initialization as kwargs, but can also be passed here in
+        context if, e.g. the series name is not known when creating the 
         
         Parameters
         ----------
@@ -592,8 +701,9 @@ class RuleFactory(object):
 
         Returns
         -------
-        
-        a rule suitable for submitting to the ruleserver `/add_integer_id_rule` endpoint
+        Rule
+            a rule suitable for submitting to the ruleserver `/add_integer_id_rule`
+            endpoint
 
         """
         
@@ -615,13 +725,37 @@ class RuleFactory(object):
         """
         assert(isinstance(on_completion, RuleFactory))
         self._on_completion = on_completion
-        
+
+    @property
+    def rule_type(self):
+        # TODO - rename to something like `display_name` of `display_type` to indicate that this is a UI helper function.
+        # TODO - do we need a function for this, or can we just have a property?
+        return self._type
+
 
 class RecipeRuleFactory(RuleFactory):
+    _type = 'recipe'
     def __init__(self, **kwargs):
         RuleFactory.__init__(self, rule_class=RecipeRule, **kwargs)
         
 class LocalisationRuleFactory(RuleFactory):
+    _type = 'localization'
     def __init__(self, **kwargs):
-        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)
-        
+        """
+        See `LocalisationRule` for full initialization arguments. Required 
+        kwargs are
+            seriesName : str
+            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
+        RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
+
+class SpoolLocalLocalizationRuleFactory(RuleFactory):
+    _type = 'localization'
+    def __init__(self, **kwargs):
+        """
+        See `SpoolLocalLocalizationRule` for full initialization arguments. 
+        Required kwargs are
+            seriesName : str
+            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
+        RuleFactory.__init__(self, rule_class=SpoolLocalLocalizationRule, **kwargs)   

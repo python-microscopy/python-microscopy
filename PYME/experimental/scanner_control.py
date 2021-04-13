@@ -58,7 +58,14 @@ class ScannerController(object):
             raise RuntimeError('waveform %s not supported' % waveform)
         
         
-        self._sound = pygame.sndarray.make_sound(y.astype('int16'))
+        if pygame.mixer.get_init()[2]  == 2:
+            #hack for when we can't get a mono mixer
+            print(y.shape)
+            y = np.tile(y.astype('int16')[:,None], (1,2))
+            print(y.shape)
+            self._sound = pygame.sndarray.make_sound(y)
+        else:
+            self._sound = pygame.sndarray.make_sound(y.astype('int16'))
         self._sound.play(-1)
         
         return ''

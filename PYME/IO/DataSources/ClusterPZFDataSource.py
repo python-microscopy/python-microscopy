@@ -60,6 +60,9 @@ class DataSource(BaseDataSource):
         self.fshape = None#(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
         
         self._getNumFrames()
+        
+        # if the series is complete when we start, we don't need to update the number of slices
+        self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
     
     def _getNumFrames(self):
         frameNames = [f for f in clusterIO.listdir(self.sequenceName, self.clusterfilter) if f.endswith('.pzf')]
@@ -79,9 +82,10 @@ class DataSource(BaseDataSource):
         return self.fshape
         
     def getNumSlices(self):
-        t = time.time()
-        if (t-self.lastShapeTime) > SHAPE_LIFESPAN:
-            self._getNumFrames()
+        if not self._complete:
+            t = time.time()
+            if (t-self.lastShapeTime) > SHAPE_LIFESPAN:
+                self._getNumFrames()
             
         return self.numFrames
 
@@ -90,20 +94,11 @@ class DataSource(BaseDataSource):
         return self.sequenceName + '/events.json'
 
     def getEvents(self):
-        import pandas as pd #defer pandas import for as long as possible
+        from PYME.IO import events
+        import json
         try:
-            #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter))
-            if len(ev) == 0:
-                return []
-            
-            ev.columns = ['EventName', 'EventDescr', 'Time']
-
-            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('Time', 'f8'), ('EventDescr', 'S256')])
-            evts['EventName'] = ev['EventName']
-            evts['EventDescr'] = ev['EventDescr']
-            evts['Time'] = ev['Time']
-            return evts
+            ev = json.loads(clusterIO.get_file(self.eventFileName, self.clusterfilter, timeout=10))
+            return events.EventLogger.list_to_array(ev)
         except (IOError, ValueError):
             #our series might not have any events
             return []
@@ -113,6 +108,10 @@ class DataSource(BaseDataSource):
 
     @property
     def is_complete(self):
-        #TODO - add check to see if we have an updated number of frames
-        return clusterIO.exists(self.eventFileName, self.clusterfilter)
+        if not self._complete:
+            # if cached property is false, check to see if anything has changed
+            #TODO - add check to see if we have an updated number of frames
+            self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
+        
+        return self._complete
  

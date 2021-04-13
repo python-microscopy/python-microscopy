@@ -262,9 +262,8 @@ class VisGUICore(object):
             self.AddMenuItem('File', itemType='separator')
             self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurements)
 
-            self.AddMenuItem('File', itemType='separator')
-
-            self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
+            #self.AddMenuItem('File', itemType='separator')
+            #self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
         if not self._new_layers:
@@ -288,12 +287,16 @@ class VisGUICore(object):
     
             self.AddMenuItem('View', itemType='separator')
         
-        self.AddMenuItem('View', '&Fit', self.SetFit)
-        self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
+        self.AddMenuItem('View', '&Home\tAlt-H', self.OnHome)
+        self.AddMenuItem('View', '&Fit\tAlt-F', self.SetFit)
+        self.AddMenuItem('View', 'Fit ROI\tAlt-8', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
+
+        self.AddMenuItem('View', 'Re&center\tAlt-C', self.OnRecenter)
+        self.AddMenuItem('View', 'Reset &rotation\tAlt-R', self.OnResetRotation)
 
         self.AddMenuItem('View', itemType='separator')
         
@@ -310,12 +313,13 @@ class VisGUICore(object):
             pass
 
         if not subMenu:
+            self.AddMenuItem('Help', "&Documentation", self.OnDocumentation)
             self.AddMenuItem('Help', "&About", self.OnAbout)
             
     def create_tool_bar(self, parent):
         from .displayPane import DisplayPaneHorizontal
         
-        return DisplayPaneHorizontal(parent, self.glCanvas, None)
+        return DisplayPaneHorizontal(parent, self.glCanvas, self)
         
         
     def OnViewPoints(self,event):
@@ -394,8 +398,7 @@ class VisGUICore(object):
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
-                                   default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
+                                   wildcard='All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
 
         #print filename
         if not filename == '':
@@ -427,7 +430,6 @@ class VisGUICore(object):
     
         self.layer_added.send(self)
 
-    
     @property
     def layers(self):
         return self.glCanvas.layers
@@ -622,6 +624,17 @@ class VisGUICore(object):
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
                                   ybounds[0], ybounds[1])
 
+    def OnRecenter(self, event=None):
+        self.glCanvas.recenter_bbox()
+        self.glCanvas.Refresh()
+
+    def OnResetRotation(self, event=None):
+        self.glCanvas.ResetView()
+        self.glCanvas.Refresh()
+
+    def OnHome(self, event=None):
+        self.OnResetRotation(event)
+        self.SetFit(event)
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)
@@ -730,10 +743,16 @@ class VisGUICore(object):
         return args
 
     def OpenFile(self, filename, recipe_callback=None):
-        args = self._populate_open_args(filename)
-
+        # get rid of any old layers
+        while len(self.layers) > 0:
+            self.layers.pop()
+        
         print('Creating Pipeline')
-        self.pipeline.OpenFile(filename, **args)
+        if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds)
+        else:
+            args = self._populate_open_args(filename)
+            self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
         #############################

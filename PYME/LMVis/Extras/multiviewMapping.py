@@ -120,11 +120,10 @@ class MultiviewMapper:
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
-        #TODO - move me to building the pipeline
-        recipe.add_modules_and_execute([FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                                    outputName='filtered_input', filters={'error_x':[0, 30.], 'error_y':[0,30.]}),
-                                        Fold(recipe, input_name='filtered_input', output_name='folded')
-                                        ])
+        
+        recipe.add_modules_and_execute([Fold(recipe,
+                                             input_name=self.pipeline.selectedDataSourceKey, 
+                                             output_name='folded')])
         
         self.pipeline.selectDataSource('folded')
 
@@ -200,7 +199,7 @@ class MultiviewMapper:
 
 
         calibration_module = CalibrateShifts()
-        if not calibration_module.configure_traits(view=calibration_module.pipeline_view_min, kind='modal'):
+        if not calibration_module.configure_traits(kind='modal'):
             return
         
         sm = calibration_module.apply_simple(self.pipeline.selectedDataSource)
@@ -387,13 +386,39 @@ class MultiviewMapper:
         mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
                                    astigmatism_calibration_location=pathToMap, output_name='z_mapped')
 
-        if mapping_module.configure_traits(view=mapping_module.pipeline_view_min, kind='modal'):
+        if mapping_module.configure_traits(kind='modal'):
             recipe.add_modules_and_execute([mapping_module,])
             
+            # keep a reference for debugging
+            
+            self._amm = mapping_module
+            
             self.pipeline.selectDataSource('z_mapped')
-    
             self.visFr.RefreshView() #TODO - is this needed?
         #self.visFr.CreateFoldPanel()
+            
+    def OnAstigQualityControl(self, event=None):
+        import matplotlib.pyplot as plt
+        import json
+
+        with open(self._amm.astigmatism_calibration_location, 'r') as f:
+            acal = json.loads(f.read())
+            
+        
+        plt.figure()
+
+        for i in range(4):
+            plt.subplot(4, 2, 2 * i + 1)
+            plt.plot(acal[i]['z'], acal[i]['sigmax'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmax%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmax%d' % i)
+            plt.grid()
+            plt.subplot(4, 2, 2 * i + 2)
+            plt.plot(acal[i]['z'], acal[i]['sigmay'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmay%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmay%d' % i)
+            plt.grid()
+        
 
     def OnCheckAstigmatismCalibration(self, event=None):
         """
