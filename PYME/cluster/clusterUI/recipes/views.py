@@ -30,20 +30,18 @@ def get_input_glob(request):
 def run(request):
     from PYME import config
     from PYME.cluster.rules import RecipeRule
-    import posixpath
 
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').lstrip('/')
-    input_list = request.POST.getlist('files', [])
-    try:
-        # put outputs in the same directory as selected files, under 'analysis'
-        output_dir = posixpath.join(posixpath.split(input_list[0])[0], 
-                                    'analysis')
-    except IndexError:
-        logger.error('no inputs selected')
-        return
+    recipe_url = request.POST.get('recipeURL')
+    output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
+    fileNames = request.POST.getlist('files', [])
     
-    rule = RecipeRule(recipeURI=recipeURI, output_dir=output_dir,
-                      inputs={'input': input_list})
+    if recipe_url is not None:
+        recipeURI = ('pyme-cluster://%s/' % server_filter) + recipe_url.lstrip('/')
+        rule = RecipeRule(recipeURI=recipeURI, output_dir=output_directory, inputs={'input': fileNames})
+    else:
+        recipe_text = request.POST.get('recipe_text')
+        rule = RecipeRule(recipe=recipe_text, output_dir=output_directory, inputs={'input': fileNames})
+    
     rule.push()
 
     return HttpResponseRedirect('/status/queues/')
