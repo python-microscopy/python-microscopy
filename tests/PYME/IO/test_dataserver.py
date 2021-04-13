@@ -104,3 +104,32 @@ def test_dircache_purge():
         listing = clusterIO.listdir('_testing/lots_of_folders/test_%d/' % i, 'TES1')
     
     #assert (len(listing) == 10)
+
+def test_mulithread_result_filing():
+    import numpy as np
+    from PYME.IO import clusterResults, unifiedIO
+    import tables
+    import posixpath
+    import threading
+    
+    n_filings = 500
+    n_per = np.random.randint(0, 100, n_filings)
+    data = [np.ones(n_per[ind], dtype=[('a', '<f4'), ('b', '<f4')]) for ind in range(n_filings)]
+    dest = 'pyme-cluster://TES1/__aggregate_h5r/_testing/test_result_filing.h5r'
+
+    threads = []
+    for ind in range(n_filings):
+        t = threading.Thread(target=clusterResults.fileResults, 
+                             args=(posixpath.join(dest, 'foo'), data[ind]))
+        t.start()
+        threads.append(t)
+    
+    [t.join() for t in threads]
+
+    time.sleep(5)
+
+    with unifiedIO.local_or_temp_filename('pyme-cluster://TES1/_testing/test_result_filing.h5r') as f,\
+        tables.open_file(f) as t:
+        n_received = len(t.root.foo)
+    
+    assert n_received == np.sum(n_per)
