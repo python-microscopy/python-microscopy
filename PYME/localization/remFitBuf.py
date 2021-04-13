@@ -50,8 +50,6 @@ import numpy as np
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
-bufferMisses = 0
-nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR', 'SplitterFitScavNR',
                       'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterFitFusionR',
@@ -398,7 +396,7 @@ class fitTask(taskDef.Task):
 
 
     def __call__(self, gui=False, taskQueue=None):
-        global dBuffer, bBuffer, dataSourceID, nTasksProcessed
+        global dBuffer, bBuffer, dataSourceID
         
         # short-circuit if a task is generated for a frame pre-StartAt
         # FIXME - we should never generate tasks for these frames.
@@ -422,7 +420,6 @@ class fitTask(taskDef.Task):
         self.data = bufferManager.dBuffer.getSlice(self.index)
         #if logger.isEnabledFor(logging.DEBUG):
         #    logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
-        nTasksProcessed += 1
         #print self.index
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
