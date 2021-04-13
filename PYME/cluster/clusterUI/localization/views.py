@@ -122,7 +122,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
 
     #print json.dumps(f.cleaned_data)
     # NB - any metadata entries given here will override the series metadata later: pass analysis settings only
-    analysisMDH = MetaDataHandler.DictMDHandler()
+    analysisMDH = MetaDataHandler.NestedClassMDHandler()
     analysisMDH.update(f.cleaned_data)
 
     #print request.GET
@@ -168,4 +168,3 @@ def localize(request, analysisModule='LatGaussFitFR'):
         raise RuntimeError('Failed to push %d of %d series' % (nFailed, nSeries))
 
     return HttpResponseRedirect('/status/queues/')
-
