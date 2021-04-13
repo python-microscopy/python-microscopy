@@ -310,7 +310,7 @@ class FrameWrangler(object):
             #lock to prevent _poll_loop setting an overflowed flag while we're in here.
             try:
                 self.inNotify = True
-                self.te = time.clock()
+                self.te = time.time()
                 #print self.te - self.tl
                 self.tl = self.te
                 
@@ -388,7 +388,7 @@ class FrameWrangler(object):
                     self.tLastFrame = self.tThisFrame
                     self.nFrames = self.n_frames_in_group
                     self.n_frames_in_group = 0
-                    self.tThisFrame = time.clock()
+                    self.tThisFrame = time.time()
                      
                     self.onFrameGroup.send(self)
                

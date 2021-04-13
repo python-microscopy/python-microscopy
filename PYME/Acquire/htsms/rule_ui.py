@@ -13,6 +13,7 @@ from PYME.recipes.traits import HasTraits, Enum, Float, CStr
 import textwrap
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +146,13 @@ class ProtocolRules(OrderedDict):
             'spooler': spooler}  # SpoolLocalLocalization
 
         # rule chain is already linked, add context and push
-        rule_factory_chain.rule_factories[0].get_rule(context=context).push()
+        rule = rule_factory_chain.rule_factories[0].get_rule(context=context)
+        t = threading.Thread(target=rule.push)
+        t.start()
+        if self.posting_thread_queue.full():
+            self.posting_thread_queue.get_nowait().join()
+        self.posting_thread_queue.put_nowait(t)
+        
     
     def update(self, *args, **kwargs):
         for p in self.keys():

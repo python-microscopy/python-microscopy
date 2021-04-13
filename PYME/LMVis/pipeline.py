@@ -733,7 +733,8 @@ class Pipeline:
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
             # only set the .events attribute if we actually have events.
-            ds.events = events
+            # ensure that events are sorted in increasing time order
+            ds.events = events[np.argsort(events['Time'])]
             
         return ds
 

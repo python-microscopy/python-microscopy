@@ -664,8 +664,8 @@ class SpoolLocalLocalizationRule(LocalisationRule):
             return True
     
     def on_data_complete(self):
-        logger.debug('Data complete, copying events to output file')
-        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.spooler.evtLogger.to_JSON())
+        events = self.spooler.evtLogger.to_recarray()
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', events)
 
 
 class RuleFactory(object):

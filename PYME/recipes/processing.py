@@ -1818,6 +1818,7 @@ class AverageFramesByZStep(ModuleBase):
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
 
+        # FIXME  - make this follow the correct event dtype
         fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
         averaged = ImageStack(new_stack, mdh=MetaDataHandler.NestedClassMDHandler(image_stack.mdh), events=fudged_events)
 

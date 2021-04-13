@@ -21,11 +21,8 @@
 #
 ##################
 
-from scipy import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
-
-import numpy
 import numpy as np
 
 import PYME.misc.fftw_compat as fftw3f
@@ -122,17 +119,17 @@ class ICTMDeconvolution(object):
         if 'prep' in dir(self) and not '_F' in dir(self):
             self.prep()
 
-        if not numpy.isscalar(weights):
+        if not np.isscalar(weights):
             self.mask = weights > 0
         else:
-            self.mask = numpy.isfinite(data.ravel())
+            self.mask = np.isfinite(data.ravel())
 
         #if doing 4Pi dec, do some phase related precomputation
         #TODO move this to the 4Pi_dec classes
         if (not alpha is None):
             self.alpha = alpha
-            self.e1 = fftshift(exp(1j*self.alpha))
-            self.e2 = fftshift(exp(2j*self.alpha))
+            self.e1 = fftshift(np.exp(1j*self.alpha))
+            self.e2 = fftshift(np.exp(2j*self.alpha))
 
         #guess a starting estimate for the object
         self.f = self.startGuess(data).ravel()
@@ -204,13 +201,13 @@ class ICTMDeconvolution(object):
             #set the current estimate to out new estimate
             self.f[:] = fnew
 
-        return real(self.fs)
+        return np.real(self.fs)
         
     def sim_pic(self,data,alpha):
         """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""
         self.alpha = alpha
-        self.e1 = fftshift(exp(1j*self.alpha))
-        self.e2 = fftshift(exp(2j*self.alpha))
+        self.e1 = fftshift(np.exp(1j*self.alpha))
+        self.e2 = fftshift(np.exp(2j*self.alpha))
         
         return self.Afunc(data)
 
@@ -416,7 +413,7 @@ class ClassicMappingFFTW(DeconvMappingBase):
         self._plan_F_r()
 
         #d = real(d);
-        return ravel(ifftshift(self._r))
+        return np.ravel(ifftshift(self._r))
 
     def Ahfunc(self, f):
         """Conjugate transform - convolve with conj. PSF"""
@@ -432,7 +429,7 @@ class ClassicMappingFFTW(DeconvMappingBase):
         self._F *= self.Ht
         self._plan_F_r()
 
-        return ravel(ifftshift(self._r))
+        return np.ravel(ifftshift(self._r))
 
 class dec_conv(ICTMDeconvolution, ClassicMappingFFTW):
     def __init__(self, *args, **kwargs):
@@ -463,7 +460,7 @@ class SpatialConvolutionMapping(DeconvMappingBase):
         i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
         """
         #make our data 3D again
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
         a = -6*fs
 
         a[:,:,0:-1] += fs[:,:,1:]
@@ -476,26 +473,26 @@ class SpatialConvolutionMapping(DeconvMappingBase):
         a[1:,:,:] += fs[0:-1,:,:]
 
         #flatten data again
-        return ravel(cast['f'](a))
+        return np.ravel(np.cast['f'](a))
 
     Lhfunc=Lfunc
 
     def Afunc(self, f):
         """Forward transform - convolve with the PSF"""
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
 
         #d = real(d);
-        return ravel(d)
+        return np.ravel(d)
 
     def Ahfunc(self, f):
         """Conjugate transform - convolve with conj. PSF"""
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)
         
-        return ravel(d)
+        return np.ravel(d)
 
 class dec_bead(ICTMDeconvolution, SpatialConvolutionMapping):
     def __init__(self, *args, **kwargs):
@@ -512,14 +509,14 @@ class dec_4pi(ICTMDeconvolution):
         self.width = data_size[1]
         self.depth = data_size[2]
         
-        (x, y, z) = np.mgrid[-floor(self.height / 2.0):(ceil(self.height / 2.0)),
-                    -floor(self.width / 2.0):(ceil(self.width / 2.0)),
-                    -floor(self.depth / 2.0):(ceil(self.depth / 2.0))]
+        (x, y, z) = np.mgrid[-np.floor(self.height / 2.0):(np.ceil(self.height / 2.0)),
+                    -np.floor(self.width / 2.0):(np.ceil(self.width / 2.0)),
+                    -np.floor(self.depth / 2.0):(np.ceil(self.depth / 2.0))]
         
         gs = np.shape(g)
-        g = g[int(floor((gs[0] - self.height) / 2)):int(self.height + floor((gs[0] - self.height) / 2)),
-            int(floor((gs[1] - self.width) / 2)):int(self.width + floor((gs[1] - self.width) / 2)),
-            int(floor((gs[2] - self.depth) / 2)):int(self.depth + floor((gs[2] - self.depth) / 2))]
+        g = g[int(np.floor((gs[0] - self.height) / 2)):int(self.height + np.floor((gs[0] - self.height) / 2)),
+            int(np.floor((gs[1] - self.width) / 2)):int(self.width + np.floor((gs[1] - self.width) / 2)),
+            int(np.floor((gs[2] - self.depth) / 2)):int(self.depth + np.floor((gs[2] - self.depth) / 2))]
         
         g = abs(ifftshift(ifftn(abs(fftn(g)))))
         g = (g / sum(sum(sum(g))))
@@ -531,18 +528,18 @@ class dec_4pi(ICTMDeconvolution):
         
         tk = 2 * kz * z
         
-        t = g * exp(1j * tk)
-        self.He = cast['F'](fftn(t));
-        self.Het = cast['F'](ifftn(t));
+        t = g * np.exp(1j * tk)
+        self.He = np.cast['F'](fftn(t));
+        self.Het = np.cast['F'](ifftn(t));
         
         tk = 2 * tk
         
-        t = g * exp(1j * tk)
-        self.He2 = cast['F'](fftn(t));
-        self.He2t = cast['F'](ifftn(t));
+        t = g * np.exp(1j * tk)
+        self.He2 = np.cast['F'](fftn(t));
+        self.He2t = np.cast['F'](ifftn(t));
     
     def Lfunc(self, f):
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
         a = -6 * fs
         
         a[:, :, 0:-1] += fs[:, :, 1:]
@@ -554,12 +551,12 @@ class dec_4pi(ICTMDeconvolution):
         a[0:-1, :, :] += fs[1:, :, :]
         a[1:, :, :] += fs[0:-1, :, :]
         
-        return ravel(cast['f'](a))
+        return np.ravel(np.cast['f'](a))
     
     Lhfunc = Lfunc
     
     def Afunc(self, f):
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
         
         F = fftn(fs)
         
@@ -569,13 +566,13 @@ class dec_4pi(ICTMDeconvolution):
         
         d_e2 = ifftshift(ifftn(F * self.He2));
         
-        d = (1.5 * real(d_1) + 2 * real(d_e * self.e1) + 0.5 * real(d_e2 * self.e2))
+        d = (1.5 * np.real(d_1) + 2 * np.real(d_e * self.e1) + 0.5 * np.real(d_e2 * self.e2))
         
-        d = real(d);
-        return ravel(d)
+        d = np.real(d);
+        return np.ravel(d)
     
     def Ahfunc(self, f):
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
         
         F = fftn(fs)
         
@@ -585,28 +582,28 @@ class dec_4pi(ICTMDeconvolution):
         
         d_e2 = ifftshift(ifftn(F * self.He2t));
         
-        d = (1.5 * d_1 + 2 * real(d_e * exp(1j * self.alpha)) + 0.5 * real(d_e2 * exp(2 * 1j * self.alpha)));
+        d = (1.5 * d_1 + 2 * np.real(d_e * np.exp(1j * self.alpha)) + 0.5 * np.real(d_e2 * np.exp(2 * 1j * self.alpha)));
         
-        d = real(d);
-        return ravel(d)
+        d = np.real(d);
+        return np.ravel(d)
 
 
 class dec_4pi_c(dec_4pi):
     def prepare(self):
-        return cDec.prepare(shape(self.H))
+        return cDec.prepare(np.shape(self.H))
     
     def cleanup(self):
         return cDec.cleanup()
     
     def Afunc(self, f):
-        return ravel(ifftshift(reshape(cDec.fw_map(cast['F'](f),cast['F'](self.alpha), cast['F'](self.H), cast['F'](self.He), cast['F'](self.He2), cast['F'](self.e1), cast['F'](self.e2)), shape(self.alpha))))
+        return np.ravel(ifftshift(np.reshape(cDec.fw_map(np.cast['F'](f), np.cast['F'](self.alpha), np.cast['F'](self.H), np.cast['F'](self.He), np.cast['F'](self.He2), np.cast['F'](self.e1), np.cast['F'](self.e2)), np.shape(self.alpha))))
     
     def Ahfunc(self, f):
         #return cDec.fw_map(f,self.alpha, self.Ht, self.Het, self.He2t, self.e1, self.e2)
-        return ravel(ifftshift(reshape(cDec.fw_map(cast['F'](f),cast['F'](self.alpha), cast['F'](self.Ht), cast['F'](self.Het), cast['F'](self.He2t), cast['F'](self.e1), cast['F'](self.e2)), shape(self.alpha))))
+        return np.ravel(ifftshift(np.reshape(cDec.fw_map(np.cast['F'](f), np.cast['F'](self.alpha), np.cast['F'](self.Ht), np.cast['F'](self.Het), np.cast['F'](self.He2t), np.cast['F'](self.e1), np.cast['F'](self.e2)), np.shape(self.alpha))))
     
     def Lfunc(self,f):
-        return cDec.Lfunc(f, shape(self.alpha))
+        return cDec.Lfunc(f, np.shape(self.alpha))
     
     Lhfunc = Lfunc
   

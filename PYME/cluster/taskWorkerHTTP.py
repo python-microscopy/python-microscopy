@@ -353,7 +353,14 @@ class taskWorker(object):
                         pass
 
                     try:
-                        context['output_dir'] = unifiedIO.dirname(taskDescr['output_dir'])
+                        od = taskDescr['output_dir']
+                        # make sure we have a trailing slash
+                        # TODO - this should be fine for most windows use cases, as you should generally
+                        # use POSIX urls for the cluster/cluster of one, but might need checking
+                        if not od.endswith('/'):
+                            od = od + '/'
+                            
+                        context['output_dir'] = unifiedIO.dirname(od)
                     except KeyError:
                         pass
 

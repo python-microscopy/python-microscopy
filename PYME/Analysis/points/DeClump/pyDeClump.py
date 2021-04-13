@@ -25,6 +25,8 @@ import tables
 import numpy as np
 from six.moves import xrange
 
+import warnings
+
 
 def findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames=5):
     #get the indices of all the points in the next n frames
@@ -97,9 +99,12 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def findClumps(t, x, y, delta_x, nFrames=5):
+
+def _findClumps(t, x, y, delta_x, nFrames=5):
     """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
+    
+    OLD, reference implementation - use the optimised DeClump.findClumps instead.
     """
 
     nRes = len(t)

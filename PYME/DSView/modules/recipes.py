@@ -25,6 +25,7 @@ from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import wx
 import numpy as np
+import six
 
 #from PYME.recipes import modules
 from PYME.recipes import recipeGui
@@ -152,7 +153,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 _display_output_image(self.outp)
             elif not self.outp is None:
                 from PYME.IO import tabular
-                import six
+                
                 
                 cache = tabular.CachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)

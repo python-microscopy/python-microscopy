@@ -93,7 +93,7 @@ class LazyScopeTweeter(object):
                     1: trigger when count is above trigger_counts, 0: trigger when count is equal to trigger_counts,
                     -1: trigger when count is below trigger_counts
                 action_filter: str
-                    Type of task to count, e.g. 'spoolController.StartSpooling'. A null string, '', will count all
+                    Type of task to count, e.g. 'spoolController.start_spooling'. A null string, '', will count all
                     tasks.
                 message: str
                     Message to tweet once triggered

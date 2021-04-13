@@ -94,20 +94,11 @@ class DataSource(BaseDataSource):
         return self.sequenceName + '/events.json'
 
     def getEvents(self):
-        import pandas as pd #defer pandas import for as long as possible
+        from PYME.IO import events
+        import json
         try:
-            #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter, timeout=10))
-            if len(ev) == 0:
-                return []
-            
-            ev.columns = ['EventName', 'EventDescr', 'Time']
-
-            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('Time', 'f8'), ('EventDescr', 'S256')])
-            evts['EventName'] = ev['EventName']
-            evts['EventDescr'] = ev['EventDescr']
-            evts['Time'] = ev['Time']
-            return evts
+            ev = json.loads(clusterIO.get_file(self.eventFileName, self.clusterfilter, timeout=10))
+            return events.EventLogger.list_to_array(ev)
         except (IOError, ValueError):
             #our series might not have any events
             return []

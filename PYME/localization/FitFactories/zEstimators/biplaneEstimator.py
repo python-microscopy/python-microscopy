@@ -131,7 +131,8 @@ def calibrate(interpolator, md, roiSize=5):
 
     #take central bit having, the same gradient sign
 
-    imn = len(sgn)/2
+    # must be integer division!
+    imn = len(sgn) // 2
     imx  =  imn
     
     sg =  sgn[imn]

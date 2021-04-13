@@ -81,7 +81,7 @@ class zScanner:
         self.img = image.ImageStack(data=self.image, mdh=mdh)
 
         #self.view = View3D(self.image, 'Z Stack', mdh = mdh)
-        self.view = ViewIm3D(self.img, 'Z Stack')
+        #self.view = ViewIm3D(self.img, 'Z Stack')
         self.running = True
         
         self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
@@ -93,28 +93,14 @@ class zScanner:
         self.startPos = self.scope.GetPos()[self.posChan]
         
         self.scope.frameWrangler.stop()
-        #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
-        #self.scope.frameWrangler.WantStartNotification.append(self.OnAqStart)
-        #self.scope.frameWrangler.WantStopNotification.append(self.OnAqStop)
-
         self.scope.frameWrangler.onFrame.connect(self.OnCameraFrame)
-
-        #self.scope.frameWrangler.onStart.connect(self.OnAqStart)
-        #self.scope.frameWrangler.onStop.connect(self.OnAqStop)
         
-        self.scope.frameWrangler.start()
         self.OnAqStart()
+        self.scope.frameWrangler.start()
         
     def Stop(self):
         self.scope.frameWrangler.stop()
-        #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
-        #self.scope.frameWrangler.WantStartNotification.remove(self.OnAqStart)
-        #self.scope.frameWrangler.WantStopNotification.remove(self.OnAqStop)
-        
         self.scope.frameWrangler.onFrame.disconnect(self.OnCameraFrame)
-        #self.scope.frameWrangler.onStart.disconnect(self.OnAqStart)
-        #self.scope.frameWrangler.onStop.disconnect(self.OnAqStop)
-        
         self.scope.frameWrangler.start()
 
         self.OnAqStop()
@@ -131,7 +117,7 @@ class zScanner:
         self.image = np.zeros((self.shape_x, self.shape_y, self.nz), 'uint16')
 
         self.img.SetData(self.image)
-        self.view.do.SetDataStack(self.img.data)
+        #self.view.do.SetDataStack(self.img.data)
         
         #loop over all providers of metadata
         for mdgen in MetaDataHandler.provideStartMetadata:
@@ -151,13 +137,14 @@ class zScanner:
         #self.view_yz.do.xp = self.ds.shape[0]/2
 
         #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
+        print('setting initial position')
         self.scope.SetPos(**{self.posChan : self.zPoss[self.pos]})
 
 
     def OnCameraFrame(self, sender, frameData, **kwargs):
         fn = int(floor(self.callNum) % len(self.zPoss))
         self.frameNum = fn
-        #print fn
+        #print(fn)
         if self.sqrt:
             self.image[:, :,fn] = (self.sc*np.sqrt(frameData[0,:,:] - self.off)).astype('uint16')
         else:
@@ -182,8 +169,8 @@ class zScanner:
             self.onStack.send(self)
                 
             
-            if 'decView' in dir(self.view):
-                self.view.decView.wienerPanel.OnCalculate()
+            #if 'decView' in dir(self.view):
+            #    self.view.decView.wienerPanel.OnCalculate()
         #self.view_xz.Refresh()
         #self.view_yz.Refresh()
         #for cb in self.WantTickNotification:
@@ -191,9 +178,9 @@ class zScanner:
             
         self.onSingleFrame.send(self)
             
-        if fn == 0:
-            self.view.do.Optimise()
-        self.view.Refresh()
+        #if fn == 0:
+        #    self.view.do.Optimise()
+        #self.view.Refresh()
 
     def _movePiezo(self, fn):
         #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])

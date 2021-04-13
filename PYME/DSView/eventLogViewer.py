@@ -43,6 +43,9 @@ class eventLogPanel(wx.Panel):
         self.SetEventSource(eventSource)
 
         self.startTime = self.metaData.getEntry('StartTime')
+        
+        self._last_scroll = 0
+        self._last_yp = 0
 
 #        self.evKeyNames = set()
 #        for e in self.eventSource:
@@ -320,7 +323,16 @@ class eventLogPanel(wx.Panel):
 
         #get translated coordinates
         #xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
-        yp = self.frameRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerFrame)
+        
+        # keep current yp whilst zooming
+        t = time.time()
+        if (t - self._last_scroll) > 1:
+            yp = self.frameRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerFrame)
+            self._last_yp = yp
+        else:
+            yp = self._last_yp
+            
+        self._last_scroll = t
         #print yp
 
         nFrames = self.frameRange[1] - self.frameRange[0]
@@ -328,15 +340,18 @@ class eventLogPanel(wx.Panel):
         if rot < 0: #zoom out
             nFrames *= 1.2
             nFrames = min(nFrames, self.maxRange[1] - self.maxRange[0])
-        elif rot > 0: #zoom in
+        elif rot > 0 : #zoom in
+            if nFrames <= 2:
+                #zoomed in as far as we can go, don't do anything
+                return
             nFrames *= 0.8
             nFrames = max(nFrames, 2)
         #yp = np.clip(yp, self.maxRange[0] + 0.5 * nFrames, self.maxRange[1] - 0.5 * nFrames)
-        nMin = yp - 0.5 * nFrames
-        nMax = yp + 0.5 * nFrames
+        nMin = min(max(yp - 0.5 * nFrames, self.maxRange[0]), max(self.maxRange[1] -nFrames, self.maxRange[0]))
+        nMax = nMin + nFrames#yp + 0.5 * nFrames
         
-        nMin = max(nMin, self.maxRange[0])
-        nMax = min(nMax, self.maxRange[1])
+        #nMin = max(nMin, self.maxRange[0])
+        #nMax = min(nMax, self.maxRange[1])
 
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True
@@ -378,7 +393,7 @@ class eventLogPanel(wx.Panel):
         self.Update()
 
 class eventLogTPanel(wx.Panel):
-    def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1)):
+    def __init__(self, parent, eventSource, metaData, timeRange, charts = [], size=(-1, -1), activate=False):
         self.eventSource = eventSource
         self.metaData = metaData
         self.maxRange = list(timeRange)
@@ -388,10 +403,13 @@ class eventLogTPanel(wx.Panel):
         self.autoRange = True
 
         self.initialised = False
+        self.startTime = self.metaData.getEntry('StartTime')
 
         self.SetEventSource(eventSource)
 
-        self.startTime = self.metaData.getEntry('StartTime')
+        self._last_scroll = 0
+        self._last_yp = 0
+        self._min_time_span = .01
 
 #        self.evKeyNames = set()
 #        for e in self.eventSource:
@@ -410,6 +428,10 @@ class eventLogTPanel(wx.Panel):
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
 
         self.initialised = True
+        self.active = activate
+        
+    def activate(self):
+        self.active = True
 
     def DoPaint(self, dc):
         dc.Clear()
@@ -677,6 +699,9 @@ class eventLogTPanel(wx.Panel):
         dc.SetFont(wx.NullFont)
 
     def OnPaint(self,event):
+        if not (self.active and self.IsShownOnScreen()):
+            return
+        
         DC = wx.PaintDC(self)
         #self.PrepareDC(DC)
 
@@ -706,23 +731,37 @@ class eventLogTPanel(wx.Panel):
 
         #get translated coordinates
         #xp = event.GetX()*view_size_x/self.Size[0] + self.xmin
-        yp = self.timeRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerS)
+        # keep current yp whilst zooming
+        t = time.time()
+        if (t - self._last_scroll) > 1:
+            yp = self.timeRange[0] + (float(event.GetY() - 2*self.textHeight)/self.pixPerS)
+            self._last_yp = yp
+        else:
+            yp = self._last_yp
+
+        self._last_scroll = t
         #print 'yp = ', yp
 
         dT = self.timeRange[1] - self.timeRange[0]
 
         if rot < 0: #zoom out
-            nMin = max(yp - .6*dT, self.maxRange[0])
-            nMax = min(yp + .6*dT, self.maxRange[1])
+            if dT > (self.maxRange[1] - self.maxRange[0]):
+                # scrolled out as far as we can, ignore
+                return
 
+            dT = min(1.2*dT, self.maxRange[1] - self.maxRange[0])
         elif rot > 0: #zoom in
-            nMin = max(yp - .4*dT, self.maxRange[0])
-            nMax = min(yp + .4*dT, self.maxRange[1])
-            if not nMax > (nMin + .1):
-                nMax = nMin + .1
+            if dT < self._min_time_span:
+                #zoomed in as far as we can, ignore scroll
+                return
+            
+            dT = max(0.8*dT, self._min_time_span)
         elif (rot == 0):
             return
 
+        nMin = min(max(yp - 0.5 * dT, self.maxRange[0]), max(self.maxRange[1] - dT, self.maxRange[0]))
+        nMax = nMin + dT
+        
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True
         else:
