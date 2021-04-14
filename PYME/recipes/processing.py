@@ -118,6 +118,23 @@ class SelectLabel(Filter):
     def completeMetadata(self, im):
         im.mdh['Processing.SelectedLabel'] = self.label
 
+@register_module('SelectLargestLabel') 
+class SelectLargestLabel(Filter):
+    """Creates a mask corresponding to all pixels with the largest label
+    
+    NOTE: the input image must be a labeled image (e.g. the output of `Processing.Label`) in which contiguous
+    areas have unique integer IDs
+    """
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        uni, counts = np.unique(data[data > 0], return_counts=True)
+        self.label = uni[np.argmax(counts)]
+        mask = (data == self.label)
+        return mask
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.SelectedLabel'] = self.label
+
 @register_module('LocalMaxima')         
 class LocalMaxima(Filter):
     threshold = Float(.3)
