@@ -325,8 +325,10 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
 
     def execute(self, namespace):
         from PYME.Analysis.points import spherical_harmonics
+        from PYME.IO import MetaDataHandler
 
-        points = tabular.MappingFilter(namespace[self.input_localizations])
+        inp = namespace[self.input_localizations]
+        points = tabular.MappingFilter(inp)
         shell = namespace[self.input_shell]
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
@@ -343,7 +345,11 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
         points.addColumn(self.name_scaled_zenith, zenith)
         points.addColumn(self.name_scaled_radius, r)
         points.addColumn(self.name_normalized_radius, r / r_shell)
-
+        
+        try:
+            points.mdh = MetaDataHandler.DictMDHandler(inp.mdh)
+        except AttributeError:
+            pass
         namespace[self.output_mapped] = points
 
 
