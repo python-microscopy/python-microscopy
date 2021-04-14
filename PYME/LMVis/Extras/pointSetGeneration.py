@@ -21,7 +21,6 @@
 ##################
 
 
-import wx
 try:
     from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
@@ -29,147 +28,7 @@ except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     #from traitsui.api import View, Item, EnumEditor, InstanceEditor
     
-from PYME.IO import image
-
-#class PointGenerationPanel(wx.Panel):
-#    def __init__(self, parent, generator):
-#        wx.Panel.__init__(self, parent)
-#
-#        vsizer = wx.BoxSizer(wx.VERTICAL)
-#
-#        self.nbPointDataSource = wx.Notebook(self,-1)
-#
-#        wormlikePanel = wx.Panel(self, -1)
-#        wsizer =
-
-
-class PointSource(HasTraits):
-    def refresh_choices(self):
-        pass
-
-class WormlikeSource(PointSource):
-    kbp = Float(200)
-    steplength=Float(1.0)
-    lengthPerKbp=Float(10.0)
-    persistLength=Float(150.0)
-    #name = Str('Wormlike Chain')
-
-    def getPoints(self):
-        from PYME.Acquire.Hardware.Simulator import wormlike2
-        wc = wormlike2.wormlikeChain(self.kbp, self.steplength, self.lengthPerKbp, self.persistLength)
-
-        return wc.xp, wc.yp, wc.zp
-
-
-
-class FileSource(PointSource):
-    file = File()
-    #name = Str('Points File')
-
-    def getPoints(self):
-        import numpy as np
-        return np.load(self.file)
-
-
-
-class WRDictEnum (BaseEnum):
-    def __init__ ( self, wrdict, *args, **metadata ):
-        self.wrdict = wrdict
-        #self.values        = tuple( values )
-        #self.fast_validate = ( 5, self.values )
-        self.name = ''
-        super( BaseEnum, self ).__init__( None, **metadata )
-
-    @property
-    def values(self):
-        return self.wrdict.keys()
-
-    #def info ( self ):
-    #    return ' or '.join( [ repr( x ) for x in self.values ] )
-
-    def create_editor ( self):
-        from traitsui.api import EnumEditor
-        #print dict(self.wrdict.items())
-
-        ed = EnumEditor( values   = self,
-                           cols     = self.cols or 3,
-                           evaluate = self.evaluate,
-                           mode     = self.mode or 'radio' )
-
-        return ed
-
-
-class ImageSource(PointSource):
-    image = WRDictEnum(image.openImages)
-    points_per_pixel = Float(0.1)
-    #name = Str('Density Image')
-    #foo = Enum([1,2,3,4])
-
-    helpInfo = {
-        'points_per_pixel': '''
-Select average number of points (dye molecules or docking sites) per pixel in image regions where the density values are 1.
-The number is a floating point fraction, e.g. 0.1, and shouldn't exceed 1. It is used for Monte-Carlo rejection of positions and larger values (>~0.2) will result in images which have visible pixel-grid structure because the Monte-Carlo sampling is no longer a good approximation to random sampling over the grid. If this is a problem for your application / you can't get high enough density without a high acceptance fraction, use an up-sampled source image with a smaller pixel size.
-''',
-        'image': '''
-Select an image from the list of open images.
-Note that you need to open or generate the source image you want to use so that this
-list is not empty. The image will be normalised for the purpose of the simulation,
-with its maximum set to 1. It describes the density of markers in the simulated sample,
-where values of 1 have a density of markers as given by the `points per pixel` parameter, i.e.
-in the Monte-Carlo sampling the acceptance probability = image*points_per_pixel. Smaller
-density values therefore give rise to proportionally fewer markers per pixel.
-''',
-    }
-    
-    def helpStr(self, name):
-        def cleanupHelpStr(str):
-            return str.strip().replace('\n', ' ').replace('\r', '')
-        
-        return cleanupHelpStr(self.helpInfo[name])
-
-    def default_traits_view( self ):
-        from traitsui.api import View, Item, EnumEditor, InstanceEditor
-
-        traits_view = View(Item('points_per_pixel',help=self.helpStr('points_per_pixel'),
-                                tooltip='mean number of marker points per pixel'),
-                           Item('image',help=self.helpStr('image'),
-                                tooltip='select the marker density image from the list of open images'),
-                           buttons = ['OK', 'Help'])
-        
-        return traits_view
-                           
-    def getPoints(self):
-        from PYME.simulation import locify
-        print((self.image))
-
-        im = image.openImages[self.image]
-        #import numpy as np
-        d = im.data[:,:,0,0].astype('f')
-
-        #normalise the image
-        d = d/d.max()
-
-        return locify.locify(d, pixelSize=im.pixelSize, pointsPerPixel=self.points_per_pixel)
-
-    def refresh_choices(self):
-        ed = self.trait('image').editor
-
-        if ed:
-            ed._values_changed()
-
-        #super( HasTraits, self ).configure_traits(*args, **kwargs)
-
-
-#    traits_view = View( Item('points_per_pixel'),
-#                        Item('image'),
-##                        Item( 'image',
-##                              label='Image',
-##                              editor =
-##                                  EnumEditor(values={'foo':0, 'bar' : 1}),#image.openImages),
-##                              ),
-#                        buttons = ['OK'])
-        
-
+from PYME.simulation.pointsets import PointSource, WormlikeSource, ImageSource, FileSource
 
 
 class Generator(HasTraits):
@@ -230,7 +89,7 @@ There should be no need to modify this from the default and it is accordingly no
         return cleanupHelpStr(self.helpInfo[name])
         
     def default_traits_view( self ):
-        from traitsui.api import View, Item, EnumEditor, InstanceEditor
+        from traitsui.api import View, Item, InstanceEditor
 
         traits_view = View( Item( 'source',
                             label= 'Point source',

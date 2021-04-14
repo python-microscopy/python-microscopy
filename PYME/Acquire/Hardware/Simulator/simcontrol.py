@@ -1,9 +1,9 @@
-from . import fluor
-from . import wormlike2
 import json
-#import pylab
-import scipy
 import numpy as np
+import scipy
+
+from PYME.simulation import wormlike2
+from . import fluor
 from . import rend_im
 
 import logging
@@ -22,7 +22,7 @@ class PSFSettings(HasTraits):
     four_pi = Bool(False)
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item
         #from PYME.ui.custom_traits_editors import CBEditor
         
         return View(Item(name='wavelength_nm'),
