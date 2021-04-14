@@ -38,7 +38,7 @@ def r_sph_harm(m, n, azimuth, zenith):
     elif m == 0:
         return sph_harm(m, n, azimuth, zenith).real
     else:
-        return (1. / np.sqrt(2) * (-1) ** m) * sph_harm(m, n, azimuth, zenith).imag
+        return (1. / np.sqrt(2) * (-1.0) ** m) * sph_harm(m, n, azimuth, zenith).imag
 
 
 def sphere_expansion(x, y, z, n_max=3):
@@ -173,29 +173,17 @@ def scaled_shell_from_hdf(hdf_file, table_name='harmonic_shell'):
 
     """
     from PYME.IO.MetaDataHandler import HDFMDHandler
+    from PYME.IO import tabular
     import tables
     try:
         opened_hdf_file = tables.open_file(hdf_file, 'r')
     except TypeError:
         opened_hdf_file = hdf_file
-    shell = ScaledShell()
-    shell.mdh = HDFMDHandler(opened_hdf_file)
+    
+    shell_table = tabular.HDFSource(opened_hdf_file, table_name)
+    shell_table.mdh = HDFMDHandler(opened_hdf_file)
 
-    shell.standard_deviations = np.asarray(shell.mdh['spherical_harmonic_shell.standard_deviations'])
-    shell.scaling_factors = np.asarray(shell.mdh['spherical_harmonic_shell.scaling_factors'])
-    shell.principal_axes = np.asarray(shell.mdh['spherical_harmonic_shell.principal_axes'])
-
-    shell.x0 = shell.mdh['spherical_harmonic_shell.x0']
-    shell.y0 = shell.mdh['spherical_harmonic_shell.y0']
-    shell.z0 = shell.mdh['spherical_harmonic_shell.z0']
-
-    shell._summed_residuals = shell.mdh['spherical_harmonic_shell.summed_residuals']
-    shell.sampling_fraction = shell.mdh['spherical_harmonic_shell.sampling_fraction']
-
-    shell_table = getattr(getattr(opened_hdf_file, 'root'), table_name)
-    shell._set_coefficients(shell_table[:]['modes'], shell_table[:]['coefficients'])
-
-    return shell
+    return ScaledShell.from_tabular(shell_table)
 
 def generate_icosahedron():
     """
@@ -357,6 +345,25 @@ class ScaledShell(object):
             f.appendToTable(tablename, self.to_recarray(keys))
             f.updateMetadata(metadata)
 
+    @staticmethod
+    def from_tabular(shell_table):
+        shell = ScaledShell()
+        
+        shell.standard_deviations = np.asarray(shell_table.mdh['spherical_harmonic_shell.standard_deviations'])
+        shell.scaling_factors = np.asarray(shell_table.mdh['spherical_harmonic_shell.scaling_factors'])
+        shell.principal_axes = np.asarray(shell_table.mdh['spherical_harmonic_shell.principal_axes'])
+
+        shell.x0 = shell_table.mdh['spherical_harmonic_shell.x0']
+        shell.y0 = shell_table.mdh['spherical_harmonic_shell.y0']
+        shell.z0 = shell_table.mdh['spherical_harmonic_shell.z0']
+
+        shell._summed_residuals = shell_table.mdh['spherical_harmonic_shell.summed_residuals']
+        shell.sampling_fraction = shell_table.mdh['spherical_harmonic_shell.sampling_fraction']
+        
+        shell._set_coefficients(shell_table['modes'], shell_table['coefficients'])
+
+        return shell
+
     def _set_coefficients(self, modes, coefficients):
         assert len(modes) == len(coefficients)
         self.modes = modes
@@ -377,6 +384,30 @@ class ScaledShell(object):
         self.scaling_factors = np.max(self.standard_deviations) /(self.standard_deviations)
         self.x_cs, self.y_cs, self.z_cs, = coordinate_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
                                                                               self.scaling_factors, self.principal_axes)
+
+    def scale_points(self, points):
+        """Scale query points, projecting them onto the basis used in shell-
+        fitting. Return in scaled spherical coordinates
+
+        Parameters
+        ----------
+        points : 3-tuple
+            x, y, z positions
+
+        Returns
+        -------
+        azimuth, zenith, r
+            scaled spherical coordinates of input points
+        """
+        x, y, z = points
+
+        # scale the query points and convert them to spherical
+        x_qs, y_qs, z_qs = coordinate_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
+                                                              np.atleast_1d(z - self.z0), self.scaling_factors,
+                                                              self.principal_axes)
+        
+        azimuth_qs, zenith_qs, r_qs = coordinate_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
+        return azimuth_qs, zenith_qs, r_qs
 
     def get_fitted_shell(self, azimuth, zenith):
         r_scaled = reconstruct_shell(self.modes, self.coefficients, azimuth, zenith)
@@ -519,14 +550,8 @@ class ScaledShell(object):
         surface.
         
         """
-        x, y, z = points
-
-        # scale the query points and convert them to spherical
-        x_qs, y_qs, z_qs = coordinate_tools.scaled_projection(np.atleast_1d(x - self.x0), np.atleast_1d(y - self.y0),
-                                                              np.atleast_1d(z - self.z0), self.scaling_factors,
-                                                              self.principal_axes)
-        
-        azimuth_qs, zenith_qs, r_qs = coordinate_tools.cartesian_to_spherical(x_qs, y_qs, z_qs)
+        # project points into scaled-space spherical coordinates
+        azimuth_qs, zenith_qs, r_qs = self.scale_points(points)
 
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
