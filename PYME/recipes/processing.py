@@ -120,7 +120,11 @@ class SelectLabel(Filter):
 
 @register_module('SelectLargestLabel') 
 class SelectLargestLabel(Filter):
-    """Creates a mask corresponding to all pixels with the largest label"""
+    """Creates a mask corresponding to all pixels with the largest label
+    
+    NOTE: the input image must be a labeled image (e.g. the output of `Processing.Label`) in which contiguous
+    areas have unique integer IDs
+    """
     
     def applyFilter(self, data, chanNum, frNum, im):
         uni, counts = np.unique(data[data > 0], return_counts=True)
