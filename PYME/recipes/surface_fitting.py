@@ -306,6 +306,55 @@ class SphericalHarmonicShell(ModuleBase):
         namespace[self.output_name_mapped] = points
 
 
+@register_module('AddSphericalHarmonicShellMappedCoords')
+class AddSphericalHarmonicShellMappedCoords(ModuleBase):
+    """Add scaled spherical coordinates and harmonic shell radius to an input
+    tabular datasource, returning a copy
+    
+    TODO: Rename and/or refactor
+    
+    """
+    input_localizations = Input('input')
+    input_shell = Input('harmonic_shell')
+
+    name_scaled_azimuth = CStr('scaled_azimuth')
+    name_scaled_zenith = CStr('scaled_zenith')
+    name_scaled_radius = CStr('scaled_radius')
+    name_normalized_radius = CStr('normalized_radius')
+
+    output_mapped = Output('harmonic_shell_mapped')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import spherical_harmonics
+        from PYME.IO import MetaDataHandler
+
+        inp = namespace[self.input_localizations]
+        points = tabular.MappingFilter(inp)
+        shell = namespace[self.input_shell]
+        if isinstance(shell, tabular.TabularBase):
+            shell = spherical_harmonics.ScaledShell.from_tabular(shell)
+        
+        # map points to scaled spherical coordinates
+        azimuth, zenith, r = shell.shell_coordinates((points['x'], points['y'],
+                                                      points['z']))
+        # lookup shell radius at those angles
+        r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
+                                                        shell.coefficients,
+                                                        azimuth, zenith)
+
+        points.addColumn(self.name_scaled_azimuth, azimuth)
+        points.addColumn(self.name_scaled_zenith, zenith)
+        points.addColumn(self.name_scaled_radius, r)
+        points.addColumn(self.name_normalized_radius, r / r_shell)
+        
+        try:
+            points.mdh = MetaDataHandler.DictMDHandler(inp.mdh)
+        except AttributeError:
+            pass
+        namespace[self.output_mapped] = points
+
+
 @register_module('ImageMaskFromSphericalHarmonicShell')
 class ImageMaskFromSphericalHarmonicShell(ModuleBase):
     """
