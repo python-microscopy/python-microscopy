@@ -311,6 +311,8 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
     """Add scaled spherical coordinates and harmonic shell radius to an input
     tabular datasource, returning a copy
     
+    TODO: Rename and/or refactor
+    
     """
     input_localizations = Input('input')
     input_shell = Input('harmonic_shell')
@@ -334,8 +336,8 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
         # map points to scaled spherical coordinates
-        azimuth, zenith, r = shell.scale_points((points['x'], points['y'],
-                                                 points['z']))
+        azimuth, zenith, r = shell.shell_coordinates((points['x'], points['y'],
+                                                      points['z']))
         # lookup shell radius at those angles
         r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
                                                         shell.coefficients,

@@ -385,7 +385,7 @@ class ScaledShell(object):
         self.x_cs, self.y_cs, self.z_cs, = coordinate_tools.scaled_projection(self.x_c, self.y_c, self.z_c,
                                                                               self.scaling_factors, self.principal_axes)
 
-    def scale_points(self, points):
+    def shell_coordinates(self, points):
         """Scale query points, projecting them onto the basis used in shell-
         fitting. Return in scaled spherical coordinates
 
@@ -551,7 +551,7 @@ class ScaledShell(object):
         
         """
         # project points into scaled-space spherical coordinates
-        azimuth_qs, zenith_qs, r_qs = self.scale_points(points)
+        azimuth_qs, zenith_qs, r_qs = self.shell_coordinates(points)
 
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
