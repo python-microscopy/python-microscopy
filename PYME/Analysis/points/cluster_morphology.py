@@ -75,6 +75,9 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
             if count < minimum_localizations:
                 ids[ids == label] = 0
 
+    if len(ids) < 1:
+        logger.error('No Labels, returning []')
+        return np.zeros([]), np.zeros([])
     numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
     return ids, numPerObject
