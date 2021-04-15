@@ -21,6 +21,11 @@
 ##################
 
 import numpy as np
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 def get_labels_from_image(label_image, points, minimum_localizations=1):
     """
@@ -42,6 +47,9 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
 
     """
     from PYME.Analysis.points.coordinate_tools import pixel_index_of_points_in_image
+    if len(points['x']) < 1:
+        logger.error('No points to query, returning []')
+        return np.zeros([]), np.zeros([])
 
     pixX, pixY, pixZ = pixel_index_of_points_in_image(label_image, points)
 
