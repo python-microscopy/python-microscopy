@@ -443,7 +443,9 @@ class GaussianMixtureModel(ModuleBase):
             predictions = gmm.fit_predict(X)
             log_prob = gmm.score_samples(X)
             if not gmm.converged_:
-                raise RuntimeError('GMM fitting did not converge')
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
         
         elif self.mode == 'bic':
             n_components = range(1, self.n + 1)
@@ -468,7 +470,9 @@ class GaussianMixtureModel(ModuleBase):
             predictions = gmm.fit_predict(X)
             log_prob = gmm.score_samples(X)
             if not gmm.converged_:
-                raise RuntimeError('GMM fitting did not converge')
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
         
         elif self.mode == 'bayesian':
             bgm = BayesianGaussianMixture(n_components=self.n,
@@ -478,8 +482,10 @@ class GaussianMixtureModel(ModuleBase):
             predictions = bgm.fit_predict(X)
             log_prob = bgm.score_samples(X)
             if not bgm.converged_:
-                raise RuntimeError('GMM fitting did not converge')
-
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
+        
         out = tabular.MappingFilter(points)
         try:
             out.mdh = MetaDataHandler.DictMDHandler(points.mdh)
@@ -488,4 +494,9 @@ class GaussianMixtureModel(ModuleBase):
 
         out.addColumn(self.label_key, predictions)
         out.addColumn(self.label_key + '_log_prob', log_prob)
+        avg_log_prob = np.empty_like(log_prob)
+        for label in np.unique(predictions):
+            mask = label == predictions
+            avg_log_prob[mask] = np.mean(log_prob[mask])
+        out.addColumn(self.label_key + '_avg_log_prob', avg_log_prob)
         namespace[self.output_labeled] = out
