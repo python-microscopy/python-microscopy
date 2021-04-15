@@ -440,7 +440,7 @@ class GaussianMixtureModel(ModuleBase):
                                   covariance_type=self.covariance,
                                   max_iter=self.max_iter,
                                   init_params=self.init_params)
-            predictions = gmm.fit_predict(X)
+            predictions = gmm.fit_predict(X) + 1  # PYME labeling scheme
             log_prob = gmm.score_samples(X)
             if not gmm.converged_:
                 logger.error('GMM fitting did not converge')
@@ -467,7 +467,7 @@ class GaussianMixtureModel(ModuleBase):
                                   covariance_type=self.covariance,
                                   max_iter=self.max_iter,
                                   init_params=self.init_params)
-            predictions = gmm.fit_predict(X)
+            predictions = gmm.fit_predict(X) + 1  # PYME labeling scheme
             log_prob = gmm.score_samples(X)
             if not gmm.converged_:
                 logger.error('GMM fitting did not converge')
@@ -479,7 +479,7 @@ class GaussianMixtureModel(ModuleBase):
                                           covariance_type=self.covariance,
                                           max_iter=self.max_iter,
                                           init_params=self.init_params)
-            predictions = bgm.fit_predict(X)
+            predictions = bgm.fit_predict(X) + 1  # PYME labeling scheme
             log_prob = bgm.score_samples(X)
             if not bgm.converged_:
                 logger.error('GMM fitting did not converge')
