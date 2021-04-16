@@ -114,7 +114,7 @@ class LCDriver(Client64):
         bool
             True if command is sent successfully
         """
-        return self.request32('set_dac_voltage', V, ch_number, device_number)
+        return self.request32('set_dac_voltage', float(V), int(ch_number), int(device_number))
 
     def set_triggers(self, out0external, out1external, out2external, out3external, 
                         device_number=0):
