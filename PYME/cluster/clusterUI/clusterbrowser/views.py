@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, StreamingHttpResponse
 from django.core.files.uploadhandler import TemporaryFileUploadHandler
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
 
@@ -31,17 +31,21 @@ def file(request, filename):
         #    file (at the end of the with block)
         # 2) We pass the filename of the temporary file to img.Save. This will mean that a second file object / file handle
         #    gets created, the contents get written, and the file gets closed
-        with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext) as outf:
-            img.Save(outf.name)
+        #with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext) as outf:
+        
+        # don't use a context manager as this closes our file prematurely - rely on a cascading close through HTTPResponse
+        # and FileWrapper instead
+        outf = tempfile.NamedTemporaryFile(mode='w+b', suffix=ext)
+        img.Save(outf.name)
 
-            #seek to update temporary file (so that it knows the new length)
-            outf.seek(0)
+        #seek to update temporary file (so that it knows the new length)
+        outf.seek(0)
 
-            wrapper = FileWrapper(outf)
-            response = HttpResponse(wrapper, content_type='image/%s' % ext.lstrip('.'))
-            response['Content-Disposition'] = 'attachment; filename=%s' % fn
-            response['Content-Length'] = os.path.getsize(outf.name)
-            return response
+        wrapper = FileWrapper(outf)
+        response = StreamingHttpResponse(wrapper, content_type='image/%s' % ext.lstrip('.'))
+        response['Content-Disposition'] = 'attachment; filename=%s' % fn
+        response['Content-Length'] = os.path.getsize(outf.name)
+        return response
 
 def _get_listing(filename):
     from PYME.IO import clusterListing as cl
