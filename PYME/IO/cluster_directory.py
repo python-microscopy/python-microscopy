@@ -161,7 +161,7 @@ class DirectoryInfoManager(object):
         return self._cached_servers
             
             
-    def list_single_node_dir(self, dirurl, nRetries = 1, timeout = 5):
+    def list_single_node_dir(self, dirurl, nRetries = 1, timeout = 10, strict_caching=False):
         """
         List the directory on a single node
         
@@ -179,9 +179,14 @@ class DirectoryInfoManager(object):
     
         try:
             dirL, rt, dt = self._dirCache[dirurl]
-            if (t - rt) > DIR_CACHE_TIME:
-                raise RuntimeError('key is expired')
-                #logger.debug('dir cache hit')
+            time_in_cache = t - rt
+            if time_in_cache > DIR_CACHE_TIME:
+                # use cached value if the last request took longer than the length of time we've been expired as it
+                # doesn't make sense to hit the server again
+                if strict_caching or (time_in_cache > (DIR_CACHE_TIME + dt)):
+                    raise RuntimeError('key is expired')
+                else:
+                    logger.warning('Using expired entry from directory cache on %s as previous request took too long' % dirurl)
         except (KeyError, RuntimeError):
             #logger.debug('dir cache miss')
             # t = time.time()
