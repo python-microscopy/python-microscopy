@@ -86,7 +86,7 @@ class CobaltLaser(Laser):
         with serial.Serial(**self.ser_args) as ser:
            ser.write('f?\r\n')
            ser.flush()
-           print('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
+           #print('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
            ret = ser.read(50)
         return
 

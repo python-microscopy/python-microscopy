@@ -318,6 +318,8 @@ class CalibrateShifts(ModuleBase):
         # Generate raw shift vectors (map of displacements between channels) for each channel
         mol_list = np.unique(clump_id)
         n_mols = len(mol_list)
+        if n_mols < 3:
+            raise ValueError('Need at 3 clusters containing points from each channel - try increasing search radius')
 
         dx = np.zeros((n_chan - 1, n_mols))
         dy = np.zeros_like(dx)
@@ -380,6 +382,7 @@ class CalibrateShifts(ModuleBase):
         namespace[self.output_name].mdh = mdh
 
 
+@register_module('ExtractMultiviewChannel')
 class ExtractMultiviewChannel(ModuleBase):
     """Extract a single multiview channel
 
@@ -418,4 +421,5 @@ class ExtractMultiviewChannel(ModuleBase):
 
         mdh = DictMDHandler(source.mdh)
         mdh['Multiview.Extracted'] = ind
-        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh)
+        namespace[self.output_name] = ImageStack(data=extracted, mdh=mdh, 
+                                                 events=source.events)

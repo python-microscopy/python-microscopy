@@ -22,7 +22,6 @@
 ##################
 
 from PYME.Analysis.PSFGen import *
-from scipy import *
 from numpy.fft import ifftshift, fftn, ifftn
 from . import fluor
 from PYME.Analysis import MetaData
@@ -47,9 +46,9 @@ from PYME.Deconv.wiener import resizePSF
 def renderIm(X, Y, z, points, roiSize, A):
     #X = mgrid[xImSlice]
     #Y = mgrid[yImSlice]
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
 
-    P = arange(0,1.01,.1)
+    P = np.arange(0,1.01,.1)
 
     for (x0,y0,z0) in points:
         ix = abs(X - x0).argmin()
@@ -98,13 +97,13 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
     
         vs = md.voxelsize_nm
-        IntXVals = vs.x*mgrid[-150:150]
-        IntYVals = vs.y*mgrid[-150:150]
-        IntZVals = vs.z*mgrid[-30:30]
+        IntXVals = vs.x * np.mgrid[-150:150]
+        IntYVals = vs.y * np.mgrid[-150:150]
+        IntZVals = vs.z * np.mgrid[-30:30]
 
         dx, dy, dz = vs
 
-        P = arange(0,1.01,.01)
+        P = np.arange(0,1.01,.01)
 
         #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
         im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=vs.x, **kwargs)
@@ -125,9 +124,9 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
     if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
     
         vs = md.voxelsize_nm
-        IntXVals = vs.x*mgrid[-150:150]
-        IntYVals = vs.y*mgrid[-150:150]
-        IntZVals = 20*mgrid[-60:60]
+        IntXVals = vs.x * np.mgrid[-150:150]
+        IntYVals = vs.y * np.mgrid[-150:150]
+        IntZVals = 20 * np.mgrid[-60:60]
                                                                                                               
         dx, dy = vs.x, vs.y
         dz = 20.#md.voxelsize.z*1e3
@@ -163,9 +162,9 @@ def setModel(modName, md):
     mod, vs_nm = load_psf.load_psf(modName)
     mod = resizePSF(mod, interpModel().shape)
 
-    IntXVals = vs_nm.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-    IntYVals = vs_nm.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-    IntZVals = vs_nm.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+    IntXVals = vs_nm.x * np.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+    IntYVals = vs_nm.y * np.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+    IntZVals = vs_nm.z * np.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
     dx, dy, dz = vs_nm
 
@@ -173,9 +172,9 @@ def setModel(modName, md):
     interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
 
 def interp(X, Y, Z):
-    X = atleast_1d(X)
-    Y = atleast_1d(Y)
-    Z = atleast_1d(Z)
+    X = np.atleast_1d(X)
+    Y = np.atleast_1d(Y)
+    Z = np.atleast_1d(Z)
 
     ox = X[0]
     oy = Y[0]
@@ -286,9 +285,9 @@ def interp2(X, Y, Z):
     return m
 
 def interp3(X, Y, Z):
-    X = atleast_1d(X)
-    Y = atleast_1d(Y)
-    Z = atleast_1d(Z)
+    X = np.atleast_1d(X)
+    Y = np.atleast_1d(Y)
+    Z = np.atleast_1d(Z)
 
     ox = X[0]
     oy = Y[0]
@@ -303,9 +302,9 @@ def interp3(X, Y, Z):
 @fluor.registerIllumFcn
 def PSFIllumFunction(fluors, position):
     im = interpModel()
-    xi = maximum(minimum(round_((fluors['x'] - position[0])/dx + im.shape[0]/2).astype('i'), im.shape[0]-1), 0)
-    yi = maximum(minimum(round_((fluors['y'] - position[1])/dy + im.shape[1]/2).astype('i'), im.shape[1]-1), 0)
-    zi = maximum(minimum(round_((fluors['z'] - position[2])/dz + im.shape[2]/2).astype('i'), im.shape[2]-1), 0)
+    xi = np.maximum(np.minimum(np.round_((fluors['x'] - position[0])/dx + im.shape[0]/2).astype('i'), im.shape[0]-1), 0)
+    yi = np.maximum(np.minimum(np.round_((fluors['y'] - position[1])/dy + im.shape[1]/2).astype('i'), im.shape[1]-1), 0)
+    zi = np.maximum(np.minimum(np.round_((fluors['z'] - position[2])/dz + im.shape[2]/2).astype('i'), im.shape[2]-1), 0)
 
     return im[xi, yi, zi]
 
@@ -351,7 +350,7 @@ def patternIllumFcn(fluors, postion):
         illPCache = ndimage.map_coordinates(illPattern, [x, y, z], order=1, mode='nearest')
         return illPCache
 
-SIM_k = pi/180.
+SIM_k = np.pi/180.
 #SIM_ky = 0# 2*pi/180.
 SIM_theta = 0
 SIM_phi = 0
@@ -513,17 +512,17 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     if interpModel() is None:
         genTheoreticalModel(mdh)
         
-    im = zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
     
     if fluors is None:
         return im
     
-    A = zeros(len(fluors.fl), 'f')
+    A = np.zeros(len(fluors.fl), 'f')
     
     for n  in range(numSubSteps):
         A += fluors.illuminate(laserPowers,intTime/numSubSteps, position=position, illuminationFunction=illuminationFunction)
 
-    flOn = where(A > 0.1)[0]
+    flOn = np.where(A > 0.1)[0]
     
     dx = X[1] - X[0]
     dy = Y[1] - Y[0]

@@ -35,6 +35,8 @@ from PYME.Acquire.eventLog import logEvent
 from .base_piezo import PiezoBase
 from PYME.Acquire.Hardware.GCS import gcs
 
+logger = logging.getLogger(__name__)
+
 def get_connected_devices():
     n, devs= gcs.EnumerateUSB('E-816')
 
@@ -231,8 +233,8 @@ class piezo_e816T(PiezoBase):
         if identifier is None:
             devices = get_connected_devices()
             identifier = devices[0]
-
-        self.id = gcs.ConnectUSB(identifier)
+        self._identifier = identifier
+        self.id = gcs.ConnectUSB(self._identifier)
         
         if not Osen is None:
             # self.ser_port.write('SPA A8 %3.4f\n' % Osen)
@@ -257,8 +259,6 @@ class piezo_e816T(PiezoBase):
         self.driftCompensation = False
         self.hasTrigger = hasTrigger
 
-        self.loopActive = True
-        self.stopMove = False
         self.position = np.array([0.])
         # self.velocity = np.array([self.maxvelocity, self.maxvelocity])
 
@@ -266,8 +266,10 @@ class piezo_e816T(PiezoBase):
         # self.targetVelocity = self.velocity.copy()
 
         self.lastTargetPosition = self.position.copy()
-
-
+        self._start_loop()
+    
+    def _start_loop(self):
+        self.loopActive = True
         self.tloop = threading.Thread(target=self._Loop)
         self.tloop.daemon=True
         self.tloop.start()
@@ -284,7 +286,7 @@ class piezo_e816T(PiezoBase):
 
                 self.errCode = int(gcs.qERR(self.id))
 
-                if not self.errCode == 0:
+                if not self.errCode == 0:  # I have yet to see this work
                     logging.info(('Stage Error: %d' % self.errCode))
 
                 # print self.targetPosition, self.stopMove
@@ -319,12 +321,32 @@ class piezo_e816T(PiezoBase):
                 #    logging.exception('Value error on response from ONT')
 
                 # time.sleep(.1)
-
-
-            except IndexError:
-                print('IndexException')
+            except RuntimeError as e:
+                # gcs.fcnWrap.HandleError throws Runtimes for everything
+                logger.error(str(e))
+                try:
+                    self.errCode = int(gcs.qERR(self.id))
+                    logger.error('error code: %s' % str(self.errCode))
+                except:
+                    logger.error('no error code retrieved')
+                if '-1' in str(e):
+                    logger.debug('reinitializing GCS connection, 10 s pause')
+                    gcs.CloseConnection(self.id)
+                    time.sleep(10.0)  # this takes at least more than 1 s
+                    try:
+                        self.id = gcs.ConnectUSB(self._identifier)
+                        logger.debug('restablished connection to piezo')
+                    except RuntimeError as e:
+                        logger.error('trying to get new device ID')
+                        devices = get_connected_devices()
+                        self._identifier = devices[0]
+                        logger.debug('new device ID acquired')
+                        self.id = gcs.ConnectUSB(self._identifier)
+                    time.sleep(1.0)
+                    logger.debug('turning on servo')
+                    gcs.SVO(self.id, b'A', [1])
+                    time.sleep(1.0)
             finally:
-                self.stopMove = False
                 self.lock.release()
 
         # close port on loop exit
@@ -342,11 +364,22 @@ class piezo_e816T(PiezoBase):
             # self.ser_port.close()
 
     def ReInit(self):
+        """
+        Reinitialize a closed connection to the pifoc. Note the pifoc
+        connection must have already been closed, whether by using `close`
+        or the polling loop failing.
+        """
         with self.lock:
-            #self.ser_port.write('WTO A0\n')
+            logging.info('restarting e816')
+            self.loopActive = False
+            time.sleep(1.0)
+            self.id = gcs.ConnectUSB(self._identifier)
             gcs.SVO(self.id, b'A', [1])
-            time.sleep(1)
+            time.sleep(1.0)
             self.lastPos = self.GetPos()
+        
+        logging.info('reinitialized, starting loop')
+        self._start_loop()
 
     def OnTarget(self):
         return self.onTarget

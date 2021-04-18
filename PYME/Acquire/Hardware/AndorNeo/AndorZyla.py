@@ -391,9 +391,9 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         buf = self.queuedBuffers.get()
         self.nQueued -= 1
         if not buf.ctypes.data == ctypes.addressof(pData.contents):
-            print((ctypes.addressof(pData.contents), buf.ctypes.data))
+            #print((ctypes.addressof(pData.contents), buf.ctypes.data))
             #self.camLock.release()
-            raise RuntimeError('Returned buffer not equal to expected buffer')
+            raise RuntimeError('Returned buffer not equal to expected buffer (%s)' % str((ctypes.addressof(pData.contents), buf.ctypes.data)))
             #print 'Returned buffer not equal to expected buffer'
             
         self.fullBuffers.put(buf)

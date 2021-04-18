@@ -27,9 +27,9 @@ from math import sin, cos
 import numpy
 from numpy import random
 
-from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 from PYME.Analysis.points.spherical_harmonics import cart2sph, reconstruct_from_modes
 from PYME.IO.tabular import HDFSource
+from PYME.simulation.wormlike2 import wormlikeChain
 
 
 class TestObject(object):

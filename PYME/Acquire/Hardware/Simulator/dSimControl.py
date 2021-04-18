@@ -23,21 +23,19 @@
 
 #Boa:Dialog:dSimControl
 
+import json
+import logging
+
+import numpy as np
+import scipy
 import wx
 import wx.grid
+
+import PYME.ui.manualFoldPanel as afp
+from PYME.simulation import wormlike2
 from . import fluor
-from . import wormlike2
-import json
-# import pylab
-import scipy
-import numpy as np
-#import os
 from . import rend_im
 
-#import PYME.ui.autoFoldPanel as afp
-import PYME.ui.manualFoldPanel as afp
-
-import logging
 logger = logging.getLogger(__name__)
 
 def create(parent):
@@ -72,7 +70,7 @@ class PSFSettings(HasTraits):
     four_pi = Bool(False)
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item
         #from PYME.ui.custom_traits_editors import CBEditor
     
         return View(Item(name='wavelength_nm'),
@@ -532,7 +530,7 @@ class dSimControl(afp.foldPanel):
         numFluors = int(self.tNumFluorophores.GetValue())
         persistLength= float(self.tPersist.GetValue())
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
-        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
+        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp / numFluors)
 
         XVals = self.scope.cam.XVals
         YVals = self.scope.cam.YVals
@@ -581,7 +579,7 @@ class dSimControl(afp.foldPanel):
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         if fn.endswith('.npy'):
@@ -599,7 +597,7 @@ class dSimControl(afp.foldPanel):
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         #self.points = pylab.load(fn)
@@ -625,7 +623,7 @@ class dSimControl(afp.foldPanel):
             
             self.st_psf.SetLabelText('PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
         else:
-            print('Setting PSF with zernike modes: %s' % z_modes)
+            logger.info('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
 
@@ -633,7 +631,7 @@ class dSimControl(afp.foldPanel):
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
-        print(fn)
+        logger.debug('Setting PSF from file: %s' % fn)
         if fn == '':
             #rend_im.genTheoreticalModel(rend_im.mdh)
             return
@@ -779,7 +777,7 @@ class dSimControl(afp.foldPanel):
         from . import EmpiricalHist
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
-            print('No file selected')
+            logger.warning('No file selected, cancelling')
             return
 
         with open(fn,'r') as f:

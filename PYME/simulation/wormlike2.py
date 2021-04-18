@@ -22,7 +22,6 @@
 ################
 
 
-from scipy import *
 
 import numpy as np
 
@@ -42,45 +41,45 @@ class wormlikeChain:
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(round(lengthPerKbp*kbp/steplength))
 
-        exp_costheta = (exp(-steplength/persistLength));
-        theta = sqrt(2*log(1/exp_costheta))*abs(randn(numsteps));
-        phi = 2*pi*rand(numsteps);
+        exp_costheta = (np.exp(-steplength/persistLength));
+        theta = np.sqrt(2*np.log(1/exp_costheta))*abs(np.random.randn(numsteps));
+        phi = 2*np.pi*np.random.rand(numsteps);
         #phi = 0.5*pi*randn(numsteps, 1)+pi/20;
 
-        phi = cumsum(concatenate(([0], phi),0))
+        phi = np.cumsum(np.concatenate(([0], phi),0))
         
-        xs = 1 - 2*rand()
-        ys = 1 - 2*rand()
-        zs = 1 - 2*rand()
+        xs = 1 - 2*np.random.rand()
+        ys = 1 - 2*np.random.rand()
+        zs = 1 - 2*np.random.rand()
 
-        nrm = sqrt(xs**2 + ys**2 + zs**2)
+        nrm = np.sqrt(xs**2 + ys**2 + zs**2)
 
         xs = xs/nrm;
         ys = ys/nrm;
         zs = zs/nrm;
 
-        so = array([xs, ys, zs])
+        so = np.array([xs, ys, zs])
 
-        xs = steplength*xs*ones(theta.shape)
-        ys = steplength*ys*ones(theta.shape)
-        zs = steplength*zs*ones(theta.shape)
+        xs = steplength*xs*np.ones(theta.shape)
+        ys = steplength*ys*np.ones(theta.shape)
+        zs = steplength*zs*np.ones(theta.shape)
 
         for i in range(2,numsteps):
-            sh = cross(so, so + array([0,0,2]))
+            sh = np.cross(so, so + np.array([0,0,2]))
             #sh = sh./sqrt(dot(sh, sh));
             #sh = sh./sqrt(sh*sh.');
-            sh = sh/dot(sh, sh.T)
-            sk = cross(so, sh)
+            sh = sh/np.dot(sh, sh.T)
+            sk = np.cross(so, sh)
             #sk = sk./sqrt(dot(sk, sk));
             #sk = sk./sqrt(sk*sk');
-            sk = sk/dot(sk, sk.T)
+            sk = sk/np.dot(sk, sk.T)
     
-            sn = cos(theta[i])*so + sin(theta[i])*sin(phi[i])*sh + sin(theta[i])*cos(phi[i])*sk
+            sn = np.cos(theta[i])*so + np.sin(theta[i])*np.sin(phi[i])*sh + np.sin(theta[i])*np.cos(phi[i])*sk
             snn = np.sqrt((sn * sn).sum())
             sn /= snn
             
-            sh_n = cos(theta[i])*(cos(phi[i])*sh + sin(phi[i])*sk) + sin(theta[i])*sn
-            sk_n = cos(theta[i])*(cos(phi[i])*sh + sin(phi[i])*sk) + sin(theta[i])*sn
+            sh_n = np.cos(theta[i])*(np.cos(phi[i])*sh + np.sin(phi[i])*sk) + np.sin(theta[i])*sn
+            sk_n = np.cos(theta[i])*(np.cos(phi[i])*sh + np.sin(phi[i])*sk) + np.sin(theta[i])*sn
             
             xs[i] = steplength*sn[0]
             ys[i] = steplength*sn[1]
@@ -90,9 +89,9 @@ class wormlikeChain:
             #i/numsteps
 
 
-        self.xp = cumsum(concatenate(([0], xs),0))
-        self.yp = cumsum(concatenate(([0], ys),0))
-        self.zp = cumsum(concatenate(([0], zs),0))
+        self.xp = np.cumsum(np.concatenate(([0], xs),0))
+        self.yp = np.cumsum(np.concatenate(([0], ys),0))
+        self.zp = np.cumsum(np.concatenate(([0], zs),0))
 
         #plot3(xp, yp, zp)
         #grid

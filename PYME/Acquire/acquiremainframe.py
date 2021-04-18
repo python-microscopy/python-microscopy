@@ -163,7 +163,7 @@ class PYMEMainFrame(AUIFrame):
         
 
     def _check_init_done(self):
-        if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+        if self.scope.initialized == True and self._check_init_done in self.time1.WantNotification:
             logger.debug('Backround initialization done')
             self.time1.WantNotification.remove(self._check_init_done)
             
@@ -412,7 +412,7 @@ class PYMEMainFrame(AUIFrame):
             panel.AddPane(pane)
         else:
             # a normal wx.Panel / wx.Window
-            print(panel, title, pinned, folded)
+            #print(panel, title, pinned, folded)
             item = afp.foldingPane(panel, -1, caption=title, pinned=pinned, folded=folded)
             pane.Reparent(item)
             item.AddNewElement(pane, priority=1)

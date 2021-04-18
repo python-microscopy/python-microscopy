@@ -4,82 +4,19 @@ cimport numpy as np
 import numpy as np
 cimport cython
 
-# Regular, boundary, and max vertex valences. These need tp be
-DEF VALENCE = 6
-DEF BOUNDARY_VALENCE = 4
-
-cdef extern from 'triangle_mesh_utils.h':
-    const int NEIGHBORSIZE  # Note this must match NEIGHBORSIZE in triangle_mesh_utils.h
-    const int VECTORSIZE
-    
-    cdef struct halfedge_t:
-        np.int32_t vertex
-        np.int32_t face
-        np.int32_t twin
-        np.int32_t next
-        np.int32_t prev
-        np.float32_t length
-        np.int32_t component
-        
-    cdef struct face_t:
-        np.int32_t halfedge
-        float normal[VECTORSIZE]
-        float area
-        np.int32_t component
-        
-    cdef struct face_d:
-        np.int32_t halfedge
-        np.float32_t normal0
-        np.float32_t normal1
-        np.float32_t normal2
-        np.float32_t area
-        np.int32_t component
-        
-    cdef struct vertex_t:
-        float position[VECTORSIZE];
-        float normal[VECTORSIZE];
-        np.int32_t halfedge;
-        np.int32_t valence;
-        np.int32_t neighbors[NEIGHBORSIZE];
-        np.int32_t component;
-        np.int32_t locally_manifold
-        
-    cdef struct vertex_d:
-        np.float32_t position0
-        np.float32_t position1
-        np.float32_t position2
-        np.float32_t normal0
-        np.float32_t normal1
-        np.float32_t normal2
-        np.int32_t halfedge
-        np.int32_t valence
-        np.int32_t neighbor0
-        np.int32_t neighbor1
-        np.int32_t neighbor2
-        np.int32_t neighbor3
-        np.int32_t neighbor4
-        np.int32_t neighbor5
-        np.int32_t neighbor6
-        np.int32_t neighbor7
-        np.int32_t neighbor8
-        np.int32_t neighbor9
-        np.int32_t neighbor10
-        np.int32_t neighbor11
-        np.int32_t neighbor12
-        np.int32_t neighbor13
-        np.int32_t neighbor14
-        np.int32_t neighbor15
-        np.int32_t neighbor16
-        np.int32_t neighbor17
-        np.int32_t neighbor18
-        np.int32_t neighbor19
-        np.int32_t component
-        np.int32_t locally_manifold
-        
-
 from PYME.experimental import triangle_mesh_utils
 
 DEF MAX_VERTEX_COUNT = 2**31
+
+# Regular, boundary, and max vertex valences. These need tp be
+DEF VALENCE = 6
+DEF BOUNDARY_VALENCE = 4
+    
+cdef extern from "triangle_mesh_utils.c":
+    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
+    
+    void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
+    void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')], align=True)
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')], align=True)
@@ -184,13 +121,6 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
 #ctypedef face_t face_d
 #ctypedef vertex_t vertex_d
 
-    
-cdef extern from "triangle_mesh_utils.c":
-    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
-    
-    void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
-    void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
-
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
 
@@ -231,36 +161,6 @@ cdef class TrianglesBase(object):
         raise NotImplementedError('Over-ride in derived class')
 
 cdef class TriangleMesh(TrianglesBase):
-
-    cdef public object _vertices
-    cdef public object _faces
-    cdef public object _halfedges
-    cdef public object _vertex_vacancies
-    cdef public object _face_vacancies
-    cdef public object _halfedge_vacancies
-    #cdef object _flat_halfedges
-    #cdef object _flat_faces
-    #cdef object _flat_vertices
-    cdef halfedge_t * _chalfedges
-    cdef face_d * _cfaces
-    cdef vertex_d * _cvertices
-
-    cdef object _faces_by_vertex
-    cdef object _loop_subdivision_flip_edges
-    cdef object _loop_subdivision_new_vertices
-
-    cdef object _singular_edges
-    cdef object _singular_vertices
-
-    cdef public object vertex_properties
-    cdef public object extra_vertex_data
-    cdef object fix_boundary
-    cdef object _manifold
-
-    cdef object _H
-    cdef object _K
-    cdef public object smooth_curvature
-    
 
     def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
@@ -870,7 +770,7 @@ cdef class TriangleMesh(TrianglesBase):
             # Edge normals subtracted from vertex normals
             Ni_diffs = np.sqrt(2. - 2.*np.sqrt(1.-((Nvi[None,:]*dvs_hat).sum(1))**2))
 
-            k = 2.*np.sign((Nvi[None,:]*dvs).sum(1))*Ni_diffs/dvs_norm
+            k = 2.*np.sign((Nvi[None,:]*(-dvs)).sum(1))*Ni_diffs/dvs_norm
             w = (1./dvs_norm)/r_sum
 
             Mvi = (w[None,:,None]*k[None,:,None]*Tijs.T[:,:,None]*Tijs[None,:,:]).sum(axis=1)
@@ -2458,20 +2358,25 @@ cdef class TriangleMesh(TrianglesBase):
             # iteration's search will be part of another component.
             component += 1
 
-    def keep_largest_connected_component(self):
+    def keep_largest_connected_component(self, n=1):
         # Find the connected components
         self.find_connected_components()
 
-        # Which connected component is largest? 
+        # Get n largest connected components
         com, counts = np.unique(self._vertices['component'][self._vertices['component']!=-1], return_counts=True)
-        max_count = np.argmax(counts)
-        max_com = com[max_count]
+        # max_count = np.argmax(counts)
+        counts_sorted = np.argsort(counts)
+        # max_com = com[max_count]
+        max_coms = com[counts_sorted[-n:]]
 
         # Remove the smaller components
-        _vertices = np.where((self._vertices['component'] != max_com))[0]
-        _edges = np.where((self._halfedges['component'] != max_com))[0]
+        # _vertices = np.where((self._vertices['component'] != max_com))[0]
+        _vertices = np.flatnonzero((self._vertices['component'][:,None] != max_coms[None,:]).prod(1))
+        # _edges = np.where((self._halfedges['component'] != max_com))[0]
+        _edges = np.flatnonzero((self._halfedges['component'][:,None] != max_coms[None,:]).prod(1))
         _edges_with_twins = _edges[self._halfedges['twin'][_edges] != -1]
-        _faces = np.where((self._faces['component'] != max_com))[0]
+        # _faces = np.where((self._faces['component'] != max_com))[0]
+        _faces = np.flatnonzero((self._faces['component'][None,:] != max_coms[:,None]).prod(1))
         # Delete vertices
         self._vertices[_vertices] = -1
         _kept_edges = self._halfedges['twin'][_edges_with_twins]

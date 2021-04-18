@@ -21,7 +21,6 @@
 #
 ##################
 
-import scipy
 #from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 #from pylab import *
@@ -152,7 +151,7 @@ def getDataErrors(im, metadata):
     # TODO - Fix me for camera maps (ie use correctImage function not ADOffset) or remove
     dataROI = im - metadata.getEntry('Camera.ADOffset')
 
-    return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    
+    return numpy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    
 
 def genFitImage(fitResults, metadata):
     from PYME.IO.MetaDataHandler import get_camera_roi_origin
@@ -307,7 +306,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
 
         fitErrors=None
         try:       
-            fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
+            fitErrors = numpy.sqrt(numpy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
         except Exception:
             pass
         

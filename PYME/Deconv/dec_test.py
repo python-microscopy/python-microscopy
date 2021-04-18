@@ -25,14 +25,14 @@ __test__= False
 
 if __name__ == '__main__':
     import dec
-    from scipy import *
+    import numpy as np
     import profile
-    (x,y,z) = mgrid[-32:31,-32:31,-128:127]
-    g = exp(-(x**2 + y**2 + z**2))
-    h = exp(-(x**2 + y**2 + (z/3.0)**2))
+    (x,y,z) = np.mgrid[-32:31,-32:31,-128:127]
+    g = np.exp(-(x**2 + y**2 + z**2))
+    h = np.exp(-(x**2 + y**2 + (z/3.0)**2))
     
     d4 = dec.dec_4pi_c()
-    d4.psf_calc(h,1,shape(g))
+    d4.psf_calc(h,1,np.shape(g))
     d4.prepare()
     
     profile.run("f = d4.deconv(ravel(cast['f'](g)), 1, alpha=g)")

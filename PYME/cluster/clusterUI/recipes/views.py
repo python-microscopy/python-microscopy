@@ -1,9 +1,10 @@
 from PYME import config
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
-
+import logging
 from PYME.misc.computerName import GetComputerName
 server_filter = config.get('dataserver-filter', GetComputerName())
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -37,26 +38,20 @@ def get_input_glob(request):
 
 def run(request):
     from PYME import config
-    if config.get('PYMERuleserver-use', True):
-        from PYME.cluster.HTTPRulePusher import RecipePusher
-    else:
-        from PYME.cluster.HTTPTaskPusher import RecipePusher
-    
+    from PYME.cluster.rules import RecipeRule
+
     recipe_url = request.POST.get('recipeURL')
-    output_directory = 'pyme-cluster://%s/%s' % (server_filter, 
-                                                 request.POST.get('recipeOutputPath').lstrip('/'))
+    output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
+    fileNames = request.POST.getlist('files', [])
     
     if recipe_url is not None:
         recipeURI = ('pyme-cluster://%s/' % server_filter) + recipe_url.lstrip('/')
-
-        pusher = RecipePusher(recipeURI=recipeURI, output_dir=output_directory)
+        rule = RecipeRule(recipeURI=recipeURI, output_dir=output_directory, inputs={'input': fileNames})
     else:
         recipe_text = request.POST.get('recipe_text')
-        pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
-
-    fileNames = request.POST.getlist('files', [])
-    pusher.fileTasksForInputs(input=fileNames)
-
+        rule = RecipeRule(recipe=recipe_text, output_dir=output_directory, inputs={'input': fileNames})
+    
+    rule.push()
 
     return HttpResponseRedirect('/status/queues/')
 
@@ -64,12 +59,7 @@ def run_template(request):
     from PYME import config
     from PYME.IO import unifiedIO
     from PYME.recipes.modules import ModuleCollection
-    
-    
-    if config.get('PYMERuleserver-use', True):
-        from PYME.cluster.HTTPRulePusher import RecipePusher
-    else:
-        from PYME.cluster.HTTPTaskPusher import RecipePusher
+    from PYME.cluster.rules import RecipeRule
         
     recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').lstrip('/'))
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
@@ -78,14 +68,15 @@ def run_template(request):
     recipe_text = unifiedIO.read(recipeURI).decode('utf-8')
     recipe = ModuleCollection.fromYAML(recipe_text)
     
+
+    # handle templated userfile inputs - these will be loaded by e.g. unifiedIO later
     for file_input in recipe.file_inputs:
         input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).lstrip('/'))
         recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
-
-    pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
     
-    fileNames = request.POST.getlist('files', [])
-    pusher.fileTasksForInputs(input=fileNames)
+    rule = RecipeRule(recipe=recipe_text, output_dir=output_directory, 
+                      inputs={'input': request.POST.getlist('files', [])})
+    rule.push()
 
     return HttpResponseRedirect('/status/queues/')
 

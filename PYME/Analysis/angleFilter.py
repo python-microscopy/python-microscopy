@@ -32,8 +32,8 @@ import matplotlib.cm
 
 def genCoords(FILT_SIZE):    
     #FILT_SIZE = 5
-    x, y = np.mgrid[-(FILT_SIZE/2):(FILT_SIZE/2 +1), -(FILT_SIZE/2):(FILT_SIZE/2 +1)]
-    b = np.vstack([x.ravel(), y.ravel()]).T
+    x, y = np.mgrid[-np.floor(FILT_SIZE/2):np.floor(FILT_SIZE/2 +1), -np.floor(FILT_SIZE/2):np.floor(FILT_SIZE/2 +1)]
+    b = np.vstack([x.ravel(), y.ravel()]).T.astype('f')
     ang = np.mod(np.angle(x +  1j*y), np.pi).ravel()
     
     return FILT_SIZE, x, y, b, ang
@@ -47,8 +47,12 @@ def th2(data, FILT_SIZE, x, y, b, ang):
     if (data > 0).sum() < 2:
         #not enough data to calculate PA
         return -1
-        
-    pa =  linalg.svd(data[:,None]*b, full_matrices=False)[2][0]
+
+    try:
+        pa =  linalg.svd(data[:,None]*b, full_matrices=False)[2][0]
+    except:
+        print (data.shape, b.shape)
+    
     return np.angle(pa[0] + 1j*pa[1])%np.pi
     
 def width(data,FILT_SIZE, x, y, b, ang):
@@ -140,7 +144,7 @@ def width_o(data, FILT_SIZE, x, y, b, ang):
 
     
 def angle_filter(data, FILT_SIZE=5):
-    return ndimage.generic_filter(data.astype('f'), th2, FILT_SIZE, extra_arguments=genCoords(FILT_SIZE))
+    return ndimage.generic_filter(data.astype('f'), th2, size=FILT_SIZE, extra_arguments=genCoords(FILT_SIZE))
     
 def width_filter(data, angles=None, FILT_SIZE=5):
     if angles is None:
