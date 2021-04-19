@@ -288,7 +288,7 @@ class ProcessColour(ModuleBase):
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
                     
         cached_output = tabular.CachingResultsFilter(output)
-        cached_output.mdh = output.mdh
+        #cached_output.mdh = output.mdh
         namespace[self.output] = cached_output
 
 

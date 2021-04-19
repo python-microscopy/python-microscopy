@@ -62,7 +62,7 @@ class BaseEngine(object):
         else:
             #use current view
             self.shader_program.v_matrix[:,:] = gl_canvas.object_rotation_matrix
-            self.shader_program.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation)[0]
+            self.shader_program.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
         
 
 class BaseLayer(HasTraits):

@@ -65,6 +65,10 @@ class BaseDataSource(object):
         return self.getSlice(0).dtype
     
     @property
+    def nbytes(self):
+        return np.prod(self.shape) * self.getSlice(0).itemsize
+    
+    @property
     def is_complete(self):
         """
         For datasources which may be opened before spooling is finished.
@@ -167,7 +171,7 @@ class XYZTCDataSource(object):
         if not input_order.startswith('XY'):
             raise RuntimeError('First 2 dimensions of input must be X and Y')
         
-        self.shape = self._datasource.getSliceShape() + [size_z, size_t, size_c]
+        self.shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
         self.dtype = self._datasource.dtype
         
         if input_order == 'XYZTC':

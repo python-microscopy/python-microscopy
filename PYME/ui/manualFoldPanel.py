@@ -34,7 +34,7 @@ PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
 
 def ColourFromStyle(col):
     if isinstance(col, six.string_types):
-        col = wx.NamedColour(col)
+        col = wx.Colour(col)
     else:
         col = wx.Colour(*col)
 

@@ -106,14 +106,14 @@ def main():
     time.sleep(2)
     logging.debug('Launching worker processors')
     numWorkers = config.get('numWorkers', cpu_count())
-
-    workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
+    subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
+    workerProcs = [subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP' % sys.executable, shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -p %s' % profiledir, shell=True,
-                                        stdin=subprocess.PIPE))
+    workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -p "%s"' % (sys.executable, profiledir),
+                                        shell=True, stdin=subprocess.PIPE))
 
     try:
         while not proc.poll():

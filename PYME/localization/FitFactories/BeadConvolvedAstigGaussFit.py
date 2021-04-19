@@ -17,7 +17,7 @@
 ##################
 
 import numpy as np
-from .fitCommon import fmtSlicesUsed
+from .fitCommon import fmtSlicesUsed, pack_results
 from . import FFBase
 from PYME.Analysis._fithelpers import FitModelWeighted
 from scipy.signal import convolve2d
@@ -124,19 +124,6 @@ fresultdtype = [('tIndex', '<i4'),
                 ]
 
 
-def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0, mse=0):
-    slicesUsed = fmtSlicesUsed(slicesUsed)
-    # print slicesUsed
-
-    if fitErr is None:
-        fitErr = -5e3 * np.ones(fitResults.shape, 'f')
-
-    res = np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode,
-                     slicesUsed, background, mse)], dtype=fresultdtype)
-    # print res
-    return res
-
-
 class GaussianFitFactory(FFBase.FitFactory):
     def __init__(self, data, metadata, fitfcn=f_gaussAstigBead, background=None, noiseSigma=None, **kwargs):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
@@ -182,10 +169,13 @@ class GaussianFitFactory(FFBase.FitFactory):
                 fitErrors = None
         except Exception:
             pass
-
-        # package results
-        return GaussianFitResultR(res, np.array(startParameters), self.metadata, (xslice, yslice, zslice), resCode,
-                                  fitErrors, bgm, np.mean(infodict['fvec']**2))
+        
+        tIndex = int(self.metadata.getOrDefault('tIndex', 0))
+        return pack_results(fresultdtype, tIndex=tIndex, fitResults=res, 
+                            fitError=fitErrors, startParams=np.array(startParameters), 
+                            resultCode=resCode, slicesUsed=(xslice, yslice, zslice),
+                            subtractedBackground=bgm, 
+                            meanSquaredError=np.mean(infodict['fvec']**2))
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
@@ -202,7 +192,6 @@ class GaussianFitFactory(FFBase.FitFactory):
 
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
-FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype  # only defined if returning data as numarray
 
 import PYME.localization.MetaDataEdit as mde

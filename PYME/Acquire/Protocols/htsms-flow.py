@@ -12,7 +12,7 @@ taskList = [
         'Multiview.ROISize': [256, 256],
         'Camera.IntegrationTime': 0.00125,
     }),
-    T(-1, scope.focus_lock.DisableLock),
+    T(-1, scope.focus_lock.DisableLockAfterAcquiringIfEnabled),
     # T(maxint, scope.turnAllLasersOff),
     T(maxint, scope.focus_lock.EnableLock)
 ]

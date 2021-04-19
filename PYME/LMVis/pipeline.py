@@ -227,6 +227,7 @@ def _processEvents(ds, events, mdh):
             if b'PiezoOnTarget' in evKeyNames:
                 # Sometimes we also emit PiezoOnTarget events with the actual piezo position, rather than where we
                 # told it to go, use these preferentially
+                # TODO - deprecate in favour of, e.g. 'FocusOnTarget' events which are offset-corrected - see issue 766
                 from PYME.Analysis import piezo_movement_correction
                 spoofed_evts =  piezo_movement_correction.spoof_focus_events_from_ontarget(events, mdh)
                 zm = piecewiseMapping.GeneratePMFromEventList(spoofed_evts, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'], eventName=b'ProtocolFocus')
@@ -732,7 +733,8 @@ class Pipeline:
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
             # only set the .events attribute if we actually have events.
-            ds.events = events
+            # ensure that events are sorted in increasing time order
+            ds.events = events[np.argsort(events['Time'])]
             
         return ds
 
@@ -823,7 +825,14 @@ class Pipeline:
         
         self.recipe.execute()
         self.filterKeys = {}
-        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        if 'filtered_localizations' in self.dataSources.keys():
+            self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
+        else:
+            # TODO - replace / remove this fallback with something better. This is currently required
+            # when we use/abuse the pipeline in dh5view, but that should ideally be replaced with
+            # something cleaner. This (and case above) should probably also be conditional on `clobber_recipe`
+            # as if opening with an existing recipe we would likely want to keep selectedDataSource constant as well.
+            self.selectDataSource('FitResults')
 
         # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
         self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
@@ -1114,7 +1123,6 @@ class Pipeline:
 
         
     
-
 
 
 

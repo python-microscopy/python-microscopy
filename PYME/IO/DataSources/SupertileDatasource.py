@@ -83,11 +83,8 @@ class SupertileDataSource(BaseDataSource):
         qp = parse_qs(query)
         level = int(qp.get('level', [0])[0])
         stride = int(qp.get('stride', [3])[0])
-        overlap = int(qp.get('overlap', [1])[0])
-        
-        mdh = MetaDataHandler.load_json(os.path.join(tile_base, 'metadata.json'))  # TODO - does this need to be posixpath?
-        # TODO - make the ImagePyramid read it's own metadata
-        p = ImagePyramid(tile_base, pyramid_tile_size=mdh['Pyramid.TileSize'], x0=mdh['Pyramid.x0'], y0=mdh['Pyramid.y0'], mdh=mdh)
+        overlap = int(qp.get('overlap', [1])[0])        
+        p = ImagePyramid.load_existing(tile_base)
         
         return SupertileDataSource(p, level, stride, overlap)
 
@@ -109,8 +106,16 @@ class SupertileDataSource(BaseDataSource):
     
     @property
     def tile_coords_um(self):
+        """
+        Returns
+        -------
+        ndarray
+            coordinates of each frame, in micrometers, referenced to the origin
+            of the camera chip.
+        """
         px_size = self.mdh['voxelsize.x']
         
+        # Pyramid.x0 and Pyramid.y0 should be referenced to the camera origin
         p0 = np.array([self.mdh['Pyramid.x0'], self.mdh['Pyramid.y0']])
         
         return px_size*self._pyr.tile_size*self.tile_coords + p0[None,:]

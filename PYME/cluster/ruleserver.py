@@ -55,6 +55,10 @@ class Rule(object):
 
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
+Bid = collections.namedtuple('Bid', 'bidder_id, cost')
+
+DEFAULT_BID = Bid(0, sys.maxsize)
+
 class IntegerIDRule(Rule):
     """
     A rule which generates tasks based on a template.
@@ -156,6 +160,11 @@ class IntegerIDRule(Rule):
     """
     TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
     
+    # task cost threshold below which tasks are deemed 'local' and directly awarded to the first bidder
+    # rather than going to "auction" - ie. the "Buy Now" price
+    # TODO - Revisit - should this be a settable rule parameter rather than a constant?
+    COST_THRESHOLD = 0.2
+    
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
                  max_task_ID=100000, task_timeout=600, rule_timeout=3600, 
@@ -204,6 +213,10 @@ class IntegerIDRule(Rule):
         self.avCost = 0
         
         self.expiry = time.time() + self._rule_timeout
+        
+        # store pending bids
+        self._pending_bids = {}
+        self._current_bidder_id = 0
               
         self._info_lock = threading.Lock()
         self._advert_lock = threading.Lock()
@@ -315,6 +328,39 @@ class IntegerIDRule(Rule):
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         costs = np.array(bid['costs'], 'f4')
+        
+        if np.all(costs < self.COST_THRESHOLD):
+            # all tasks are below the "Buy Now" threshold, take a shortcut and directly award them to the bidder bypassing
+            # the rest of the biddng process. This enables high performance on localisation tasks
+            pass
+        else:
+            # NOTE: this bidding code is not high-performance. This is probably OK as code is bypassed in normal
+            # localisation scenario but might need to be revisited as it will be triggered in mixed cases where
+            # some bids are local and some are not.
+            with self._info_lock:
+                # get a unique bidder ID
+                self._current_bidder_id += 1
+                bidder_id = self._current_bidder_id
+                
+                # record bids
+                for taskID, cost in zip(taskIDs, costs):
+                    # get existing winning bid
+                    _, winning_cost = self._pending_bids.get(taskID, DEFAULT_BID)
+                    if cost < winning_cost:
+                        # if we have a lower cost, over-write the winning bid
+                        self._pending_bids[taskID] = Bid(bidder_id, cost)
+            
+            #wait for other bids
+            time.sleep(0.2) #TODO - make this time configurable??
+            
+            with self._info_lock:
+                # filter our tasks to only keep the wining ones
+                winners = [self._pending_bids[taskID].bidder_id==bidder_id for taskID in taskIDs]
+                
+                taskIDs = taskIDs[winners]
+                costs = costs[winners]
+        
+        
         with self._info_lock:
             successful_bid_mask = self._task_info['status'][taskIDs] == STATUS_AVAILABLE
             successful_bid_ids = taskIDs[successful_bid_mask]

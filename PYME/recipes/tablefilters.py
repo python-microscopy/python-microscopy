@@ -3,8 +3,10 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrSt
 
 import numpy as np
 #import pandas as pd
-from PYME.IO import tabular
+from PYME.IO import tabular, MetaDataHandler
 #from PYME.LMVis import renderers
+import logging
+logger = logging.getLogger(__name__)
 
 @register_module('Mapping')
 class Mapping(ModuleBase):
@@ -178,22 +180,48 @@ class SelectTableColumns(ModuleBase):
 
 @register_module('RandomSubset')
 class RandomSubset(ModuleBase):
-    """Select a random subset of rows from a table"""
+    """Select a random subset of rows from a table
+    
+    Parameters:
+    -----------
+    
+    input :
+    output :
+    num_to_select : int
+        The number of samples rows to return
+    strict: bool
+        How strict are we about the number of rows - governs what happens when the number of rows in the original data
+        set is less than or equal to the number we want. If strict=False, the number of rows is truncated to the length
+        of the original data. If strict=True trying to take a number of samples > the number of rows will generate an
+        error. A warning will also be displayed if num_to_select is > n_rows/2. Monte-Carlo (or similar) applications
+        should use strict=True.
+    
+    """
+    
     input = Input('input')
     output = Output('output')
-    numToSelect = Int(100)
+    num_to_select = Int(100)
+    strict = Bool(False)
     
     def execute(self, namespace):
         data = namespace[self.input]
         
-        out = tabular.RandomSelectionFilter(data, num_Samples=self.numToSelect)
+        n_rows = len(data)
+        
+        if n_rows < self.num_to_select:
+            if self.strict:
+                raise IndexError('Trying to select %d from data with only %d rows. To allow truncation, use strict=False' % (self.num_to_select, n_rows))
+            else:
+                logger.info('RandomSubset: Truncating from %d to %d rows as data only has %d rows. To make this an error, use strict=True' % (self.num_to_select, n_rows, n_rows)) 
+        
+        if self.strict and (self.num_to_select > 0.5*n_rows):
+            logger.warning('RandomSubset: Selecting %d from %d rows will not be very random' % (self.num_to_select, n_rows))
+        
+        out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select))
         
         try:
-            out.mdh = data.mdh
+            out.mdh = MetaDataHandler.DictMDHandler(data.mdh)
         except AttributeError:
             pass
 
-        namespace[self.outputName] = out
-        
-
-
+        namespace[self.output] = out

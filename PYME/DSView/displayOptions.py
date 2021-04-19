@@ -317,23 +317,31 @@ class DisplayOpts(object):
         self.zp = other.zp
             
 
+    def _optimal_display_range(self, d, method='percentile'):
+        """ Estimate a suitable starting display range
+        """
+        
+        #discard NaNa
+        d = d[np.isnan(d) == 0].ravel()
+        
+        if method == 'min-max':
+            return d.min(), d.max()
+        elif method == 'percentile':
+            return d.min(), np.percentile(d, 99.)
+
     def Optimise(self):
         if len(self.ds.shape) == 2:
-            dss = self.ds[:,:]
-            dss = dss[np.isnan(dss) ==0]
-            self.Offs[0] = 1.*dss.min()
-            self.Gains[0] =1./(dss.max()- dss.min()+ 1e-3)
+            bds = [self._optimal_display_range(self.ds[:,:]),]
         elif len(self.ds.shape) ==3:
-            dss = self.ds[:,:,self.zp]
-            dss = dss[np.isnan(dss) ==0]
-            self.Offs[0] = 1.*dss.min()
-            self.Gains[0] =1./(dss.max()- dss.min()+ 1e-3)
+            bds = [self._optimal_display_range(self.ds[:, :, self.zp]), ]
         else:
-            for i in range(len(self.Chans)):
-                dss = self.ds[:,:,self.zp,self.Chans[i]]
-                dss = dss[np.isnan(dss) ==0]
-                self.Offs[i] = float(dss.min())
-                self.Gains[i] = 1.0/(float(dss.max()) - self.Offs[i]+ 1e-3)
+            bds = [self._optimal_display_range(self.ds[:, :, self.zp, c]) for c in self.Chans]
+        
+        for i, bd in enumerate(bds):
+            low, high = bd
+
+            self.Offs[i] = float(low)
+            self.Gains[i] = 1.0/(float(high) - float(low)+ 1e-3)
                 
         #print self.Offs, self.Gains
 

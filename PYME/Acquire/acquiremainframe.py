@@ -163,7 +163,7 @@ class PYMEMainFrame(AUIFrame):
         
 
     def _check_init_done(self):
-        if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+        if self.scope.initialized == True and self._check_init_done in self.time1.WantNotification:
             logger.debug('Backround initialization done')
             self.time1.WantNotification.remove(self._check_init_done)
             
@@ -412,7 +412,7 @@ class PYMEMainFrame(AUIFrame):
             panel.AddPane(pane)
         else:
             # a normal wx.Panel / wx.Window
-            print(panel, title, pinned, folded)
+            #print(panel, title, pinned, folded)
             item = afp.foldingPane(panel, -1, caption=title, pinned=pinned, folded=folded)
             pane.Reparent(item)
             item.AddNewElement(pane, priority=1)
@@ -666,9 +666,22 @@ class PYMEMainFrame(AUIFrame):
         msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
             if six.PY3:
-                msg += '%s, %s\n' % (t.name, t._target)
+                cd = None
+                if hasattr(t._target, '__code__'):
+                    cd = t._target.__code__
+                elif hasattr(t._target, '__func__'):
+                    cd = t._target.__func__.__code__
+                elif hasattr(t, '__code__'):
+                    cd = t.__code__
+                else:
+                    # Thread sub-class
+                    try:
+                        cd = t.__class__.run.__code__
+                    except AttributeError:
+                        pass
+                msg += '%s, %s, daemon=%s, %s\n' % (t.name, t._target, t.daemon, cd)
             else:
-                msg += '%s, %s\n' % (t, t._Thread__target)
+                msg += '%s, %s, daemon=%s\n' % (t, t._Thread__target, t.daemon)
             
         logging.info(msg)
 

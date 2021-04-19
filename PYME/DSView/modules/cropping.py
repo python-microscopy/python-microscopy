@@ -26,6 +26,27 @@ import wx
 
 from ._base import Plugin
 
+def crop_2D(image, roi):
+    # TODO - make or refactor into recipe module
+    from PYME.IO.image import ImageStack
+    import numpy as np
+    filt_ims = [np.atleast_3d(image.data[roi[0][0]:roi[0][1], roi[1][0]:roi[1][1], :, chanNum].squeeze()) for
+                chanNum in range(image.data.shape[3])]
+    
+    im = ImageStack(filt_ims, titleStub='Cropped Image')
+    im.mdh.copyEntriesFrom(image.mdh)
+    im.mdh['Parent'] = image.filename
+    im.mdh['Processing.CropROI'] = roi
+    
+    vx, vy, vz = image.voxelsize
+    ox, oy, oz = image.origin
+    
+    im.mdh['Origin.x'] = ox + roi[0][0] * vx
+    im.mdh['Origin.y'] = oy + roi[1][0] * vy
+    im.mdh['Origin.z'] = oz
+    
+    return im
+
 class Cropper(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
@@ -36,7 +57,7 @@ class Cropper(Plugin):
     def OnCrop(self, event):
         import numpy as np
         #from scipy.ndimage import gaussian_filter
-        from PYME.IO.image import ImageStack
+        
         from PYME.DSView import ViewIm3D
 
         if not (self.do.selectionMode == self.do.SELECTION_RECTANGLE):
@@ -44,22 +65,8 @@ class Cropper(Plugin):
             return
 
         x0, x1, y0, y1, z0, z1 = self.do.sorted_selection
-        
         roi = [[x0, x1 + 1],[y0, y1 +1], [0, self.image.data.shape[2]]]
-
-        filt_ims = [np.atleast_3d(self.image.data[roi[0][0]:roi[0][1],roi[1][0]:roi[1][1],:,chanNum].squeeze()) for chanNum in range(self.image.data.shape[3])]
-
-        im = ImageStack(filt_ims, titleStub = 'Cropped Image')
-        im.mdh.copyEntriesFrom(self.image.mdh)
-        im.mdh['Parent'] = self.image.filename
-        im.mdh['Processing.CropROI'] = roi
-
-        vx, vy, vz = self.image.voxelsize
-        ox, oy, oz = self.image.origin
-        
-        im.mdh['Origin.x'] = ox + roi[0][0]*vx
-        im.mdh['Origin.y'] = oy + roi[1][0]*vy
-        im.mdh['Origin.z'] = oz
+        im = crop_2D(self.image, roi)
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'

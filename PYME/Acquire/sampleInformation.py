@@ -274,7 +274,7 @@ class SampleInfoDialog(wx.Dialog):
         if acquiring and self.lSlides.GetItemCount() == 1:
             self.lSlides.Select(0)
 
-        print('foo;')
+        #print('foo;')
 
     def OnAddSlide(self, event):
         import webbrowser
@@ -288,13 +288,13 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnSelectSlide(self, event):
         i = event.GetIndex()
-        print(i)
+        #print(i)
         #self.slide = self.lSlides.qs[i]
         #r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
         #resp = r.json()
         resp = self.lSlides._getSlideInfo(i)
         self.slide = resp['info']
-        print((self.slide))
+        #print((self.slide))
         self.bOK.Enable()
 
     def OnFilterChange(self, event):
@@ -469,10 +469,10 @@ def prefillSampleData(parent):
 
     if dlg.ShowModal() == wx.ID_OK:
         dlg.PopulateMetadata(slideMD, False)
-        print('bar')
-        print((dlg.slide))
+        #print('bar')
+        #print((dlg.slide))
         currentSlide[0] = dlg.slide
-        print(currentSlide)
+        #print(currentSlide)
     else:
         currentSlide[0] = None
 
@@ -482,7 +482,7 @@ def prefillSampleData(parent):
 def getSampleData(parent, mdh):
     #global currentSlide
 
-    print(('currSlide:', currentSlide))
+    #print(('currSlide:', currentSlide))
     cs = currentSlide[0]
 
     if cs:
@@ -493,7 +493,7 @@ def getSampleData(parent, mdh):
         dlg = SampleInfoDialog(parent)
 
         if dlg.ShowModal() == wx.ID_OK:
-            print('populating metadata')
+            #print('populating metadata')
             dlg.PopulateMetadata(mdh)
 
             currentSlide[0] = dlg.slide

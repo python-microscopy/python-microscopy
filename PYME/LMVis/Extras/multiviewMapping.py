@@ -389,10 +389,36 @@ class MultiviewMapper:
         if mapping_module.configure_traits(kind='modal'):
             recipe.add_modules_and_execute([mapping_module,])
             
+            # keep a reference for debugging
+            
+            self._amm = mapping_module
+            
             self.pipeline.selectDataSource('z_mapped')
-    
             self.visFr.RefreshView() #TODO - is this needed?
         #self.visFr.CreateFoldPanel()
+            
+    def OnAstigQualityControl(self, event=None):
+        import matplotlib.pyplot as plt
+        import json
+
+        with open(self._amm.astigmatism_calibration_location, 'r') as f:
+            acal = json.loads(f.read())
+            
+        
+        plt.figure()
+
+        for i in range(4):
+            plt.subplot(4, 2, 2 * i + 1)
+            plt.plot(acal[i]['z'], acal[i]['sigmax'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmax%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmax%d' % i)
+            plt.grid()
+            plt.subplot(4, 2, 2 * i + 2)
+            plt.plot(acal[i]['z'], acal[i]['sigmay'])
+            plt.scatter(-self.pipeline['astigmatic_z'], self.pipeline['sigmay%d' % i], s=2, c=self.pipeline['probe'])
+            plt.ylabel('sigmay%d' % i)
+            plt.grid()
+        
 
     def OnCheckAstigmatismCalibration(self, event=None):
         """

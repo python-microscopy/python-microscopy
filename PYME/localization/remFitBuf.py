@@ -50,8 +50,6 @@ import numpy as np
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
-bufferMisses = 0
-nTasksProcessed = 0
 
 splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'SplitterFitCOIR', 'SplitterFitFNSR', 'SplitterFitScavNR',
                       'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterFitFusionR',
@@ -91,7 +89,7 @@ class BufferManager(object):
 
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
-            self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
+            self.dBuffer = buffers.SliceBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
             self.bBuffer = None
         
         #fix our background buffers
@@ -343,7 +341,7 @@ class fitTask(taskDef.Task):
             drift_ind = [0,0]
         # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
         # makes bufferLen at least 1
-        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
+        self.bufferLen = max(0, max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])) + 1
         
     @property
     def fitMod(self):
@@ -398,7 +396,7 @@ class fitTask(taskDef.Task):
 
 
     def __call__(self, gui=False, taskQueue=None):
-        global dBuffer, bBuffer, dataSourceID, nTasksProcessed
+        global dBuffer, bBuffer, dataSourceID
         
         # short-circuit if a task is generated for a frame pre-StartAt
         # FIXME - we should never generate tasks for these frames.
@@ -422,7 +420,6 @@ class fitTask(taskDef.Task):
         self.data = bufferManager.dBuffer.getSlice(self.index)
         #if logger.isEnabledFor(logging.DEBUG):
         #    logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
-        nTasksProcessed += 1
         #print self.index
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
@@ -433,9 +430,14 @@ class fitTask(taskDef.Task):
         self.bg = 0
 
         if 'GPU_PREFIT' in dir(self.fitMod):
-            if len(self.bgindices) != 0:  # asynchronously calculate background
-                bufferManager.bBuffer.calc_background(self.bgindices)
-                self.bg = bufferManager.bBuffer
+            if len(self.bgindices) != 0:
+                if md.get('Analysis.GPUPCTBackground', False):
+                    # asynchronous background calc on the GPU
+                    bufferManager.bBuffer.calc_background(self.bgindices)
+                    self.bg = bufferManager.bBuffer
+                else:
+                    # calculate now on the CPU
+                    self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
             # fit module does its own prefit steps on the GPU
             self.data = self.data.squeeze()
             ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=None)
@@ -589,7 +591,7 @@ class fitTask(taskDef.Task):
             (per-pixel) variance, readout noise [e-^2]
         """
         var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
-        return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
+        return np.sqrt(var + (float(md['Camera.NoiseFactor'])**2)*(float(md['Camera.ElectronsPerCount'])*float(md['Camera.TrueEMGain'])*np.maximum(data, 1.0) + float(md['Camera.TrueEMGain'])*float(md['Camera.TrueEMGain'])))/float(md['Camera.ElectronsPerCount'])
     
     def calcThreshold(self):
         #from scipy import ndimage

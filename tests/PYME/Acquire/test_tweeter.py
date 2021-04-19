@@ -1,6 +1,7 @@
-import pytest
 import logging
 import time
+
+import pytest
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,9 +29,9 @@ condition = {
     'message': 'Testing!'
 }
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_tweet():
-    from PYME.Acquire.tweeter import LazyScopeTweeter
+    from PYME.Acquire.htsms.tweeter import LazyScopeTweeter
     from PYME.Acquire.ActionManager import ActionManager
 
     actions = ActionManager(FakeScope(FakeSpooler()))

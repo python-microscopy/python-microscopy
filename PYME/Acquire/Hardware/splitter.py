@@ -107,6 +107,43 @@ class Unmixer:
             return red_chan
 
 
+    def Unmix_(self, data, mixMatrix, offset, ROI=[0,0,512, 512]):
+        import scipy.linalg
+        from PYME.localisation import splitting
+        #from pylab import *
+        #from PYME.DSView.dsviewer_npy import View3D
+
+        umm = scipy.linalg.inv(mixMatrix)
+
+        dsa = data.squeeze() - offset
+        g_, r_ = [dsa[roi[0]:roi[2], roi[1]:roi[3]] for roi in rois]
+        
+        if self.flip:
+            if self.axis == 'up_down':
+                r_ = numpy.fliplr(r_)
+            else:
+                r_ = numpy.flipud(r_)
+
+            r_ = self._deshift(r_, ROI)
+
+        #print g_.shape, r_.shape
+
+        g = umm[0,0]*g_ + umm[0,1]*r_
+        r = umm[1,0]*g_ + umm[1,1]*r_
+
+        g = g*(g > 0)
+        r = r*(r > 0)
+
+#        figure()
+#        subplot(211)
+#        imshow(g.T, cmap=cm.hot)
+#
+#        subplot(212)
+#        imshow(r.T, cmap=cm.hot)
+
+        #View3D([r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))])
+        return [r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))]
+
     def Unmix(self, data, mixMatrix, offset, ROI=[0,0,512, 512]):
         import scipy.linalg
         
@@ -118,14 +155,14 @@ class Unmixer:
         dsa = data.squeeze() - offset
         
         if self.axis == 'up_down':
-            g_ = dsa[:, :(dsa.shape[1]/2)]
-            r_ = dsa[:, (dsa.shape[1]/2):]
+            g_ = dsa[:, :int(dsa.shape[1]/2)]
+            r_ = dsa[:, int(dsa.shape[1]/2):]
             if self.flip:
                 r_ = numpy.fliplr(r_)
             r_ = self._deshift(r_, ROI)
         else:
-            g_ = dsa[:(dsa.shape[0]/2), :]
-            r_ = dsa[(dsa.shape[0]/2):, :]
+            g_ = dsa[:int(dsa.shape[0]/2), :]
+            r_ = dsa[int(dsa.shape[0]/2):, :]
             if self.flip:
                 r_ = numpy.flipud(r_)
             r_ = self._deshift(r_, ROI)
@@ -151,7 +188,7 @@ class Unmixer:
 
 class Splitter:
     def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top',
-                 constrain=True, flip = True, cam_name=''):
+                 constrain=True, flip = True, cam_name='', rois=None):
         self.dir = dir
         self.scope = scope
         self.cam = cam
@@ -159,6 +196,7 @@ class Splitter:
         self.parent = parent
         self.unmixer = Unmixer(flip=flip, axis = dir)
         self.flip = flip
+        self._rois=rois
 
         #which dichroic mirror is installed
         self.dichroic = dichroic
@@ -215,6 +253,17 @@ class Splitter:
             #self.menu.Check(idConstROI, True)
         
 
+    @property
+    def rois(self):
+        if self._rois is not None:
+            return self._rois
+        if self.dir == 'up_down':
+            return [[0,0,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2], 
+                    [0,self.cam.GetCCDHeight()/2,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]]
+        else: #dir == 'left_right'
+            return [[0,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()],
+                    [self.cam.GetCCDWidth()/2,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]]
+    
     def ProvideMetadata(self, mdh):
         from PYME.LMVis import dyeRatios #TODO - move to somewhere common
         
@@ -228,12 +277,7 @@ class Splitter:
             except (KeyError, AttributeError):
                 pass
             
-            if self.dir == 'up_down':
-                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
-                mdh['Splitter.Channel1ROI'] = [0,self.cam.GetCCDHeight()/2,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
-            else: #dir == 'left_right'
-                mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
-                mdh['Splitter.Channel1ROI'] = [self.cam.GetCCDWidth()/2,0,self.cam.GetCCDWidth()/2, self.cam.GetCCDHeight()]
+            mdh['Splitter.Channel0ROI'], mdh['Splitter.Channel1ROI'] = self.rois
 
             if 'shiftField' in dir(self):
                 mdh.setEntry('chroma.ShiftFilename', self.shiftFieldName)

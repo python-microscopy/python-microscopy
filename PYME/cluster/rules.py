@@ -180,6 +180,15 @@ class Rule(object):
 
         """
         return True
+
+    @property
+    def data_complete(self):
+        """ Is the underlying data complete?"""
+        return True
+    
+    def on_data_complete(self):
+        '''Over-ride in derived rules so that, e.g. events can be written at the end of a real-time acquisition '''
+        pass
     
     def get_new_tasks(self):
         """
@@ -246,6 +255,8 @@ class Rule(object):
             self.doPoll = True
             self.pollT = threading.Thread(target=self._poll_loop)
             self.pollT.start()
+        else:
+            self.on_data_complete()
 
     def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
         """ wrapper around add_integer_rule api endpoint"""
@@ -300,9 +311,6 @@ class Rule(object):
 
     def _poll_loop(self):
         logging.debug('task pusher poll loop started')
-        # wait until clusterIO caches clear to avoid replicating the results file.
-        # TODO - we shouldn't need this any more as results are being pushed to a specific server rather than using a PYME-CLUSTER:// URI
-        time.sleep(1.5)
     
         while (self.doPoll == True):
             try:
@@ -311,8 +319,18 @@ class Rule(object):
             except NoNewTasks:
                 pass
         
+            if self.data_complete and not hasattr(self, '_data_comp_callback_res'):
+                logger.debug('input data complete, calling on_data_complete')
+                self._data_comp_callback_res=self.on_data_complete()
+            
             if self.complete:
-                logging.debug('input data complete and all tasks pushed, marking rule as complete')
+                logger.debug('input data complete')
+                try:  # check/relase one more time to avoid race condition
+                    rel_start, rel_end = self.get_new_tasks()
+                    self._release_tasks(rel_start, rel_end)
+                except NoNewTasks:
+                    pass
+                logger.debug('all tasks pushed, marking rule as complete')
                 self._mark_complete()
                 logging.debug('ending polling loop.')
                 self.doPoll = False
@@ -478,7 +496,18 @@ class LocalisationRule(Rule):
         MetaData.fixEMGain(resultsMdh)
         
         
-        self._setup(seriesName, resultsMdh, resultsFilename, startAt, dataSourceModule, serverfilter)
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
+
+        #load data source
+        if dataSourceModule is None:
+            DataSource = DataSources.getDataSourceForFilename(seriesName)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
+                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+    
+        self.ds = DataSource(seriesName)
+    
+        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
         
         Rule.__init__(self, **kwargs)
         
@@ -489,7 +518,6 @@ class LocalisationRule(Rule):
         self.dataSourceID = dataSourceID
         if '~' in self.dataSourceID or '~' in resultsFilename:
             raise RuntimeError('File, queue or results name must NOT contain ~')
-    
         
         #where the results are when we want to read them
         self.resultsURI = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsFilename)
@@ -504,17 +532,6 @@ class LocalisationRule(Rule):
         self.mdh = metadata
         self.start_at = startAt
         self.serverfilter = serverfilter
-    
-        #load data source
-        if dataSourceModule is None:
-            DataSource = DataSources.getDataSourceForFilename(dataSourceID)
-        else:
-            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule,
-                                    fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
-    
-        self.ds = DataSource(self.dataSourceID)
-    
-        logger.debug('DataSource.__class__: %s' % self.ds.__class__)
     
     def _task_template(self, context):
         tt = {'id': '{{ruleID}}~{{taskID}}',
@@ -540,7 +557,9 @@ class LocalisationRule(Rule):
         #set up results file:
         logging.debug('resultsURI: ' + self.worker_resultsURI)
         clusterResults.fileResults(self.worker_resultsURI + '/MetaData', self.mdh)
-        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
+        
+        # defer copying events to after series completion
+        #clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.put_file(self.resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=self.serverfilter)
@@ -549,11 +568,19 @@ class LocalisationRule(Rule):
         #time.sleep(1.5) #moved inside polling thread so launches will run quicker
 
         self._next_release_start = self.start_at
-        numTotalFrames = self.ds.getNumSlices()
-        self.frames_outstanding=numTotalFrames - self._next_release_start
-        
+        self.frames_outstanding=self.total_frames - self._next_release_start
+        if self.data_complete:
+            return dict(max_tasks=self.total_frames)
         return {}
+    
+    @property
+    def total_frames(self):
+        return self.ds.getNumSlices()
 
+    @property
+    def data_complete(self):
+        return self.ds.is_complete
+    
     @property
     def complete(self):
         """
@@ -564,7 +591,11 @@ class LocalisationRule(Rule):
         -------
 
         """
-        return self.ds.is_complete and not (self.frames_outstanding  > 0)
+        return self.data_complete and self.total_frames == self._next_release_start
+    
+    def on_data_complete(self):
+        logger.debug('Data complete, copying events to output file')
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', self.ds.getEvents())
 
     def get_new_tasks(self):
         """
@@ -576,7 +607,7 @@ class LocalisationRule(Rule):
         release_start, release_end : the indices of starting and ending tasks to release
 
         """
-        numTotalFrames = self.ds.getNumSlices()
+        numTotalFrames = self.total_frames
         logging.debug('numTotalFrames: %s, _next_release_start: %d' % (numTotalFrames, self._next_release_start))
 
         if numTotalFrames <= self._next_release_start:
@@ -590,8 +621,52 @@ class LocalisationRule(Rule):
             
             return release_start, release_end
         
+
+class SpoolLocalLocalizationRule(LocalisationRule):
+    def __init__(self, spooler, seriesName, analysisMetadata, resultsFilename=None, startAt=0, serverfilter=clusterIO.local_serverfilter, **kwargs):
+        # TODO - reduce duplication of `LocalisationRule.__init__()` and `LocalisationRule._setup()`
+        from PYME.IO import MetaDataHandler
+        from PYME.Analysis import MetaData
+        from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
+        from PYME.IO import unifiedIO
+
+        self.spooler = spooler
+    
+        if resultsFilename is None:
+            resultsFilename = genClusterResultFileName(seriesName)
         
+        resultsFilename = verify_cluster_results_filename(resultsFilename)
+        logger.info('Results file: ' + resultsFilename)
+    
+        resultsMdh = MetaDataHandler.DictMDHandler()
+        # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
+        resultsMdh.update(self.spooler.md)
+        resultsMdh.update(analysisMetadata)
+        resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo',
+                                                                        resultsMdh.getOrDefault('Analysis.StartAt', 0))
+        MetaData.fixEMGain(resultsMdh)
         
+        self._setup(seriesName, resultsMdh, resultsFilename, startAt, serverfilter)
+        
+        Rule.__init__(self, **kwargs)
+    
+    @property
+    def total_frames(self):
+        return self.spooler.get_n_frames()
+
+    @property
+    def data_complete(self):
+        try:
+            return self.spooler.finished()
+        except RuntimeError as e:
+            logger.error(str(e))
+            logger.info('marking data as complete')
+            return True
+    
+    def on_data_complete(self):
+        events = self.spooler.evtLogger.to_recarray()
+        clusterResults.fileResults(self.worker_resultsURI + '/Events', events)
+
 
 class RuleFactory(object):
     _type = ''
@@ -673,3 +748,14 @@ class LocalisationRuleFactory(RuleFactory):
             analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
         """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
+
+class SpoolLocalLocalizationRuleFactory(RuleFactory):
+    _type = 'localization'
+    def __init__(self, **kwargs):
+        """
+        See `SpoolLocalLocalizationRule` for full initialization arguments. 
+        Required kwargs are
+            seriesName : str
+            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
+        RuleFactory.__init__(self, rule_class=SpoolLocalLocalizationRule, **kwargs)   

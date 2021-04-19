@@ -32,7 +32,7 @@ class EnumControl(wx.Panel):
         self.parent.update()
         
     def update(self):
-        choices = self.target.getAvailableValues()
+        choices = list(self.target.getAvailableValues())
         self.cChoice.SetItems(choices)
         self.cChoice.SetSelection(choices.index(self.target.getString()))
         

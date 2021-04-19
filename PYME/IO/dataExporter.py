@@ -82,16 +82,21 @@ class H5Exporter(Exporter):
         self.complevel = complevel
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+        from PYME.IO.dataWrap import Wrap
+        
         h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
+        
+        data = Wrap(data) #make sure we can index along a colour dimension
         nChans = data.shape[3]
 
-        xSize, ySize = data[xslice, yslice, 0].shape[:2]
+        slice0 = data[xslice, yslice, 0, 0]
+        xSize, ySize = slice0.shape[:2]
         
         print((xSize, ySize))
-        dtype = data[xslice, yslice, 0].dtype
+        dtype = slice0.dtype
         
         if not dtype in ['uint8', 'uint16', 'float32']:
             warnings.warn('Attempting to save an unsupported data-type (%s) - data should be one of uint8, uint16, or float32' % dtype,
@@ -146,14 +151,13 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
+        if not events is None and len(events) > 0:
+            assert isinstance(events, numpy.ndarray), "expected type of events object to be numpy array, but was {}".format(type(events))
+            # this should get the sorting done automatically
+            outEvents = h5out.create_table(h5out.root, 'Events', events, filters=tables.Filters(complevel=5, shuffle=True))
+        else:
+            outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent, filters=tables.Filters(complevel=5, shuffle=True))
 
-        outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
-
-        if not events is None:
-            #copy events to results file
-            if len(events) > 0:
-                outEvents.append(events)
-                
         h5out.flush()
         h5out.close()
 
@@ -237,6 +241,12 @@ class OMETiffExporter(Exporter):
                 return data.astype('uint8')
             else:
                 return data
+            
+        if data.nbytes > 2e9:
+            warnings.warn('Data is larger than 2GB, generated TIFF may not read in all software')
+            
+        if data.nbytes > 4e9:
+            raise RuntimeError('TIFF has a maximum file size of 4GB, crop data or save as HDF')
         
         dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None

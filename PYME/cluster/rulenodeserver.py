@@ -219,12 +219,14 @@ class NodeServer(object):
                     except StopIteration:
                         pass
                     
-                    task_requests.append(dict(ruleID=rater.rule['ruleID'], taskIDs=taskIDs, costs=costs))
+                    if len(costs) > 0:  # don't bother with empty bids
+                        task_requests.append(dict(ruleID=rater.rule['ruleID'], taskIDs=taskIDs, costs=costs))
                     
                     if n_tasks >= n_tasks_to_request:
                         break
                         
-                if n_tasks < n_tasks_to_request:
+                if n_tasks < 1:
+                    # only bid on non-local if we haven't found any local tasks
                     #logger.debug('Found %d local tasks' % n_tasks)
                     #logger.debug('Could not find enough local tasks, bidding on non-local')
                     #bid for non-local tasks
@@ -240,7 +242,8 @@ class NodeServer(object):
                         except StopIteration:
                             pass
     
-                        task_requests.append(dict(ruleID=rater.rule['ruleID'], taskIDs=taskIDs, costs=costs))
+                        if len(costs) > 0:  # don't bother with empty bids
+                            task_requests.append(dict(ruleID=rater.rule['ruleID'], taskIDs=taskIDs, costs=costs))
     
                         if n_tasks >= n_tasks_to_request:
                             break
@@ -248,6 +251,10 @@ class NodeServer(object):
                     #print task_requests
                     #logger.debug('task_requests: %s' % task_requests)
                 
+                # just return if we have nothing to bid
+                if n_tasks < 1:
+                    return
+
                 #place bids and get results
                 url = self.distributor_url +'bid_on_tasks'
                 r = self.taskSession.get(url, json=task_requests, timeout=120)

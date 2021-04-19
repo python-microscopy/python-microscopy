@@ -1,7 +1,7 @@
 .. _extendingdsviewer:
 
-Extending the image data viewer (dh5view/View3D)
-************************************************
+Extending the image data viewer (PYMEImage/dh5view/View3D)
+**********************************************************
 
 
 The PYME image data viewer is implemented in :class:`PYME.DSView.dsviewer.DSViewFrame` and can be invoked either by running ``dh5view``
