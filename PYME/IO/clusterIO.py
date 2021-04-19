@@ -671,7 +671,7 @@ def put_file(filename, data, serverfilter=local_serverfilter, timeout=10):
     
         t = time.time()
     
-        url = url.encode()
+        #url = str(url) # force tp string (not unicode)
         try:
             s = _getSession(url)
             r = s.put(url, data=data, timeout=timeout)
@@ -955,7 +955,7 @@ else:
 
             t = time.time()
             #_last_access_time[name] = t
-            url = url.encode()
+            #url = str(url) #force to string on py2
             s = _getSession(url)
             r = s.put(url, data=data, timeout=1)
             dt = time.time() - t

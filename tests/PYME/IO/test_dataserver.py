@@ -105,7 +105,10 @@ def test_dircache_purge():
     
     #assert (len(listing) == 10)
 
+@pytest.mark.skip(reason='Test is malformed and has race condition (results file should be created before multi threaded access)')
 def test_mulithread_result_filing():
+    # FIXME - this test is expected to fail as files should be created before multi-threaded aggregate operations
+    # with enough of a delay between creation and access to ensure that the file is present in directory caches.
     import numpy as np
     from PYME.IO import clusterResults, unifiedIO
     import tables
