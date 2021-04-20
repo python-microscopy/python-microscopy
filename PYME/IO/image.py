@@ -49,6 +49,11 @@ from PYME.IO.compatibility import np_load_legacy
 logger = logging.getLogger(__name__)
 import warnings
 
+class PYMEDeprecationWarning(DeprecationWarning):
+    pass
+
+warnings.simplefilter('always',PYMEDeprecationWarning)
+
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility
 VS = MetaDataHandler.VoxelSize
@@ -256,7 +261,7 @@ class ImageStack(object):
             self.xlabel = 'Wavelength [nm]'
 
         #if we have 1D data, plot as graph rather than image        
-        if self.data.shape[1] == 1:
+        if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
         #add ourselves to the list of open images        
@@ -311,7 +316,7 @@ class ImageStack(object):
 
         """
         import warnings
-        warnings.warn(DeprecationWarning('This will either disappear or change function as we move to a 5D data model. Use the explicit .data_xytc instead, or even better, change to using the 5D model as image.data_xyztc or image.voxels'))
+        warnings.warn(PYMEDeprecationWarning('This will either disappear or change function as we move to a 5D data model. Use the explicit .data_xytc instead, or even better, change to using the 5D model as image.data_xyztc or image.voxels'), stacklevel=2)
         return self._data
         
     @property
