@@ -296,6 +296,38 @@ class XYZTCWrapper(XYZTCDataSource):
     @property
     def is_complete(self):
         return self._datasource.is_complete()
+
+
+class XYTCWrapper(XYTCDataSource):
+    """
+    Wrapper to turn an XYZTC Datasource into an XYTC DataSource by remapping the slicing.
     
+    Flattens Z & T dimensions into one Z/T dimension. Generally only interesting for backwards compatibility
+    """
     
+    def __init__(self, datasource):
+        self._datasource = datasource
+        
+        self.sizeC = datasource.shape[4]
+        self.additionalDims = 'TC'
+    
+    @property
+    def getSlice(self, ind):
+        return self._datasource.getSlice()
+    
+    @property
+    def getSliceShape(self):
+        return self._datasource.getSliceShape()
+    
+    @property
+    def getNumSlices(self):
+        return self._datasource.getNumSlices()
+    
+    @property
+    def getEvents(self):
+        return self._datasource.getEvents()
+    
+    @property
+    def is_complete(self):
+        return self._datasource.is_complete()
     

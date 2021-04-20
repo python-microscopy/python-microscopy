@@ -42,7 +42,7 @@ from six import string_types
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler
 from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource
+from PYME.IO.DataSources import BufferedDataSource, BaseDataSource
 from PYME.IO.FileUtils.nameUtils import getRelFilename
 from PYME.IO.compatibility import np_load_legacy
 
@@ -275,9 +275,27 @@ class ImageStack(object):
         -------
 
         """
+        
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
         self._data = dataWrap.Wrap(data)
+        
+        if isinstance(self._data, BaseDataSource.XYZTCDataSource) or (self._data.ndim == 5):
+            # data is already 5D
+            self._data_xyztc = self._data
+            self._data_xytc = BaseDataSource.XYTCWrapper(self._data)
+        else:
+            self._data_xytc = self._data
+            # promote to 5D, assuming z/t dimension is t
+            # FIXME - do more sensible promotion??
+    
+            if getattr(self._data, 'additionalDims', 'TC') == 'CT':
+                dim_order = 'XYZCT'
+            else:
+                dim_order = 'XYZTC'
+                
+            self._data_xyztc = BaseDataSource.XYZTCWrapper(self._data, input_order=dim_order, size_z=1, size_t=self._data.shape[2], size_c=self._data.shape[3])
+            
         
     @property
     def data(self):
@@ -317,7 +335,7 @@ class ImageStack(object):
         """
         A shorter alias of data_xyztc
         """
-        return self.data_xytc
+        return self.data_xyztc
     
     @property
     def data_xytc(self):
@@ -329,7 +347,7 @@ class ImageStack(object):
 
         """
         
-        return self._data
+        return self._data_xytc
     
     @property
     def voxelsize(self):
