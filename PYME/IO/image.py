@@ -52,7 +52,7 @@ import warnings
 class PYMEDeprecationWarning(DeprecationWarning):
     pass
 
-warnings.simplefilter('always',PYMEDeprecationWarning)
+#warnings.simplefilter('once',PYMEDeprecationWarning)
 
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility

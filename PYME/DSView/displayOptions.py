@@ -72,6 +72,7 @@ class DisplayOpts(object):
         self._yp=0
 
         self._zp=0
+        self._tp=0
         
         self.maximumProjection=False
         self.colourMax = False
@@ -143,6 +144,19 @@ class DisplayOpts(object):
             raise IndexError('Y position out of bounds')
         
         self._yp = value
+        #print 'z changed'
+        self.OnChange()
+
+    @property
+    def tp(self):
+        return self._tp
+
+    @tp.setter
+    def tp(self, value):
+        if (value < 0) or (value >= self.ds.shape[3]):
+            raise IndexError('Z position out of bounds')
+    
+        self._tp = value
         #print 'z changed'
         self.OnChange()
         

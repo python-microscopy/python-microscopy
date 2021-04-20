@@ -953,7 +953,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             ima[:] = numpy.minimum(ima[:] + (255 * cmap(gain * (seg - offset))[:, :, :3])[:], 255)
     
         elif numpy.iscomplexobj(seg):
-            if self.do.complexMode == 'real':
+            if self.do.colourMax or (self.do.complexMode == 'imag coloured'):
+                applyLUT(numpy.imag(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                ima[:] = (ima * numpy.clip((numpy.real(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
+            elif self.do.complexMode == 'real':
                 applyLUT(seg.real, gain, offset, lut, ima)
             elif self.do.complexMode == 'imag':
                 applyLUT(seg.imag, gain, offset, lut, ima)
@@ -961,9 +964,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 applyLUT(numpy.abs(seg), gain, offset, lut, ima)
             elif self.do.complexMode == 'angle':
                 applyLUT(numpy.angle(seg), gain, offset, lut, ima)
-            elif self.do.complexMode == 'imag coloured':
-                applyLUT(numpy.imag(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
-                ima[:] = (ima * numpy.clip((numpy.real(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
             else:
                 applyLUT(numpy.angle(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
                 ima[:] = (ima * numpy.clip((numpy.abs(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
@@ -1002,41 +1002,54 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         fstep = float(step)
         step = int(step)
 
+        
+        
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
+            dmy, dmx  = self.do.ds.shape[1], self.do.ds.shape[0]
+            slice_key = (slice(x0_,(x0_+sX_),step),
+                         slice(y0_,(y0_+sY_),step),
+                         int(self.do.zp),
+                         int(self.do.tp))
             
-            for chan, offset, gain, cmap in self.do.GetActiveChans():
-                if self.do.maximumProjection:
-                    # special case for max projection - fixme - remove after we get colour coded projections in the projection module
-                    seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].max(2).squeeze().T
-                    
-                    if self.do.colourMax:
-                        lut = getLUT(cmap)
-                        aseg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].argmax(2).squeeze().T
-                        applyLUT(aseg, self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
-                        ima[:] = (ima*numpy.clip((seg - offset)*gain, 0,1)[:,:,None]).astype('uint8')
-                    else:
-                        self._map_colour(seg, gain, offset, cmap, ima)
-                else:
-                    seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T
-                    self._map_colour(seg, gain, offset, cmap, ima)
+            proj_axis = 2
                     
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
-
-            for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                seg = self.do.ds[x0_:(x0_ + sX_):step, int(self.do.yp), y0_:(y0_ + sY_):step, chan].squeeze().T
-                self._map_colour(seg, gain, offset, cmap, ima)
-
+            dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[0]
+            slice_key = (slice(x0_, (x0_ + sX_), step),
+                         int(self.do.yp),
+                         slice(y0_, (y0_ + sY_), step),
+                         int(self.do.tp))
+            
+            proj_axis = 1
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[1])/fstep)), 3), 'uint8')
+            dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[1]
+            slice_key = (int(self.do.xp),
+                         slice(x0_, (x0_ + sX_), step),
+                         slice(y0_, (y0_ + sY_), step),
+                         int(self.do.tp))
+            
+            proj_axis = 0
+            
+        if self.do.ds.ndim < 5:
+            # for old-style data, drop the time dimension
+            slice_key = slice_key[:3]
+            
+        ima = numpy.zeros((int(numpy.ceil(min(sY_, dmy)/fstep)), int(numpy.ceil(min(sX_, dmx)/fstep)), 3), 'uint8')
 
-            for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                seg = self.do.ds[int(self.do.xp), x0_:(x0_ + sX_):step, y0_:(y0_ + sY_):step, chan].squeeze().T
-                self._map_colour(seg, gain, offset, cmap, ima)
+        for chan, offset, gain, cmap in self.do.GetActiveChans():
+            if self.do.maximumProjection and (self.do.slice == DisplayOpts.SLICE_XY):
+                # special case for max projection - fixme - remove after we get colour coded projections in the projection module
+                seg = self.do.ds[slice_key[:2] + (slice(None), chan)].max(2).squeeze().T
+                if self.do.colourMax:
+                    seg = seg + 1j*self.do.ds[slice_key[:2] + (slice(None), chan)].argmax(2).squeeze().T
+            else:
+                seg = self.do.ds[slice_key +  (chan,)].squeeze().T
+                
+            print('seg.shape', seg.shape)
+            self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
         img.Rescale(img.GetWidth()*sc2,img.GetHeight()*sc2*self.aspect)
@@ -1084,6 +1097,13 @@ class ArraySettingsAndViewPanel(wx.Panel):
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 
             pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+            
+        if (self.do.ds.ndim >= 5) and (self.do.ds.shape[3] > 1):
+            self.playbackpanel = playback.PlayPanel(self, self, axis='t')
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
+
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanelT").Bottom().Caption('Playback (t)').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
             self._mgr.AddPane(self.playbackpanel, pinfo1)
 
 #        self.toolbar = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW| aui.AUI_TB_VERTICAL)
