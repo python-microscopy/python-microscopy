@@ -472,7 +472,7 @@ class ImageStack(object):
         self.seriesName = filename[len('QUEUE://'):]
 
         self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource) #this will get replaced with a wrapped version
 
         self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
         MetaData.fillInBlanks(self.mdh, self.dataSource)
@@ -492,7 +492,7 @@ class ImageStack(object):
         self.dataSource = HDFDataSource.DataSource(filename, None)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
             self.mdh = MetaData.TIRFDefault
@@ -541,7 +541,7 @@ class ImageStack(object):
         self.dataSource = HTTPDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
         self.mdh = MetaData.TIRFDefault
@@ -571,7 +571,7 @@ class ImageStack(object):
         self.dataSource = ClusterPZFDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
         self.mdh = MetaData.TIRFDefault
@@ -595,8 +595,10 @@ class ImageStack(object):
         """
         from PYME.IO import unifiedIO
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data, vox = np_load_legacy(fn)
+            data, vox = np_load_legacy(fn)
                 
+        self.SetData(data)
+        
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
@@ -621,7 +623,9 @@ class ImageStack(object):
         x = numpy.linspace(0, 256*70, 256)
         y = numpy.linspace(0, 512*70, 512)
         xs, ys = numpy.meshgrid(x, y)
-        self.data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        
+        self.SetData(data)
         
         from PYME.Analysis.points import twoColourPlot
         twoColourPlot.PlotShiftField2(dx, dy, [256, 512])
@@ -635,8 +639,9 @@ class ImageStack(object):
         if filename.upper().startswith('SUPERTILE:'):
             filename = filename[10:]
         
-        self.data = SupertileDatasource.DataSource(filename)
-        self.mdh = self.data.mdh
+        data = SupertileDatasource.DataSource(filename)
+        self.SetData(data)
+        self.mdh = data.mdh
         self.seriesName = filename
         self.mode = 'default'
         
@@ -649,8 +654,9 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
 
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data = numpy.load(fn,allow_pickle=True)
-
+            data = numpy.load(fn,allow_pickle=True)
+        
+        self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -667,8 +673,10 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
     
         with unifiedIO.openFile(filename) as f:
-            self.data = PZFFormat.loads(f.read())[0]
-    
+            data = PZFFormat.loads(f.read())[0]
+
+        self.SetData(data)
+        
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
     
@@ -680,8 +688,8 @@ class ImageStack(object):
         """
         mdfn = self._findAndParseMetadata(filename)
         
-        self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
-
+        data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+        self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -873,14 +881,11 @@ class ImageStack(object):
             wx.MessageBox('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).', 'WARNING', wx.OK)
         
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        data = self.dataSource #this will get replaced with a wrapped version
 
         if self.dataSource.getNumSlices() > 500: #this is likely to be a localization data set
             #background subtraction in the GUI the same way as in the analysis
-            self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
-
-        print(self.data.shape)
-
+            data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         #if we have a multi channel data set, try and pull in all the channels
         if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
@@ -898,7 +903,7 @@ class ImageStack(object):
 
                     chans.append(ds)
 
-                self.data = ListWrapper(chans) #this will get replaced with a wrapped version
+                data = ListWrapper(chans) #this will get replaced with a wrapped version
 
                 self.filename = mdfn
             except:
@@ -907,7 +912,7 @@ class ImageStack(object):
         elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
             from PYME.IO.dataWrap import ListWrapper
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
-            self.data = ListWrapper(chans)
+            data = ListWrapper(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
             from PYME.IO.dataWrap import ListWrapper
             nChans = self.mdh['LSM.images_number_channels']
@@ -920,9 +925,11 @@ class ImageStack(object):
 
                 chans.append(ds)
 
-            self.data = ListWrapper(chans)
+            data = ListWrapper(chans)
 
 
+        self.SetData(data)
+        
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
@@ -997,7 +1004,7 @@ class ImageStack(object):
         
         print(self.dataSource.shape)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource)
         
         print(self.data.shape)
 
@@ -1015,8 +1022,8 @@ class ImageStack(object):
 
         if 'Multiview.NumROIs' in self.mdh.keys():
             self.dataSource = MultiviewDataSource.DataSource(self.dataSource, self.mdh)
-        
-        self.data = self.dataSource #this will get replaced with a wrapped version
+
+        self.SetData(self.dataSource)
 
         self.seriesName = getRelFilename(filename)
 
@@ -1029,7 +1036,7 @@ class ImageStack(object):
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource)
         #self.data = readTiff.read3DTiff(filename)
 
         self._findAndParseMetadata(filename)
