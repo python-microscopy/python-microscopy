@@ -943,6 +943,30 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._oldImSig = None
         self.Refresh()
         self.Update()
+        
+    def _map_colour(self, seg, gain, offset, cmap, ima):
+        lut = getLUT(cmap)
+        
+        if cmap == labeled:
+            # special case for labelled colourmap - use slow matplotlib lookup and rely on matplotlib roll-around to
+            # cycle colour map TODO - check if recent matplotlibs actually roll around or not.
+            ima[:] = numpy.minimum(ima[:] + (255 * cmap(gain * (seg - offset))[:, :, :3])[:], 255)
+    
+        elif numpy.iscomplexobj(seg):
+            if self.do.complexMode == 'real':
+                applyLUT(seg.real, gain, offset, lut, ima)
+            elif self.do.complexMode == 'imag':
+                applyLUT(seg.imag, gain, offset, lut, ima)
+            elif self.do.complexMode == 'abs':
+                applyLUT(numpy.abs(seg), gain, offset, lut, ima)
+            elif self.do.complexMode == 'angle':
+                applyLUT(numpy.angle(seg), gain, offset, lut, ima)
+            else:
+                applyLUT(numpy.angle(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                ima[:] = (ima * numpy.clip((numpy.abs(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
+        else:
+            #print seg.shape
+            applyLUT(seg, gain, offset, lut, ima)
 
     def Render(self, fullImage=False):
         #print 'rend'
@@ -980,37 +1004,20 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
             
             for chan, offset, gain, cmap in self.do.GetActiveChans():
-                lut = getLUT(cmap)
-                    
                 if self.do.maximumProjection:
+                    # special case for max projection - fixme - remove after we get colour coded projections in the projection module
                     seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].max(2).squeeze().T
+                    
                     if self.do.colourMax:
+                        lut = getLUT(cmap)
                         aseg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].argmax(2).squeeze().T
                         applyLUT(aseg, self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
                         ima[:] = (ima*numpy.clip((seg - offset)*gain, 0,1)[:,:,None]).astype('uint8')
                     else:
-                        applyLUT(seg, gain, offset, lut, ima)
+                        self._map_colour(seg, gain, offset, cmap, ima)
                 else:
                     seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T
-
-                    if cmap == labeled:
-                        ima[:] = numpy.minimum(ima[:] + (255 * cmap(gain * (seg - offset))[:, :, :3])[:], 255)
-                    
-                    elif numpy.iscomplexobj(seg):
-                        if self.do.complexMode == 'real':
-                            applyLUT(seg.real, gain, offset, lut, ima)
-                        elif self.do.complexMode == 'imag':
-                            applyLUT(seg.imag, gain, offset, lut, ima)
-                        elif self.do.complexMode == 'abs':
-                            applyLUT(numpy.abs(seg), gain, offset, lut, ima)
-                        elif self.do.complexMode == 'angle':
-                            applyLUT(numpy.angle(seg), gain, offset, lut, ima)
-                        else:
-                            applyLUT(numpy.angle(seg), self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
-                            ima[:] = (ima*numpy.clip((numpy.abs(seg) - offset)*gain, 0,1)[:,:,None]).astype('uint8')
-                    else:
-                        #print seg.shape
-                        applyLUT(seg, gain, offset, lut, ima)
+                    self._map_colour(seg, gain, offset, cmap, ima)
                     
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
@@ -1018,11 +1025,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 seg = self.do.ds[x0_:(x0_ + sX_):step, int(self.do.yp), y0_:(y0_ + sY_):step, chan].squeeze().T
-                if not cmap == labeled:
-                    lut = getLUT(cmap)
-                    applyLUT(seg, gain, offset, lut, ima)
-                else:
-                    ima[:] = ima[:] + 255*cmap(gain*(seg - offset))[:,:,:3][:]
+                self._map_colour(seg, gain, offset, cmap, ima)
 
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
@@ -1030,11 +1033,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 seg = self.do.ds[int(self.do.xp), x0_:(x0_ + sX_):step, y0_:(y0_ + sY_):step, chan].squeeze().T
-                if not cmap == labeled:
-                    lut = getLUT(cmap)
-                    applyLUT(seg, gain, offset, lut, ima)
-                else:
-                    ima[:] = ima[:] + 255*cmap(gain*(seg - offset))[:,:,:3][:]
+                self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
         img.Rescale(img.GetWidth()*sc2,img.GetHeight()*sc2*self.aspect)
