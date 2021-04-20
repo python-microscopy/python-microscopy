@@ -206,7 +206,7 @@ class ImageStack(object):
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True, load_prompt=None):
 
         global nUntitled
-        self.data = data      #image data
+        self._data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
         self.events = events  #events
 
@@ -237,7 +237,7 @@ class ImageStack(object):
             self.Load(filename, prompt=load_prompt, haveGUI=self.haveGUI)
 
         #do the necessary munging to get the data in the format we want it        
-        self.SetData(self.data)
+        self.SetData(self._data)
 
         #generate a placeholder filename / window title        
         if self.filename is None:
@@ -277,7 +277,59 @@ class ImageStack(object):
         """
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
-        self.data = dataWrap.Wrap(data)
+        self._data = dataWrap.Wrap(data)
+        
+    @property
+    def data(self):
+        """
+        Compatiblity property for old style data access. Currently equivalent to data_xytc, + a deprecation warning.
+        
+        The old behaviour is available as data_xytc
+        
+        Might (eventually) change to data_xyztc once transition is complete
+        
+        Returns
+        -------
+
+        """
+        import warnings
+        warnings.warn(DeprecationWarning('This will either disappear or change function as we move to a 5D data model. Use the explicit .data_xytc instead, or even better, change to using the 5D model as image.data_xyztc or image.voxels'))
+        return self._data
+        
+    @property
+    def data_xyztc(self):
+        """
+        Provides voxel data in a form that is accessible as though it was a 5D array with X, Y, Z, T, C as the dimensions
+        
+        Implemented as a property to facilitate transition from old 4D data model
+        
+        Returns
+        -------
+        
+        PYME.IO.DataSources.BaseDataSource.XYZTC data source (or class derived from this
+
+        """
+        
+        return self._data_xyztc
+    
+    @property
+    def voxels(self):
+        """
+        A shorter alias of data_xyztc
+        """
+        return self.data_xytc
+    
+    @property
+    def data_xytc(self):
+        """
+        Old-style data access with z & t dimensions flattened
+        
+        Returns
+        -------
+
+        """
+        
+        return self._data
     
     @property
     def voxelsize(self):
@@ -815,7 +867,7 @@ class ImageStack(object):
         #if we have a multi channel data set, try and pull in all the channels
         if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
             try:
-                from PYME.IO.dataWrap import ListWrap
+                from PYME.IO.dataWrap import ListWrapper
                 #pull in all channels
 
                 chans = []
@@ -828,18 +880,18 @@ class ImageStack(object):
 
                     chans.append(ds)
 
-                self.data = ListWrap(chans) #this will get replaced with a wrapped version
+                self.data = ListWrapper(chans) #this will get replaced with a wrapped version
 
                 self.filename = mdfn
             except:
                 pass
             
         elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
-            from PYME.IO.dataWrap import ListWrap
+            from PYME.IO.dataWrap import ListWrapper
             chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
-            self.data = ListWrap(chans)
+            self.data = ListWrapper(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
-            from PYME.IO.dataWrap import ListWrap
+            from PYME.IO.dataWrap import ListWrapper
             nChans = self.mdh['LSM.images_number_channels']
             
             chans = []
@@ -850,7 +902,7 @@ class ImageStack(object):
 
                 chans.append(ds)
 
-            self.data = ListWrap(chans)
+            self.data = ListWrapper(chans)
 
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename

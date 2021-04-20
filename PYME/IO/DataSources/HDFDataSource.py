@@ -23,7 +23,7 @@
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 import tables
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import numpy as np
 
 try:
@@ -34,7 +34,7 @@ except ImportError:
 import logging
 logger = logging.getLogger(__name__)
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
         self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path

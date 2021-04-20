@@ -22,12 +22,12 @@
 ##################
 
 #from PYME.IO.FileUtils.nameUtils import getFullFilename
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 #import tables
 from PYME.localization.remFitBuf import CameraInfoManager
 import numpy as np
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'FlatFieldDataSource'
     def __init__(self, parentSource, mdh, flatfield=None, dark = None):
         #self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path

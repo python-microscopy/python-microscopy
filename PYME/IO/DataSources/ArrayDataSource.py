@@ -1,8 +1,8 @@
 import numpy as np
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import tables
 
-class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions larger than len(shape)
+class ArrayDataSource(XYTCDataSource): #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data, dimOrder='XYTC', dim_1_is_z=False):
         self.data = data
         self.type = 'Array'

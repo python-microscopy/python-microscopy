@@ -29,9 +29,9 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 #import numpy as np
 
 from PYME.contrib.gohlke import tifffile
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'TiffDataSource'
     def __init__(self, filename, taskQueue=None, chanNum = 0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path

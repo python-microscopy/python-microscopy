@@ -30,7 +30,7 @@
 """
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import numpy as np
 
 # default cropping info - should correspond to the Bewersdorf lab setup
@@ -46,7 +46,7 @@ CROP_INFO_YU = {
 }
 
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'MultiviewDataSource'
     def __init__(self, dataSource, croppingInfo):
         """

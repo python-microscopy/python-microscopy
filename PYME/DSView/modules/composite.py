@@ -628,7 +628,7 @@ class Compositor(Plugin):
         
                     newNames.append(otherName)
         
-                    if isinstance(other.data, dataWrap.ListWrap):
+                    if isinstance(other.data, dataWrap.ListWrapper):
                         od = other.data.dataList[chan]
                     else:
                         od = other.data
@@ -666,7 +666,7 @@ class Compositor(Plugin):
                 mdh['Origin.y'] = origin[1]
                 mdh['Origin.z'] = origin[2]
     
-                View3D(dataWrap.ListWrap(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=wx.GetTopLevelParent(self.dsviewer), glCanvas=self.dsviewer.glCanvas)
+                View3D(dataWrap.ListWrapper(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=wx.GetTopLevelParent(self.dsviewer), glCanvas=self.dsviewer.glCanvas)
 
         dlg.Destroy()
 
@@ -801,7 +801,7 @@ class Compositor(Plugin):
         from PYME.IO.DataSources import AlignDataSource
         from  PYME.IO import dataWrap
         
-        if isinstance(self.image.data, dataWrap.ListWrap):
+        if isinstance(self.image.data, dataWrap.ListWrapper):
             nd = [AlignDataSource.DataSource(ds) for ds in self.image.data.wrapList]
         else:
             nd = [AlignDataSource.DataSource(dataWrap.Wrap(self.image.data[:,:,:,i])) for i in range(self.image.data.shape[3])]

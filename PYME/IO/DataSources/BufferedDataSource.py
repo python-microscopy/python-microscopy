@@ -20,10 +20,10 @@
 #
 ##################
 import numpy
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import threading
 
-class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple times
+class DataSource(XYTCDataSource): #buffer our io to avoid decompressing multiple times
     moduleName = 'BufferedDataSource'
     def __init__(self,dataSource, bLen = 12):
         self.bLen = bLen

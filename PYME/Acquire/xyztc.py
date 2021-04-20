@@ -2,7 +2,7 @@ import numpy as np
 from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
 from PYME.IO import image
-from PYME.IO.DataSources.BaseDataSource import XYZTCDataSource
+from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
 from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 
 import time

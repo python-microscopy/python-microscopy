@@ -35,6 +35,80 @@ class DefaultList(list):
 
 
 class BaseDataSource(object):
+    @property
+    def shape(self):
+        """The 4D shape of the datasource"""
+        #if self.type == 'DataSource':
+        raise NotImplementedError
+    
+    @property
+    def ndim(self):
+        # for numpy (and dask) compatibility
+        raise NotImplementedError
+    
+    @property
+    def dtype(self):
+        # for numpy (and dask) compatibility
+        return self.getSlice(0).dtype
+    
+    @property
+    def nbytes(self):
+        return np.prod(self.shape) * self.getSlice(0).itemsize
+    
+    @property
+    def is_complete(self):
+        """
+        For datasources which may be opened before spooling is finished.
+
+        Over-ridden in derived classes (currently only ClusterPZFDataSource)
+
+        Returns
+        -------
+
+        is_complete : bool
+            has spooling of this series finished
+
+        """
+        return True
+    
+    def getSlice(self, ind):
+        """Return the nth 2D slice of the DataSource where the higher dimensions
+        have been flattened.
+
+        equivalent to indexing contiguous 4D data with data[:,:,ind%data.shape[2], ind/data.shape[3]]
+
+        e.g. for a 100x100x50x2 DataSource, getSlice(20) would return data[:,:,20,0].squeeze()
+        whereas getSlice(75) would return data[:,:,25, 1].squeeze()
+        """
+        raise NotImplementedError
+    
+    def getSliceShape(self):
+        """Return the 2D shape of a slice"""
+        raise NotImplementedError
+    
+    def getNumSlices(self):
+        """Return the number of 2D slices. This is the product of the
+        dimensions > 2
+        """
+        raise NotImplementedError
+    
+    def getEvents(self):
+        """Return any events which are ascociated with this DataSource"""
+        raise NotImplementedError
+    
+    def __getitem__(self, keys):
+        """Allows slicing into the DataSource as though it were a numpy ndarray.
+        
+        Behaviour is not guaranteed to be strictly 1:1 with numpy for missing dimensions (we are a bit more lenient)
+        """
+        
+        raise NotImplementedError
+
+
+class XYTCDataSource(BaseDataSource):
+    """
+    Old style data source base
+    """
     oldData = None
     oldSlice = None
     #nTrueDims =3
@@ -55,59 +129,9 @@ class BaseDataSource(object):
         return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
     
     @property
-    def ndims(self):
+    def ndim(self):
         # for numpy (and dask) compatibility
         return self.nTrueDims
-    
-    @property
-    def dtype(self):
-        # for numpy (and dask) compatibility
-        return self.getSlice(0).dtype
-    
-    @property
-    def nbytes(self):
-        return np.prod(self.shape) * self.getSlice(0).itemsize
-    
-    @property
-    def is_complete(self):
-        """
-        For datasources which may be opened before spooling is finished.
-        
-        Over-ridden in derived classes (currently only ClusterPZFDataSource)
-        
-        Returns
-        -------
-        
-        is_complete : bool
-            has spooling of this series finished
-
-        """
-        return True
-        
-    def getSlice(self, ind):
-        """Return the nth 2D slice of the DataSource where the higher dimensions
-        have been flattened.
-        
-        equivalent to indexing contiguous 4D data with data[:,:,ind%data.shape[2], ind/data.shape[3]]
-        
-        e.g. for a 100x100x50x2 DataSource, getSlice(20) would return data[:,:,20,0].squeeze()
-        whereas getSlice(75) would return data[:,:,25, 1].squeeze()
-        """
-        raise NotImplementedError
-
-    def getSliceShape(self):
-        """Return the 2D shape of a slice"""
-        raise NotImplementedError
-
-    def getNumSlices(self):
-        """Return the number of 2D slices. This is the product of the
-        dimensions > 2
-        """
-        raise NotImplementedError
-
-    def getEvents(self):
-        """Return any events which are ascociated with this DataSource"""
-        raise NotImplementedError
         
     def __getitem__(self, keys):
         """Allows slicing into the DataSource as though it were a numpy ndarray.
@@ -160,24 +184,21 @@ class BaseDataSource(object):
 
         return r
     
-class XYZTCDataSource(object):
-    ndim=5
-    
-    def __init__(self, datasource, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
-        self._datasource = datasource
+class XYZTCDataSource(BaseDataSource):
+    """ Datasource to use as a base class for datasources which are natively 5D (and can be used in isinstance checks to
+    Test the above.
+    """
+
+    def __init__(self, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
         self._input_order = input_order
-        
-        
+    
         if not input_order.startswith('XY'):
             raise RuntimeError('First 2 dimensions of input must be X and Y')
-        
-        self.shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
-        self.dtype = self._datasource.dtype
-        
+    
         if input_order == 'XYZTC':
             self._z_stride = 1
             self._t_stride = size_z
-            self._c_stride = size_z*size_t
+            self._c_stride = size_z * size_t
         elif input_order == 'XYTZC':
             self._z_stride = size_t
             self._t_stride = 1
@@ -192,7 +213,7 @@ class XYZTCDataSource(object):
             self._c_stride = size_t
         elif input_order == 'XYCZT':
             self._z_stride = size_c
-            self._t_stride = size_c*size_z
+            self._t_stride = size_c * size_z
             self._c_stride = 1
         elif input_order == 'XYCTZ':
             self._z_stride = size_t * size_c
@@ -200,10 +221,10 @@ class XYZTCDataSource(object):
             self._c_stride = 1
         else:
             raise RuntimeError('Input order: %s not supported' % input_order)
-        
-    #@property
-    #def shape(self):
-    #    raise NotImplementedError()
+    
+    @property
+    def ndim(self):
+        return  5
     
     def __getitem__(self, keys):
         keys = list(keys)
@@ -219,8 +240,8 @@ class XYZTCDataSource(object):
                     #special case for -1 indexing
                     keys[i] = slice(-1, None)
                 else:
-                    keys[i] = slice(keys[i],keys[i] + 1)
-                    
+                    keys[i] = slice(keys[i], keys[i] + 1)
+            
             indices['XYZTC'[i]] = keys[i].indices(self.shape[i])
         
         #allocate output array
@@ -229,8 +250,52 @@ class XYZTCDataSource(object):
         for c in indices['C']:
             for t in indices['T']:
                 for z in indices['Z']:
-                    slice_idx = self._c_stride*c + self._t_stride*t + self._z_stride*z
-                    out[:,:, z, c, t] = self._datasource.getSlice(slice_idx)[keys[0], keys[1]]
+                    slice_idx = self._c_stride * c + self._t_stride * t + self._z_stride * z
+                    out[:, :, z, c, t] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
-            
         return out
+    
+
+
+class XYZTCWrapper(XYZTCDataSource):
+    """
+    Wrapper to turn an XYTC Datasource into an XYZTC DataSource by remapping the slicing.
+    """
+    def __init__(self, datasource, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
+        self._datasource = datasource
+        
+        XYZTCDataSource.__init__(self, input_order=input_order, size_z=size_z, size_t=size_t, size_c=size_c)
+        
+        self._shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
+        self._dtype = self._datasource.dtype
+    
+    @property
+    def shape(self):
+        return self._shape
+    
+    @property
+    def dtype(self):
+        return self._dtype
+    
+    @property
+    def getSlice(self, ind):
+        return self._datasource.getSlice()
+    
+    @property
+    def getSliceShape(self):
+        return self._datasource.getSliceShape()
+    
+    @property
+    def getNumSlices(self):
+        return self._datasource.getNumSlices()
+    
+    @property
+    def getEvents(self):
+        return  self._datasource.getEvents()
+    
+    @property
+    def is_complete(self):
+        return self._datasource.is_complete()
+    
+    
+    

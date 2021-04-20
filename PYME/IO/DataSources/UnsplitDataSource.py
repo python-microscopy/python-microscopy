@@ -21,11 +21,11 @@
 ##################
 from __future__ import print_function
 import numpy
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
 from PYME.localization import splitting
 
-class DataSource(BaseDataSource): 
+class DataSource(XYTCDataSource):
     moduleName = 'UnsplitDataSource'
     def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.), chanROIs=None):
         #self.unmixer = unmixer

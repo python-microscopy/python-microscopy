@@ -248,7 +248,7 @@ class OMETiffExporter(Exporter):
         if data.nbytes > 4e9:
             raise RuntimeError('TIFF has a maximum file size of 4GB, crop data or save as HDF')
         
-        dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
+        dw = dataWrap.ListWrapper([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)

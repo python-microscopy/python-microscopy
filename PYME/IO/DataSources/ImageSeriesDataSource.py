@@ -28,14 +28,14 @@ from PIL import Image
 import glob
 import os
 import numpy as np
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
 #import numpy as np
 
 #from PYME.misc import tifffile
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'ImageSeriesDataSource'
     def __init__(self, filename, taskQueue=None):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path

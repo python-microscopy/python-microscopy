@@ -21,7 +21,7 @@
 #
 ##################
 
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import numpy as np
 
 from six.moves import xrange
@@ -216,7 +216,7 @@ class backgroundBufferM:
 
         return self.curBG - self.offset
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'BGSDataSource'
     def __init__(self, datasource, bgRange=None):
         self.datasource = datasource
