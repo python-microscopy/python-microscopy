@@ -152,6 +152,14 @@ class DisplayOpts(object):
 
     @complexMode.setter
     def complexMode(self, value):
+        """
+        
+        Parameters
+        ----------
+        value : str
+            one of 'real', 'imag', 'abs', 'angle', 'coloured', 'imag coloured'
+
+        """
         self._complexMode = value
         #print 'z changed'
         self.OnChange()

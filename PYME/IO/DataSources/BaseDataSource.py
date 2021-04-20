@@ -266,6 +266,9 @@ class XYZTCWrapper(XYZTCDataSource):
         
         XYZTCDataSource.__init__(self, input_order=input_order, size_z=size_z, size_t=size_t, size_c=size_c)
         
+        #print(self._datasource)
+        #print(self._datasource.getSliceShape())
+        
         self._shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
         self._dtype = self._datasource.dtype
     
@@ -277,19 +280,15 @@ class XYZTCWrapper(XYZTCDataSource):
     def dtype(self):
         return self._dtype
     
-    @property
     def getSlice(self, ind):
         return self._datasource.getSlice()
     
-    @property
     def getSliceShape(self):
         return self._datasource.getSliceShape()
     
-    @property
     def getNumSlices(self):
         return self._datasource.getNumSlices()
     
-    @property
     def getEvents(self):
         return  self._datasource.getEvents()
     
@@ -311,19 +310,15 @@ class XYTCWrapper(XYTCDataSource):
         self.sizeC = datasource.shape[4]
         self.additionalDims = 'TC'
     
-    @property
     def getSlice(self, ind):
         return self._datasource.getSlice()
     
-    @property
     def getSliceShape(self):
         return self._datasource.getSliceShape()
-    
-    @property
+
     def getNumSlices(self):
         return self._datasource.getNumSlices()
     
-    @property
     def getEvents(self):
         return self._datasource.getEvents()
     

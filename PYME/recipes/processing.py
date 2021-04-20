@@ -1993,9 +1993,12 @@ class Projection(Filter):
     """ Project image along an axis
     
     TODO - make this more efficient - we currently force the whole stack into memory
+    
+    NOTE: coloured max returns results encoded as a complex number out = np.max(data, axis) + 1j*np.argmax(data, axis)
+    
     """
     
-    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min'])
+    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min', 'Coloured Max'])
     axis = Int(2)
     
     processFramesIndividually = False
@@ -2013,6 +2016,12 @@ class Projection(Filter):
             return np.std(data, axis=int(self.axis))
         if self.kind == 'Min':
             return np.min(data, axis=int(self.axis))
+        if self.kind == 'Coloured Max':
+            m = np.min(data, axis=int(self.axis))
+            im = np.argmin(data, axis=int(self.axis))
+            
+            return m + 1j*im
+            
 
 @register_module('StatisticsByFrame')
 class StatisticsByFrame(ModuleBase):

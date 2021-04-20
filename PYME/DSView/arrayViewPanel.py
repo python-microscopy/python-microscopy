@@ -961,6 +961,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 applyLUT(numpy.abs(seg), gain, offset, lut, ima)
             elif self.do.complexMode == 'angle':
                 applyLUT(numpy.angle(seg), gain, offset, lut, ima)
+            elif self.do.complexMode == 'imag coloured':
+                applyLUT(numpy.imag(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                ima[:] = (ima * numpy.clip((numpy.real(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
             else:
                 applyLUT(numpy.angle(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
                 ima[:] = (ima * numpy.clip((numpy.abs(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')

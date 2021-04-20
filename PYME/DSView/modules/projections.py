@@ -12,7 +12,8 @@ def project(dsviewer, axis, type, crop=False):
     else:
         im = dsviewer.image
     
-    ViewIm3D(processing.Projection(kind=type, axis=axis).apply_simple(im), parent=dsviewer)
+    v = ViewIm3D(processing.Projection(kind=type, axis=axis).apply_simple(im), parent=dsviewer)
+    v.do.complexMode='imag coloured'
 
 
 def Plug(dsviewer):
@@ -29,6 +30,8 @@ def Plug(dsviewer):
     dsviewer.AddMenuItem('Processing>Project>Max', 'x', lambda e: project(dsviewer, axis=0, type='Max'))
     dsviewer.AddMenuItem('Processing>Project>Max', 'y', lambda e: project(dsviewer, axis=1, type='Max'))
     dsviewer.AddMenuItem('Processing>Project>Max', 'z', lambda e: project(dsviewer, axis=2, type='Max'))
+    
+    dsviewer.AddMenuItem('Processing>Project', 'Coloured Max Z', lambda e: project(dsviewer, axis=2, type='Coloured Max'))
 
     dsviewer.AddMenuItem('Processing>Project (Cropped)>Mean', 'x', lambda e: project(dsviewer, axis=0, type='Mean', crop=True))
     dsviewer.AddMenuItem('Processing>Project (Cropped)>Mean', 'y', lambda e: project(dsviewer, axis=1, type='Mean', crop=True))

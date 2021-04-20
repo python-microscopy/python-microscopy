@@ -53,15 +53,12 @@ class ListWrapper(BaseDataSource):
     def dtype(self):
         return self.wrapList[0].dtype
 
-    @property
     def getSliceShape(self):
         return self.wrapList[0].getSliceShape()
 
-    @property
     def getNumSlices(self):
         return self._ds_n_slices*len(self.wrapList)
 
-    @property
     def getEvents(self):
         return self.wrapList[0].getEvents()
 
