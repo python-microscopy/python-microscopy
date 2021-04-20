@@ -29,6 +29,9 @@ from PYME.contrib import dispatch
 
 from PYME.IO import dataWrap
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     # location in Python 2.7 and 3.1
     from weakref import WeakSet
@@ -239,7 +242,13 @@ class DisplayOpts(object):
     def SetDataStack(self, datasource):
         self.ds = dataWrap.Wrap(datasource) #make sure data is wrapped
 
-        nchans = self.ds.shape[3]
+        nchans = self.ds.shape[self.ds.ndim -1]
+        
+        self.nz = self.ds.shape[2]
+        if (self.ds.ndim >=5):
+            self.nt = self.ds.shape[3]
+        else:
+            self.nt = 1
 
         if not nchans == len(self.Chans):
             if nchans == 1:
@@ -248,7 +257,7 @@ class DisplayOpts(object):
                 self.Offs = [0]
                 self.cmaps = [cm.gray]
                 try:
-                    if np.iscomplexobj(self.ds[0,0]):
+                    if np.iscomplexobj(self.ds[0,0, 0, 0, 0]):
                         self.cmaps = [cm.jet]
                         self.cmax_offset = -np.pi
                         self.cmax_scale = 1./(2*np.pi)
@@ -325,7 +334,7 @@ class DisplayOpts(object):
                     syn.Synchronise(self)
             
             except Exception as e: 
-                print(e)
+                logger.exception('Error in OnChange')
             finally:
                 self.inOnChange = False
             
@@ -337,6 +346,7 @@ class DisplayOpts(object):
         self.xp = other.xp
         self.yp = other.yp
         self.zp = other.zp
+        self.tp = other.tp
             
 
     def _optimal_display_range(self, d, method='percentile'):
@@ -356,6 +366,8 @@ class DisplayOpts(object):
             bds = [self._optimal_display_range(self.ds[:,:]),]
         elif len(self.ds.shape) ==3:
             bds = [self._optimal_display_range(self.ds[:, :, self.zp]), ]
+        elif (self.ds.ndim) == 5:
+            bds = [self._optimal_display_range(self.ds[:, :, self.zp, self.tp, c]) for c in self.Chans]
         else:
             bds = [self._optimal_display_range(self.ds[:, :, self.zp, c]) for c in self.Chans]
         

@@ -111,8 +111,8 @@ class DSViewFrame(AUIFrame):
 
         
 
-        self.do = DisplayOpts(self.image.data)
-        if self.image.voxels.shape[1] == 1:
+        self.do = DisplayOpts(self.image.data_xyztc)
+        if self.image.data_xyztc.shape[1] == 1:
             self.do.slice = self.do.SLICE_XZ
         self.do.Optimise()
 
@@ -187,7 +187,7 @@ class DSViewFrame(AUIFrame):
 
         if self.do.ds.shape[2] > 1:
             from PYME.DSView.modules import playback
-            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel = playback.PlayZTPanel(self, self)
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 
             pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
@@ -293,7 +293,7 @@ class DSViewFrame(AUIFrame):
             self.updating = True
             #if 'view' in dir(self):
             #    self.view.Refresh()
-            statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp)
+            statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
             #grab status from modules which supply it
             for sCallback in self.statusHooks:
                 statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)

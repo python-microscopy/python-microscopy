@@ -1048,7 +1048,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             else:
                 seg = self.do.ds[slice_key +  (chan,)].squeeze().T
                 
-            print('seg.shape', seg.shape)
+            #print('slice_key:', slice_key)
+            #print('seg.shape:', seg.shape)
             self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())

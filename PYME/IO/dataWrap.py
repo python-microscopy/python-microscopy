@@ -39,7 +39,7 @@ class ListWrapper(BaseDataSource):
         n = int(ind/self._ds_n_slices)
         i = int(ind % self._ds_n_slices)
         
-        return self.dataList[n].getSlice(i)
+        return self.wrapList[n].getSlice(i)
 
     @property
     def shape(self):

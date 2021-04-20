@@ -77,9 +77,13 @@ class OptionsPanel(wx.Panel):
 
             id = wx.NewId()
             self.hIds.append(id)
-            c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].real.ravel()
+            if self.do.ds.ndim < 5:
+                c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].real.ravel()
+            else:
+                c = self.do.ds[:, :, self.do.zp, self.do.tp, self.do.Chans[i]].real.ravel()
+                
             if np.iscomplexobj(c):
-                if self.do.complexMode == 'real':
+                if self.do.complexMode in ['real', 'imag coloured']:
                     c = c.real
                 elif self.do.complexMode == 'imag':
                     c = c.imag
@@ -155,7 +159,7 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnOptimise)
         
-        if self.do.ds.shape[2] > 1:        
+        if False: #self.do.ds.shape[2] > 1:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
             self.czProject = wx.Choice(self, -1, choices=['None', 'Standard', 'Colour Coded'])
@@ -164,10 +168,10 @@ class OptionsPanel(wx.Panel):
             hsizer.Add(self.czProject, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
             
-        if np.iscomplexobj(self.do.ds[0,0,0,0]):        
+        if np.iscomplexobj(self.do.ds[0,0,0,0,0]):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             #hsizer.Add(wx.StaticText(self, -1, 'Projection:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-            self.cComplex = wx.Choice(self, -1, choices=['colored', 'real', 'imag', 'angle', 'abs'])
+            self.cComplex = wx.Choice(self, -1, choices=['colored', 'real', 'imag', 'angle', 'abs', 'imag coloured'])
             self.cComplex.SetSelection(0)
             self.cComplex.Bind(wx.EVT_CHOICE, self.OnComplexChanged)
             hsizer.Add(self.cComplex, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -298,7 +302,10 @@ class OptionsPanel(wx.Panel):
 
     def RefreshHists(self):
         for i in range(len(self.do.Chans)):
-            c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
+            if self.do.ds.ndim >= 5:
+                c = self.do.ds[:, :, self.do.zp, self.do.tp, self.do.Chans[i]].ravel()
+            else:
+                c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
             if np.iscomplexobj(c):
                 if self.do.complexMode == 'real':
                     c = c.real

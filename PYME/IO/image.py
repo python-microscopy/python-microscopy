@@ -291,15 +291,27 @@ class ImageStack(object):
             self._data_xytc = BaseDataSource.XYTCWrapper(self._data)
         else:
             self._data_xytc = self._data
-            # promote to 5D, assuming z/t dimension is t
+            # promote to 5D, currently assume series with > 100 frames along z/t dimension are time series,
+            # series with <= 100 frames are s-stacks
             # FIXME - do more sensible promotion??
     
             if getattr(self._data, 'additionalDims', 'TC') == 'CT':
                 dim_order = 'XYZCT'
+                size_z = 1
+                size_t = self._data.shape[2]
             else:
                 dim_order = 'XYZTC'
                 
-            self._data_xyztc = BaseDataSource.XYZTCWrapper(self._data, input_order=dim_order, size_z=1, size_t=self._data.shape[2], size_c=self._data.shape[3])
+                if self._data.shape[2] > 100:
+                    # assume time series
+                    size_z = 1
+                    size_t = self._data.shape[2]
+                else:
+                    # assume z stack
+                    size_t = 1
+                    size_z = self._data.shape[2]
+                
+            self._data_xyztc = BaseDataSource.XYZTCWrapper(self._data, input_order=dim_order, size_z=size_z, size_t=size_t, size_c=self._data.shape[3])
             
         
     @property

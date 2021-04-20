@@ -185,7 +185,30 @@ class PlayPanel(wx.Panel):
 
             if not self.tPlay.IsRunning():
                 self.dsviewer.optionspanel.RefreshHists()
+                
 
+class PlayZTPanel(wx.Panel):
+    def __init__(self, parent, dsviewer):
+        wx.Panel.__init__(self,parent, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self._pans = []
+        
+        pan_z = PlayPanel(self, dsviewer, 'z')
+        vsizer.Add(pan_z, 0, wx.EXPAND, 0)
+        self._pans.append(pan_z)
+        
+        # TODO - create anyway and just hide???
+        if (dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[3] > 1):
+            pan_t = PlayPanel(self, dsviewer, 't')
+            vsizer.Add(pan_t, 0, wx.EXPAND, 0)
+            self._pans.append(pan_t)
+            
+        self.SetSizerAndFit(vsizer)
+        
+    def update(self):
+        for p in self._pans:
+            p.update()
 
 
 class player:
@@ -200,9 +223,6 @@ class player:
         item = afp.foldingPane(_pnl, -1, caption="Playback", pinned = True)
 
         self.playPan = PlayPanel(item, self.dsviewer)
-
-        
-
         item.AddNewElement(self.playPan)
         _pnl.AddPane(item)
 

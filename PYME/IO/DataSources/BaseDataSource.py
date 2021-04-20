@@ -184,6 +184,9 @@ class XYTCDataSource(BaseDataSource):
 
         return r
     
+def _slice_len(s):
+    return (s.stop - s.start) // s.step
+
 class XYZTCDataSource(BaseDataSource):
     """ Datasource to use as a base class for datasources which are natively 5D (and can be used in isinstance checks to
     Test the above.
@@ -244,14 +247,16 @@ class XYZTCDataSource(BaseDataSource):
             
             indices['XYZTC'[i]] = keys[i].indices(self.shape[i])
         
-        #allocate output array
-        out = np.zeros([len(indices[k]) for k in 'XYZTC'], dtype=self.dtype)
         
-        for c in indices['C']:
-            for t in indices['T']:
-                for z in indices['Z']:
+        #print(indices)
+        #allocate output array
+        out = np.zeros([_slice_len(slice(*indices[k])) for k in 'XYZTC'], dtype=self.dtype)
+        
+        for ci, c in enumerate(range(*indices['C'])):
+            for ti, t in enumerate(range(*indices['T'])):
+                for zi, z in enumerate(range(*indices['Z'])):
                     slice_idx = self._c_stride * c + self._t_stride * t + self._z_stride * z
-                    out[:, :, z, c, t] = self.getSlice(slice_idx)[keys[0], keys[1]]
+                    out[:, :, zi, ci, ti] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
         return out
     
@@ -281,7 +286,7 @@ class XYZTCWrapper(XYZTCDataSource):
         return self._dtype
     
     def getSlice(self, ind):
-        return self._datasource.getSlice()
+        return self._datasource.getSlice(ind)
     
     def getSliceShape(self):
         return self._datasource.getSliceShape()
@@ -311,7 +316,7 @@ class XYTCWrapper(XYTCDataSource):
         self.additionalDims = 'TC'
     
     def getSlice(self, ind):
-        return self._datasource.getSlice()
+        return self._datasource.getSlice(ind)
     
     def getSliceShape(self):
         return self._datasource.getSliceShape()
