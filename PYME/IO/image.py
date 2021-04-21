@@ -293,25 +293,7 @@ class ImageStack(object):
             self._data_xytc = self._data
             # promote to 5D, currently assume series with > 100 frames along z/t dimension are time series,
             # series with <= 100 frames are s-stacks
-            # FIXME - do more sensible promotion??
-    
-            if getattr(self._data, 'additionalDims', 'TC') == 'CT':
-                dim_order = 'XYZCT'
-                size_z = 1
-                size_t = self._data.shape[2]
-            else:
-                dim_order = 'XYZTC'
-                
-                if self._data.shape[2] > 100:
-                    # assume time series
-                    size_z = 1
-                    size_t = self._data.shape[2]
-                else:
-                    # assume z stack
-                    size_t = 1
-                    size_z = self._data.shape[2]
-                
-            self._data_xyztc = BaseDataSource.XYZTCWrapper(self._data, input_order=dim_order, size_z=size_z, size_t=size_t, size_c=self._data.shape[3])
+            self._data_xyztc = BaseDataSource.XYZTCWrapper.auto_promote(self._data)
             
         
     @property
@@ -419,7 +401,7 @@ class ImageStack(object):
             return [name.decode() if isinstance(name, bytes) else name for name in names]
         
         except:
-            return ['Chan %d'% d for d in range(self.data.shape[3])]
+            return ['Chan %d'% d for d in range(self.data_xyztc.shape[4])]
 
     @names.setter
     def names(self, value):
@@ -905,7 +887,7 @@ class ImageStack(object):
             data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         #if we have a multi channel data set, try and pull in all the channels
-        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
+        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == data.shape[3]:
             try:
                 from PYME.IO.dataWrap import ListWrapper
                 #pull in all channels
@@ -926,9 +908,9 @@ class ImageStack(object):
             except:
                 pass
             
-        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
+        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == data.getNumSlices():
             from PYME.IO.dataWrap import ListWrapper
-            chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
+            chans = [numpy.atleast_3d(data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
             data = ListWrapper(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
             from PYME.IO.dataWrap import ListWrapper
@@ -1218,12 +1200,12 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)
+                self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)
             else:
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, filename=filename, progressCallback=progressCallback)
+                self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, filename=filename, progressCallback=progressCallback)
             #self.SetTitle(fn)
 
             if not (self.filename is None):

@@ -277,6 +277,32 @@ class XYZTCWrapper(XYZTCDataSource):
         self._shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
         self._dtype = self._datasource.dtype
     
+    @classmethod
+    def auto_promote(cls, data):
+        """Try to automatically promote a datasource, guessing what dimensionality it should have
+        
+        currently assume series with > 100 frames along z/t dimension are time series,
+        series with <= 100 frames are s-stacks
+        """
+
+        if getattr(data, 'additionalDims', 'TC') == 'CT':
+            dim_order = 'XYZCT'
+            size_z = 1
+            size_t = data.shape[2]
+        else:
+            dim_order = 'XYZTC'
+    
+            if data.shape[2] > 100:
+                # assume time series
+                size_z = 1
+                size_t = data.shape[2]
+            else:
+                # assume z stack
+                size_t = 1
+                size_z = data.shape[2]
+
+        return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=data.shape[3])
+    
     @property
     def shape(self):
         return self._shape

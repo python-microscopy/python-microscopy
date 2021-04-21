@@ -953,7 +953,7 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.pixels = self.doc.createElement('Pixels')
             self.img.appendChild(self.pixels)
             self.pixels.setAttribute('ID', 'Pixels:0')
-            self.pixels.setAttribute('DimensionOrder', 'XYCZT')
+            self.pixels.setAttribute('DimensionOrder', 'XYZTC')
             
             tf = self.doc.createElement('TiffData')
             self.pixels.appendChild(tf)
@@ -978,11 +978,13 @@ class OMEXMLMDHandler(XMLMDHandler):
         #sync the OME data from the ordinary metadata
         if not data is None:
             ims = data.shape
-            if len(ims) > 3:
-                SizeY, SizeX, SizeT, SizeC = ims
+            if (data.ndim == 5):
+                SizeY, SizeX, SizeZ, SizeT, SizeC = ims[:data.ndim]
+            elif(data.ndim == 4):
+                SizeY, SizeX, SizeT, SizeC = ims[:data.ndim]
                 SizeZ = 1
             else:
-                SizeY, SizeX, SizeT = ims
+                SizeY, SizeX, SizeT = ims[:3]
                 SizeZ = 1
                 SizeC = 1
                 
@@ -990,7 +992,7 @@ class OMEXMLMDHandler(XMLMDHandler):
             if str(data[0,0,0,0,0].dtype) in ('float32', 'float64'):
                 self.pixels.setAttribute('Type', 'float')
             else:
-                self.pixels.setAttribute('Type', str(data[0,0,0,0,0].dtype))
+                self.pixels.setAttribute('Type', str(data.dtype))
             self.pixels.setAttribute('SizeX', str(SizeX))
             self.pixels.setAttribute('SizeY', str(SizeY))
             self.pixels.setAttribute('SizeZ', str(SizeZ))
