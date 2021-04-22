@@ -28,12 +28,17 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
 #import numpy as np
 
-from PYME.contrib.gohlke import tifffile
+try:
+    import tifffile
+    local_tifffile = False
+except AttributeError:
+    local_tifffile = True
+    from PYME.contrib.gohlke import tifffile
 from .BaseDataSource import XYZTCDataSource
 
 class DataSource(XYZTCDataSource):
     moduleName = 'TiffDataSource'
-    def __init__(self, filename, taskQueue=None, chanNum = 0):
+    def __init__(self, filename, taskQueue=None, chanNum = 0, series=0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
         self.RGB = False
@@ -66,27 +71,33 @@ class DataSource(XYZTCDataSource):
 
         print((self.filename))
         
-        tf = tifffile.TIFFfile(self.filename)
+        if local_tifffile:
+            tf = tifffile.TIFFfile(self.filename)
+        else:
+            tf = tifffile.TiffFile(self.filename)
         
         self.tf = tf # keep a reference for debugging
         
-        print(tf.series[0].shape)
-
-        self.im = tf.series[0].pages
+        print(tf.series[series].shape)
+        self.im = tf.series[series].pages
         
         axisOrder = 'XYZTC'
         size_z = len(self.im)
         size_c, size_t = 1,1
         
-        if tf.is_ome:
+        if tf.is_ome or (not local_tifffile):
             print('Detected OME TIFF')
-            sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
+            sh = {'Z':1, 'T': 1,'C':1}
+            sh.update(dict(zip(tf.series[series].axes, tf.series[0].shape)))
             print('sh = %s' % sh)
             size_c = sh['C']
             size_z  = sh['Z']
             size_t = sh['T']
             
-            axisOrder = tf.series[0].axes[::-1]
+            axisOrder = tf.series[series].axes[::-1]
+            
+            axisOrder = axisOrder + ''.join([a for a in ['Z', 'T', 'C'] if not a in axisOrder])
+            
             print('axisOrder = ', axisOrder)
             
             #self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
@@ -125,15 +136,17 @@ class DataSource(XYZTCDataSource):
             # special case for RGB TIFF
             ind_0 = ind%len(self.im)
             ind_1 = int(ind/len(self.im))
-            return self.im[ind_0].asarray(False, False)[0, 0, :,:,ind_1].squeeze()
+            return self.im[ind_0].asarray(squeeze=False)[0, 0, :,:,ind_1].squeeze()
         
-        res =  self.im[ind].asarray(False, False)
+        if local_tifffile:
+            res =  self.im[ind].asarray(squeeze=False, colormapped=False)
+            res = res[0, self.chanNum, :, :].squeeze()
+        else:
+            res = self.im[ind].asarray()
         #if res.ndim == 3:
         #print res.shape
         #print self.chanNum
         
-        
-        res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res
     
