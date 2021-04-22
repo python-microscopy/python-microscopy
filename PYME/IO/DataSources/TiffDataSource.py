@@ -31,9 +31,10 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 try:
     import tifffile
     local_tifffile = False
-except AttributeError:
+except ImportError:
     local_tifffile = True
     from PYME.contrib.gohlke import tifffile
+    
 from .BaseDataSource import XYZTCDataSource
 
 class DataSource(XYZTCDataSource):
