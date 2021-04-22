@@ -394,9 +394,9 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         
         for _ in range(self.jitter_iterations):
             xr, yr, zr = np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z))
-            xr = xr * self.sampling_nm[0] + x
-            yr = yr * self.sampling_nm[1] + y
-            zr = zr * self.sampling_nm[2] + z
+            xr = (xr - 0.5) * self.sampling_nm[0] + x
+            yr = (yr - 0.5) * self.sampling_nm[1] + y
+            zr = (zr - 0.5) * self.sampling_nm[2] + z
             azi, zen, r = shell.shell_coordinates((xr, yr, zr))
             r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
                                                             shell.coefficients,
