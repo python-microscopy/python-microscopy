@@ -116,3 +116,13 @@ def test_distance_to_shell_along_vector_from_points():
     dist = FITTER.distance_to_shell_along_vector_from_point(up, query, guess)
     ground_truth = np.sqrt((R_SPHERE ** 2) - ((xq - FITTER.x0) ** 2))
     np.testing.assert_array_almost_equal(ground_truth, dist, decimal=0)
+
+def test_density_estimate():
+    from PYME.recipes.surface_fitting import SHShellRadiusDensityEstimate
+
+    hist_out = SHShellRadiusDensityEstimate(sampling_nm=[1, 1, 1],
+                                            jitter_iterations=10).apply_simple(FITTER)
+    r2norm = hist_out['counts'] / (hist_out['bin_centers']**2)
+    rel = r2norm / r2norm[-1]
+    # drop the lowest bin and check that we're within 5% of the rest
+    assert np.all(np.abs(rel[1:] - 1) < 0.05)

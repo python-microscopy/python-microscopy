@@ -354,6 +354,71 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
             pass
         namespace[self.output_mapped] = points
 
+@register_module('SHShellRadiusDensityEstimate')
+class SHShellRadiusDensityEstimate(ModuleBase):
+    """
+    Estimate the normalized radius histogram for a uniform distribution within
+    the shell.
+    TODO: make more generic re: SDF / other surfaces
+    """
+    input_shell = Input('harmonic_shell')
+
+    bins = ListFloat([0, 1.0, 0.1])
+    sampling_nm = ListFloat([75, 75, 75])
+    jitter_iterations = Int(3)
+
+    output = Output('r_uniform_kde')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import spherical_harmonics
+        from PYME.IO import MetaDataHandler
+
+        shell = namespace[self.input_shell]
+        if isinstance(shell, tabular.TabularBase):
+            shell = spherical_harmonics.ScaledShell.from_tabular(shell)
+        
+        bin_edges = np.arange(self.bins[0], self.bins[1] + self.bins[2], self.bins[2])
+        bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+        out_hist = np.zeros(len(bin_centers), float)
+
+        # get shell bounds, make grid within
+        shell_bounds = shell.approximate_image_bounds()
+        xv = np.arange(shell_bounds.x0, shell_bounds.x1 + self.sampling_nm[0],
+                       self.sampling_nm[0])
+        yv = np.arange(shell_bounds.y0, shell_bounds.y1 + self.sampling_nm[1],
+                       self.sampling_nm[1])
+        zv = np.arange(shell_bounds.z0, shell_bounds.z1 + self.sampling_nm[2],
+                       self.sampling_nm[2])
+        x, y, z = np.meshgrid(xv, yv, zv)
+        
+        for _ in range(self.jitter_iterations):
+            xr, yr, zr = np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z))
+            xr = xr * self.sampling_nm[0] + x
+            yr = yr * self.sampling_nm[1] + y
+            zr = zr * self.sampling_nm[2] + z
+            azi, zen, r = shell.shell_coordinates((xr, yr, zr))
+            r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
+                                                            shell.coefficients,
+                                                            azi, zen)
+            inside = r < r_shell
+            r_norm = r[inside] / r_shell[inside]
+            # sum-normalize this iteration and add to output
+            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / np.sum(inside)
+        
+        # finish the average
+        out_hist = out_hist / self.jitter_iterations
+        
+        res = tabular.DictSource({
+            'bin_centers': bin_centers,
+            'counts': out_hist
+        })
+        try:
+            res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
+        except AttributeError:
+            pass
+        namespace[self.output] = res
+
 
 @register_module('ImageMaskFromSphericalHarmonicShell')
 class ImageMaskFromSphericalHarmonicShell(ModuleBase):
@@ -386,6 +451,9 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         from PYME.IO.MetaDataHandler import DictMDHandler, origin_nm
 
         shell = namespace[self.input_shell]
+        if isinstance(shell, tabular.TabularBase):
+            from PYME.Analysis.points import spherical_harmonics
+            shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         image_bound_source = namespace[self.input_image_bound_source]
         # TODO - make bounds estimation more generic - e.g. to match an existing image.
         b = ImageBounds.estimateFromSource(image_bound_source)
