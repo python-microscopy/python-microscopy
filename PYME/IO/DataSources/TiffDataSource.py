@@ -29,9 +29,9 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 #import numpy as np
 
 from PYME.contrib.gohlke import tifffile
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYZTCDataSource
 
-class DataSource(XYTCDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'TiffDataSource'
     def __init__(self, filename, taskQueue=None, chanNum = 0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
@@ -73,30 +73,49 @@ class DataSource(XYTCDataSource):
         print(tf.series[0].shape)
 
         self.im = tf.series[0].pages
+        
+        axisOrder = 'XYZTC'
+        size_z = len(self.im)
+        size_c, size_t = 1,1
+        
         if tf.is_ome:
             print('Detected OME TIFF')
             sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
             print('sh = %s' % sh)
-            self.sizeC = sh['C']
+            size_c = sh['C']
+            size_z  = sh['Z']
+            size_t = sh['T']
             
             axisOrder = tf.series[0].axes[::-1]
+            print('axisOrder = ', axisOrder)
             
-            self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+            #self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
         elif tf.is_rgb:
             print('WARNING: Detected RGB TIFF - data not likely to be suitable for quantitative analysis')
-            self.sizeC = 3
+            size_c = 3
             self.RGB = True
             if len(self.im) > 1:
                 # we can have multi-page RGB TIFF - why?????
                 print('WARNING: Multi-page RGB TIFF detected - where did this come from???')
-                self.additionalDims='TC'
-            else:
-                self.additionalDims = 'C'
-            
-            
                 
+            axisOrder = 'XYCZT'
+            size_z = len(self.im)
+            size_t = 1
+            
+        XYZTCDataSource.__init__(self, input_order=axisOrder, size_z=size_z, size_t=size_t, size_c=size_c)
+        
+        sl0 = self.getSlice(0)
+        self._dtype = sl0.dtype
+        self._shape = [sl0.shape[0], sl0.shape[1], size_z, size_t, size_c]
 
+    @property
+    def shape(self):
+        return self._shape
 
+    @property
+    def dtype(self):
+        return self._dtype
+    
     def getSlice(self, ind):
         #self.im.seek(ind)
         #ima = np.array(im.getdata()).newbyteorder(self.endedness)
@@ -117,7 +136,7 @@ class DataSource(XYTCDataSource):
         res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res
-
+    
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])
         if len(self.im[0].shape) == 2:

@@ -277,7 +277,7 @@ def _attr_access(mdh, key):
         if any([k.startswith(key) for k in mdh.keys()]):
             return _AttrProxy(mdh, parent=key)
         else:
-            raise
+            raise AttributeError('Attribute %s not found' % key)
 
 
 class MDHandlerBase(DictMixin):
@@ -830,7 +830,7 @@ class XMLMDHandler(MDHandlerBase):
             el = [e for e in node.childNodes if e.nodeName == entPath[0]]
             if len(el) == 0:
                 #node not there
-                raise RuntimeError(u'Requested node not found')
+                raise AttributeError(u'Requested node not found')
             else:
                 node = el[0]
 
@@ -954,6 +954,8 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.img.appendChild(self.pixels)
             self.pixels.setAttribute('ID', 'Pixels:0')
             self.pixels.setAttribute('DimensionOrder', 'XYZTC')
+            self.pixels.setAttribute('BigEndian', 'false')
+            self.pixels.setAttribute('Interleaved', 'false')
             
             tf = self.doc.createElement('TiffData')
             self.pixels.appendChild(tf)
@@ -998,6 +1000,14 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.pixels.setAttribute('SizeZ', str(SizeZ))
             self.pixels.setAttribute('SizeT', str(SizeT))
             self.pixels.setAttribute('SizeC', str(SizeC))
+            
+            for i in range(SizeC):
+                c = self.doc.createElement('Channel')
+                c.setAttribute('ID', 'Channel:0:%d' %i)
+                c.setAttribute('SamplesPerPixel', '1')
+                l = self.doc.createElement('LightPath')
+                c.appendChild(l)
+                self.pixels.appendChild(c)
             
             if 'voxelsize.x' in self.getEntryNames():
                 self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))

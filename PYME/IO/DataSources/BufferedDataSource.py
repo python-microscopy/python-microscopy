@@ -20,22 +20,27 @@
 #
 ##################
 import numpy
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYZTCDataSource, XYZTCWrapper
 import threading
 
-class DataSource(XYTCDataSource): #buffer our io to avoid decompressing multiple times
+class DataSource(XYZTCDataSource): #buffer our io to avoid decompressing multiple times
     moduleName = 'BufferedDataSource'
-    def __init__(self,dataSource, bLen = 12):
+    def __init__(self,datasource, bLen = 12):
+        
+        if (not isinstance(datasource, XYZTCDataSource)) and (not datasource.ndim == 5) :
+            datasource = XYZTCWrapper.auto_promote(datasource)
+        
         self.bLen = bLen
         self.buffer = None #delay creation until we know the dtype
         #self.buffer = numpy.zeros((bLen,) + dataSource.getSliceShape(), 'uint16')
         self.insertAt = 0
         self.bufferedSlices = -1*numpy.ones((bLen,), 'i')
-        self.dataSource = dataSource
-        self.additionalDims = dataSource.additionalDims
-        self.sizeC = dataSource.sizeC
+        self.dataSource = datasource
 
         self.lock = threading.Lock()
+
+        size_z, size_t, size_c = datasource.shape[2:]
+        XYZTCDataSource.__init__(self, input_order=datasource._input_order, size_z=size_z, size_t=size_t, size_c=size_c)
 
     def getSlice(self,ind):
         #global bufferMisses
@@ -69,6 +74,14 @@ class DataSource(XYTCDataSource): #buffer our io to avoid decompressing multiple
                 ret = sl
             return ret
 
+    @property
+    def shape(self):
+        return self.dataSource.shape
+
+    @property
+    def dtype(self):
+        return self.dataSource.dtype
+    
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])
         return self.dataSource.getSliceShape()
@@ -82,10 +95,13 @@ class DataSource(XYTCDataSource): #buffer our io to avoid decompressing multiple
 
     def release(self):
         return self.dataSource.release()
-        
 
     def reloadData(self):
         return self.dataSource.reloadData()
+
+    @property
+    def is_complete(self):
+        return self.dataSource.is_complete()
         
 
 

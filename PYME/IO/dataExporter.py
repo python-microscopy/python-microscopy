@@ -84,7 +84,7 @@ class Exporter:
         if tslice is None:
             tslice = slice(0, data.shape[3], 1)
         
-        nChans = data.shape[3]
+        nChans = data.shape[4]
         nZ = (zslice.stop - zslice.start) // zslice.step
         nT = (tslice.stop - tslice.start) // tslice.step
         
@@ -113,7 +113,7 @@ class H5Exporter(Exporter):
         data, tslice, xSize, ySize, nZ, nT, nChans, nframes = self._prepare(data, xslice, yslice, zslice, tslice)
         
         print((xSize, ySize))
-        dtype = slice0.dtype
+        dtype = data.dtype
         
         if not dtype in ['uint8', 'uint16', 'float32']:
             warnings.warn('Attempting to save an unsupported data-type (%s) - data should be one of uint8, uint16, or float32' % dtype,
