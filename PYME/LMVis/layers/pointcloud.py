@@ -3,7 +3,7 @@ from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
+from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
 from matplotlib import cm
 import numpy as np
@@ -29,10 +29,12 @@ class Points3DEngine(BaseEngine):
                 return False
             
             n_vertices = vertices.shape[0]
+            normals = layer.get_normals()
+            colors = layer.get_colors()
         
             glVertexPointerf(vertices)
-            glNormalPointerf(layer.get_normals())
-            glColorPointerf(layer.get_colors())
+            glNormalPointerf(normals)
+            glColorPointerf(colors)
         
             if gl_canvas:
                 if layer.point_size == 0:
@@ -42,6 +44,20 @@ class Points3DEngine(BaseEngine):
             else:
                 glPointSize(layer.point_size*self.point_scale_correction)
             glDrawArrays(GL_POINTS, 0, n_vertices)
+
+            if layer.display_normals:
+                normal_buffer = np.empty((vertices.shape[0]+normals.shape[0],3), dtype=vertices.dtype)
+                normal_buffer[0::2,:] = vertices
+                normal_buffer[1::2,:] = vertices
+                # assert(np.allclose(np.linalg.norm(normals,axis=1),1))
+                normal_buffer[1::2,:] += layer.normal_scaling*normals
+                
+                glVertexPointerf(normal_buffer)
+                sc = np.array([1, 1, 1, 1])
+                glColorPointerf(np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
+                glNormalPointerf(np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+                glLineWidth(3)  # slightly thick
+                glDrawArrays(GL_LINES, 0, 2*n_vertices)
             
 
 
@@ -91,6 +107,8 @@ class PointCloudRenderLayer(EngineLayer):
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Point tranparency')
     method = Enum(*ENGINES.keys(), desc='Method used to display points')
+    display_normals = Bool(False)
+    normal_scaling = Float(10.0)
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of points')
     _datasource_keys = List()
     _datasource_choices = List()
