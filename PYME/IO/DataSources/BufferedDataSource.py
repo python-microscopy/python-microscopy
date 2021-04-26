@@ -73,14 +73,6 @@ class DataSource(XYZTCDataSource): #buffer our io to avoid decompressing multipl
 
                 ret = sl
             return ret
-
-    @property
-    def shape(self):
-        return self.dataSource.shape
-
-    @property
-    def dtype(self):
-        return self.dataSource.dtype
     
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])

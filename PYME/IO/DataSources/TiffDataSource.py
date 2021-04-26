@@ -119,14 +119,6 @@ class DataSource(XYZTCDataSource):
         sl0 = self.getSlice(0)
         self._dtype = sl0.dtype
         self._shape = [sl0.shape[0], sl0.shape[1], size_z, size_t, size_c]
-
-    @property
-    def shape(self):
-        return self._shape
-
-    @property
-    def dtype(self):
-        return self._dtype
     
     def getSlice(self, ind):
         #self.im.seek(ind)

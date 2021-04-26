@@ -185,7 +185,7 @@ class DSViewFrame(AUIFrame):
         self._mgr.AddPane(self.optionspanel.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
                       ToolbarPane().Right().GripperTop())
 
-        if self.do.ds.shape[2] > 1:
+        if (self.do.ds.shape[2] > 1) or ((self.do.ds.ndim > 4) and (self.do.ds.shape[3] > 1)):
             from PYME.DSView.modules import playback
             self.playbackpanel = playback.PlayZTPanel(self, self)
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())

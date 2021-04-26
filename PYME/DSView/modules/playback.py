@@ -180,6 +180,11 @@ class PlayPanel(wx.Panel):
 
     def update(self):
         #print 'foo'
+        if self.do.ds.shape[self._shape_idx] <2 :
+            self.Hide()
+        else:
+            self.Show()
+            
         if not self.moving:
             self.slPlayPos.SetValue((100*self._get_pos())/max(1,self.do.ds.shape[self._shape_idx]-1))
 
@@ -194,21 +199,28 @@ class PlayZTPanel(wx.Panel):
         
         self._pans = []
         
-        pan_z = PlayPanel(self, dsviewer, 'z')
-        vsizer.Add(pan_z, 0, wx.EXPAND, 0)
-        self._pans.append(pan_z)
         
-        # TODO - create anyway and just hide???
-        if (dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[3] > 1):
-            pan_t = PlayPanel(self, dsviewer, 't')
-            vsizer.Add(pan_t, 0, wx.EXPAND, 0)
-            self._pans.append(pan_t)
+        self.pan_z = PlayPanel(self, dsviewer, 'z')
+        vsizer.Add(self.pan_z, 0, wx.EXPAND, 0)
+        self._pans.append(self.pan_z)
+        
+        self.pan_t = PlayPanel(self, dsviewer, 't')
+        vsizer.Add(self.pan_t, 0, wx.EXPAND, 0)
+        self._pans.append(self.pan_t)
+
+        if not ((dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[3] > 1)):
+            self.pan_t.Hide()
             
+        if (dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[2] < 2):
+            self.pan_z.Hide()
+
         self.SetSizerAndFit(vsizer)
+            
         
     def update(self):
         for p in self._pans:
             p.update()
+
 
 
 class player:

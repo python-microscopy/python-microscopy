@@ -52,7 +52,7 @@ import warnings
 class PYMEDeprecationWarning(DeprecationWarning):
     pass
 
-#warnings.simplefilter('once',PYMEDeprecationWarning)
+warnings.simplefilter('once',PYMEDeprecationWarning)
 
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility
@@ -311,7 +311,7 @@ class ImageStack(object):
         """
         import warnings
         warnings.warn(PYMEDeprecationWarning('This will either disappear or change function as we move to a 5D data model. Use the explicit .data_xytc instead, or even better, change to using the 5D model as image.data_xyztc or image.voxels'), stacklevel=2)
-        return self._data
+        return self._data_xytc
         
     @property
     def data_xyztc(self):
@@ -413,7 +413,7 @@ class ImageStack(object):
         try:
             return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
         except:
-            return ImageBounds(0, 0, self.pixelSize*self.data.shape[0], self.pixelSize*self.data.shape[1],0, self.sliceSize*self.data.shape[2])
+            return ImageBounds(0, 0, self.pixelSize*self.voxels.shape[0], self.pixelSize*self.voxels.shape[1],0, self.sliceSize*self.voxels.shape[2])
 
     @imgBounds.setter
     def imgBounds(self, value):

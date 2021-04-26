@@ -49,7 +49,10 @@ class BaseDataSource(object):
     @property
     def dtype(self):
         # for numpy (and dask) compatibility
-        return self.getSlice(0).dtype
+        if getattr(self, '_dtype', None) is None:
+            self._dtype = self.getSlice(0).dtype
+            
+        return self._dtype
     
     @property
     def nbytes(self):
@@ -193,7 +196,27 @@ class XYZTCDataSource(BaseDataSource):
     """
 
     def __init__(self, input_order='XYZTC', size_z=1, size_t=1, size_c=1):
+        self.set_dim_order_and_size(input_order, size_z, size_t, size_c)
+        self._dtype = None
+        
+        
+    def set_dim_order_and_size(self, input_order=None, size_z=None, size_t=None, size_c=None):
+        if input_order is None:
+            input_order = getattr(self, '_input_order', 'XYZTC')
+        
+        old_sizes = getattr(self, '_sizes', (1,1,1))
+        if size_z is None:
+            size_z = old_sizes[0]
+        
+        if size_t is None:
+            size_t = old_sizes[1]
+            
+        if size_c is None:
+            size_c = old_sizes[2]
+            
         self._input_order = input_order
+        self._sizes = (size_z, size_t, size_c)
+        self._shape = None
     
         if not input_order.startswith('XY'):
             raise RuntimeError('First 2 dimensions of input must be X and Y')
@@ -224,6 +247,13 @@ class XYZTCDataSource(BaseDataSource):
             self._c_stride = 1
         else:
             raise RuntimeError('Input order: %s not supported' % input_order)
+        
+    @property
+    def shape(self):
+        if self._shape is None:
+            self._shape = tuple(self.getSliceShape()) + self._sizes
+            
+        return self._shape
     
     @property
     def ndim(self):
@@ -259,7 +289,6 @@ class XYZTCDataSource(BaseDataSource):
                     out[:, :, zi, ci, ti] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
         return out
-    
 
 
 class XYZTCWrapper(XYZTCDataSource):
@@ -274,7 +303,7 @@ class XYZTCWrapper(XYZTCDataSource):
         #print(self._datasource)
         #print(self._datasource.getSliceShape())
         
-        self._shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
+        #self._shape = tuple(self._datasource.getSliceShape()) + (size_z, size_t, size_c)
         self._dtype = self._datasource.dtype
     
     @classmethod
@@ -303,13 +332,6 @@ class XYZTCWrapper(XYZTCDataSource):
 
         return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=data.shape[3])
     
-    @property
-    def shape(self):
-        return self._shape
-    
-    @property
-    def dtype(self):
-        return self._dtype
     
     def getSlice(self, ind):
         return self._datasource.getSlice(ind)
@@ -339,7 +361,11 @@ class XYTCWrapper(XYTCDataSource):
         self._datasource = datasource
         
         self.sizeC = datasource.shape[4]
-        self.additionalDims = 'TC'
+        
+        ad = getattr(datasource, '_input_order', 'XYZTC')[2:]
+        ad = ad.replace('Z', '')
+        
+        self.additionalDims = ad #'TC'
     
     def getSlice(self, ind):
         return self._datasource.getSlice(ind)

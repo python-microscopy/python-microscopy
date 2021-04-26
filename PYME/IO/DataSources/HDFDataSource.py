@@ -98,13 +98,6 @@ class DataSource(XYZTCDataSource):
             
             return self.h5File.root.ImageData[ind, :,:]
 
-    @property
-    def shape(self):
-        return self._shape
-
-    @property
-    def dtype(self):
-        return self._dtype
     
     @property
     def pzf_index(self):

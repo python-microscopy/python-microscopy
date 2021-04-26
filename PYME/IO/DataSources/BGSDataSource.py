@@ -336,13 +336,6 @@ class XYZTCBgsSource(XYZTCDataSource):
         self.dBuffer = dataBuffer(self._datasource, 50)
         self.bBuffer = backgroundBuffer(self.dBuffer)
 
-    @property
-    def shape(self):
-        return self._datasource.shape
-
-    @property
-    def dtype(self):
-        return self._datasource.dtype
 
     def getSliceShape(self):
         return self._datasource.getSliceShape()
