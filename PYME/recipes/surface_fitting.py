@@ -360,10 +360,14 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     Estimate the normalized radius histogram for a uniform distribution within
     the shell.
     TODO: make more generic re: SDF / other surfaces
+
+    Also estimates the volume of the shell, the anisotropy of the shell, and
+    the standard deviation along its principle axes (if filled with a uniform
+    distribution)
     """
     input_shell = Input('harmonic_shell')
 
-    bins = ListFloat([0, 1.0, 0.1])
+    r_bin_spacing = Float(0.05)
     sampling_nm = ListFloat([75, 75, 75])
     jitter_iterations = Int(3)
 
@@ -378,7 +382,7 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
-        bin_edges = np.arange(self.bins[0], self.bins[1] + self.bins[2], self.bins[2])
+        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
         out_hist = np.zeros(len(bin_centers), float)
 
@@ -390,10 +394,14 @@ class SHShellRadiusDensityEstimate(ModuleBase):
                        self.sampling_nm[1])
         zv = np.arange(shell_bounds.z0, shell_bounds.z1 + self.sampling_nm[2],
                        self.sampling_nm[2])
-        x, y, z = np.meshgrid(xv, yv, zv)
+        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij')
+
+        v_estimates = []
+        sdev_estimates = []
+        n_choose = 10000
         
         for _ in range(self.jitter_iterations):
-            xr, yr, zr = np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z)), np.random.rand(len(x), len(y), len(z))
+            xr, yr, zr = np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv))
             xr = (xr - 0.5) * self.sampling_nm[0] + x
             yr = (yr - 0.5) * self.sampling_nm[1] + y
             zr = (zr - 0.5) * self.sampling_nm[2] + z
@@ -402,12 +410,34 @@ class SHShellRadiusDensityEstimate(ModuleBase):
                                                             shell.coefficients,
                                                             azi, zen)
             inside = r < r_shell
+            N = np.sum(inside)
             r_norm = r[inside] / r_shell[inside]
             # sum-normalize this iteration and add to output
-            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / np.sum(inside)
+            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / N
+
+            # record volume estimate
+            v_estimates.append(N)
+            # estimate spread along principle axes of the shell
+            X = np.vstack([xr[inside], yr[inside], zr[inside]])
+            if N > n_choose:
+                # downsample to avoid memory error
+                X = X[:, np.random.choice(N, n_choose, replace=False)]
+            # TODO - do we need to be mean-centered?
+            X = X - X.mean(axis=1)[:, None]
+            _, s, _ = np.linalg.svd(X.T)
+            # svd cov is not normalized, handle that
+            sdev_estimates.append(s / np.sqrt(X.shape[1] - 1))  # with bessel's correction
         
         # finish the average
         out_hist = out_hist / self.jitter_iterations
+        # finish the volume calculation, convert from nm^3 to um^3
+        volume = np.mean(v_estimates) * (np.prod(self.sampling_nm) / (1e9))
+        # average the standard deviation estimates
+        standard_deviations = np.mean(np.stack(sdev_estimates), axis=0)
+        # similar to Basser, P. J., et al. doi.org/10.1006/jmrb.1996.0086
+        # note that singular values are square roots of the eigenvalues. Use 
+        # the sample standard deviation rather than pop.
+        anisotropy = np.sqrt(np.var(standard_deviations**2, ddof=1)) / (np.sqrt(3) * np.mean(standard_deviations**2))
         
         res = tabular.DictSource({
             'bin_centers': bin_centers,
@@ -416,7 +446,12 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         try:
             res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
         except AttributeError:
-            pass
+            res.mdh = MetaDataHandler.DictMDHandler()
+        
+        res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
+        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.tolist()
+        res.mdh['SHShellRadiusDensityEstimate.Anisotropy'] = float(anisotropy)
+
         namespace[self.output] = res
 
 
