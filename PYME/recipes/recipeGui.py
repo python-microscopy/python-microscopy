@@ -19,6 +19,7 @@ locale.setlocale(locale.LC_CTYPE, 'C')
 import docutils.core
 
 from PYME.recipes import modules
+from PYME.recipes import Recipe
 #from PYME.recipes import runRecipe
 from PYME.recipes import batchProcess
 from PYME.recipes import recipeLayout
@@ -658,7 +659,7 @@ class RecipeManager(object):
             
     def LoadRecipeText(self, s, filename=''):
         self.currentFilename  = filename
-        self.activeRecipe = modules.ModuleCollection.fromYAML(s)
+        self.activeRecipe = Recipe.fromYAML(s)
         #self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
 
         try:        

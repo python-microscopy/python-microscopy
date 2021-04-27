@@ -7,6 +7,7 @@ Created on Fri May  8 10:07:57 2015
 """
 import matplotlib
 from PYME.recipes import modules
+from PYME.recipes import Recipe
 from argparse import ArgumentParser
 from PYME.IO.image import ImageStack
 import pandas as pd
@@ -78,9 +79,9 @@ def runRecipe(recipe, inputs, outputs, context={}):
                   following execution of the recipe.
     """
     try:
-        if not isinstance(recipe, modules.ModuleCollection):
+        if not isinstance(recipe, Recipe):
             # recipe is a string
-            recipe = modules.ModuleCollection.fromYAML(recipe)
+            recipe = Recipe.fromYAML(recipe)
         
         #the recipe instance might be re-used - clear any previous data
         recipe.namespace.clear()
@@ -113,7 +114,7 @@ def main():
     with open(args.recipe) as f:
         s = f.read()
         
-    recipe = modules.ModuleCollection.fromYAML(s)
+    recipe = Recipe.fromYAML(s)
     
     #create a new parser to parse input and output filenames
     op = ArgumentParser()

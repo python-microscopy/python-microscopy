@@ -16,7 +16,8 @@ from tornado import web
 from PYME.recipes import html_recipe_editor
 from jigna import web_server as jignaws
 
-from PYME.recipes.base import ModuleCollection
+#from PYME.recipes.base import ModuleCollection
+from PYME.recipes import Recipe
 
 rec_text = '''
 - processing.OpticalFlow:
@@ -105,7 +106,7 @@ def main():
         #(r'/recipe_editor/(.*)', tornado.web.StaticFileHandler, {'path': os.path.dirname(html_recipe_editor.__file__)}),
         (r'.*', tornado.web.FallbackHandler, dict(fallback=django_app)),
         
-        ], template=html_recipe_editor.template, context={'recipe': ModuleCollection.fromYAML(rec_text)})
+        ], template=html_recipe_editor.template, context={'recipe': Recipe.fromYAML(rec_text)})
     #server = tornado.httpserver.HTTPServer(tornado_app)
     
     http_server = tornado.httpserver.HTTPServer(tornado_app)

@@ -505,14 +505,14 @@ class CaWave(object):
         normalize: True
     '''
     def __init__(self, wavefronts, intensity, trange, recipe=''):
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         
         self.trange = trange
         
         if recipe == '':
             recipe = self.default_recipe
         
-        self._mc = ModuleCollection.fromYAML(recipe)
+        self._mc = Recipe.fromYAML(recipe)
         
         print('Executing wave sub-recipe')
         

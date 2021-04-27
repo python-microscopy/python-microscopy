@@ -319,7 +319,8 @@ class taskWorker(object):
                     #self.resultsQueue.put((queueURL, taskDescr, None))
 
             elif taskDescr['type'] == 'recipe':
-                from PYME.recipes.modules import ModuleCollection
+                from PYME.recipes import Recipe
+                from PYME.recipes import modules
 
                 try:
                     taskdefRef = taskDescr.get('taskdefRef', None)
@@ -329,7 +330,7 @@ class taskWorker(object):
                     else: #recipe is defined in the task
                         recipe_yaml = taskDescr['taskdef']['recipe']
 
-                    recipe = ModuleCollection.fromYAML(recipe_yaml)
+                    recipe = Recipe.fromYAML(recipe_yaml)
 
                     #load recipe inputs
                     logging.debug(taskDescr)

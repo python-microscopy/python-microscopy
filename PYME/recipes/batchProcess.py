@@ -6,7 +6,7 @@ Created on Sat May  9 12:23:57 2015
 @author: david
 """
 from PYME.recipes import runRecipe
-from PYME.recipes import modules
+from PYME.recipes import Recipe, modules
 import os
 import glob
 from argparse import ArgumentParser
@@ -95,7 +95,7 @@ def bake_recipe(recipe_filename, inputGlobs, output_dir, *args, **kwargs):
     with open(recipe_filename) as f:
         s = f.read()
     
-    recipe = modules.ModuleCollection.fromYAML(s)
+    recipe = Recipe.fromYAML(s)
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -119,7 +119,7 @@ def main():
     with open(args.recipe) as f:
         s = f.read()
         
-    recipe = modules.ModuleCollection.fromYAML(s)
+    recipe = Recipe.fromYAML(s)
 
     output_dir = args.output_dir
     num_procs = args.num_processes
