@@ -41,12 +41,13 @@ except ImportError:
 
 class DataSource(XYTCDataSource):
     moduleName = 'ImageSeriesDataSource'
-    def __init__(self, filename, taskQueue=None):
-        self.filename = getFullExistingFilename(filename)#convert relative path to full path
-        #self.data = readTiff.read3DTiff(self.filename)
-
-        #use metadata for glob
-        md = MetaDataHandler.SimpleMDHandler(self.filename)
+    def __init__(self, filename='', metadata=None, taskQueue=None):
+        if filename is not '':
+            self.filename = getFullExistingFilename(filename)#convert relative path to full path
+            #use metadata for glob
+            md = MetaDataHandler.SimpleMDHandler(self.filename)
+        else:
+            md = metadata
 
         pattern = md.getEntry('SeriesPattern')
 
