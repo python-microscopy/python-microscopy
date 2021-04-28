@@ -447,6 +447,8 @@ class MyApp(wx.App):
                 # import numpy as np
                 from scipy import ndimage
                 im = ImageStack(ndimage.gaussian_filter(np.random.rand(100,100,100, 2), [20, 20, 20, 0]))
+                im.pixelSize = 10
+                im.sliceSize = 10
             elif len (args) > 0:
                 im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
             else:

@@ -561,17 +561,37 @@ class Filter(ModuleBase):
     """Module with one image input and one image output"""
     inputName = Input('input')
     outputName = Output('filtered_image')
+
+    # NOTE - if a derived class only supports, e.g. XY analysis, it should redefine this trait ro only include the dimensions
+    # it supports
+    dimensionality = Enum('XY', 'XYZ', 'XYZT', desc='Which image dimensions should the filter be applied to?')
     
-    processFramesIndividually = Bool(True)
+    #processFramesIndividually = Bool(True)
+    
+    @property
+    def processFramesIndividually(self):
+        import warnings
+        warnings.warn('Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
+                      'hints for computational optimisation', DeprecationWarning, stacklevel=2)
+        
+        logger.warning('Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
+                      'hints for computational optimisation')
+        return self.dimensionality == 'XY'
+    
+    def output_shapes(self, input_shapes):
+        """What shape is the output (without running any computation)
+        
+        Filters which modify image size (e.g. zoom) should over-write this. Will be used in the future for smart chunking.
+        """
+        return {self.outputName : input_shapes[self.inputName]}
     
     def filter(self, image):
-        #from PYME.util.shmarray import shmarray
-        #import multiprocessing
-        
-        if self.processFramesIndividually:
+        if self.dimensionality == 'XY':
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
                 filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze().astype('f'), chanNum, i, image)) for i in range(image.data.shape[2])], 2))
+        elif self.dimensionality == 'XYZ':
+            pass
         else:
             filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze().astype('f'), chanNum, 0, image)) for chanNum in range(image.data.shape[3])]
             
@@ -582,6 +602,17 @@ class Filter(ModuleBase):
         self.completeMetadata(im)
         
         return im
+    
+    def _apply_filter(self, data, image, z, t, c):
+        if hasattr(self, 'applyFilter'):
+            import warnings
+            warnings.warn('applyFilter() is deprecated, derived classes should implement `apply_filter()` instead')
+            self.applyFilter(data, c, z, image)
+        else:
+            self.apply_filter(data, voxelsize=image.voxelsize)
+        
+    def apply_filter(self, data, voxelsize):
+        raise NotImplementedError('Should be over-ridden in derived class')
         
     def execute(self, namespace):
         namespace[self.outputName] = self.filter(namespace[self.inputName])
