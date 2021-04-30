@@ -48,6 +48,7 @@ class DataSource(XYTCDataSource):
             md = MetaDataHandler.SimpleMDHandler(self.filename)
         else:
             md = metadata
+            self.filename = ''
 
         pattern = md.getEntry('SeriesPattern')
 

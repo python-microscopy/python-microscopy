@@ -129,7 +129,7 @@ class XYTCDataSource(BaseDataSource):
     def shape(self):
         """The 4D shape of the datasource"""
         #if self.type == 'DataSource':
-        return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
+        return tuple(DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) ))
     
     @property
     def ndim(self):
