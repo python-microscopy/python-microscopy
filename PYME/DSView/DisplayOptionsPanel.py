@@ -301,21 +301,25 @@ class OptionsPanel(wx.Panel):
 
 
     def RefreshHists(self):
+        d = self.do.get_hist_data()
         for i in range(len(self.do.Chans)):
-            if self.do.ds.ndim >= 5:
-                c = self.do.ds[:, :, self.do.zp, self.do.tp, self.do.Chans[i]].ravel()
-            else:
-                c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
-            if np.iscomplexobj(c):
-                if self.do.complexMode == 'real':
-                    c = c.real
-                elif self.do.complexMode == 'imag':
-                    c = c.imag
-                elif self.do.complexMode == 'angle':
-                    c = np.angle(c)
-                else:
-                    c = np.abs(c)
-            self.hcs[i].SetData(c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
+            # if self.do.ds.ndim >= 5:
+            #     c = self.do.ds[:, :, self.do.zp, self.do.tp, self.do.Chans[i]].ravel()
+            # else:
+            #     c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].ravel()
+            # if np.iscomplexobj(c):
+            #     if self.do.complexMode == 'real':
+            #         c = c.real
+            #     elif self.do.complexMode == 'imag':
+            #         c = c.imag
+            #     elif self.do.complexMode == 'angle':
+            #         c = np.angle(c)
+            #     else:
+            #         c = np.abs(c)
+            
+            #self.hcs[i].SetData(c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
+            
+            self.hcs[i].SetData(d[i], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
 
     def CreateToolBar(self, wind):
         global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect

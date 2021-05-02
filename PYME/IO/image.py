@@ -1044,6 +1044,49 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+        
+    def _load_zarr(self, filename):
+        import zarr
+        from PYME.IO.DataSources import ArrayDataSource
+        
+        if '?' in filename:
+            fn, arrayname = filename.split('?')
+        else:
+            fn = filename
+            arrayname = None
+        
+        z = zarr.open(fn, 'r')
+        
+        # reopen using a caching store with 1GB cache size
+        z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
+        
+        if isinstance(z, zarr.Group):
+            array_names = sorted(list(z.array_keys()))
+            print('Zarr file contains multiple datasets: %s' % (array_names,))
+            
+            if arrayname and (arrayname in array_names):
+                a = ArrayDataSource.XYZTCArrayDataSource(z[arrayname])
+            else:
+                a = ArrayDataSource.XYZTCArrayDataSource(z[array_names[0]])
+            
+            if ('0' in array_names) and ('1' in array_names):
+                # hack to detect pyramid
+                print('Detected pyramidal .zarr')
+                self.is_pyramid = True
+                
+                self.levels = [ArrayDataSource.XYZTCArrayDataSource(z[n]) for n in array_names]
+                a.levels = self.levels
+            
+        else:
+            a = ArrayDataSource.XYZTCArrayDataSource(z)
+
+        self.SetData(a)
+        
+        self.seriesName = getRelFilename(fn)
+        self.mode = 'default'
+        
+        print('loaded zarr')
+            
 
     def Load(self, filename=None, prompt=None, haveGUI = False):
         """
@@ -1132,6 +1175,9 @@ class ImageStack(object):
                 self._loadDCIMG(filename)
             elif filename.endswith('.pzf'):
                 self._loadPZF(filename)
+            elif '.zarr' in filename:
+                # check for `in` rather than `endswith` as we use query notation for groups.
+                self._load_zarr(filename)
             else: #try bioformats
                 try:
                     self._loadBioformats(filename)

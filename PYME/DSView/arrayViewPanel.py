@@ -1001,16 +1001,37 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         fstep = float(step)
         step = int(step)
-
         
+        if (step > 1) and hasattr(self.do.ds, 'levels'):
+            # we have a pyramidal data source
+            
+            level = -self.do.scale
+            
+            #if (level > len(self.do.ds.levels)):
+            level = int(min(level, len(self.do.ds.levels)))
+            step = int(2**(-numpy.ceil(numpy.log2(sc))-level))
+            
+            _s = 1.0/(2**level)
+            
+            x0_, y0_, sX_, sY_ = [int(numpy.ceil(v)) for v in [x0_, y0_, sX_, sY_]]
+            
+            # x0_ = int(numpy.ceil(x0_*_s))
+            # y0_ = int(y0_*_s)
+            # sX_ = int(sX_*_s)
+            # sY_ = int(sY_*_s)
+            
+            ds = self.do.ds.levels[level]
+        else:
+            ds = self.do.ds
+            _s = 1
         
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
             dmy, dmx  = self.do.ds.shape[1], self.do.ds.shape[0]
             slice_key = (slice(x0_,(x0_+sX_),step),
                          slice(y0_,(y0_+sY_),step),
-                         int(self.do.zp),
-                         int(self.do.tp))
+                         int(self.do.zp*_s),
+                         int(self.do.tp*_s))
             
             proj_axis = 2
                     
@@ -1018,27 +1039,28 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif self.do.slice == DisplayOpts.SLICE_XZ:
             dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[0]
             slice_key = (slice(x0_, (x0_ + sX_), step),
-                         int(self.do.yp),
+                         int(self.do.yp*_s),
                          slice(y0_, (y0_ + sY_), step),
-                         int(self.do.tp))
+                         int(self.do.tp*_s))
             
             proj_axis = 1
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
             dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[1]
-            slice_key = (int(self.do.xp),
+            slice_key = (int(self.do.xp*_s),
                          slice(x0_, (x0_ + sX_), step),
                          slice(y0_, (y0_ + sY_), step),
-                         int(self.do.tp))
+                         int(self.do.tp*_s))
             
             proj_axis = 0
             
-        if self.do.ds.ndim < 5:
+        if ds.ndim < 5:
             # for old-style data, drop the time dimension
             slice_key = slice_key[:3]
             
-        ima = numpy.zeros((int(numpy.ceil(min(sY_, dmy)/fstep)), int(numpy.ceil(min(sX_, dmx)/fstep)), 3), 'uint8')
+        #ima = numpy.zeros((int(numpy.ceil(min(sY_/_s, dmy)/fstep)), int(numpy.ceil(min(sX_/_s, dmx)/fstep)), 3), 'uint8')
 
+        segs = []
         for chan, offset, gain, cmap in self.do.GetActiveChans():
             if self.do.maximumProjection and (self.do.slice == DisplayOpts.SLICE_XY):
                 # special case for max projection - fixme - remove after we get colour coded projections in the projection module
@@ -1046,10 +1068,16 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 if self.do.colourMax:
                     seg = seg + 1j*self.do.ds[slice_key[:2] + (slice(None), chan)].argmax(2).squeeze().T
             else:
-                seg = self.do.ds[slice_key +  (chan,)].squeeze().T
+                seg = ds[slice_key +  (chan,)].squeeze().T
                 
-            #print('slice_key:', slice_key)
-            #print('seg.shape:', seg.shape)
+            segs.append((seg, chan, offset, gain, cmap))
+            
+        
+        ima = numpy.zeros(segs[0][0].shape[:2] + (3,), 'uint8')
+        
+        for seg, chan, offset, gain, cmap in segs:
+            print('slice_key:', slice_key)
+            print('seg.shape, ima.shape:', seg.shape, ima.shape)
             self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())

@@ -106,6 +106,9 @@ class BaseDataSource(object):
         """
         
         raise NotImplementedError
+    
+   
+        
 
 
 class XYTCDataSource(BaseDataSource):
@@ -321,7 +324,7 @@ class XYZTCWrapper(XYZTCDataSource):
         else:
             dim_order = 'XYZTC'
     
-            if data.shape[2] > 100:
+            if False: #data.shape[2] > 100:
                 # assume time series
                 size_z = 1
                 size_t = data.shape[2]

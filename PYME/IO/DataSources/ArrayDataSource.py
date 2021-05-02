@@ -2,6 +2,21 @@ import numpy as np
 from .BaseDataSource import BaseDataSource, DefaultList
 import tables
 
+_array_types = (np.ndarray, tables.EArray)
+
+# we might not have dask or zarr installed, support them if present
+try:
+    import dask.array as da
+    _array_types = _array_types + (da.Array,)
+except ImportError:
+    pass
+
+try:
+    import zarr
+    _array_types = _array_types + (zarr.Array,)
+except ImportError:
+    pass
+
 class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data, dimOrder='XYTC', dim_1_is_z=False):
         self.data = data
@@ -9,7 +24,8 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         
         self.dim_1_is_z = dim_1_is_z
         
-        if not isinstance(data, (np.ndarray, tables.EArray)): # is a data source
+        if not isinstance(data, _array_types): # is a data source
+            # TODO - duck type instead?
             raise DeprecationWarning('Expecting array data')
         
         #self.additionalDims = dimOrder[2:len(data.shape)]
@@ -64,10 +80,10 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         
         #if self.type == 'Array':
         r = self.data.__getitem__(tuple(keys))
-        #else:
-        #    raise DeprecationWarning('We should only be wrapping arrays')
-        #r = np.concatenate([np.atleast_2d(self.data.getSlice(i)[keys[0], keys[1]])[:, :, None] for i in
-        #                    range(*keys[1].indices(self.data.getNumSlices()))], 2)
+        
+        if not isinstance(r, np.ndarray):
+            # make slicing work for dask arrays TODO - revisit??
+            r = r.compute()
         
         self.oldData = r
         
@@ -88,17 +104,28 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
     
     def getSliceShape(self):
         return tuple(self.shape[:2])
-        # if self.dim_1_is_z:
-        #     return tuple(self.data.shape[1:3])
-        # else:
-        #     return tuple(self.data.shape[:2])
+
     
     def getNumSlices(self):
         return np.prod(self.shape[2:])
-        # if self.dim_1_is_z:
-        #     return self.data.shape[0]
-        # else:
-        #     if len(self.data.shape) > 2:
-        #         return np.prod(self.data.shape[2:])
-        #     else:
-        #         return 1
+    
+class XYZTCArrayDataSource(ArrayDataSource):
+    def __init__(self, data):
+        ArrayDataSource.__init__(self, data)
+        
+        if self._ndim == 4:
+            self._shape = DefaultList(self._shape[:3] + [1, self._shape[3]])
+            
+    @property
+    def ndim(self):
+        return 5
+            
+    def __getitem__(self, keys):
+        keys = list(keys)
+        
+        if self._ndim == 4:
+            t = keys.pop(3)
+            #assert(t == 0)
+            
+        return ArrayDataSource.__getitem__(self, tuple(keys))
+            
