@@ -193,6 +193,28 @@ class XYTCDataSource(BaseDataSource):
 def _slice_len(s):
     return (s.stop - s.start) // s.step
 
+class XYZSubvolume(object):
+    def __init__(self, datasource, t=0, c=0):
+        self._datasource = datasource
+        self._t = t
+        self._c = c
+        
+        if hasattr(datasource, 'levels'):
+            self.levels = [XYZSubvolume(l, t, c) for l in datasource.levels]
+
+    @property
+    def shape(self):
+        return tuple(self._datasource.shape[:3])
+    
+    def __getattr__(self, name):
+        return getattr(self._datasource, name)
+    
+    def __getitem__(self, item):
+        keys = tuple(item[:3]) + (self._t, self._c)
+        return  self._datasource[keys]
+        
+    
+
 class XYZTCDataSource(BaseDataSource):
     """ Datasource to use as a base class for datasources which are natively 5D (and can be used in isinstance checks to
     Test the above.
