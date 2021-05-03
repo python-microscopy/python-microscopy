@@ -557,11 +557,7 @@ def ModuleCollection(*args, **kwargs):
     warnings.warn(DeprecationWarning('recipes.base.ModuleCollection is deprecated, use recipes.recipe.Recipe instead'))
     return Recipe(*args, **kwargs)
         
-class Filter(ModuleBase):
-    """Module with one image input and one image output"""
-    inputName = Input('input')
-    outputName = Output('filtered_image')
-
+class ImageModuleBase(ModuleBase):
     # NOTE - if a derived class only supports, e.g. XY analysis, it should redefine this trait ro only include the dimensions
     # it supports
     dimensionality = Enum('XY', 'XYZ', 'XYZT', desc='Which image dimensions should the filter be applied to?')
@@ -571,12 +567,35 @@ class Filter(ModuleBase):
     @property
     def processFramesIndividually(self):
         import warnings
-        warnings.warn('Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
-                      'hints for computational optimisation', DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            'Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
+            'hints for computational optimisation', DeprecationWarning, stacklevel=2)
         
-        logger.warning('Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
-                      'hints for computational optimisation')
+        logger.warning(
+            'Use dimensionality =="XY" instead to check which dimensions a filter should be applied to, chunking '
+            'hints for computational optimisation')
         return self.dimensionality == 'XY'
+    
+    @processFramesIndividually.setter
+    def processFramesIndividually(self, value):
+        import warnings
+        warnings.warn(
+            'Use dimensionality ="XY" instead to check which dimensions a filter should be applied to, chunking '
+            'hints for computational optimisation', DeprecationWarning, stacklevel=2)
+    
+        logger.warning(
+            'Use dimensionality ="XY" instead to check which dimensions a filter should be applied to, chunking '
+            'hints for computational optimisation')
+        
+        if value:
+            self.dimensionality = 'XY'
+        else:
+            self.dimensionality = 'XYZ'
+
+class Filter(ImageModuleBase):
+    """Module with one image input and one image output"""
+    inputName = Input('input')
+    outputName = Output('filtered_image')
     
     def output_shapes(self, input_shapes):
         """What shape is the output (without running any computation)

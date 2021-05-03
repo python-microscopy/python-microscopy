@@ -20,6 +20,11 @@ class Neuroglancer(Plugin):
             
         return self._ng_viewer
     
+    def ToZarr(self):
+        import zarr
+        import dask.array
+        ds = zarr.array(self.image.data)
+    
     def OnNeuroglancer(self, event):
         import neuroglancer
         with self.ng_viewer.txn() as s:

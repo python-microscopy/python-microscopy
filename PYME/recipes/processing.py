@@ -2003,8 +2003,8 @@ class Projection(Filter):
     kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min', 'Coloured Max'])
     axis = Int(2)
     
-    processFramesIndividually = False
-    
+    dimensionality = Enum('XYZ', 'XY')
+        
     def apply_filter(self, data, voxelsize):
         if self.kind == 'Mean':
             return np.mean(data, axis=int(self.axis))
