@@ -24,7 +24,7 @@ class svmSegment(Filter):
             with unifiedIO.local_or_temp_filename(self.classifier) as fn:
                 self._cf = svmSegment.svmClassifier(filename=fn)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         self._loadClassifier()
         
         return self._cf.classify(data.astype('f'))
@@ -56,7 +56,7 @@ class CNNFilter(Filter):
             with unifiedIO.local_or_temp_filename(self._model_name) as fn:
                 self._model = load_model(fn)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         self._load_model()
         
         out = np.zeros(data.shape, 'f')

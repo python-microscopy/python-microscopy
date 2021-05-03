@@ -1073,11 +1073,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             segs.append((seg, chan, offset, gain, cmap))
             
         
-        ima = numpy.zeros(segs[0][0].shape[:2] + (3,), 'uint8')
+        if len(segs) > 0:
+            ima = numpy.zeros(segs[0][0].shape[:2] + (3,), 'uint8')
+        else:
+            ima = numpy.zeros((int(numpy.ceil(min(sY_ / _s, dmy) / fstep)), int(numpy.ceil(min(sX_ / _s, dmx) / fstep)), 3), 'uint8')
         
         for seg, chan, offset, gain, cmap in segs:
-            print('slice_key:', slice_key)
-            print('seg.shape, ima.shape:', seg.shape, ima.shape)
+            #'slice_key:', slice_key)
+            #print('seg.shape, ima.shape:', seg.shape, ima.shape)
             self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())

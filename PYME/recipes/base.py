@@ -586,16 +586,28 @@ class Filter(ModuleBase):
         return {self.outputName : input_shapes[self.inputName]}
     
     def filter(self, image):
-        if self.dimensionality == 'XY':
-            filt_ims = []
-            for chanNum in range(image.data.shape[3]):
-                filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze().astype('f'), chanNum, i, image)) for i in range(image.data.shape[2])], 2))
-        elif self.dimensionality == 'XYZ':
-            pass
-        else:
-            filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze().astype('f'), chanNum, 0, image)) for chanNum in range(image.data.shape[3])]
-            
-        im = ImageStack(filt_ims, titleStub = self.outputName)
+        out = []
+        for c in range(image.data_xyztc.shape[4]):
+            if self.dimensionality == 'XYZT':
+                data = image.data_xyztc[:, :, :, :,c].squeeze().astype('f')
+                xyzt = np.atleast_3d(self._apply_filter(data, image, c=c))
+            else: # XYZ or XY
+                xyzt = []
+                for t in range(image.data_xyztc.shape[3]):
+                    if self.dimensionality == 'XYZ':
+                        data = image.data_xyztc[:, :, :, t, c].squeeze().astype('f')
+                        xyz = np.atleast_3d(self._apply_filter(data, image, c=c, t=t))
+                    else: #XY
+                        xyz = []
+                        for z in range(image.data_xyztc.shape[2]):
+                            data = image.data_xyztc[:, :, z, t, c].squeeze().astype('f')
+                            
+                            xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z)))
+                    
+                    xyzt.append(xyz)
+            out.append(xyzt)
+                
+        im = ImageStack(out, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
         im.mdh['Parent'] = image.filename
         
@@ -603,13 +615,13 @@ class Filter(ModuleBase):
         
         return im
     
-    def _apply_filter(self, data, image, z, t, c):
+    def _apply_filter(self, data, image, z=None, t=None, c=None):
         if hasattr(self, 'applyFilter'):
             import warnings
             warnings.warn('applyFilter() is deprecated, derived classes should implement `apply_filter()` instead')
-            self.applyFilter(data, c, z, image)
+            return  self.applyFilter(data, c, z, image)
         else:
-            self.apply_filter(data, voxelsize=image.voxelsize)
+            return self.apply_filter(data, voxelsize=image.voxelsize)
         
     def apply_filter(self, data, voxelsize):
         raise NotImplementedError('Should be over-ridden in derived class')
