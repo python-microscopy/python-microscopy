@@ -202,7 +202,7 @@ class MeanFilter(Filter):
         return [self.sizeX, self.sizeY, self.sizeZ, self.sizeT]
     
     def apply_filter(self, data, voxelsize):
-        return ndimage.mean_filter(data, self.sigmas[:len(data.shape)])
+        return ndimage.uniform_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
         im.mdh['Processing.MeanFilter'] = self.sigmas
