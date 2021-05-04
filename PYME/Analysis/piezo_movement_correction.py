@@ -120,16 +120,21 @@ def spoof_focus_events_from_ontarget(events, metadata):
 
     """
     ontarget_times, ontarget_positions = [], []
+    offset_start, first_offset_time = 0, np.finfo(float).max
     for event in events:
         if event['EventName'] == b'PiezoOnTarget':
             ontarget_times.append(float(event['Time']))
             ontarget_positions.append(float(event['EventDescr']))
+        elif event['EventName'] == b'PiezoOffsetUpdate':
+            if float(event['Time']) < first_offset_time:
+                first_offset_time = float(event['Time'])
+                offset_start = float(event['EventDescr'].decode('ascii').split(', ')[0])
 
     if len(ontarget_times) == 0:
         # nothing to do
         return events
 
-    offset_map = piecewise_mapping.GeneratePMFromEventList(events, metadata, 0, 0, eventName=b'PiezoOffsetUpdate',
+    offset_map = piecewise_mapping.GeneratePMFromEventList(events, metadata, 0, offset_start, eventName=b'PiezoOffsetUpdate',
                                                            dataPos=0)
 
     ontarget_times = np.asarray(ontarget_times)

@@ -23,8 +23,6 @@
 
 #!/usr/bin/python
 from __future__ import print_function
-import scipy
-import numpy
 import numpy as np
 import numpy.ctypeslib
 
@@ -75,7 +73,7 @@ def calcNeighbourDistPart(di, x, y, edb, nStart, nEnd):
 
         dist = edb.getVertexEdgeLengths(i)
 
-        di[i] = scipy.mean(dist)
+        di[i] = np.mean(dist)
 
     #return di
 
@@ -156,24 +154,24 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
     """
     
     # choose a ROI size that is appropriate, and generate a padded image to render into
-    sx = numpy.maximum(sx, pixelSize)
-    fuzz = 3*scipy.median(sx)
+    sx = np.maximum(sx, pixelSize)
+    fuzz = 3*np.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
 
     # Gauss2D expects coordinates for pixel centres
     # FIXME - do we need the half pixel offset (this would be correct if localizations were referenced to top-left of
     # raw image, but they aren't - they are referenced to the pixel centres).
-    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize) + 0.5*pixelSize
-    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize) + 0.5*pixelSize
+    X = np.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize) + 0.5*pixelSize
+    Y = np.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize) + 0.5*pixelSize
     
-    im = scipy.zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
     
     for i in range(len(x)):
         # FIXME - argmin() involves a search (expensive) - we should be able to get the nearest pixel as something like
         # ix = int(np.round((x[i] - X[0])/pixelSize))
-        ix = scipy.absolute(X - x[i]).argmin()
-        iy = scipy.absolute(Y - y[i]).argmin()
+        ix = np.absolute(X - x[i]).argmin()
+        iy = np.absolute(Y - y[i]).argmin()
 
         sxi = sx[i]
         
@@ -218,10 +216,10 @@ def rend_density_estimate(x, y, imageBounds, pixelSize, N=10):
     """
     from scipy.spatial import cKDTree
     
-    X = numpy.arange(imageBounds.x0, imageBounds.x1, pixelSize) + 0.5 * pixelSize
-    Y = numpy.arange(imageBounds.y0, imageBounds.y1, pixelSize) + 0.5 * pixelSize
+    X = np.arange(imageBounds.x0, imageBounds.x1, pixelSize) + 0.5 * pixelSize
+    Y = np.arange(imageBounds.y0, imageBounds.y1, pixelSize) + 0.5 * pixelSize
     
-    im = scipy.zeros((len(X), len(Y)), 'f')
+    im = np.zeros((len(X), len(Y)), 'f')
     
     
     pts = np.vstack([x, y]).T
@@ -243,8 +241,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
     WARNING - needs lots of revision
     """
     
-    sx = numpy.maximum(sx, pixelSize)
-    fuzz = 6*scipy.median(sx)
+    sx = np.maximum(sx, pixelSize)
+    fuzz = 6*np.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*(roiSize)
 
@@ -255,27 +253,27 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
     #print pixelSize
 
-    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
-    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
+    X = np.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
+    Y = np.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
 
     #print X
     
     ctval = 1e-4
     
-    l3 = numpy.log(ctval)
+    l3 = np.log(ctval)
     #l3 = -10
     
-    im = len(x)*l3*scipy.ones((len(X), len(Y)), 'd')
+    im = len(x)*l3*np.ones((len(X), len(Y)), 'd')
     print((im.min()))
     
-    fac = 1./numpy.sqrt(2*numpy.pi)
+    fac = 1./np.sqrt(2*np.pi)
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
-    delX = scipy.absolute(X[1] - X[0]) 
+    delX = np.absolute(X[1] - X[0]) 
     
     for i in range(len(x)):
-        ix = scipy.absolute(X - x[i]).argmin()
-        iy = scipy.absolute(Y - y[i]).argmin()
+        ix = np.absolute(X - x[i]).argmin()
+        iy = np.absolute(Y - y[i]).argmin()
         
         if (ix > (roiSize + 1)) and (ix < (im.shape[0] - roiSize - 2)) and (iy > (roiSize+1)) and (iy < (im.shape[1] - roiSize-2)):       
             #print i, X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)]
@@ -293,9 +291,9 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
             #sxi = max(sx[i], delX)
             sxi = sx[i]
             Xi, Yi = X[(ix - roiSize):(ix + roiSize + 1)][:,None], Y[(iy - roiSize):(iy + roiSize + 1)][None,:]
-            imp = numpy.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
+            imp = np.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
             print((imp.max(), imp.min(), l3, imp.shape))
-            imp_ = numpy.maximum(imp, l3)
+            imp_ = np.maximum(imp, l3)
             im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp_ - l3
 
     im = im[roiSize:-roiSize, roiSize:-roiSize]
@@ -312,15 +310,15 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
 
     if c is None:
         # We didn't pass anything in for c - use 1/ area of triangle
-        a01 = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
-        a02 = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
-        a12 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
+        a01 = np.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+        a02 = np.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+        a12 = np.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
 
         a_ = ((a01 * a01).sum(1))
         b_ = ((a02 * a02).sum(1))
         b2_ = ((a12 * a12).sum(1))
         # use the median edge length^2 as a proxy for area (this avoids "slithers" getting really bright)
-        c = 0.5*numpy.median([b_, a_, b2_], 0)
+        c = 0.5*np.median([b_, a_, b2_], 0)
  
         #c_neighbours = c[T.triangle_neighbors].sum(1)
         #c = 1.0/(c + c_neighbours + 1)
@@ -342,7 +340,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
         sizeX = (imageBounds.x1 - imageBounds.x0) / pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0) / pixelSize
         
-        im = numpy.zeros((sizeX, sizeY))
+        im = np.zeros((sizeX, sizeY))
 
     # convert vertices [nm] to pixel position in output image (still floating point)
     xs = (xs - imageBounds.x0) / pixelSize
@@ -362,18 +360,18 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
     np.random.seed(seed)
     
     for i in range(int(n)):
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = np.random.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
             #print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
-        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig2*np.random.randn(Imc.sum()), y[Imc] +  jsig2*np.random.randn(Imc.sum()))
 
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=False)
         
-    im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - fix fileID code so that this is not necessary
+    im [:20, 0] += np.random.rand(20) #Create signature for ImageID - TODO - fix fileID code so that this is not necessary
         
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
@@ -388,20 +386,21 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
     for i in range(int(n)):
         #im_ *= 0
         #im_ = numpy.zeros(im.shape, 'f')
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = np.random.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
             #print((jsig.shape, Imc.shape))
+
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
-        T = tri.Triangulation(x[Imc] + jsig2 * scipy.randn(Imc.sum()), y[Imc] + jsig2 * scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] + jsig2 * np.random.randn(Imc.sum()), y[Imc] + jsig2 * np.random.randn(Imc.sum()))
         
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=True)
         
         #im[:] = (im + (im_))# + 1e9*(im_ <=0)))[:]
     
-    im[:20, 0] += scipy.rand(20) #Create signature/watermark for ImageID - TODO - fix fileID code so that this is no longer necessary
+    im[:20, 0] += np.random.rand(20) #Create signature/watermark for ImageID - TODO - fix fileID code so that this is no longer necessary
     
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
@@ -449,7 +448,7 @@ def _iterations_per_task(n, nTasks):
     
 
     # generate tasks for each seed. The tasks array contains the number of iterations that that CPU should perform
-    tasks = (n / nTasks) * numpy.ones(nTasks, 'i')
+    tasks = (n / nTasks) * np.ones(nTasks, 'i')
     tasks[:(n % nTasks)] += 1
     
     return tasks
@@ -502,7 +501,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
-        if type(jsig) == numpy.ndarray:
+        if type(jsig) == np.ndarray:
             jsig = shmarray.create_copy(jsig)
 
         # We will generate 1 process for each seed, defaulting to generating a seed for each CPU core if seeds are not
@@ -520,7 +519,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric
             p.join()
 
     else:
-        im = numpy.zeros((sizeX, sizeY))
+        im = np.zeros((sizeX, sizeY))
 
         # Technically we could just call fcn( ....,n), but we replicate the logic above and divide into groups of tasks
         # so that we can reproduce a previously generated image
@@ -544,9 +543,9 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     xs = T.x[T.triangles]
     ys = T.y[T.triangles]
     
-    a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
-    b = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
-    b2 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
+    a = np.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+    b = np.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+    b2 = np.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
     
     #area of triangle
     #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
@@ -555,13 +554,13 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     
     #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
     
-    c = numpy.abs(a[:, 0] * b[:, 1] + a[:, 1] * b[:, 0])
+    c = np.abs(a[:, 0] * b[:, 1] + a[:, 1] * b[:, 0])
     
     if c is None:
-        if numpy.version.version > '1.2':
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+        if np.version.version > '1.2':
+            c = np.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
         else:
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+            c = np.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
             
             #c = c*c/1e6
     
@@ -580,8 +579,8 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     ys = (ys - imageBounds.y0) / pixelSize
     
     if im is None:
-        im = numpy.zeros((sizeX, sizeY))
-        im1 = numpy.zeros_like(im)
+        im = np.zeros((sizeX, sizeY))
+        im1 = np.zeros_like(im)
     
     drawTriangles(im, xs, ys, c * c * c)
     drawTriangles(im1, xs, ys, c * c * c * c)
@@ -590,18 +589,19 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
 
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
     from matplotlib import tri
-    scipy.random.seed()
+    np.random.seed()
     
     for i in range(n):
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = np.random.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
             #print((jsig.shape, Imc.shape))
+
             jsig2 = jsig[Imc]
         else:
             jsig2 = float(jsig)
             
-        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig2*np.random.randn(Imc.sum()), y[Imc] +  jsig2*np.random.randn(Imc.sum()))
 
         rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
 
@@ -617,13 +617,13 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
-        if type(jsig) == numpy.ndarray:
+        if type(jsig) == np.ndarray:
             jsig = shmarray.create_copy(jsig)
 
 
         nCPUs = multiprocessing.cpu_count()
 
-        tasks = int(n / nCPUs) * numpy.ones(nCPUs, 'i')
+        tasks = int(n / nCPUs) * np.ones(nCPUs, 'i')
         tasks[:int(n%nCPUs)] += 1
 
         processes = [multiprocessing.Process(target = rendJitTri2, args=(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, nIt)) for nIt in tasks]
@@ -635,8 +635,8 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
             p.join()
 
     else:
-        im = numpy.zeros((sizeX, sizeY))
-        im1 = numpy.zeros((sizeX, sizeY))
+        im = np.zeros((sizeX, sizeY))
+        im1 = np.zeros((sizeX, sizeY))
 
         rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n)
 
@@ -646,10 +646,11 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
 
 def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
     for i in range(n):
-        scipy.random.seed()
+        np.random.seed()
 
-        Imc = scipy.rand(len(x)) < mcp
-        if isinstance(jsig, numpy.ndarray):
+
+        Imc = np.random.rand(len(x)) < mcp
+        if isinstance(jsig, np.ndarray):
             #print((jsig.shape, Imc.shape))
             jsig_ = jsig[Imc]
             jsigz_ = jsigz[Imc]
@@ -658,8 +659,10 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
             jsigz_ = jsigz
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
-        p = numpy.hstack(((x[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz_*scipy.randn(Imc.sum()))[:, None]))
+
+        p = np.hstack(((x[Imc]+ jsig_*np.random.randn(Imc.sum()))[:, None], (y[Imc]+ jsig_*np.random.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz_*np.random.randn(Imc.sum()))[:, None]))
         #print((p.shape))
+
         RenderTetrahedra(p, im)
 
 #if multiProc:
@@ -688,16 +691,16 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, sliceSize=100):
         y = shmarray.create_copy(y)
         z = shmarray.create_copy(z)
 
-        if type(jsig) == numpy.ndarray:
+        if type(jsig) == np.ndarray:
             jsig = shmarray.create_copy(jsig)
 
-        if type(jsigz) == numpy.ndarray:
+        if type(jsigz) == np.ndarray:
             jsigz = shmarray.create_copy(jsigz)
 
 
         nCPUs = multiprocessing.cpu_count()
 
-        tasks = int(n / nCPUs) * numpy.ones(nCPUs, 'i')
+        tasks = int(n / nCPUs) * np.ones(nCPUs, 'i')
         tasks[:int(n % nCPUs)] += 1
 
         processes = [multiprocessing.Process(target = rendJTet, args=(im, y, x,z, jsig, jsigz, mcp, nIt)) for nIt in tasks]
@@ -711,7 +714,7 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, sliceSize=100):
         return im/n
 
     else:
-        im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
+        im = np.zeros((sizeX, sizeY, sizeZ), order='F')
 
         rendJTet(im, y, x, z, jsig, jsigz, mcp, n)
 
@@ -719,19 +722,19 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, sliceSize=100):
 
 
 def rendHist(x,y, imageBounds, pixelSize):
-    X = numpy.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
-    Y = numpy.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
+    X = np.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
+    Y = np.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
     
-    im, edx, edy = scipy.histogram2d(x,y, bins=(X,Y))
+    im, edx, edy = np.histogram2d(x,y, bins=(X,Y))
 
     return im
 
 def rendHist3D(x,y,z, imageBounds, pixelSize,sliceSize=100):
-    X = numpy.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
-    Y = numpy.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
-    Z = numpy.arange(imageBounds.z0,imageBounds.z1 + 1.01*sliceSize, sliceSize)
+    X = np.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
+    Y = np.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
+    Z = np.arange(imageBounds.z0,imageBounds.z1 + 1.01*sliceSize, sliceSize)
 
-    im, ed = scipy.histogramdd([x,y, z], bins=(X,Y,Z))
+    im, ed = np.histogramdd([x,y, z], bins=(X,Y,Z))
 
     return im
 
@@ -743,12 +746,12 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
 
     #print X.shape
 
-    return scipy.exp(-((X[:,None]-x0)**2 + (Y[None,:] - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2))/((2*scipy.pi*wxy**2)*scipy.sqrt(2*scipy.pi*wz**2))
+    return np.exp(-((X[:,None]-x0)**2 + (Y[None,:] - y0)**2)/(2*wxy**2) - ((Z-z0)**2)/(2*wz**2))/((2*np.pi*wxy**2)*np.sqrt(2*np.pi*wz**2))
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
     from PYME.localization.cModels.gauss_app import genGauss3D
-    sx = numpy.maximum(sx, pixelSize)
-    fuzz = 3*scipy.median(sx)
+    sx = np.maximum(sx, pixelSize)
+    fuzz = 3*np.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
 
@@ -758,23 +761,23 @@ def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
 
     #print pixelSize
 
-    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
-    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
-    Z = numpy.arange(zb[0], zb[1], sliceSize)
+    X = np.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
+    Y = np.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
+    Z = np.arange(zb[0], zb[1], sliceSize)
 
     #print X
 
-    im = scipy.zeros((len(X), len(Y), len(Z)), 'f')
+    im = np.zeros((len(X), len(Y), len(Z)), 'f')
 
     #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
-    delX = scipy.absolute(X[1] - X[0])
-    delZ = scipy.absolute(Z[1] - Z[0])
+    delX = np.absolute(X[1] - X[0])
+    delZ = np.absolute(Z[1] - Z[0])
 
     #for zn in range(len(Z)):
     for i in range(len(x)):
-        ix = scipy.absolute(X - x[i]).argmin()
-        iy = scipy.absolute(Y - y[i]).argmin()
-        iz = scipy.absolute(Z - z[i]).argmin()
+        ix = np.absolute(X - x[i]).argmin()
+        iy = np.absolute(Y - y[i]).argmin()
+        iz = np.absolute(Z - z[i]).argmin()
         
         dz = int(round(2*sz[i]/delZ))
 

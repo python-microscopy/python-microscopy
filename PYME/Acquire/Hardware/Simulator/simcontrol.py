@@ -1,9 +1,9 @@
-from . import fluor
-from . import wormlike2
 import json
-#import pylab
-import scipy
 import numpy as np
+import scipy
+
+from PYME.simulation import wormlike2
+from . import fluor
 from . import rend_im
 
 import logging
@@ -22,7 +22,7 @@ class PSFSettings(HasTraits):
     four_pi = Bool(False)
     
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group, ListEditor
+        from traitsui.api import View, Item
         #from PYME.ui.custom_traits_editors import CBEditor
         
         return View(Item(name='wavelength_nm'),
@@ -166,7 +166,7 @@ class SimController(object):
             label = 'PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if psf_settings.vectorial else 'scalar',
                                                                   psf_settings.NA, psf_settings.wavelength_nm, z_modes)
         else:
-            print('Setting PSF with zernike modes: %s' % z_modes)
+            logger.info('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
             

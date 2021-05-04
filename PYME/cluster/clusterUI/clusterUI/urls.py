@@ -26,6 +26,6 @@ urlpatterns = [
     url(r'^status/', include('clusterstatus.urls')),
     #url(r'^localization/', include('localization.urls')),
     path('localization/', include('localization.urls')),
-    url(r'^recipes/', include('recipes.urls')),
+    path('recipes/', include('recipes.urls')),
     url(r'^$', RedirectView.as_view(url='/files/')), #redirect the base view to files for now
 ]

@@ -6,9 +6,12 @@ import shutil
 
 import time
 import sys
+import logging
+from PYME.IO import clusterIO
 
 import pytest
-#pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
+if os.environ.get('AZURE_TEST', False):
+    pytestmark = pytest.mark.skip(reason="Doesn't seem to work on azure")
 
 procs = []
 tmp_root = None
@@ -21,11 +24,12 @@ def setup_module():
         
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer', '-r', tmp_root,  '-f', 'TEST', '-t', '-p', '%d' % (port_start + i), '--timeout-test=0.5'], stderr= sys.stderr, shell=False)
+        proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer', '-r', tmp_root,  '-f', 'TEST', '-t', '-p', '%d' % (port_start + i), '--timeout-test=0.5', '-a', 'local'], stderr= sys.stderr, shell=False)
         procs.append(proc)
         
     time.sleep(5)
     print('Launched servers')
+    print('Advertised services:\n------------------\n%s' % '\n'.join([str(s) for s in clusterIO.get_ns().get_advertised_services()]))
 
 
 def teardown_module():
@@ -41,6 +45,7 @@ def teardown_module():
     shutil.rmtree(tmp_root)
     
     
+
 def test_spooler(nFrames=50):
     ts = testClusterSpooling.TestSpooler(testFrameSize=[1024,256], serverfilter='TEST')
     ts.run(nFrames=nFrames)

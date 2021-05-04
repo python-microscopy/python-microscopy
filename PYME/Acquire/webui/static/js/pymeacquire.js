@@ -93,11 +93,29 @@
         })
     }
 
-    function dict_fill(key, value){
-        var d = {};
-        d[key] = value;
-        return d;
+    function update_stack_settings(settings){
+        console.log('updating stack', settings);
+        $.ajax({
+            url : "/stack_settings/update",
+            data : JSON.stringify(settings),
+            processData: false,
+            type: 'POST',
+            error: log_ajax_error,
+        })
     }
+
+    function update_spooler_settings(settings){
+        console.log('updating spooler', settings);
+        $.ajax({
+            url : "/spool_controller/settings",
+            data : JSON.stringify(settings),
+            processData: false,
+            type: 'POST',
+            error: log_ajax_error,
+        })
+    }
+
+    //
 
     function start_spooling(filename=null,max_frames=null){
         //console.log('updating state', state);
@@ -125,7 +143,8 @@
        methods:{
            set_position: function(axis, value){
                 //console.log(delta);
-                update_server_state(dict_fill('Positioning.' + axis, parseFloat(value)));
+                //update_server_state(dict_fill('Positioning.' + axis, parseFloat(value)));
+                update_server_state({['Positioning.' + axis]: parseFloat(value)});
            }
        }
     });
@@ -153,32 +172,83 @@
                </div>`,
         methods: {
             set_laser_power: function (lname, value) {
-                update_server_state(dict_fill('Lasers.' + lname + '.Power', parseFloat(value)));
+                //update_server_state(dict_fill('Lasers.' + lname + '.Power', parseFloat(value)));
+                update_server_state({['Lasers.' + lname + '.Power']: parseFloat(value)});
             },
             set_laser_on: function (lname, value) {
                 //console.log('turning ' + lname + ' on: ' + value);
-                update_server_state(dict_fill('Lasers.' + lname + '.On', value));
+                //update_server_state(dict_fill('Lasers.' + lname + '.On', value));
+                update_server_state({['Lasers.' + lname + '.On']: value});
             },
         }
     });
 
+    Vue.component('stack-settings', {
+       props: {value : Object,
+               show_dwell_time: {type: Boolean, default: false}},
+       template: `<div>
+                    <div class="input-group input-group-sm">
+                        <span class="form-control-sm">Axis:&nbsp&nbsp</span>
+                        <select  class="form-control form-control-sm" :value="value.ScanPiezo" v-on:change="update_setting('ScanPiezo', $event.target.value)">
+                            <option selected>z</option>
+                            <option>...</option>
+                          </select>
+                    </div>
+                    <div class="input-group input-group-sm">
+                    <span class="form-control-sm">Mode: </span>
+                    <select class="form-control form-control-sm" :value="value.ScanMode"  v-on:change="update_setting('ScanMode', $event.target.value)">
+                            <option>Middle and Number</option>
+                            <option>Start and End</option> </select>
+</div>
+<div class="form-row">
+<div class="input-group input-group-sm col">
+<span class="form-control-sm">Start: </span>
+<input class="form-control form-control-sm" type="number" step=.01 :value="value.StartPos"  v-on:change="update_setting('StartPos', $event.target.value)">
+<div class="input-group-append"><button class="btn-light">Set</button> </div>
+</div>
+<div class="input-group input-group-sm col">
+<span class="form-control-sm">End: </span>
+<input class="form-control form-control-sm" type="number" step=.01 :value="value.EndPos"  v-on:change="update_setting('EndPos', $event.target.value)">
+<div class="input-group-append"><button class="btn-light">Set</button> </div>
+</div>
+</div>
+<div class="form-row">
+<div class="input-group input-group-sm col">
+<span class="form-control-sm">Step size [um]: </span>
+<input class="form-control form-control-sm" type="number" :value="value.StepSize"  v-on:change="update_setting('StepSize', $event.target.value)">
+</div>
+<div class="input-group input-group-sm col">
+<span class="form-control-sm">Num slices: </span>
+<input class="form-control form-control-sm" type="number" :value="value.NumSlices"  v-on:change="update_setting('NumSlices', $event.target.value)">
+</div>
+<div class="input-group input-group-sm col" v-if="show_dwell_time">
+<span class="form-control-sm">Dwell time: </span>
+<input class="form-control form-control-sm" type="number" step=.01 :value="value.DwellFrames"  v-on:change="update_setting('DwellFrames', $event.target.value)">
+</div>
+</div>
+                   </div>
+                   
+                 `,
+        methods: {
+           update_setting: function(propname, value){
+               update_stack_settings({[propname] : value});
+           }
+
+        }
+    });
+
     var scope_state = {};
-    scope_state['Camera.IntegrationTime']=0.1 //default start option
+    scope_state['Camera.IntegrationTime']=0.1; //default start option
+
 
     var app = new Vue({
         el: '#app',
         data: {
-            message: 'Hello Vue!',
-            state: scope_state
-            }
-    });
-
-    var hw = new Vue({
-        el: '#hw',
-        data: {
-            message: 'Hello Vue!',
+            //message: 'Hello Vue!',
             state: scope_state,
-            spooler : {status:{spooling:false,},},
+            spooler : {status:{spooling:false,},
+                       settings:{z_stepped:false}},
+            stack : {},
             },
         computed: {
             integration_time_ms: function () {
@@ -192,7 +262,18 @@
                     return lname;
                 });
                 return laser_info;
+                },
+            spool_z_stepping: {
+                get: function (){
+                    if (this.spooler.settings.z_stepped){
+                        return 'true';
+                    } else return false;
+                },
+                set: function(newValue){
+                    update_spooler_settings({'z_stepped': newValue=='true'});
+                    //this.spooler.settings.z_stepped = (newValue == 'true');
                 }
+            }
             },
         methods:{
             update_server_state : update_server_state,
@@ -204,55 +285,30 @@
         }
     });
 
-    function get_state(){
-        $.ajax({
-            url: "/get_scope_state",
-            success: function(data){
-                app.state=data;
-                hw.state = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            }
+    //get initial values
+    $.ajax({url: "/get_scope_state", success: function(data){app.state=data;}});
+    $.ajax({url: "/spool_controller/info", success: function(data){app.spooler = data;}});
+    $.ajax({url: "/stack_settings/settings", success: function(data){app.stack = data;}});
 
-        })
+    function poll_updates(url, attrib){
+        var _poll = function(){
+            $.ajax({
+                url: url,
+                success: function(data) {
+                            app[attrib] = data;
+                            console.log('updated ' + attrib + ' on ' + app);
+
+                    },
+                complete: function(jqXHR, status){if (status == 'success') {_poll();} else {console.log('Error whilst polling ' + url + ', make sure server is up and try refreshing the page');}}
+            })
+        };
+        _poll();
     }
 
-    get_state();
 
-    function poll_state(){
-        $.ajax({
-            url: "/scope_state_longpoll",
-            success: function(data){
-                //console.log(data);
-                app.state=data;
-                hw.state = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            },
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_state();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                }
-
-        })
-    }
-
-    poll_state();
-
-    function poll_spooler(){
-        $.ajax({
-            url: "/spool_controller/info_longpoll",
-            success: function(data){
-                //console.log(data);
-                //app.state=data;
-                hw.spooler = data;
-                //$("#int_time").val(1000*app.state['Camera.IntegrationTime'])
-            },
-            complete: function(jqXHR, status){
-                    if (status == 'success') {poll_spooler();} else {console.log('Error during image polling, make sure server is up and try refreshing the page');}
-                }
-
-        })
-    }
-
-    poll_spooler();
+    poll_updates("/scope_state_longpoll", 'state');
+    poll_updates("/spool_controller/info_longpoll",  'spooler');
+    poll_updates("/stack_settings/settings_longpoll", 'stack');
 
 
     $(window).on('load', function(){$("#home-tab").tab('show');});

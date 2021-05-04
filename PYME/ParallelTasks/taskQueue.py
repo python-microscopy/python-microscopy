@@ -61,7 +61,7 @@ class TaskQueue:
         task = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
         task.queueID = self.queueID
-        task.initializeWorkerTimeout(time.clock())
+        task.initializeWorkerTimeout(time.time())
         with self.inProgressLock:
             self.tasksInProgress.append(task)
         
@@ -116,7 +116,7 @@ class TaskQueue:
 
     def checkTimeouts(self):
         with self.inProgressLock:
-            curTime = time.clock()
+            curTime = time.time()
             for it in self.tasksInProgress:
                 if 'workerTimeout' in dir(it):
                     if curTime > it.workerTimeout:

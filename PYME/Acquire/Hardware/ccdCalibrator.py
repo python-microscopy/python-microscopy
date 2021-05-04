@@ -28,6 +28,9 @@ import time
 global scope
 scope = None
 
+import logging
+logger = logging.getLogger(__name__)
+
 def setScope(sc):
     global scope
     scope = sc
@@ -94,11 +97,11 @@ class ccdCalibrator:
 
     def finish(self):
         import wx
-        print('Disconnecting')
+        logger.debug('Disconnecting')
         self.pa.onFrame.disconnect(self.tick)
         self.cam.SetEMGain(self.emgain)
         time.sleep(0.5)
-        print('Disconnected')
+        logger.debug('Disconnected')
         wx.CallAfter(self.plot)
         
     def plot(self):
@@ -140,7 +143,7 @@ class ccdCalibrator:
         self.pos += 1
         wx.CallAfter(self.pd.Update,self.pos)
         if self.pos < len(self.gains):
-            print('Setting EM Gain to %d' % self.gains[self.pos])
+            logger.debug('Setting EM Gain to %d' % self.gains[self.pos])
             self.cam.SetEMGain(self.gains[self.pos])
         else:
             self.finish()

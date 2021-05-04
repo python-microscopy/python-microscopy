@@ -750,7 +750,8 @@ class uc480Camera(Camera):
     def noise_properties(self):
         return {'ElectronsPerCount': self.GetElectronsPerCount(),
                 'ReadNoise': self.GetReadNoise(),
-                'ADOffset': self.GetADOffset()}
+                'ADOffset': self.GetADOffset(),
+                'SaturationThreshold': 2 ** self.nbits  - 1}
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata

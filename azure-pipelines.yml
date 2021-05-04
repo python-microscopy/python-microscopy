@@ -20,6 +20,7 @@ strategy:
 
 variables:
   PIP_CACHE_DIR: $(Pipeline.Workspace)/.pip
+  AZURE_TEST: 1
 
 steps:
 - task: UsePythonVersion@0

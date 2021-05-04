@@ -129,7 +129,7 @@ class PanSpool(afp.foldingPane):
         elif (self.spoolController.spoolType == 'Cluster'):
             self.rbSpoolCluster.SetValue(True)
         else:
-            print(self.spoolController.spoolType)
+            #print(self.spoolController.spoolType)
             self.rbSpoolFile.SetValue(True)
     
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -438,7 +438,7 @@ class PanSpool(afp.foldingPane):
             try:
                 q_scale = float(self.tQuantizeScale.GetValue()) / self.scope.cam.noise_properties['ElectronsPerCount']
             except (AttributeError, NotImplementedError):
-                print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
+                logger.warning("Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
                 q_scale = float(self.tQuantizeScale.GetValue())
         
             compSettings = {
@@ -472,13 +472,10 @@ class PanSpool(afp.foldingPane):
         
 
         try:
-            self.spoolController.StartSpooling(fn, #stack=stack, #compLevel = compLevel,
-                                               #pzf_compression_settings=self.get_compression_settings(),
-                                               #cluster_h5=self.cbClusterh5.GetValue()
-                                               )
+            self.spoolController.start_spooling(fn)
         except IOError as e:
             logger.exception('IO error whilst spooling')
-            ans = wx.MessageBox(str(e.message), 'Error', wx.OK)
+            ans = wx.MessageBox(str(e.strerror), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             
     def update_ui(self):

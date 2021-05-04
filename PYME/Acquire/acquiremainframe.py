@@ -412,7 +412,7 @@ class PYMEMainFrame(AUIFrame):
             panel.AddPane(pane)
         else:
             # a normal wx.Panel / wx.Window
-            print(panel, title, pinned, folded)
+            #print(panel, title, pinned, folded)
             item = afp.foldingPane(panel, -1, caption=title, pinned=pinned, folded=folded)
             pane.Reparent(item)
             item.AddNewElement(pane, priority=1)

@@ -21,7 +21,7 @@
 #
 ##################
 
-from scipy import *
+import numpy as np
 from scipy.integrate import odeint
 
 def flF2(N,t, argS):
@@ -30,7 +30,7 @@ def flF2(N,t, argS):
     dNa = -(Ab + Aad + Aad2)*I*Na + Ada*Nd
     dNd = Aad*I*Na - Ada*Nd + Ada2*Nd2
     dNd2 = Aad2*Nd - Ada2*Nd2
-    return array([dNa, dNd, dNd2])
+    return np.array([dNa, dNd, dNd2])
 
 
 def flF2Mod(p, t):
@@ -40,7 +40,7 @@ def flF2Mod(p, t):
     Nd2 = 0
     Ab,Aad,Ada, Aad2, Ada2 = p[2:]
     I = 1
-    a = integrate.odeint(flF2, [Na, Nd, Nd2], t, ((Ab,Aad,Ada, Aad2, Ada2,I),))
+    a = odeint(flF2, [Na, Nd, Nd2], t, ((Ab,Aad,Ada, Aad2, Ada2,I),))
     return a[:,0] + b
 
 
@@ -49,7 +49,7 @@ def flFsq(N,t, argS, Ia):
     Ab,Aad,Ada = argS
     I = 0
 
-    ind = floor(t/0.007)
+    ind = np.floor(t/0.007)
     #print len(Ia)
     if ind < len(Ia):
         I = Ia[ind]
@@ -57,7 +57,7 @@ def flFsq(N,t, argS, Ia):
     dNa = -(Ab + Aad)*I*Na**2 + Ada*Nd
     dNd = Aad*I*Na**2 - Ada*Nd
     #print dNa
-    return array([dNa, dNd])
+    return np.array([dNa, dNd])
 
 
 def flFsq1(N,t, argS):
@@ -67,7 +67,7 @@ def flFsq1(N,t, argS):
     dNa = -(Ab + Aad)*I*Na**2 + Ada*Nd
     dNd = Aad*I*Na**2 - Ada*Nd
     #print dNa
-    return array([dNa, dNd])
+    return np.array([dNa, dNd])
 
 
 def flFpow(N,t, argS):
@@ -77,7 +77,7 @@ def flFpow(N,t, argS):
     dNa = - Aad*I*Na**pow -Ab*I*Na + Ada*Nd
     dNd = Aad*I*Na**pow - Ada*Nd
     #print dNa
-    return array([dNa, dNd])
+    return np.array([dNa, dNd])
 
 
 #Model with thiol binding

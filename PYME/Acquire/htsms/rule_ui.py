@@ -13,6 +13,7 @@ from PYME.recipes.traits import HasTraits, Enum, Float, CStr
 import textwrap
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,7 @@ class ProtocolRules(OrderedDict):
         self._spool_controller = spool_controller
         self.posting_thread_queue = queue.Queue(posting_thread_queue_size)
         self._updated = dispatch.Signal()
+        self._updated.connect(self.update)
         
         self['default'] = RuleChain()
 
@@ -112,8 +114,8 @@ class ProtocolRules(OrderedDict):
         if not self.active:
             logger.info('inactive, check "active" to turn on auto analysis')
             return
-        
-        prot_filename = self._spool_controller.spooler.protocol.filename
+        spooler = self._spool_controller.spooler
+        prot_filename = spooler.protocol.filename
         prot_filename = '' if prot_filename is None else prot_filename
         protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
         logger.info('protocol name : %s' % protocol_name)
@@ -127,20 +129,36 @@ class ProtocolRules(OrderedDict):
             # not the right trigger for this protocol
             return
         
-        if len(rule_factory_chain) == 0:
+        if len(rule_factory_chain.rule_factories) == 0:
             logger.info('no rules in chain')
             return
         
         # set the context based on the input series
-        series_uri = self._spool_controller.spooler.getURL()
+        series_uri = spooler.getURL()
         spool_dir, series_stub = posixpath.split(series_uri)
         series_stub = posixpath.splitext(series_stub)[0]
-        context = {'spool_dir': spool_dir, 'series_stub': series_stub,
-                   'seriesName': series_uri, 'inputs': {'input': [series_uri]},
-                   'output_dir': posixpath.join(spool_dir, 'analysis')}
+        context = {
+            'spool_dir': spool_dir,  # do we need this? or typo in rule docs
+            'series_stub': series_stub,  # do we need this? or typo in rule docs
+            'seriesName': series_uri,  # Localization
+            'inputs': {'input': [series_uri]},  # Recipe
+            'output_dir': posixpath.join(spool_dir, 'analysis'), # Recipe
+            'spooler': spooler}  # SpoolLocalLocalization
 
         # rule chain is already linked, add context and push
-        rule_factory_chain.rule_factories[0].get_rule(context=context).push()
+        rule = rule_factory_chain.rule_factories[0].get_rule(context=context)
+        t = threading.Thread(target=rule.push)
+        t.start()
+        if self.posting_thread_queue.full():
+            self.posting_thread_queue.get_nowait().join()
+        self.posting_thread_queue.put_nowait(t)
+        
+    
+    def update(self, *args, **kwargs):
+        for p in self.keys():
+            factories = self[p].rule_factories
+            for ind in range(len(factories) - 1):
+                factories[ind].chain(factories[ind + 1])
 
 
 class ProtocolRuleFactoryListCtrl(wx.ListCtrl):
@@ -578,13 +596,13 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def OnAddLocalization(self, wx_event=None):
         self._localization_panel.OnAddLocalizationRule()
 
-from PYME.recipes.recipeGui import RecipeView, RecipeManager
+from PYME.recipes.recipeGui import RecipeView, RecipeManager, RecipePlotPanel
 class RuleRecipeView(RecipeView):
     def __init__(self, parent, recipes):
         wx.Panel.__init__(self, parent, size=(400, 100))
-        
         self.recipes = recipes
         recipes.recipeView = self  # weird plug
+        self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -627,15 +645,18 @@ class RuleRecipeView(RecipeView):
         
         #self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
         #                               style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-        
-        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(350, -1))
+        self.tRecipeText = wx.stc.StyledTextCtrl(self, -1, size=(400, -1))
         self._set_text_styling()
         
+                                       
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
         vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        
+        self.bApply.Disable()
+        self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
         
         hsizer1.Add(vsizer, 0, wx.EXPAND | wx.ALL, 2)
         
@@ -674,7 +695,7 @@ class ChainedAnalysisPanel(wx.Panel):
         recipe_manager : PYME.recipes.recipeGui.RecipeManager
             [description]
         default_pairings : dict
-            protocol keys with lists of RuleFactorys as values to prepopulate
+            protocol keys with RuleChains as values to prepopulate
             panel on start up
         """
         wx.Panel.__init__(self, parent, -1)
@@ -712,17 +733,10 @@ class ChainedAnalysisPanel(wx.Panel):
             self._set_up_defaults(default_pairings)
     
     def _set_up_defaults(self, pairings):
-        for protocol_name, rule_factory_list in pairings.items():
-            # make sure we've chained the rules
-            n_rules = len(rule_factory_list)
-            for s_ind, f_ind in enumerate(range(1, n_rules)):
-                rule_factory_list[s_ind].chain(rule_factory_list[f_ind])
-
+        for protocol_name, rule_chain in pairings.items():
             # add them to the protocol rules dict
-            self._protocol_rules[protocol_name] = rule_factory_list
+            self._protocol_rules[protocol_name] = rule_chain
         
-        # update the GUI
-        # self._protocol_rules_list.update_list()
         self._protocol_rules._updated.send(self)
 
     def OnRemoveProtocolRule(self, wx_event=None):
@@ -813,15 +827,14 @@ class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
         self.AddNewElement(add_rule_panel)
     
     def OnAddLocalizationRule(self, wx_event=None):
-        from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
-        #from PYME.Acquire.htsms.rule_ui import get_rule_tile
+        from PYME.cluster.rules import SpoolLocalLocalizationRuleFactory
         from PYME.IO.MetaDataHandler import DictMDHandler
         if self.chained_analysis_page is None:
             logger.error('chained_analysis_page attribute unset')
             return
         
         mdh = DictMDHandler(self.localization_mdh)
-        loc_rule = get_rule_tile(LocalizationRuleFactory)(analysisMetadata=mdh)
+        loc_rule = get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)
         self.chained_analysis_page.add_tile(loc_rule)
 
 class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
@@ -870,11 +883,10 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         scope : PYME.Acquire.microscope.microscope
             the microscope itself
         default_pairings : dict
-            [optional] protocol keys with lists of RuleFactorys as values to
+            [optional] protocol keys with RuleChains as values to
             prepopulate panel on start up. By default, None
         """
-        from PYME.recipes.recipeGui import RuleRecipeView, RuleRecipeManager
-        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings, LocalizationSettingsPanel
+        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
 
         scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()

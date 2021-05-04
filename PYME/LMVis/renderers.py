@@ -36,6 +36,7 @@ SAMPLE_MD_KEYS = [
     'Sample.SlideRef',
     'Sample.Creator',
     'Sample.Notes',
+    'Sample.Well',
     'Sample.Labelling',
     'AcquiringUser'
 ]

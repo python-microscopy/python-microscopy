@@ -68,11 +68,9 @@ ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 ncmapnames = list(ndat.keys())
 cm.cmapnames += ncmapnames
 for cmapname in ncmapnames:
-    cm.__dict__[cmapname] = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], cm.LUTSIZE)
-    cmapname_r = cmapname+'_r'
-    cmapdat_r = cm.revcmap(ndat[cmapname])
-    ndat[cmapname_r] = cmapdat_r
-    cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, cm.LUTSIZE)
+    ncm = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], cm.LUTSIZE)
+    cm.__dict__[cmapname] = ncm
+    cm.__dict__[cmapname+'_r']=ncm.reversed()
 
 #solid colour colormaps for VisGUI multichannel and isosurface display
 @register_cmap('R')

@@ -55,7 +55,75 @@ def locify(im, pixelSize=1, pointsPerPixel=0.1):
     z = pixelSize *(z[mcInd])
 
     return (x,y,z)
+
+
+def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
+    '''
+    Generate points from a signed distance function. Effectively does octree-like subdivision of the function domain to
+    assign points on a regular grid, then passes through a Monte-Carlo acceptance function to simulate labelling efficiency
     
+    Parameters
+    ----------
+    sdf : function
+        the signed distance function. Should be of the form dist = sdf(pts) where pts is a 3xN ndarray/
+    r_max: float
+        The maximum radius of the object (from centre)
+    centre : 3-tuple / array of float
+        The centre of the object
+    dx_min : float
+        The target side length of a voxel. Effectively a density parameter (density = 1/dx_min^3).
+    p : float
+        Monte-Carlo acceptance probability.
+
+    Returns
+    -------
+    
+    verts : 3xN ndarray of fluorophore positions
+
+    '''
+    dx = 1.2 * r_max
+    
+    vx, vy, vz = [v.ravel() for v in 1.2 * np.mgrid[-1:2, -1:2, -1:2]]
+    
+    verts = dx * np.vstack([vx, vy, vz])
+    #print(verts.shape)
+    
+    c_offs = np.array(
+        [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]])
+    #test_offs =
+    
+    while dx > dx_min:
+        dx /= 2.0
+        #test and discard.
+        corners = [verts + dx * c_offs[i][:, None] for i in range(8)]
+        corner_dists = [sdf(c) for c in corners] + [sdf(verts), ]
+        
+        #corner_dists = [sdf(verts),]
+        
+        #contains_points = np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 9
+        # for some reason the sign test doesn't seem to work properly. Use a generous
+        # distance based test instead
+        contains_points = np.min([np.abs(c) for c in corner_dists], axis=0) < 2 * dx
+        
+        verts = verts[:, contains_points]
+        #print(verts.shape)
+        
+        #subdivide
+        verts = np.concatenate([verts + dx * c_offs[i][:, None] for i in range(8)], axis=1)
+        #print(verts.shape)
+    
+    # because we use a fairly relaxed / conservative criterea for discarding above (which will
+    # effectively match the cell containing the surface AND it's neighbours)
+    # we perform a more stringent test on the final set of points.
+    corners = [verts + dx * c_offs[i][:, None] for i in range(8)]
+    corner_dists = [sdf(c) for c in corners]
+    
+    contains_points = (np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 8) | (sdf(verts) < dx)
+    verts = verts[:, contains_points]
+    
+    #print(verts.shape)
+    
+    return verts[:, np.random.rand(verts.shape[1]) < p]
 
 def testPattern():
     '''generate a test pattern'''

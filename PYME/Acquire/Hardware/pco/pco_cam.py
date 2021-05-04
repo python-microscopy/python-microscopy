@@ -51,8 +51,13 @@ class PcoCam(Camera):
         self.initalized = True
         self._roi = None
         self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
-        self._ccd_temp = 0  # Store the sensor temperature
+        self._ccd_temp = 0 
+        self._ccd_temp_set_point = 0
+        self._electr_temp = 0
         self._cycle_time = 0
+        self._integ_time = 0
+        self._binning_x = 0
+        self._binning_y = 0
         self.recording = False
 
     @property
@@ -63,7 +68,7 @@ class PcoCam(Camera):
         self.desc = self.cam.sdk.get_camera_description()
 
     def ExpReady(self):
-        return self.GetNumImsBuffered() >= 1
+        return self.recording and (self.GetNumImsBuffered() >= 1)
 
     def GetName(self):
         return self.cam.sdk.get_camera_name()['camera name']
@@ -109,10 +114,11 @@ class PcoCam(Camera):
         time = np.clip(time, lb, ub)
             
         self.cam.set_exposure_time(time)
+        d = self.cam.sdk.get_delay_exposure_time()
+        self._integ_time = d['exposure']*timebase[d['exposure timebase']] 
 
     def GetIntegTime(self):
-        d = self.cam.sdk.get_delay_exposure_time()
-        return d['exposure']*timebase[d['exposure timebase']] 
+        return self._integ_time
 
     def GetCycleTime(self):
         return self._cycle_time
@@ -141,9 +147,10 @@ class PcoCam(Camera):
         value = np.clip(value, 1, b_max)
 
         self.cam.sdk.set_binning(value, self.GetVerticalBin())
+        self._binning_x = self.cam.sdk.get_binning()['binning x']
 
     def GetHorizontalBin(self):
-        return self.cam.sdk.get_binning()['binning x']
+        return self._binning_x
 
     def SetVerticalBin(self, value):
         b_max, step_type = self.desc['max. binning vert'], self.desc['binning vert stepping']
@@ -157,9 +164,10 @@ class PcoCam(Camera):
         value = np.clip(value, 1, b_max)
 
         self.cam.sdk.set_binning(self.GetHorizontalBin(), value)
+        self._binning_y = self.cam.sdk.get_binning()['binning y']
 
     def GetVerticalBin(self):
-        return self.cam.sdk.get_binning()['binning y']
+        return self._binning_y
 
     def GetSupportedBinning(self):
         import itertools
@@ -239,14 +247,13 @@ class PcoCam(Camera):
         return self._roi
     
     def GetElectrTemp(self):
-        # FIXME: should this be 'power temperature'?
-        return self.cam.sdk.get_temperature()['camera temperature'] 
+        return self._electr_temp
 
     def GetCCDTemp(self):
-        return self.cam.sdk.get_temperature()['sensor temperature']
+        return self._ccd_temp
 
     def GetCCDTempSetPoint(self):
-        return self.cam.sdk.get_cooling_setpoint_temperature()['cooling setpoint temperature']
+        return self._ccd_temp_set_point
 
     def SetCCDTemp(self, temp):
         lb = self.desc['Min Cool Set DESC']
@@ -254,6 +261,16 @@ class PcoCam(Camera):
         temp = np.clip(temp, lb, ub)
 
         self.cam.sdk.set_cooling_setpoint_temperature(temp)
+        self._ccd_temp_set_point = temp
+        self._get_temps()
+
+    def _get_temps(self):
+        # NOTE: temperature only gets probed when acquisition starts/stops (which can be fairly
+        # irregularly - to the point of not being useful).
+        # TODO - find a way to safely call this while the camera is running
+        d = self.cam.sdk.get_temperature()
+        self._ccd_temp = d['sensor temperature']
+        self._electr_temp = d['camera temperature']  # FIXME: should this be 'power temperature'?
 
     def GetAcquisitionMode(self):
         return self._mode
@@ -265,10 +282,12 @@ class PcoCam(Camera):
             raise RuntimeError('Mode %d not supported' % mode)
 
     def StartExposure(self):
-        # self.StopAq()
-        self.n_read = 0
+        self.StopAq()
+        self._get_temps()
+
         d = self.cam.sdk.get_delay_exposure_time()
-        self._cycle_time = d['exposure']*timebase[d['exposure timebase']] \
+        self._integ_time = d['exposure']*timebase[d['exposure timebase']] 
+        self._cycle_time = self._integ_time \
                            + d['delay']*timebase[d['delay timebase']]
         if self._mode == self.MODE_SINGLE_SHOT:
             self.cam.record(number_of_images=1, mode='sequence')
@@ -284,7 +303,21 @@ class PcoCam(Camera):
 
     def StopAq(self):
         self.recording = False
-        self.cam.stop()
+        if self.cam.rec.recorder_handle.value is not None:
+            # NOTE: probably don't need this if statement thanks to the self.recording flag,
+            # but better to be safe
+            self.cam.rec.stop_record()
+            self.cam.rec.delete()
+
+        self._integ_time = 0
+        self._cycle_time = 0
+        self.buffer_size = 0
+        self.n_read = 0
+        
+        # read the temp in StopAq too, as this has the side effect of making sure we have
+        # a reasonably correct temperature in acquisition metadata (as we
+        # stop acquisition, record metadata, and then restart)
+        self._get_temps()
 
     def GetNumImsBuffered(self):
         if self.recording:

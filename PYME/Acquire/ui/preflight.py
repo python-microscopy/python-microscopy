@@ -21,21 +21,38 @@
 #
 ################
 
-def ShowPreflightResults(parent, failedChecks):
-    import wx
+import logging
+logger = logging.getLogger(__name__)
+
+def ShowPreflightResults(failedChecks, preflight_mode='interactive', parent=None):
     if len(failedChecks) == 0:
         return True
 
     else:
-        #print failedChecks
-        errormsgs = '\n'.join(['- ' + c.message for c in failedChecks])
-        msg = 'Preflight check found the following potential problems:\n\n' + errormsgs + '\n\nDo you wish to continue?'
-        dlg = wx.MessageDialog(parent, msg, 'Preflight Check:', wx.YES_NO|wx.NO_DEFAULT|wx.ICON_ERROR)
-
-        ret = dlg.ShowModal()
-        dlg.Destroy()
-
-        return ret == wx.ID_YES
+        if preflight_mode == 'interactive':
+            import wx
+            #print failedChecks
+            errormsgs = '\n'.join(['- ' + c.message for c in failedChecks])
+            msg = 'Preflight check found the following potential problems:\n\n' + errormsgs + '\n\nDo you wish to continue?'
+            dlg = wx.MessageDialog(parent, msg, 'Preflight Check:', wx.YES_NO|wx.NO_DEFAULT|wx.ICON_ERROR)
+    
+            ret = dlg.ShowModal()
+            dlg.Destroy()
+    
+            return ret == wx.ID_YES
+        elif preflight_mode == 'warn':
+            import warnings
+            for c in failedChecks:
+                warnings.warn('PREFLIGHT FAILURE: ' + c.message)
+                logger.warning('PREFLIGHT FAILURE: ' + c.message)
+                
+            return True
+        else: # 'abort'
+            for c in failedChecks:
+                logger.error('PREFLIGHT FAILURE: ' + c.message)
+                
+            logger.error('Aborting series due to preflight failures')
+        
 
 
 

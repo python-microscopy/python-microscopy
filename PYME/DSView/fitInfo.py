@@ -30,6 +30,9 @@ import numpy as np
 from PYME.contrib import wxPlotPanel
 #from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
+import logging
+logger = logging.getLogger(__name__)
+
 class FitInfoPanel(wx.Panel):
     def __init__(self, parent, fitResults, mdh, ds=None, id=-1):
         wx.Panel.__init__(self, id=id, parent=parent)
@@ -76,6 +79,7 @@ class FitInfoPanel(wx.Panel):
         self.fitResults = results
         self.mdh = mdh
         self.fitViewPan.SetFitResults(results, mdh)
+        logger.debug('running SetResults')
         
 
     def genResultsText(self, index):
@@ -155,6 +159,7 @@ class FitInfoPanel(wx.Panel):
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)
+        logger.debug('running UpdateDisp')
         
     def DrawOverlays(self, vp, dc):
         do = vp.do
@@ -215,6 +220,7 @@ class FitInfoPanel(wx.Panel):
                 
                 dc.DrawLine(pxs-3, pys-3, pxs+3, pys+3)
                 dc.DrawLine(pxs-3, pys+3, pxs+3, pys-3)
+        logger.debug('running DrawOverlays')
 
 
 class fitDispPanel(wxPlotPanel.PlotPanel):
@@ -397,15 +403,19 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 #            a, ed = numpy.histogram(self.fitResults['tIndex'], self.Size[0]/2)
 #            print float(numpy.diff(ed[:2]))
 
-            self.subplot1.cla()
-            self.subplot2.cla()
-            self.subplot3.cla()
-            self.subplot4.cla()
-            self.subplot5.cla()
+            
 #            self.subplot1.plot(ed[:-1], a/float(numpy.diff(ed[:2])), color='b' )
 #            self.subplot1.set_xticks([0, ed.max()])
 #            self.subplot1.set_yticks([0, numpy.floor(a.max()/float(numpy.diff(ed[:2])))])
             if not i is None:
+                # only clear the panels if we have been called with a valid fitResults index
+                self.subplot1.cla()
+                self.subplot2.cla()
+                self.subplot3.cla()
+                self.subplot4.cla()
+                self.subplot5.cla()
+                logger.debug('in draw: clearing panels')
+            
                 fri = self.fitResults[i]
                 #print fri
                 #print fri['tIndex'], slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y'])
@@ -415,9 +425,11 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 
                 self.subplot1.imshow(imd, interpolation='nearest', cmap=cm.hot)
                 self.subplot1.set_title('Data')
-
+                logger.debug('in draw: showing ROI image')
+                
+                logger.debug('in draw: importing fitMod')
                 fitMod = __import__('PYME.localization.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
-                #print dir()
+                logger.debug('in draw: imported fitMod')
 
                 if 'genFitImage' in dir(fitMod):
                     imf = fitMod.genFitImage(fri, self.mdh).squeeze()
@@ -428,12 +440,15 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                     self.subplot3.set_title('Residuals')
                     self.subplot4.plot(imd.sum(0))
                     self.subplot4.plot(imf.sum(0))
-                    self.subplot5.plot(np.hstack([imd[:,:(imd.shape[1]/2)].sum(1), imd[:,(imd.shape[1]/2):].sum(1)]))
-                    self.subplot5.plot(np.hstack([imf[:,:(imd.shape[1]/2)].sum(1), imf[:,(imd.shape[1]/2):].sum(1)]))
+                    # required for indexing: changed to explicit integer division below
+                    self.subplot5.plot(np.hstack([imd[:,:(imd.shape[1]//2)].sum(1), imd[:,(imd.shape[1]//2):].sum(1)]))
+                    self.subplot5.plot(np.hstack([imf[:,:(imd.shape[1]//2)].sum(1), imf[:,(imd.shape[1]//2):].sum(1)]))
                     #self.subplot5.plot(imf.sum(1))
-                    
-
-
+                    logger.debug('in draw: plotting curves')
+                else:
+                    logger.debug('in draw: fitModel has no genFitImage function')
+            else:
+                logger.debug('running draw with i as none')
 
             
 #            self.subplot2.plot(ed[:-1], numpy.cumsum(a), color='g' )
@@ -441,3 +456,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 #            self.subplot2.set_yticks([0, a.sum()])
 
             self.canvas.draw()
+            if not i is None:
+                logger.debug('running draw, i = %d' % i)
+            else:
+                logger.debug('running draw in NONE mode!!!')

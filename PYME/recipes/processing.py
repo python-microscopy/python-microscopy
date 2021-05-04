@@ -118,6 +118,23 @@ class SelectLabel(Filter):
     def completeMetadata(self, im):
         im.mdh['Processing.SelectedLabel'] = self.label
 
+@register_module('SelectLargestLabel') 
+class SelectLargestLabel(Filter):
+    """Creates a mask corresponding to all pixels with the largest label
+    
+    NOTE: the input image must be a labeled image (e.g. the output of `Processing.Label`) in which contiguous
+    areas have unique integer IDs
+    """
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        uni, counts = np.unique(data[data > 0], return_counts=True)
+        self.label = uni[np.argmax(counts)]
+        mask = (data == self.label)
+        return mask
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.SelectedLabel'] = self.label
+
 @register_module('LocalMaxima')         
 class LocalMaxima(Filter):
     threshold = Float(.3)
@@ -1818,12 +1835,13 @@ class AverageFramesByZStep(ModuleBase):
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
 
+        # FIXME  - make this follow the correct event dtype
         fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
         averaged = ImageStack(new_stack, mdh=MetaDataHandler.NestedClassMDHandler(image_stack.mdh), events=fudged_events)
 
         # fudge metadata, leaving breadcrumbs
         averaged.mdh['Camera.CycleTime'] = cycle_time
-        averaged.mdh['StackSettings.NumSteps'] = n_steps
+        averaged.mdh['StackSettings.NumSlices'] = n_steps
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
@@ -1868,8 +1886,8 @@ class ResampleZ(ModuleBase):
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
 
         # generate grid for sampling
-        xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
-                                 indexing='ij')
+        new_z = np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling)
+        xx, yy, zz = np.meshgrid(x, y, new_z, indexing='ij')
         # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
         uni, counts = np.unique(z_vals, return_counts=True)
         if np.any(counts > 1):
@@ -1881,11 +1899,17 @@ class ResampleZ(ModuleBase):
             interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
-        regular_stack = ImageStack(regular, mdh=MetaDataHandler.NestedClassMDHandler(stack.mdh))
-
-        regular_stack.mdh['RegularizedStack'] = True
-        regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
-        regular_stack.mdh['voxelsize.z'] = self.z_sampling
+        mdh = MetaDataHandler.DictMDHandler({
+            'RegularizedStack': True,
+            'StackSettings.StepSize': self.z_sampling,
+            'StackSettings.StartPos': new_z[0],
+            'StackSettings.EndPos': new_z[-1],
+            'StackSettings.NumSlices': len(new_z),
+            'voxelsize.z': self.z_sampling
+        })
+        mdh.mergeEntriesFrom(stack.mdh)
+        
+        regular_stack = ImageStack(regular, mdh=mdh)
 
         namespace[self.output] = regular_stack
 
@@ -1971,7 +1995,7 @@ class Projection(Filter):
     TODO - make this more efficient - we currently force the whole stack into memory
     """
     
-    kind = Enum(['Mean', 'Max', 'Median', 'Std', 'Min'])
+    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min'])
     axis = Int(2)
     
     processFramesIndividually = False
@@ -1979,6 +2003,8 @@ class Projection(Filter):
     def applyFilter(self, data, chanel_num, frame_num, image):
         if self.kind == 'Mean':
             return np.mean(data, axis=int(self.axis))
+        if self.kind == 'Sum':
+            return np.sum(data, axis=int(self.axis))
         if self.kind == 'Max':
             return np.max(data, axis=int(self.axis))
         if self.kind == 'Median':
