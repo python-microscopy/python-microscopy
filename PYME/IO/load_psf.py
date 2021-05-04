@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def load_psf(filename):
     """Load a PSF from an image file"""
     img = ImageStack(filename=filename)
-    ps = img.data[:, :, :].squeeze()
+    ps = img.data_xytc[:, :, :,0].squeeze()
     vox_nm = img.voxelsize_nm
     
     #sanity checks
