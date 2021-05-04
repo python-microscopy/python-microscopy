@@ -90,7 +90,10 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         return r
     
     def getSlice(self, ind):
-        if self.ndim == 3:
+        if self.ndim == 2:
+            assert(ind == 0)
+            return self[:,:]
+        elif self.ndim == 3:
             #3D
             return self[:, :, ind].squeeze()
         elif self.ndim == 4:
@@ -101,6 +104,8 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
             ti = (ind // self.shape[2]) % self.shape[3]
             ci = ind //(self.shape[3]*self.shape[2])
             return self[:,:,zi, ti, ci].squeeze()
+        else:
+            raise RuntimeError('unsupported ndim = %d' % ndim)
     
     def getSliceShape(self):
         return tuple(self.shape[:2])

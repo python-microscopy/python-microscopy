@@ -107,7 +107,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.aspect = 1.
 
-        self.slice = None 
+        self._slice = None
+        self._sc = None
         
         self.overlays = []
         
@@ -668,9 +669,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             s = self.CalcImSize()
             self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
-            if not self.slice == self.do.slice:
+            if (self._slice != self.do.slice) or (self._sc != sc):
+                #print('recentering')
                 #if the slice has changed, change our aspect and do some
-                self.slice = self.do.slice
+                self._slice = self.do.slice
+                self._sc = sc
                 #if not event is None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
                 #recenter the view
                 if(self.do.slice == self.do.SLICE_XY):
@@ -688,10 +691,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
                 sx,sy =self.imagepanel.GetClientSize()
 
-                #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
                 ppux, ppuy = self.GetScrollPixelsPerUnit()
-                #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
-                #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
                 self.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
 
             #self.imagepanel.Refresh()
@@ -1013,7 +1013,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
             _s = 1.0/(2**level)
             
-            x0_, y0_, sX_, sY_ = [int(numpy.ceil(v)) for v in [x0_, y0_, sX_, sY_]]
+            x0_, y0_, sX_, sY_ = [int(numpy.ceil(v*_s)) for v in [x0_, y0_, sX_, sY_]]
             
             # x0_ = int(numpy.ceil(x0_*_s))
             # y0_ = int(y0_*_s)

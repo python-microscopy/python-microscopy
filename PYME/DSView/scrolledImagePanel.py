@@ -147,6 +147,7 @@ class ScrolledImagePanel(wx.Panel):
         return (1,1)
 
     def Scroll(self, x, y):
+        self.xOff, self.yOff = x, y
         self.scrollX.SetThumbPosition(x)
         self.scrollY.SetThumbPosition(y)
         self.imagepanel.Refresh()
@@ -168,11 +169,11 @@ class ScrolledImagePanel(wx.Panel):
             self.RefreshScrollbars()
         event.Skip()
 
-    def Scroll(self, dx, dy):
-        self.xOff += dx
-        self.yOff += dy
-
-        self.RefreshScrollbars()
+    # def Scroll(self, dx, dy):
+    #     self.xOff += dx
+    #     self.yOff += dy
+    #
+    #     self.RefreshScrollbars()
 
 
     

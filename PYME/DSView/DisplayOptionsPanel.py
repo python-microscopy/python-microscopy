@@ -72,25 +72,15 @@ class OptionsPanel(wx.Panel):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             dispSize = (100, 80)
 
+        hd = self.do.get_hist_data()
+        
         for i in range(len(self.do.Chans)):
             ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
 
             id = wx.NewId()
             self.hIds.append(id)
-            if self.do.ds.ndim < 5:
-                c = self.do.ds[:,:,self.do.zp, self.do.Chans[i]].real.ravel()
-            else:
-                c = self.do.ds[:, :, self.do.zp, self.do.tp, self.do.Chans[i]].real.ravel()
-                
-            if np.iscomplexobj(c):
-                if self.do.complexMode in ['real', 'imag coloured']:
-                    c = c.real
-                elif self.do.complexMode == 'imag':
-                    c = c.imag
-                elif self.do.complexMode == 'angle':
-                    c = np.angle(c)
-                else:
-                    c = np.abs(c)
+            
+            c = hd[i]
                     
             hClim = histLimits.HistLimitPanel(self, id, c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
 
@@ -216,6 +206,13 @@ class OptionsPanel(wx.Panel):
         
         self.do.WantChangeNotification.append(self.OnDoChange)
 
+        self._hists_stale = True
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        
+    def OnIdle(self, evt):
+        if self._hists_stale:
+            self._refresh_hists()
+
     def OnOptimise(self, event):
         self.do.Optimise()
         self.RefreshHists()
@@ -300,7 +297,12 @@ class OptionsPanel(wx.Panel):
             hClim.SetValueAndFire((t,t))
 
 
+    
     def RefreshHists(self):
+        self._hists_stale = True
+        
+    def _refresh_hists(self):
+        self._hists_stale = False
         d = self.do.get_hist_data()
         for i in range(len(self.do.Chans)):
             # if self.do.ds.ndim >= 5:

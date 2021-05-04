@@ -85,6 +85,19 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         recipe = self.recipes.activeRecipe
         dg = recipe.dependancyGraph()
 
+        #if recipe.failed:
+        #    self.figure.patch.set_facecolor('red')
+        #    self.figure.patch.set_alpha(0.1)
+        #else:
+        #    self.figure.patch.set_facecolor('grey')
+        #    self.figure.patch.set_alpha(0)
+        
+        if recipe.failed:
+            c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND)
+            self.SetColor(wx.Colour(255, c.green, c.blue, c.alpha).Get())
+        else:
+            self.SetColor()
+        
         #Find the connecting lines
         node_positions, connecting_lines = recipeLayout.layout(dg)
 

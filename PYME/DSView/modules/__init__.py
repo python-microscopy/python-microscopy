@@ -25,6 +25,7 @@
 import glob
 import os
 import weakref
+import time
 
 from imp import reload
 
@@ -115,7 +116,11 @@ def loadModule(modName, dsviewer):
     # record dsviewer keyw so we can warn if we inject into dsviewer class
     # part of module injection deprecation
     dsv_keys = list(dsviewer.__dict__.keys())
+    t1 = time.time()
     ret = mod.Plug(dsviewer)
+    dt = time.time() - t1
+    
+    logger.debug('%s.Plug() took %3.2f s' % (modName, dt))
     
     if list(dsviewer.__dict__.keys()) != dsv_keys:
         logger.warning('Plugin [%s] injects into dsviewer namespace, could result in circular references' % modName)

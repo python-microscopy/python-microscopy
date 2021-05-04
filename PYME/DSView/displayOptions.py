@@ -374,8 +374,8 @@ class DisplayOpts(object):
         chan_d = []
 
         sx, sy = self.ds.shape[:2]
-        xr = (max(self.xp - 256, 0), min(self.xp + 256, sx))
-        yr = (max(self.yp - 256, 0), min(self.yp + 256, sy))
+        xr = (max(self.xp - 50, 0), min(self.xp + 50, sx))
+        yr = (max(self.yp - 50, 0), min(self.yp + 50, sy))
         
         for i in range(len(self.Chans)):
             if self.ds.ndim >= 5:

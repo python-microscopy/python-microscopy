@@ -212,6 +212,7 @@ class Recipe(HasTraits):
                     #record our error so that we can associate it with a module
                     m._last_error = traceback.format_exc()
                     self.failed = True
+                    self._failing_module = m
                     
                     # make sure we didn't leave any partial results
                     logger.debug('removing failed module dependencies')

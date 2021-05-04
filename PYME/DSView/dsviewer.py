@@ -496,10 +496,14 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    #from PYME.util import mProfile
+    #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
     print('Finished main loop')
+    #mProfile.profileOff()
+    #mProfile.report()
 
 
 if __name__ == "__main__":
