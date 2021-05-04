@@ -364,6 +364,8 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     Also estimates the volume of the shell, the anisotropy of the shell, and
     the standard deviation along its principle axes (if filled with a uniform
     distribution)
+    
+    TODO - rename/refactor. This has too much logic in the recipe module itself, it also feels very special case and the name might make it hard to discover.
     """
     input_shell = Input('harmonic_shell')
 
