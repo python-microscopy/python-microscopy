@@ -732,6 +732,18 @@ class ScaledShell(object):
             errors[ind] = self._distance_error(query, vector, starting_point)
 
         return guess_distances[np.argmin(np.abs(errors))]
+    
+    def approximate_image_bounds(self, d_zenith=0.1, d_azimuth=0.1):
+        from PYME.IO.image import ImageBounds
+        
+        zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith,
+                                   0:(2 * np.pi + d_azimuth):d_azimuth]
+
+        x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
+
+        return ImageBounds(x_shell.min(), y_shell.min(), 
+                           x_shell.max(), y_shell.max(),
+                           z_shell.min(), z_shell.max())
 
 class SHShell(ScaledShell):
     '''

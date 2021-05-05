@@ -354,6 +354,108 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
             pass
         namespace[self.output_mapped] = points
 
+@register_module('SHShellRadiusDensityEstimate')
+class SHShellRadiusDensityEstimate(ModuleBase):
+    """
+    Estimate the normalized radius histogram for a uniform distribution within
+    the shell.
+    TODO: make more generic re: SDF / other surfaces
+
+    Also estimates the volume of the shell, the anisotropy of the shell, and
+    the standard deviation along its principle axes (if filled with a uniform
+    distribution)
+    
+    TODO - rename/refactor. This has too much logic in the recipe module itself, it also feels very special case and the name might make it hard to discover.
+    """
+    input_shell = Input('harmonic_shell')
+
+    r_bin_spacing = Float(0.05)
+    sampling_nm = ListFloat([75, 75, 75])
+    jitter_iterations = Int(3)
+
+    output = Output('r_uniform_kde')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import spherical_harmonics
+        from PYME.IO import MetaDataHandler
+
+        shell = namespace[self.input_shell]
+        if isinstance(shell, tabular.TabularBase):
+            shell = spherical_harmonics.ScaledShell.from_tabular(shell)
+        
+        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing)
+        bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+        out_hist = np.zeros(len(bin_centers), float)
+
+        # get shell bounds, make grid within
+        shell_bounds = shell.approximate_image_bounds()
+        xv = np.arange(shell_bounds.x0, shell_bounds.x1 + self.sampling_nm[0],
+                       self.sampling_nm[0])
+        yv = np.arange(shell_bounds.y0, shell_bounds.y1 + self.sampling_nm[1],
+                       self.sampling_nm[1])
+        zv = np.arange(shell_bounds.z0, shell_bounds.z1 + self.sampling_nm[2],
+                       self.sampling_nm[2])
+        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij')
+
+        v_estimates = []
+        sdev_estimates = []
+        n_choose = 10000
+        
+        for _ in range(self.jitter_iterations):
+            xr, yr, zr = np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv))
+            xr = (xr - 0.5) * self.sampling_nm[0] + x
+            yr = (yr - 0.5) * self.sampling_nm[1] + y
+            zr = (zr - 0.5) * self.sampling_nm[2] + z
+            azi, zen, r = shell.shell_coordinates((xr, yr, zr))
+            r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
+                                                            shell.coefficients,
+                                                            azi, zen)
+            inside = r < r_shell
+            N = np.sum(inside)
+            r_norm = r[inside] / r_shell[inside]
+            # sum-normalize this iteration and add to output
+            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / N
+
+            # record volume estimate
+            v_estimates.append(N)
+            # estimate spread along principle axes of the shell
+            X = np.vstack([xr[inside], yr[inside], zr[inside]])
+            if N > n_choose:
+                # downsample to avoid memory error
+                X = X[:, np.random.choice(N, n_choose, replace=False)]
+            # TODO - do we need to be mean-centered?
+            X = X - X.mean(axis=1)[:, None]
+            _, s, _ = np.linalg.svd(X.T)
+            # svd cov is not normalized, handle that
+            sdev_estimates.append(s / np.sqrt(X.shape[1] - 1))  # with bessel's correction
+        
+        # finish the average
+        out_hist = out_hist / self.jitter_iterations
+        # finish the volume calculation, convert from nm^3 to um^3
+        volume = np.mean(v_estimates) * (np.prod(self.sampling_nm) / (1e9))
+        # average the standard deviation estimates
+        standard_deviations = np.mean(np.stack(sdev_estimates), axis=0)
+        # similar to Basser, P. J., et al. doi.org/10.1006/jmrb.1996.0086
+        # note that singular values are square roots of the eigenvalues. Use 
+        # the sample standard deviation rather than pop.
+        anisotropy = np.sqrt(np.var(standard_deviations**2, ddof=1)) / (np.sqrt(3) * np.mean(standard_deviations**2))
+        
+        res = tabular.DictSource({
+            'bin_centers': bin_centers,
+            'counts': out_hist
+        })
+        try:
+            res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
+        except AttributeError:
+            res.mdh = MetaDataHandler.DictMDHandler()
+        
+        res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
+        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.tolist()
+        res.mdh['SHShellRadiusDensityEstimate.Anisotropy'] = float(anisotropy)
+
+        namespace[self.output] = res
+
 
 @register_module('ImageMaskFromSphericalHarmonicShell')
 class ImageMaskFromSphericalHarmonicShell(ModuleBase):
@@ -386,6 +488,9 @@ class ImageMaskFromSphericalHarmonicShell(ModuleBase):
         from PYME.IO.MetaDataHandler import DictMDHandler, origin_nm
 
         shell = namespace[self.input_shell]
+        if isinstance(shell, tabular.TabularBase):
+            from PYME.Analysis.points import spherical_harmonics
+            shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         image_bound_source = namespace[self.input_image_bound_source]
         # TODO - make bounds estimation more generic - e.g. to match an existing image.
         b = ImageBounds.estimateFromSource(image_bound_source)
