@@ -95,15 +95,15 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
             return self[:,:]
         elif self.ndim == 3:
             #3D
-            return self[:, :, ind].squeeze()
+            return np.atleast_2d(self[:, :, ind].squeeze())
         elif self.ndim == 4:
             #4D. getSlice should collapse last 2 dimensions
-            return self[:,:,ind % self.shape[2], ind // self.shape[2]].squeeze()
+            return np.atleast_2d(self[:,:,ind % self.shape[2], ind // self.shape[2]].squeeze())
         elif self.ndim == 5:
             zi = ind % self.shape[2]
             ti = (ind // self.shape[2]) % self.shape[3]
             ci = ind //(self.shape[3]*self.shape[2])
-            return self[:,:,zi, ti, ci].squeeze()
+            return np.atleast_2d(self[:,:,zi, ti, ci].squeeze())
         else:
             raise RuntimeError('unsupported ndim = %d' % ndim)
     

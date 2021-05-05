@@ -286,10 +286,15 @@ class GraphViewPanel(wx.Panel):
         else:
             xvals = self.xvals
 
-        for i in range(self.do.ds.shape[3]):
-            self.axes.plot(xvals, self.do.ds[:,self.do.yp, self.do.zp, i].squeeze(), label=self.do.names[i])
+        n_chans = self.do.ds.shape[self.do.ds.ndim -1]
+        
+        for i in range(n_chans):
+            if self.do.ds.ndim >= 5:
+                self.axes.plot(xvals, self.do.ds[:, self.do.yp, self.do.zp, self.do.tp, i].squeeze(), label=self.do.names[i])
+            else:
+                self.axes.plot(xvals, self.do.ds[:,self.do.yp, self.do.zp, i].squeeze(), label=self.do.names[i])
 
-        if self.do.ds.shape[3] > 1:
+        if n_chans > 1:
             self.axes.legend()
 
         self.axes.grid()
