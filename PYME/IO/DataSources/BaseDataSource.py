@@ -191,7 +191,7 @@ class XYTCDataSource(BaseDataSource):
         return r
     
 def _slice_len(s):
-    return (s.stop - s.start) // s.step
+    return int(np.ceil((s.stop - s.start) / s.step))
 
 class XYZSubvolume(object):
     def __init__(self, datasource, t=0, c=0):
