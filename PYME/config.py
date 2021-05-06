@@ -207,6 +207,9 @@ nodeserver-num_workers : default= CPU count. Number of workers to launch on an i
 
 ruleserver-retries : default = 3. [new-style task distribution]. The number of times to retry a given task before it is deemed to have failed.
 
+rulenodeserver-nonlocal : toggle whether to bid for non-local tasks if no local
+    tasks are found. Uses should default to True.
+
 httpspooler-chunksize : default=50, how many frames we spool in each chunk 
     before (potentially) switching which PYMEDataServer we send the next chunk
     to. Increasing the chunksize can increase data-locality for faster analysis,
