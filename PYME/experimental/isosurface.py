@@ -76,4 +76,5 @@ def distance_to_mesh(points, surf):
     v = surf._vertices['position'][_v]  # (n_points, M, (v0,v1,v2), (x,y,z))
 
     # Find the closest point-plane distance from triangles with closest face centers
+    # NOTE that np.max should be exact inside the object and a slight overestimate outside
     return np.max(triangle_sdf(points, v),axis=1)
