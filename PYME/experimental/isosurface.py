@@ -38,13 +38,14 @@ def triangle_sdf(p, pv):
     pv : np.array
         3x3 triangle vertex x coordinates
     """
-    p1p0 = pv[:,:,1] - pv[:,:,0]
-    p2p0 = pv[:,:,2] - pv[:,:,0]
-    n = np.cross(p1p0,p2p0,axis=2)
-    nn = np.linalg.norm(n,axis=2)
-    nh = n/nn[...,None]
-    nh[nn==0] = 0
-    return (-nh*(p[:,None,:]-pv[:,:,0])).sum(1)
+    # M = number of faces to average over (see distance_to_mesh)
+    p1p0 = pv[:,:,1] - pv[:,:,0]    # (N x M x (x,y,z))
+    p2p0 = pv[:,:,2] - pv[:,:,0]    # (N x M x (x,y,z))
+    n = np.cross(p1p0,p2p0,axis=2)  # (N x M x (x,y,z))
+    nn = np.linalg.norm(n,axis=2)   # (N x M)
+    nh = n/nn[...,None]             # (N x M x (x,y,z))
+    nh[nn==0] = 0 
+    return (-nh*(p[:,None,:]-pv[:,:,0])).sum(2)
 
 def distance_to_mesh(points, surf):
     """
@@ -72,7 +73,7 @@ def distance_to_mesh(points, surf):
     
     # Get position representation
     _v = surf.faces[_faces]
-    v = surf._vertices['position'][_v]  # (points, N, (v0,v1,v2), (x,y,z))
+    v = surf._vertices['position'][_v]  # (n_points, N, (v0,v1,v2), (x,y,z))
 
     # Intersect (np.max) SDFs of nearest triangles
     return np.max(triangle_sdf(points, v),axis=1)
