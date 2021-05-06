@@ -34,9 +34,9 @@ def triangle_sdf(p, pv):
     Parameters
     ----------
     p : np.array
-        Nx3 points
+        Nx(x,y,z) points
     pv : np.array
-        3x3 triangle vertex x coordinates
+        NxMx(v0,v1,v2)x(x,y,z) triangle vertex x coordinates
     """
     # M = number of faces to average over (see distance_to_mesh)
     p1p0 = pv[:,:,1] - pv[:,:,0]    # (N x M x (x,y,z))
@@ -45,7 +45,7 @@ def triangle_sdf(p, pv):
     nn = np.linalg.norm(n,axis=2)   # (N x M)
     nh = n/nn[...,None]             # (N x M x (x,y,z))
     nh[nn==0] = 0 
-    return (-nh*(p[:,None,:]-pv[:,:,0])).sum(2)
+    return (-nh*(p[:,None,:]-pv[:,:,0])).sum(2)  # (N x M)
 
 def distance_to_mesh(points, surf):
     """
@@ -67,13 +67,13 @@ def distance_to_mesh(points, surf):
     # Construct a kdtree over the face centers
     tree = scipy.spatial.cKDTree(face_centers)
 
-    # Get N closet faces for each point
-    N = 5
-    _, _faces = tree.query(points, k=N)
+    # Get M closet face centroids for each point
+    M = 5
+    _, _faces = tree.query(points, k=M)
     
     # Get position representation
     _v = surf.faces[_faces]
-    v = surf._vertices['position'][_v]  # (n_points, N, (v0,v1,v2), (x,y,z))
+    v = surf._vertices['position'][_v]  # (n_points, M, (v0,v1,v2), (x,y,z))
 
-    # Intersect (np.max) SDFs of nearest triangles
+    # Find the closest point-plane distance from triangles with closest face centers
     return np.max(triangle_sdf(points, v),axis=1)
