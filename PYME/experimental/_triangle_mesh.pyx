@@ -2342,17 +2342,13 @@ cdef class TriangleMesh(TrianglesBase):
                     # Assign the vertex component label to halfedges and faces
                     # emanating from this vertex
                     curr_edge = self._halfedges[_edge]
+                    if self._vertices['component'][curr_edge['vertex']] != component:
+                        search_vertices.append(curr_edge['vertex'])
                     self._halfedges['component'][_edge] = component
                     self._halfedges['component'][curr_edge['prev']] = component
                     self._halfedges['component'][curr_edge['next']] = component
                     self._faces['component'][curr_edge['face']] = component
-                    
-                    # If the vertex is assigned, we've already visited it and
-                    # don't need to do so again.
-                    if self._vertices['component'][curr_edge['vertex']] != -1:
-                        continue
                     self._vertices['component'][curr_edge['vertex']] = component
-                    search_vertices.append(curr_edge['vertex'])
             
             # Increment the label as any vertices not included in this
             # iteration's search will be part of another component.
@@ -2376,22 +2372,29 @@ cdef class TriangleMesh(TrianglesBase):
         _edges = np.flatnonzero((self._halfedges['component'][:,None] != max_coms[None,:]).prod(1))
         _edges_with_twins = _edges[self._halfedges['twin'][_edges] != -1]
         # _faces = np.where((self._faces['component'] != max_com))[0]
-        _faces = np.flatnonzero((self._faces['component'][None,:] != max_coms[:,None]).prod(1))
+        _faces = np.flatnonzero((self._faces['component'][:,None] != max_coms[None,:]).prod(1))
+
+        # Maybe don't delete some of these? (If there are singular elements in our mesh.)
+        _kept_edges = np.array(list(set(self._halfedges['twin'][_edges_with_twins])-set(_edges)))
+        if _kept_edges:
+            _deleted_vertices = np.array(list(set(_vertices)-set(self._halfedges['vertex'][_kept_edges])))
+            self._halfedges['twin'][_kept_edges] = -1
+        else:
+            _deleted_vertices = _vertices
         # Delete vertices
-        self._vertices[_vertices] = -1
-        _kept_edges = self._halfedges['twin'][_edges_with_twins]
-        self._halfedges['twin'][_kept_edges] = -1
+        self._vertices[_deleted_vertices] = -1
         self._halfedges[_edges] = -1
         self._faces[_faces] = -1
 
         # Mark deleted faces as available
-        self._vertex_vacancies = list(set(self._vertex_vacancies).union(set(_vertices)))
+        self._vertex_vacancies = list(set(self._vertex_vacancies).union(set(_deleted_vertices)))
         self._halfedge_vacancies = list(set(self._halfedge_vacancies).union(set(_edges)))
         self._face_vacancies = list(set(self._face_vacancies).union(set(_faces)))
 
-        # Update newly orphaned edges
-        self._update_face_normals(list(set(self._halfedges['face'][_kept_edges])))
-        self._update_vertex_neighbors(list(set(self._halfedges['vertex'][_kept_edges])))
+        if _kept_edges:
+            # Update newly orphaned edges
+            self._update_face_normals(list(set(self._halfedges['face'][_kept_edges])))
+            self._update_vertex_neighbors(list(set(self._halfedges['vertex'][_kept_edges])))
         
         self._faces_by_vertex = None
         self._H = None
