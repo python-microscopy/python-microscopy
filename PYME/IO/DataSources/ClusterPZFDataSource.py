@@ -23,7 +23,7 @@
 
 #from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import tables
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
 #import httplib
 #import urllib
@@ -39,7 +39,7 @@ from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
 from PYME.IO import MetaDataHandler
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
         self.seriesName = url

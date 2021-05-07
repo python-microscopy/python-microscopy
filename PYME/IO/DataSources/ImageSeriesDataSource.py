@@ -28,21 +28,27 @@ from PIL import Image
 import glob
 import os
 import numpy as np
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
 #import numpy as np
 
 #from PYME.misc import tifffile
+try:
+    import tifffile
+except ImportError:
+    from PYME.misc import tifffile
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'ImageSeriesDataSource'
-    def __init__(self, filename, taskQueue=None):
-        self.filename = getFullExistingFilename(filename)#convert relative path to full path
-        #self.data = readTiff.read3DTiff(self.filename)
-
-        #use metadata for glob
-        md = MetaDataHandler.SimpleMDHandler(self.filename)
+    def __init__(self, filename='', metadata=None, taskQueue=None):
+        if filename is not '':
+            self.filename = getFullExistingFilename(filename)#convert relative path to full path
+            #use metadata for glob
+            md = MetaDataHandler.SimpleMDHandler(self.filename)
+        else:
+            md = metadata
+            self.filename = ''
 
         pattern = md.getEntry('SeriesPattern')
 
@@ -50,18 +56,24 @@ class DataSource(BaseDataSource):
 
         self.files.sort()
 
-        self.im0 = Image.open(self.files[0])
+        f0 = self.files[0]
+        if f0.endswith('.tif'):
+            self.im0 = tifffile.imread(f0).squeeze()
+            self._slice_shape = self.im0.shape[:2]
+        else:
+            self.im0 = Image.open(self.files[0])
+            self._slice_shape = self.im0.size[1], self.im0.size[0]
 
-        #self.im.seek(0)
-
-        #PIL's endedness support is subtly broken - try to fix it
-        #NB this is untested for floating point tiffs
-        self.endedness = 'LE'
-        if self.im0.ifd.prefix =='MM':
-            self.endedness = 'BE'
-            
-        print((self.im0.ifd.prefix))
-        print((self.endedness))
+            #self.im.seek(0)
+    
+            #PIL's endedness support is subtly broken - try to fix it
+            #NB this is untested for floating point tiffs
+            self.endedness = 'LE'
+            if self.im0.ifd.prefix =='MM':
+                self.endedness = 'BE'
+                
+            print((self.im0.ifd.prefix))
+            print((self.endedness))
 
         #to find the number of images we have to loop over them all
         #this is obviously not ideal as PIL loads the image data into memory for each
@@ -82,14 +94,18 @@ class DataSource(BaseDataSource):
 
     def getSlice(self, ind):
         #self.im.seek(ind)
-        im = Image.open(self.files[ind])
-        ima = np.array(im.getdata())#.newbyteorder(self.endedness)
-        return ima.reshape((im.size[1], im.size[0]))
+        fn = self.files[ind]
+        if fn.endswith('.tif'):
+            return tifffile.imread(fn).squeeze()
+        else:
+            im = Image.open(fn)
+            ima = np.array(im.getdata())#.newbyteorder(self.endedness)
+            return ima.reshape(self._slice_shape)
         #return self.data[:,:,ind]
         #return self.im[ind].asarray()
 
     def getSliceShape(self):
-        return (self.im0.size[1], self.im0.size[0])
+        return self._slice_shape
         #return self.im[0].shape[1:3]
         #return self.data.shape[:2]
 

@@ -2,7 +2,7 @@ from .base import register_module, ModuleBase, OutputModule
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr
 
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import os
 from PYME.IO import tabular
 
@@ -80,6 +80,7 @@ class CSVOutput(OutputModule):
         -------
 
         """
+        import pandas as pd
 
         out_filename = self.filePattern.format(**context)
         v = namespace[self.inputName]

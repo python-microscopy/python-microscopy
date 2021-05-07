@@ -23,7 +23,7 @@
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 import tables
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYZTCDataSource
 import numpy as np
 
 try:
@@ -34,7 +34,7 @@ except ImportError:
 import logging
 logger = logging.getLogger(__name__)
 
-class DataSource(BaseDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
         self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path
@@ -53,32 +53,29 @@ class DataSource(BaseDataSource):
             self.usePZFFormat = False
             
         try:
-            self.dimorder = self._img_data.attrs.DimOrder
-            if isinstance(self.dimorder, bytes):
-                self.dimorder = self.dimorder.decode()
+            dimorder = self._img_data.attrs.DimOrder
+            if isinstance(dimorder, bytes):
+                dimorder = dimorder.decode()
                 
-            assert (self.dimorder[:2] == 'XY')
+            assert (dimorder[:2] == 'XY')
             
-            self.sizeC = int(self._img_data.attrs.SizeC)
-            self.sizeZ = int(self._img_data.attrs.SizeZ)
-            self.sizeT = int(self._img_data.attrs.SizeT)
-
-            # FIXME - we currently ignore SizeZ and SizeT and collapse to one dimension (to fit with the XY[Z/T]C data model)
-            # This should be changed once we fully move to an xyztc model. In the meantime, it's probably safest if C is
-            # always the last dimension.
-            
-            if self.sizeC > 1:
-                if self.dimorder[-1] == 'C':
-                    self.additionalDims = 'TC'
-                else:
-                    self.additionalDims = 'CT'
-            else:
-                self.additionalDims = 'T'
+            size_c = int(self._img_data.attrs.SizeC)
+            size_z = int(self._img_data.attrs.SizeZ)
+            size_t = int(self._img_data.attrs.SizeT)
             
         except:
             logger.exception('Error reading dim info (can be safely ignored for old files)')
-            pass
             
+            dimorder = 'XYZTC'
+            size_z = self.getNumSlices()
+            size_t = 1
+            size_c = 1
+            
+        XYZTCDataSource.__init__(self, dimorder, size_z=size_z, size_t=size_t, size_c=size_c)
+
+        self._shape = tuple(self.getSliceShape()) + (size_z, size_t, size_c)
+        self._dtype = self.getSlice(0).dtype
+
     @property
     def _img_data(self):
         if self.usePZFFormat:
@@ -101,6 +98,7 @@ class DataSource(BaseDataSource):
             
             return self.h5File.root.ImageData[ind, :,:]
 
+    
     @property
     def pzf_index(self):
         if self._pzf_index is None:

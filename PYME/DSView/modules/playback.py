@@ -29,7 +29,7 @@ from PYME.ui.mytimer import mytimer
 
 
 class PlayPanel(wx.Panel):
-    def __init__(self, parent, dsviewer):
+    def __init__(self, parent, dsviewer, axis='z'):
         wx.Panel.__init__(self,parent, -1)
         dirname = os.path.dirname(__file__)
 
@@ -42,6 +42,13 @@ class PlayPanel(wx.Panel):
 
         self.mode = 'HORIZ'
         self.moving= False
+        
+        self.axis = axis
+        
+        if axis == 't':
+            self._shape_idx = 3
+        else: #x
+            self._shape_idx = 2
 
         #timer for playback
         self.tPlay = mytimer()
@@ -52,6 +59,18 @@ class PlayPanel(wx.Panel):
         self.genContents(self.mode)
 
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        
+    def _set_pos(self, value):
+        if self.axis == 't':
+            self.do.tp = value
+        else:
+            self.do.zp = value
+            
+    def _get_pos(self):
+        if self.axis == 't':
+            return self.do.tp
+        else:
+            return self.do.zp
 
     def genContents(self, mode='VERT'):
         self.DestroyChildren() #clean out existing gui
@@ -77,7 +96,7 @@ class PlayPanel(wx.Panel):
             vsizer = wx.BoxSizer(wx.VERTICAL)
 
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hsizer.Add(wx.StaticText(self, -1, 'Pos:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
+            hsizer.Add(wx.StaticText(self, -1, '%s:' % self.axis), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
             hsizer.Add(self.slPlayPos, 1,wx.ALIGN_CENTER_VERTICAL)
 
             vsizer.Add(hsizer, 0,wx.ALL|wx.EXPAND, 0)
@@ -96,7 +115,7 @@ class PlayPanel(wx.Panel):
             hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL)
             hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL|wx.RIGHT,4)
             hsizer.Add(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL|wx.RIGHT,4)
-            hsizer.Add(wx.StaticText(self, -1, 'Pos:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
+            hsizer.Add(wx.StaticText(self, -1, '%s:' % self.axis), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
             hsizer.Add(self.slPlayPos, 3,wx.ALIGN_CENTER_VERTICAL)
 
             hsizer.Add(wx.StaticText(self, -1, 'FPS:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,4)
@@ -123,13 +142,14 @@ class PlayPanel(wx.Panel):
             self.bPlay.SetBitmapLabel(self.bmPlay)
 
     def OnFrame(self):
-        if self.do.zp >= (self.do.ds.shape[2]-1):
-            self.do.zp = 0
+        p = self._get_pos()
+        if  p >= (self.do.ds.shape[self._shape_idx]-1):
+            self._set_pos(0)
         else:
-            self.do.zp +=1
+            self._set_pos(p + 1)
 
     def OnSeekStart(self, event):
-        self.do.zp = 0
+        self._set_pos(0)
         #self.vp.update()
 
     def OnPlaySpeedChanged(self, event):
@@ -139,7 +159,7 @@ class PlayPanel(wx.Panel):
 
     def OnPlayPosChanged(self, event):
         self.moving = True #hide refreshes that we generate ourselves
-        self.do.zp = int((self.do.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
+        self._set_pos(int((self.do.ds.shape[self._shape_idx]-1)*self.slPlayPos.GetValue()/100.))
         self.moving = False
         #self.vp.update()
 
@@ -155,16 +175,51 @@ class PlayPanel(wx.Panel):
                 raise ValueError('Please enter a valid frame number.')
             
             frame = max(0, frame)
-            frame = min(frame, self.do.ds.shape[2]-1)
-            self.do.zp = frame
+            frame = min(frame, self.do.ds.shape[self._shape_idx]-1)
+            self._set_pos(frame)
 
     def update(self):
         #print 'foo'
+        if self.do.ds.shape[self._shape_idx] <2 :
+            self.Hide()
+        else:
+            self.Show()
+            
         if not self.moving:
-            self.slPlayPos.SetValue((100*self.do.zp)/max(1,self.do.ds.shape[2]-1))
+            self.slPlayPos.SetValue((100*self._get_pos())/max(1,self.do.ds.shape[self._shape_idx]-1))
 
             if not self.tPlay.IsRunning():
                 self.dsviewer.optionspanel.RefreshHists()
+                
+
+class PlayZTPanel(wx.Panel):
+    def __init__(self, parent, dsviewer):
+        wx.Panel.__init__(self,parent, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self._pans = []
+        
+        
+        self.pan_z = PlayPanel(self, dsviewer, 'z')
+        vsizer.Add(self.pan_z, 0, wx.EXPAND, 0)
+        self._pans.append(self.pan_z)
+        
+        self.pan_t = PlayPanel(self, dsviewer, 't')
+        vsizer.Add(self.pan_t, 0, wx.EXPAND, 0)
+        self._pans.append(self.pan_t)
+
+        if not ((dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[3] > 1)):
+            self.pan_t.Hide()
+            
+        if (dsviewer.do.ds.ndim > 4) and (dsviewer.do.ds.shape[2] < 2):
+            self.pan_z.Hide()
+
+        self.SetSizerAndFit(vsizer)
+            
+        
+    def update(self):
+        for p in self._pans:
+            p.update()
 
 
 
@@ -180,9 +235,6 @@ class player:
         item = afp.foldingPane(_pnl, -1, caption="Playback", pinned = True)
 
         self.playPan = PlayPanel(item, self.dsviewer)
-
-        
-
         item.AddNewElement(self.playPan)
         _pnl.AddPane(item)
 

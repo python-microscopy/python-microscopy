@@ -627,9 +627,9 @@ def imsave_f(filename, data,
     ifd_offset = tell()
     write(offset_format, 0)  # first IFD    
     
-    for i in range(shape[2]):
+    for k in range(shape[4]):
         for j in range(shape[3]):
-            for k in range(shape[4]):        
+            for i in range(shape[2]):
                 # update pointer at ifd_offset
                 pos = tell()
                 seek(ifd_offset)

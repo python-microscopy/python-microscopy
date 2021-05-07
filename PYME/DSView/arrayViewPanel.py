@@ -107,7 +107,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.aspect = 1.
 
-        self.slice = None 
+        self._slice = None
+        self._sc = None
         
         self.overlays = []
         
@@ -319,10 +320,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             tFoc = list(set(self.filter['clumpIndex'][IFoc]))
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-            #pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            #dc.SetPen(pGreen)
             
 
             for tN in tFoc:
@@ -504,10 +501,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         else:
             step = 2**(-numpy.ceil(numpy.log2(sc)))
             sc2 = sc*step
-            
-        #sX, sY = view.imagepanel.Size
-            
-        #im.Rescale(im.GetWidth()*sc2,im.GetHeight()*sc2*self.aspect)
 
         
         im2 = wx.BitmapFromImage(im)
@@ -574,47 +567,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             wx.TheClipboard.SetData(bmpDataObject)
         finally:
             wx.TheClipboard.Close()
-
-            
-#    def OnPaint(self,event):
-#        self.painting = True
-#        DC = wx.PaintDC(self.imagepanel)
-#        if not time.time() > (self.lastUpdateTime + 2*self.lastFrameTime): #avoid paint floods
-#            if not self.refrTimer.IsRunning():
-#                self.refrTimer.Start(.2, True) #make sure we do get a refresh after disposing of flood
-#            return
-#
-#        frameStartTime = time.time()
-#        self.imagepanel.impanel.PrepareDC(DC)
-#
-#        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-#
-#        #s = self.imagepanel.GetVirtualSize()
-#        s = self.imagepanel.impanel.GetClientSize()
-#        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
-#        #del DC
-#        MemDC = wx.MemoryDC()
-#        OldBitmap = MemDC.SelectObject(MemBitmap)
-#        try:
-#            DC.BeginDrawing()
-#            #DC.Clear()
-#            #Perform(WM_ERASEBKGND, MemDC, MemDC);
-#            #Message.DC := MemDC;
-#            self.DoPaint(MemDC);
-#            #Message.DC := 0;
-#            #DC.BlitXY(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-#            DC.Blit(x0, y0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-#            DC.EndDrawing()
-#        finally:
-#            #MemDC.SelectObject(OldBitmap)
-#            del MemDC
-#            del MemBitmap
-#
-#        self.lastUpdateTime = time.time()
-#        self.lastFrameTime = self.lastUpdateTime - frameStartTime
-#
-#        self.painting = False
-#        #print self.lastFrameTime
             
 
     def OnWheel(self, event):
@@ -717,9 +669,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             s = self.CalcImSize()
             self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
-            if not self.slice == self.do.slice:
+            if (self._slice != self.do.slice) or (self._sc != sc):
+                #print('recentering')
                 #if the slice has changed, change our aspect and do some
-                self.slice = self.do.slice
+                self._slice = self.do.slice
+                self._sc = sc
                 #if not event is None and event.GetId() in [self.cbSlice.GetId(), self.cbScale.GetId()]:
                 #recenter the view
                 if(self.do.slice == self.do.SLICE_XY):
@@ -737,10 +691,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
                 sx,sy =self.imagepanel.GetClientSize()
 
-                #self.imagepanel.SetScrollbars(20,20,s[0]*sc/20,s[1]*sc/20,min(0, lx*sc - sx/2)/20, min(0,ly*sc - sy/2)/20)
                 ppux, ppuy = self.GetScrollPixelsPerUnit()
-                #self.imagepanel.SetScrollPos(wx.HORIZONTAL, max(0, lx*sc - sx/2)/ppux)
-                #self.imagepanel.SetScrollPos(wx.VERTICAL, max(0, ly*sc - sy/2)/ppuy)
                 self.Scroll(max(0, lx*sc - sx/2)/ppux, max(0, ly*sc*self.aspect - sy/2)/ppuy)
 
             #self.imagepanel.Refresh()
@@ -968,10 +919,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 
         self.do.selection_trace.append(((pos[0]/sc), (pos[1]/(sc*self.aspect))))
 
-        #if ('update' in dir(self.GetParent())):
-        #     self.GetParent().update()
-        #self.update()
-        #else:
         self.Refresh()
         self.Update()
 
@@ -980,68 +927,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.do.EndSelection()
             
 
-        
-#    def Render(self):
-#        x0,y0 = self.imagepanel.CalcUnscrolledPosition(0,0)
-#        sX, sY = self.imagepanel.Size
-#
-#        sc = pow(2.0,(self.do.scale-2))
-#        sX_ = int(sX/sc)
-#        sY_ = int(sY/sc)
-#        x0_ = int(x0/sc)
-#        y0_ = int(y0/sc)
-#
-#        #XY
-#        if self.do.slice == DisplayOpts.SLICE_XY:
-#            if self.do.Chans[0] < self.do.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros(ds.shape[:2], 'uint8').T
-#            if self.do.Chans[1] < self.do.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros(ds.shape[:2], 'uint8').T
-#            if self.do.Chans[2] < self.do.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros(ds.shape[:2], 'uint8').T
-#        #XZ
-#        elif self.do.slice == DisplayOpts.SLICE_XZ:
-#            if self.do.Chans[0] < self.do.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[1] < self.do.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[2] < self.do.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.do.ds[x0_:(x0_+sX_),int(self.do.yp),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros((ds.shape[0], ds.shape[2]), 'uint8'.T)
-#
-#        #YZ
-#        elif self.do.slice == DisplayOpts.SLICE_YZ:
-#            if self.do.Chans[0] < self.do.ds.shape[3]:
-#                r = (self.do.Gains[0]*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[0]] - self.do.Offs[0])).astype('uint8').squeeze().T
-#            else:
-#                r = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[1] < self.do.ds.shape[3]:
-#                g = (self.do.Gains[1]*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[1]] - self.do.Offs[1])).astype('uint8').squeeze().T
-#            else:
-#                g = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8').T
-#            if self.do.Chans[2] < self.do.ds.shape[3]:
-#                b = (self.do.Gains[2]*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_),y0_:(y0_+sY_), self.do.Chans[2]] - self.do.Offs[2])).astype('uint8').squeeze().T
-#            else:
-#                b = numpy.zeros((ds.shape[1], ds.shape[2]), 'uint8'.T)
-#        r = r.T
-#        g = g.T
-#        b = b.T
-#        r = r.reshape(r.shape + (1,))
-#        g = g.reshape(g.shape + (1,))
-#        b = b.reshape(b.shape + (1,))
-#        ima = numpy.concatenate((r,g,b), 2)
-#        return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
         
     def _gensig(self, x0, y0, sX,sY, do):
         sig = [x0, y0, sX, sY, do.scale, do.slice, do.GetActiveChans(), do.ds.shape]
@@ -1058,6 +943,33 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._oldImSig = None
         self.Refresh()
         self.Update()
+        
+    def _map_colour(self, seg, gain, offset, cmap, ima):
+        lut = getLUT(cmap)
+        
+        if cmap == labeled:
+            # special case for labelled colourmap - use slow matplotlib lookup and rely on matplotlib roll-around to
+            # cycle colour map TODO - check if recent matplotlibs actually roll around or not.
+            ima[:] = numpy.minimum(ima[:] + (255 * cmap(gain * (seg - offset))[:, :, :3])[:], 255)
+    
+        elif numpy.iscomplexobj(seg):
+            if self.do.colourMax or (self.do.complexMode == 'imag coloured'):
+                applyLUT(numpy.imag(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                ima[:] = (ima * numpy.clip((numpy.real(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
+            elif self.do.complexMode == 'real':
+                applyLUT(seg.real, gain, offset, lut, ima)
+            elif self.do.complexMode == 'imag':
+                applyLUT(seg.imag, gain, offset, lut, ima)
+            elif self.do.complexMode == 'abs':
+                applyLUT(numpy.abs(seg), gain, offset, lut, ima)
+            elif self.do.complexMode == 'angle':
+                applyLUT(numpy.angle(seg), gain, offset, lut, ima)
+            else:
+                applyLUT(numpy.angle(seg), self.do.cmax_scale / self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
+                ima[:] = (ima * numpy.clip((numpy.abs(seg) - offset) * gain, 0, 1)[:, :, None]).astype('uint8')
+        else:
+            #print seg.shape
+            applyLUT(seg, gain, offset, lut, ima)
 
     def Render(self, fullImage=False):
         #print 'rend'
@@ -1089,69 +1001,87 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         fstep = float(step)
         step = int(step)
-
+        
+        if (step > 1) and hasattr(self.do.ds, 'levels'):
+            # we have a pyramidal data source
+            
+            level = -self.do.scale
+            
+            #if (level > len(self.do.ds.levels)):
+            level = int(min(level, len(self.do.ds.levels)))
+            step = int(2**(-numpy.ceil(numpy.log2(sc))-level))
+            
+            _s = 1.0/(2**level)
+            
+            x0_, y0_, sX_, sY_ = [int(numpy.ceil(v*_s)) for v in [x0_, y0_, sX_, sY_]]
+            
+            # x0_ = int(numpy.ceil(x0_*_s))
+            # y0_ = int(y0_*_s)
+            # sX_ = int(sX_*_s)
+            # sY_ = int(sY_*_s)
+            
+            ds = self.do.ds.levels[level]
+        else:
+            ds = self.do.ds
+            _s = 1
+        
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
-            for chan, offset, gain, cmap in self.do.GetActiveChans():
-                if not cmap == labeled:
-                    lut = getLUT(cmap)
+            dmy, dmx  = self.do.ds.shape[1], self.do.ds.shape[0]
+            slice_key = (slice(x0_,(x0_+sX_),step),
+                         slice(y0_,(y0_+sY_),step),
+                         int(self.do.zp*_s),
+                         int(self.do.tp*_s))
+            
+            proj_axis = 2
                     
-                    if self.do.maximumProjection:
-                        seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].max(2).squeeze().T
-                        if self.do.colourMax:
-                            aseg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,:, chan].argmax(2).squeeze().T
-                            applyLUT(aseg, self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
-                            ima[:] = (ima*numpy.clip((seg - offset)*gain, 0,1)[:,:,None]).astype('uint8')
-                        else:
-                            applyLUT(seg, gain, offset, lut, ima)
-                    else:
-                        seg = self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T
-                        
-                        if numpy.iscomplexobj(seg):
-                            if self.do.complexMode == 'real':
-                                applyLUT(seg.real, gain, offset, lut, ima)
-                            elif self.do.complexMode == 'imag':
-                                applyLUT(seg.imag, gain, offset, lut, ima)
-                            elif self.do.complexMode == 'abs':
-                                applyLUT(numpy.abs(seg), gain, offset, lut, ima)
-                            elif self.do.complexMode == 'angle':
-                                applyLUT(numpy.angle(seg), gain, offset, lut, ima)
-                            else:
-                                applyLUT(numpy.angle(seg), self.do.cmax_scale/self.do.ds.shape[2], self.do.cmax_offset, lut, ima)
-                                ima[:] = (ima*numpy.clip((numpy.abs(seg) - offset)*gain, 0,1)[:,:,None]).astype('uint8')
-                        else:
-                            #print seg.shape
-                            applyLUT(seg, gain, offset, lut, ima)
-
-                else:
-                    if self.layerMode == 'mult':
-                        ima[:] = numpy.minimum(ima[:]*(cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
-                    else:
-                        ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
-
-            for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                if not cmap == labeled:
-                    lut = getLUT(cmap)
-                    seg = self.do.ds[x0_:(x0_+sX_):step,int(self.do.yp),y0_:(y0_+sY_):step, chan].squeeze().T
-                    applyLUT(seg, gain, offset, lut, ima)
-                else:
-                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,int(self.do.yp),y0_:(y0_+sY_):step, chan].squeeze().T - offset))[:,:,:3][:]
-
+            dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[0]
+            slice_key = (slice(x0_, (x0_ + sX_), step),
+                         int(self.do.yp*_s),
+                         slice(y0_, (y0_ + sY_), step),
+                         int(self.do.tp*_s))
+            
+            proj_axis = 1
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
-            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[1])/fstep)), 3), 'uint8')
+            dmy, dmx = self.do.ds.shape[2], self.do.ds.shape[1]
+            slice_key = (int(self.do.xp*_s),
+                         slice(x0_, (x0_ + sX_), step),
+                         slice(y0_, (y0_ + sY_), step),
+                         int(self.do.tp*_s))
+            
+            proj_axis = 0
+            
+        if ds.ndim < 5:
+            # for old-style data, drop the time dimension
+            slice_key = slice_key[:3]
+            
+        #ima = numpy.zeros((int(numpy.ceil(min(sY_/_s, dmy)/fstep)), int(numpy.ceil(min(sX_/_s, dmx)/fstep)), 3), 'uint8')
 
-            for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
-                if not cmap == labeled:
-                    lut = getLUT(cmap)
-                    seg = self.do.ds[int(self.do.xp),x0_:(x0_+sX_):step,y0_:(y0_+sY_):step, chan].squeeze().T
-                    applyLUT(seg, gain, offset, lut, ima)
-                else:
-                    ima[:] = ima[:] + 255*cmap(gain*(self.do.ds[int(self.do.xp),x0_:(x0_+sX_):step,y0_:(y0_+sY_):step, chan].squeeze().T - offset))[:,:,:3][:]
+        segs = []
+        for chan, offset, gain, cmap in self.do.GetActiveChans():
+            if self.do.maximumProjection and (self.do.slice == DisplayOpts.SLICE_XY):
+                # special case for max projection - fixme - remove after we get colour coded projections in the projection module
+                seg = self.do.ds[slice_key[:2] + (slice(None), chan)].max(2).squeeze().T
+                if self.do.colourMax:
+                    seg = seg + 1j*self.do.ds[slice_key[:2] + (slice(None), chan)].argmax(2).squeeze().T
+            else:
+                seg = ds[slice_key +  (chan,)].squeeze().T
+                
+            segs.append((seg, chan, offset, gain, cmap))
+            
+        
+        if len(segs) > 0:
+            ima = numpy.zeros(segs[0][0].shape[:2] + (3,), 'uint8')
+        else:
+            ima = numpy.zeros((int(numpy.ceil(min(sY_ / _s, dmy) / fstep)), int(numpy.ceil(min(sX_ / _s, dmx) / fstep)), 3), 'uint8')
+        
+        for seg, chan, offset, gain, cmap in segs:
+            #'slice_key:', slice_key)
+            #print('seg.shape, ima.shape:', seg.shape, ima.shape)
+            self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
         img.Rescale(img.GetWidth()*sc2,img.GetHeight()*sc2*self.aspect)
@@ -1160,48 +1090,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return img
 
 
-#    def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
-#        if not pos is None:
-#            px, py, pz = pos
-#        else:
-#            px, py, pz = self.do.xp, self.do.yp, self.do.zp
-#
-#        points = self.points
-#        d = None
-#        pts = None
-#
-#        if axis == 2: #z
-#            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - roi[1]):(py + roi[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
-#            x = numpy.mgrid[(pz - halfLength):(pz + halfLength)]
-#            if len(points) > 0:
-#                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(points[:,2] == z)).sum() for z in x])
-#
-#                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
-#            #print p.shape
-#            #p = p.mean(1).mean(0)
-#            if not background is None:
-#                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
-#        elif axis == 1: #y
-#            p = self.do.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
-#            x = numpy.mgrid[(py - halfLength):(py + halfLength)]
-#            if len(points) > 0:
-#                d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
-#
-#                pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
-#            if not background is None:
-#                p -= self.do.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
-#        elif axis == 0: #x
-#            p = self.do.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
-#            x = numpy.mgrid[(px - halfLength):(px + halfLength)]
-#            if len(points) > 0:
-#                d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
-#
-#                pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
-#            if not background is None:
-#                p -= self.do.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
-#
-#        return x,p,d, pts
-# end of class ViewPanel
 
 class ArraySettingsAndViewPanel(wx.Panel):
     def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, wantUpdates = [], mdh=None, **kwds):
@@ -1241,6 +1129,13 @@ class ArraySettingsAndViewPanel(wx.Panel):
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 
             pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+            self._mgr.AddPane(self.playbackpanel, pinfo1)
+            
+        if (self.do.ds.ndim >= 5) and (self.do.ds.shape[3] > 1):
+            self.playbackpanel = playback.PlayPanel(self, self, axis='t')
+            self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
+
+            pinfo1 = aui.AuiPaneInfo().Name("playbackPanelT").Bottom().Caption('Playback (t)').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
             self._mgr.AddPane(self.playbackpanel, pinfo1)
 
 #        self.toolbar = aui.AuiToolBar(self, -1, wx.DefaultPosition, wx.DefaultSize,agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW| aui.AUI_TB_VERTICAL)

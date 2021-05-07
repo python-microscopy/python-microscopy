@@ -42,12 +42,17 @@ from six import string_types
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler
 from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource
+from PYME.IO.DataSources import BufferedDataSource, BaseDataSource
 from PYME.IO.FileUtils.nameUtils import getRelFilename
 from PYME.IO.compatibility import np_load_legacy
 
 logger = logging.getLogger(__name__)
 import warnings
+
+class PYMEDeprecationWarning(DeprecationWarning):
+    pass
+
+warnings.simplefilter('once',PYMEDeprecationWarning)
 
 #VS = namedtuple('VS', 'x,y,z')
 #Alias for backwards compatibility
@@ -206,7 +211,7 @@ class ImageStack(object):
     def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True, load_prompt=None):
 
         global nUntitled
-        self.data = data      #image data
+        self._data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
         self.events = events  #events
 
@@ -237,7 +242,7 @@ class ImageStack(object):
             self.Load(filename, prompt=load_prompt, haveGUI=self.haveGUI)
 
         #do the necessary munging to get the data in the format we want it        
-        self.SetData(self.data)
+        self.SetData(self._data)
 
         #generate a placeholder filename / window title        
         if self.filename is None:
@@ -256,7 +261,7 @@ class ImageStack(object):
             self.xlabel = 'Wavelength [nm]'
 
         #if we have 1D data, plot as graph rather than image        
-        if self.data.shape[1] == 1:
+        if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
         #add ourselves to the list of open images        
@@ -275,9 +280,73 @@ class ImageStack(object):
         -------
 
         """
+        
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
-        self.data = dataWrap.Wrap(data)
+        self._data = dataWrap.Wrap(data)
+        
+        if isinstance(self._data, BaseDataSource.XYZTCDataSource) or (self._data.ndim == 5):
+            # data is already 5D
+            self._data_xyztc = self._data
+            self._data_xytc = BaseDataSource.XYTCWrapper(self._data)
+        else:
+            self._data_xytc = self._data
+            # promote to 5D, currently assume series with > 100 frames along z/t dimension are time series,
+            # series with <= 100 frames are s-stacks
+            self._data_xyztc = BaseDataSource.XYZTCWrapper.auto_promote(self._data)
+            
+        
+    @property
+    def data(self):
+        """
+        Compatiblity property for old style data access. Currently equivalent to data_xytc, + a deprecation warning.
+        
+        The old behaviour is available as data_xytc
+        
+        Might (eventually) change to data_xyztc once transition is complete
+        
+        Returns
+        -------
+
+        """
+        import warnings
+        warnings.warn(PYMEDeprecationWarning('This will either disappear or change function as we move to a 5D data model. Use the explicit .data_xytc instead, or even better, change to using the 5D model as image.data_xyztc or image.voxels'), stacklevel=2)
+        return self._data_xytc
+        
+    @property
+    def data_xyztc(self):
+        """
+        Provides voxel data in a form that is accessible as though it was a 5D array with X, Y, Z, T, C as the dimensions
+        
+        Implemented as a property to facilitate transition from old 4D data model
+        
+        Returns
+        -------
+        
+        PYME.IO.DataSources.BaseDataSource.XYZTC data source (or class derived from this
+
+        """
+        
+        return self._data_xyztc
+    
+    @property
+    def voxels(self):
+        """
+        A shorter alias of data_xyztc
+        """
+        return self.data_xyztc
+    
+    @property
+    def data_xytc(self):
+        """
+        Old-style data access with z & t dimensions flattened
+        
+        Returns
+        -------
+
+        """
+        
+        return self._data_xytc
     
     @property
     def voxelsize(self):
@@ -332,7 +401,7 @@ class ImageStack(object):
             return [name.decode() if isinstance(name, bytes) else name for name in names]
         
         except:
-            return ['Chan %d'% d for d in range(self.data.shape[3])]
+            return ['Chan %d'% d for d in range(self.data_xyztc.shape[4])]
 
     @names.setter
     def names(self, value):
@@ -344,7 +413,7 @@ class ImageStack(object):
         try:
             return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
         except:
-            return ImageBounds(0, 0, self.pixelSize*self.data.shape[0], self.pixelSize*self.data.shape[1],0, self.sliceSize*self.data.shape[2])
+            return ImageBounds(0, 0, self.pixelSize*self.voxels.shape[0], self.pixelSize*self.voxels.shape[1],0, self.sliceSize*self.voxels.shape[2])
 
     @imgBounds.setter
     def imgBounds(self, value):
@@ -402,7 +471,7 @@ class ImageStack(object):
         self.seriesName = filename[len('QUEUE://'):]
 
         self.dataSource = TQDataSource.DataSource(self.seriesName, self.tq)
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource) #this will get replaced with a wrapped version
 
         self.mdh = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
         MetaData.fillInBlanks(self.mdh, self.dataSource)
@@ -422,7 +491,7 @@ class ImageStack(object):
         self.dataSource = HDFDataSource.DataSource(filename, None)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
             self.mdh = MetaData.TIRFDefault
@@ -471,7 +540,7 @@ class ImageStack(object):
         self.dataSource = HTTPDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
         self.mdh = MetaData.TIRFDefault
@@ -501,7 +570,7 @@ class ImageStack(object):
         self.dataSource = ClusterPZFDataSource.DataSource(filename)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
-        self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
+        self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
         self.mdh = MetaData.TIRFDefault
@@ -525,8 +594,10 @@ class ImageStack(object):
         """
         from PYME.IO import unifiedIO
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data, vox = np_load_legacy(fn)
+            data, vox = np_load_legacy(fn)
                 
+        self.SetData(data)
+        
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
@@ -551,7 +622,9 @@ class ImageStack(object):
         x = numpy.linspace(0, 256*70, 256)
         y = numpy.linspace(0, 512*70, 512)
         xs, ys = numpy.meshgrid(x, y)
-        self.data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        
+        self.SetData(data)
         
         from PYME.Analysis.points import twoColourPlot
         twoColourPlot.PlotShiftField2(dx, dy, [256, 512])
@@ -565,8 +638,9 @@ class ImageStack(object):
         if filename.upper().startswith('SUPERTILE:'):
             filename = filename[10:]
         
-        self.data = SupertileDatasource.DataSource(filename)
-        self.mdh = self.data.mdh
+        data = SupertileDatasource.DataSource(filename)
+        self.SetData(data)
+        self.mdh = data.mdh
         self.seriesName = filename
         self.mode = 'default'
         
@@ -579,8 +653,9 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
 
         with unifiedIO.local_or_temp_filename(filename) as fn:
-            self.data = numpy.load(fn,allow_pickle=True)
-
+            data = numpy.load(fn,allow_pickle=True)
+        
+        self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -597,8 +672,10 @@ class ImageStack(object):
         mdfn = self._findAndParseMetadata(filename)
     
         with unifiedIO.openFile(filename) as f:
-            self.data = PZFFormat.loads(f.read())[0]
-    
+            data = PZFFormat.loads(f.read())[0]
+
+        self.SetData(data)
+        
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
     
@@ -610,8 +687,8 @@ class ImageStack(object):
         """
         mdfn = self._findAndParseMetadata(filename)
         
-        self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
-
+        data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+        self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -803,19 +880,16 @@ class ImageStack(object):
             wx.MessageBox('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).', 'WARNING', wx.OK)
         
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        data = self.dataSource #this will get replaced with a wrapped version
 
         if self.dataSource.getNumSlices() > 500: #this is likely to be a localization data set
             #background subtraction in the GUI the same way as in the analysis
-            self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
-
-        print(self.data.shape)
-
+            data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         #if we have a multi channel data set, try and pull in all the channels
-        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == self.data.shape[3]:
+        if 'ChannelFiles' in self.mdh.getEntryNames() and not len(self.mdh['ChannelFiles']) == data.shape[3]:
             try:
-                from PYME.IO.dataWrap import ListWrap
+                from PYME.IO.dataWrap import ListWrapper
                 #pull in all channels
 
                 chans = []
@@ -828,18 +902,18 @@ class ImageStack(object):
 
                     chans.append(ds)
 
-                self.data = ListWrap(chans) #this will get replaced with a wrapped version
+                data = ListWrapper(chans) #this will get replaced with a wrapped version
 
                 self.filename = mdfn
             except:
                 pass
             
-        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == self.data.getNumSlices():
-            from PYME.IO.dataWrap import ListWrap
-            chans = [numpy.atleast_3d(self.data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
-            self.data = ListWrap(chans)
+        elif 'ChannelNames' in self.mdh.getEntryNames() and len(self.mdh['ChannelNames']) == data.getNumSlices():
+            from PYME.IO.dataWrap import ListWrapper
+            chans = [numpy.atleast_3d(data.getSlice(i)) for i in range(len(self.mdh['ChannelNames']))]
+            data = ListWrapper(chans)
         elif filename.endswith('.lsm') and 'LSM.images_number_channels' in self.mdh.keys() and self.mdh['LSM.images_number_channels'] > 1:
-            from PYME.IO.dataWrap import ListWrap
+            from PYME.IO.dataWrap import ListWrapper
             nChans = self.mdh['LSM.images_number_channels']
             
             chans = []
@@ -850,9 +924,11 @@ class ImageStack(object):
 
                 chans.append(ds)
 
-            self.data = ListWrap(chans)
+            data = ListWrapper(chans)
 
 
+        self.SetData(data)
+        
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
 
@@ -927,7 +1003,7 @@ class ImageStack(object):
         
         print(self.dataSource.shape)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource)
         
         print(self.data.shape)
 
@@ -945,8 +1021,8 @@ class ImageStack(object):
 
         if 'Multiview.NumROIs' in self.mdh.keys():
             self.dataSource = MultiviewDataSource.DataSource(self.dataSource, self.mdh)
-        
-        self.data = self.dataSource #this will get replaced with a wrapped version
+
+        self.SetData(self.dataSource)
 
         self.seriesName = getRelFilename(filename)
 
@@ -959,7 +1035,7 @@ class ImageStack(object):
 
         self.dataSource = ImageSeriesDataSource.DataSource(filename, None)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
-        self.data = self.dataSource #this will get replaced with a wrapped version
+        self.SetData(self.dataSource)
         #self.data = readTiff.read3DTiff(filename)
 
         self._findAndParseMetadata(filename)
@@ -968,6 +1044,49 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+        
+    def _load_zarr(self, filename):
+        import zarr
+        from PYME.IO.DataSources import ArrayDataSource
+        
+        if '?' in filename:
+            fn, arrayname = filename.split('?')
+        else:
+            fn = filename
+            arrayname = None
+        
+        z = zarr.open(fn, 'r')
+        
+        # reopen using a caching store with 1GB cache size
+        z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
+        
+        if isinstance(z, zarr.Group):
+            array_names = sorted(list(z.array_keys()))
+            print('Zarr file contains multiple datasets: %s' % (array_names,))
+            
+            if arrayname and (arrayname in array_names):
+                a = ArrayDataSource.XYZTCArrayDataSource(z[arrayname])
+            else:
+                a = ArrayDataSource.XYZTCArrayDataSource(z[array_names[0]])
+            
+            if ('0' in array_names) and ('1' in array_names):
+                # hack to detect pyramid
+                print('Detected pyramidal .zarr')
+                self.is_pyramid = True
+                
+                self.levels = [ArrayDataSource.XYZTCArrayDataSource(z[n]) for n in array_names]
+                a.levels = self.levels
+            
+        else:
+            a = ArrayDataSource.XYZTCArrayDataSource(z)
+
+        self.SetData(a)
+        
+        self.seriesName = getRelFilename(fn)
+        self.mode = 'default'
+        
+        print('loaded zarr')
+            
 
     def Load(self, filename=None, prompt=None, haveGUI = False):
         """
@@ -1056,6 +1175,9 @@ class ImageStack(object):
                 self._loadDCIMG(filename)
             elif filename.endswith('.pzf'):
                 self._loadPZF(filename)
+            elif '.zarr' in filename:
+                # check for `in` rather than `endswith` as we use query notation for groups.
+                self._load_zarr(filename)
             else: #try bioformats
                 try:
                     self._loadBioformats(filename)
@@ -1124,12 +1246,12 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)
+                self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)
             else:
-                self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, filename=filename, progressCallback=progressCallback)
+                self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, filename=filename, progressCallback=progressCallback)
             #self.SetTitle(fn)
 
             if not (self.filename is None):

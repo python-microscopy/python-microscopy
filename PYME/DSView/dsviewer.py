@@ -111,8 +111,8 @@ class DSViewFrame(AUIFrame):
 
         
 
-        self.do = DisplayOpts(self.image.data)
-        if self.image.data.shape[1] == 1:
+        self.do = DisplayOpts(self.image.data_xyztc)
+        if self.image.data_xyztc.shape[1] == 1:
             self.do.slice = self.do.SLICE_XZ
         self.do.Optimise()
 
@@ -185,9 +185,9 @@ class DSViewFrame(AUIFrame):
         self._mgr.AddPane(self.optionspanel.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
                       ToolbarPane().Right().GripperTop())
 
-        if self.do.ds.shape[2] > 1:
+        if (self.do.ds.shape[2] > 1) or ((self.do.ds.ndim > 4) and (self.do.ds.shape[3] > 1)):
             from PYME.DSView.modules import playback
-            self.playbackpanel = playback.PlayPanel(self, self)
+            self.playbackpanel = playback.PlayZTPanel(self, self)
             self.playbackpanel.SetSize(self.playbackpanel.GetBestSize())
 
             pinfo1 = aui.AuiPaneInfo().Name("playbackPanel").Bottom().Caption('Playback').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
@@ -293,7 +293,7 @@ class DSViewFrame(AUIFrame):
             self.updating = True
             #if 'view' in dir(self):
             #    self.view.Refresh()
-            statusText = 'Slice No: (%d/%d)    x: %d    y: %d' % (self.do.zp, self.do.ds.shape[2], self.do.xp, self.do.yp)
+            statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
             #grab status from modules which supply it
             for sCallback in self.statusHooks:
                 statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
@@ -447,6 +447,8 @@ class MyApp(wx.App):
                 # import numpy as np
                 from scipy import ndimage
                 im = ImageStack(ndimage.gaussian_filter(np.random.rand(100,100,100, 2), [20, 20, 20, 0]))
+                im.pixelSize = 10
+                im.sliceSize = 10
             elif len (args) > 0:
                 im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
             else:
@@ -494,10 +496,14 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    #from PYME.util import mProfile
+    #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
     print('Finished main loop')
+    #mProfile.profileOff()
+    #mProfile.report()
 
 
 if __name__ == "__main__":

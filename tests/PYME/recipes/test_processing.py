@@ -1,11 +1,11 @@
 
-from PYME.recipes.base import ModuleCollection
+from PYME.recipes import Recipe
 from PYME.recipes import processing
 from PYME.IO.image import ImageStack
 import numpy as np
 
 def test_stats_by_frame():
-    recipe = ModuleCollection()
+    recipe = Recipe()
     test_length = 10
     x, y = np.meshgrid(range(test_length), range(test_length))
     mask = x > test_length/2  # mask out everything but 6, 7, 8, 9

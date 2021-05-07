@@ -58,7 +58,8 @@ def run(request):
 def run_template(request):
     from PYME import config
     from PYME.IO import unifiedIO
-    from PYME.recipes.modules import ModuleCollection
+    from PYME.recipes import Recipe
+    from PYME.recipes import modules
     from PYME.cluster.rules import RecipeRule
         
     recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').lstrip('/'))
@@ -66,7 +67,7 @@ def run_template(request):
 
 
     recipe_text = unifiedIO.read(recipeURI).decode('utf-8')
-    recipe = ModuleCollection.fromYAML(recipe_text)
+    recipe = Recipe.fromYAML(recipe_text)
     
 
     # handle templated userfile inputs - these will be loaded by e.g. unifiedIO later
@@ -83,12 +84,13 @@ def run_template(request):
 
 def view_svg(request):
     from PYME.IO import unifiedIO
-    from PYME.recipes.modules import ModuleCollection
+    from PYME.recipes import Recipe
+    from PYME.recipes import modules
     from PYME.recipes import recipeLayout
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
-    recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+    recipe = Recipe.fromYAML(unifiedIO.read(recipeURI))
 
     svg = recipeLayout.to_svg(recipe.dependancyGraph())
 
@@ -96,11 +98,11 @@ def view_svg(request):
 
 def extra_inputs(request):
     from PYME.IO import unifiedIO
-    from PYME.recipes.modules import ModuleCollection
+    from PYME.recipes import Recipe
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
-    recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+    recipe = Recipe.fromYAML(unifiedIO.read(recipeURI))
     
     return render(request, 'recipes/extra_inputs.html', {'file_inputs': recipe.file_inputs, 'serverfilter' : server_filter})
 

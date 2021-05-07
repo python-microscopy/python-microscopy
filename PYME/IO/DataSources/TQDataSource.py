@@ -20,9 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'TQDataSource'
     def __init__(self, queueName, taskQueue):
         self.taskQueue = taskQueue

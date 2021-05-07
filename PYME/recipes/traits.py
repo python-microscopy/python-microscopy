@@ -40,6 +40,36 @@ class Input(CStr):
                 
         return value
     
+# class InputList(ListStr):
+#     fast_validate=None
+#
+#     def validate(self, object, name, value):
+#         value = ListStr.validate(self, object, name, value)
+#
+#         if getattr(object, '_initial_set', False):
+#             # defer validation when performed in constructor to avoid detection of spurious circular references with default values (see issue #695)
+#
+#             for v in value:
+#                 # make sure we're not assigning to an output of this module
+#                 mod_outputs = getattr(object, 'outputs', [])
+#                 if v in mod_outputs:
+#                     # trying to assign input to output
+#                     raise TraitError(
+#                         'Assigning "%s" to input "%s" would result in a circular reference (value is in module outputs).' % (
+#                         v, name))
+#
+#                 # make sure we are not assigning to any downstream outputs
+#                 recipe = getattr(object, '_parent', None)
+#                 if recipe is not None:
+#                     if v in recipe.downstream_outputs(list(object.outputs)):
+#                         # trying to assign input to output
+#                         raise TraitError(
+#                             'Assigning "%s" to input "%s" would result in a circular reference (value is in downstream outputs).' % (
+#                             v, name))
+#
+#         return value
+#
+    
         
 
 class Output(CStr):

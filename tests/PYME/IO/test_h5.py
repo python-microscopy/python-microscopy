@@ -30,7 +30,7 @@ def test_h5_export_uint16():
     
         im = image.ImageStack(filename=filename)
         
-        assert(np.allclose(im.data[:,:,:,0].squeeze(), data))
+        assert(np.allclose(im.data[:,:,:,0,0].squeeze(), data))
         im.dataSource.release()
     finally:
         shutil.rmtree(tempdir)
@@ -55,7 +55,7 @@ def test_h5_export_uint16_multicolour():
         
         im = image.ImageStack(filename=filename)
         
-        assert (np.allclose(im.data[:, :, :, :].squeeze(), data))
+        assert (np.allclose(im.data[:, :, :, :,:].squeeze(), data))
         im.dataSource.release()
     finally:
         shutil.rmtree(tempdir)

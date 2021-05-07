@@ -69,8 +69,32 @@ class Exporter:
 #
 #        return fname
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, tslice=None):
         pass
+
+    def _prepare(self, data, xslice, yslice, zslice, tslice):
+        from PYME.IO.dataWrap import Wrap
+        from PYME.IO.DataSources import BaseDataSource
+        data = Wrap(data) #make sure we can index along a colour dimension
+    
+        if data.ndim != 5:
+            # promote to xyztc
+            data = BaseDataSource.XYZTCWrapper.auto_promote(data)
+        
+        if tslice is None:
+            tslice = slice(0, data.shape[3], 1)
+        
+        nChans = data.shape[4]
+        nZ = (zslice.stop - zslice.start) // zslice.step
+        nT = (tslice.stop - tslice.start) // tslice.step
+        
+        nframes = nZ * nT
+
+        slice0 = data[xslice, yslice, 0, 0, 0]
+        xSize, ySize = slice0.shape[:2]
+        
+        return data, tslice, xSize, ySize, nZ, nT, nChans, nframes
+        
 
 #@exporter
 class H5Exporter(Exporter):
@@ -81,22 +105,15 @@ class H5Exporter(Exporter):
         self.complib = complib
         self.complevel = complevel
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        from PYME.IO.dataWrap import Wrap
-        
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None, tslice=None):
         h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
-
-        nframes = (zslice.stop - zslice.start)/zslice.step
         
-        data = Wrap(data) #make sure we can index along a colour dimension
-        nChans = data.shape[3]
 
-        slice0 = data[xslice, yslice, 0, 0]
-        xSize, ySize = slice0.shape[:2]
+        data, tslice, xSize, ySize, nZ, nT, nChans, nframes = self._prepare(data, xslice, yslice, zslice, tslice)
         
         print((xSize, ySize))
-        dtype = slice0.dtype
+        dtype = data.dtype
         
         if not dtype in ['uint8', 'uint16', 'float32']:
             warnings.warn('Attempting to save an unsupported data-type (%s) - data should be one of uint8, uint16, or float32' % dtype,
@@ -108,31 +125,34 @@ class H5Exporter(Exporter):
 
         curFrame = 0
         for ch_num in range(nChans):
-            for frameN in range(zslice.start,zslice.stop, zslice.step):
-                curFrame += 1
-                im = data[xslice, yslice, frameN, ch_num].squeeze()
-                
-                for fN in range(frameN+1, frameN+zslice.step):
-                    im += data[xslice, yslice, fN, ch_num].squeeze()
+            for z in range(zslice.start, zslice.stop, zslice.step):
+                for t in range(tslice.start, tslice.stop, tslice.step):
+                    curFrame += 1
+                    im = data[xslice, yslice, z, t, ch_num].squeeze()
                     
-                if im.ndim == 1:
-                    im = im.reshape((-1, 1))[None, :,:]
-                else:
-                    im = im[None, :,:]
-                
-                #print im.shape
-                ims.append(im)
-                if ((curFrame % 10) == 0)  and progressCallback:
-                    try:
-                        progressCallback(curFrame, nframes)
-                    except:
-                        pass
+                    # average is downsampling in z
+                    #TODO - do something similar in t ???
+                    for z_N in range(z +1, z +zslice.step):
+                        im += data[xslice, yslice, z, t, ch_num].squeeze()
+                        
+                    if im.ndim == 1:
+                        im = im.reshape((-1, 1))[None, :,:]
+                    else:
+                        im = im[None, :,:]
+                    
+                    #print im.shape
+                    ims.append(im)
+                    if ((curFrame % 10) == 0)  and progressCallback:
+                        try:
+                            progressCallback(curFrame, nframes)
+                        except:
+                            pass
             #ims.flush()
         
         ims.attrs.DimOrder = 'XYZTC'
         ims.attrs.SizeC = nChans
-        ims.attrs.SizeZ = nframes  #FIXME for proper XYZTC data model
-        ims.attrs.SizeT = 1        #FIXME for proper XYZTC data model
+        ims.attrs.SizeZ = nZ
+        ims.attrs.SizeT = nT
             
         ims.flush()
 
@@ -150,6 +170,7 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
         outMDH.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+        outMDH.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
 
         if not events is None and len(events) > 0:
             assert isinstance(events, numpy.ndarray), "expected type of events object to be numpy array, but was {}".format(type(events))
@@ -228,28 +249,41 @@ class TiffStackExporter(Exporter):
 
 #exporter(TiffStackExporter)
 
+import numpy as np
+class _CastWrapper(object):
+    def __init__(self, data, dtype=np.uint8):
+        self._data = data
+        self._dtype = dtype
+        
+    def getSlice(self, ind):
+        return self._data.getSlice(ind).astype(self._dtype)
+    
+    def __getattr__(self, item):
+        return getattr(self._data, item)
+        
+
 class OMETiffExporter(Exporter):
     extension = '*.tif'
     descr = 'OME TIFF - .tif'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None, tslice=None):
         from PYME.contrib.gohlke import tifffile
-        from PYME.IO import dataWrap
+
+        data, tslice, _, _, _, _, _, _ = self._prepare(data, xslice, yslice, zslice, tslice)
+             
+        if data.dtype == 'bool':
+            data = _CastWrapper(data, 'uint8')
         
-        def _bool_to_uint8(data):
-            if data.dtype == 'bool':
-                return data.astype('uint8')
-            else:
-                return data
-            
         if data.nbytes > 2e9:
             warnings.warn('Data is larger than 2GB, generated TIFF may not read in all software')
             
         if data.nbytes > 4e9:
             raise RuntimeError('TIFF has a maximum file size of 4GB, crop data or save as HDF')
         
-        dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
+        #dw = dataWrap.ListWrapper([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None
+        
+        
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
             if not origName is None:
@@ -258,14 +292,15 @@ class OMETiffExporter(Exporter):
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            xmd.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
             
-            description=xmd.getXML(dw)
+            description=xmd.getXML(data)
         else:
             description = None
             
             
             
-        tifffile.imsave_f(outFile, dw, description = description)
+        tifffile.imsave_f(outFile, data, description = description)
 
         if progressCallback:
             try:

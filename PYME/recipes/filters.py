@@ -33,13 +33,14 @@ class GaussianFilter(Filter):
     sigmaY = Float(1.0)
     sigmaX = Float(1.0)
     sigmaZ = Float(1.0)
+    sigmaT = Float(0.0)
     #def __init__(self, **kwargs):
     #    pass
     @property
     def sigmas(self):
-        return [self.sigmaX, self.sigmaY, self.sigmaZ]
+        return [self.sigmaX, self.sigmaY, self.sigmaZ, self.sigmaT]
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
@@ -68,13 +69,14 @@ class MedianFilter(Filter):
     sizeX = Int(3)
     sizeY = Int(3)
     sizeZ = Int(3)
+    sizeT = Int(0)
     #def __init__(self, **kwargs):
     #    pass
     @property
     def sigmas(self):
-        return [self.sizeX, self.sizeY, self.sizeZ]
+        return [self.sizeX, self.sizeY, self.sizeZ, self.sizeT]
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.median_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
@@ -103,14 +105,15 @@ class MaxFilter(Filter):
     sizeX = Int(3)
     sizeY = Int(3)
     sizeZ = Int(3)
+    sizeT = Int(0)
 
     # def __init__(self, **kwargs):
     #    pass
     @property
     def sigmas(self):
-        return [self.sizeX, self.sizeY, self.sizeZ]
+        return [self.sizeX, self.sizeY, self.sizeZ, self.sizeT]
 
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.maximum_filter(data, self.sigmas[:len(data.shape)])
 
     def completeMetadata(self, im):
@@ -162,7 +165,7 @@ class DespeckleFilter(Filter):
     def sigmas(self):
         return [self.sizeX, self.sizeY, self.sizeZ]
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.generic_filter(data, self._filt, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
@@ -191,14 +194,15 @@ class MeanFilter(Filter):
     sizeX = Int(3)
     sizeY = Int(3)
     sizeZ = Int(3)
+    sizeT = Int(0)
     #def __init__(self, **kwargs):
     #    pass
     @property
     def sigmas(self):
-        return [self.sizeX, self.sizeY, self.sizeZ]
+        return [self.sizeX, self.sizeY, self.sizeZ, self.sizeT]
     
-    def applyFilter(self, data, chanNum, frNum, im):
-        return ndimage.mean_filter(data, self.sigmas[:len(data.shape)])
+    def apply_filter(self, data, voxelsize):
+        return ndimage.uniform_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
         im.mdh['Processing.MeanFilter'] = self.sigmas
@@ -219,9 +223,11 @@ class Zoom(Filter):
     * zoom only zooms in x and y if ``processFramesIndividually`` is ``True``
 
     """
+    dimensionality = Enum('XY', 'XYZ', desc='Which image dimensions should the filter be applied to?')
+    
     zoom = Float(1.0)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.zoom(data, self.zoom)
     
     def completeMetadata(self, im):
@@ -229,7 +235,7 @@ class Zoom(Filter):
         im.mdh['voxelsize.x'] = im.mdh['voxelsize.x']/self.zoom
         im.mdh['voxelsize.y'] = im.mdh['voxelsize.y']/self.zoom
         
-        if not self.processFramesIndividually:
+        if not self.dimensionality == 'XY':
             im.mdh['voxelsize.z'] = im.mdh['voxelsize.z']/self.zoom
 
 @register_module('MaskEdges')
@@ -245,9 +251,11 @@ class MaskEdges(Filter):
 
     widthPxels : the distance from the edge to mask with 0s
     """
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+    
     widthPixels = Int(10)
 
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         dm = data.copy()
         dm[:self.widthPixels, :] = 0
         dm[-self.widthPixels:, :] = 0
@@ -277,6 +285,8 @@ class DoGFilter(Filter):
     * sigmaZ and sigmaZ2 are ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
 
     """
+    dimensionality = Enum('XY', 'XYZ', desc='Which image dimensions should the filter be applied to?')
+    
     sigmaY = Float(1.0)
     sigmaX = Float(1.0)
     sigmaZ = Float(1.0)
@@ -295,7 +305,7 @@ class DoGFilter(Filter):
     def sigma2s(self):
         return [self.sigma2X, self.sigma2Y, self.sigma2Z]
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)]) - ndimage.gaussian_filter(data, self.sigma2s[:len(data.shape)])
     
     def completeMetadata(self, im):

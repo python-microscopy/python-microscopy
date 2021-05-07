@@ -20,7 +20,7 @@ class SKFilter(Filter):
         #def __init__(self, **kwargs):
         #    pass
         
-        def applyFilter(self, data, chanNum, frNum, im):
+        def apply_filter(self, data, voxelsize):
             ret =  getattr(skf, self._filtName)(data, **self.kwargs())
             if 'threshold' in self._filtName and np.isscalar(ret):
                 #thresholding functions return the threshold value, not a mask

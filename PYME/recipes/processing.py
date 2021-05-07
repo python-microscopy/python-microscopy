@@ -27,7 +27,7 @@ logger=logging.getLogger(__name__)
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = data > self.threshold
         return mask
 
@@ -41,7 +41,7 @@ class FractionalThreshold(Filter):
     """
     fractionThreshold = Float(0.5)
 
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         N, bins = np.histogram(data, bins=5000)
         #calculate bin centres
         bin_mids = (bins[:-1] )
@@ -65,7 +65,7 @@ class Threshold(Filter):
     n_histogram_bins = Int(255)
     bin_spacing = Enum(['linear', 'log', 'adaptive'])
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         from PYME.Analysis import thresholding
         
         if self.method == 'isodata':
@@ -84,7 +84,7 @@ class Label(Filter):
     """
     minRegionPixels = Int(10)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = data > 0.5
         labs, nlabs = ndimage.label(mask)
         
@@ -111,7 +111,7 @@ class SelectLabel(Filter):
     """Creates a mask corresponding to all pixels with the given label"""
     label = Int(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = (data == self.label)
         return mask
 
@@ -126,7 +126,7 @@ class SelectLargestLabel(Filter):
     areas have unique integer IDs
     """
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         uni, counts = np.unique(data[data > 0], return_counts=True)
         self.label = uni[np.argmax(counts)]
         mask = (data == self.label)
@@ -140,7 +140,7 @@ class LocalMaxima(Filter):
     threshold = Float(.3)
     minDistance = Int(10)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.feature
         im = data.astype('f')/data.max()
         return skimage.feature.peak_local_max(im, threshold_abs = self.threshold, min_distance = self.minDistance, indices=False)
@@ -505,14 +505,14 @@ class CaWave(object):
         normalize: True
     '''
     def __init__(self, wavefronts, intensity, trange, recipe=''):
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         
         self.trange = trange
         
         if recipe == '':
             recipe = self.default_recipe
         
-        self._mc = ModuleCollection.fromYAML(recipe)
+        self._mc = Recipe.fromYAML(recipe)
         
         print('Executing wave sub-recipe')
         
@@ -1146,8 +1146,10 @@ class Deconvolve(Filter):
     regularisationLambda = Float(0.1) #Regularisation - ICTM only
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
     zPadding = Int(0) # padding along the z axis
-    
-    processFramesIndividually = False # Make deconvolution 3D by default
+
+    #  Make deconvolution 3D by default
+    #processFramesIndividually = False
+    dimensionality = Enum('XYZ', 'XY', desc='Which image dimensions should the filter be applied to?')
     
     _psfCache = {}
     _decCache = {}
@@ -1285,7 +1287,7 @@ class Deconvolve(Filter):
         return self._decCache[decKey]
             
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         d = np.atleast_3d(data.astype('f') - self.offset)
         #vx, vy, vz = np.array(im.voxelsize)*1e-3
         
@@ -1306,7 +1308,7 @@ class Deconvolve(Filter):
         #psf, vs = self.GetPSF(im.voxelsize)
         
         #Get appropriate deconvolution object        
-        dec = self.GetDec(dp, im.voxelsize)
+        dec = self.GetDec(dp, voxelsize)
         
         #run deconvolution
         res = dec.deconv(dp, self.regularisationLambda, self.iterations, weights).reshape(dec.shape)
@@ -1440,7 +1442,7 @@ class DeconvolveMotionCompensating(Deconvolve):
     
 @register_module('DistanceTransform')     
 class DistanceTransform(Filter):    
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = 1.0*(data > 0.5)
         voxelsize = np.array(im.voxelsize)[:mask.ndim]
         dt = -ndimage.distance_transform_edt(data, sampling=voxelsize)
@@ -1452,7 +1454,7 @@ class BinaryDilation(Filter):
     iterations = Int(1)
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1466,7 +1468,7 @@ class BinaryErosion(Filter):
     iterations = Int(1)
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1479,7 +1481,7 @@ class BinaryErosion(Filter):
 class BinaryFillHoles(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1492,7 +1494,7 @@ class BinaryFillHoles(Filter):
 class GreyDilation(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1505,7 +1507,7 @@ class GreyDilation(Filter):
 class GreyErosion(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1518,7 +1520,7 @@ class GreyErosion(Filter):
 class WhiteTophat(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1543,14 +1545,14 @@ class Watershed(ModuleBase):
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
                 if not mask is None:
-                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze(), mask.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
+                    filt_ims.append(np.concatenate([np.atleast_3d(self._apply_ws(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze(), mask.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
                 else:
-                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
+                    filt_ims.append(np.concatenate([np.atleast_3d(self._apply_ws(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
         else:
             if not mask is None:
-                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), markers.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
+                filt_ims = [np.atleast_3d(self._apply_ws(image.data[:,:,:,chanNum].squeeze(), markers.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
             else:
-                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
+                filt_ims = [np.atleast_3d(self._apply_ws(image.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
             
         im = ImageStack(filt_ims, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
@@ -1560,7 +1562,7 @@ class Watershed(ModuleBase):
         
         return im
         
-    def applyFilter(self, image,markers, mask=None):
+    def _apply_ws(self, image,markers, mask=None):
         import skimage.morphology
 
         img = ((image/image.max())*2**15).astype('int16')         
@@ -1993,14 +1995,17 @@ class Projection(Filter):
     """ Project image along an axis
     
     TODO - make this more efficient - we currently force the whole stack into memory
+    
+    NOTE: coloured max returns results encoded as a complex number out = np.max(data, axis) + 1j*np.argmax(data, axis)
+    
     """
     
-    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min'])
+    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min', 'Coloured Max'])
     axis = Int(2)
     
-    processFramesIndividually = False
-    
-    def applyFilter(self, data, chanel_num, frame_num, image):
+    dimensionality = Enum('XYZ', 'XY')
+        
+    def apply_filter(self, data, voxelsize):
         if self.kind == 'Mean':
             return np.mean(data, axis=int(self.axis))
         if self.kind == 'Sum':
@@ -2013,6 +2018,12 @@ class Projection(Filter):
             return np.std(data, axis=int(self.axis))
         if self.kind == 'Min':
             return np.min(data, axis=int(self.axis))
+        if self.kind == 'Coloured Max':
+            m = np.min(data, axis=int(self.axis))
+            im = np.argmin(data, axis=int(self.axis))
+            
+            return m + 1j*im
+            
 
 @register_module('StatisticsByFrame')
 class StatisticsByFrame(ModuleBase):
@@ -2110,3 +2121,59 @@ class DarkAndVarianceMap(ModuleBase):
 
         namespace[self.output_dark] = dark_map
         namespace[self.output_variance] = variance_map
+        
+@register_module('Composite')
+class Composite(ModuleBase):
+    """
+    Combine multiple single-channel images into a multi-channel image. Goes further than base.JoinChannels
+    in that it supports re-scaling to match voxel sizes and optionally shift correction.
+    
+    input0 is used to set the voxel size, with other images being re-scaled to match
+    
+    """
+    input0 = Input('input')
+    input1 = Input('')
+    input2 = Input('')
+    input3 = Input('')
+    
+    shiftmap0 = FileOrURI('')
+    shiftmap1 = FileOrURI('')
+    shiftmap2 = FileOrURI('')
+    shiftmap3 = FileOrURI('')
+    
+    ignoreZOrigin = Bool(True)
+    interpolate = Bool(True)
+    
+    output = Output('composite')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis import composite
+        
+        imgs = []
+        
+        for i in range(4):
+            imn = getattr(self, 'input%d' % i)
+            
+            if not (imn == ''):
+                if '$' in imn:
+                    imn, chan = imn.split('$')
+                    chan=int(chan)
+                else:
+                    chan=0
+                    
+            imgs.append((namespace[imn], chan, getattr(self, 'shiftmap%d' % i)))
+            
+        namespace[self.output] = composite.make_composite(imgs, ignoreZ=self.ignoreZOrigin, interp=self.interpolate)
+        
+    @property
+    def inputs(self):
+        """
+        Redefine inputs to remove channel suffixes
+
+        """
+        return {v.split('$')[0] for k, v in self.trait_get().items() if
+                (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+                    
+                
+            

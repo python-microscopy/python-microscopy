@@ -42,7 +42,8 @@ import warnings
 
 #from traits.api import HasTraits
 #from traitsui.api import View
-from PYME.recipes.base import ModuleCollection
+#from PYME.recipes.base import ModuleCollection
+from PYME.recipes import Recipe
 
 import numpy as np
 import scipy.special
@@ -299,7 +300,7 @@ class Pipeline:
         self.colourFilter = None
         self.events = None
         
-        self.recipe = ModuleCollection(execute_on_invalidation=True)
+        self.recipe = Recipe(execute_on_invalidation=True)
         self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None

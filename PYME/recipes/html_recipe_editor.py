@@ -19,7 +19,8 @@ import PYME.resources
 import sys
 import os
 from PYME.recipes import modules #force modules to load
-from PYME.recipes.base import ModuleCollection
+from PYME.recipes import Recipe
+#from PYME.recipes.base import ModuleCollection
 
 #### Domain model ####
 
@@ -65,7 +66,7 @@ def main():
     else:
         recipe_yaml = ''
         
-    recipe = ModuleCollection.fromYAML(recipe_yaml)
+    recipe = Recipe.fromYAML(recipe_yaml)
     
     print(recipe)
 

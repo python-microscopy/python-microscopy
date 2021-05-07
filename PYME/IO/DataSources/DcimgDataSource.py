@@ -22,11 +22,11 @@
 ##################
 
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
 from PYME.IO import dcimg
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'DcimgDataSource'
     def __init__(self, filename, taskQueue=None):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path

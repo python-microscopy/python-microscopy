@@ -21,9 +21,9 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
-class DataSource(BaseDataSource): 
+class DataSource(XYTCDataSource):
     moduleName = 'AlignDataSource'
     def __init__(self,dataSource, shifts=[0,0,0], voxelsize=(70., 70., 200.)):
         #self.unmixer = unmixer

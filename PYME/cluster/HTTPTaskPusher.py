@@ -282,11 +282,11 @@ class HTTPTaskPusher(object):
 
 class RecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
-        from PYME.recipes.modules import ModuleCollection
+        from PYME.recipes import Recipe
         if recipe:
             if isinstance(recipe, string_types):
                 self.recipe_text = recipe
-                self.recipe = ModuleCollection.fromYAML(recipe)
+                self.recipe = Recipe.fromYAML(recipe)
             else:
                 self.recipe_text = recipe.toYAML()
                 self.recipe = recipe
@@ -299,7 +299,7 @@ class RecipePusher(object):
             else:
                 from PYME.IO import unifiedIO
                 self.recipeURI = recipeURI
-                self.recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+                self.recipe = Recipe.fromYAML(unifiedIO.read(recipeURI))
 
         self.taskQueueURI = _getTaskQueueURI()
 

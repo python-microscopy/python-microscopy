@@ -23,7 +23,7 @@
 
 #from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import tables
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
 #import httplib
 #import urllib
@@ -41,7 +41,7 @@ SHAPE_LIFESPAN = 5
 
 
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'HTTPDataSource'
     def __init__(self, url, queue=None):
         self.url = url
