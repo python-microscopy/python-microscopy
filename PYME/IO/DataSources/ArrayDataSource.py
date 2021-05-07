@@ -62,9 +62,9 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
     def __getitem__(self, keys):
         keys = list(keys)
         #print keys
-        for i in range(len(keys)):
-            if not isinstance(keys[i], slice):
-                keys[i] = slice(int(keys[i]), int(keys[i]) + 1)
+        #for i in range(len(keys)):
+        #    if not isinstance(keys[i], slice):
+        #        keys[i] = slice(int(keys[i]), int(keys[i]) + 1)
         #if keys == self.oldSlice:
         #    return self.oldData
         
@@ -81,7 +81,7 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         #if self.type == 'Array':
         r = self.data.__getitem__(tuple(keys))
         
-        if not isinstance(r, np.ndarray):
+        if not isinstance(r, (np.ndarray, np.number)):
             # make slicing work for dask arrays TODO - revisit??
             r = r.compute()
         

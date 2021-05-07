@@ -292,8 +292,13 @@ class XYZTCDataSource(BaseDataSource):
         
         indices = {}
         
+        to_squeeze=[]
+        
         for i in range(len(keys)):
             if not isinstance(keys[i], slice):
+                if np.isscalar(keys[i]):
+                    to_squeeze.append(i)
+                
                 if keys[i] == -1:
                     #special case for -1 indexing
                     keys[i] = slice(-1, None)
@@ -313,7 +318,7 @@ class XYZTCDataSource(BaseDataSource):
                     slice_idx = self._c_stride * c + self._t_stride * t + self._z_stride * z
                     out[:, :, zi, ci, ti] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
-        return out
+        return out.squeeze(axis=tuple(to_squeeze))
 
 
 class XYZTCWrapper(XYZTCDataSource):
