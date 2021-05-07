@@ -2121,3 +2121,59 @@ class DarkAndVarianceMap(ModuleBase):
 
         namespace[self.output_dark] = dark_map
         namespace[self.output_variance] = variance_map
+        
+@register_module('Composite')
+class Composite(ModuleBase):
+    """
+    Combine multiple single-channel images into a multi-channel image. Goes further than base.JoinChannels
+    in that it supports re-scaling to match voxel sizes and optionally shift correction.
+    
+    input0 is used to set the voxel size, with other images being re-scaled to match
+    
+    """
+    input0 = Input('input')
+    input1 = Input('')
+    input2 = Input('')
+    input3 = Input('')
+    
+    shiftmap0 = FileOrURI('')
+    shiftmap1 = FileOrURI('')
+    shiftmap2 = FileOrURI('')
+    shiftmap3 = FileOrURI('')
+    
+    ignoreZOrigin = Bool(True)
+    interpolate = Bool(True)
+    
+    output = Output('composite')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis import composite
+        
+        imgs = []
+        
+        for i in range(4):
+            imn = getattr(self, 'input%d' % i)
+            
+            if not (imn == ''):
+                if '$' in imn:
+                    imn, chan = imn.split('$')
+                    chan=int(chan)
+                else:
+                    chan=0
+                    
+            imgs.append((namespace[imn], chan, getattr(self, 'shiftmap%d' % i)))
+            
+        namespace[self.output] = composite.make_composite(imgs, ignoreZ=self.ignoreZOrigin, interp=self.interpolate)
+        
+    @property
+    def inputs(self):
+        """
+        Redefine inputs to remove channel suffixes
+
+        """
+        return {v.split('$')[0] for k, v in self.trait_get().items() if
+                (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+                    
+                
+            
