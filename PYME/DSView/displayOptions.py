@@ -372,10 +372,25 @@ class DisplayOpts(object):
         """
         
         chan_d = []
+        
+        local_scaling = False
 
         sx, sy = self.ds.shape[:2]
-        xr = (max(self.xp - 50, 0), min(self.xp + 50, sx))
-        yr = (max(self.yp - 50, 0), min(self.yp + 50, sy))
+        xr = (0, sx)
+        yr = (0, sy)
+
+        try:
+            chunks = self.ds.chunks
+    
+            if not ((chunks[0] == sx) and (chunks[1] == sy)):
+                # we have a chunked dataset where the chunks sub-sample the x-y space, do not attempt to load a full xy
+                # slice into memoru
+                local_scaling = True
+                
+                xr = (max(self.xp - 50, 0), min(self.xp + 50, sx))
+                yr = (max(self.yp - 50, 0), min(self.yp + 50, sy))
+        except AttributeError:
+            pass
         
         for i in range(len(self.Chans)):
             if self.ds.ndim >= 5:
@@ -397,6 +412,9 @@ class DisplayOpts(object):
                 else:
                     c = np.abs(c)
                     
+            if c.size > 1e4:
+                c = c[::int(np.floor(c.size/1e4))]
+            
             chan_d.append(c)
             
         return chan_d
