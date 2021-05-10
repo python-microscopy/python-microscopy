@@ -255,11 +255,18 @@ class _CastWrapper(object):
         self._data = data
         self._dtype = dtype
         
+    @property
+    def dtype(self):
+        return self._dtype
+        
     def getSlice(self, ind):
         return self._data.getSlice(ind).astype(self._dtype)
     
     def __getattr__(self, item):
         return getattr(self._data, item)
+    
+    def __getitem__(self, item):
+        return self._data.__getitem__(item).astype(self._dtype)
         
 
 class OMETiffExporter(Exporter):

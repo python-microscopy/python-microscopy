@@ -25,6 +25,12 @@ import tables
 from PYME.IO.DataSources.BaseDataSource import DefaultList, BaseDataSource
 from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 
+def atleast_nd(a, n):
+    while a.ndim < n:
+        a = np.expand_dims(a, a.ndim)
+        
+    return a
+
 class ListWrapper(BaseDataSource):
     def __init__(self, dataList):
         self.dataList = dataList
@@ -82,7 +88,7 @@ class ListWrapper(BaseDataSource):
         #    return ListWrap([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))])
 
         if isinstance(kL, slice):
-            return np.concatenate([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))], self.listDim)
+            return np.concatenate([atleast_nd(self.wrapList[i].__getitem__(keys[:self.listDim]), self.ndim) for i in range(*kL.indices(len(self.wrapList)))], self.listDim)
         else:
             return self.wrapList[kL].__getitem__(keys[:self.listDim])
 
