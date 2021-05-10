@@ -4,8 +4,8 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_r
 import threading
 import queue
 import os
-import glob
-import collections
+#import glob
+#import collections
 import time
 import six
 import tempfile
@@ -17,7 +17,7 @@ import json
 import queue
 import logging
 
-from skimage.measure import label
+#from skimage.measure import label
 
 from PYME.IO import clusterIO, PZFFormat
 from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
@@ -369,30 +369,92 @@ class PartialPyramid(ImagePyramid):
 
 
 class TileSpooler(object):
-    def __init__(self, server_address, server_port):
+    """
+    Class to handle spooling tiles to a single server
+    """
+    def __init__(self, server_address, server_port, dir_manager=None):
+        if not isinstance(server_address, string):
+            server_address = socket.inet_ntoa(server_address)
+            
         self._server_address = server_address
-        self.server_port = server_port
+        self._server_port = server_port
+        
+        self._dir_manager = dir_manager
+        
+        self._url = 'http://%s:%d/' % (server_address, server_port)
 
         self._put_queue = queue.Queue()
+        self._rc_queue = queue.Queue()
         self._last_flush_time = time.time()
+        self._socket = None
+        self._alive = True
         
+        self._connect()
         
+    def _connect(self):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self._socket.settimeout(30)
         
-    def _poll_loop(self, server_idx):
-        """
-
-        Runs in a separate thread for each server and sends results once there is a reasonable ammount available.
-
-        """
-        _chunk_list = []
+        self._socket.connect((self._server_address, self._server_port))
     
-        while self._do_poll: #TODO -add other checks, as in spooler
+    def kill(self):
+        self._alive = False
+        
+        self._t_send.join()
+        self._t_recv.join()
+        
+        self._socket.close()
+    
+    def _send_loop(self):
+        connection = b'keep-alive'
+        
+        while self._alive:
             try:
-                _chunk_list.append(self._put_lists[server_idx].get_nowait())
-            
-                if len(_chunk_list) >=
+                filename, data = self._put_queue.get(timeout=20)
+
+                if False:
+                    connection = b'close'
+
+                header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (
+                    filename.encode(), connection, dl)
+                
+                self._socket.sendall(header)
+                self._socket.sendall(data)
+
+
+
+                datalen += dl
+                nChunksSpooled += 1
+                nChunksRemaining -= 1
+                
             except queue.Empty:
                 pass
+                
+                
+            
+    def _recv_loop(self):
+        fp = self._socket.makefile('rb', 65536)
+        
+        try:
+            while self._alive:
+                try:
+                    filename = self._rc_queue.get(timeout=10)
+                    status, reason, msg = clusterIO._parse_response(fp)
+                    if not status == 200:
+                        logger.error(('Error spooling %s: Response %d - status %d' % (filename, i, status)) + ' msg: ' + str(msg))
+                    else:
+                        if self._dir_manager:
+                            # register file in cluster directory
+                            fn = filename.split('?')[0]
+                            url = self.url_ + fn
+                            self._dir_manager.register_file(fn, url, dl)
+                            
+                except queue.Empty:
+                    pass
+                
+        finally:
+            fp.close()
         
         
         
