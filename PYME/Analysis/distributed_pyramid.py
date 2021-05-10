@@ -391,6 +391,14 @@ class TileSpooler(object):
         
         self._connect()
         
+        self._t_send = threading.Thread(target=self._send_loop)
+        self._t_send.daemon = True
+        self._t_send.start()
+
+        self._t_recv = threading.Thread(target=self._recv_loop)
+        self._t_recv.daemon = True
+        self._t_recv.start()
+        
     def _connect(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -399,12 +407,20 @@ class TileSpooler(object):
         self._socket.connect((self._server_address, self._server_port))
     
     def kill(self):
+        """
+        Stop our threads and tidy up
+
+        """
         self._alive = False
         
         self._t_send.join()
         self._t_recv.join()
         
         self._socket.close()
+        
+    def put(self, filename, data):
+        """Add a file to the queue to be put"""
+        self._put_queue.put((filename, data))
     
     def _send_loop(self):
         connection = b'keep-alive'
@@ -422,15 +438,12 @@ class TileSpooler(object):
                 self._socket.sendall(header)
                 self._socket.sendall(data)
 
-
-
                 datalen += dl
                 nChunksSpooled += 1
                 nChunksRemaining -= 1
                 
             except queue.Empty:
                 pass
-                
                 
             
     def _recv_loop(self):
@@ -486,7 +499,7 @@ class DistributedImagePyramid(ImagePyramid):
         
         self.sessions = [requests.Session() for _, _ in self.servers]
         
-        self._put_lists = [queue.Queue() for _ in self.servers]
+        self._tile_spoolers = [TileSpooler(address, port) for address, port in self.servers]
         
         
         for server_idx in range(len(self.servers)):
@@ -870,9 +883,11 @@ class DistributedImagePyramid(ImagePyramid):
         if weights is not 'auto':
             raise RuntimeError('Distributed pyramid only supports auto weights')
         
-        self._put_lists[server_idx].put((tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None))
-    
-                
+        fn = f'__pyramid_update_tile/{self.base_dir}?x={tile_x}&y={tile_y}&weights="{weights}"&' + \
+             f'tox={tile_offset[0]}&toy={tile_offset[1]}&fox={frame_offset[0]}&foy={frame_offset[1]}&' + \
+             f'frame_shape={frame_shape}'
+        
+        self._tile_spoolers[server_idx].put((tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None))
             
     
     def update_tiles_on_server(self, chunk_tuples, server_idx):
