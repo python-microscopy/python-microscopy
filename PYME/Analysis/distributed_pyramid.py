@@ -1,9 +1,5 @@
 import numpy as np
-from PYME.IO.MetaDataHandler import(
-    get_camera_roi_origin, get_camera_physical_roi_origin,
-    load_json, NestedClassMDHandler,
-)
-
+from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
 
 import threading
 import queue
@@ -20,12 +16,11 @@ import logging
 import json
 import queue
 import logging
-from skimage.measure import label
-from PYME.IO import clusterIO, PZFFormat
-from PYME.Analysis.tile_pyramid import (
-    TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
-)
 
+from skimage.measure import label
+
+from PYME.IO import clusterIO, PZFFormat
+from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO
 
 logger = logging.getLogger(__name__)
 MAXLINE = 65536
@@ -373,6 +368,35 @@ class PartialPyramid(ImagePyramid):
         logger.debug("updating part pyramid done")
 
 
+class TileSpooler(object):
+    def __init__(self, server_address, server_port):
+        self._server_address = server_address
+        self.server_port = server_port
+
+        self._put_queue = queue.Queue()
+        self._last_flush_time = time.time()
+        
+        
+        
+    def _poll_loop(self, server_idx):
+        """
+
+        Runs in a separate thread for each server and sends results once there is a reasonable ammount available.
+
+        """
+        _chunk_list = []
+    
+        while self._do_poll: #TODO -add other checks, as in spooler
+            try:
+                _chunk_list.append(self._put_lists[server_idx].get_nowait())
+            
+                if len(_chunk_list) >=
+            except queue.Empty:
+                pass
+        
+        
+        
+
 
 class DistributedImagePyramid(ImagePyramid):
     """
@@ -380,37 +404,43 @@ class DistributedImagePyramid(ImagePyramid):
     cluster.
     Implementation from the microscope side.
     """
-    def __init__(
-        self, storage_directory, pyramid_tile_size=256, mdh=None, 
-        n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0, 
-        pixel_size=1, backend=PZFTileIO, servers=None, chunk_shape=[8,8,1], timeout=10, repeats=3
-    ):
-        super().__init__(
-            storage_directory, pyramid_tile_size=pyramid_tile_size, mdh=mdh,
-            n_tiles_x=n_tiles_x, n_tiles_y=n_tiles_y, depth=depth, x0=x0, y0=y0, 
-            pixel_size=pixel_size, backend=backend
-        )
+    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0,
+                 pixel_size=1, backend=PZFTileIO, servers=None, chunk_shape=[8,8,1], timeout=10, repeats=3):
+        
+        ImagePyramid.__init__(self,storage_directory, pyramid_tile_size=pyramid_tile_size, mdh=mdh,
+                              n_tiles_x=n_tiles_x, n_tiles_y=n_tiles_y, depth=depth, x0=x0, y0=y0,
+                              pixel_size=pixel_size, backend=backend)
+        
         self.chunk_shape = chunk_shape
         self.timeout = timeout
         self.repeats = repeats
+        
         if servers is None:
-            self.servers = [
-                (
-                    socket.inet_ntoa(v.address), v.port
-                ) for k, v in clusterIO.get_ns().get_advertised_services()
-            ]
+            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in clusterIO.get_ns().get_advertised_services()]
         else:
             self.servers = [(address, servers[address]) for address in servers]
+            
         assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
+        
         self.sessions = [requests.Session() for _, _ in self.servers]
+        
+        self._put_lists = [queue.Queue() for _ in self.servers]
+        
+        
         for server_idx in range(len(self.servers)):
             self.create_remote_part(server_idx, backend)
+        
+        # FIXME - Apart from the chunk shape, these parameters have no place in the metadata
         self._mdh["Pyramid.Servers"] = self.mdh_servers()
         self._mdh["Pyramid.ChunkShape"] = self.chunk_shape
         self._mdh["Pyramid.Timeout"] = self.timeout
         self._mdh["Pyramid.Repeats"] = self.repeats
         self._cached_level_coords = {}
 
+    
+    # FIXME - Remove. From an IO perspective, we should open and read distributed pyramids using the base pyramid class
+    # (suitably modified to use unifiedIO where needed). This removes an awful lot of code duplication, and lets us take
+    # advantage of the caching etc already implemented in clusterIO.
     @classmethod
     def load_existing(cls, storage_directory):
         """ loads a DistributedImagePyramid from a given directory.
@@ -444,6 +474,9 @@ class DistributedImagePyramid(ImagePyramid):
             repeats=mdh["Pyramid.Repeats"],
         )
 
+    # FIXME - remove - servers have no place in the metadata, as there is no garuantee that the pyramid will be
+    # opened from the same cluster config - it could just as easily be copied elsewhere. Additionally, server
+    # IPs in the PYME cluster are dynamically allocated and may change without notice.
     def mdh_servers(self):
         """
         Converts the servers attribute into a dictionary for mdh.
@@ -489,6 +522,8 @@ class DistributedImagePyramid(ImagePyramid):
         url = url.encode()
         return url
 
+    
+    # we shouldn't need any out logic here at all - we should be able to use the clusterIO methods (e.g. putFiles)
     def put(self, path_prefix, params, data, server_idx):
         """
         Sends a HTTP PUT request to a specified cluster server.
@@ -681,84 +716,103 @@ class DistributedImagePyramid(ImagePyramid):
 
         return frame_slice, params
 
-    def update_base_tiles_from_frame(self, x, y, frame, weights):
+    def _ensure_layer_directory(self, layer_num=0):
+        # directories get created automatically on the cluster, we don't need to do anything here.
+        pass
+    
+    # DB - this duplicates the method in the base class for no good reason - update_base_tile should be overloaded instead.
+    # it also doe a bunch of super expensive and un-neccessary processing - e.g. labelling, np.where
+    # def update_base_tiles_from_frame(self, x, y, frame, weights='auto'):
+    #     """
+    #     Identifiers which server is responsible for which chunk and
+    #     sends corresponding frame slices to the servers.
+    #
+    #     Notes
+    #     -----
+    #     Given a 2x2 frame, 1x1 chunks and 4 servers, one may describe the
+    #     responsibility of the servers via a matrix:
+    #     `[
+    #         [1, 2],
+    #         [3, 4],
+    #     ]`
+    #     where matrix values indicate which server is responsible for the
+    #     tile (and chunk in this case) at their position. If only
+    #     2 servers are present, the matrix may look like this:
+    #     `[
+    #         [1, 2],
+    #         [2, 1],
+    #     ]`
+    #     In this case, a server's chunks are extracted into masks and then
+    #     separated with `skimage.measure.label`.
+    #     """
+    #     frameSizeX, frameSizeY = frame.shape[:2]
+    #
+    #     if weights == 'auto':
+    #         weights = self.frame_weights(frame.shape[:2])
+    #     else:
+    #         # Auto-weights allows weighting to be performed server-side in the future, don't allow non-auto weights
+    #         # TODO - offer differenc auto-weighting schemes?
+    #         raise RuntimeError('Distributed pyramid should only be used with automatic weights')
+    #
+    #
+    #     frame = frame * weights
+    #
+    #     out_folder = os.path.join(self.base_dir, '0')
+    #     if not os.path.exists(out_folder):
+    #         os.makedirs(out_folder)
+    #
+    #     if (x < 0) or (y < 0):
+    #         raise ValueError('base tile origin positions must be >=0')
+    #
+    #     tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
+    #     tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
+    #
+    #     self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
+    #     self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
+    #
+    #     array = [server_for_chunk(tile_x, tile_y, 0, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)) for tile_x in tile_xs for tile_y in tile_ys]
+    #
+    #     responsibility_matrix = np.asarray(array,dtype=int,)
+    #
+    #     responsibility_matrix = responsibility_matrix.reshape((len(tile_xs), len(tile_ys)))
+    #     for server_idx in range(len(self.sessions)):
+    #         server_chunks = responsibility_matrix == server_idx
+    #         chunk_masks, nr_chunks = label(server_chunks, return_num=True, connectivity=1)
+    #         chunk_tuples = []
+    #         for chunk in np.arange(nr_chunks) + 1:
+    #             chunk_mask = chunk_masks == chunk
+    #             chunk_coords = np.where(chunk_mask)
+    #             chunk_coords = [
+    #                 chunk_coords[0].min(),
+    #                 chunk_coords[0].max(),
+    #                 chunk_coords[1].min(),
+    #                 chunk_coords[1].max(),
+    #             ]
+    #             frame_slice, chunk_params = self.extract_chunk_from(x, y, chunk_coords, frameSizeX, frameSizeY, frame,)
+    #             chunk_tuples.append((PZFFormat.dumps(frame_slice.astype(np.float32)),chunk_params,))
+    #
+    #         self.update_tiles_on_server(chunk_tuples, server_idx)
+    #     self.pyramid_valid = False
+        
+    
+    def update_base_tile(self, tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None):
         """
-        Identifiers which server is responsible for which chunk and
-        sends corresponding frame slices to the servers.
-
-        Notes
-        -----
-        Given a 2x2 frame, 1x1 chunks and 4 servers, one may describe the
-        responsibility of the servers via a matrix:
-        `[
-            [1, 2],
-            [3, 4],
-        ]`
-        where matrix values indicate which server is responsible for the
-        tile (and chunk in this case) at their position. If only
-        2 servers are present, the matrix may look like this:
-        `[
-            [1, 2],
-            [2, 1],
-        ]`
-        In this case, a server's chunks are extracted into masks and then
-        separated with `skimage.measure.label`.
-        """
-        frameSizeX, frameSizeY = frame.shape[:2]
+        Over-ridden version of update_base_tile which causes this to be called on the server rather than the client
         
-        out_folder = os.path.join(self.base_dir, '0')
-        if not os.path.exists(out_folder):
-            os.makedirs(out_folder)
+        In practice it simply adds each chunk to a queue of chunks that get pushed asynchronously in multiple threads
+        (one for each server).
         
-        if (x < 0) or (y < 0):
-            raise ValueError('base tile origin positions must be >=0')
+        """"
+        server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions))
         
-        tile_xs = range(
-            int(
-                np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1
-            )
-        )
-        tile_ys = range(
-            int(
-                np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1
-            )
-        )
-        self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
-        self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
-
-        array = [
-                server_for_chunk(
-                    tile_x, tile_y, 0, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)
-                ) for tile_x in tile_xs for tile_y in tile_ys
-        ]
-        responsibility_matrix = np.asarray(
-            array,
-            dtype=int,
-        )
-        responsibility_matrix = responsibility_matrix.reshape((len(tile_xs), len(tile_ys)))
-        for server_idx in range(len(self.sessions)):
-            server_chunks = responsibility_matrix == server_idx
-            chunk_masks, nr_chunks = label(server_chunks, return_num=True, connectivity=1)
-            chunk_tuples = []
-            for chunk in np.arange(nr_chunks) + 1:
-                chunk_mask = chunk_masks == chunk
-                chunk_coords = np.where(chunk_mask)
-                chunk_coords = [
-                    chunk_coords[0].min(),
-                    chunk_coords[0].max(),
-                    chunk_coords[1].min(),
-                    chunk_coords[1].max(),
-                ]
-                frame_slice, chunk_params = self.extract_chunk_from(
-                    x, y, chunk_coords, frameSizeX, frameSizeY, frame,
-                )
-                chunk_tuples.append((
-                    PZFFormat.dumps(frame_slice.astype(np.float32)),
-                    chunk_params,
-                ))
-            self.update_tiles_on_server(chunk_tuples, server_idx)
-        self.pyramid_valid = False
-
+        if weights is not 'auto':
+            raise RuntimeError('Distributed pyramid only supports auto weights')
+        
+        self._put_lists[server_idx].put((tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None))
+    
+                
+            
+    
     def update_tiles_on_server(self, chunk_tuples, server_idx):
         """
         Sends the output from `extract_chunk_from()` to the responsible cluster
@@ -960,18 +1014,6 @@ def distributed_pyramid(
     xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
     ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
     
-    #calculate a weighting matrix (to allow feathering at the edges - TODO)
-    weights = np.ones((frameSizeX, frameSizeY, nchans))
-    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
-    #weights[:, -10:, :] = 0
-    
-    #print weights[:20, :].shape
-    edgeRamp = min(100, int(.25 * ds.shape[0]))
-    weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
-    weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
-    weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
-    weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
-    
     # get splitter ROI coordinates in units of pixels
     ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
     ROIY1 = y0_cam + 1
@@ -1000,9 +1042,8 @@ def distributed_pyramid(
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
-            d_weighted = weights * d
             # TODO - account for orientation so this works for non-primary cams
-            P.update_base_tiles_from_frame(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            P.update_base_tiles_from_frame(x_i, y_i, d)
 
     P.finish_base_tiles()
 

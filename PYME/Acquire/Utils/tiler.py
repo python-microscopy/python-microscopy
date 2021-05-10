@@ -35,18 +35,10 @@ class Tiler(pointScanner.PointScanner):
         self.progress = dispatch.Signal()
         
     
-    def _gen_weights(self):
-        sh = self.scope.frameWrangler.currentFrame.shape[:2]
-        self._weights = np.ones(sh)
-
-        edgeRamp = min(100, int(.25 * sh[0]))
-        self._weights[:edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[:, None]
-        self._weights[-edgeRamp:, :,] *= np.linspace(1, 0, edgeRamp)[:, None]
-        self._weights[:, :edgeRamp] *= np.linspace(0, 1, edgeRamp)[None, :]
-        self._weights[:, -edgeRamp:] *= np.linspace(1, 0, edgeRamp)[None, :]
         
     def start(self):
-        self._gen_weights()
+        #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()
+        
         self.genCoords()
 
         #metadata handling
@@ -91,7 +83,7 @@ class Tiler(pointScanner.PointScanner):
         y_i = np.round(((pos['y'] - self._y0) / self._pixel_size)).astype('i')
         #print(pos['x'], pos['y'], x_i, y_i, d.min(), d.max())
         
-        self.P.add_base_tile(x_i, y_i, self._weights*d, self._weights)
+        self.P.update_base_tiles_from_frame(x_i, y_i, d)
         
         t = time.time()
         if t > (self._last_update_time + 1):

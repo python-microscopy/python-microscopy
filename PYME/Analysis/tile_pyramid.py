@@ -290,6 +290,8 @@ def infer_tileio_backend(base_directory):
     raise IOError("No files found for loading ImagePyramid.")
 
 class ImagePyramid(object):
+    _weight_cache = {}
+    
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
                  pixel_size=1, backend=PZFTileIO):
@@ -331,6 +333,29 @@ class ImagePyramid(object):
         self._imgs = backend(base_dir=self.base_dir, suff='img')
         self._acc = backend(base_dir=self.base_dir, suff='acc')
         self._occ = backend(base_dir=self.base_dir, suff='occ')
+    
+    @classmethod
+    def frame_weights(cls, frame_shape):
+        k = tuple(frame_shape[:2])
+        
+        try:
+            weights = cls._weight_cache[k]
+        except KeyError:
+            #calculate a weighting matrix (to allow feathering at the edges - TODO)
+            weights = np.ones((frame_shape[0], frame_shape[1], 1))
+            #weights[:, :10, :] = 0 #avoid splitter edge artefacts
+            #weights[:, -10:, :] = 0
+        
+            #print weights[:20, :].shape
+            edgeRamp = min(100, int(.25 * frame_shape[0]))
+            weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
+            weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
+            weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
+            weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
+            
+            cls._weight_cache[k] = weights
+        
+        return weights
 
     @classmethod
     def load_existing(cls, storage_directory):
@@ -480,7 +505,12 @@ class ImagePyramid(object):
         
         return mdh
 
-    def update_base_tiles_from_frame(self, x, y, frame, weights):
+    def _ensure_layer_directory(self, layer_num=0):
+        out_folder = os.path.join(self.base_dir, '%d' % layer_num)
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
+    
+    def update_base_tiles_from_frame(self, x, y, frame, weights='auto'):
         """add tile to the pyramid
 
         Parameters
@@ -499,9 +529,14 @@ class ImagePyramid(object):
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
-        out_folder = os.path.join(self.base_dir, '0')
-        if not os.path.exists(out_folder):
-            os.makedirs(out_folder)
+        if weights == 'auto':
+            weights = self.frame_weights(frame.shape[:2])
+            
+        frame = frame*weights
+        
+        # TODO - is this actually required, or do the backends do this?
+        # move to backends if they don't already create directories as needed.
+        self._ensure_layer_directory(0)
         
         if (x < 0) or (y < 0):
             raise ValueError('base tile origin positions must be >=0')
@@ -516,30 +551,48 @@ class ImagePyramid(object):
         
         for tile_x in tile_xs:
             for tile_y in tile_ys:
-                self.update_base_tile(0, x, y, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame)
+                xs = max(tile_x * self.tile_size - x, 0)
+                xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
+                
+                ys = max((tile_y * self.tile_size) - y, 0)
+                ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
+
+                xst = max(x - tile_x * self.tile_size, 0)
+                yst = max(y - tile_y * self.tile_size, 0)
+                
+                chunk_data = frame[xs:xe, ys:ye]
+                chunk_weights = weights[xs:xe, ys:ye]
+                
+                self.update_base_tile(tile_x, tile_y, chunk_data, chunk_weights, tile_offset=(xst, yst),
+                                      frame_offset=(xs, ys), frame_shape=frame.shape)
         
         self.pyramid_valid = False
-
-    def update_base_tile(self, layer, x, y, tile_x, tile_y, weights, frameSizeX, frameSizeY, frame):
+    
+    def update_base_tile(self, tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None):
+        layer=0
+        
         acc_ = self._acc.get_tile(layer, tile_x, tile_y)
         occ_ = self._occ.get_tile(layer, tile_x, tile_y)
 
         if (acc_ is None) or (occ_ is None):
             acc_ = np.zeros([self.tile_size, self.tile_size])
             occ_ = np.zeros([self.tile_size, self.tile_size])
+        
+        if weights is 'auto':
+            # note - we take advantage of the fact that strings are immutable constants to perform the above check
+            # using is rather than risk an element-wise comparisson.
+            xs, ys = frame_offset
+            weights = self.frame_weights(frame_shape)[xs:(xs+data.shape[0]), ys:(ys+data.shape[1])]
+            data = data*weights
+        
+        xst, yst = tile_offset
 
-        xs = max(tile_x * self.tile_size - x, 0)
-        xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
-        xst = max(x - tile_x * self.tile_size, 0)
-        xet = min(xst + (xe - xs), self.tile_size)
+        xet = xst + data.shape[0]
+        yet = yst + data.shape[1]
 
-        ys = max((tile_y * self.tile_size) - y, 0)
-        ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
-        yst = max(y - tile_y * self.tile_size, 0)
-        yet = min(yst + (ye - ys), self.tile_size)
-
-        acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
-        occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
+        acc_[xst:xet, yst:yet] += data
+        occ_[xst:xet, yst:yet] += weights
+        
         self._acc.save_tile(layer, tile_x, tile_y, acc_)
         self._occ.save_tile(layer, tile_x, tile_y, occ_)
 
@@ -657,16 +710,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
     
     #calculate a weighting matrix (to allow feathering at the edges - TODO)
-    weights = np.ones((frameSizeX, frameSizeY, nchans))
-    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
-    #weights[:, -10:, :] = 0
-    
-    #print weights[:20, :].shape
-    edgeRamp = min(100, int(.25 * ds.shape[0]))
-    weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
-    weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
-    weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
-    weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
+    #weights = ImagePyramid.frame_weights(ds.shape[:2])
     
     # get splitter ROI coordinates in units of pixels
     ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
@@ -694,9 +738,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
-            d_weighted = weights * d
             # TODO - account for orientation so this works for non-primary cams
-            P.update_base_tiles_from_frame(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            P.update_base_tiles_from_frame(x_i, y_i, d)
                 
     
     t2 = time.time()
