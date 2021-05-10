@@ -28,12 +28,18 @@ from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
 #import numpy as np
 
-from PYME.contrib.gohlke import tifffile
-from .BaseDataSource import BaseDataSource
+try:
+    import tifffile
+    local_tifffile = False
+except ImportError:
+    local_tifffile = True
+    from PYME.contrib.gohlke import tifffile
+    
+from .BaseDataSource import XYZTCDataSource
 
-class DataSource(BaseDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'TiffDataSource'
-    def __init__(self, filename, taskQueue=None, chanNum = 0):
+    def __init__(self, filename, taskQueue=None, chanNum = 0, series=0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
         self.RGB = False
@@ -66,37 +72,54 @@ class DataSource(BaseDataSource):
 
         print((self.filename))
         
-        tf = tifffile.TIFFfile(self.filename)
+        if local_tifffile:
+            tf = tifffile.TIFFfile(self.filename)
+        else:
+            tf = tifffile.TiffFile(self.filename)
         
         self.tf = tf # keep a reference for debugging
         
-        print(tf.series[0].shape)
-
-        self.im = tf.series[0].pages
-        if tf.is_ome:
+        print(tf.series[series].shape)
+        self.im = tf.series[series].pages
+        
+        axisOrder = 'XYZTC'
+        size_z = len(self.im)
+        size_c, size_t = 1,1
+        
+        if tf.is_ome or (not local_tifffile):
             print('Detected OME TIFF')
-            sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
+            sh = {'Z':1, 'T': 1,'C':1}
+            sh.update(dict(zip(tf.series[series].axes, tf.series[0].shape)))
             print('sh = %s' % sh)
-            self.sizeC = sh['C']
+            size_c = sh['C']
+            size_z  = sh['Z']
+            size_t = sh['T']
             
-            axisOrder = tf.series[0].axes[::-1]
+            axisOrder = tf.series[series].axes[::-1]
             
-            self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+            axisOrder = axisOrder + ''.join([a for a in ['Z', 'T', 'C'] if not a in axisOrder])
+            
+            print('axisOrder = ', axisOrder)
+            
+            #self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
         elif tf.is_rgb:
             print('WARNING: Detected RGB TIFF - data not likely to be suitable for quantitative analysis')
-            self.sizeC = 3
+            size_c = 3
             self.RGB = True
             if len(self.im) > 1:
                 # we can have multi-page RGB TIFF - why?????
                 print('WARNING: Multi-page RGB TIFF detected - where did this come from???')
-                self.additionalDims='TC'
-            else:
-                self.additionalDims = 'C'
-            
-            
                 
-
-
+            axisOrder = 'XYCZT'
+            size_z = len(self.im)
+            size_t = 1
+            
+        XYZTCDataSource.__init__(self, input_order=axisOrder, size_z=size_z, size_t=size_t, size_c=size_c)
+        
+        sl0 = self.getSlice(0)
+        self._dtype = sl0.dtype
+        self._shape = [sl0.shape[0], sl0.shape[1], size_z, size_t, size_c]
+    
     def getSlice(self, ind):
         #self.im.seek(ind)
         #ima = np.array(im.getdata()).newbyteorder(self.endedness)
@@ -106,18 +129,20 @@ class DataSource(BaseDataSource):
             # special case for RGB TIFF
             ind_0 = ind%len(self.im)
             ind_1 = int(ind/len(self.im))
-            return self.im[ind_0].asarray(False, False)[0, 0, :,:,ind_1].squeeze()
+            return self.im[ind_0].asarray(squeeze=False)[0, 0, :,:,ind_1].squeeze()
         
-        res =  self.im[ind].asarray(False, False)
+        if local_tifffile:
+            res =  self.im[ind].asarray(squeeze=False, colormapped=False)
+            res = res[0, self.chanNum, :, :].squeeze()
+        else:
+            res = self.im[ind].asarray()
         #if res.ndim == 3:
         #print res.shape
         #print self.chanNum
         
-        
-        res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res
-
+    
     def getSliceShape(self):
         #return (self.im.size[1], self.im.size[0])
         if len(self.im[0].shape) == 2:

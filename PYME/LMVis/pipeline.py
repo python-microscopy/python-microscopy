@@ -42,7 +42,8 @@ import warnings
 
 #from traits.api import HasTraits
 #from traitsui.api import View
-from PYME.recipes.base import ModuleCollection
+#from PYME.recipes.base import ModuleCollection
+from PYME.recipes import Recipe
 
 import numpy as np
 import scipy.special
@@ -299,7 +300,7 @@ class Pipeline:
         self.colourFilter = None
         self.events = None
         
-        self.recipe = ModuleCollection(execute_on_invalidation=True)
+        self.recipe = Recipe(execute_on_invalidation=True)
         self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
@@ -733,7 +734,8 @@ class Pipeline:
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
             # only set the .events attribute if we actually have events.
-            ds.events = events
+            # ensure that events are sorted in increasing time order
+            ds.events = events[np.argsort(events['Time'])]
             
         return ds
 

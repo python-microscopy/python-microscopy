@@ -21,14 +21,14 @@ def teardown():
 
 def test_queue_acquisitions():
     from PYME.IO.tabular import DictSource
-    from PYME.recipes.base import ModuleCollection
+    from PYME.recipes import Recipe
     import numpy as np
     import time
 
     action_manager.paused = True
 
     d = DictSource({'x': np.arange(10), 'y': np.arange(10)})
-    rec = ModuleCollection()
+    rec = Recipe()
     rec.namespace['input'] = d
 
     spool_settings = {'extra_metadata' : {'Sample.Well': '{file_stub}'}}

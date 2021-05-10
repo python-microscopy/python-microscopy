@@ -21,18 +21,12 @@
 #
 ##################
 
-import tables
 from PYME.IO import MetaDataHandler
+from PYME.IO.events import MemoryEventLogger
+import PYME.Acquire.Spooler as sp
 
-#import Pyro.core
 import os
 import time
-
-import PYME.Acquire.Spooler as sp
-#from PYME.Acquire import protocol as p
-#from PYME.IO.FileUtils import fileID, nameUtils
-#from PYME.ParallelTasks.relativeFiles import getRelFilename
-
 import threading
 
 try:
@@ -44,43 +38,14 @@ except ImportError:
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
-
-import numpy as np
-import random
 from PYME import config
 
-import json
-
+import random
 import logging
 logger = logging.getLogger(__name__)
 
-class EventLogger:
-    def __init__(self, spool):#, scope):
-        self.spooler = spool
-        #self.scope = scope
-          
-        self._events = []
-        self._event_lock = threading.Lock()
-    
-    def logEvent(self, eventName, eventDescr = '', timestamp=None):
-        if eventName == 'StartAq' and eventDescr == '':
-            eventDescr = '%d' % self.spooler.imNum
-
-        if timestamp is None:
-            timestamp = sp.timeFcn()
-            
-        with self._event_lock:
-            self._events.append((eventName, eventDescr, timestamp))
-        
-    def to_JSON(self):
-        return json.dumps(self._events)
-          
-
 def genSequenceID(filename=''):
-    return  int(time.time()) & random.randint(0, 2**31) << 31 
-    
-
-    
+    return  int(time.time()) & random.randint(0, 2**31) << 31
 
 def getReducedFilename(filename):
     #rname = filename[len(nameUtils.datadir):]
@@ -109,7 +74,7 @@ defaultCompSettings = {
 
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
-        
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         #filename = filename[len(nameUtils.datadir):]
         
         #filename, 
@@ -144,12 +109,10 @@ class Spooler(sp.Spooler):
             self._pollThreads.append(pt)
         
         self.md = MetaDataHandler.NestedClassMDHandler()
-        self.evtLogger = EventLogger(self)
+        self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)
         
         self.sequenceID = genSequenceID()
-        self.md['imageID'] = self.sequenceID  
-        
-        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
+        self.md['imageID'] = self.sequenceID
 
         self._lastFrameTime = 1e12
 
@@ -217,7 +180,7 @@ class Spooler(sp.Spooler):
             logging.error('An exception occurred in one of the spooling threads')
             raise RuntimeError('An exception occurred in one of the spooling threads')
         else:
-            return self._postQueue.empty() and (self._numThreadsProcessing == 0)
+            return (not self._dPoll) and self._postQueue.empty() and (self._numThreadsProcessing == 0)
 
         
     def getURL(self):

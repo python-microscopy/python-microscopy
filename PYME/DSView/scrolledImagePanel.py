@@ -55,7 +55,7 @@ class ImagePanel(wx.Panel):
         try:
             #DC.BeginDrawing()
             
-            self.renderer(MemDC);
+            self.renderer(MemDC)
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             #DC.EndDrawing()
             
@@ -110,6 +110,7 @@ class ScrolledImagePanel(wx.Panel):
 
     def SetVirtualSize(self,size):
         self.imSize = size
+        #self.imagepanel.SetSize(size)
         
         self.RefreshScrollbars()
 
@@ -146,6 +147,7 @@ class ScrolledImagePanel(wx.Panel):
         return (1,1)
 
     def Scroll(self, x, y):
+        self.xOff, self.yOff = x, y
         self.scrollX.SetThumbPosition(x)
         self.scrollY.SetThumbPosition(y)
         self.imagepanel.Refresh()
@@ -167,11 +169,11 @@ class ScrolledImagePanel(wx.Panel):
             self.RefreshScrollbars()
         event.Skip()
 
-    def Scroll(self, dx, dy):
-        self.xOff += dx
-        self.yOff += dy
-
-        self.RefreshScrollbars()
+    # def Scroll(self, dx, dy):
+    #     self.xOff += dx
+    #     self.yOff += dy
+    #
+    #     self.RefreshScrollbars()
 
 
     

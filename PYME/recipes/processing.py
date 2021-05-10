@@ -27,7 +27,7 @@ logger=logging.getLogger(__name__)
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = data > self.threshold
         return mask
 
@@ -41,7 +41,7 @@ class FractionalThreshold(Filter):
     """
     fractionThreshold = Float(0.5)
 
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         N, bins = np.histogram(data, bins=5000)
         #calculate bin centres
         bin_mids = (bins[:-1] )
@@ -65,7 +65,7 @@ class Threshold(Filter):
     n_histogram_bins = Int(255)
     bin_spacing = Enum(['linear', 'log', 'adaptive'])
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         from PYME.Analysis import thresholding
         
         if self.method == 'isodata':
@@ -84,7 +84,7 @@ class Label(Filter):
     """
     minRegionPixels = Int(10)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = data > 0.5
         labs, nlabs = ndimage.label(mask)
         
@@ -111,7 +111,24 @@ class SelectLabel(Filter):
     """Creates a mask corresponding to all pixels with the given label"""
     label = Int(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
+        mask = (data == self.label)
+        return mask
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.SelectedLabel'] = self.label
+
+@register_module('SelectLargestLabel') 
+class SelectLargestLabel(Filter):
+    """Creates a mask corresponding to all pixels with the largest label
+    
+    NOTE: the input image must be a labeled image (e.g. the output of `Processing.Label`) in which contiguous
+    areas have unique integer IDs
+    """
+    
+    def apply_filter(self, data, voxelsize):
+        uni, counts = np.unique(data[data > 0], return_counts=True)
+        self.label = uni[np.argmax(counts)]
         mask = (data == self.label)
         return mask
 
@@ -123,7 +140,7 @@ class LocalMaxima(Filter):
     threshold = Float(.3)
     minDistance = Int(10)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.feature
         im = data.astype('f')/data.max()
         return skimage.feature.peak_local_max(im, threshold_abs = self.threshold, min_distance = self.minDistance, indices=False)
@@ -488,14 +505,14 @@ class CaWave(object):
         normalize: True
     '''
     def __init__(self, wavefronts, intensity, trange, recipe=''):
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         
         self.trange = trange
         
         if recipe == '':
             recipe = self.default_recipe
         
-        self._mc = ModuleCollection.fromYAML(recipe)
+        self._mc = Recipe.fromYAML(recipe)
         
         print('Executing wave sub-recipe')
         
@@ -1129,8 +1146,10 @@ class Deconvolve(Filter):
     regularisationLambda = Float(0.1) #Regularisation - ICTM only
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
     zPadding = Int(0) # padding along the z axis
-    
-    processFramesIndividually = False # Make deconvolution 3D by default
+
+    #  Make deconvolution 3D by default
+    #processFramesIndividually = False
+    dimensionality = Enum('XYZ', 'XY', desc='Which image dimensions should the filter be applied to?')
     
     _psfCache = {}
     _decCache = {}
@@ -1268,7 +1287,7 @@ class Deconvolve(Filter):
         return self._decCache[decKey]
             
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         d = np.atleast_3d(data.astype('f') - self.offset)
         #vx, vy, vz = np.array(im.voxelsize)*1e-3
         
@@ -1289,7 +1308,7 @@ class Deconvolve(Filter):
         #psf, vs = self.GetPSF(im.voxelsize)
         
         #Get appropriate deconvolution object        
-        dec = self.GetDec(dp, im.voxelsize)
+        dec = self.GetDec(dp, voxelsize)
         
         #run deconvolution
         res = dec.deconv(dp, self.regularisationLambda, self.iterations, weights).reshape(dec.shape)
@@ -1423,7 +1442,7 @@ class DeconvolveMotionCompensating(Deconvolve):
     
 @register_module('DistanceTransform')     
 class DistanceTransform(Filter):    
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         mask = 1.0*(data > 0.5)
         voxelsize = np.array(im.voxelsize)[:mask.ndim]
         dt = -ndimage.distance_transform_edt(data, sampling=voxelsize)
@@ -1435,7 +1454,7 @@ class BinaryDilation(Filter):
     iterations = Int(1)
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1449,7 +1468,7 @@ class BinaryErosion(Filter):
     iterations = Int(1)
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1462,7 +1481,7 @@ class BinaryErosion(Filter):
 class BinaryFillHoles(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1475,7 +1494,7 @@ class BinaryFillHoles(Filter):
 class GreyDilation(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1488,7 +1507,7 @@ class GreyDilation(Filter):
 class GreyErosion(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1501,7 +1520,7 @@ class GreyErosion(Filter):
 class WhiteTophat(Filter):
     radius = Float(1)
     
-    def applyFilter(self, data, chanNum, frNum, im):
+    def apply_filter(self, data, voxelsize):
         import skimage.morphology
         
         if len(data.shape) == 3: #3D
@@ -1526,14 +1545,14 @@ class Watershed(ModuleBase):
             filt_ims = []
             for chanNum in range(image.data.shape[3]):
                 if not mask is None:
-                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze(), mask.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
+                    filt_ims.append(np.concatenate([np.atleast_3d(self._apply_ws(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze(), mask.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
                 else:
-                    filt_ims.append(np.concatenate([np.atleast_3d(self.applyFilter(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
+                    filt_ims.append(np.concatenate([np.atleast_3d(self._apply_ws(image.data[:,:,i,chanNum].squeeze(), markers.data[:,:,i,chanNum].squeeze())) for i in range(image.data.shape[2])], 2))
         else:
             if not mask is None:
-                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), markers.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
+                filt_ims = [np.atleast_3d(self._apply_ws(image.data[:,:,:,chanNum].squeeze(), markers.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
             else:
-                filt_ims = [np.atleast_3d(self.applyFilter(image.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
+                filt_ims = [np.atleast_3d(self._apply_ws(image.data[:,:,:,chanNum].squeeze(), mask.data[:,:,:,chanNum].squeeze())) for chanNum in range(image.data.shape[3])]
             
         im = ImageStack(filt_ims, titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
@@ -1543,7 +1562,7 @@ class Watershed(ModuleBase):
         
         return im
         
-    def applyFilter(self, image,markers, mask=None):
+    def _apply_ws(self, image,markers, mask=None):
         import skimage.morphology
 
         img = ((image/image.max())*2**15).astype('int16')         
@@ -1818,12 +1837,13 @@ class AverageFramesByZStep(ModuleBase):
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
 
+        # FIXME  - make this follow the correct event dtype
         fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
         averaged = ImageStack(new_stack, mdh=MetaDataHandler.NestedClassMDHandler(image_stack.mdh), events=fudged_events)
 
         # fudge metadata, leaving breadcrumbs
         averaged.mdh['Camera.CycleTime'] = cycle_time
-        averaged.mdh['StackSettings.NumSteps'] = n_steps
+        averaged.mdh['StackSettings.NumSlices'] = n_steps
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
@@ -1868,8 +1888,8 @@ class ResampleZ(ModuleBase):
         y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
 
         # generate grid for sampling
-        xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
-                                 indexing='ij')
+        new_z = np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling)
+        xx, yy, zz = np.meshgrid(x, y, new_z, indexing='ij')
         # RegularGridInterpolator needs z to be strictly ascending need to average frames from the same step first
         uni, counts = np.unique(z_vals, return_counts=True)
         if np.any(counts > 1):
@@ -1881,11 +1901,17 @@ class ResampleZ(ModuleBase):
             interp = RegularGridInterpolator((x, y, sorted_z_vals), stack.data[:, :, :, ci][:,:,I], method='linear')
             regular.append(interp((xx, yy, zz)))
 
-        regular_stack = ImageStack(regular, mdh=MetaDataHandler.NestedClassMDHandler(stack.mdh))
-
-        regular_stack.mdh['RegularizedStack'] = True
-        regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
-        regular_stack.mdh['voxelsize.z'] = self.z_sampling
+        mdh = MetaDataHandler.DictMDHandler({
+            'RegularizedStack': True,
+            'StackSettings.StepSize': self.z_sampling,
+            'StackSettings.StartPos': new_z[0],
+            'StackSettings.EndPos': new_z[-1],
+            'StackSettings.NumSlices': len(new_z),
+            'voxelsize.z': self.z_sampling
+        })
+        mdh.mergeEntriesFrom(stack.mdh)
+        
+        regular_stack = ImageStack(regular, mdh=mdh)
 
         namespace[self.output] = regular_stack
 
@@ -1969,14 +1995,17 @@ class Projection(Filter):
     """ Project image along an axis
     
     TODO - make this more efficient - we currently force the whole stack into memory
+    
+    NOTE: coloured max returns results encoded as a complex number out = np.max(data, axis) + 1j*np.argmax(data, axis)
+    
     """
     
-    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min'])
+    kind = Enum(['Mean', 'Sum', 'Max', 'Median', 'Std', 'Min', 'Coloured Max'])
     axis = Int(2)
     
-    processFramesIndividually = False
-    
-    def applyFilter(self, data, chanel_num, frame_num, image):
+    dimensionality = Enum('XYZ', 'XY')
+        
+    def apply_filter(self, data, voxelsize):
         if self.kind == 'Mean':
             return np.mean(data, axis=int(self.axis))
         if self.kind == 'Sum':
@@ -1989,6 +2018,12 @@ class Projection(Filter):
             return np.std(data, axis=int(self.axis))
         if self.kind == 'Min':
             return np.min(data, axis=int(self.axis))
+        if self.kind == 'Coloured Max':
+            m = np.min(data, axis=int(self.axis))
+            im = np.argmin(data, axis=int(self.axis))
+            
+            return m + 1j*im
+            
 
 @register_module('StatisticsByFrame')
 class StatisticsByFrame(ModuleBase):
@@ -2086,3 +2121,59 @@ class DarkAndVarianceMap(ModuleBase):
 
         namespace[self.output_dark] = dark_map
         namespace[self.output_variance] = variance_map
+        
+@register_module('Composite')
+class Composite(ModuleBase):
+    """
+    Combine multiple single-channel images into a multi-channel image. Goes further than base.JoinChannels
+    in that it supports re-scaling to match voxel sizes and optionally shift correction.
+    
+    input0 is used to set the voxel size, with other images being re-scaled to match
+    
+    """
+    input0 = Input('input')
+    input1 = Input('')
+    input2 = Input('')
+    input3 = Input('')
+    
+    shiftmap0 = FileOrURI('')
+    shiftmap1 = FileOrURI('')
+    shiftmap2 = FileOrURI('')
+    shiftmap3 = FileOrURI('')
+    
+    ignoreZOrigin = Bool(True)
+    interpolate = Bool(True)
+    
+    output = Output('composite')
+
+
+    def execute(self, namespace):
+        from PYME.Analysis import composite
+        
+        imgs = []
+        
+        for i in range(4):
+            imn = getattr(self, 'input%d' % i)
+            
+            if not (imn == ''):
+                if '$' in imn:
+                    imn, chan = imn.split('$')
+                    chan=int(chan)
+                else:
+                    chan=0
+                    
+            imgs.append((namespace[imn], chan, getattr(self, 'shiftmap%d' % i)))
+            
+        namespace[self.output] = composite.make_composite(imgs, ignoreZ=self.ignoreZOrigin, interp=self.interpolate)
+        
+    @property
+    def inputs(self):
+        """
+        Redefine inputs to remove channel suffixes
+
+        """
+        return {v.split('$')[0] for k, v in self.trait_get().items() if
+                (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+                    
+                
+            

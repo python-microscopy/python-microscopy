@@ -1,7 +1,7 @@
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 import numpy as np
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'RandomDataSource'
 
     def __init__(self, pix_r, pix_c, length=100):

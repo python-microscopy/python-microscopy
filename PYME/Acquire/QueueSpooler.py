@@ -36,28 +36,6 @@ try:
     ns = hybrid_ns.getNS()
 except ImportError:
     ns = None
-
-#rom PYME.Acquire import eventLog
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
-
-class EventLogger:
-   def __init__(self, spool, tq, queueName):
-      self.spooler = spool
-      #self.scope = scope
-      self.tq = tq
-      self.queueName = queueName
-
-   def logEvent(self, eventName, eventDescr = '', timestamp=None):
-      if eventName == 'StartAq':
-          eventDescr = '%d' % self.spooler.imNum
-
-      if timestamp is None:
-          timestamp = sp.timeFcn()
-      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, timestamp))
       
 
 class Spooler(sp.Spooler):
@@ -67,6 +45,8 @@ class Spooler(sp.Spooler):
 #       else:
 #            taskQueueName = 'taskQueue'
         import Pyro.core
+        from PYME.IO.events import QueueEventLogger
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
@@ -88,9 +68,7 @@ class Spooler(sp.Spooler):
         self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = frameShape, complevel=complevel, complib=complib)
 
         self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-        self.evtLogger = EventLogger(self, self.tq, self.seriesName)
-
-        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
+        self.evtLogger = QueueEventLogger(self, self.tq, self.seriesName, time_fcn=self._time_fcn)
    
     def OnFrame(self, sender, frameData, **kwargs):
         if not self.watchingFrames:

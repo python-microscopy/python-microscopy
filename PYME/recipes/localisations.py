@@ -683,17 +683,17 @@ class MeasureClusters3D(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        # make sure labeling scheme is consistent with what pyme conventions
-        if np.min(inp[self.labelKey]) < 0:
-            raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
-
         labels = inp[self.labelKey].astype(np.int)
+        # make sure labeling scheme is consistent with what pyme conventions
+        if (len(labels) > 0) and  (labels.min() < 0):
+            raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
+        
         I = np.argsort(labels)
         I = I[labels[I] > 0]
         
         x_vals, y_vals, z_vals = inp['x'][I], inp['y'][I], inp['z'][I]
         labels = labels[I]
-        maxLabel = labels[-1]
+        maxLabel = labels[-1] if (len(labels) > 0) else 0
         
         #find the unique labels, and their separation in the sorted list of points
         unique_labels, counts = np.unique(labels, return_counts=True)

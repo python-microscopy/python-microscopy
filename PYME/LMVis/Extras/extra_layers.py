@@ -185,12 +185,12 @@ def distance_to_surface(visFr):
     
     dlg = wx.SingleChoiceDialog(visFr, "Measure distance to which mesh?", "Choose a mesh", mesh_names)
 
-    if not dlg.ShowModal():
-            dlg.Destroy()
-            return
-    else:
+    if dlg.ShowModal() == wx.ID_OK:
         surf_name = dlg.GetStringSelection()
         dlg.Destroy()
+    else:
+        dlg.Destroy()
+        return
 
     recipe = visFr.pipeline.recipe
     dts = DistanceToMesh(recipe, input_mesh=surf_name, input_points=pipeline.selectedDataSourceKey, output=dist_name)

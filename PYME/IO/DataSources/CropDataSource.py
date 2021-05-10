@@ -21,9 +21,9 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
-class DataSource(BaseDataSource): 
+class DataSource(XYTCDataSource):
     moduleName = 'CropDataSource'
     def __init__(self,dataSource, xrange=None, yrange=None, trange=None):
         #self.unmixer = unmixer

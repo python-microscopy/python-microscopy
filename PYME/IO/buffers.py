@@ -23,7 +23,12 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
         #return self.dataSource.getSlice(ind)
         if ind in self.bufferedSlices: #return from buffer
             #print int(np.where(self.bufferedSlices == ind)[0])
-            return self.buffer[int(np.where(self.bufferedSlices == ind)[0]),:,:]
+            sl = self.buffer[int(np.where(self.bufferedSlices == ind)[0]),:,:]
+            
+            # FIXME - because sl is a view into the the underlying buffer it is possible for it to get
+            # over-written before it is used, hence the copy. This copy is, however, not great for either performance
+            # or memory usage, and it would be good to avoid if at all possible.
+            return np.copy(sl)
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
@@ -40,6 +45,37 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
             #if bufferMisses % 10 == 0:
             #    print nTasksProcessed, bufferMisses
 
+            # FIXME - because sl is a view into the the underlying buffer it is possible for it to get
+            # over-written before it is used, hence the copy. This copy is, however, not great for either performance
+            # or memory usage, and it would be good to avoid if at all possible.
+            return np.copy(sl)
+
+
+class SliceBuffer(object): #buffer our io to avoid decompressing multiple times
+    '''
+    Replacement candidate for dataBuffer which avoids memory copying
+    '''
+    def __init__(self, dataSource, bLen=12):
+        self._bLen = bLen
+        self._buffer = {} # type : dict
+        self._bufferedSlices = []
+        self.dataSource = dataSource
+    
+    def getSlice(self, ind):
+        try:
+            sl = self._buffer[ind]
+            return sl
+        except KeyError:
+            #get from our data source and store in buffer
+            sl = self.dataSource.getSlice(ind)
+            self._buffer[ind] = sl
+            self._bufferedSlices.append(ind)
+            
+            # if our buffer is now full, drop the oldest entry
+            if len(self._bufferedSlices) > self._bLen:
+                ind_to_remove = self._bufferedSlices.pop(0)
+                self._buffer.pop(ind_to_remove)
+            
             return sl
         
 class backgroundBuffer:

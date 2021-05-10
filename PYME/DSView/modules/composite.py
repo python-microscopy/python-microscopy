@@ -27,27 +27,12 @@ import os
 #import pylab
 from PYME.IO import MetaDataHandler
 from PYME.IO import image
-from PYME.DSView import View3D
+from PYME.DSView import View3D, ViewIm3D
 from PYME.IO import dataWrap
 
 import wx.lib.agw.aui as aui
 
-def common_prefix(strings):
-    """ Find the longest string that is a prefix of all the strings.
-    """
-    if not strings:
-        return ''
-    prefix = strings[0]
-    for s in strings:
-        if len(s) < len(prefix):
-            prefix = prefix[:len(s)]
-        if not prefix:
-            return ''
-        for i in range(len(prefix)):
-            if prefix[i] != s[i]:
-                prefix = prefix[:i]
-                break
-    return prefix
+from PYME.Analysis.composite import common_prefix, make_composite
 
 class ShiftPanel(wx.Panel):
     def __init__(self, dsviewer):
@@ -590,85 +575,29 @@ class Compositor(Plugin):
 
         
     def OnMakeComposites(self, event):
-        import numpy as np
-       
-        dlg = CompositeDialog(self.dsviewer, self.dsviewer.image)
-        imageNames = dlg.imageNames
-        #dispNames = dlg.dispNames
-
+        dlg = CompositeDialog(self.dsviewer, self.image)
+        
         if dlg.ShowModal() == wx.ID_OK:
-            #others = [dispNames[n] for n in dlg.GetSelections()]
-            others = dlg.GetSelections()            
-            #master, mchan = _getImage(dlg.GetMaster())
-            ignoreZ = dlg.GetIgnoreZ()
-            interp = dlg.GetInterp()
-            if interp:
-                order = 3
-            else:
-                order = 0
+            imgs = []
+            for im_name in dlg.GetSelections():
+                im, chan = _getImage(im_name)
+                shiftfield = dlg.GetShiftmap(im_name)
                 
-            shape, origin, voxelsize = dlg.shape, dlg.origin, dlg.voxelsize
-            print((shape, origin, voxelsize))
+                imgs.append((im, chan, shiftfield))
             
-            if len(others) > 0:    
-                newNames = []
-                newData = []
-                            
-                for otherN in others:
-                    other, chan = _getImage(otherN)
-                        
-                    try:
-                        cn = other.mdh.getEntry('ChannelNames')[chan]
-                        otherName = '%s - %s' % (os.path.split(other.filename)[1], cn) 
-                    except:
-                        if other.data.shape[3] == 1:
-                            otherName = os.path.split(other.filename)[1]
-                        else:
-                            otherName = '%s -  %d' % (os.path.split(other.filename)[1], chan)
-        
-                    newNames.append(otherName)
-        
-                    if isinstance(other.data, dataWrap.ListWrap):
-                        od = other.data.dataList[chan]
-                    else:
-                        od = other.data
-
-                    if ignoreZ:                    
-                        originsEqual = np.allclose(other.origin[:2], origin[:2], atol=1)
-                    else:
-                        originsEqual = np.allclose(other.origin, origin, atol=1)
-                        
-                    shiftField = dlg.GetShiftmap(otherN)
-
-                    print(shape[:3], other.data.shape[:3])
-                    
-                    if (not np.allclose(other.pixelSize, voxelsize[0], rtol=.001)) or (not (other.data.shape[:3] == shape[:3])) or (not originsEqual) or shiftField:
-                        #need to rescale ...
-                        print(('Remapping ', otherN, originsEqual, other.origin, np.allclose(other.pixelSize, voxelsize[0], rtol=.001),(not (other.data.shape[:3] == shape[:3])), shiftField, other.pixelSize, ignoreZ))
-                        #print origin, voxelsize
-                        od = self.RemapData(other, chan, shape, voxelsize, origin, shiftField = shiftField, ignoreZ=ignoreZ, order=order)
-                        
-                    newData += [od]
-    
-                pre = common_prefix(newNames)
-                print(pre)
-                lPre = len(pre)
-                newNames = [n[lPre:] for n in newNames]                
+            if len(imgs) > 0:
+                out = make_composite(imgs,
+                                     ignoreZ=dlg.GetIgnoreZ(),
+                                     interp=dlg.GetInterp(),
+                                     shape=dlg.shape,
+                                     origin=dlg.origin,
+                                     voxelsize=dlg.voxelsize)
                 
-                mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
-                mdh.setEntry('ChannelNames', newNames)
-                
-                mdh['voxelsize.x'] = voxelsize[0]/1e3
-                mdh['voxelsize.y'] = voxelsize[1]/1e3
-                mdh['voxelsize.z'] = voxelsize[2]/1e3
-                
-                mdh['Origin.x'] = origin[0]
-                mdh['Origin.y'] = origin[1]
-                mdh['Origin.z'] = origin[2]
-    
-                View3D(dataWrap.ListWrap(newData, 3), 'Composite', mdh=mdh, mode = self.dsviewer.mode, parent=wx.GetTopLevelParent(self.dsviewer), glCanvas=self.dsviewer.glCanvas)
-
+                ViewIm3D(out, 'Composite', mode=self.dsviewer.mode,
+                       parent=wx.GetTopLevelParent(self.dsviewer), glCanvas=self.dsviewer.glCanvas)
+            
         dlg.Destroy()
+    
 
     def OnSplitChannels(self, event):
         try:
@@ -681,55 +610,6 @@ class Compositor(Plugin):
             mdh.setEntry('ChannelNames', [names[i]])
 
             View3D(self.image.data[:,:,:,i], '%s - %s' % (self.image.filename, names[i]), mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
-     
-    def RemapData(self, image, chan, shape, voxelsize, origin, shiftField='', ignoreZ = True, order=3):
-        """apply a vectorial correction for chromatic shift to an image - this
-        is a generic vectorial shift compensation, rather than the secial case 
-        correction used with the splitter."""
-        from scipy import ndimage
-        import numpy as np
-        
-        data = image.data[:,:,:, chan]
-        
-        X, Y, Z = np.mgrid[0:shape[0], 0:shape[1], 0:shape[2]]
-        
-        vx, vy, vz = image.voxelsize
-        vxm, vym, vzm = voxelsize
-        
-        if vz == 0:
-            vz = 1
-        if vzm == 0:
-            vzm =1
-        
-        x0, y0, z0 = image.origin
-        xm0, ym0, zm0 = origin
-        
-        if ignoreZ:
-            z0 = 0
-            zm0 = 0
-        
-        #desired coordinates in nm from camera origin
-        Xnm = X*vxm + xm0
-        Ynm = Y*vym + ym0
-        Znm = Z*vzm + zm0
-        
-       
-        if os.path.exists(shiftField):
-            spx, spy, dz = np.load(shiftField)
-            
-            dx = spx.ev(Xnm, Ynm)
-            dy = spy.ev(Xnm, Ynm)
-            
-            if ignoreZ:
-                dz = 0
-            
-            Xnm += dx
-            Ynm += dy
-            Znm += dz
-            
-        print((vx, vy, vz, data.shape))
-            
-        return ndimage.map_coordinates(np.atleast_3d(data), [(Xnm - x0)/vx, (Ynm - y0)/vy, (Znm - z0)/vz], mode='nearest', order = order)
         
         
     def OnApplyShiftmap(self, event):
@@ -801,7 +681,7 @@ class Compositor(Plugin):
         from PYME.IO.DataSources import AlignDataSource
         from  PYME.IO import dataWrap
         
-        if isinstance(self.image.data, dataWrap.ListWrap):
+        if isinstance(self.image.data, dataWrap.ListWrapper):
             nd = [AlignDataSource.DataSource(ds) for ds in self.image.data.wrapList]
         else:
             nd = [AlignDataSource.DataSource(dataWrap.Wrap(self.image.data[:,:,:,i])) for i in range(self.image.data.shape[3])]

@@ -176,11 +176,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
         """
         
         # add a check to ensure that dwell times are sensible
-        preflightList.append(C('(self.dwellTime*scope.cam.GetIntegTime() > .1) or not scope.cam.contMode',
+        pf = list(preflightList)
+        pf.append(C('(self.dwellTime*scope.cam.GetIntegTime() > .1) or not scope.cam.contMode',
                                'Z step dwell time too short - increase either dwell time or integration time, or set camera mode to single shot / software triggered'))
         
-        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList,
-                                  filename)
+        TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList=pf,filename=filename)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime
@@ -194,9 +194,11 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.require_camera_restart = require_camera_restart
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.stackSettings.GetStartPos(),
-                               scope.stackSettings.GetEndPos() + .95 * scope.stackSettings.GetStepSize(),
-                               scope.stackSettings.GetStepSize() * scope.stackSettings.GetDirection())
+        stack_settings = getattr(spooler, 'stack_settings', scope.stackSettings)
+        
+        self.zPoss = np.arange(stack_settings.GetStartPos(),
+                               stack_settings.GetEndPos() + .95 * stack_settings.GetStepSize(),
+                               stack_settings.GetStepSize() * stack_settings.GetDirection())
 
         if self.slice_order != 'saw':
             if self.slice_order == 'random':
@@ -204,13 +206,13 @@ class ZStackTaskListProtocol(TaskListProtocol):
             elif self.slice_order == 'triangle':
                 if len(self.zPoss) % 2:
                     # odd
-                    self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
+                    self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-2::-2]])
                 else:
                     # even
                     self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
 
 
-        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
+        self.piezoName = 'Positioning.%s' % stack_settings.GetScanChannel()
         self.startPos = scope.state[self.piezoName + '_target'] #FIXME - _target positions shouldn't be part of scope state
         self.pos = 0
 

@@ -10,3 +10,10 @@ ignore:
     - "*/setup.py"
     - "*/setup_exe.py"
     - "*/Hardware/*"
+
+
+#    - "*/DSView/*" # (GUI code) - TODO find a way to add display options back in
+#    - "*/LMVis/Extras/*"
+#    - "*/ui/*"
+#    - "*/loft/*"
+#    - "*/Loft/*"

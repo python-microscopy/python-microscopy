@@ -61,7 +61,7 @@ import numpy as np
 #from PYME.gohlke import tifffile
 
 
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 
 
 class BioformatsFile(bioformats.ImageReader):
@@ -110,7 +110,7 @@ class BioformatsFile(bioformats.ImageReader):
     def __del__(self):
         release_VM()
 
-class DataSource(BaseDataSource):
+class DataSource(XYTCDataSource):
     moduleName = 'BioformatsDataSource'
     def __init__(self, image_file, taskQueue=None, chanNum = 0, series=None):
         self.chanNum = chanNum

@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from PYME.misc import big_sur_fix
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
@@ -266,7 +267,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         dlg.SetName("PYME Visualise")
         dlg.SetVersion(version)
         dlg.SetDescription("Visualisation of localisation microscopy data.")
-        dlg.SetCopyright("(C)2009-2020")
+        dlg.SetCopyright("(C)2009-2021")
         dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
         #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
         # TODO: should this be the issues page or the website
@@ -274,6 +275,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #dlg.AddDeveloper("David Baddeley") #should probably be all or none here, punting full list for now
 
         wx.adv.AboutBox(dlg)
+
+    def OnDocumentation(self, event):
+        import webbrowser
+        webbrowser.open('https://python-microscopy.org/doc/')
+        event.Skip()
 
 #    def OnToggleWindow(self, event):
 #        self._mgr.ShowPane(self._leftWindow1,not self._leftWindow1.IsShown())
@@ -389,9 +395,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             
         #print 'ev'
         if not self.pipeline.events is None:
-            self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events, 
-                                                        self.pipeline.mdh, 
-                                                        [0, self.pipeline.selectedDataSource['tIndex'].max()])
+            #self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events,
+            #                                            self.pipeline.mdh,
+            #                                            [0, self.pipeline.selectedDataSource['tIndex'].max()])
+
+            st = min(self.pipeline.events['Time'].min() - self.pipeline.mdh['StartTime'], 0)
+            et = 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime']
+            print(st, et)
+            
+            self.elv = eventLogViewer.eventLogTPanel(self, self.pipeline.events,self.pipeline.mdh,[st, et])
     
             self.elv.SetCharts(self.pipeline.eventCharts)
             

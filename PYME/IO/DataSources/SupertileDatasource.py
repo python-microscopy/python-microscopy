@@ -28,7 +28,7 @@ from PYME.IO import MetaDataHandler
 import glob
 import os
 import numpy as np
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
 from six.moves.urllib.parse import parse_qs
@@ -36,7 +36,7 @@ from six.moves.urllib.parse import parse_qs
 
 #from PYME.misc import tifffile
 
-class SupertileDataSource(BaseDataSource):
+class SupertileDataSource(XYTCDataSource):
     moduleName = 'SupertileDataSource'
     def __init__(self, pyramid, level=0, stride=3, overlap=1):
         # NOTE: We cheat a bit here to allow this to be constructed from an existing pyramid - the cannonical module.DataSource(filename) instantiation 

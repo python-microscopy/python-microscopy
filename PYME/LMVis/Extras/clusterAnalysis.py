@@ -176,7 +176,7 @@ class ClusterAnalyser:
         containing both colors is determined.
         """
         from PYME.recipes import tablefilters, localisations
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         import wx
 
         chans = self.pipeline.colourFilter.getColourChans()
@@ -195,7 +195,7 @@ class ClusterAnalyser:
         minClumpSize = 3 #minPt_dlg.GetValue()
 
         #build a recipe programatically
-        rec = ModuleCollection()
+        rec = Recipe()
         #split input according to colour channels
         rec.add_module(localisations.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[0]))
         rec.add_module(localisations.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[1]))
@@ -258,13 +258,13 @@ class ClusterAnalyser:
 
     def OnPairwiseDistanceHistogram(self, event=None):
         from PYME.recipes import tablefilters, localisations, measurement
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         import matplotlib.pyplot as plt
         import wx
         import os
 
         # build a recipe programatically
-        distogram = ModuleCollection()
+        distogram = Recipe()
 
         # split input according to colour channels selected
         distogram.add_module(localisations.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
@@ -307,11 +307,11 @@ class ClusterAnalyser:
     def OnClustersInTime(self, event=None):
         #FIXME - this would probably be better in an addon module outside of the core project
         from PYME.recipes import localisations
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
         import matplotlib.pyplot as plt
 
         # build a recipe programatically
-        rec = ModuleCollection()
+        rec = Recipe()
 
         # split input according to colour channel selected
         rec.add_module(localisations.ExtractTableChannel(rec, inputName='input', outputName='chan0',
@@ -350,10 +350,10 @@ class ClusterAnalyser:
 
         """
         from PYME.recipes import localisations
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes import Recipe
 
         # build a recipe programatically
-        measrec = ModuleCollection()
+        measrec = Recipe()
 
         measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelsKey='dbscanClustered',
                                                        outputName='output'))

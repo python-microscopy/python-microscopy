@@ -29,6 +29,9 @@ from PYME.contrib import dispatch
 
 from PYME.IO import dataWrap
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     # location in Python 2.7 and 3.1
     from weakref import WeakSet
@@ -72,6 +75,7 @@ class DisplayOpts(object):
         self._yp=0
 
         self._zp=0
+        self._tp=0
         
         self.maximumProjection=False
         self.colourMax = False
@@ -145,6 +149,19 @@ class DisplayOpts(object):
         self._yp = value
         #print 'z changed'
         self.OnChange()
+
+    @property
+    def tp(self):
+        return self._tp
+
+    @tp.setter
+    def tp(self, value):
+        if (value < 0) or (value >= self.ds.shape[3]):
+            raise IndexError('Z position out of bounds')
+    
+        self._tp = value
+        #print 'z changed'
+        self.OnChange()
         
     @property
     def complexMode(self):
@@ -152,6 +169,14 @@ class DisplayOpts(object):
 
     @complexMode.setter
     def complexMode(self, value):
+        """
+        
+        Parameters
+        ----------
+        value : str
+            one of 'real', 'imag', 'abs', 'angle', 'coloured', 'imag coloured'
+
+        """
         self._complexMode = value
         #print 'z changed'
         self.OnChange()
@@ -217,7 +242,13 @@ class DisplayOpts(object):
     def SetDataStack(self, datasource):
         self.ds = dataWrap.Wrap(datasource) #make sure data is wrapped
 
-        nchans = self.ds.shape[3]
+        nchans = self.ds.shape[self.ds.ndim -1]
+        
+        self.nz = self.ds.shape[2]
+        if (self.ds.ndim >=5):
+            self.nt = self.ds.shape[3]
+        else:
+            self.nt = 1
 
         if not nchans == len(self.Chans):
             if nchans == 1:
@@ -226,7 +257,7 @@ class DisplayOpts(object):
                 self.Offs = [0]
                 self.cmaps = [cm.gray]
                 try:
-                    if np.iscomplexobj(self.ds[0,0]):
+                    if np.iscomplexobj(self.ds[0,0, 0, 0, 0]):
                         self.cmaps = [cm.jet]
                         self.cmax_offset = -np.pi
                         self.cmax_scale = 1./(2*np.pi)
@@ -297,13 +328,14 @@ class DisplayOpts(object):
             self.inOnChange = True
             try:
                 for fcn in self.WantChangeNotification:
+                    #print('do - notifying %s' % fcn)
                     fcn()
                     
                 for syn in self.syncedWith:
                     syn.Synchronise(self)
             
             except Exception as e: 
-                print(e)
+                logger.exception('Error in OnChange')
             finally:
                 self.inOnChange = False
             
@@ -315,6 +347,7 @@ class DisplayOpts(object):
         self.xp = other.xp
         self.yp = other.yp
         self.zp = other.zp
+        self.tp = other.tp
             
 
     def _optimal_display_range(self, d, method='percentile'):
@@ -328,14 +361,66 @@ class DisplayOpts(object):
             return d.min(), d.max()
         elif method == 'percentile':
             return d.min(), np.percentile(d, 99.)
+        
+    def get_hist_data(self):
+        """
+        Get data to display in an image histogram. Only returns a subset of the data for large images
+        
+        Returns
+        -------
+
+        """
+        
+        chan_d = []
+        
+        local_scaling = False
+
+        sx, sy = self.ds.shape[:2]
+        xr = (0, sx)
+        yr = (0, sy)
+
+        try:
+            chunks = self.ds.chunks
+    
+            if not ((chunks[0] == sx) and (chunks[1] == sy)):
+                # we have a chunked dataset where the chunks sub-sample the x-y space, do not attempt to load a full xy
+                # slice into memoru
+                local_scaling = True
+                
+                xr = (max(self.xp - 50, 0), min(self.xp + 50, sx))
+                yr = (max(self.yp - 50, 0), min(self.yp + 50, sy))
+        except AttributeError:
+            pass
+        
+        for i in range(len(self.Chans)):
+            if self.ds.ndim >= 5:
+                c = self.ds[xr[0]:xr[1], yr[0]:yr[1], self.zp, self.tp, self.Chans[i]].ravel()
+            elif self.ds.ndim == 4:
+                c = self.ds[xr[0]:xr[1], yr[0]:yr[1],self.zp, self.Chans[i]].ravel()
+            elif self.ds.ndim == 3:
+                c = self.ds[xr[0]:xr[1], yr[0]:yr[1], self.zp].ravel()
+            else:
+                c = self.ds[xr[0]:xr[1], yr[0]:yr[1]]
+            
+            if np.iscomplexobj(c):
+                if self.complexMode == 'real':
+                    c = c.real
+                elif self.complexMode == 'imag':
+                    c = c.imag
+                elif self.complexMode == 'angle':
+                    c = np.angle(c)
+                else:
+                    c = np.abs(c)
+                    
+            if c.size > 1e4:
+                c = c[::int(np.floor(c.size/1e4))]
+            
+            chan_d.append(c)
+            
+        return chan_d
 
     def Optimise(self):
-        if len(self.ds.shape) == 2:
-            bds = [self._optimal_display_range(self.ds[:,:]),]
-        elif len(self.ds.shape) ==3:
-            bds = [self._optimal_display_range(self.ds[:, :, self.zp]), ]
-        else:
-            bds = [self._optimal_display_range(self.ds[:, :, self.zp, c]) for c in self.Chans]
+        bds = [self._optimal_display_range(c) for c in self.get_hist_data()]
         
         for i, bd in enumerate(bds):
             low, high = bd

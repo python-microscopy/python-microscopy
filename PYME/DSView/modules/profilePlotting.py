@@ -69,12 +69,13 @@ class ProfilePlotter(Plugin):
         plots = []
         
     
-        for chanNum in range(self.image.data.shape[3]):
-            img = self.image.data[:,:, self.do.zp, chanNum].squeeze()
+        n_chans = self.image.data_xyztc.shape[4]
+        for chanNum in range(n_chans):
+            img = self.image.data_xyztc[:,:, self.do.zp, self.do.tp, chanNum].squeeze()
             
             p = extract_profile(img, lx, ly, hx, hy, w)
         
-            plots.append(p.reshape(-1, 1, 1))
+            plots.append(p.reshape(-1, 1, 1,1))
     
         #plt.legend(names)
 
@@ -211,14 +212,16 @@ class ProfilePlotter(Plugin):
     def OnPlotAxialProfile(self, event=None):
         lx, ly, hx, hy = self.do.GetSliceSelection()
 
+        n_chans = self.image.data_xyztc.shape[4]
+        
         try:
             names = self.image.mdh.getEntry('ChannelNames')
         except:
-            names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
+            names = ['Channel %d' % d for d in range(n_chans)]
 
        
         plots = []
-        t = np.arange(self.image.data.shape[2])
+        z = np.arange(self.image.data_xyztc.shape[2])
         
         try:
             stack = (self.image.mdh['AcquisitionType'] == 'Stack')
@@ -233,15 +236,15 @@ class ProfilePlotter(Plugin):
             except:
                 dt = 1
             
-        for chanNum in range(self.image.data.shape[3]):
-            plots.append(np.zeros((len(t), 1, 1)))
+        for chanNum in range(n_chans):
+            plots.append(np.zeros((len(z), 1, 1, 1)))
 
-        dlg = wx.ProgressDialog('Extracting Axial Profile', 'Progress', max(len(t) - 1, 1))        
-        for i in t:      
-            for chanNum in range(self.image.data.shape[3]):
-                plots[chanNum][i] = self.image.data[lx:hx, ly:hy, i, chanNum].mean()
+        dlg = wx.ProgressDialog('Extracting Axial Profile', 'Progress', max(len(z) - 1, 1))
+        for i in z:
+            for chanNum in range(n_chans):
+                plots[chanNum][i] = self.image.data_xyztc[lx:hx, ly:hy, i, self.do.tp, chanNum].mean()
                 if (i % 10) == 0:
-                    dlg.Update(i, '%d of %d frames' % (i, t.size))
+                    dlg.Update(i, '%d of %d frames' % (i, z.size))
                     
         dlg.Destroy()
                 
@@ -251,17 +254,17 @@ class ProfilePlotter(Plugin):
         #TODO: Is this really sensible???
         # fix so that we can even plot stacks of depth 1 (i.e. data that is not really a stack)
         # works by replicating the single plane twice simulating a stack of depth 2
-        if len(t) == 1:
-            t =  np.arange(2)
+        if len(z) == 1:
+            z =  np.arange(2)
             plots2 = []
-            for chanNum in range(self.image.data.shape[3]):
-                plots2.append(np.zeros((len(t), 1, 1)))
+            for chanNum in range(n_chans):
+                plots2.append(np.zeros((len(z), 1, 1,1)))
                 for j in range(2):
                     plots2[chanNum][j] = plots[chanNum][0]
             plots = plots2
 
         im = ImageStack(plots, titleStub='New Profile')
-        im.xvals = t*dt
+        im.xvals = z*dt
 
         if stack:
             im.xlabel = 'Position [um]'
@@ -308,10 +311,12 @@ class ProfilePlotter(Plugin):
         plots = []
         t = np.arange(np.ceil(len(pts)))
 
-        for chanNum in range(self.image.data.shape[3]):
-            p = ndimage.map_coordinates(self.image.data[:, :, self.do.zp, chanNum].squeeze(), pts.T)
+        n_chans = self.image.data_xyztc.shape[4]
+        
+        for chanNum in range(n_chans):
+            p = ndimage.map_coordinates(self.image.data_xyztc[:, :, self.do.zp, self.do.tp, chanNum].squeeze(), pts.T)
     
-            plots.append(p.reshape(-1, 1, 1))
+            plots.append(p.reshape(-1, 1, 1, 1))
 
         #plt.legend(names)
 

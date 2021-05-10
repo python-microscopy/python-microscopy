@@ -19,6 +19,7 @@ locale.setlocale(locale.LC_CTYPE, 'C')
 import docutils.core
 
 from PYME.recipes import modules
+from PYME.recipes import Recipe
 #from PYME.recipes import runRecipe
 from PYME.recipes import batchProcess
 from PYME.recipes import recipeLayout
@@ -84,6 +85,19 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         recipe = self.recipes.activeRecipe
         dg = recipe.dependancyGraph()
 
+        #if recipe.failed:
+        #    self.figure.patch.set_facecolor('red')
+        #    self.figure.patch.set_alpha(0.1)
+        #else:
+        #    self.figure.patch.set_facecolor('grey')
+        #    self.figure.patch.set_alpha(0)
+        
+        if recipe.failed:
+            c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND)
+            self.SetColor(wx.Colour(255, c.green, c.blue, c.alpha).Get())
+        else:
+            self.SetColor()
+        
         #Find the connecting lines
         node_positions, connecting_lines = recipeLayout.layout(dg)
 
@@ -658,7 +672,7 @@ class RecipeManager(object):
             
     def LoadRecipeText(self, s, filename=''):
         self.currentFilename  = filename
-        self.activeRecipe = modules.ModuleCollection.fromYAML(s)
+        self.activeRecipe = Recipe.fromYAML(s)
         #self.mICurrent.SetItemLabel('Run %s\tF5' % os.path.split(filename)[1])
 
         try:        

@@ -21,7 +21,7 @@
 #
 ##################
 
-from .BaseDataSource import BaseDataSource
+from .BaseDataSource import XYTCDataSource, XYZTCDataSource, XYZTCWrapper
 import numpy as np
 
 from six.moves import xrange
@@ -216,7 +216,7 @@ class backgroundBufferM:
 
         return self.curBG - self.offset
 
-class DataSource(BaseDataSource):
+class XTZCBackgroundSource(XYTCDataSource):
     moduleName = 'BGSDataSource'
     def __init__(self, datasource, bgRange=None):
         self.datasource = datasource
@@ -279,3 +279,75 @@ class DataSource(BaseDataSource):
         
         self.dBuffer = dataBuffer(self.datasource, 50)
         self.bBuffer = backgroundBuffer(self.dBuffer)
+
+
+class XYZTCBgsSource(XYZTCDataSource):
+    moduleName = 'BGSDataSource'
+    
+    def __init__(self, datasource, bgRange=None):
+        if (not isinstance(datasource, XYZTCDataSource)) and (not datasource.ndim == 5) :
+            datasource = XYZTCWrapper.auto_promote(datasource)
+        
+        self._datasource = datasource
+        
+        self.dBuffer = dataBuffer(self._datasource, 50)
+        self.bBufferMn = backgroundBuffer(self.dBuffer)
+        self.bBufferP = backgroundBufferM(self.dBuffer)
+        self.bBuffer = self.bBufferMn
+        
+        self.bgRange = bgRange
+        self.dataStart = 0
+        
+        size_z, size_t, size_c = datasource.shape[2:]
+        
+        XYZTCDataSource.__init__(self, input_order=datasource._input_order, size_z=size_z, size_t=size_t, size_c=size_c)
+    
+    def setBackgroundBufferPCT(self, pctile=0):
+        if not pctile == 0:
+            self.bBufferP.pctile = pctile
+            self.bBuffer = self.bBufferP
+        else:
+            self.bBuffer = self.bBufferMn
+    
+    def getSlice(self, ind):
+        sl = self.dBuffer.getSlice(ind)
+        
+        if self.bgRange:
+            if (len(self.bgRange) == 3):
+                step = self.bgRange[2]
+            else:
+                step = 1
+            bgi = list(
+                range(max(ind + self.bgRange[0], self.dataStart), max(ind + self.bgRange[1], self.dataStart), step))
+            #print len(bgi)
+            if len(bgi) > 0:
+                return sl - self.bBuffer.getBackground(bgi)
+            else:
+                return sl.astype('f4')
+        else:
+            return sl.astype('f4')
+    
+    def __getattr__(self, item):
+        return getattr(self._datasource, item)
+    
+    def reloadData(self):
+        self._datasource.reloadData()
+        
+        self.dBuffer = dataBuffer(self._datasource, 50)
+        self.bBuffer = backgroundBuffer(self.dBuffer)
+
+
+    def getSliceShape(self):
+        return self._datasource.getSliceShape()
+
+    def getNumSlices(self):
+        return self._datasource.getNumSlices()
+
+    def getEvents(self):
+        return self._datasource.getEvents()
+
+    @property
+    def is_complete(self):
+        return self._datasource.is_complete()
+
+DataSource = XYZTCBgsSource

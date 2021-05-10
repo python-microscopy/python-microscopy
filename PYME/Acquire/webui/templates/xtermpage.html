@@ -87,14 +87,14 @@
     // Expose terminal for fiddling with in the browser
     window.terminal = terminal;
 
-    try {
+    /*try {
         // for some reason this fails if done with the other setOption calls
         $(window).on('load', function () {
             terminal.term.setOption('fontSize', 12);
         });
     } catch(err){
         console.log(err);
-    }
+    }*/
 
 });
 </script>

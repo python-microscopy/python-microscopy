@@ -319,7 +319,8 @@ class taskWorker(object):
                     #self.resultsQueue.put((queueURL, taskDescr, None))
 
             elif taskDescr['type'] == 'recipe':
-                from PYME.recipes.modules import ModuleCollection
+                from PYME.recipes import Recipe
+                from PYME.recipes import modules
 
                 try:
                     taskdefRef = taskDescr.get('taskdefRef', None)
@@ -329,7 +330,7 @@ class taskWorker(object):
                     else: #recipe is defined in the task
                         recipe_yaml = taskDescr['taskdef']['recipe']
 
-                    recipe = ModuleCollection.fromYAML(recipe_yaml)
+                    recipe = Recipe.fromYAML(recipe_yaml)
 
                     #load recipe inputs
                     logging.debug(taskDescr)
@@ -353,7 +354,14 @@ class taskWorker(object):
                         pass
 
                     try:
-                        context['output_dir'] = unifiedIO.dirname(taskDescr['output_dir'])
+                        od = taskDescr['output_dir']
+                        # make sure we have a trailing slash
+                        # TODO - this should be fine for most windows use cases, as you should generally
+                        # use POSIX urls for the cluster/cluster of one, but might need checking
+                        if not od.endswith('/'):
+                            od = od + '/'
+                            
+                        context['output_dir'] = unifiedIO.dirname(od)
                     except KeyError:
                         pass
 

@@ -2,7 +2,7 @@ from .base import register_module, ModuleBase, OutputModule
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr
 
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import os
 from PYME.IO import tabular
 
@@ -12,7 +12,16 @@ logger = logging.getLogger(__name__)
 def _ensure_output_directory(filename):
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
-        os.makedirs(dirname)
+        try:
+            os.makedirs(dirname)
+        except OSError as e:
+            import errno
+            # makedirs is susceptible to race conditions - allow simultaneous
+            # creation from a separate thread / process to fail gracefully.
+            # NOTE: We check the errno rather than catching FileExistsError to maintain py2 compatibility.
+            if not e.errno == errno.EEXIST:
+                raise
+            
 
 @register_module('CSVOutput')
 class CSVOutput(OutputModule):
@@ -71,6 +80,7 @@ class CSVOutput(OutputModule):
         -------
 
         """
+        import pandas as pd
 
         out_filename = self.filePattern.format(**context)
         v = namespace[self.inputName]

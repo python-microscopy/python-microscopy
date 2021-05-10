@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, DictStrAny
 
 import numpy as np
 from PYME.IO import tabular
@@ -324,7 +324,8 @@ class Ripleys(ModuleBase):
             raise RuntimeError('Need at least {} simulations to achieve a significance of {}'.format(int(np.ceil(1.0/self.significance)),self.significance))
         
         try:
-            origin_coords = MetaDataHandler.origin_nm(points_real.mdh)
+            ox, oy, _ = MetaDataHandler.origin_nm(points_real.mdh)
+            origin_coords = (ox, oy, 0)  # see origin_nm docs
         except:
             origin_coords = (0, 0, 0)
         
@@ -415,12 +416,15 @@ class GaussianMixtureModel(ModuleBase):
     Notes
     -----
     Directly implements or closely wraps scikit-learn mixture.GaussianMixture
-    and mixture.BayesianGaussianMixture
+    and mixture.BayesianGaussianMixture. See sklearn documentation for more 
+    information.
     """
     input_points = Input('input')
     n = Int(1)
     mode = Enum(('n', 'bic', 'bayesian'))
     covariance = Enum(('full', 'tied', 'diag', 'spherical'))
+    max_iter = Int(100)
+    init_params = Enum(('kmeans', 'random'))
     label_key = CStr('gmm_label')
     output_labeled = Output('labeled_points')
     
@@ -433,15 +437,24 @@ class GaussianMixtureModel(ModuleBase):
 
         if self.mode == 'n':
             gmm = GaussianMixture(n_components=self.n,
-                                covariance_type=self.covariance)
-            predictions = gmm.fit_predict(X)
+                                  covariance_type=self.covariance,
+                                  max_iter=self.max_iter,
+                                  init_params=self.init_params)
+            predictions = gmm.fit_predict(X) + 1  # PYME labeling scheme
+            log_prob = gmm.score_samples(X)
+            if not gmm.converged_:
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
         
         elif self.mode == 'bic':
             n_components = range(1, self.n + 1)
             bic = np.zeros(len(n_components))
             for ind in range(len(n_components)):
-                gmm = GaussianMixture(n_components=n_components[ind], 
-                                    covariance_type=self.covariance)
+                gmm = GaussianMixture(n_components=n_components[ind],
+                                      covariance_type=self.covariance,
+                                      max_iter=self.max_iter,
+                                      init_params=self.init_params)
                 gmm.fit(X)
                 bic[ind] = gmm.bic(X)
                 logger.debug('%d BIC: %f' % (n_components[ind], bic[ind]))
@@ -451,14 +464,28 @@ class GaussianMixtureModel(ModuleBase):
                 logger.warning('BIC optimization selected n components near n max')
             
             gmm = GaussianMixture(n_components=best,
-                                covariance_type=self.covariance)
-            predictions = gmm.fit_predict(X)
+                                  covariance_type=self.covariance,
+                                  max_iter=self.max_iter,
+                                  init_params=self.init_params)
+            predictions = gmm.fit_predict(X) + 1  # PYME labeling scheme
+            log_prob = gmm.score_samples(X)
+            if not gmm.converged_:
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
         
         elif self.mode == 'bayesian':
             bgm = BayesianGaussianMixture(n_components=self.n,
-                                      covariance_type=self.covariance)
-            predictions = bgm.fit_predict(X)
-
+                                          covariance_type=self.covariance,
+                                          max_iter=self.max_iter,
+                                          init_params=self.init_params)
+            predictions = bgm.fit_predict(X) + 1  # PYME labeling scheme
+            log_prob = bgm.score_samples(X)
+            if not bgm.converged_:
+                logger.error('GMM fitting did not converge')
+                predictions = np.zeros(len(points), int)
+                log_prob = - np.inf * np.ones(len(points))
+        
         out = tabular.MappingFilter(points)
         try:
             out.mdh = MetaDataHandler.DictMDHandler(points.mdh)
@@ -466,4 +493,10 @@ class GaussianMixtureModel(ModuleBase):
             pass
 
         out.addColumn(self.label_key, predictions)
+        out.addColumn(self.label_key + '_log_prob', log_prob)
+        avg_log_prob = np.empty_like(log_prob)
+        for label in np.unique(predictions):
+            mask = label == predictions
+            avg_log_prob[mask] = np.mean(log_prob[mask])
+        out.addColumn(self.label_key + '_avg_log_prob', avg_log_prob)
         namespace[self.output_labeled] = out
