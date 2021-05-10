@@ -780,6 +780,80 @@ if USE_RAW_SOCKETS:
         return status, reason, data
                 
     
+    def _put_files_on_server(address, port, files, nChunksRemaining=None, dir_manager=None, serverfilter=local_serverfilter):
+        if nChunksRemaining is None:
+            nChunksRemaining = len(files)
+            
+        if dir_manager is None:
+            dir_manager = get_dir_manager(serverfilter)
+            
+        if not isinstance(address, string):
+            address = socket.inet_ntoa(address)
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        s.settimeout(30)
+    
+        #conect to the server
+        s.connect((address, port))
+    
+        datalen = 0
+    
+        #_last_access_time[name] = t
+    
+        url_ = 'http://%s:%d/' % (address, port)
+    
+        rs = []
+    
+        #nChunksRemaining = len(files)
+        connection = b'keep-alive'
+        #pipeline the sends
+    
+        nChunksSpooled = 0
+        while nChunksRemaining > 0:
+            filename, data = files[-nChunksRemaining]
+            unifiedIO.assert_name_ok(filename)
+            dl = len(data)
+            if nChunksRemaining <= 1:
+                connection = b'close'
+        
+            header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (
+            filename.encode(), connection, dl)
+            s.sendall(header)
+            s.sendall(data)
+        
+            # register file now (TODO - wait until we get spooling confirmation?)
+            url = url_ + filename
+            dir_manager.register_file(filename, url, dl)
+        
+            datalen += dl
+            nChunksSpooled += 1
+            nChunksRemaining -= 1
+    
+        # # TODO - FIXME so that reading replies is fast enough
+        # for i in range(nChunksSpooled):
+        #     #read all our replies
+        #     #print(i, files[i][0])
+        #     resp = httplib.HTTPResponse(s, buffering=False)
+        #     resp.begin()
+        #     status = resp.status
+        #     msg = resp.read()
+        #     if not status == 200:
+        #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
+        #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
+    
+        fp = s.makefile('rb', 65536)
+        try:
+            for i in range(nChunksSpooled):
+                status, reason, msg = _parse_response(fp)
+                if not status == 200:
+                    logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + str(msg))
+                    raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, str(msg)))
+        finally:
+            fp.close()
+            
+        return nChunksRemaining
+    
     def put_files(files, serverfilter=local_serverfilter, timeout=30):
         """
         Put a bunch of files to a single server in the cluster (chosen by algorithm)
@@ -818,68 +892,8 @@ if USE_RAW_SOCKETS:
             #logger.debug('Chose server: %s:%d' % (name, info.port))
             try:
                 t = time.time()
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                s.settimeout(30)
-        
-                #conect to the server
-                s.connect((socket.inet_ntoa(info.address), info.port))
-        
-        
-                datalen = 0
-                      
-                #_last_access_time[name] = t
                 
-                url_ = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
-        
-                rs = []
-        
-                #nChunksRemaining = len(files)
-                connection = b'keep-alive'
-                #pipeline the sends
-                
-                nChunksSpooled = 0
-                while nChunksRemaining > 0:
-                    filename, data = files[-nChunksRemaining]
-                    unifiedIO.assert_name_ok(filename)
-                    dl = len(data)
-                    if nChunksRemaining <= 1:
-                        connection = b'close'
-        
-                    
-                    header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename.encode(), connection, dl)
-                    s.sendall(header)
-                    s.sendall(data)
-                    
-                    # register file now (TODO - wait until we get spooling confirmation?)
-                    url = url_ + filename
-                    dir_manager.register_file(filename, url, dl)
-        
-                    datalen += dl
-                    nChunksSpooled += 1
-                    nChunksRemaining -= 1
-                    
-                # # TODO - FIXME so that reading replies is fast enough
-                # for i in range(nChunksSpooled):
-                #     #read all our replies
-                #     #print(i, files[i][0])
-                #     resp = httplib.HTTPResponse(s, buffering=False)
-                #     resp.begin()
-                #     status = resp.status
-                #     msg = resp.read()
-                #     if not status == 200:
-                #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
-                #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
-
-                fp = s.makefile('rb', 65536)
-                try:
-                    for i in range(nChunksSpooled):
-                        status, reason, msg = _parse_response(fp)
-                        if not status == 200:
-                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + str(msg))
-                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, str(msg)))
-                finally:
-                    fp.close()
+                nChunksRemaining = _put_files_on_server(info.address, info.port, files, nChunksRemaining, dir_manager)
 
                 dt = time.time() - t
                 _lastwritespeed[name] = datalen / (dt + .001)
