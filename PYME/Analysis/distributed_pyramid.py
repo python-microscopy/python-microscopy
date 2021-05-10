@@ -371,6 +371,8 @@ class PartialPyramid(ImagePyramid):
 class TileSpooler(object):
     """
     Class to handle spooling tiles to a single server
+    
+    TODO - use this in the spoolers as well??? It's a little cleaner than the existing code.
     """
     def __init__(self, server_address, server_port, dir_manager=None):
         if not isinstance(server_address, string):
@@ -623,94 +625,6 @@ class DistributedImagePyramid(ImagePyramid):
                 except:
                     pass
 
-    def _read_status(self, fp):
-        line = fp.readline()
-        try:
-            [version, status, reason] = line.split(None, 2)
-        except ValueError:
-            [version, status] = line.split(None, 1)
-            reason = ""
-        status = int(status)
-        return version, status, reason
-
-    def _parse_response(self, fp):
-        '''A striped down version of httplib.HttpResponse.begin'''
-        status = httplib.CONTINUE
-        while status == httplib.CONTINUE:
-            version, status, reason = self._read_status(fp)
-            skip = True
-            while status == httplib.CONTINUE and skip:
-                skip = fp.readline(MAXLINE + 1)
-                if len(skip) > MAXLINE:
-                    raise httplib.LineTooLong("header line")
-                skip = skip.strip()
-        headers = {}
-        n_headers = 0
-        is_empty_line = False
-        while not is_empty_line:
-            line = fp.readline(MAXLINE +1)
-            if len(line) > MAXLINE:
-                raise httplib.LineTooLong("header line")
-            line = line.strip()
-            is_empty_line = line in (b'\r\n', b'\n', b'')
-            if not is_empty_line:
-                n_headers += 1
-                if n_headers > httplib._MAXHEADERS:
-                    raise httplib.HTTPException("got more than %d headers" % httplib._MAXHEADERS)
-                key, value = line.split(b': ')
-                headers[key.strip().lower()] = value.strip()
-        length = int(headers.get(b'content-length', 0))
-        data = fp.read(length) if length > 0 else b''
-        return status, reason, data
-
-    def multi_put(self, path_prefix, tuples, server_idx):
-        """
-        Sends a HTTP PUT request to a specified cluster server.
-        """
-        if len(tuples) == 0:
-            return
-        from urllib.parse import urlencode
-        for repeat in range(self.repeats):
-            address, port = self.servers[server_idx]
-            header = 'PUT /{} HTTP/1.1\r\nConnection: {}\r\nContent-Length: {}\r\n\r\n'
-            path = self.make_url_path(path_prefix) + '?'
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-                s.settimeout(30)
-                s.connect((address, port))
-                for i, (data, params) in enumerate(tuples):
-                    s.sendall(
-                        header.format(
-                            path + urlencode(params, doseq=True),
-                            'keep-alive' if i < len(tuples) - 1 else 'close',
-                            len(data),
-                        ).encode()
-                    )
-                    s.sendall(data)
-                fp = s.makefile('rb', 65536)
-                try:
-                    for i in range(len(tuples)):
-                        status, reason, msg = self._parse_response(fp)
-                        if not status == 200:
-                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + str(msg))
-                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, str(msg)))
-                finally:
-                    fp.close()
-            except socket.timeout:
-                if repeat == self.repeats - 1:
-                    logger.exception('Timeout writing to {} after {} retries, aborting - DATA WILL BE LOST'.format(address, self.repeats))
-                    raise
-                else:
-                    logger.error('Timeout writing to {}'.format(address))
-            except socket.error:
-                if repeat == self.repeats - 1:
-                    logger.exception('Error writing to {} after {} retries, aborting - DATA WILL BE LOST'.format(address, self.repeats))
-                    raise
-                else:
-                    logger.exception('Error writing to {}'.format(address))
-            finally:
-                s.close()
 
     def get(self, path_prefix, request_data, server_idx):
         """
@@ -890,12 +804,13 @@ class DistributedImagePyramid(ImagePyramid):
         self._tile_spoolers[server_idx].put((tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None))
             
     
-    def update_tiles_on_server(self, chunk_tuples, server_idx):
-        """
-        Sends the output from `extract_chunk_from()` to the responsible cluster
-        server.
-        """
-        self.multi_put('__part_pyramid_update_tiles', chunk_tuples, server_idx)
+    # replaced by individual spoolers and update_base_tile
+    # def update_tiles_on_server(self, chunk_tuples, server_idx):
+    #     """
+    #     Sends the output from `extract_chunk_from()` to the responsible cluster
+    #     server.
+    #     """
+    #     self.multi_put('__part_pyramid_update_tiles', chunk_tuples, server_idx)
 
     def finish_base_tiles(self):
         """
