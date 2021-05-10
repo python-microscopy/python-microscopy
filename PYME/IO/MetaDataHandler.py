@@ -991,7 +991,7 @@ class OMEXMLMDHandler(XMLMDHandler):
                 SizeC = 1
                 
             
-            if str(data[0,0,0,0,0].dtype) in ('float32', 'float64'):
+            if str(data.dtype) in ('float32', 'float64'):
                 self.pixels.setAttribute('Type', 'float')
             else:
                 self.pixels.setAttribute('Type', str(data.dtype))
