@@ -88,7 +88,7 @@ class ListWrapper(BaseDataSource):
         #    return ListWrap([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))])
 
         if isinstance(kL, slice):
-            return np.concatenate([atleast_nd(self.wrapList[i].__getitem__(keys[:self.listDim]), self.listDim) for i in range(*kL.indices(len(self.wrapList)))], self.listDim)
+            return np.concatenate([atleast_nd(self.wrapList[i].__getitem__(keys[:self.listDim]), self.ndim) for i in range(*kL.indices(len(self.wrapList)))], self.listDim)
         else:
             return self.wrapList[kL].__getitem__(keys[:self.listDim])
 
