@@ -205,14 +205,14 @@ class PZFTileIO(NumpyTileIO):
         
 class ClusterPZFTileIO(PZFTileIO):
     def __init__(self, base_dir, suff='img'):
-        ClusterPZFTileIO.__init__(self, base_dir, suff, tile_cache=ClusterPZFTileCache)
+        PZFTileIO.__init__(self, base_dir, suff, tile_cache=ClusterPZFTileCache)
         
     def _update_layer_tile_coords(self, layer=0):
         from PYME.IO import clusterIO
         tiles = []
         
-        for xdir in clusterIO.cglob('/'.join(self.base_dir, '%d' % layer, '*')):
-            for fn in clusterIO.glob('/'.join(xdir, '*_%s' % self.suff)):
+        for xdir in clusterIO.cglob('/'.join([self.base_dir, '%d' % layer, '*'])):
+            for fn in clusterIO.glob('/'.join([xdir, '*_%s' % self.suff])):
                 tiles.append(tuple([int(s) for s in os.path.basename(fn).split('_')[:2]]))
 
 if six.PY2:
@@ -496,6 +496,11 @@ class ImagePyramid(object):
 
                     self._imgs.save_tile(0, xc, yc, tile_)
 
+    def finish_base_tiles(self):
+        #method stub to allow synchronisation when performing distributed tiling
+        # TODO - rename
+        pass
+    
     def update_pyramid(self):
         self._rebuild_base()
         inputLevel = 0
@@ -553,10 +558,10 @@ class ImagePyramid(object):
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
-        if weights == 'auto':
-            weights = self.frame_weights(frame.shape[:2])
+        #if weights == 'auto':
+        #    weights = self.frame_weights(frame.shape[:2])
             
-        frame = frame*weights
+        #frame = frame*weights
         
         # TODO - is this actually required, or do the backends do this?
         # move to backends if they don't already create directories as needed.
@@ -585,9 +590,9 @@ class ImagePyramid(object):
                 yst = max(y - tile_y * self.tile_size, 0)
                 
                 chunk_data = frame[xs:xe, ys:ye]
-                chunk_weights = weights[xs:xe, ys:ye]
+                #chunk_weights = weights[xs:xe, ys:ye]
                 
-                self.update_base_tile(tile_x, tile_y, chunk_data, chunk_weights, tile_offset=(xst, yst),
+                self.update_base_tile(tile_x, tile_y, chunk_data, weights, tile_offset=(xst, yst),
                                       frame_offset=(xs, ys), frame_shape=frame.shape)
         
         self.pyramid_valid = False

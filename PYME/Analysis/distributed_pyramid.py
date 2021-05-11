@@ -37,9 +37,9 @@ def server_for_chunk(x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
     return server_id
 
 
-def is_server_for_chunk(candidate_server, x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
-    actual = server_for_chunk(x, y, chunk_shape=chunk_shape, nr_servers=nr_servers)
-    return actual == candidate_server
+# def is_server_for_chunk(candidate_server, x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
+#     actual = server_for_chunk(x, y, chunk_shape=chunk_shape, nr_servers=nr_servers)
+#     return actual == candidate_server
 
 
 class PartialPyramid(ImagePyramid):
@@ -48,108 +48,41 @@ class PartialPyramid(ImagePyramid):
     cluster.
 
     Implementation on the server side
+    
+    Note: we don't want to write metadata for the partial pyramids, meaning that they don't
+    need all of the parameters
+    
     """
-    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None,
-        n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0, 
-        pixel_size=1, backend=PZFTileIO, chunk_shape=[8,8,1], nr_servers=1, server_idx=0,):
-        
-        super().__init__(storage_directory, pyramid_tile_size=pyramid_tile_size, mdh=mdh,
-            n_tiles_x=n_tiles_x, n_tiles_y=n_tiles_y, depth=depth, x0=x0, y0=y0, 
-            pixel_size=pixel_size, backend=backend)
+    def __init__(self, storage_directory, pyramid_tile_size=256, backend=PZFTileIO, chunk_shape=[8,8,1]):
+        ImagePyramid.__init__(self,storage_directory, pyramid_tile_size=pyramid_tile_size, backend=backend)
         
         self.chunk_shape = chunk_shape
-        self.server_idx = server_idx
-        self.nr_servers = nr_servers
-        
         self.update_queue = queue.Queue()
         
         self.all_tiles_received = False
 
-        self.update_thread = threading.Thread(target=self._poll_loop, daemon=True)
-        self.update_thread.start()
+        self._update_thread = threading.Thread(target=self._poll_loop, daemon=True)
+        self._update_thread.start()
 
     @classmethod
-    def build_from_request(self, filepath, part_dict):
-        part_params = json.loads(part_dict.decode())
-        return PartialPyramid(
-            filepath,
-            pyramid_tile_size=part_params["pyramid_tile_size"],
-            n_tiles_x=part_params["n_tiles_x"],
-            n_tiles_y=part_params["n_tiles_y"],
-            depth=part_params["depth"],
-            x0=part_params["x0"],
-            y0=part_params["y0"],
-            pixel_size=part_params["pixel_size"],
-            backend=TILEIO_EXT[part_params["backend"]],
-            chunk_shape=part_params["chunk_shape"],
-            nr_servers=part_params["nr_servers"],
-            server_idx=part_params["server_idx"],
-        )
-
-    # def update_base_tiles_from_request(self, request_data, data):
-    #     """
-    #     Updates base tiles with the input of a HTTP PUT request. A chunk
-    #     of a frame is sent per request and processed here, analoguous to
-    #     update_base_tiles_from_frame.
-    #
-    #     Parameters:
-    #     -----------
-    #     request_data : dict
-    #         simple parameter values for updating the base tiles.
-    #         Expects list values for keys `['x', 'y', 'chunk_idcs',
-    #         'frameSizeY', 'frameOffsetX', 'frameOffsetY']`.
-    #     data : bytes
-    #         a chunk of a frame which this server is responsible for.
-    #         Sent via PZFFormat and loaded within this method.
-    #     """
-    #     frame_slice = PZFFormat.loads(data)[0]
-    #     if len(frame_slice.shape) > 2:
-    #         frame_slice = frame_slice.squeeze(axis=2)
-    #
-    #     x = int(request_data["x"][0])
-    #     y = int(request_data["y"][0])
-    #     frameSizeX = int(request_data["frameSizeX"][0])
-    #     frameSizeY = int(request_data["frameSizeY"][0])
-    #     frameOffsetX = int(request_data["frameOffsetX"][0])
-    #     frameOffsetY = int(request_data["frameOffsetY"][0])
-    #     chunk_idcs = np.asarray(request_data["chunk_idcs"], dtype=int)
-    #     assert len(chunk_idcs) == 4
-    #
-    #     weights = np.ones((frameSizeX, frameSizeY))
-    #     edgeRamp = min(100, int(.25 * frameSizeX))
-    #     weights[:edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[:, None]
-    #     weights[-edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[:, None]
-    #     weights[:, :edgeRamp] *= np.linspace(0, 1, edgeRamp)[None, :]
-    #     weights[:, -edgeRamp:] *= np.linspace(1, 0, edgeRamp)[None, :]
-    #
-    #     for tile_x in range(chunk_idcs[0], chunk_idcs[2] + 1):
-    #         for tile_y in range(chunk_idcs[1], chunk_idcs[3] + 1):
-    #             if is_server_for_chunk(
-    #                 self.server_idx, tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=self.nr_servers
-    #             ):
-    #                 self.update_base_tile(
-    #                     0, x, y, chunk_idcs,
-    #                     frameOffsetX, frameOffsetY,
-    #                     frameSizeX, frameSizeY,
-    #                     tile_x, tile_y,
-    #                     frame_slice, weights
-    #                 )
+    def from_request(cls, filepath, body):
+        params = json.loads(body.decode())
+        
+        return cls(filepath, **params)
                     
     def queue_base_tile_update(self, data, query):
         import json
-        data = PZFFormat.loads(data).squeeze()
-        weights = query.get('weights', 'auto')
+        data, _ = PZFFormat.loads(data)
+        data = data.squeeze()
+        weights = query.get('weights', ['auto',])[0]
         
-        tile_x, tile_y = int(query['x']), int(query['y'])
-        tile_offset = (int(query.get('tox', 0)), int(query.get('toy', 0)))
-        frame_offset = (int(query.get('fox', 0)), int(query.get('foy', 0)))
+        tile_x, tile_y = int(query['x'][0]), int(query['y'][0])
+        tile_offset = (int(query.get('tox', [0,])[0]), int(query.get('toy', [0,])[0]))
+        frame_offset = (int(query.get('fox', [0,])[0]), int(query.get('foy', [0,])[0]))
         
-        frame_shape = json.loads(query['frame_shape'])
+        frame_shape = (int(query['fsx'][0]),int(query['fsy'][0]))
         
         tile_data = tile_x, tile_y, data, weights, tile_offset, frame_offset, frame_shape
-        
-        # self.update_base_tile(tile_x, tile_y, data, weights,
-        #                       tile_offset=tile_offset, frame_offset=frame_offset, frame_shape=frame_shape)
         
         self.update_queue.put(tile_data)
         
@@ -159,7 +92,7 @@ class PartialPyramid(ImagePyramid):
             try:
                 # we let queue.get() block until there is data in the queue, albeit with a timeout
                 # so that we will
-                tile_data = pyramid.update_queue.get(timeout=5)
+                tile_data = self.update_queue.get(timeout=5)
 
                 self.update_base_tile(*tile_data)
                 self.pyramid_valid = False
@@ -228,153 +161,45 @@ class PartialPyramid(ImagePyramid):
     #     coords = self.get_layer_tile_coords(level)
     #     return json.dumps(coords).encode()
 
-    def get_status_at_request(self):
-        """
-        Gets the current update status of this PartialPyramid. Used to determine whether this part
-        has finished building.
+    # def get_status_at_request(self):
+    #     """
+    #     Gets the current update status of this PartialPyramid. Used to determine whether this part
+    #     has finished building.
+    #
+    #     Returns
+    #     -------
+    #     status : dict
+    #         indicates the update status via bool values at the keys
+    #         ["base tiles done", "part pyramid done"].
+    #     """
+    #     status = {
+    #         "base tiles done": not (self.all_tiles_received and self.update_queue.empty()),
+    #         "part pyramid done": self.pyramid_valid,
+    #     }
+    #     return json.dumps(status).encode()
+
+    def finalise(self):
+        self.all_tiles_received = True
         
-        Returns
-        -------
-        status : dict
-            indicates the update status via bool values at the keys
-            ["base tiles done", "part pyramid done"].
-        """
-        status = {
-            "base tiles done": not (self.all_tiles_received and self.update_queue.empty()),
-            "part pyramid done": self.pyramid_valid,
-        }
-        return json.dumps(status).encode()
-
-    # def update_base_tile(
-    #     self, layer, x, y, chunk_idcs,
-    #     frameOffsetX, frameOffsetY,
-    #     frameSizeX, frameSizeY,
-    #     tile_x, tile_y, frame_slice, weights,
-    # ):
-    #     """
-    #     Updates a base tile with parameters received via HTTP.
-    #
-    #     Parameters
-    #     ----------
-    #     layer : int
-    #         should be 0.
-    #     coords : list or array
-    #         specifies which tile and which part of the tile is updated.
-    #     frame_slice : numpy array
-    #         the part of the frame used to update the tile.
-    #     weights_slice : numpy array
-    #         the weights for this tile update.
-    #     """
-    #
-    #     acc_ = self._acc.get_tile(layer, tile_x, tile_y)
-    #     occ_ = self._occ.get_tile(layer, tile_x, tile_y)
-    #
-    #     if (acc_ is None) or (occ_ is None):
-    #         acc_ = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
-    #         occ_ = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
-    #
-    #     xs = max(tile_x * self.tile_size - x, 0)
-    #     xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
-    #     xst = max(x - tile_x * self.tile_size, 0)
-    #     xet = min(xst + (xe - xs), self.tile_size)
-    #
-    #     ys = max((tile_y * self.tile_size) - y, 0)
-    #     ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
-    #     yst = max(y - tile_y * self.tile_size, 0)
-    #     yet = min(yst + (ye - ys), self.tile_size)
-    #
-    #     assert isinstance(xs - frameOffsetX, int), "expected type int but got {} of value {}".format(type(xs - frameOffsetX), xs - frameOffsetX)
-    #     assert isinstance(xe - frameOffsetX, int), "expected type int but got {} of value {}".format(type(xe - frameOffsetX), xe - frameOffsetX)
-    #     assert isinstance(ys - frameOffsetY, int), "expected type int but got {} of value {}".format(type(ys - frameOffsetY), ys - frameOffsetY)
-    #     assert isinstance(ye - frameOffsetY, int), "expected type int but got {} of value {}".format(type(ye - frameOffsetY), ye - frameOffsetY)
-    #     acc_[xst:xet, yst:yet] += frame_slice[
-    #         xs - frameOffsetX:xe - frameOffsetX,
-    #         ys - frameOffsetY:ye - frameOffsetY,
-    #     ]
-    #     occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
-    #     self._acc.save_tile(layer, tile_x, tile_y, acc_)
-    #     self._occ.save_tile(layer, tile_x, tile_y, occ_)
-    #
-    #     self._clean_tiles(tile_x, tile_y)
-
-
-
-    # the base class _rebuild_base function should be fine - only local data is visible to this pyramid, so if
-    # it appears in _occ.get_layer_tile_coords it's ours by default
-    # def rebuild_base(self):
-    #     """
-    #     Analoguous to _rebuild_base from the super class, but only rebuilds the tiles
-    #     for which this server is responsible.
-    #     """
-    #     for xc, yc in self._occ.get_layer_tile_coords(0):
-    #         if is_server_for_chunk(
-    #             self.server_idx, xc, yc, z=0,
-    #             chunk_shape=self.chunk_shape,
-    #             nr_servers=self.nr_servers,
-    #         ) and not self._imgs.tile_exists(0, xc, yc):
-    #             occ = self._occ.get_tile(0, xc, yc) + 1e-9
-    #             sf = 1.0 / occ
-    #             sf[occ <= .1] = 0
-    #             tile_ = self._acc.get_tile(0, xc, yc) * sf
-    #             assert tile_.shape[0] == self.tile_size and tile_.shape[1] == self.tile_size
-    #             self._imgs.save_tile(0, xc, yc, tile_)
-
+        # this will block until the part-pyramid is complete, making the calling function block as well.
+        self._update_thread.join()
     
-    # as for rebuild_base, this is not needed - if we can see the tiles they are ours (as long as we only build
-    # up to a safe level).
-    # def make_new_layer(self, input_level):
-    #     """
-    #     Analoguous to _make_layer from the super class, but only makes the layer tiles
-    #     for which this server is responsible.
-    #     """
-    #     from scipy import ndimage
-    #
-    #     new_layer = input_level + 1
-    #     tile_coords = self.get_layer_tile_coords(input_level)
-    #
-    #     qsize = int(self.tile_size / 2)
-    #
-    #     new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
-    #     layer_chunk_shape = np.asarray(self.chunk_shape) / pow(2, input_level)
-    #     layer_chunk_shape[2] = 1
-    #
-    #     for xc, yc in new_tile_coords:
-    #         if is_server_for_chunk(
-    #             self.server_idx, xc, yc, z=input_level,
-    #             chunk_shape=layer_chunk_shape,
-    #             nr_servers=self.nr_servers,
-    #         ) and not self._imgs.tile_exists(new_layer, xc, yc):
-    #             tile = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
-    #
-    #             NW = self.get_tile(input_level, 2 * xc, 2 * yc)
-    #             if not NW is None:
-    #                 tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
-    #             NE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc))
-    #             if not NE is None:
-    #                 tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
-    #             SW = self.get_tile(input_level, (2 * xc), (2 * yc) + 1)
-    #             if not SW is None:
-    #                 tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
-    #             SE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc) + 1)
-    #             if not SE is None:
-    #                 tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
-    #             assert tile.shape[0] == self.tile_size and tile.shape[1] == self.tile_size
-    #             self._imgs.save_tile(new_layer, xc, yc, tile)
-    #
-    #     is_not_final_part_layer = layer_chunk_shape.max() > 2
-    #     return is_not_final_part_layer
-
     def update_pyramid(self):
         """
         Updates this PartialPyramid as far as its chunk_shape allows.
+        
+        TODO - refactor base update_pyramid to allow max_depth as a parameter.
         """
         logger.debug("updating part pyramid")
         self.rebuild_base()
         inputLevel = 0
         
-        while self.make_new_layer(inputLevel):
+        max_depth = np.log2(self.chunk_shape[:2]).min()
+        
+        while (inputLevel < max_depth) and (self._make_layer(inputLevel) > 1):
             logger.debug("Built level {}".format(inputLevel))
             inputLevel += 1
+        
         logger.debug("Topmost level {}".format(inputLevel + 1))
 
         self.pyramid_valid = True
@@ -390,7 +215,7 @@ class TileSpooler(object):
     TODO - use this in the spoolers as well??? It's a little cleaner than the existing code.
     """
     def __init__(self, server_address, server_port, dir_manager=None):
-        if not isinstance(server_address, string):
+        if not isinstance(server_address, str):
             server_address = socket.inet_ntoa(server_address)
             
         self._server_address = server_address
@@ -423,20 +248,34 @@ class TileSpooler(object):
         
         self._socket.connect((self._server_address, self._server_port))
     
-    def kill(self):
+    def finalize(self, filename=None):
         """
         Stop our threads and tidy up
 
         """
-        self._alive = False
+        if filename:
+            #if we provide a sentinal file, put that
+            self.put(filename, None)
+            time.sleep(2)
         
+        
+        #self._alive = False
+        
+    def close(self):
+        #TODO - wait on the put queue to empty?
+        self._alive = False
         self._t_send.join()
         self._t_recv.join()
         
         self._socket.close()
         
     def put(self, filename, data):
-        """Add a file to the queue to be put"""
+        """Add a file to the queue to be put
+        
+        calling put with data == None is a sentinel that no more data will follow, and that keep-alive
+        should be switched off. This should normaly be accompanied by a filename = '__part_pyramid_finish/<pyramid_dir>'
+        
+        """
         self._put_queue.put((filename, data))
     
     def _send_loop(self):
@@ -449,20 +288,26 @@ class TileSpooler(object):
         
         while self._alive:
             try:
-                filename, data = self._put_queue.get(timeout=20)
+                filename, data = self._put_queue.get(timeout=10)
 
-                if False:
+                if data is None:
                     connection = b'close'
+                    data = b''
+                    
+                dl = len(data)
 
                 header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (
                     filename.encode(), connection, dl)
                 
+                logger.debug(header)
+                
                 self._socket.sendall(header)
-                self._socket.sendall(data)
+                if dl > 0:
+                    self._socket.sendall(data)
 
-                datalen += dl
-                nChunksSpooled += 1
-                nChunksRemaining -= 1
+                #datalen += dl
+                #nChunksSpooled += 1
+                #nChunksRemaining -= 1
                 
             except queue.Empty:
                 pass
@@ -522,271 +367,60 @@ class DistributedImagePyramid(ImagePyramid):
         assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
         
         self.sessions = [requests.Session() for _, _ in self.servers]
-        
         self._tile_spoolers = [TileSpooler(address, port) for address, port in self.servers]
-        
         
         for server_idx in range(len(self.servers)):
             self.create_remote_part(server_idx, backend)
         
-        # FIXME - Apart from the chunk shape, these parameters have no place in the metadata
-        #self._mdh["Pyramid.Servers"] = self.mdh_servers()
-        self._mdh["Pyramid.ChunkShape"] = self.chunk_shape
-        #self._mdh["Pyramid.Timeout"] = self.timeout
-        #self._mdh["Pyramid.Repeats"] = self.repeats
-        self._cached_level_coords = {}
-
+        # TODO - do we need to put the chunk shape in the metadata?
+        #self._mdh["Pyramid.ChunkShape"] = self.chunk_shape
+        #self._cached_level_coords = {}
     
-    # FIXME - Remove. From an IO perspective, we should open and read distributed pyramids using the base pyramid class
-    # (suitably modified to use unifiedIO where needed). This removes an awful lot of code duplication, and lets us take
-    # advantage of the caching etc already implemented in clusterIO.
-    # @classmethod
-    # def load_existing(cls, storage_directory):
-    #     """ loads a DistributedImagePyramid from a given directory.
-    #
-    #     Parameters
-    #     ----------
-    #     storage_directory : str
-    #         root directory of a DistributedImagePyramid instance.
-    #
-    #     Returns
-    #     -------
-    #     DistributedImagePyramid
-    #         based on storage_directory contents.
-    #     """
-    #
-    #     mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
-    #
-    #     return DistributedImagePyramid(
-    #         storage_directory,
-    #         pyramid_tile_size=mdh['Pyramid.TileSize'],
-    #         mdh=mdh,
-    #         n_tiles_x=mdh["Pyramid.NTilesX"],
-    #         n_tiles_y=mdh["Pyramid.NTilesY"],
-    #         depth=mdh["Pyramid.Depth"],
-    #         x0=mdh['Pyramid.x0'],
-    #         y0=mdh['Pyramid.y0'],
-    #         pixel_size=mdh["Pyramid.PixelSize"],
-    #         servers=mdh["Pyramid.Servers"],
-    #         chunk_shape=mdh["Pyramid.ChunkShape"],
-    #         timeout=mdh["Pyramid.Timeout"],
-    #         repeats=mdh["Pyramid.Repeats"],
-    #     )
-
-    # FIXME - remove - servers have no place in the metadata, as there is no garuantee that the pyramid will be
-    # opened from the same cluster config - it could just as easily be copied elsewhere. Additionally, server
-    # IPs in the PYME cluster are dynamically allocated and may change without notice.
-    # def mdh_servers(self):
-    #     """
-    #     Converts the servers attribute into a dictionary for mdh.
-    #     """
-    #     servers_dict = {}
-    #     for address, port in self.servers:
-    #         servers_dict[address] = port
-    #     return servers_dict
-
-    def part_dict(self, server_idx, backend):
-        """
-        Returns a dict for initializing a PartialPyramid on a cluster server. 
-        """
-        part_params = {
-            "pyramid_tile_size": self.tile_size,
-            "n_tiles_x": self.n_tiles_x,
-            "n_tiles_y": self.n_tiles_y,
-            "depth": self.depth,
-            "x0": self.x0,
-            "y0": self.y0,
-            "pixel_size": self.pixel_size,
-            "backend": [key for key in TILEIO_EXT if TILEIO_EXT[key] == backend][0],
-            "chunk_shape": self.chunk_shape,
-            "nr_servers": len(self.servers),
-            "server_idx": server_idx,
-        }
-        return part_params
-
-    
-    def make_url_path(self, path_prefix):
-        url_path = (path_prefix + "{}" + self.base_dir).format('/' if self.base_dir[0] != '/' else "")
-        return url_path
-
-    
-    def make_url(self, path_prefix, server_idx):
+    def _make_url(self, path_prefix, server_idx):
         """
         Generates a URL to a specified cluster server for a request
         indicated by the path prefix.
         """
         address, port = self.servers[server_idx]
-        path = self.make_url_path(path_prefix)
+        path = path_prefix + '/' + self.base_dir.lstrip('/')
         url = 'http://%s:%d/%s' % (address, port, path)
         url = url.encode()
         return url
 
     
-    # we shouldn't need any out logic here at all - we should be able to use the clusterIO methods (e.g. putFiles)
     def put(self, path_prefix, params, data, server_idx):
         """
         Sends a HTTP PUT request to a specified cluster server.
         """
-        url = self.make_url(path_prefix, server_idx)
-        for repeat in range(self.repeats):
-            session = self.sessions[server_idx]
+        url = self._make_url(path_prefix, server_idx)
+        
+        session = self.sessions[server_idx]
+        try:
+            response = session.put(url, params=params, data=data, timeout=self.timeout)
+            if not response.status_code == 200:
+                raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
+        finally:
             try:
-                response = session.put(url, params=params, data=data, timeout=self.timeout)
-                if not response.status_code == 200:
-                    raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
-                return
-            except response.ConnectTimeout:
-                if repeat + 1 == self.repeats:
-                    logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
-                    raise
-                else:
-                    logger.warn('Timeout attempting to put file: %s, retrying' % url)
-            finally:
-                try:
-                    response.close()
-                except:
-                    pass
+                response.close()
+            except:
+                pass
 
-
-    # def get(self, path_prefix, request_data, server_idx):
-    #     """
-    #     Sends a HTTP GET request to a specified cluster server.
-    #     """
-    #     url = self.make_url(path_prefix, server_idx)
-    #     for repeat in range(self.repeats):
-    #         session = self.sessions[server_idx]
-    #         try:
-    #             response = session.get(url, params=request_data, timeout=self.timeout)
-    #             if not response.status_code == 200:
-    #                 raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
-    #             return response
-    #         except response.ConnectTimeout:
-    #             if repeat + 1 == self.repeats:
-    #                 logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
-    #                 raise
-    #             else:
-    #                 logger.warn('Timeout attempting to put file: %s, retrying' % url)
-    #         finally:
-    #             try:
-    #                 response.close()
-    #             except:
-    #                 pass
-    #     return None
 
     def create_remote_part(self, server_idx, backend):
         """
         Initializes PartialPyramid a on the specified server.
         """
-        data = json.dumps(self.part_dict(server_idx, backend)).encode()
-        self.put('__part_pyramid_create', {}, data, server_idx)
+        data = json.dumps({"pyramid_tile_size": self.tile_size,"chunk_shape": self.chunk_shape,}).encode()
+        
+        self.put('__pyramid_create', {}, data, server_idx)
+        
         logger.debug("Created remote part pyramid for server {}".format(server_idx))
 
-    # def extract_chunk_from(
-    #     self, x, y, chunk_idcs, frameSizeX, frameSizeY, frame,
-    # ):
-    #     """
-    #     Extracts the update coordinates and slices from an update frame and its weights.
-    #     Essentially prepares the input for PartialPyramid.update_base_tile_from_slices().
-    #     """
-    #     [min_tile_x, min_tile_y, max_tile_x, max_tile_y] = chunk_idcs
-    #
-    #     xs = max(min_tile_x * self.tile_size - x, 0)
-    #     xe = min((max_tile_x + 1) * self.tile_size - x, frameSizeX)
-    #
-    #     ys = max((min_tile_y * self.tile_size) - y, 0)
-    #     ye = min(((max_tile_y + 1) * self.tile_size) - y, frameSizeY)
-    #
-    #     frame_slice = frame[xs:xe, ys:ye]
-    #     params = {
-    #         "x": x,
-    #         "y": y,
-    #         "chunk_idcs": chunk_idcs,
-    #         "frameSizeX": frameSizeX,
-    #         "frameSizeY": frameSizeY,
-    #         "frameOffsetX": xs,
-    #         "frameOffsetY": ys,
-    #     }
-    #
-    #     return frame_slice, params
 
     def _ensure_layer_directory(self, layer_num=0):
         # directories get created automatically on the cluster, we don't need to do anything here.
         pass
     
-    # DB - this duplicates the method in the base class for no good reason - update_base_tile should be overloaded instead.
-    # it also doe a bunch of super expensive and un-neccessary processing - e.g. labelling, np.where
-    # def update_base_tiles_from_frame(self, x, y, frame, weights='auto'):
-    #     """
-    #     Identifiers which server is responsible for which chunk and
-    #     sends corresponding frame slices to the servers.
-    #
-    #     Notes
-    #     -----
-    #     Given a 2x2 frame, 1x1 chunks and 4 servers, one may describe the
-    #     responsibility of the servers via a matrix:
-    #     `[
-    #         [1, 2],
-    #         [3, 4],
-    #     ]`
-    #     where matrix values indicate which server is responsible for the
-    #     tile (and chunk in this case) at their position. If only
-    #     2 servers are present, the matrix may look like this:
-    #     `[
-    #         [1, 2],
-    #         [2, 1],
-    #     ]`
-    #     In this case, a server's chunks are extracted into masks and then
-    #     separated with `skimage.measure.label`.
-    #     """
-    #     frameSizeX, frameSizeY = frame.shape[:2]
-    #
-    #     if weights == 'auto':
-    #         weights = self.frame_weights(frame.shape[:2])
-    #     else:
-    #         # Auto-weights allows weighting to be performed server-side in the future, don't allow non-auto weights
-    #         # TODO - offer differenc auto-weighting schemes?
-    #         raise RuntimeError('Distributed pyramid should only be used with automatic weights')
-    #
-    #
-    #     frame = frame * weights
-    #
-    #     out_folder = os.path.join(self.base_dir, '0')
-    #     if not os.path.exists(out_folder):
-    #         os.makedirs(out_folder)
-    #
-    #     if (x < 0) or (y < 0):
-    #         raise ValueError('base tile origin positions must be >=0')
-    #
-    #     tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
-    #     tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
-    #
-    #     self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
-    #     self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
-    #
-    #     array = [server_for_chunk(tile_x, tile_y, 0, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions)) for tile_x in tile_xs for tile_y in tile_ys]
-    #
-    #     responsibility_matrix = np.asarray(array,dtype=int,)
-    #
-    #     responsibility_matrix = responsibility_matrix.reshape((len(tile_xs), len(tile_ys)))
-    #     for server_idx in range(len(self.sessions)):
-    #         server_chunks = responsibility_matrix == server_idx
-    #         chunk_masks, nr_chunks = label(server_chunks, return_num=True, connectivity=1)
-    #         chunk_tuples = []
-    #         for chunk in np.arange(nr_chunks) + 1:
-    #             chunk_mask = chunk_masks == chunk
-    #             chunk_coords = np.where(chunk_mask)
-    #             chunk_coords = [
-    #                 chunk_coords[0].min(),
-    #                 chunk_coords[0].max(),
-    #                 chunk_coords[1].min(),
-    #                 chunk_coords[1].max(),
-    #             ]
-    #             frame_slice, chunk_params = self.extract_chunk_from(x, y, chunk_coords, frameSizeX, frameSizeY, frame,)
-    #             chunk_tuples.append((PZFFormat.dumps(frame_slice.astype(np.float32)),chunk_params,))
-    #
-    #         self.update_tiles_on_server(chunk_tuples, server_idx)
-    #     self.pyramid_valid = False
-        
     
     def update_base_tile(self, tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None):
         """
@@ -794,35 +428,36 @@ class DistributedImagePyramid(ImagePyramid):
         
         In practice it simply adds each chunk to a queue of chunks that get pushed asynchronously in multiple threads
         (one for each server).
-        
-        """"
+        """
+        import json
         server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions))
         
         if weights is not 'auto':
             raise RuntimeError('Distributed pyramid only supports auto weights')
         
-        fn = f'__pyramid_update_tile/{self.base_dir}?x={tile_x}&y={tile_y}&weights="{weights}"&' + \
+        fn = f'__pyramid_update_tile/{self.base_dir}?x={tile_x}&y={tile_y}&' + \
              f'tox={tile_offset[0]}&toy={tile_offset[1]}&fox={frame_offset[0]}&foy={frame_offset[1]}&' + \
-             f'frame_shape={frame_shape}'
+             f'fsx={frame_shape[0]}&fsy={frame_shape[1]}'
         
-        self._tile_spoolers[server_idx].put((tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None))
-            
+        self._tile_spoolers[server_idx].put(fn,PZFFormat.dumps(data))
+             
     
-    # replaced by individual spoolers and update_base_tile
-    # def update_tiles_on_server(self, chunk_tuples, server_idx):
-    #     """
-    #     Sends the output from `extract_chunk_from()` to the responsible cluster
-    #     server.
-    #     """
-    #     self.multi_put('__part_pyramid_update_tiles', chunk_tuples, server_idx)
-
     def finish_base_tiles(self):
         """
         Notifies all cluster servers that all frames have been processed on the
-        microscope end.
+        microscope end. Blocks until the servers have finished constructing their partial pyramids
         """
-        for server_idx in range(len(self.servers)):
-            self.put('__part_pyramid_finish', {}, "".encode(), server_idx)
+        
+        for ts in self._tile_spoolers:
+            ts.finalize('__pyramid_finish/' + self.base_dir.lstrip('/'))
+            
+        for ts in self._tile_spoolers:
+            # put this in a separate loop to the above as .close() joins the pushing threads, which
+            # would serialise computation (rather than having it triggered in all threads)
+            ts.close()
+        
+        #for server_idx in range(len(self.servers)):
+        #    self.put('__part_pyramid_finish', {}, "".encode(), server_idx)
 
     # def get_status_from_server(self, server_idx):
     #     """
@@ -857,53 +492,43 @@ class DistributedImagePyramid(ImagePyramid):
     #         aggregate.append(tile_coords)
     #     return tile_coords
 
-    def rebuild_base(self):
-        """
-        Synchronization step between the microscope and the cluster.
-        This method returns when all PartialPyramids for this DistributedImagePyramid have been built.
-        """
-        unfinished_servers = set([i for i in range(len(self.servers))])
-        while len(unfinished_servers) > 0:
-            finished = []
-            # time.sleep(len(unfinished_servers))
-            time.sleep(1)
-            for server_idx in unfinished_servers:
-                status = self.get_status_from_server(server_idx)
-                if status["part pyramid done"]:
-                    finished.append(server_idx)
-            for server_idx in finished:
-                unfinished_servers.remove(server_idx)
-        logger.debug("All remote parts built")
+    # def rebuild_base(self):
+    #     """
+    #     Synchronization step between the microscope and the cluster.
+    #     This method returns when all PartialPyramids for this DistributedImagePyramid have been built.
+    #     """
+    #     unfinished_servers = set([i for i in range(len(self.servers))])
+    #     while len(unfinished_servers) > 0:
+    #         finished = []
+    #         # time.sleep(len(unfinished_servers))
+    #         time.sleep(1)
+    #         for server_idx in unfinished_servers:
+    #             status = self.get_status_from_server(server_idx)
+    #             if status["part pyramid done"]:
+    #                 finished.append(server_idx)
+    #         for server_idx in finished:
+    #             unfinished_servers.remove(server_idx)
+    #     logger.debug("All remote parts built")
 
-    def top_part_layer(self):
-        """
-        Returns the top layer a PartialPyramid has built given chunk_shape.
-        """
-        layer_chunk_shape = np.asarray(self.chunk_shape)
-        level = 0
-        while layer_chunk_shape.max() > 1:
-            level = level + 1
-            layer_chunk_shape = layer_chunk_shape / 2
-        return level
+    
+    @property
+    def partial_pyramid_depth(self):
+        return np.log2(self.chunk_shape[:2]).min()
 
+    
     def update_pyramid(self):
         """
         Builds the final layers once the lower levels have been built on the cluster.
         The topmost layers on the cluster are aggregated on the microscope and
         then used to make the final layers.
         """
-        self.rebuild_base()
-        inputLevel = self.top_part_layer()
-        tile_coords = self.get_layer_tile_coords_from_servers(inputLevel)
-        for x, y in tile_coords:
-            tile = self.get_tile_from_server(inputLevel, x, y)
-            if tile is not None:
-                self._imgs.save_tile(inputLevel, x, y, tile)
-        logger.debug("Aggregated parts of level {}".format(inputLevel))
+        #self.rebuild_base()
+        inputLevel = self.partial_pyramid_depth
 
         while self._make_layer(inputLevel) > 1:
             inputLevel += 1
             logger.debug("Built level {}".format(inputLevel))
+        
         logger.debug("Topmost level: {}".format(inputLevel + 1))
 
         self.pyramid_valid = True
@@ -1019,10 +644,7 @@ def distributed_pyramid(
     if dark is None:
         dark = float(mdh.getOrDefault('Camera.ADOffset', 0))
 
-    P = DistributedImagePyramid(
-        out_folder, pyramid_tile_size, x0=x0, y0=y0, 
-        pixel_size=mdh.getEntry('voxelsize.x'),
-    )
+    P = DistributedImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'),)
 
     logger.debug('Updating base tiles ...')
     
@@ -1052,8 +674,8 @@ def distributed_pyramid(
     logger.debug(time.time() - t2)
     logger.debug('Done')
 
-    with open(os.path.join(P.base_dir, 'metadata.json'), 'w') as f:
-        f.write(P.mdh.to_JSON())
+    
+    clusterIO.put_file('/'.join([P.base_dir, 'metadata.json']), P.mdh.to_JSON())
     
     return P    
 

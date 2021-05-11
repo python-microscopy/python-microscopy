@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256, return_to_start=True):
+                 trigger=False, base_tile_size=256, return_to_start=True, backend='file'):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
@@ -30,6 +30,8 @@ class Tiler(pointScanner.PointScanner):
         self._flat = None #currently not used
         
         self._last_update_time = 0
+        
+        self._backend = backend
         
         self.on_stop = dispatch.Signal()
         self.progress = dispatch.Signal()
@@ -63,7 +65,12 @@ class Tiler(pointScanner.PointScanner):
         x0 = self._x0 + self._pixel_size*x0_cam  # offset in [um]
         y0 = self._y0 + self._pixel_size*y0_cam
         
-        self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
+        if self._backend == 'cluster':
+            from PYME.Analysis import distributed_pyramid
+            self.P = distributed_pyramid.DistributedImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
+                                           pixel_size=self._pixel_size)
+        else:
+            self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
         
         pointScanner.PointScanner.start(self)
@@ -93,6 +100,8 @@ class Tiler(pointScanner.PointScanner):
     def _stop(self):
         pointScanner.PointScanner._stop(self)
         
+        self.P.finish_base_tiles()
+
         self.P.update_pyramid()
 
         with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:

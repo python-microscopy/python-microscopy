@@ -366,40 +366,34 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.Analysis.distributed_pyramid import PartialPyramid
         data = self._get_data()
         
+        logger.debug('__pyramid: path- %s, len(data) - %d' % (self.path, len(data)))
+        
         parsed = urlparse.urlparse(self.path.lstrip('/'))
         path = parsed.path
         query = urlparse.parse_qs(parsed.query)
         
-        if path.startswith('__part_pyramid_create'):
-            self._create_part_pyramid(path[len('__part_pyramid_create'):], data, query)
-        elif path.startswith('__part_pyramid_update_tiles'):
-            self._update_base_tiles(path[len('__part_pyramid_update_tiles'):], data, query)
-        elif path.startswith('__part_pyramid_finish'):
-            self._finish_base_tiles(path[len('__part_pyramid_finish'):], data, query)
-        elif path.startswith('__part_pyramid_update'):
-            self._update_pyramid(path[len('__part_pyramid_update'):], data, query)
+        parts = path.split('/')
+        endpoint = parts[0]
+        path = '/'.join(parts[1:])
+        
+        if endpoint == '__pyramid_create':
+            disk_path = self.translate_path(path)
+
+            part_pyramids[path] = PartialPyramid.from_request(disk_path, data)
+            logger.debug("Created PartialPyramid for {}".format(path))
+
+        elif endpoint == '__pyramid_update_tile':
+            assert path in part_pyramids, "PartialPyramid for {} not initialized yet".format(path)
+            logger.debug('update tile: ', query)
+            part_pyramids[path].queue_base_tile_update(data, query)
+            
+        elif endpoint == '__pyramid_finish':
+            part_pyramids[path].finalise()
+            
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
-
-    def _create_part_pyramid(self, path, data, query):
-        from PYME.Analysis.distributed_pyramid import PartialPyramid
-
-        part_pyramids[path] = PartialPyramid.build_from_request(path, data)
-        logger.debug("Created PartialPyramid for {}".format(path))
-        part_pyramids[path].update_thread.start()
-
-    def _update_base_tiles(self, path, data, query):
-        assert path in part_pyramids, "PartialPyramid for {} not initialized yet".format(path)
-        part_pyramids[path].queue_base_tile_update(data, query)
-
-    def _finish_base_tiles(self, path, data, query):
-        part_pyramids[path].all_tiles_received = True
-
-    def _update_pyramid(self, path, data, query):
-        part_pyramids[path].update_pyramid()
-
 
     def _aggregate_h5(self):
         """
@@ -477,7 +471,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._doAggregate()
             return
 
-        if self.path.lstrip('/').startswith('__part_pyramid'):
+        if self.path.lstrip('/').startswith('__pyramid'):
             #paths starting with __part_pyramid are special, and trigger operations on PartialPyramids rather than creation
             #of a new file.
             self._do_part_pyramid()
@@ -894,6 +888,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                          (self.client_address[0],
                           self.log_date_time_string(),
                           format % args))
+        logger.debug("raw_requestline: %s" % self.raw_requestline)
 
         #self.log_message(format, *args)
 

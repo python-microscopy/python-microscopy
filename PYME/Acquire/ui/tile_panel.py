@@ -40,6 +40,19 @@ class TilePanel(wx.Panel):
         hsizer2.Add(self.tYTiles, 0, wx.ALL, 2)
         vsizer.Add(hsizer2)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.rbSpoolFile = wx.RadioButton(self, -1, 'File', style=wx.RB_GROUP)
+        #self.rbSpoolFile.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
+        hsizer.Add(self.rbSpoolFile, 1, wx.ALL | wx.EXPAND, 2)
+        self.rbSpoolCluster = wx.RadioButton(self, -1, 'Cluster')
+        #self.rbSpoolCluster.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
+        hsizer.Add(self.rbSpoolCluster, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.rbSpoolFile.SetValue(True)
+
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
         self.tDestination = wx.TextCtrl(self, -1, value='')
@@ -73,9 +86,13 @@ class TilePanel(wx.Panel):
         # document API)
         trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
         
+        backend = 'file'
+        if self.rbSpoolCluster.GetValue():
+            backend = 'cluster'
+        
         self.scope.tiler = tiler.Tiler(self.scope, tile_dir = self.tDestination.GetValue(),
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
-                                       trigger=trigger)
+                                       trigger=trigger, backend=backend)
         
         self.bStop.Enable()
         self.bGo.Disable()
