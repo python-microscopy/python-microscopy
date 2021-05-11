@@ -363,62 +363,43 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return
     
     def _do_part_pyramid(self):
-        if self.path.lstrip('/').startswith('__part_pyramid_create'):
-            self._create_part_pyramid()
-        elif self.path.lstrip('/').startswith('__part_pyramid_update_tiles'):
-            self._update_base_tiles()
-        elif self.path.lstrip('/').startswith('__part_pyramid_finish'):
-            self._finish_base_tiles()
-        elif self.path.lstrip('/').startswith('__part_pyramid_update'):
-            self._update_pyramid()
+        from PYME.Analysis.distributed_pyramid import PartialPyramid
+        data = self._get_data()
+        
+        parsed = urlparse.urlparse(self.path.lstrip('/'))
+        path = parsed.path
+        query = urlparse.parse_qs(parsed.query)
+        
+        if path.startswith('__part_pyramid_create'):
+            self._create_part_pyramid(path[len('__part_pyramid_create'):], data, query)
+        elif path.startswith('__part_pyramid_update_tiles'):
+            self._update_base_tiles(path[len('__part_pyramid_update_tiles'):], data, query)
+        elif path.startswith('__part_pyramid_finish'):
+            self._finish_base_tiles(path[len('__part_pyramid_finish'):], data, query)
+        elif path.startswith('__part_pyramid_update'):
+            self._update_pyramid(path[len('__part_pyramid_update'):], data, query)
 
-    def _create_part_pyramid(self):
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _create_part_pyramid(self, path, data, query):
         from PYME.Analysis.distributed_pyramid import PartialPyramid
 
-        filepath = self.path.lstrip('/')[len('__part_pyramid_create'):]
-        data = self._get_data()
-        part_pyramids[filepath] = PartialPyramid.build_from_request(filepath, data)
-        logger.debug("Created PartialPyramid for {}".format(filepath))
-        part_pyramids[filepath].update_thread.start()
-        self.send_response(200)
-        self.send_header("Content-Length", "0")
-        self.end_headers()
-        return
+        part_pyramids[path] = PartialPyramid.build_from_request(path, data)
+        logger.debug("Created PartialPyramid for {}".format(path))
+        part_pyramids[path].update_thread.start()
 
-    def _update_base_tiles(self):
-        url = self.path.lstrip('/')[len('__part_pyramid_update_tiles'):]
-        parsed = urlparse.urlparse(url)
-        query = parsed.query
-        filepath = parsed.path
-        request_data = urlparse.parse_qs(query)
-        data = self._get_data()
-        assert filepath in part_pyramids, "PartialPyramid for {} not initialized yet".format(filepath)
-        part_pyramids[filepath].update_queue.put((request_data, data))
+    def _update_base_tiles(self, path, data, query):
+        assert path in part_pyramids, "PartialPyramid for {} not initialized yet".format(path)
+        part_pyramids[path].queue_base_tile_update(data, query)
 
-        self.send_response(200)
-        self.send_header("Content-Length", "0")
-        self.end_headers()
-        return
+    def _finish_base_tiles(self, path, data, query):
+        part_pyramids[path].all_tiles_received = True
 
-    def _finish_base_tiles(self):
-        filepath = self.path.lstrip('/')[len('__part_pyramid_finish'):]
-        data = self._get_data()
-        part_pyramids[filepath].all_tiles_received = True
+    def _update_pyramid(self, path, data, query):
+        part_pyramids[path].update_pyramid()
 
-        self.send_response(200)
-        self.send_header("Content-Length", "0")
-        self.end_headers()
-        return
-
-    def _update_pyramid(self):
-        filepath = self.path.lstrip('/')[len('__part_pyramid_update'):]
-        data = self._get_data()
-        part_pyramids[filepath].update_pyramid()
-
-        self.send_response(200)
-        self.send_header("Content-Length", "0")
-        self.end_headers()
-        return
 
     def _aggregate_h5(self):
         """
@@ -600,61 +581,61 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return f
 
-    def _get_part_pyramid_status(self):
-        url = self.path.lstrip('/')[len('__part_pyramid_status'):]
-        parsed = urlparse.urlparse(url)
-        query = parsed.query
-        filepath = parsed.path
-        request_data = urlparse.parse_qs(query)
-        status_data = part_pyramids[filepath].get_status_at_request()
-
-        f = BytesIO()
-        f.write(status_data)
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
-        encoding = sys.getfilesystemencoding()
-        self.send_header("Content-type", "application/json; charset=%s" % encoding)
-        self.send_header("Content-Length", str(length))
-        self.end_headers()
-        return f
-
-    def _get_part_pyramid_tile(self):
-        url = self.path.lstrip('/')[len('__part_pyramid_tile'):]
-        parsed = urlparse.urlparse(url)
-        query = parsed.query
-        filepath = parsed.path
-        request_data = urlparse.parse_qs(query)
-        tile_data, dtype, shape = part_pyramids[filepath].get_tile_at_request(request_data)
-
-        f = BytesIO()
-        f.write(tile_data)
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
-        self.send_header("Content-type", "application/ndarray; dtype={}; shape={}".format(dtype, shape))
-        self.send_header("Content-Length", str(length))
-        self.end_headers()
-        return f
-
-    def _get_part_pyramid_coords(self):
-        url = self.path.lstrip('/')[len('__part_pyramid_coords'):]
-        parsed = urlparse.urlparse(url)
-        query = parsed.query
-        filepath = parsed.path
-        request_data = dict(qc.split("=") for qc in query.split("&"))
-        coords_data = part_pyramids[filepath].get_coords_at_request(request_data)
-
-        f = BytesIO()
-        f.write(coords_data)
-        length = f.tell()
-        f.seek(0)
-        self.send_response(200)
-        encoding = sys.getfilesystemencoding()
-        self.send_header("Content-type", "application/json; charset=%s" % encoding)
-        self.send_header("Content-Length", str(length))
-        self.end_headers()
-        return f
+    # def _get_part_pyramid_status(self):
+    #     url = self.path.lstrip('/')[len('__part_pyramid_status'):]
+    #     parsed = urlparse.urlparse(url)
+    #     query = parsed.query
+    #     filepath = parsed.path
+    #     request_data = urlparse.parse_qs(query)
+    #     status_data = part_pyramids[filepath].get_status_at_request()
+    #
+    #     f = BytesIO()
+    #     f.write(status_data)
+    #     length = f.tell()
+    #     f.seek(0)
+    #     self.send_response(200)
+    #     encoding = sys.getfilesystemencoding()
+    #     self.send_header("Content-type", "application/json; charset=%s" % encoding)
+    #     self.send_header("Content-Length", str(length))
+    #     self.end_headers()
+    #     return f
+    #
+    # def _get_part_pyramid_tile(self):
+    #     url = self.path.lstrip('/')[len('__part_pyramid_tile'):]
+    #     parsed = urlparse.urlparse(url)
+    #     query = parsed.query
+    #     filepath = parsed.path
+    #     request_data = urlparse.parse_qs(query)
+    #     tile_data, dtype, shape = part_pyramids[filepath].get_tile_at_request(request_data)
+    #
+    #     f = BytesIO()
+    #     f.write(tile_data)
+    #     length = f.tell()
+    #     f.seek(0)
+    #     self.send_response(200)
+    #     self.send_header("Content-type", "application/ndarray; dtype={}; shape={}".format(dtype, shape))
+    #     self.send_header("Content-Length", str(length))
+    #     self.end_headers()
+    #     return f
+    #
+    # def _get_part_pyramid_coords(self):
+    #     url = self.path.lstrip('/')[len('__part_pyramid_coords'):]
+    #     parsed = urlparse.urlparse(url)
+    #     query = parsed.query
+    #     filepath = parsed.path
+    #     request_data = dict(qc.split("=") for qc in query.split("&"))
+    #     coords_data = part_pyramids[filepath].get_coords_at_request(request_data)
+    #
+    #     f = BytesIO()
+    #     f.write(coords_data)
+    #     length = f.tell()
+    #     f.seek(0)
+    #     self.send_response(200)
+    #     encoding = sys.getfilesystemencoding()
+    #     self.send_header("Content-type", "application/json; charset=%s" % encoding)
+    #     self.send_header("Content-Length", str(length))
+    #     self.end_headers()
+    #     return f
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -674,13 +655,14 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return self.get_status()
         if self.path.lstrip('/').startswith('__glob'):
             return self.get_glob()
-        if self.path.lstrip('/').startswith('__part_pyramid_status'):
-            return self._get_part_pyramid_status()
-        if self.path.lstrip('/').startswith('__part_pyramid_tile'):
-            return self._get_part_pyramid_tile()
-        if self.path.lstrip('/').startswith('__part_pyramid_coords'):
-            return self._get_part_pyramid_coords()
         
+        # if self.path.lstrip('/').startswith('__part_pyramid_status'):
+        #     return self._get_part_pyramid_status()
+        # if self.path.lstrip('/').startswith('__part_pyramid_tile'):
+        #     return self._get_part_pyramid_tile()
+        # if self.path.lstrip('/').startswith('__part_pyramid_coords'):
+        #     return self._get_part_pyramid_coords()
+        #
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):

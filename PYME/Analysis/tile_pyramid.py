@@ -105,6 +105,19 @@ class PZFTileCache(TileCache):
         from PYME.IO import PZFFormat
         with open(filename, 'rb') as f:
             return PZFFormat.loads(f.read())[0].squeeze()
+        
+class ClusterPZFTileCache(TileCache):
+    def _save(self, filename, data):
+        from PYME.IO import clusterIO, PZFFormat
+        
+        clusterIO.put_file(filename, PZFFormat.dumps(data.astype('float32')))
+        
+    def _load(self, filename):
+        from PYME.IO import clusterIO, PZFFormat
+        
+        s = clusterIO.get_file(filename)
+        return PZFFormat.loads(s)
+    
     
 class TileIO(object):
     def get_tile(self, layer, x, y):
@@ -181,15 +194,26 @@ class NumpyTileIO(TileIO):
         self._tilecache.flush()
 
 class PZFTileIO(NumpyTileIO):
-    def __init__(self, base_dir, suff='img'):
+    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache):
         self.base_dir = base_dir
         self.suff = suff + '.pzf'
 
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
     
-        self._tilecache = PZFTileCache()
+        self._tilecache = tile_cache()
         self._coords = {}
         
+class ClusterPZFTileIO(PZFTileIO):
+    def __init__(self, base_dir, suff='img'):
+        ClusterPZFTileIO.__init__(self, base_dir, suff, tile_cache=ClusterPZFTileCache)
+        
+    def _update_layer_tile_coords(self, layer=0):
+        from PYME.IO import clusterIO
+        tiles = []
+        
+        for xdir in clusterIO.cglob('/'.join(self.base_dir, '%d' % layer, '*')):
+            for fn in clusterIO.glob('/'.join(xdir, '*_%s' % self.suff)):
+                tiles.append(tuple([int(s) for s in os.path.basename(fn).split('_')[:2]]))
 
 if six.PY2:
     def blob(data):
