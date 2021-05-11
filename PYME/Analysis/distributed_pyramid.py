@@ -56,6 +56,8 @@ class PartialPyramid(ImagePyramid):
     def __init__(self, storage_directory, pyramid_tile_size=256, backend=PZFTileIO, chunk_shape=[8,8,1]):
         ImagePyramid.__init__(self,storage_directory, pyramid_tile_size=pyramid_tile_size, backend=backend)
         
+        logger.debug('Creating new pyramid in directory %s' % storage_directory)
+        
         self.chunk_shape = chunk_shape
         self.update_queue = queue.Queue()
         
@@ -84,99 +86,30 @@ class PartialPyramid(ImagePyramid):
         
         tile_data = tile_x, tile_y, data, weights, tile_offset, frame_offset, frame_shape
         
+        #logger.debug('putting data on update_queue, shape=%s' % str(data.shape))
         self.update_queue.put(tile_data)
         
     def _poll_loop(self):
+        logger.debug('starting polling loop')
         while not self.all_tiles_received:
             # time.sleep(sleep_time)
             try:
                 # we let queue.get() block until there is data in the queue, albeit with a timeout
                 # so that we will
                 tile_data = self.update_queue.get(timeout=5)
+                
+                #logger.debug('got data from update queue')
 
                 self.update_base_tile(*tile_data)
                 self.pyramid_valid = False
             except queue.Empty:
                 pass
+            except:
+                logger.exception('Unexpected error in polling loop:')
+                raise
         
         self.update_pyramid()
         
-
-    # def get_tile_at_request(self, request):
-    #     """
-    #     Gets tile at the position specified by a dictionary request.
-    #
-    #     Parameters:
-    #     -----------
-    #     request : dictionary
-    #         Contains coordinates at keys ["layer", "x", "y"]. Values
-    #         are expected to be in a list with one element.
-    #
-    #     Returns
-    #     -------
-    #     bytes
-    #         tile numpy array converted to bytes.
-    #     dtype
-    #         dtype of the tile.
-    #     tuple (of ints)
-    #         shape of the tile. Supposed to be (tile_size, tile_size).
-    #
-    #     Notes
-    #     -----
-    #     If the get_tile call at the same position would return None, this method returns
-    #     the values of an empty array.
-    #     This is to ensure there are bytes which can be sent via HTTP.
-    #     """
-    #     layer = int(request["layer"][0])
-    #     x = int(request["x"][0])
-    #     y = int(request["y"][0])
-    #     tile = self.get_tile(layer, x, y)
-    #     if tile is None:
-    #         tile = np.asarray([], dtype=np.float32)
-    #     else:
-    #         tile = tile.astype(np.float32)
-    #         assert tile.shape[0] == self.tile_size and tile.shape[1] == self.tile_size
-    #     return tile.tobytes(), tile.dtype, tile.shape
-    #
-    # def get_coords_at_request(self, request):
-    #     """
-    #     Gets tile coords at the layer specified in the request dict.
-    #
-    #     Parameters:
-    #     -----------
-    #     request : dictionary
-    #         Contains coordinates at keys ["level"].
-    #
-    #     Returns
-    #     -------
-    #     bytes
-    #         of a JSON string of the coords.
-    #
-    #     Notes
-    #     -----
-    #     There's probably a more efficient solution than JSON, but the
-    #     main bottleneck is frame chunk transferal at the moment.
-    #     """
-    #     level = int(request["level"])
-    #     coords = self.get_layer_tile_coords(level)
-    #     return json.dumps(coords).encode()
-
-    # def get_status_at_request(self):
-    #     """
-    #     Gets the current update status of this PartialPyramid. Used to determine whether this part
-    #     has finished building.
-    #
-    #     Returns
-    #     -------
-    #     status : dict
-    #         indicates the update status via bool values at the keys
-    #         ["base tiles done", "part pyramid done"].
-    #     """
-    #     status = {
-    #         "base tiles done": not (self.all_tiles_received and self.update_queue.empty()),
-    #         "part pyramid done": self.pyramid_valid,
-    #     }
-    #     return json.dumps(status).encode()
 
     def finalise(self):
         self.all_tiles_received = True
@@ -191,7 +124,7 @@ class PartialPyramid(ImagePyramid):
         TODO - refactor base update_pyramid to allow max_depth as a parameter.
         """
         logger.debug("updating part pyramid")
-        self.rebuild_base()
+        self._rebuild_base()
         inputLevel = 0
         
         max_depth = np.log2(self.chunk_shape[:2]).min()
@@ -455,65 +388,11 @@ class DistributedImagePyramid(ImagePyramid):
             # put this in a separate loop to the above as .close() joins the pushing threads, which
             # would serialise computation (rather than having it triggered in all threads)
             ts.close()
-        
-        #for server_idx in range(len(self.servers)):
-        #    self.put('__part_pyramid_finish', {}, "".encode(), server_idx)
-
-    # def get_status_from_server(self, server_idx):
-    #     """
-    #     Requests the update status of the PartialPyramid on a given cluster server.
-    #     """
-    #     response = self.get("__part_pyramid_status", {}, server_idx)
-    #     return json.loads(response.content.decode())
-
-    # def get_tile_from_server(self, layer, x, y):
-    #     """
-    #     Loads a tile which is located on a cluster server.
-    #     """
-    #     layer_chunk_shape = np.asarray(self.chunk_shape) / pow(2, layer)
-    #     layer_chunk_shape[2] = 1
-    #     server_idx = server_for_chunk(x, y, chunk_shape=layer_chunk_shape, nr_servers=len(self.servers))
-    #     response = self.get("__part_pyramid_tile", {"layer": layer, "x": x, "y": y}, server_idx)
-    #     tile_data = response.content
-    #     tile = np.frombuffer(tile_data, dtype=np.float32)
-    #     if len(tile) == 0:
-    #         return None
-    #     tile = tile.reshape((self.tile_size, self.tile_size))
-    #     return tile
-    #
-    # def get_layer_tile_coords_from_servers(self, level):
-    #     """
-    #     Loads the tile coords at a specified level from the cluster.
-    #     """
-    #     aggregate = []
-    #     for server_idx in range(len(self.servers)):
-    #         response = self.get('__part_pyramid_coords', {"level": level}, server_idx)
-    #         tile_coords = json.loads(response.content.decode())
-    #         aggregate.append(tile_coords)
-    #     return tile_coords
-
-    # def rebuild_base(self):
-    #     """
-    #     Synchronization step between the microscope and the cluster.
-    #     This method returns when all PartialPyramids for this DistributedImagePyramid have been built.
-    #     """
-    #     unfinished_servers = set([i for i in range(len(self.servers))])
-    #     while len(unfinished_servers) > 0:
-    #         finished = []
-    #         # time.sleep(len(unfinished_servers))
-    #         time.sleep(1)
-    #         for server_idx in unfinished_servers:
-    #             status = self.get_status_from_server(server_idx)
-    #             if status["part pyramid done"]:
-    #                 finished.append(server_idx)
-    #         for server_idx in finished:
-    #             unfinished_servers.remove(server_idx)
-    #     logger.debug("All remote parts built")
 
     
     @property
     def partial_pyramid_depth(self):
-        return np.log2(self.chunk_shape[:2]).min()
+        return int(np.log2(self.chunk_shape[:2]).min())
 
     
     def update_pyramid(self):
@@ -522,18 +401,20 @@ class DistributedImagePyramid(ImagePyramid):
         The topmost layers on the cluster are aggregated on the microscope and
         then used to make the final layers.
         """
-        #self.rebuild_base()
-        inputLevel = self.partial_pyramid_depth
-
-        while self._make_layer(inputLevel) > 1:
-            inputLevel += 1
-            logger.debug("Built level {}".format(inputLevel))
         
-        logger.debug("Topmost level: {}".format(inputLevel + 1))
-
-        self.pyramid_valid = True
-        self.depth = inputLevel
-        self._imgs.flush()
+        if not self.pyramid_valid:
+            #only rebuild if we haven't already
+            inputLevel = self.partial_pyramid_depth
+    
+            while self._make_layer(inputLevel) > 1:
+                inputLevel += 1
+                logger.debug("Built level {}".format(inputLevel))
+            
+            logger.debug("Topmost level: {}".format(inputLevel + 1))
+    
+            self.pyramid_valid = True
+            self.depth = inputLevel
+            self._imgs.flush()
 
 
 def distributed_pyramid(

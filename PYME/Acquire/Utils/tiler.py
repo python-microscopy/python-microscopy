@@ -104,8 +104,12 @@ class Tiler(pointScanner.PointScanner):
 
         self.P.update_pyramid()
 
-        with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
-            f.write(self.P.mdh.to_JSON())
+        if self._backend == 'cluster':
+            from PYME.IO import clusterIO
+            clusterIO.put_file(self.P.base_dir + '/metadata.json', self.P.mdh.to_JSON().encode())
+        else:
+            with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
+                f.write(self.P.mdh.to_JSON())
             
         self.on_stop.send(self)
         self.progress.send(self)

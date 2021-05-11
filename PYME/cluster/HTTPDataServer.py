@@ -366,7 +366,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.Analysis.distributed_pyramid import PartialPyramid
         data = self._get_data()
         
-        logger.debug('__pyramid: path- %s, len(data) - %d' % (self.path, len(data)))
+        #logger.debug('__pyramid: path- %s, len(data) - %d' % (self.path, len(data)))
         
         parsed = urlparse.urlparse(self.path.lstrip('/'))
         path = parsed.path
@@ -384,10 +384,11 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         elif endpoint == '__pyramid_update_tile':
             assert path in part_pyramids, "PartialPyramid for {} not initialized yet".format(path)
-            logger.debug('update tile: ', query)
+            logger.debug('update tile: %s' % query)
             part_pyramids[path].queue_base_tile_update(data, query)
             
         elif endpoint == '__pyramid_finish':
+            logger.debug('Finalising pyramid')
             part_pyramids[path].finalise()
             
 
@@ -480,10 +481,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
         path = self.translate_path(self.path)
+        # move up here to make sure we actually get the data (and clear it from our queue, even if we are going to, e.g.
+        # 405 it later)
+        data = self._get_data()
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
             self.send_error(405, "File already exists %s" % path)
+            
+            
 
             #self.end_headers()
             return None
@@ -518,7 +524,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                    data = self._get_data()
                     f.write(data)
 
                     #set the file to read-only (reflecting our write-once semantics

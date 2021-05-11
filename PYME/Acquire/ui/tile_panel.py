@@ -128,7 +128,7 @@ class TilePanel(wx.Panel):
         import requests
         import os
 
-        self.scope.tiler.P.update_pyramid()
+        #self.scope.tiler.P.update_pyramid()
         
         #if not self._gui_proc is None:
         #    self._gui_proc.kill()

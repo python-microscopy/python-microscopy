@@ -116,7 +116,8 @@ class ClusterPZFTileCache(TileCache):
         from PYME.IO import clusterIO, PZFFormat
         
         s = clusterIO.get_file(filename)
-        return PZFFormat.loads(s)
+        return PZFFormat.loads(s)[0].squeeze()
+    
     
     
 class TileIO(object):
@@ -212,8 +213,10 @@ class ClusterPZFTileIO(PZFTileIO):
         tiles = []
         
         for xdir in clusterIO.cglob('/'.join([self.base_dir, '%d' % layer, '*'])):
-            for fn in clusterIO.glob('/'.join([xdir, '*_%s' % self.suff])):
+            for fn in clusterIO.cglob('/'.join([xdir, '*_%s' % self.suff])):
                 tiles.append(tuple([int(s) for s in os.path.basename(fn).split('_')[:2]]))
+                
+        self._coords[layer] = tiles
 
 if six.PY2:
     def blob(data):
@@ -346,7 +349,7 @@ class ImagePyramid(object):
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
 
-        if not os.path.exists(self.base_dir):
+        if (not os.path.exists(self.base_dir)) and (not backend == ClusterPZFTileIO):
             os.makedirs(self.base_dir)
 
         #self._tilecache = TileCache()
@@ -611,7 +614,8 @@ class ImagePyramid(object):
             # note - we take advantage of the fact that strings are immutable constants to perform the above check
             # using is rather than risk an element-wise comparisson.
             xs, ys = frame_offset
-            weights = self.frame_weights(frame_shape)[xs:(xs+data.shape[0]), ys:(ys+data.shape[1])]
+            weights = self.frame_weights(frame_shape)[xs:(xs+data.shape[0]), ys:(ys+data.shape[1])].squeeze()
+            #logger.debug('weights.shape: %s, data.shape:%s, acc_.shape:%s' % (weights.shape, data.shape, acc_.shape))
             data = data*weights
         
         xst, yst = tile_offset

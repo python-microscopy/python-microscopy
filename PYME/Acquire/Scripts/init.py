@@ -41,10 +41,10 @@ def pz(scope):
     scope.fakePiezo = fakePiezo.FakePiezo(100)
     scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
     
-    scope.fakeXPiezo = fakePiezo.FakePiezo(100)
+    scope.fakeXPiezo = fakePiezo.FakePiezo(10000)
     scope.register_piezo(scope.fakeXPiezo, 'x')
     
-    scope.fakeYPiezo = fakePiezo.FakePiezo(100)
+    scope.fakeYPiezo = fakePiezo.FakePiezo(10000)
     scope.register_piezo(scope.fakeYPiezo, 'y')
 
 pz.join() #piezo must be there before we start camera
