@@ -42,35 +42,12 @@ def is_server_for_chunk(candidate_server, x, y, z=0, chunk_shape=[8,8,1], nr_ser
     return actual == candidate_server
 
 
-def update_partial_pyramid(pyramid, sleep_time=1):
-    """
-    Payload execution of PartialPyramid's update thread.
-    First updates base tiles until all frames are processed and then updates the
-    higher pyramid layers.
-
-    Parameters
-    ----------
-
-    pyramid : PartialPyramid
-        the pyramid to be updated.
-    sleep_time : float
-        duration in which the update thread rests to reduce polling issues.
-        Interpreted in units of seconds.
-    """
-    while not pyramid.all_tiles_received:
-        # time.sleep(sleep_time)
-        while not pyramid.update_queue.empty():
-            request_data, data = pyramid.update_queue.get()
-            pyramid.update_base_tiles_from_request(request_data, data)
-    pyramid.update_pyramid()
-
-
 class PartialPyramid(ImagePyramid):
     """
     Subclass of ImagePyramid which supports distribution of pyramid files over a PYME
     cluster.
 
-    Implementation from the microscope side.
+    Implementation on the server side
     """
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None,
         n_tiles_x=0, n_tiles_y=0, depth=0, x0=0, y0=0, 
@@ -86,9 +63,10 @@ class PartialPyramid(ImagePyramid):
         
         self.update_queue = queue.Queue()
         
-        self.update_thread = threading.Thread(target=update_partial_pyramid, args=(self,), daemon=True)
-        
         self.all_tiles_received = False
+
+        self.update_thread = threading.Thread(target=self._poll_loop, daemon=True)
+        self.update_thread.start()
 
     @classmethod
     def build_from_request(self, filepath, part_dict):
@@ -159,7 +137,7 @@ class PartialPyramid(ImagePyramid):
                     
     def queue_base_tile_update(self, data, query):
         import json
-        data = PZFFormat.loads(data)
+        data = PZFFormat.loads(data).squeeze()
         weights = query.get('weights', 'auto')
         
         tile_x, tile_y = int(query['x']), int(query['y'])
@@ -321,65 +299,70 @@ class PartialPyramid(ImagePyramid):
 
 
 
-    def rebuild_base(self):
-        """
-        Analoguous to _rebuild_base from the super class, but only rebuilds the tiles
-        for which this server is responsible.
-        """
-        for xc, yc in self._occ.get_layer_tile_coords(0):
-            if is_server_for_chunk(
-                self.server_idx, xc, yc, z=0,
-                chunk_shape=self.chunk_shape,
-                nr_servers=self.nr_servers,
-            ) and not self._imgs.tile_exists(0, xc, yc):
-                occ = self._occ.get_tile(0, xc, yc) + 1e-9
-                sf = 1.0 / occ
-                sf[occ <= .1] = 0
-                tile_ = self._acc.get_tile(0, xc, yc) * sf
-                assert tile_.shape[0] == self.tile_size and tile_.shape[1] == self.tile_size
-                self._imgs.save_tile(0, xc, yc, tile_)
+    # the base class _rebuild_base function should be fine - only local data is visible to this pyramid, so if
+    # it appears in _occ.get_layer_tile_coords it's ours by default
+    # def rebuild_base(self):
+    #     """
+    #     Analoguous to _rebuild_base from the super class, but only rebuilds the tiles
+    #     for which this server is responsible.
+    #     """
+    #     for xc, yc in self._occ.get_layer_tile_coords(0):
+    #         if is_server_for_chunk(
+    #             self.server_idx, xc, yc, z=0,
+    #             chunk_shape=self.chunk_shape,
+    #             nr_servers=self.nr_servers,
+    #         ) and not self._imgs.tile_exists(0, xc, yc):
+    #             occ = self._occ.get_tile(0, xc, yc) + 1e-9
+    #             sf = 1.0 / occ
+    #             sf[occ <= .1] = 0
+    #             tile_ = self._acc.get_tile(0, xc, yc) * sf
+    #             assert tile_.shape[0] == self.tile_size and tile_.shape[1] == self.tile_size
+    #             self._imgs.save_tile(0, xc, yc, tile_)
 
-    def make_new_layer(self, input_level):
-        """
-        Analoguous to _make_layer from the super class, but only makes the layer tiles
-        for which this server is responsible.
-        """
-        from scipy import ndimage
-
-        new_layer = input_level + 1
-        tile_coords = self.get_layer_tile_coords(input_level)
-        
-        qsize = int(self.tile_size / 2)
-        
-        new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
-        layer_chunk_shape = np.asarray(self.chunk_shape) / pow(2, input_level)
-        layer_chunk_shape[2] = 1
-
-        for xc, yc in new_tile_coords:
-            if is_server_for_chunk(
-                self.server_idx, xc, yc, z=input_level,
-                chunk_shape=layer_chunk_shape,
-                nr_servers=self.nr_servers,
-            ) and not self._imgs.tile_exists(new_layer, xc, yc):
-                tile = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
-                
-                NW = self.get_tile(input_level, 2 * xc, 2 * yc)
-                if not NW is None:
-                    tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
-                NE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc))
-                if not NE is None:
-                    tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
-                SW = self.get_tile(input_level, (2 * xc), (2 * yc) + 1)
-                if not SW is None:
-                    tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
-                SE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc) + 1)
-                if not SE is None:
-                    tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
-                assert tile.shape[0] == self.tile_size and tile.shape[1] == self.tile_size
-                self._imgs.save_tile(new_layer, xc, yc, tile)
-
-        is_not_final_part_layer = layer_chunk_shape.max() > 2
-        return is_not_final_part_layer
+    
+    # as for rebuild_base, this is not needed - if we can see the tiles they are ours (as long as we only build
+    # up to a safe level).
+    # def make_new_layer(self, input_level):
+    #     """
+    #     Analoguous to _make_layer from the super class, but only makes the layer tiles
+    #     for which this server is responsible.
+    #     """
+    #     from scipy import ndimage
+    #
+    #     new_layer = input_level + 1
+    #     tile_coords = self.get_layer_tile_coords(input_level)
+    #
+    #     qsize = int(self.tile_size / 2)
+    #
+    #     new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
+    #     layer_chunk_shape = np.asarray(self.chunk_shape) / pow(2, input_level)
+    #     layer_chunk_shape[2] = 1
+    #
+    #     for xc, yc in new_tile_coords:
+    #         if is_server_for_chunk(
+    #             self.server_idx, xc, yc, z=input_level,
+    #             chunk_shape=layer_chunk_shape,
+    #             nr_servers=self.nr_servers,
+    #         ) and not self._imgs.tile_exists(new_layer, xc, yc):
+    #             tile = np.zeros([self.tile_size, self.tile_size], dtype=np.float32)
+    #
+    #             NW = self.get_tile(input_level, 2 * xc, 2 * yc)
+    #             if not NW is None:
+    #                 tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
+    #             NE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc))
+    #             if not NE is None:
+    #                 tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
+    #             SW = self.get_tile(input_level, (2 * xc), (2 * yc) + 1)
+    #             if not SW is None:
+    #                 tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
+    #             SE = self.get_tile(input_level, (2 * xc) + 1, (2 * yc) + 1)
+    #             if not SE is None:
+    #                 tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
+    #             assert tile.shape[0] == self.tile_size and tile.shape[1] == self.tile_size
+    #             self._imgs.save_tile(new_layer, xc, yc, tile)
+    #
+    #     is_not_final_part_layer = layer_chunk_shape.max() > 2
+    #     return is_not_final_part_layer
 
     def update_pyramid(self):
         """
