@@ -118,8 +118,6 @@ class ClusterPZFTileCache(TileCache):
         s = clusterIO.get_file(filename)
         return PZFFormat.loads(s)[0].squeeze()
     
-    
-    
 class TileIO(object):
     def get_tile(self, layer, x, y):
         raise NotImplementedError
@@ -487,6 +485,7 @@ class ImagePyramid(object):
                     #print(xc, yc, 'SE')
                 
                 self._imgs.save_tile(new_layer, xc, yc, tile)
+        
         return len(new_tile_coords)
     
     def _rebuild_base(self):
@@ -788,19 +787,6 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
         f.write(P.mdh.to_JSON())
     
     return P
-
-def load_pyramid(dir_base):
-    """
-    Loads a pyramid from a directory. The pyramid may be a regular ImagePyramid
-    or a DistributedImagePyramid.
-    """
-    mdh = load_json(os.path.join(dir_base, 'metadata.json'))
-
-    if "Pyramid.Servers" in mdh.keys():
-        from PYME.Analysis.distributed_pyramid import DistributedImagePyramid
-        return DistributedImagePyramid.load_existing(dir_base)
-    return ImagePyramid.load_existing(dir_base)
-    
 
 def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
     from PYME.IO import image

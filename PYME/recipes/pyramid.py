@@ -1,6 +1,6 @@
 
 from .base import ModuleBase, register_module, register_legacy_module, OutputModule
-from .traits import Input, Output, CStr, Int, Bool
+from .traits import Input, Output, CStr, Int
 from PYME.IO import tabular
 import warnings
 import logging
@@ -112,7 +112,6 @@ class _Supertile(ModuleBase):
     level = Int(0)
     stride = Int(3)
     overlap = Int(1)
-    distributed = Bool(False)
     output_name = Output('supertile')
 
     def execute(self, namespace):

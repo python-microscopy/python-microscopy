@@ -77,20 +77,21 @@ class SupertileDataSource(XYTCDataSource):
     
     @staticmethod
     def from_filename(filename):
-        from PYME.Analysis.tile_pyramid import load_pyramid
+        from PYME.Analysis.tile_pyramid import ImagePyramid
         
         tile_base, query = filename.split('?')
         qp = parse_qs(query)
         level = int(qp.get('level', [0])[0])
         stride = int(qp.get('stride', [3])[0])
         overlap = int(qp.get('overlap', [1])[0])        
-        p = load_pyramid(tile_base)
+        p = ImagePyramid.load_existing(tile_base)
         
         return SupertileDataSource(p, level, stride, overlap)
 
     @property
     def tile_coords(self):
         tc = np.array(self._pyr.get_layer_tile_coords(self.level))
+
         x0, y0 = tc.min(axis=0)
         xm, ym  = tc.max(axis=0)
         

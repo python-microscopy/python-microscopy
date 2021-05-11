@@ -580,62 +580,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return f
 
-    # def _get_part_pyramid_status(self):
-    #     url = self.path.lstrip('/')[len('__part_pyramid_status'):]
-    #     parsed = urlparse.urlparse(url)
-    #     query = parsed.query
-    #     filepath = parsed.path
-    #     request_data = urlparse.parse_qs(query)
-    #     status_data = part_pyramids[filepath].get_status_at_request()
-    #
-    #     f = BytesIO()
-    #     f.write(status_data)
-    #     length = f.tell()
-    #     f.seek(0)
-    #     self.send_response(200)
-    #     encoding = sys.getfilesystemencoding()
-    #     self.send_header("Content-type", "application/json; charset=%s" % encoding)
-    #     self.send_header("Content-Length", str(length))
-    #     self.end_headers()
-    #     return f
-    #
-    # def _get_part_pyramid_tile(self):
-    #     url = self.path.lstrip('/')[len('__part_pyramid_tile'):]
-    #     parsed = urlparse.urlparse(url)
-    #     query = parsed.query
-    #     filepath = parsed.path
-    #     request_data = urlparse.parse_qs(query)
-    #     tile_data, dtype, shape = part_pyramids[filepath].get_tile_at_request(request_data)
-    #
-    #     f = BytesIO()
-    #     f.write(tile_data)
-    #     length = f.tell()
-    #     f.seek(0)
-    #     self.send_response(200)
-    #     self.send_header("Content-type", "application/ndarray; dtype={}; shape={}".format(dtype, shape))
-    #     self.send_header("Content-Length", str(length))
-    #     self.end_headers()
-    #     return f
-    #
-    # def _get_part_pyramid_coords(self):
-    #     url = self.path.lstrip('/')[len('__part_pyramid_coords'):]
-    #     parsed = urlparse.urlparse(url)
-    #     query = parsed.query
-    #     filepath = parsed.path
-    #     request_data = dict(qc.split("=") for qc in query.split("&"))
-    #     coords_data = part_pyramids[filepath].get_coords_at_request(request_data)
-    #
-    #     f = BytesIO()
-    #     f.write(coords_data)
-    #     length = f.tell()
-    #     f.seek(0)
-    #     self.send_response(200)
-    #     encoding = sys.getfilesystemencoding()
-    #     self.send_header("Content-type", "application/json; charset=%s" % encoding)
-    #     self.send_header("Content-Length", str(length))
-    #     self.end_headers()
-    #     return f
-
     def send_head(self):
         """Common code for GET and HEAD commands.
 
@@ -652,16 +596,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
         if self.path.lstrip('/') == '__status':
             return self.get_status()
+        
         if self.path.lstrip('/').startswith('__glob'):
             return self.get_glob()
         
-        # if self.path.lstrip('/').startswith('__part_pyramid_status'):
-        #     return self._get_part_pyramid_status()
-        # if self.path.lstrip('/').startswith('__part_pyramid_tile'):
-        #     return self._get_part_pyramid_tile()
-        # if self.path.lstrip('/').startswith('__part_pyramid_coords'):
-        #     return self._get_part_pyramid_coords()
-        #
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):

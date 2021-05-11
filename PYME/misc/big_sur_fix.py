@@ -18,5 +18,3 @@ try:
         util.find_library = new_util_find_library
 except ImportError:
     pass
-
-import ifaddr
