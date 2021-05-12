@@ -4,20 +4,12 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_r
 import threading
 import queue
 import os
-#import glob
-#import collections
-import time
+#import time
 import six
-import tempfile
-import http.client as httplib
 import socket
 import requests
 import logging
 import json
-import queue
-import logging
-
-#from skimage.measure import label
 
 from PYME.IO import clusterIO, PZFFormat
 from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO, ClusterPZFTileIO
@@ -35,12 +27,6 @@ def server_for_chunk(x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
     server_id = (server_id + np.floor(z / chunk_shape[2])) % nr_servers
     server_id = int(server_id)
     return server_id
-
-
-# def is_server_for_chunk(candidate_server, x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
-#     actual = server_for_chunk(x, y, chunk_shape=chunk_shape, nr_servers=nr_servers)
-#     return actual == candidate_server
-
 
 class PartialPyramid(ImagePyramid):
     """
@@ -160,7 +146,7 @@ class TileSpooler(object):
 
         self._put_queue = queue.Queue()
         self._rc_queue = queue.Queue()
-        self._last_flush_time = time.time()
+        #self._last_flush_time = time.time()
         self._socket = None
         self._alive = True
         
@@ -299,7 +285,6 @@ class DistributedImagePyramid(ImagePyramid):
             
         assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
         
-        self.sessions = [requests.Session() for _, _ in self.servers]
         self._tile_spoolers = [TileSpooler(address, port) for address, port in self.servers]
         
         for server_idx in range(len(self.servers)):
@@ -308,35 +293,6 @@ class DistributedImagePyramid(ImagePyramid):
         # TODO - do we need to put the chunk shape in the metadata?
         #self._mdh["Pyramid.ChunkShape"] = self.chunk_shape
         #self._cached_level_coords = {}
-    
-    def _make_url(self, path_prefix, server_idx):
-        """
-        Generates a URL to a specified cluster server for a request
-        indicated by the path prefix.
-        """
-        address, port = self.servers[server_idx]
-        path = path_prefix + '/' + self.base_dir.lstrip('/')
-        url = 'http://%s:%d/%s' % (address, port, path)
-        url = url.encode()
-        return url
-
-    
-    def put(self, path_prefix, params, data, server_idx):
-        """
-        Sends a HTTP PUT request to a specified cluster server.
-        """
-        url = self._make_url(path_prefix, server_idx)
-        
-        session = self.sessions[server_idx]
-        try:
-            response = session.put(url, params=params, data=data, timeout=self.timeout)
-            if not response.status_code == 200:
-                raise RuntimeError('Put failed with %d: %s' % (response.status_code, response.content))
-        finally:
-            try:
-                response.close()
-            except:
-                pass
 
 
     def create_remote_part(self, server_idx, backend):
@@ -345,7 +301,17 @@ class DistributedImagePyramid(ImagePyramid):
         """
         data = json.dumps({"pyramid_tile_size": self.tile_size,"chunk_shape": self.chunk_shape,}).encode()
         
-        self.put('__pyramid_create', {}, data, server_idx)
+        address, port = self.servers[server_idx]
+        p_dir = self.base_dir.lstrip('/')
+        url = f'http://{address}:{port}/__pyramid_create/{p_dir}'
+
+        # TODO - do this through the tile spoolers to hide latency? (currently serialised over servers)
+        r = requests.put(url, data=data)
+        if not r.status_code == 200:
+            msg = 'Put failed with %d: %s' % (r.status_code, r.content)
+            r.close()
+            raise RuntimeError(msg)
+        r.close()
         
         logger.debug("Created remote part pyramid for server {}".format(server_idx))
 
@@ -479,6 +445,8 @@ def distributed_pyramid(
     cameras (i.e. when the stage is registered with multipliers to match the
     camera, rather than camera registered with orientation metadata to match it
     to the stage).
+    
+    TODO - this largely duplicates the corresponding function in tile_pyramid => refactor
 
     """
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
