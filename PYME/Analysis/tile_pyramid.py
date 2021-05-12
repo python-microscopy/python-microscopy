@@ -1,5 +1,6 @@
 import numpy as np
 from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
+from PYME.IO import unifiedIO
 
 import os
 import glob
@@ -326,6 +327,11 @@ class ImagePyramid(object):
             # used to support transitory pyramids. 
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
+            
+        if unifiedIO.is_cluster_uri(storage_directory):
+            assert (backend == ClusterPZFTileIO)
+            
+            storage_directory, _ = unifiedIO.split_cluster_url(storage_directory)
         
         self.base_dir = storage_directory
         self.tile_size = pyramid_tile_size
@@ -398,7 +404,12 @@ class ImagePyramid(object):
         """
 
         mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
-
+        
+        if unifiedIO.is_cluster_uri(storage_directory):
+            backend = ClusterPZFTileIO
+        else:
+            backend = TILEIO_EXT.get(mdh.get("Pyramid.Backend", None), None)
+        
         return ImagePyramid(
             storage_directory,
             pyramid_tile_size=mdh['Pyramid.TileSize'],
@@ -409,7 +420,7 @@ class ImagePyramid(object):
             x0=mdh['Pyramid.x0'],
             y0=mdh['Pyramid.y0'],
             pixel_size=mdh["Pyramid.PixelSize"],
-            backend=TILEIO_EXT.get(mdh.get("Pyramid.Backend", None),None)
+            backend=backend
         )
 
     def __del__(self):
@@ -537,6 +548,8 @@ class ImagePyramid(object):
         return mdh
 
     def _ensure_layer_directory(self, layer_num=0):
+        # TODO - is this actually required, or do the backends do this?
+        # move to backends if they don't already create directories as needed.
         out_folder = os.path.join(self.base_dir, '%d' % layer_num)
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
@@ -559,11 +572,6 @@ class ImagePyramid(object):
         """
 
         frameSizeX, frameSizeY = frame.shape[:2]
-        
-        #if weights == 'auto':
-        #    weights = self.frame_weights(frame.shape[:2])
-            
-        #frame = frame*weights
         
         # TODO - is this actually required, or do the backends do this?
         # move to backends if they don't already create directories as needed.
