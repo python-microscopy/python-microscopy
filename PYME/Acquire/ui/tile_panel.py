@@ -117,7 +117,7 @@ class TilePanel(wx.Panel):
         
         # FIXME - previous delay was 1e3, which seems more reasonable. Do we need a config option (or heuristic) here ?
         # assume this change was due to the time it takes to build a pyramid after tiling ends. Might ultimately be fixed when we revisit live tiling. 
-        wx.CallAfter(wx.CallLater,1e4, self._launch_viewer)
+        wx.CallAfter(wx.CallLater,1e3, self._launch_viewer)
         
         
     def _launch_viewer(self):

@@ -207,7 +207,7 @@ class TileSpooler(object):
         
         while self._alive:
             try:
-                filename, data = self._put_queue.get(timeout=10)
+                filename, data = self._put_queue.get(timeout=1)
 
                 if data is None:
                     connection = b'close'
@@ -238,7 +238,7 @@ class TileSpooler(object):
         try:
             while self._alive:
                 try:
-                    filename = self._rc_queue.get(timeout=10)
+                    filename = self._rc_queue.get(timeout=1)
                     status, reason, msg = clusterIO._parse_response(fp)
                     if not status == 200:
                         logger.error(('Error spooling %s: Response %d - status %d' % (filename, i, status)) + ' msg: ' + str(msg))
