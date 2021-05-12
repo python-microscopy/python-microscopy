@@ -36,7 +36,7 @@ class VoxSizeDialog(wx.Dialog):
 
         sizer2.Add(self.tVoxX, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer1.Add(sizer2, 0, wx.ALL, 0)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer2.Add(wx.StaticText(self, -1, u'y\u00A0[\u00B5m]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -44,7 +44,7 @@ class VoxSizeDialog(wx.Dialog):
 
         sizer2.Add(self.tVoxY, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer1.Add(sizer2, 0, wx.ALL, 0)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer2.Add(wx.StaticText(self, -1, u'z\u00A0[\u00B5m]:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -52,7 +52,7 @@ class VoxSizeDialog(wx.Dialog):
 
         sizer2.Add(self.tVoxZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer1.Add(sizer2, 0, wx.ALL, 0)
 
         btSizer = wx.StdDialogButtonSizer()
 
@@ -67,7 +67,7 @@ class VoxSizeDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
