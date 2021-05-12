@@ -98,10 +98,18 @@ class Tiler(pointScanner.PointScanner):
             self.progress.send(self)
         
     def _stop(self):
-        pointScanner.PointScanner._stop(self)
+        pointScanner.PointScanner._stop(self, send_stop=False)
+        self.progress.send(self)
         
+        logger.info('Finished tile acquisition')
+        if self._backend == 'cluster':
+            logger.info('Waiting for spoolers to empty and for base levels to be built')
         self.P.finish_base_tiles()
+        
+        if self._backend == 'cluster':
+            logger.info('Base tiles built')
 
+        logger.info('Completing pyramid')
         self.P.update_pyramid()
 
         if self._backend == 'cluster':
@@ -110,6 +118,8 @@ class Tiler(pointScanner.PointScanner):
         else:
             with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
                 f.write(self.P.mdh.to_JSON())
+                
+        logger.info('Pyramid complete')
             
         self.on_stop.send(self)
         self.progress.send(self)

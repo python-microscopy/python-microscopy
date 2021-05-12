@@ -228,7 +228,7 @@ class PointScanner(object):
 
         self.callNum += 1
         
-    def _stop(self):
+    def _stop(self, send_stop=True):
         self.running = False
         #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
         #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
@@ -244,7 +244,10 @@ class PointScanner(object):
     
         self.scope.frameWrangler.stop()
 
-        self.on_stop.send(self)
+        if send_stop:
+            # optionally defer sending the stop signal until after a derived class _stop
+            # method has run
+            self.on_stop.send(self)
         
         if self._return_to_start:
             logger.debug('Returning home : %s' % self.currPos)

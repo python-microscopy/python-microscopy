@@ -4,7 +4,7 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_r
 import threading
 import queue
 import os
-#import time
+import time
 import six
 import socket
 import requests
@@ -329,7 +329,7 @@ class DistributedImagePyramid(ImagePyramid):
         (one for each server).
         """
         import json
-        server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=len(self.sessions))
+        server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=len(self.servers))
         
         if weights is not 'auto':
             raise RuntimeError('Distributed pyramid only supports auto weights')
