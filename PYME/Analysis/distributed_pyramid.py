@@ -81,14 +81,19 @@ class PartialPyramid(ImagePyramid):
             # time.sleep(sleep_time)
             try:
                 # we let queue.get() block until there is data in the queue, albeit with a timeout
-                # so that we will
-                tile_data = self.update_queue.get(timeout=5)
+                # so that we can
+                tile_data = self.update_queue.get(timeout=.1)
                 
                 #logger.debug('got data from update queue')
 
                 self.update_base_tile(*tile_data)
                 self.pyramid_valid = False
             except queue.Empty:
+                # build the pyramid on the fly if we're not busy processing updates
+                if not self.pyramid_valid:
+                    logger.debug('Rebuilding base')
+                    #self._rebuild_base()
+                    self.update_pyramid()
                 pass
             except:
                 logger.exception('Unexpected error in polling loop:')
@@ -175,7 +180,7 @@ class TileSpooler(object):
         if filename:
             #if we provide a sentinal file, put that
             self.put(filename, None)
-            time.sleep(2)
+            self._t_send.join(2)
         
         
         #self._alive = False
@@ -207,7 +212,7 @@ class TileSpooler(object):
         
         while self._alive:
             try:
-                filename, data = self._put_queue.get(timeout=1)
+                filename, data = self._put_queue.get(timeout=.1)
 
                 if data is None:
                     connection = b'close'
@@ -223,6 +228,8 @@ class TileSpooler(object):
                 self._socket.sendall(header)
                 if dl > 0:
                     self._socket.sendall(data)
+                    
+                self._put_queue.task_done()
 
                 #datalen += dl
                 #nChunksSpooled += 1
@@ -238,7 +245,7 @@ class TileSpooler(object):
         try:
             while self._alive:
                 try:
-                    filename = self._rc_queue.get(timeout=1)
+                    filename = self._rc_queue.get(timeout=.1)
                     status, reason, msg = clusterIO._parse_response(fp)
                     if not status == 200:
                         logger.error(('Error spooling %s: Response %d - status %d' % (filename, i, status)) + ' msg: ' + str(msg))

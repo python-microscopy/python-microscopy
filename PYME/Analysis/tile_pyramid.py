@@ -471,28 +471,31 @@ class ImagePyramid(object):
         new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
         #print('new_tile_coords:', new_tile_coords)
         
+        def _zoom(d):
+            return (d[::2,::2] + d[1::2,::2] + d[1::2,1::2] + d[::2,1::2])*.25
+        
         for xc, yc in new_tile_coords:
             if not self._imgs.tile_exists(new_layer, xc, yc):
                 tile = np.zeros([self.tile_size, self.tile_size])
                 
                 NW = self.get_tile(inputLevel, 2 * xc, 2 * yc)
                 if not NW is None:
-                    tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
+                    tile[:qsize, :qsize] = _zoom(NW) #ndimage.zoom(NW, .5)
                     #print(xc, yc, 'NW')
                 
                 NE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc))
                 if not NE is None:
-                    tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
+                    tile[qsize:, :qsize] = _zoom(NE) # ndimage.zoom(NE, .5)
                     #print(xc, yc, 'NE')
                 
                 SW = self.get_tile(inputLevel, (2 * xc), (2 * yc) + 1)
                 if not SW is None:
-                    tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
+                    tile[:qsize, qsize:] = _zoom(SW) #ndimage.zoom(SW, .5)
                     #print(xc, yc, 'SW')
                 
                 SE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc) + 1)
                 if not SE is None:
-                    tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
+                    tile[qsize:, qsize:] = _zoom(SE) #ndimage.zoom(SE, .5)
                     #print(xc, yc, 'SE')
                 
                 self._imgs.save_tile(new_layer, xc, yc, tile)
