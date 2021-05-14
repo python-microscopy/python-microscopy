@@ -125,7 +125,7 @@ class OptionsPanel(wx.Panel):
             hsizer.Add(self.cbScale, 0, wx.ALL|wx.ALIGN_CENTER, 5)
             vsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER, 0)
         else:
-            vsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.ALIGN_CENTER|wx.EXPAND, 5)
+            vsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.EXPAND, 5)
 
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -423,6 +423,5 @@ class OptionsPanel(wx.Panel):
     def OnDoChange(self):
         #print 'c'
         self.cbScale.SetSelection(self.do.scale + self.scale_11)
-
 
 
