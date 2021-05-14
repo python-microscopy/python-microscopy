@@ -316,8 +316,8 @@ class Colocaliser(Plugin):
         
         im.mdh['Colocalisation.Channels'] = names
         im.mdh['Colocalisation.Thresholds'] = [tA, tB]
-        im.mdh['Colocalisation.Pearson'] = np.array(pearson)
-        im.mdh['Colocalisation.Manders'] = [np.array(MA), np.array(MB)]
+        im.mdh['Colocalisation.Pearson'] = float(pearson)
+        im.mdh['Colocalisation.Manders'] = [float(MA), float(MB)]
         try:
             im.mdh['Colocalisation.ThresholdMode'] = self.do.ThreshMode
         except:
