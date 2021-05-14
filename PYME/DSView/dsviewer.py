@@ -118,7 +118,7 @@ class DSViewFrame(AUIFrame):
 
         if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
             chan_names = self.image.mdh.getEntry('ChannelNames')
-            if len(chan_names) == self.image.data.shape[3]:
+            if len(chan_names) == self.image.data_xyztc.shape[4]:
                 self.do.names = chan_names
 
         #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)

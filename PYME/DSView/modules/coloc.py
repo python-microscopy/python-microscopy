@@ -172,12 +172,12 @@ class Colocaliser(Plugin):
         chans = dlg.GetChans()
         use_mask = dlg.GetUseMask()
 
-        zs, ze = (0, self.image.data.shape[2])
-        if (self.image.data.shape[2] > 1) and restrict_z:
+        zs, ze = (0, self.image.data_xyztc.shape[3])
+        if (self.image.data_xyztc.shape[3] > 1) and restrict_z:
             zs, ze = dlg.GetZrange()
             
         zs,ze = (0,1)
-        if self.image.data.shape[2] > 1:
+        if self.image.data_xyztc.shape[3] > 1:
             zs,ze = dlg.GetZrange()
         dlg.Destroy()
         
