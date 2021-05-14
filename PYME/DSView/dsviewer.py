@@ -142,7 +142,7 @@ class DSViewFrame(AUIFrame):
         #a submenu for modules to hook and install saving functions into
         self.save_menu = wx.Menu()
         self._menus['Save'] = self.save_menu
-        tmp_menu.AppendMenu(-1, 'Save &Results', self.save_menu)
+        tmp_menu.Append(-1, 'Save &Results', self.save_menu)
         
         #tmp_menu.AppendSeparator()
         #tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)

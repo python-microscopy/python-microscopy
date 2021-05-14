@@ -178,8 +178,8 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.makeColumnEditable(5)
 
         for key, value in self.pipeline.colour_mapper.species_ratios.items():
-            ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
-            self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
+            ind = self.lFluorSpecies.InsertItem(UI_MAXSIZE, key)
+            self.lFluorSpecies.SetItem(ind,1, '%3.2f' % value)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
             
             

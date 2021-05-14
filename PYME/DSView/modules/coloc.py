@@ -189,8 +189,8 @@ class Colocaliser(Plugin):
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
-        imA = self.image.data[:,:,zs:ze,chans[0]].squeeze()
-        imB = self.image.data[:,:,zs:ze,chans[1]].squeeze()
+        imA = self.image.data_xyztc[:,:,zs:ze,:,chans[0]].squeeze()
+        imB = self.image.data_xyztc[:,:,zs:ze,:,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #plt.mean(self.ivps[0].clim)
@@ -316,8 +316,8 @@ class Colocaliser(Plugin):
         
         im.mdh['Colocalisation.Channels'] = names
         im.mdh['Colocalisation.Thresholds'] = [tA, tB]
-        im.mdh['Colocalisation.Pearson'] = pearson
-        im.mdh['Colocalisation.Manders'] = [MA, MB]
+        im.mdh['Colocalisation.Pearson'] = np.array(pearson)
+        im.mdh['Colocalisation.Manders'] = [np.array(MA), np.array(MB)]
         try:
             im.mdh['Colocalisation.ThresholdMode'] = self.do.ThreshMode
         except:
