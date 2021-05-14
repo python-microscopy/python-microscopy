@@ -10,6 +10,10 @@ try:
         def new_util_find_library( name ):
             res = orig_util_find_library( name )
             if res: return res
+            if name == 'c':
+                # work-around for ifaddr
+                # exploits the fact that ctypes.CDLL(None) opens the System library
+                return None
             return '/System/Library/Frameworks/'+name+'.framework/'+name
         util.find_library = new_util_find_library
 except ImportError:

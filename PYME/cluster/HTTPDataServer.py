@@ -215,6 +215,10 @@ _dirCacheTimeout = 1
 
 from PYME.IO import clusterListing as cl
 
+
+part_pyramids = {}
+
+
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
@@ -358,6 +362,40 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return
     
+    def _do_part_pyramid(self):
+        from PYME.Analysis.distributed_pyramid import PartialPyramid
+        data = self._get_data()
+        
+        #logger.debug('__pyramid: path- %s, len(data) - %d' % (self.path, len(data)))
+        
+        parsed = urlparse.urlparse(self.path.lstrip('/'))
+        path = parsed.path
+        query = urlparse.parse_qs(parsed.query)
+        
+        parts = path.split('/')
+        endpoint = parts[0]
+        path = '/'.join(parts[1:])
+        
+        if endpoint == '__pyramid_create':
+            disk_path = self.translate_path(path)
+
+            part_pyramids[path] = PartialPyramid.from_request(disk_path, data)
+            logger.debug("Created PartialPyramid for {}".format(path))
+
+        elif endpoint == '__pyramid_update_tile':
+            assert path in part_pyramids, "PartialPyramid for {} not initialized yet".format(path)
+            logger.debug('update tile: %s' % query)
+            part_pyramids[path].queue_base_tile_update(data, query)
+            
+        elif endpoint == '__pyramid_finish':
+            logger.debug('Finalising pyramid')
+            part_pyramids[path].finalise()
+            
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _aggregate_h5(self):
         """
         Support for results aggregation into an HDF5 file, using pytables.
@@ -434,13 +472,24 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._doAggregate()
             return
 
+        if self.path.lstrip('/').startswith('__pyramid'):
+            #paths starting with __part_pyramid are special, and trigger operations on PartialPyramids rather than creation
+            #of a new file.
+            self._do_part_pyramid()
+            return
+
 
 
         path = self.translate_path(self.path)
+        # move up here to make sure we actually get the data (and clear it from our queue, even if we are going to, e.g.
+        # 405 it later)
+        data = self._get_data()
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
             self.send_error(405, "File already exists %s" % path)
+            
+            
 
             #self.end_headers()
             return None
@@ -475,7 +524,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                    data = self._get_data()
                     f.write(data)
 
                     #set the file to read-only (reflecting our write-once semantics
@@ -502,8 +550,6 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 f.close()
 
     def get_status(self):
-
-
         f = BytesIO()
         f.write(json.dumps(status).encode())
         length = f.tell()
@@ -785,6 +831,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                          (self.client_address[0],
                           self.log_date_time_string(),
                           format % args))
+        logger.debug("raw_requestline: %s" % self.raw_requestline)
 
         #self.log_message(format, *args)
 

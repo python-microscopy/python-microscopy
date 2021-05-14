@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256, return_to_start=True):
+                 trigger=False, base_tile_size=256, return_to_start=True, backend='file'):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
@@ -31,22 +31,16 @@ class Tiler(pointScanner.PointScanner):
         
         self._last_update_time = 0
         
+        self._backend = backend
+        
         self.on_stop = dispatch.Signal()
         self.progress = dispatch.Signal()
         
     
-    def _gen_weights(self):
-        sh = self.scope.frameWrangler.currentFrame.shape[:2]
-        self._weights = np.ones(sh)
-
-        edgeRamp = min(100, int(.25 * sh[0]))
-        self._weights[:edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[:, None]
-        self._weights[-edgeRamp:, :,] *= np.linspace(1, 0, edgeRamp)[:, None]
-        self._weights[:, :edgeRamp] *= np.linspace(0, 1, edgeRamp)[None, :]
-        self._weights[:, -edgeRamp:] *= np.linspace(1, 0, edgeRamp)[None, :]
         
     def start(self):
-        self._gen_weights()
+        #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()
+        
         self.genCoords()
 
         #metadata handling
@@ -71,7 +65,12 @@ class Tiler(pointScanner.PointScanner):
         x0 = self._x0 + self._pixel_size*x0_cam  # offset in [um]
         y0 = self._y0 + self._pixel_size*y0_cam
         
-        self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
+        if self._backend == 'cluster':
+            from PYME.Analysis import distributed_pyramid
+            self.P = distributed_pyramid.DistributedImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
+                                           pixel_size=self._pixel_size)
+        else:
+            self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
         
         pointScanner.PointScanner.start(self)
@@ -91,7 +90,7 @@ class Tiler(pointScanner.PointScanner):
         y_i = np.round(((pos['y'] - self._y0) / self._pixel_size)).astype('i')
         #print(pos['x'], pos['y'], x_i, y_i, d.min(), d.max())
         
-        self.P.add_base_tile(x_i, y_i, self._weights*d, self._weights)
+        self.P.update_base_tiles_from_frame(x_i, y_i, d)
         
         t = time.time()
         if t > (self._last_update_time + 1):
@@ -99,12 +98,29 @@ class Tiler(pointScanner.PointScanner):
             self.progress.send(self)
         
     def _stop(self):
-        pointScanner.PointScanner._stop(self)
+        pointScanner.PointScanner._stop(self, send_stop=False)
+        self.progress.send(self)
+        t_ = time.time()
         
+        logger.info('Finished tile acquisition')
+        if self._backend == 'cluster':
+            logger.info('Waiting for spoolers to empty and for base levels to be built')
+        self.P.finish_base_tiles()
+        
+        if self._backend == 'cluster':
+            logger.info('Base tiles built')
+
+        logger.info('Completing pyramid (dt = %3.2f)' % (time.time()-t_))
         self.P.update_pyramid()
 
-        with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
-            f.write(self.P.mdh.to_JSON())
+        if self._backend == 'cluster':
+            from PYME.IO import clusterIO
+            clusterIO.put_file(self.P.base_dir + '/metadata.json', self.P.mdh.to_JSON().encode())
+        else:
+            with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
+                f.write(self.P.mdh.to_JSON())
+                
+        logger.info('Pyramid complete (dt = %3.2f)' % (time.time()-t_))
             
         self.on_stop.send(self)
         self.progress.send(self)

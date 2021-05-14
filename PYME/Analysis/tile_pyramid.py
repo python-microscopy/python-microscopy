@@ -1,5 +1,6 @@
 import numpy as np
 from PYME.IO.MetaDataHandler import get_camera_roi_origin, get_camera_physical_roi_origin, load_json, NestedClassMDHandler
+from PYME.IO import unifiedIO
 
 import os
 import glob
@@ -105,6 +106,18 @@ class PZFTileCache(TileCache):
         from PYME.IO import PZFFormat
         with open(filename, 'rb') as f:
             return PZFFormat.loads(f.read())[0].squeeze()
+        
+class ClusterPZFTileCache(TileCache):
+    def _save(self, filename, data):
+        from PYME.IO import clusterIO, PZFFormat
+        
+        clusterIO.put_file(filename, PZFFormat.dumps(data.astype('float32')))
+        
+    def _load(self, filename):
+        from PYME.IO import clusterIO, PZFFormat
+        
+        s = clusterIO.get_file(filename)
+        return PZFFormat.loads(s)[0].squeeze()
     
 class TileIO(object):
     def get_tile(self, layer, x, y):
@@ -181,15 +194,28 @@ class NumpyTileIO(TileIO):
         self._tilecache.flush()
 
 class PZFTileIO(NumpyTileIO):
-    def __init__(self, base_dir, suff='img'):
+    def __init__(self, base_dir, suff='img', tile_cache=PZFTileCache):
         self.base_dir = base_dir
         self.suff = suff + '.pzf'
 
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
     
-        self._tilecache = PZFTileCache()
+        self._tilecache = tile_cache()
         self._coords = {}
         
+class ClusterPZFTileIO(PZFTileIO):
+    def __init__(self, base_dir, suff='img'):
+        PZFTileIO.__init__(self, base_dir, suff, tile_cache=ClusterPZFTileCache)
+        
+    def _update_layer_tile_coords(self, layer=0):
+        from PYME.IO import clusterIO
+        tiles = []
+        
+        for xdir in clusterIO.cglob('/'.join([self.base_dir, '%d' % layer, '*'])):
+            for fn in clusterIO.cglob('/'.join([xdir, '*_%s' % self.suff])):
+                tiles.append(tuple([int(s) for s in os.path.basename(fn).split('_')[:2]]))
+                
+        self._coords[layer] = tiles
 
 if six.PY2:
     def blob(data):
@@ -290,6 +316,8 @@ def infer_tileio_backend(base_directory):
     raise IOError("No files found for loading ImagePyramid.")
 
 class ImagePyramid(object):
+    _weight_cache = {}
+    
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
                  pixel_size=1, backend=PZFTileIO):
@@ -299,6 +327,11 @@ class ImagePyramid(object):
             # used to support transitory pyramids. 
             self._temp_directory = storage_directory
             storage_directory = storage_directory.name
+            
+        if unifiedIO.is_cluster_uri(storage_directory):
+            assert (backend == ClusterPZFTileIO)
+            
+            storage_directory, _ = unifiedIO.split_cluster_url(storage_directory)
         
         self.base_dir = storage_directory
         self.tile_size = pyramid_tile_size
@@ -320,7 +353,7 @@ class ImagePyramid(object):
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
 
-        if not os.path.exists(self.base_dir):
+        if (not os.path.exists(self.base_dir)) and (not backend == ClusterPZFTileIO):
             os.makedirs(self.base_dir)
 
         #self._tilecache = TileCache()
@@ -331,6 +364,29 @@ class ImagePyramid(object):
         self._imgs = backend(base_dir=self.base_dir, suff='img')
         self._acc = backend(base_dir=self.base_dir, suff='acc')
         self._occ = backend(base_dir=self.base_dir, suff='occ')
+    
+    @classmethod
+    def frame_weights(cls, frame_shape):
+        k = tuple(frame_shape[:2])
+        
+        try:
+            weights = cls._weight_cache[k]
+        except KeyError:
+            #calculate a weighting matrix (to allow feathering at the edges - TODO)
+            weights = np.ones((frame_shape[0], frame_shape[1], 1))
+            #weights[:, :10, :] = 0 #avoid splitter edge artefacts
+            #weights[:, -10:, :] = 0
+        
+            #print weights[:20, :].shape
+            edgeRamp = min(100, int(.25 * frame_shape[0]))
+            weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
+            weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
+            weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
+            weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
+            
+            cls._weight_cache[k] = weights
+        
+        return weights
 
     @classmethod
     def load_existing(cls, storage_directory):
@@ -348,7 +404,12 @@ class ImagePyramid(object):
         """
 
         mdh = load_json(os.path.join(storage_directory, 'metadata.json'))
-
+        
+        if unifiedIO.is_cluster_uri(storage_directory):
+            backend = ClusterPZFTileIO
+        else:
+            backend = TILEIO_EXT.get(mdh.get("Pyramid.Backend", None), None)
+        
         return ImagePyramid(
             storage_directory,
             pyramid_tile_size=mdh['Pyramid.TileSize'],
@@ -359,7 +420,7 @@ class ImagePyramid(object):
             x0=mdh['Pyramid.x0'],
             y0=mdh['Pyramid.y0'],
             pixel_size=mdh["Pyramid.PixelSize"],
-            backend=TILEIO_EXT.get(mdh.get("Pyramid.Backend", None),None)
+            backend=backend
         )
 
     def __del__(self):
@@ -396,7 +457,7 @@ class ImagePyramid(object):
     
     def get_layer_tile_coords(self, level):
         return self._imgs.get_layer_tile_coords(level)
-    
+
     def _make_layer(self, inputLevel):
         from scipy import ndimage
 
@@ -410,28 +471,31 @@ class ImagePyramid(object):
         new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
         #print('new_tile_coords:', new_tile_coords)
         
+        def _zoom(d):
+            return (d[::2,::2] + d[1::2,::2] + d[1::2,1::2] + d[::2,1::2])*.25
+        
         for xc, yc in new_tile_coords:
             if not self._imgs.tile_exists(new_layer, xc, yc):
                 tile = np.zeros([self.tile_size, self.tile_size])
                 
                 NW = self.get_tile(inputLevel, 2 * xc, 2 * yc)
                 if not NW is None:
-                    tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
+                    tile[:qsize, :qsize] = _zoom(NW) #ndimage.zoom(NW, .5)
                     #print(xc, yc, 'NW')
                 
                 NE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc))
                 if not NE is None:
-                    tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
+                    tile[qsize:, :qsize] = _zoom(NE) # ndimage.zoom(NE, .5)
                     #print(xc, yc, 'NE')
                 
                 SW = self.get_tile(inputLevel, (2 * xc), (2 * yc) + 1)
                 if not SW is None:
-                    tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
+                    tile[:qsize, qsize:] = _zoom(SW) #ndimage.zoom(SW, .5)
                     #print(xc, yc, 'SW')
                 
                 SE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc) + 1)
                 if not SE is None:
-                    tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
+                    tile[qsize:, qsize:] = _zoom(SE) #ndimage.zoom(SE, .5)
                     #print(xc, yc, 'SE')
                 
                 self._imgs.save_tile(new_layer, xc, yc, tile)
@@ -447,6 +511,11 @@ class ImagePyramid(object):
                     tile_ = self._acc.get_tile(0, xc, yc) * sf
 
                     self._imgs.save_tile(0, xc, yc, tile_)
+
+    def finish_base_tiles(self):
+        #method stub to allow synchronisation when performing distributed tiling
+        # TODO - rename
+        pass
     
     def update_pyramid(self):
         self._rebuild_base()
@@ -458,7 +527,7 @@ class ImagePyramid(object):
         self.pyramid_valid = True
         self.depth = inputLevel
         self._imgs.flush()
-    
+
     def _clean_tiles(self, x, y):
         level = 0
         
@@ -480,8 +549,15 @@ class ImagePyramid(object):
         mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
+
+    def _ensure_layer_directory(self, layer_num=0):
+        # TODO - is this actually required, or do the backends do this?
+        # move to backends if they don't already create directories as needed.
+        out_folder = os.path.join(self.base_dir, '%d' % layer_num)
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
     
-    def add_base_tile(self, x, y, frame, weights):
+    def update_base_tiles_from_frame(self, x, y, frame, weights='auto'):
         """add tile to the pyramid
 
         Parameters
@@ -500,9 +576,9 @@ class ImagePyramid(object):
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
-        out_folder = os.path.join(self.base_dir, '0')
-        if not os.path.exists(out_folder):
-            os.makedirs(out_folder)
+        # TODO - is this actually required, or do the backends do this?
+        # move to backends if they don't already create directories as needed.
+        self._ensure_layer_directory(0)
         
         if (x < 0) or (y < 0):
             raise ValueError('base tile origin positions must be >=0')
@@ -517,35 +593,53 @@ class ImagePyramid(object):
         
         for tile_x in tile_xs:
             for tile_y in tile_ys:
-                acc_ = self._acc.get_tile(0, tile_x, tile_y)
-                occ_ = self._occ.get_tile(0, tile_x, tile_y)
+                xs = max(tile_x * self.tile_size - x, 0)
+                xe = min((tile_x + 1) * self.tile_size - x, frameSizeX)
                 
-                if (acc_ is None) or (occ_ is None):
-                    acc_ = np.zeros([self.tile_size, self.tile_size])
-                    occ_ = np.zeros([self.tile_size, self.tile_size])
-                
-                xs, xe = max(tile_x * self.tile_size - x, 0), min((tile_x + 1) * self.tile_size - x, frameSizeX)
-                xst = max(x - tile_x * self.tile_size, 0)
-                xet = min(xst + (xe - xs),
-                          self.tile_size) #min(frameSizeX - (tile_x + 1) * self.tile_size - x, 0) #FIXME
-                
-                ys, ye = max((tile_y * self.tile_size) - y, 0), min(((tile_y + 1) * self.tile_size) - y,
-                                                                  frameSizeY)
-                
-                yst = max(y - tile_y * self.tile_size, 0)
-                yet = min(yst + (ye - ys), self.tile_size) #min(frameSizeY - (tile_y + 1) * self.tile_size - y,0) #FIXME
-                
-                #print(tile_x, tile_y)
-                #print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, xet, yst, yet, xs, xe, ys, ye))
-                acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
-                occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
+                ys = max((tile_y * self.tile_size) - y, 0)
+                ye = min(((tile_y + 1) * self.tile_size) - y, frameSizeY)
 
-                self._acc.save_tile(0, tile_x, tile_y, acc_)
-                self._occ.save_tile(0, tile_x, tile_y, occ_)
+                xst = max(x - tile_x * self.tile_size, 0)
+                yst = max(y - tile_y * self.tile_size, 0)
                 
-                self._clean_tiles(tile_x, tile_y)
+                chunk_data = frame[xs:xe, ys:ye]
+                #chunk_weights = weights[xs:xe, ys:ye]
+                
+                self.update_base_tile(tile_x, tile_y, chunk_data, weights, tile_offset=(xst, yst),
+                                      frame_offset=(xs, ys), frame_shape=frame.shape)
         
         self.pyramid_valid = False
+    
+    def update_base_tile(self, tile_x, tile_y, data, weights, tile_offset=(0,0), frame_offset=(0,0), frame_shape=None):
+        layer=0
+        
+        acc_ = self._acc.get_tile(layer, tile_x, tile_y)
+        occ_ = self._occ.get_tile(layer, tile_x, tile_y)
+
+        if (acc_ is None) or (occ_ is None):
+            acc_ = np.zeros([self.tile_size, self.tile_size])
+            occ_ = np.zeros([self.tile_size, self.tile_size])
+        
+        if weights is 'auto':
+            # note - we take advantage of the fact that strings are immutable constants to perform the above check
+            # using is rather than risk an element-wise comparisson.
+            xs, ys = frame_offset
+            weights = self.frame_weights(frame_shape)[xs:(xs+data.shape[0]), ys:(ys+data.shape[1])].squeeze()
+            #logger.debug('weights.shape: %s, data.shape:%s, acc_.shape:%s' % (weights.shape, data.shape, acc_.shape))
+            data = data*weights
+        
+        xst, yst = tile_offset
+
+        xet = xst + data.shape[0]
+        yet = yst + data.shape[1]
+
+        acc_[xst:xet, yst:yet] += data
+        occ_[xst:xet, yst:yet] += weights
+        
+        self._acc.save_tile(layer, tile_x, tile_y, acc_)
+        self._occ.save_tile(layer, tile_x, tile_y, occ_)
+
+        self._clean_tiles(tile_x, tile_y)
 
 
 def get_position_from_events(events, mdh):
@@ -659,16 +753,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
     
     #calculate a weighting matrix (to allow feathering at the edges - TODO)
-    weights = np.ones((frameSizeX, frameSizeY, nchans))
-    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
-    #weights[:, -10:, :] = 0
-    
-    #print weights[:20, :].shape
-    edgeRamp = min(100, int(.25 * ds.shape[0]))
-    weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
-    weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
-    weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
-    weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
+    #weights = ImagePyramid.frame_weights(ds.shape[:2])
     
     # get splitter ROI coordinates in units of pixels
     ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
@@ -696,9 +781,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, dark, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
 
-            d_weighted = weights * d
             # TODO - account for orientation so this works for non-primary cams
-            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+            P.update_base_tiles_from_frame(x_i, y_i, d)
                 
     
     t2 = time.time()

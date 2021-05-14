@@ -91,7 +91,7 @@ class SupertileDataSource(XYTCDataSource):
     @property
     def tile_coords(self):
         tc = np.array(self._pyr.get_layer_tile_coords(self.level))
-        
+
         x0, y0 = tc.min(axis=0)
         xm, ym  = tc.max(axis=0)
         

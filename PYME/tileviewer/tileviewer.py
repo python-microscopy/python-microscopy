@@ -137,10 +137,13 @@ class TileServer(object):
         
         im = self._pyramid.get_tile(int(layer), int(x), int(y))
         
-        #scale data
-        #im = np.clip((255*(im - float(vmin)))/(float(vmax)-float(vmin)), 0, 255).astype('uint8')
+        if im is None:
+            im = np.zeros((self._pyramid.tile_size, self._pyramid.tile_size), dtype='uint8')
+        else:
+            #scale data
+            #im = np.clip((255*(im - float(vmin)))/(float(vmax)-float(vmin)), 0, 255).astype('uint8')
         
-        im = np.sqrt(im).astype('uint8')
+            im = np.sqrt(im).astype('uint8')
 
         out = BytesIO()
         Image.fromarray(im.T).save(out, 'PNG')
