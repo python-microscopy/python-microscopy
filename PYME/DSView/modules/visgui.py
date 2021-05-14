@@ -129,7 +129,7 @@ def Plug(dsviewer):
         dsviewer.AddPage(page=dsviewer.ivps[-1], select=True, caption=name)
         
 
-    if dsviewer.image.data_xyztc.shape[3] > 1:
+    if dsviewer.image.data_xyztc.shape[2] > 1:
         dsviewer.AddPage(page=ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize), select=False, caption='Slices')
 
     elif dsviewer.image.data_xyztc.shape[4] > 1:
@@ -137,7 +137,7 @@ def Plug(dsviewer):
         dsviewer.civp.ivps = dsviewer.ivps
         dsviewer.AddPage(page=dsviewer.civp, select=False, caption='Composite')
 
-    if dsviewer.image.data_xyztc.shape[3] == 1:
+    if dsviewer.image.data_xyztc.shape[2] == 1:
         # gl canvas doesn't currently work for 3D images, crashes on linux
         dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
         dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
