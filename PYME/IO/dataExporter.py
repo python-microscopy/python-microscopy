@@ -424,9 +424,9 @@ class TxtExporter(Exporter):
         try:
             chanNames = metadata.getEntry('ChannelNames')
         except:
-            chanNames = ['Chan %d' % d for d in range(data.shape[3])]
+            chanNames = ['Chan %d' % d for d in range(data.shape[4])]
 
-        dat = [data[xslice, yslice, zslice, chan].squeeze() for chan in range(data.shape[3])]
+        dat = [data[xslice, yslice, zslice, :, chan].squeeze() for chan in range(data.shape[4])]
 
         #print chanNames
 
@@ -442,10 +442,10 @@ class TxtExporter(Exporter):
         fid = open(outFile, 'wb')
 
         #write header
-        fid.write('#' + '\t'.join(chanNames))
+        fid.write(('#' + '\t'.join(chanNames)).encode('utf-8'))
 
         for i in range(len(dat[0])):
-            fid.write('\n' + '\t'.join(['%f' % d[i] for d in dat]))
+            fid.write(('\n' + '\t'.join(['%f' % d[i] for d in dat])).encode('utf-8'))
 
         fid.close()
         
