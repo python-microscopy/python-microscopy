@@ -46,7 +46,7 @@ class GenImageDialog(wx.Dialog):
 
 
         sizer2.Add(self.cbPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(sizer2, 0, wx.ALL, 5)
         
         if not zvals is None:
             nZlevels = len(set(zvals))
@@ -67,7 +67,7 @@ class GenImageDialog(wx.Dialog):
             self.cJitterVariable.SetSelection(jitterVarDefault)
             sizer2.Add(self.cJitterVariable, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
         #jitter parameter for gaussian in z
         if mode in  ['3Dgaussian', '3Dtriangles']:
@@ -97,7 +97,7 @@ class GenImageDialog(wx.Dialog):
 
             self.tMCProb = wx.TextCtrl(self, -1, '%3.2f' % mcProbDefault, size=(60, -1))
             sizer2.Add(self.tMCProb, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             sizer2.Add(wx.StaticText(self, -1, '# Samples to average:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -105,14 +105,14 @@ class GenImageDialog(wx.Dialog):
             self.tNumSamps = wx.TextCtrl(self, -1, '10', size=(60, -1))
             sizer2.Add(self.tNumSamps, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             self.cbTriangGeometric = wx.CheckBox(self, -1, 'Geometric mean')
             self.cbTriangGeometric.SetValue(geometric_mean)
             sizer2.Add(self.cbTriangGeometric, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
             
         if mode in ['densityfit']:
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -180,7 +180,7 @@ class GenImageDialog(wx.Dialog):
                 self.lColour.SetSelection(n)
 
             sizer2.Add(self.lColour, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 5)
+            sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         
         btSizer = wx.StdDialogButtonSizer()
@@ -196,7 +196,7 @@ class GenImageDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

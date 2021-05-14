@@ -65,7 +65,7 @@ class TracebackDialog(wx.Dialog):
         
         btnsizer.Realize()
                 
-        vsizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 2)
+        vsizer.Add(btnsizer, 0, wx.ALL|wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
     
     def on_copy(self, event):
