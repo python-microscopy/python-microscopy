@@ -60,7 +60,7 @@ class Fitter(Plugin):
         xv = self.image.xvals
         
         for chan in range(self.image.data.shape[3]):    
-            I = self.image.data[:,0,0, chan].squeeze().astype('f')
+            I = self.image.data_xyztc[:,:,0,0, chan].squeeze().astype('f')
             
             res = fh.FitModel(gmod, [I.max()-I.min(), xv[I.argmax()], xv[1] - xv[0], I.min()], I, xv)
             
