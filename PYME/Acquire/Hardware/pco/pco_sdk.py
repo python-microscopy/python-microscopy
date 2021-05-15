@@ -1075,7 +1075,7 @@ def allocate_buffer(handle, index, size):
     buffer = ctypes.c_void_p(0)
     event = ctypes.c_void_p(0)
     check_status(sc2_cam.PCO_AllocateBuffer(handle, index, size, buffer, event))
-    return index, buffer, event
+    return index.contents, buffer, event
 
 # ---------------------------------------------------------------------
 # 2.10.2 PCO_FreeBuffer
