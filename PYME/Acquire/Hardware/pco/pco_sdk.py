@@ -4,12 +4,17 @@
 Created on Fri May 14 2021
 
 @author: zacsimile
+
+The goal of this file is to provide Python access to pco.sdk as closely to how it
+is implemented in pco.sdk as possible. There's no mapping of flags to readable
+strings such as "on"/"off". The idea is to have raw access to the DLL. For a
+friendlier--but less comprehensive--version, see sdk.py in https://pypi.org/project/pco/.
+
+For more information, see the pco.sdk manual,
+https://www.pco.de/fileadmin/fileadmin/user_upload/pco-manuals/pco.sdk_manual.pdf
+
+NOTE: I cheated a little off https://pypi.org/project/pco/.
 """
-
-# NOTE: I cheated a little off https://pypi.org/project/pco/
-
-# For more information, see the pco.sdk manual,
-# https://www.pco.de/fileadmin/fileadmin/user_upload/pco-manuals/pco.sdk_manual.pdf
 
 import ctypes
 import ctypes.wintypes
