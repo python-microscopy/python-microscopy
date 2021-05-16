@@ -218,6 +218,37 @@ class PCO_Buflist(ctypes.Structure):
                 ("dwStatusDll", ctypes.wintypes.DWORD),  # BUFFER_ALLOCATED, BUFFER_CREATED, BUFFER_EXTERNAL, BUFFER_SET
                 ("dwStatusDrv", ctypes.wintypes.DWORD)]  # PCO_NOERROR or see pco.sdk for error codes
 
+PCO_CAMERA_TYPES = {
+    ctypes.wintypes.WORD(int("0x1300",0)) : 'pco.edge 5.5 CL',
+    ctypes.wintypes.WORD(int("0x1302",0)) : 'pco.edge 4.2 CL',
+    ctypes.wintypes.WORD(int("0x1310",0)) : 'pco.edge GL',
+    ctypes.wintypes.WORD(int("0x1320",0)) : 'pco.edge USB3',
+    ctypes.wintypes.WORD(int("0x1340",0)) : 'pco.edge CLHS',
+    ctypes.wintypes.WORD(int("0x1304",0)) : 'pco.edge MT',
+    ctypes.wintypes.WORD(int("0x1000",0)) : 'pco.dimax',
+    ctypes.wintypes.WORD(int("0x1010",0)) : 'pco.dimax_TV',
+    ctypes.wintypes.WORD(int("0x1020",0)) : 'pco.dimax CS',
+    ctypes.wintypes.WORD(int("0x1400",0)) : 'pco.flim',
+    ctypes.wintypes.WORD(int("0x1500",0)) : 'pco.panda',
+    ctypes.wintypes.WORD(int("0x0800",0)) : 'pco.pixelfly usb',
+    ctypes.wintypes.WORD(int("0x0100",0)) : 'pco.1200HS',
+    ctypes.wintypes.WORD(int("0x0200",0)) : 'pco.1300',
+    ctypes.wintypes.WORD(int("0x0220",0)) : 'pco.1600',
+    ctypes.wintypes.WORD(int("0x0240",0)) : 'pco.2000',
+    ctypes.wintypes.WORD(int("0x0260",0)) : 'pco.4000',
+    ctypes.wintypes.WORD(int("0x0830",0)) : 'pco.1400'
+}
+
+PCO_INTERFACE_TYPES = {
+    ctypes.wintypes.WORD(int("0x0001",0)) : 'FireWire',
+    ctypes.wintypes.WORD(int("0x0002",0)) : 'Camera Link',
+    ctypes.wintypes.WORD(int("0x0003",0)) : 'USB 2.0',
+    ctypes.wintypes.WORD(int("0x0004",0)) : 'GigE',
+    ctypes.wintypes.WORD(int("0x0005",0)) : 'Serial Interface',
+    ctypes.wintypes.WORD(int("0x0006",0)) : 'USB 3.0',
+    ctypes.wintypes.WORD(int("0x0007",0)) : 'CLHS'
+}
+
 # ---------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------
@@ -244,6 +275,8 @@ def open_camera():
     to open multiple cameras. Call get_camera_type() to
     figure out which camera was grabbed.
 
+    To open a specific camera, use open_camera_ex().
+
     Returns
     -------
     handle : HANDLE
@@ -253,6 +286,12 @@ def open_camera():
     cam_num = ctypes.wintypes.WORD()  # unused
     check_status(sc2_cam.PCO_OpenCamera(handle, cam_num))
     return handle
+
+# ---------------------------------------------------------------------
+# 2.1.2 PCO_OpenCameraEx
+# ---------------------------------------------------------------------
+def open_camera_ex(**kwargs):
+    raise NotImplementedError("Not implemented, but shouldn't be too hard. Check pco.sdk for details.")
 
 # ---------------------------------------------------------------------
 # 2.1.3 PCO_CloseCamera
@@ -1032,7 +1071,7 @@ def get_hot_pixel_correction_mode(handle):
 # 2.9.8 PCO_SetHotPixelCorrectionMode
 # ---------------------------------------------------------------------
 sc2_cam.PCO_SetHotPixelCorrectionMode.argtypes = [HANDLE, ctypes.wintypes.WORD]
-def Set_hot_pixel_correction_mode(handle, mode):
+def set_hot_pixel_correction_mode(handle, mode):
     """
     Set camera chip hot pixel correction mode. 
 
