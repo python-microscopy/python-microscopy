@@ -215,7 +215,7 @@ class PCO_Buflist(ctypes.Structure):
     # _pack_ = 1
     _fields_ = [("SBufNr", ctypes.c_short),
                 ("reserved", ctypes.wintypes.WORD),
-                ("dwStatusDll", ctypes.wintypes.DWORD),  # BUFFER_ALLOCATED, BUFFER_CREATED, BUFFER_EXTERNAL, BUFFER_SET
+                ("dwStatusDll", ctypes.wintypes.DWORD),  # PCO_BUFFER_ALLOCATED, PCO_BUFFER_CREATED, PCO_BUFFER_EXTERNAL, PCO_BUFFER_SET
                 ("dwStatusDrv", ctypes.wintypes.DWORD)]  # PCO_NOERROR or see pco.sdk for error codes
 
 PCO_CAMERA_TYPES = {
@@ -252,7 +252,7 @@ PCO_INTERFACE_TYPES = {
 # ---------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------
-class PcoSDKException(Exception):
+class PcoSdkException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
 
@@ -261,7 +261,7 @@ def check_status(err, function_name=None):
         if function_name is None:
             function_name = sys._getframe(1).f_code.co_name  # who called me?
         err_desc = get_error_text(err)
-        raise PcoSDKException(f"Error during {function_name}: {err_desc}")
+        raise PcoSdkException(f"Error during {function_name}: {err_desc}")
 
 # ---------------------------------------------------------------------
 # 2.1.1 PCO_OpenCamera
@@ -291,6 +291,9 @@ def open_camera():
 # 2.1.2 PCO_OpenCameraEx
 # ---------------------------------------------------------------------
 def open_camera_ex(**kwargs):
+    """
+    Choose which camera to open, rather than using a scan mode.
+    """
     raise NotImplementedError("Not implemented, but shouldn't be too hard. Check pco.sdk for details.")
 
 # ---------------------------------------------------------------------
@@ -1220,6 +1223,26 @@ sc2_cam.PCO_GetImageEx.argtypes = [HANDLE,
                                    ctypes.wintypes.WORD]
 def get_image_ex(handle, segment, first_image, buffer_index, lx, ly, 
                  bits_per_pixel):
+    """
+    Get a single image from the camera.
+
+    Parameters
+    ----------
+    handle : HANDLE
+        Unique pco. camera handle (pointer).
+    segment : int
+        Index of memory segment. 1 is the default memory segment
+    first_image : int
+        Image number. 1 if PCO_GetRecordingState is PCO_CAMERA_STOPPED, 0 if it is PCO_CAMERA_RUNNING
+    buffer_index : int
+        Buffer index.
+    lx : int
+        Image width
+    ly : int
+        Image height
+    bits_per_pixel : int
+        Bit resolution of the transferred image (16 is the common choice, see pco.sdk manual)
+    """
     check_status(sc2_cam.PCO_GetImageEx(handle, segment, first_image,
                  first_image, buffer_index, lx, ly, bits_per_pixel))
 # ---------------------------------------------------------------------
@@ -1232,15 +1255,44 @@ sc2_cam.PCO_AddBufferEx.argtypes = [HANDLE,
                                     ctypes.wintypes.WORD,
                                     ctypes.wintypes.WORD,
                                     ctypes.wintypes.WORD]
-def add_buffer_ex(handle, first_image, last_image, buffer_index, lx, ly, 
+def add_buffer_ex(handle, first_image, buffer_index, lx, ly, 
                   bits_per_pixel):
-    check_status(sc2_cam.PCO_AddBufferEx(handle, first_image, last_image,
+    """
+    Set up buffer for single image transfer from the camera. Can add multiple
+    buffers for fast live recording.
+
+    Parameters
+    ----------
+    handle : HANDLE
+        Unique pco. camera handle (pointer).
+    first_image : int
+        Image number. 1 if PCO_GetRecordingState is PCO_CAMERA_STOPPED, 0 if it is PCO_CAMERA_RUNNING
+    buffer_index : int
+        Buffer index.
+    lx : int
+        Image width
+    ly : int
+        Image height
+    bits_per_pixel : int
+        Bit resolution of the transferred image (16 is the common choice, see pco.sdk manual)
+    """
+    check_status(sc2_cam.PCO_AddBufferEx(handle, first_image, first_image,
                  buffer_index, lx, ly, bits_per_pixel))
 # ---------------------------------------------------------------------
 # 2.11.6 PCO_CancelImages
 # ---------------------------------------------------------------------
 sc2_cam.PCO_CancelImages.argtypes = [HANDLE]
-def cancel_images(handle=ctypes.c_void_p(0)):
+def cancel_images(handle):
+    """
+
+    Remove all remaining buffers from the internal queue, reset the internal queue
+    and also reset the transfer state machine in the camera.
+
+    Parameters
+    ----------
+    handle : HANDLE
+        Unique pco. camera handle (pointer).
+    """
     check_status(sc2_cam.PCO_CancelImages(handle))
 
 # ---------------------------------------------------------------------
@@ -1262,6 +1314,8 @@ def wait_for_buffer(handle, num_buffers, buffer_list, timeout):
     buffer_list : list
         List of PCO_Buflist containing all allocated buffers
         we are waiting on.
+    timeout : int
+        Timeout in milliseconds.
     """
     check_status(sc2_cam.PCO_WaitForBuffer(handle, num_buffers, buffer_list, timeout))
 
@@ -1299,8 +1353,21 @@ sc2_cam.PCO_GetErrorText.argtypes = [ctypes.wintypes.DWORD,
                                      ctypes.c_char_p,
                                      ctypes.wintypes.DWORD]
 def get_error_text(err):
+    """
+    Get detailed description for a pco.sdk error.
+
+    Parameters
+    ----------
+    err : int
+        Error number
+
+    Returns
+    -------
+    string
+        Error description.
+    """
     c_buf_len = 512
     c_buf = ctypes.create_string_buffer(c_buf_len)
     sc2_cam.PCO_GetErrorText(err, c_buf, c_buf_len)
 
-    return c_buf.value.decode('ascii')
+    return str(c_buf.value.decode('ascii'))

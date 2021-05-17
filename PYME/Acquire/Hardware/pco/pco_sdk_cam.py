@@ -8,12 +8,14 @@ Created on Sun May 16 2021
 
 from PYME.Acquire.Hardware.Camera import Camera
 from PYME.Acquire.Hardware.pco import pco_sdk
+from PYME.Acquire import eventLog
 
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
 import ctypes
+import ctypes.wintypes
 
 timebase = {pco_sdk.PCO_TIMEBASE_NS : 1e-9, 
             pco_sdk.PCO_TIMEBASE_US : 1e-6, 
@@ -42,6 +44,9 @@ class camReg(object):
 
 camReg.regCamera()  # initialize/reset the sdk
 
+DEFAULT_N_BUFFERS = 4
+BITS_PER_PIXEL = 16
+
 class PcoSdkCam(Camera):
     def __init__(self):
         Camera.__init__(self)
@@ -52,6 +57,15 @@ class PcoSdkCam(Camera):
         self._handle = pco_sdk.open_camera()
         camReg.regCamera()
         self._desc = pco_sdk.get_camera_description(self._handle)
+
+        if pco_sdk.get_recording_state(self._handle) == pco_sdk.PCO_CAMERA_RUNNING:
+            pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
+        pco_sdk.reset_settings_to_default(self._handle)
+        _, err, _ = pco_sdk.get_camera_health_status(self._handle)
+        if err != 0:
+            self.Shutdown()
+            raise pco_sdk.PcoSdkException(f"Camera shutdown with error status {err}.")
+
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
         self._cam_type = pco_sdk.get_camera_type(self._handle)
         self.SetHotPixelCorrectionMode(pco_sdk.PCO_HOTPIXELCORRECTION_OFF)
@@ -59,21 +73,51 @@ class PcoSdkCam(Camera):
         self._delay_time = 0
         self._electr_temp = 0
         self._ccd_temp = 0
-        self._buffer_size = 0
+        self._n_buffers = DEFAULT_N_BUFFERS  # max of 16
+        self._buf_num = None
+        self._buf_event = None
+        self._buf_addr = None
+        self._buf_list = []
+        self._curr_buf = 0
         self._initalized = True
+        self._recording = False
 
     @property
     def noise_properties(self):
         return self.noiseProps
 
     def ExpReady(self):
-        pass
+        if not self._recording:
+            return False
+
+        if self._mode == self.MODE_CONTINUOUS:
+            pco_sdk.wait_for_buffer(self._handle, self._n_buffers, self._buf_list, 1000)
+            return True
+
+        return False
 
     def CamReady(self):
         return self._initalized
 
     def ExtractColor(self, chSlice, mode):
-        pass
+        # Make sure this buffer works
+        _, status_drv = pco_sdk.get_buffer_status(self._handle, self._buf_num[self._curr_buf])
+        if status_drv:
+            raise pco_sdk.PcoSdkException(f"Error {status_drv} during buffer check.")
+
+        # copy image from _buf_addr
+        ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
+                   self._buf_addr[self._curr_buf], 
+                   chSlice.nbytes)
+
+        # recycle the buffer
+        pco_sdk.add_buffer_ex(self._handle, 0, 0, self._buf_num[self._curr_buf], 
+                              self.GetPicWidth(), self.GetPicHeight(), BITS_PER_PIXEL)
+
+        # update buffer index
+        self._curr_buf += 1
+        if self._curr_buf > self._n_buffers:
+            self._curr_buf = 0
 
     def GetHeadModel(self):
         return pco_sdk.PCO_CAMERA_TYPES.get(self._cam_type.wCamType)
@@ -259,18 +303,48 @@ class PcoSdkCam(Camera):
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
+        if mode == self.MODE_CONTINUOUS:
+            self._n_buffers = DEFAULT_N_BUFFERS
+        elif mode == self.MODE_SINGLE_SHOT:
+            self._n_buffers = 1
 
     def StartExposure(self):
+        self.StopAq()
+        self._buf_num = -1*np.ones(self._n_buffers, dtype=ctypes.c_short)
+        self._buf_event = np.zeros(self._n_buffers, dtype=pco_sdk.HANDLE)
+        self._buf_addr = np.zeros(self._n_buffers, dtype=ctypes.wintypes.PWORD)
+        self._buf_list = []
+        lx, ly = self.GetPicWidth(), self.GetPicHeight()
+        bufsize = lx*ly*ctypes.sizeof(ctypes.wintypes.WORD)  # how many words is this image worth?
+        for i in np.arange(self._n_buffers):
+            pco_sdk.allocate_buffer(self._handle, self._buf_num[i], bufsize, 
+                                    self._buf_addr[i], self._buf_event[i])
+            self._buf_list.append(pco_sdk.PCO_Buflist(self._buf_num[i], ctypes.wintypes.WORD(0), 
+                                                      ctypes.wintypes.DWORD(0), ctypes.wintypes.DWORD(0)))
+        pco_sdk.set_image_parameters(self._handle, lx, ly, pco_sdk.PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING)
+        pco_sdk.arm_camera(self._handle)
+        pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_RUNNING)
+        eventLog.logEvent('StartAq', '')
+        if self._mode == self.MODE_CONTINUOUS:
+            for i in np.arange(self._n_buffers):
+                pco_sdk.add_buffer_ex(self._handle, 0, 0, self._buf_num[i], lx, ly, BITS_PER_PIXEL)
+        self._recording = True
+
         return 0
 
     def StopAq(self):
-        pass
+        self._recording = False
+        pco_sdk.cancel_images(self._handle)
+        pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
+        for i in np.arange(self._n_buffers):
+            pco_sdk.free_buffer(self._handle, self._buf_num[i])
+        self._get_temps()
 
     def GetNumImsBuffered(self):
-        pass
+        return np.sum([buf.dwStatusDll == pco_sdk.PCO_BUFFER_SET for buf in self._buf_list])
 
     def GetBufferSize(self):
-        return self._buffer_size
+        return self._n_buffers
 
     def GetFPS(self):
         if self.GetCycleTime() == 0:
