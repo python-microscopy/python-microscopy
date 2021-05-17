@@ -23,13 +23,7 @@
 import numpy as np
 import tables
 from PYME.IO.DataSources.BaseDataSource import DefaultList, BaseDataSource
-from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
-
-def atleast_nd(a, n):
-    while a.ndim < n:
-        a = np.expand_dims(a, a.ndim)
-        
-    return a
+from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource, atleast_nd
 
 class ListWrapper(BaseDataSource):
     def __init__(self, dataList):

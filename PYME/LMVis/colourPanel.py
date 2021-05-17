@@ -141,7 +141,7 @@ class colourPanel(wx.Panel):
         self.pipeline = pipeline
 
         self.colPlotPan = colourPlotPanel(self, pipeline, visFrame)
-        bsizer.Add(self.colPlotPan, 4,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
+        bsizer.Add(self.colPlotPan, 4,wx.ALL|wx.EXPAND, 5)
 
 #        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 #        hsizer.Add(wx.StaticText(self, -1, "x' = "), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -178,8 +178,8 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.makeColumnEditable(5)
 
         for key, value in self.pipeline.colour_mapper.species_ratios.items():
-            ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
-            self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
+            ind = self.lFluorSpecies.InsertItem(UI_MAXSIZE, key)
+            self.lFluorSpecies.SetItem(ind,1, '%3.2f' % value)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
             
             
@@ -226,7 +226,7 @@ class colourPanel(wx.Panel):
         hsizer2.Add(self.tPBelong, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPBelong.Bind(wx.EVT_TEXT, self.OnChangePDye)
 
-        vsizer.Add(hsizer2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer2, 0, wx.ALL, 0)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'p_other:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -235,11 +235,11 @@ class colourPanel(wx.Panel):
         hsizer2.Add(self.tPOther, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPOther.Bind(wx.EVT_TEXT, self.OnChangePOther)
 
-        vsizer.Add(hsizer2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer2, 0, wx.ALL, 0)
 
         hsizer.Add(vsizer, 0, wx.ALL, 5)
 
-        bsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        bsizer.Add(hsizer, 0, wx.ALL, 5)
 
         self.SetSizer(bsizer)
         bsizer.Fit(self)

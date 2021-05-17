@@ -65,7 +65,7 @@ class TracebackDialog(wx.Dialog):
         
         btnsizer.Realize()
                 
-        vsizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 2)
+        vsizer.Add(btnsizer, 0, wx.ALL|wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
     
     def on_copy(self, event):
@@ -93,7 +93,7 @@ class ComputationInProgress(object):
         
     def __enter__(self):
         self._old_cursor = self.window.GetCursor()
-        self.window.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+        self.window.SetCursor(wx.Cursor(wx.CURSOR_WAIT))
         
         if hasattr(self.window, 'SetStatus'):
             # at present, only VisGUI has SetStatus - possibly rename...
