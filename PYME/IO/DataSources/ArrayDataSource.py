@@ -17,6 +17,12 @@ try:
 except ImportError:
     pass
 
+def atleast_nd(a, n):
+    while a.ndim < n:
+        a = np.expand_dims(a, a.ndim)
+    
+    return a
+
 class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions larger than len(shape)
     def __init__(self, data, dimOrder='XYTC', dim_1_is_z=False):
         self.data = data
@@ -95,15 +101,15 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
             return self[:,:]
         elif self.ndim == 3:
             #3D
-            return np.atleast_2d(self[:, :, ind].squeeze())
+            return atleast_nd(self[:, :, ind].squeeze(), 2)
         elif self.ndim == 4:
             #4D. getSlice should collapse last 2 dimensions
-            return np.atleast_2d(self[:,:,ind % self.shape[2], ind // self.shape[2]].squeeze())
+            return atleast_nd(self[:,:,ind % self.shape[2], ind // self.shape[2]].squeeze(), 2)
         elif self.ndim == 5:
             zi = ind % self.shape[2]
             ti = (ind // self.shape[2]) % self.shape[3]
             ci = ind //(self.shape[3]*self.shape[2])
-            return np.atleast_2d(self[:,:,zi, ti, ci].squeeze())
+            return atleast_nd(self[:,:,zi, ti, ci].squeeze(), 2)
         else:
             raise RuntimeError('unsupported ndim = %d' % ndim)
     
