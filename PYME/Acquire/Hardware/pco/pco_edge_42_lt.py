@@ -6,7 +6,8 @@ Created on Mon August 12 2020
 @author: zacsimile
 """
 
-from PYME.Acquire.Hardware.pco import pco_cam
+# from PYME.Acquire.Hardware.pco import pco_cam
+from PYME.Acquire.Hardware.pco import pco_sdk_cam
 
 noiseProperties = {
 '61003940' : {
@@ -19,10 +20,10 @@ noiseProperties = {
         },
 }
 
-class PcoEdge42LT(pco_cam.PcoCam):
+class PcoEdge42LT(pco_sdk_cam.PcoSdkCam):
     def __init__(self, camNum, debuglevel='off'):
-        pco_cam.PcoCam.__init__(self, camNum, debuglevel)
+        pco_sdk_cam.PcoSdkCam.__init__(self, camNum, debuglevel)
 
     def Init(self):
-        pco_cam.PcoCam.Init(self)
+        pco_sdk_cam.PcoSdkCam.Init(self)
         self.noiseProps = noiseProperties[self.GetSerialNumber()]

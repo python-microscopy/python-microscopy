@@ -5,6 +5,9 @@ Created on Fri May 14 2021
 
 @author: zacsimile
 
+To run, install the pco. sdk, available at 
+https://www.pco.de/software/development-tools/pcosdk/, as admin.
+
 The goal of this file is to provide Python access to pco.sdk as closely to how it
 is implemented in pco.sdk as possible. There's no mapping of flags to readable
 strings such as "on"/"off". The idea is to have raw access to the DLL. For a
@@ -27,11 +30,11 @@ if os_desc != 'Windows':
     raise Exception("Operating system is not supported.")
 
 dll = 'SC2_Cam.dll'
-dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), dll)
+dll_path = "C:\\Program Files (x86)\\PCO Digital Camera Toolbox\\pco.sdk\\bin64\\" + dll
 try:
     sc2_cam = ctypes.windll.LoadLibrary(dll_path)
 except:
-    raise OSError(f"{dll} not found in {dll_path}.")
+    raise
 
 # ---------------------------------------------------------------------
 # Structures and types
@@ -112,7 +115,7 @@ class PCO_SC2_Firmware_DESC(ctypes.Structure):
                 ("wVariant", ctypes.wintypes.WORD),
                 ("ZZwDummy", ctypes.wintypes.WORD * 22)]
 
-class PCO_HW_Vers(C.Structure):
+class PCO_HW_Vers(ctypes.Structure):
     #_pack_ = 1
     _fields_ = [
         ("wBoardNum", ctypes.wintypes.WORD),
@@ -210,7 +213,7 @@ class PCO_Metadata_Struct(ctypes.Structure):
                 ("bIMAGE_TYPE", ctypes.c_byte),
                 ("wCOLOR_PATTERN", ctypes.wintypes.WORD)]
 
-PCO_NOERROR = ctypes.wintypes.DWORD(int("0x00000000", 0))
+PCO_NOERROR = 0x00000000
 class PCO_Buflist(ctypes.Structure):
     # _pack_ = 1
     _fields_ = [("SBufNr", ctypes.c_short),
@@ -219,34 +222,34 @@ class PCO_Buflist(ctypes.Structure):
                 ("dwStatusDrv", ctypes.wintypes.DWORD)]  # PCO_NOERROR or see pco.sdk for error codes
 
 PCO_CAMERA_TYPES = {
-    ctypes.wintypes.WORD(int("0x1300",0)) : 'pco.edge 5.5 CL',
-    ctypes.wintypes.WORD(int("0x1302",0)) : 'pco.edge 4.2 CL',
-    ctypes.wintypes.WORD(int("0x1310",0)) : 'pco.edge GL',
-    ctypes.wintypes.WORD(int("0x1320",0)) : 'pco.edge USB3',
-    ctypes.wintypes.WORD(int("0x1340",0)) : 'pco.edge CLHS',
-    ctypes.wintypes.WORD(int("0x1304",0)) : 'pco.edge MT',
-    ctypes.wintypes.WORD(int("0x1000",0)) : 'pco.dimax',
-    ctypes.wintypes.WORD(int("0x1010",0)) : 'pco.dimax_TV',
-    ctypes.wintypes.WORD(int("0x1020",0)) : 'pco.dimax CS',
-    ctypes.wintypes.WORD(int("0x1400",0)) : 'pco.flim',
-    ctypes.wintypes.WORD(int("0x1500",0)) : 'pco.panda',
-    ctypes.wintypes.WORD(int("0x0800",0)) : 'pco.pixelfly usb',
-    ctypes.wintypes.WORD(int("0x0100",0)) : 'pco.1200HS',
-    ctypes.wintypes.WORD(int("0x0200",0)) : 'pco.1300',
-    ctypes.wintypes.WORD(int("0x0220",0)) : 'pco.1600',
-    ctypes.wintypes.WORD(int("0x0240",0)) : 'pco.2000',
-    ctypes.wintypes.WORD(int("0x0260",0)) : 'pco.4000',
-    ctypes.wintypes.WORD(int("0x0830",0)) : 'pco.1400'
+    0x1300 : 'pco.edge 5.5 CL',
+    0x1302 : 'pco.edge 4.2 CL',
+    0x1310 : 'pco.edge GL',
+    0x1320 : 'pco.edge USB3',
+    0x1340 : 'pco.edge CLHS',
+    0x1304 : 'pco.edge MT',
+    0x1000 : 'pco.dimax',
+    0x1010 : 'pco.dimax_TV',
+    0x1020 : 'pco.dimax CS',
+    0x1400 : 'pco.flim',
+    0x1500 : 'pco.panda',
+    0x0800 : 'pco.pixelfly usb',
+    0x0100 : 'pco.1200HS',
+    0x0200 : 'pco.1300',
+    0x0220 : 'pco.1600',
+    0x0240 : 'pco.2000',
+    0x0260 : 'pco.4000',
+    0x0830 : 'pco.1400'
 }
 
 PCO_INTERFACE_TYPES = {
-    ctypes.wintypes.WORD(int("0x0001",0)) : 'FireWire',
-    ctypes.wintypes.WORD(int("0x0002",0)) : 'Camera Link',
-    ctypes.wintypes.WORD(int("0x0003",0)) : 'USB 2.0',
-    ctypes.wintypes.WORD(int("0x0004",0)) : 'GigE',
-    ctypes.wintypes.WORD(int("0x0005",0)) : 'Serial Interface',
-    ctypes.wintypes.WORD(int("0x0006",0)) : 'USB 3.0',
-    ctypes.wintypes.WORD(int("0x0007",0)) : 'CLHS'
+    0x0001 : 'FireWire',
+    0x0002 : 'Camera Link',
+    0x0003 : 'USB 2.0',
+    0x0004 : 'GigE',
+    0x0005 : 'Serial Interface',
+    0x0006 : 'USB 3.0',
+    0x0007 : 'CLHS'
 }
 
 # ---------------------------------------------------------------------
@@ -286,7 +289,6 @@ def open_camera():
     cam_num = ctypes.wintypes.WORD()  # unused
     check_status(sc2_cam.PCO_OpenCamera(handle, cam_num))
     return handle
-
 # ---------------------------------------------------------------------
 # 2.1.2 PCO_OpenCameraEx
 # ---------------------------------------------------------------------
@@ -342,6 +344,7 @@ def get_camera_description(handle):
         Struct of camera properties.
     """
     desc = PCO_Description()
+    desc.wSize = ctypes.sizeof(PCO_Description)
     check_status(sc2_cam.PCO_GetCameraDescription(handle, desc))
     return desc
 
@@ -364,6 +367,7 @@ def get_camera_type(handle):
         Struct containing hardware/firmware version, serial number, etc.
     """
     camera_type = PCO_CameraType()
+    camera_type.wSize = ctypes.sizeof(PCO_CameraType)
     check_status(sc2_cam.PCO_GetCameraType(handle, camera_type))
     return camera_type
 
@@ -388,18 +392,18 @@ def get_camera_health_status(handle):
 
     Returns
     -------
-    warn : unsigned long int
+    warn : int
         Warning bit 
-    err : unsigned long int
+    err : int
         Error bit 
-    status : unsigned long int
+    status : int
         Status bit 
     """
     warn = ctypes.wintypes.DWORD()
     err = ctypes.wintypes.DWORD()
     status = ctypes.wintypes.DWORD()
     check_status(sc2_cam.PCO_GetCameraHealthStatus(handle, warn, err, status))
-    return warn, err, status
+    return warn.value, err.value, status.value
 
 # ---------------------------------------------------------------------
 # 2.3.4 PCO_GetTemperature
@@ -418,18 +422,18 @@ def get_temperature(handle):
 
     Returns
     -------
-    ccd_temp : short
+    ccd_temp : int
         Image sensor temp in 1/10 degree i.e. 100 = 10.0 C
-    cam_temp : short
+    cam_temp : int
         Internal camera temp in C
-    pow_temp : short
+    pow_temp : int
         Temp of additional devices (e.g. power supply)
     """
     ccd_temp = ctypes.c_short()
     cam_temp = ctypes.c_short()
     pow_temp = ctypes.c_short()
     check_status(sc2_cam.PCO_GetTemperature(handle, ccd_temp, cam_temp, pow_temp))
-    return ccd_temp, cam_temp, pow_temp
+    return ccd_temp.value, cam_temp.value, pow_temp.value
 
 
 # ---------------------------------------------------------------------
@@ -456,8 +460,8 @@ sc2_cam.PCO_SetImageParameters.argtypes = [HANDLE, ctypes.wintypes.WORD,
                                            ctypes.wintypes.DWORD,
                                            ctypes.c_void_p,
                                            ctypes.c_int]
-PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING = ctypes.wintypes.DWORD(int("0x00000001", 0))
-PCO_IMAGEPARAMETERS_READ_FROM_SEGMENTS = ctypes.wintypes.DWORD(int("0x00000002", 0))
+PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING = 0x00000001
+PCO_IMAGEPARAMETERS_READ_FROM_SEGMENTS = 0x00000002
 def set_image_parameters(handle, lx, ly, image_flag):
     """
     Set image parameters for internal allocated resources before image transfer.
@@ -475,7 +479,10 @@ def set_image_parameters(handle, lx, ly, image_flag):
     """
     param = ctypes.c_void_p(0)
     ilen = ctypes.c_int(0)
-    check_status(sc2_cam.PCO_SetImageParameters(handle, lx, ly, image_flag, param, ilen))
+    check_status(sc2_cam.PCO_SetImageParameters(handle, ctypes.wintypes.WORD(lx), 
+                                                ctypes.wintypes.WORD(ly), 
+                                                ctypes.wintypes.DWORD(image_flag), 
+                                                param, ilen))
 
 # ---------------------------------------------------------------------
 # 2.4.4 PCO_ResetSettingsToDefault
@@ -510,13 +517,13 @@ def get_sizes(handle):
 
     Returns
     -------
-    lx : unsigned short int
+    lx : int
         Image width
-    ly : unsigned short int
+    ly : int
         Image height
-    lx_max : unsigned short int
+    lx_max : int
         Max image width
-    ly_max : unsigned short int
+    ly_max : int
         Max image height
     """
     lx = ctypes.wintypes.WORD()
@@ -524,7 +531,7 @@ def get_sizes(handle):
     lx_max = ctypes.wintypes.WORD()
     ly_max = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetSizes(handle, lx, ly, lx_max, ly_max))
-    return lx, ly, lx_max, ly_max
+    return lx.value, ly.value, lx_max.value, ly_max.value
 
 # ---------------------------------------------------------------------
 # 2.5.6 PCO_GetROI
@@ -545,13 +552,13 @@ def get_roi(handle):
     
     Returns
     -------
-    x0 : unsigned short int
+    x0 : int
         Horizontal (column) start coordinate
-    y0 : unsigned short int
+    y0 : int
         Vertical (row) start coordinate
-    x1 : unsigned short int
+    x1 : int
         Horizontal end coordinate
-    y1 : unsigned short int
+    y1 : int
         Vertical end coordinate
     """
     x0 = ctypes.wintypes.WORD()
@@ -559,7 +566,7 @@ def get_roi(handle):
     y0 = ctypes.wintypes.WORD()
     y1 = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetROI(handle, x0, y0, x1, y1))
-    return x0, x1, y0, y1
+    return x0.value, x1.value, y0.value, y1.value
 
 # ---------------------------------------------------------------------
 # 2.5.7 PCO_SetROI
@@ -577,16 +584,19 @@ def set_roi(handle, x0, y0, x1, y1):
     ----------
     handle : HANDLE
         Unique pco. camera handle (pointer).
-    x0 : unsigned short int
+    x0 : int
         Horizontal (column) start coordinate
-    y0 : unsigned short int
+    y0 : int
         Vertical (row) start coordinate
-    x1 : unsigned short int
+    x1 : int
         Horizontal end coordinate
-    y1 : unsigned short int
+    y1 : int
         Vertical end coordinate
     """
-    check_status(sc2_cam.PCO_SetROI(handle, x0, y0, x1, y1))
+    check_status(sc2_cam.PCO_SetROI(handle, ctypes.wintypes.WORD(x0), 
+                                    ctypes.wintypes.WORD(y0), 
+                                    ctypes.wintypes.WORD(x1), 
+                                    ctypes.wintypes.WORD(y1)))
 
 # ---------------------------------------------------------------------
 # 2.5.8 PCO_GetBinning
@@ -604,15 +614,15 @@ def get_binning(handle):
 
     Returns
     -------
-    bin_horiz : unsigned short int
+    bin_horiz : int
         Horizontal (column) binning in pixels
-    bin_vert : unsigned short int
+    bin_vert : int
         Vertical (row) binning in pixels
     """
     bin_horiz = ctypes.wintypes.WORD()
     bin_vert = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetBinning(handle, bin_horiz, bin_vert))
-    return bin_horiz, bin_vert
+    return bin_horiz.value, bin_vert.value
 
 # ---------------------------------------------------------------------
 # 2.5.9 PCO_SetBinning
@@ -631,12 +641,13 @@ def set_binning(handle, bin_horiz, bin_vert):
     ----------
     handle : HANDLE
         Unique pco. camera handle (pointer).
-    bin_horiz : unsigned short int
+    bin_horiz : int
         Horizontal (column) binning in pixels
-    bin_vert : unsigned short int
+    bin_vert : int
         Vertical (row) binning in pixels
     """
-    check_status(sc2_cam.PCO_SetBinning(handle, bin_horiz, bin_vert))
+    check_status(sc2_cam.PCO_SetBinning(handle, ctypes.wintypes.WORD(bin_horiz), 
+                                        ctypes.wintypes.WORD(bin_vert)))
 
 # ---------------------------------------------------------------------
 # 2.5.10 PCO_GetPixelRate
@@ -653,12 +664,12 @@ def get_pixel_rate(handle):
     
     Returns
     -------
-    pixel_rate : unsigned long int
+    pixel_rate : int
         Pixel rate of the camera in Hz
     """
     pixel_rate = ctypes.wintypes.DWORD()
     check_status(sc2_cam.GetPixelRate(handle, pixel_rate))
-    return pixel_rate
+    return pixel_rate.value
 
 # ---------------------------------------------------------------------
 # 2.5.10 PCO_SetPixelRate
@@ -675,7 +686,7 @@ def set_pixel_rate(handle, pixel_rate):
     pixel_rate : int
         Pixel rate of the camera in Hz
     """
-    check_status(sc2_cam.SetPixelRate(handle, pixel_rate))
+    check_status(sc2_cam.SetPixelRate(handle, ctypes.wintypes.DWORD(pixel_rate)))
 
 # ---------------------------------------------------------------------
 # 2.5.20 PCO_GetCoolingSetpointTemperature
@@ -693,12 +704,12 @@ def get_cooling_setpoint_temperature(handle):
 
     Returns
     -------
-    temp : short
+    temp : int
         Setpoint in degrees C
     """
     temp = ctypes.c_short()
     check_status(sc2_cam.PCO_GetCoolingSetpointTemperature(handle,temp))
-    return temp
+    return temp.value
 
 # ---------------------------------------------------------------------
 # 2.5.21 PCO_SetCoolingSetpointTemperature
@@ -716,7 +727,7 @@ def set_cooling_setpoint_temperature(handle, temp):
         Setpoint in degrees C. Must be in between sMinCoolSetDESC and
         sMaxCoolSetDESC (see output of get_camera_description())
     """
-    check_status(sc2_cam.PCO_SetCoolingSetpointTemperature(handle,temp))
+    check_status(sc2_cam.PCO_SetCoolingSetpointTemperature(handle, ctypes.c_short(temp)))
 # ---------------------------------------------------------------------
 # 2.6.4 PCO_GetDelayExposureTime
 # ---------------------------------------------------------------------
@@ -724,9 +735,9 @@ sc2_cam.PCO_GetDelayExposureTime.argtypes = [HANDLE, ctypes.wintypes.PDWORD,
                                              ctypes.wintypes.PDWORD,
                                              ctypes.wintypes.PWORD,
                                              ctypes.wintypes.PWORD]
-PCO_TIMEBASE_NS = ctypes.wintypes.WORD(int("0x0000", 0))  # nanoseconds
-PCO_TIMEBASE_US = ctypes.wintypes.WORD(int("0x0001", 0))  # microseconds
-PCO_TIMEBASE_MS = ctypes.wintypes.WORD(int("0x0002", 0))  # milliseconds
+PCO_TIMEBASE_NS = 0x0000  # nanoseconds
+PCO_TIMEBASE_US = 0x0001  # microseconds
+PCO_TIMEBASE_MS = 0x0002  # milliseconds
 def get_delay_exposure_time(handle):
     """
     Get delay and exposure times for camera sensor.
@@ -753,7 +764,7 @@ def get_delay_exposure_time(handle):
     timebase_exposure = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetDelayExposureTime(handle, delay, exposure,
                                                   timebase_delay, timebase_exposure))
-    return delay, exposure, timebase_delay, timebase_exposure
+    return delay.value, exposure.value, timebase_delay.value, timebase_exposure.value
 
 # ---------------------------------------------------------------------
 # 2.6.5 PCO_SetDelayExposureTime
@@ -783,8 +794,10 @@ def set_delay_exposure_time(handle, delay, exposure, timebase_delay, timebase_ex
     timebase_exposure : unsigned short int
         Unit for exposure time. One of PCO_TIMEBASE_NS, PCO_TIMEBASE_US, PCO_TIMEBASE_MS.
     """
-    check_status(sc2_cam.PCO_SetDelayExposureTime(handle, delay, exposure,
-                                                  timebase_delay, timebase_exposure))
+    check_status(sc2_cam.PCO_SetDelayExposureTime(handle, ctypes.wintypes.DWORD(delay), 
+                                                  ctypes.wintypes.DWORD(exposure),
+                                                  ctypes.wintypes.DWORD(timebase_delay), 
+                                                  ctypes.wintypes.DWORD(timebase_exposure)))
 
 # ---------------------------------------------------------------------
 # 2.6.26 PCO_GetImageTiming
@@ -813,8 +826,8 @@ def get_image_timing(handle):
 # 2.7.3 PCO_GetRecordingState
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetRecordingState.argtypes = [HANDLE, ctypes.wintypes.PWORD]
-PCO_CAMERA_STOPPED = ctypes.wintypes.WORD(int("0x0000", 0))
-PCO_CAMERA_RUNNING = ctypes.wintypes.WORD(int("0x0001", 0))
+PCO_CAMERA_STOPPED = 0x0000
+PCO_CAMERA_RUNNING = 0x0001
 def get_recording_state(handle):
     """
     Get the current recording state of the camera.
@@ -826,12 +839,12 @@ def get_recording_state(handle):
 
     Returns
     -------
-    state : unsigned short int
+    state : int
         Recording state, one of PCO_CAMERA_STOPPED (0), PCO_CAMERA_RUNNING (1).
     """
     state = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetRecordingState(handle, state))
-    return state
+    return state.value
 
 # ---------------------------------------------------------------------
 # 2.7.4 PCO_SetRecordingState
@@ -848,14 +861,14 @@ def set_recording_state(handle, state):
     state : int
         Recording state, one of PCO_CAMERA_STOPPED (0), PCO_CAMERA_RUNNING (1).
     """
-    check_status(sc2_cam.PCO_SetRecordingState(handle, state))
+    check_status(sc2_cam.PCO_SetRecordingState(handle, ctypes.wintypes.WORD(state)))
 
 # ---------------------------------------------------------------------
 # 2.7.5 PCO_GetStorageMode
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetStorageMode.argtypes = [HANDLE, ctypes.wintypes.PWORD]
-PCO_STORAGE_RECORDER = ctypes.wintypes.WORD(int("0x0000", 0))
-PCO_STORAGE_FIFO = ctypes.wintypes.WORD(int("0x0001", 0))
+PCO_STORAGE_RECORDER = 0x0000
+PCO_STORAGE_FIFO = 0x0001
 def get_storage_mode(handle):
     """
     Get camera image storage mode. One of "recorder" or "FIFO buffer".
@@ -867,12 +880,12 @@ def get_storage_mode(handle):
 
     Returns
     -------
-    mode : unsigned short int
+    mode : int
         Camera image storage mode. One of PCO_STORAGE_RECORDER (0) or PCO_STORAGE_FIFO (1).
     """
     mode = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetStorageMode(handle, mode))
-    return mode
+    return mode.value
 
 # ---------------------------------------------------------------------
 # 2.7.6 PCO_SetStorageMode
@@ -889,15 +902,15 @@ def set_storage_mode(handle, mode):
     mode : unsigned short int
         Camera image storage mode. One of PCO_STORAGE_RECORDER (0) or PCO_STORAGE_FIFO (1).
     """
-    check_status(sc2_cam.PCO_SetStorageMode(handle, mode))
+    check_status(sc2_cam.PCO_SetStorageMode(handle, ctypes.wintypes.WORD(mode)))
 
 # ---------------------------------------------------------------------
 # 2.7.9 PCO_GetAcquireMode
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetAcquireMode.argtypes = [HANDLE, ctypes.wintypes.PWORD]
-PCO_ACQUIRE_AUTO = ctypes.wintypes.WORD(int("0x0000", 0))
-PCO_ACQUIRE_EXTERNAL = ctypes.wintypes.WORD(int("0x0000", 0))
-PCO_ACQUIRE_EXTERNAL_MODULATE = ctypes.wintypes.WORD(int("0x0000", 0))
+PCO_ACQUIRE_AUTO = 0x0000
+PCO_ACQUIRE_EXTERNAL = 0x0000
+PCO_ACQUIRE_EXTERNAL_MODULATE = 0x0000
 def get_acquire_mode(handle):
     """
     Get the current acquisition mode of the camera. One of "auto",
@@ -916,13 +929,13 @@ def get_acquire_mode(handle):
     """
     mode = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetAcquireMode(handle, mode))
-    return mode
+    return mode.value
 
 # ---------------------------------------------------------------------
 # 2.7.10 PCO_SetAcquireMode
 # ---------------------------------------------------------------------
 sc2_cam.PCO_SetAcquireMode.argtypes = [HANDLE, ctypes.wintypes.WORD]
-def set_acquire_mode(handle):
+def set_acquire_mode(handle, mode):
     """
     Set the current acquisition mode of the camera. One of "auto",
     "external" or "external modulate".
@@ -935,9 +948,7 @@ def set_acquire_mode(handle):
         Camera acquisiton mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
         PCO_ACQUIRE_EXTERNAL_MODULATE (2).
     """
-    mode = ctypes.wintypes.WORD()
-    check_status(sc2_cam.PCO_GetAcquireMode(handle, mode))
-    return mode
+    check_status(sc2_cam.PCO_GetAcquireMode(handle, ctypes.wintypes.WORD(mode)))
 
 # ---------------------------------------------------------------------
 # 2.7.14 PCO_GetMetaDataMode
@@ -945,8 +956,8 @@ def set_acquire_mode(handle):
 sc2_cam.PCO_GetMetaDataMode.argtypes = [HANDLE, ctypes.wintypes.PWORD,
                                         ctypes.wintypes.PWORD,
                                         ctypes.wintypes.PWORD]
-PCO_METADATA_OFF = ctypes.wintypes.WORD(int("0x0000", 0))
-PCO_METADATA_ON = ctypes.wintypes.WORD(int("0x0000", 0))
+PCO_METADATA_OFF = 0x0000
+PCO_METADATA_ON = 0x0000
 def get_metadata_mode(handle):
     """
     Get the metadata mode of the camera and information about the size
@@ -970,7 +981,7 @@ def get_metadata_mode(handle):
     size = ctypes.wintypes.WORD()
     version = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetMetaDataMode(handle, mode, size, version))
-    return mode, size, version
+    return mode.value, size.value, version.value
 
 # ---------------------------------------------------------------------
 # 2.7.15 PCO_SetMetaDataMode
@@ -999,15 +1010,16 @@ def set_metadata_mode(handle, mode):
     """
     size = ctypes.wintypes.WORD()
     version = ctypes.wintypes.WORD()
-    check_status(sc2_cam.PCO_SetMetaDataMode(handle, mode, size, version))
-    return size, version
+    check_status(sc2_cam.PCO_SetMetaDataMode(handle, ctypes.wintypes.WORD(mode), 
+                                             size, version))
+    return size.value, version.value
 
 # ---------------------------------------------------------------------
 # 2.9.5 PCO_GetBitAlignment
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetBitAlignment.argtypes = [HANDLE, ctypes.wintypes.PWORD]
-PCO_ALIGNMENT_MSB = ctypes.wintypes.WORD(int("0x0000", 0))  # align to most significant bit
-PCO_ALIGNMENT_LSB = ctypes.wintypes.WORD(int("0x0001", 0))  # align to least significant bit
+PCO_ALIGNMENT_MSB = 0x0000  # align to most significant bit
+PCO_ALIGNMENT_LSB = 0x0001  # align to least significant bit
 def get_bit_alignment(handle):
     """
     Get the bit alignment of the transferred image data.
@@ -1025,7 +1037,7 @@ def get_bit_alignment(handle):
     """
     alignment = ctypes.wintypes.WORD() 
     check_status(sc2_cam.PCO_GetBitAlignment(handle, alignment))
-    return alignment
+    return alignment.value
 
 # ---------------------------------------------------------------------
 # 2.9.6 PCO_SetBitAlignment
@@ -1043,14 +1055,14 @@ def set_bit_alignment(handle, alignment):
         Bit alignment of the transferred image data. One of PCO_ALIGNMENT_MSB (0)
         or PCO_ALIGNMENT_LSB (1).
     """
-    check_status(sc2_cam.PCO_SetBitAlignment(handle, alignment))
+    check_status(sc2_cam.PCO_SetBitAlignment(handle, ctypes.wintypes.WORD(alignment)))
 
 # ---------------------------------------------------------------------
 # 2.9.7 PCO_GetHotPixelCorrectionMode
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetHotPixelCorrectionMode.argtypes = [HANDLE, ctypes.wintypes.PWORD]
-PCO_HOTPIXELCORRECTION_OFF = ctypes.wintypes.WORD(int("0x0000", 0)) 
-PCO_HOTPIXELCORRECTION_ON = ctypes.wintypes.WORD(int("0x0001", 0)) 
+PCO_HOTPIXELCORRECTION_OFF = 0x0000
+PCO_HOTPIXELCORRECTION_ON = 0x0001
 def get_hot_pixel_correction_mode(handle):
     """
     Get camera chip hot pixel correction mode. 
@@ -1068,7 +1080,7 @@ def get_hot_pixel_correction_mode(handle):
     """
     mode = ctypes.wintypes.WORD()
     check_status(sc2_cam.PCO_GetHotPixelCorrectionMode(handle, mode))
-    return mode
+    return mode.value
 
 # ---------------------------------------------------------------------
 # 2.9.8 PCO_SetHotPixelCorrectionMode
@@ -1086,7 +1098,7 @@ def set_hot_pixel_correction_mode(handle, mode):
         Hot pixel correction mode. One of PCO_HOTPIXELCORRECTION_OFF (0) or 
         PCO_HOTPIXELCORRECTION_ON (1).
     """
-    check_status(sc2_cam.PCO_SetHotPixelCorrectionMode(handle, mode))
+    check_status(sc2_cam.PCO_SetHotPixelCorrectionMode(handle, ctypes.wintypes.WORD(mode)))
 
 # ---------------------------------------------------------------------
 # 2.10.1 PCO_AllocateBuffer
@@ -1128,7 +1140,8 @@ def allocate_buffer(handle, index, size, buffer=None, event=None):
         buffer = ctypes.c_void_p(0)
     if event is None:
         event = ctypes.c_void_p(0)
-    check_status(sc2_cam.PCO_AllocateBuffer(handle, index, size, buffer, event))
+    check_status(sc2_cam.PCO_AllocateBuffer(handle, index, ctypes.wintypes.DWORD(size), 
+                                            buffer, event))
     return index.contents, buffer, event
 
 # ---------------------------------------------------------------------
@@ -1146,7 +1159,7 @@ def free_buffer(handle, index):
     index : int
         Buffer index to free
     """
-    check_status(sc2_cam.PCO_FreeBuffer(handle, index))
+    check_status(sc2_cam.PCO_FreeBuffer(handle, ctypes.c_short(index)))
 
 # ---------------------------------------------------------------------
 # 2.10.3 PCO_GetBufferStatus
@@ -1154,10 +1167,10 @@ def free_buffer(handle, index):
 sc2_cam.PCO_GetBufferStatus.argtypes = [HANDLE, ctypes.c_short,
                                         ctypes.wintypes.PDWORD,
                                         ctypes.wintypes.PDWORD]
-PCO_BUFFER_ALLOCATED = ctypes.wintypes.WORD(int("0x80000000", 0))  # Buffer is allocated
-PCO_BUFFER_CREATED = ctypes.wintypes.WORD(int("0x40000000", 0))    # Buffer event created inside the SDK DLL
-PCO_BUFFER_EXTERNAL = ctypes.wintypes.WORD(int("0x20000000", 0))   # Buffer is allocated externally
-PCO_BUFFER_SET = ctypes.wintypes.WORD(int("0x00008000", 0))        # Buffer event is set
+PCO_BUFFER_ALLOCATED = 0x80000000  # Buffer is allocated
+PCO_BUFFER_CREATED = 0x40000000    # Buffer event created inside the SDK DLL
+PCO_BUFFER_EXTERNAL = 0x20000000   # Buffer is allocated externally
+PCO_BUFFER_SET = 0x00008000        # Buffer event is set
 def get_buffer_status(handle, index):
     """
     Parameters
@@ -1178,8 +1191,9 @@ def get_buffer_status(handle, index):
     """
     status_dll = ctypes.wintypes.DWORD()
     status_drv = ctypes.wintypes.DWORD()
-    check_status(sc2_cam.PCO_GetBufferStatus(handle, index, status_dll, status_drv))
-    return status_dll, status_drv
+    check_status(sc2_cam.PCO_GetBufferStatus(handle, ctypes.c_short(index), 
+                                             status_dll, status_drv))
+    return status_dll.value, status_drv.value
 
 # ---------------------------------------------------------------------
 # 2.10.4 PCO_GetBuffer
@@ -1207,7 +1221,7 @@ def get_buffer(handle, index):
     """
     buffer = ctypes.c_void_p(0)
     event = ctypes.c_void_p(0)
-    check_status(sc2_cam.PCO_GetBuffer(handle, index, buffer, event))
+    check_status(sc2_cam.PCO_GetBuffer(handle, ctypes.c_short(index), buffer, event))
     return buffer, event
 
 # ---------------------------------------------------------------------
@@ -1243,8 +1257,11 @@ def get_image_ex(handle, segment, first_image, buffer_index, lx, ly,
     bits_per_pixel : int
         Bit resolution of the transferred image (16 is the common choice, see pco.sdk manual)
     """
-    check_status(sc2_cam.PCO_GetImageEx(handle, segment, first_image,
-                 first_image, buffer_index, lx, ly, bits_per_pixel))
+    image_index = ctypes.wintypes.DWORD(first_image)
+    check_status(sc2_cam.PCO_GetImageEx(handle, ctypes.wintypes.WORD(segment), image_index,
+                                        image_index, ctypes.c_short(buffer_index), 
+                                        ctypes.wintypes.WORD(lx), ctypes.wintypes.WORD(ly), 
+                                        ctypes.wintypes.WORD(bits_per_pixel)))
 # ---------------------------------------------------------------------
 # 2.11.3 PCO_AddBufferEx
 # ---------------------------------------------------------------------
@@ -1276,8 +1293,11 @@ def add_buffer_ex(handle, first_image, buffer_index, lx, ly,
     bits_per_pixel : int
         Bit resolution of the transferred image (16 is the common choice, see pco.sdk manual)
     """
-    check_status(sc2_cam.PCO_AddBufferEx(handle, first_image, first_image,
-                 buffer_index, lx, ly, bits_per_pixel))
+    image_index = ctypes.wintypes.DWORD(first_image)
+    check_status(sc2_cam.PCO_AddBufferEx(handle, image_index, image_index,
+                                         ctypes.c_short(buffer_index), 
+                                         ctypes.wintypes.WORD(lx), ctypes.wintypes.WORD(ly), 
+                                         ctypes.wintypes.WORD(bits_per_pixel)))
 # ---------------------------------------------------------------------
 # 2.11.6 PCO_CancelImages
 # ---------------------------------------------------------------------
@@ -1317,7 +1337,8 @@ def wait_for_buffer(handle, num_buffers, buffer_list, timeout):
     timeout : int
         Timeout in milliseconds.
     """
-    check_status(sc2_cam.PCO_WaitForBuffer(handle, num_buffers, buffer_list, timeout))
+    check_status(sc2_cam.PCO_WaitForBuffer(handle, ctypes.c_int(num_buffers), 
+                                           buffer_list, ctypes.c_int(timeout)))
 
 # ---------------------------------------------------------------------
 # 2.11.9 PCO_GetMetaData
@@ -1343,7 +1364,8 @@ def get_metadata(handle, index):
     reserved1 = ctypes.wintypes.DWORD()
     reserved2 = ctypes.wintypes.DWORD()
     metadata = PCO_Metadata_Struct()
-    check_status(sc2_cam.PCO_GetMetaData(handle, index, metadata, reserved1, reserved2))
+    check_status(sc2_cam.PCO_GetMetaData(handle, ctypes.c_short(index), metadata, 
+                                         reserved1, reserved2))
     return metadata
 
 # ---------------------------------------------------------------------
@@ -1368,6 +1390,6 @@ def get_error_text(err):
     """
     c_buf_len = 512
     c_buf = ctypes.create_string_buffer(c_buf_len)
-    sc2_cam.PCO_GetErrorText(err, c_buf, c_buf_len)
+    sc2_cam.PCO_GetErrorText(ctypes.wintypes.DWORD(err), c_buf, c_buf_len)
 
     return str(c_buf.value.decode('ascii'))

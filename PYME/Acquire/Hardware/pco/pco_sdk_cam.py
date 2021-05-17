@@ -48,7 +48,7 @@ DEFAULT_N_BUFFERS = 4
 BITS_PER_PIXEL = 16
 
 class PcoSdkCam(Camera):
-    def __init__(self):
+    def __init__(self, camNum, debuglevel='off'):
         Camera.__init__(self)
         self._initalized = False
         self.noiseProps = None
@@ -81,6 +81,8 @@ class PcoSdkCam(Camera):
         self._curr_buf = 0
         self._initalized = True
         self._recording = False
+        self._roi = None
+        self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
 
     @property
     def noise_properties(self):
@@ -148,10 +150,10 @@ class PcoSdkCam(Camera):
         return (self._integ_time + self._delay_time)
 
     def GetCCDWidth(self):
-        return int(self._desc.wMaxHorzResStdDESC)
+        return self._desc.wMaxHorzResStdDESC
 
     def GetCCDHeight(self):
-        return int(self._desc.wMaxVertResStdDESC)
+        return self._desc.wMaxVertResStdDESC
 
     def GetPicWidth(self):
         return self.GetROI()[2] - self.GetROI()[0] + 1
@@ -224,6 +226,9 @@ class PcoSdkCam(Camera):
         # Minimum ROI size
         lx_min = self._desc.wMinSizeHorzDESC
         ly_min = self._desc.wMinSizeVertDESC
+
+        # print(lx_min, ly_min)
+        # print(type(lx_min), type(ly_min))
 
         # Make sure bounds are ordered
         if x1 < x0:
