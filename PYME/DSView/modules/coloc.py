@@ -25,6 +25,8 @@ import numpy as np
 import wx
 # import pylab
 import matplotlib.pyplot as plt
+import logging
+logger = logging.getLogger(__name__)
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
@@ -186,11 +188,13 @@ class Colocaliser(Plugin):
         if not use_mask:
             mask=None
         
-
-        #assume we have exactly 2 channels #FIXME - add a selector
+        if self.image.data_xyztc.shape[3] > 1:
+            logger.warning('Detected time series, colocalisation will only be performed on currently displayed timepoint')
+        
         #grab image data
-        imA = self.image.data_xyztc[:,:,zs:ze,:,chans[0]].squeeze()
-        imB = self.image.data_xyztc[:,:,zs:ze,:,chans[1]].squeeze()
+        # FIXME - use only the currently displayed timepoint.
+        imA = self.image.data_xyztc[:,:,zs:ze,self.do.tp,chans[0]].squeeze()
+        imB = self.image.data_xyztc[:,:,zs:ze,self.do.tp,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #plt.mean(self.ivps[0].clim)
