@@ -26,6 +26,7 @@ import matplotlib.cm
 
 from PYME.ui.AUIFrame import AUIFrame
 import wx.lib.agw.aui as aui
+from PYME.LMVis import view_clipping_pane
 
 class MeshViewFrame(AUIFrame):
     def __init__(self, *args, **kwargs):
@@ -38,12 +39,21 @@ class MeshViewFrame(AUIFrame):
 
         
         self.panesToMinimise = []
+        
         self.layerpanel = layer_panel.LayerPane(self, self.canvas, caption=None, add_button=False)
         self.layerpanel.SetSize(self.layerpanel.GetBestSize())
         pinfo = aui.AuiPaneInfo().Name("layerPanel").Right().Caption('Layers').CloseButton(
             False).MinimizeButton(True).MinimizeMode(
             aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
         self._mgr.AddPane(self.layerpanel, pinfo)
+
+        self.panesToMinimise.append(pinfo)
+        
+        self._clip_pane = view_clipping_pane.ViewClippingPanel(self, self.canvas)
+        pinfo = aui.AuiPaneInfo().Name("ClippingPanel").Right().Caption('Clipping').CloseButton(
+            False).MinimizeButton(True).MinimizeMode(
+            aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
+        self._mgr.AddPane(self._clip_pane, pinfo)
 
         self.panesToMinimise.append(pinfo)
 
