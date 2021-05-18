@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 # Here we extend the Paul Bourke treatment (http://paulbourke.net/geometry/polygonise/marchingsource.cpp) with
 # Eric Lengyel's (http://transvoxel.org/Lengyel-VoxelTerrain.pdf).
@@ -812,27 +813,49 @@ class ModifiedMarchingCubes(object):
         # v_idxs = multi_pack((np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).astype('uint64'), c0_, c1_).ravel()
         v_idxs = np.vstack([(np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).ravel(), c0_.ravel(), c1_.ravel()]).T
 
-        # Grab the unique vertices and calculate edges
-        # edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True)
-        edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True, axis=0)
-
-        # Store these for manifold check later
-        # self._edge_indices = v_idxs.reshape(-1, 12, order='F')
-
-        
-        # i, j0, j1 = multi_unpack(edges_unique)
-        i, j0, j1 = edges_unique.T.astype('uint32')
-
-        v0 = vertices[i, j0, :]
-        v1 = vertices[i, j1, :]
-        v0_value = values[i, j0]
-        v1_value = values[i, j1]
-
-        # Calculate each edge once
-        p = self.interpolate_vertex(v0, v1, v0_value, v1_value, i, j0, j1)
-
-        # Reshape the calculated vertices to match the shape we'll index into later
-        pr = p[edges_inverse].reshape(-1, 12, 3, order='C')
+        print(v_idxs.shape)
+        print(v_idxs[:10,:])
+        #
+        if False:
+            # Normally the edge intersection would be calculated 4 times (once for each incident
+            # voxel. As an optimisation, calculate this only once.
+            # CAVEAT - this requires using np.unique which has O(NlogN) best case scaling, and O(N^2) worst case
+            # The non-optimised version below is O(N).
+            
+            # Grab the unique vertices and calculate edges
+            # edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True)
+            edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True, axis=0)
+    
+            # Store these for manifold check later
+            # self._edge_indices = v_idxs.reshape(-1, 12, order='F')
+    
+            
+            # i, j0, j1 = multi_unpack(edges_unique)
+            i, j0, j1 = edges_unique.T.astype('uint32')
+    
+            v0 = vertices[i, j0, :]
+            v1 = vertices[i, j1, :]
+            v0_value = values[i, j0]
+            v1_value = values[i, j1]
+    
+            # Calculate each edge once
+            p = self.interpolate_vertex(v0, v1, v0_value, v1_value, i, j0, j1)
+    
+            # Reshape the calculated vertices to match the shape we'll index into later
+            pr = p[edges_inverse].reshape(-1, 12, 3, order='C')
+        else:
+            i, j0, j1 = v_idxs.T.astype('uint32')
+    
+            v0 = vertices[i, j0, :]
+            v1 = vertices[i, j1, :]
+            v0_value = values[i, j0]
+            v1_value = values[i, j1]
+    
+            # Calculate each edge once
+            p = self.interpolate_vertex(v0, v1, v0_value, v1_value, i, j0, j1)
+    
+            # Reshape the calculated vertices to match the shape we'll index into later
+            pr = p.reshape(-1, 12, 3, order='C')
 
 
         return pr
@@ -938,6 +961,99 @@ class ModifiedMarchingCubes(object):
         #print(a)
         return a
 
+    def create_triangles_and_intersections(self, cube_index, vertices, values):
+        """
+        Create intersection list and convert to triangles (combined from the previous methods as a performance
+        optimisation)
+
+        Parameters
+        ----------
+        intersections : np.array
+            Array of edge intersection vertices.
+        triangles : np.array
+            Array of edge indices to form triangles.
+
+        Returns
+        -------
+        None
+        """
+    
+        # Get this voxel's equivalence class
+        cell_class = REGULAR_CELL_CLASS[cube_index]
+    
+        # Grab triangle draw order
+        cell_data = REGULAR_CELL_DATA[cell_class]
+    
+        triangles = cell_data
+    
+        # get rid of cells which have no intersections (should be equivalent to (cube_index == 00) or (cube_index=0xff)_
+        idxs_ = np.array(np.where(triangles[:, 0] != -1)).reshape(-1)
+        triangles_pruned = triangles[idxs_].flatten()
+    
+        # Get rid of -1 values in the lookup table (redundant triangles within a cell that does have intersections)
+        tri_mask = (triangles_pruned != -1)
+        idxs = np.repeat(idxs_, triangles.shape[1])[tri_mask]
+        triangles_pruned = triangles_pruned[tri_mask]
+    
+        #print(cube_index.shape, triangles.shape, triangles.flatten().shape, idxs.shape, triangles_pruned.shape)
+    
+        # Find the edges we wish the triangles to intersect
+    
+        #################
+        # begin intersections
+    
+        # Find the voxel edges on which our triangle vertices lie
+        interpolation_vertices = REGULAR_VERTEX_DATA[cube_index, :]
+    
+        # Corners
+        c0 = hi_nibble(interpolation_vertices)
+        c1 = lo_nibble(interpolation_vertices)
+    
+        #sort
+        c0_ = np.minimum(c0, c1)
+        c1_ = np.maximum(c0, c1)
+    
+        i = idxs# (np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).ravel().astype('uint32')
+        j0 = c0_[idxs, triangles_pruned].ravel()
+        j1 = c1_[idxs, triangles_pruned].ravel()
+    
+        #print(c0_.shape, i.shape)
+        #print(i[:10], j0[:10], j1[:10])
+    
+        v0 = vertices[i, j0, :]
+        v1 = vertices[i, j1, :]
+        v0_value = values[i, j0]
+        v1_value = values[i, j1]
+    
+        # Calculate each edge once
+        intersections = self.interpolate_vertex(v0, v1, v0_value, v1_value, i, j0, j1)
+    
+        #end intersections
+        ###################
+    
+        #triangles_returned = intersections[idxs, triangles_pruned].reshape(int(idxs.shape[0] / 3), 3, 3)
+    
+        triangles_returned = intersections.reshape(int(idxs.shape[0] / 3), 3, 3)
+    
+        normals = np.cross((triangles_returned[:, 2] - triangles_returned[:, 1]),
+                           (triangles_returned[:, 0] - triangles_returned[:, 1]))
+    
+        # Prune the 0-area triangles
+        nn = np.linalg.norm(normals, axis=1)
+        triangles_returned = triangles_returned[(nn > 0), :]
+        normals = normals[(nn > 0), :]
+    
+        # Store triangles in STL format
+        triangles_stl = np.zeros(triangles_returned.shape[0], dtype=self.dt)
+        triangles_stl['vertex0'] = triangles_returned[:, 0, :]
+        triangles_stl['vertex1'] = triangles_returned[:, 1, :]
+        triangles_stl['vertex2'] = triangles_returned[:, 2, :]
+        triangles_stl['normal'] = normals
+    
+        self.triangles = triangles_stl
+    
+        return self.triangles
+
     def march(self, return_triangles=True, dual_march=False):
         """
         March over the input vertices.
@@ -954,60 +1070,62 @@ class ModifiedMarchingCubes(object):
 
         # Classify this voxel
         cube_index = self.cube_index(self.values)
-        mask = ~((cube_index == 0) | (cube_index == 0xFF))
+        #mask = ~((cube_index == 0) | (cube_index == 0xFF))
         
         verts, vals = self.vertices, self.values
+
+        self.create_triangles_and_intersections(cube_index, verts, vals)
         
-        if False:#not dual_march:
-            # FIXME - disabled for now - this fails when we extract from an octree and do piecewise-linear interpolation
-            # between vertices as the piecewise linear interpolation function accesses a non-masked depth array.
-            
-            # only crop to index mask if we are not doing a dual march
-            cube_index= cube_index[mask]
-            verts, vals = verts[mask,:, :], vals[mask,:]
-
-        # Find the edges we wish the triangles to intersect
-        intersections = self.create_intersection_list(cube_index, verts, vals)
-
-        # Get this voxel's equivalence class
-        cell_class = REGULAR_CELL_CLASS[cube_index]
-        # print(cell_class)
-        # print(self.values >= self.isolevel)
-
-        if dual_march:
-            # Invert instance where cell_class 1 is next to cell class 13
-            # cell_class, cube_index = self.manifold_check(0x01, 0x0D, cell_class, cube_index)
-
-            # cell_class, cube_index = self.manifold_check(0x00, 0x04, cell_class, cube_index)
-
-            shared_vertices = self.num_shared_vertices()
-            shared_indices_1 = np.where(shared_vertices == 1)
-            shared_indices_2 = np.where(shared_vertices == 2)
-            shared_indices_4 = np.where(shared_vertices == 4)
-            shared_indices_8 = np.where(shared_vertices == 8)
-            shared_indices_16 = np.where(shared_vertices == 16)
-
-            to_flip = []
-
-            #to_flip.extend(shared_indices_1[0]*(FLIP_CELL_CLASS_1[cell_class[shared_indices_1[0]],cell_class[shared_indices_1[1]]] == 1))
-            #to_flip.extend(shared_indices_2[0]*(FLIP_CELL_CLASS_2[cell_class[shared_indices_2[0]],cell_class[shared_indices_2[1]]] == 1))
-            to_flip.extend(shared_indices_4[0]*(FLIP_CELL_CLASS_4[cell_class[shared_indices_4[0]],cell_class[shared_indices_4[1]]] == 1))
-            #to_flip.extend(shared_indices_8[0]*(FLIP_CELL_CLASS_8[cell_class[shared_indices_8[0]],cell_class[shared_indices_8[1]]] == 1))
-            #to_flip.extend(shared_indices_16[0]*(FLIP_CELL_CLASS_16[cell_class[shared_indices_16[0]],cell_class[shared_indices_16[1]]] == 1))
-
-            to_flip = np.unique(to_flip)
-
-            # Invert the cube code of the cell of replace_class
-            cube_index[to_flip] = ((cube_index[to_flip]) ^ (0xFF))
-            cell_class[to_flip] = REGULAR_CELL_CLASS[cube_index[to_flip]]
-
-            # Redo the intersections
-            intersections = self.create_intersection_list(cube_index, self.vertices, self.values)
-             
-        # Grab triangle draw order
-        cell_data = REGULAR_CELL_DATA[cell_class]
-        # Create the triangles
-        self.create_triangles(intersections, cell_data)
+        # if False:#not dual_march:
+        #     # FIXME - disabled for now - this fails when we extract from an octree and do piecewise-linear interpolation
+        #     # between vertices as the piecewise linear interpolation function accesses a non-masked depth array.
+        #
+        #     # only crop to index mask if we are not doing a dual march
+        #     cube_index= cube_index[mask]
+        #     verts, vals = verts[mask,:, :], vals[mask,:]
+        #
+        # # Find the edges we wish the triangles to intersect
+        # intersections = self.create_intersection_list(cube_index, verts, vals)
+        #
+        # # Get this voxel's equivalence class
+        # cell_class = REGULAR_CELL_CLASS[cube_index]
+        # # print(cell_class)
+        # # print(self.values >= self.isolevel)
+        #
+        # if dual_march:
+        #     # Invert instance where cell_class 1 is next to cell class 13
+        #     # cell_class, cube_index = self.manifold_check(0x01, 0x0D, cell_class, cube_index)
+        #
+        #     # cell_class, cube_index = self.manifold_check(0x00, 0x04, cell_class, cube_index)
+        #
+        #     shared_vertices = self.num_shared_vertices()
+        #     shared_indices_1 = np.where(shared_vertices == 1)
+        #     shared_indices_2 = np.where(shared_vertices == 2)
+        #     shared_indices_4 = np.where(shared_vertices == 4)
+        #     shared_indices_8 = np.where(shared_vertices == 8)
+        #     shared_indices_16 = np.where(shared_vertices == 16)
+        #
+        #     to_flip = []
+        #
+        #     #to_flip.extend(shared_indices_1[0]*(FLIP_CELL_CLASS_1[cell_class[shared_indices_1[0]],cell_class[shared_indices_1[1]]] == 1))
+        #     #to_flip.extend(shared_indices_2[0]*(FLIP_CELL_CLASS_2[cell_class[shared_indices_2[0]],cell_class[shared_indices_2[1]]] == 1))
+        #     to_flip.extend(shared_indices_4[0]*(FLIP_CELL_CLASS_4[cell_class[shared_indices_4[0]],cell_class[shared_indices_4[1]]] == 1))
+        #     #to_flip.extend(shared_indices_8[0]*(FLIP_CELL_CLASS_8[cell_class[shared_indices_8[0]],cell_class[shared_indices_8[1]]] == 1))
+        #     #to_flip.extend(shared_indices_16[0]*(FLIP_CELL_CLASS_16[cell_class[shared_indices_16[0]],cell_class[shared_indices_16[1]]] == 1))
+        #
+        #     to_flip = np.unique(to_flip)
+        #
+        #     # Invert the cube code of the cell of replace_class
+        #     cube_index[to_flip] = ((cube_index[to_flip]) ^ (0xFF))
+        #     cell_class[to_flip] = REGULAR_CELL_CLASS[cube_index[to_flip]]
+        #
+        #     # Redo the intersections
+        #     intersections = self.create_intersection_list(cube_index, self.vertices, self.values)
+        #
+        # # Grab triangle draw order
+        # cell_data = REGULAR_CELL_DATA[cell_class]
+        # # Create the triangles
+        # self.create_triangles(intersections, cell_data)
 
         # Do we want this function to kick the triangles back to us?
         if return_triangles:
@@ -1100,17 +1218,25 @@ class RasterMarchingCubes(ModifiedMarchingCubes):
         mask = ~((cube_index == 0) | (cube_index == 0xFF))
         cube_index = cube_index[mask].ravel()
     
-        # Find the edges we wish the triangles to intersect
-        intersections = self.create_intersection_list(cube_index, *self.gen_vertices_and_vals(mask))
-    
-        # Get this voxel's equivalence class
-        cell_class = REGULAR_CELL_CLASS[cube_index]
-        
-    
-        # Grab triangle draw order
-        cell_data = REGULAR_CELL_DATA[cell_class]
-        # Create the triangles
-        self.create_triangles(intersections, cell_data)
+        #t = time.time()
+        self.create_triangles_and_intersections(cube_index, *self.gen_vertices_and_vals(mask))
+        # t_ = time.time()
+        #
+        # print('create_triangles_and_intersections: %3.2f s' % (t_ - t))
+        #
+        # # Get this voxel's equivalence class
+        # cell_class = REGULAR_CELL_CLASS[cube_index]
+        #
+        # # Grab triangle draw order
+        # cell_data = REGULAR_CELL_DATA[cell_class]
+        #
+        # # Find the edges we wish the triangles to intersect
+        # intersections = self.create_intersection_list(cube_index, *self.gen_vertices_and_vals(mask))
+        #
+        # # Create the triangles
+        # self.create_triangles(intersections, cell_data)
+        #
+        # print('create_triangles, intersections: %3.2f s' % (time.time() - t_))
     
         # Do we want this function to kick the triangles back to us?
         if return_triangles:
