@@ -227,9 +227,6 @@ class PcoSdkCam(Camera):
         lx_min = self._desc.wMinSizeHorzDESC
         ly_min = self._desc.wMinSizeVertDESC
 
-        # print(lx_min, ly_min)
-        # print(type(lx_min), type(ly_min))
-
         # Make sure bounds are ordered
         if x1 < x0:
             x0, x1 = x1, x0
@@ -317,7 +314,7 @@ class PcoSdkCam(Camera):
         self.StopAq()
         self._buf_num = -1*np.ones(self._n_buffers, dtype=ctypes.c_short)
         self._buf_event = np.zeros(self._n_buffers, dtype=pco_sdk.HANDLE)
-        self._buf_addr = np.zeros(self._n_buffers, dtype=ctypes.wintypes.PWORD)
+        self._buf_addr = np.zeros(self._n_buffers, dtype=ctypes.wintypes.WORD)
         self._buf_list = []
         lx, ly = self.GetPicWidth(), self.GetPicHeight()
         bufsize = lx*ly*ctypes.sizeof(ctypes.wintypes.WORD)  # how many words is this image worth?
@@ -338,11 +335,12 @@ class PcoSdkCam(Camera):
         return 0
 
     def StopAq(self):
-        self._recording = False
-        pco_sdk.cancel_images(self._handle)
-        pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
-        for i in np.arange(self._n_buffers):
-            pco_sdk.free_buffer(self._handle, self._buf_num[i])
+        if self._recording:
+            self._recording = False
+            pco_sdk.cancel_images(self._handle)
+            pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
+            for i in np.arange(self._n_buffers):
+                pco_sdk.free_buffer(self._handle, self._buf_num[i])
         self._get_temps()
 
     def GetNumImsBuffered(self):
