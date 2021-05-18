@@ -60,15 +60,15 @@ class PCO_Description(ctypes.Structure):
                 ("wRoiVertStepsDESC", ctypes.wintypes.WORD),
                 ("wNumADCsDESC", ctypes.wintypes.WORD),
                 ("wMinSizeHorzDESC", ctypes.wintypes.WORD),
-                ("wMinSizeVertDESC", ctypes.wintypes.WORD),
                 ("dwPixelRateDESC", ctypes.wintypes.DWORD * 4),
-                ("ZzdwDummy", ctypes.wintypes.DWORD),
+                ("ZzdwDummypr", ctypes.wintypes.DWORD * 20),
                 ("wConvFactDESC", ctypes.wintypes.WORD * 4),
                 ("sCoolingSetpoints", ctypes.c_short * 10),
-                ("ZZdwDummycv", ctypes.wintypes.WORD),
+                ("ZZdwDummycv", ctypes.wintypes.WORD * 8),
                 ("wSoftRoiHorStepsDESC", ctypes.wintypes.WORD),
                 ("wSoftRoiVertStepsDESC", ctypes.wintypes.WORD),
                 ("wIRDESC", ctypes.wintypes.WORD),
+                ("wMinSizeVertDESC", ctypes.wintypes.WORD),
                 ("dwMinDelayDESC", ctypes.wintypes.DWORD),
                 ("dwMaxDelayDESC", ctypes.wintypes.DWORD),
                 ("dwMinDelayStepDESC", ctypes.wintypes.DWORD),
@@ -97,7 +97,6 @@ class PCO_Description(ctypes.Structure):
                 ("dwGeneralCapsDESC3", ctypes.wintypes.DWORD),
                 ("dwGeneralCapsDESC4", ctypes.wintypes.DWORD),
                 ("ZzdwDummy", ctypes.wintypes.DWORD)]
-
 class PCO_SC2_Hardware_DESC(ctypes.Structure):
     # _pack_ = 1
     _fields_ = [
@@ -330,8 +329,8 @@ sc2_cam.PCO_GetCameraDescription.argtypes = [HANDLE,
                                              ctypes.POINTER(PCO_Description)]
 def get_camera_description(handle):
     """
-    Get camera description. Includes properties such as image size, pixel rate, etc.,
-    but not camera names, serial numbers, etc. For the latter, call get_camera_type().
+    Get camera description. Includes properties such as image size, pixel rate, etctypes.,
+    but not camera names, serial numbers, etctypes. For the latter, call get_camera_type().
 
     Parameters
     ----------
