@@ -48,6 +48,7 @@ class camReg(object):
 camReg.regCamera()  # initialize/reset the sdk
 
 MAX_BUFFERS = 16
+MAX_TIMEOUTS = 10
 
 class PcoSdkCam(Camera):
     def __init__(self, camNum, debuglevel='off'):
@@ -85,6 +86,7 @@ class PcoSdkCam(Camera):
         self._n_buffered = 0
         self._binning_x = 0
         self._binning_y = 0
+        self._n_timeouts = 0
         self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
         self.SetIntegTime(0.025)
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
@@ -102,7 +104,9 @@ class PcoSdkCam(Camera):
         if self._mode == self.MODE_CONTINUOUS:
             wait_status = k32_dll.WaitForSingleObject(self._buf_event[self._curr_buf], self._timeout)
             if wait_status:
-                raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
+                self._n_timeouts += 1
+                if self._n_timeouts >= MAX_TIMEOUTS:
+                    raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
             self._n_buffered += 1
             k32_dll.ResetEvent(self._buf_event[self._curr_buf])
             return True
@@ -340,6 +344,7 @@ class PcoSdkCam(Camera):
         
         self._n_buffered = 0
         self._curr_buf = 0
+        self._n_timeouts = 0
         self._buf_event = []
         self._buf_addr = []
         lx, ly = self.GetPicWidth(), self.GetPicHeight()

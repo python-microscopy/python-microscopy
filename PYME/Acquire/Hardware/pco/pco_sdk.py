@@ -430,7 +430,7 @@ def get_temperature(handle):
     cam_temp = ctypes.c_short()
     pow_temp = ctypes.c_short()
     check_status(sc2_cam.PCO_GetTemperature(handle, ccd_temp, cam_temp, pow_temp))
-    return ccd_temp.value, cam_temp.value, pow_temp.value
+    return (ccd_temp.value/10.0), cam_temp.value, pow_temp.value
 
 
 # ---------------------------------------------------------------------
@@ -1332,6 +1332,7 @@ def add_buffer_ex(handle, first_image, buffer_index, lx, ly,
                                          ctypes.c_short(buffer_index), 
                                          ctypes.wintypes.WORD(lx), ctypes.wintypes.WORD(ly), 
                                          ctypes.wintypes.WORD(bits_per_pixel)))
+
 # ---------------------------------------------------------------------
 # 2.11.6 PCO_CancelImages
 # ---------------------------------------------------------------------
