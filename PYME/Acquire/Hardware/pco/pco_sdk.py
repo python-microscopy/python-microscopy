@@ -345,7 +345,7 @@ def get_camera_description(handle):
     return desc
 
 # ---------------------------------------------------------------------
-# 2.3.3 PCO_GetCameraType
+# 2.3.2 PCO_GetCameraType
 # ---------------------------------------------------------------------
 sc2_cam.PCO_GetCameraType.argtypes = [ctypes.wintypes.HANDLE, ctypes.POINTER(PCO_CameraType)]
 def get_camera_type(handle):
@@ -432,6 +432,32 @@ def get_temperature(handle):
     check_status(sc2_cam.PCO_GetTemperature(handle, ccd_temp, cam_temp, pow_temp))
     return ccd_temp.value, cam_temp.value, pow_temp.value
 
+
+# ---------------------------------------------------------------------
+# 2.3.6 PCO_GetCameraName
+# ---------------------------------------------------------------------
+sc2_cam.PCO_GetCameraName.argtypes = [ctypes.wintypes.HANDLE, ctypes.c_char_p,
+                                      ctypes.wintypes.WORD]
+def get_camera_name(handle):
+    """
+    Get the camera name
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+
+    Returns
+    -------
+    string
+        Camera name.
+    """
+    c_buf_len = 40
+    c_buf = ctypes.create_string_buffer(c_buf_len)
+
+    check_status(sc2_cam.PCO_GetCameraName(handle, c_buf, ctypes.wintypes.WORD(c_buf_len)))
+
+    return str(c_buf.value.decode('ascii'))
 
 # ---------------------------------------------------------------------
 # 2.4.1 PCO_ArmCamera
@@ -786,23 +812,23 @@ def set_delay_exposure_time(handle, delay, exposure, timebase_delay, timebase_ex
     ----------
     handle : ctypes.wintypes.HANDLE
         Unique pco. camera handle (pointer).
-    delay : unsigned long int
+    delay : int
         Delay time in units of timebase_delay. In range 
         dwMinDelayDESC .. dwMinDelayStepDESC .. dwMaxDelayDESC
         (see output of get_camera_description()).
-    exposure : unsigned long int
+    exposure : int
         Exposure time in units of timebase_exposure. In range
         dwMinExposDESC ..  dwMinExposStepDESC .. dwMaxExposDESC
         (see output of get_camera_description()).
-    timebase_delay : unsigned short int
+    timebase_delay : int
         Unit for delay time. One of PCO_TIMEBASE_NS, PCO_TIMEBASE_US, PCO_TIMEBASE_MS.
-    timebase_exposure : unsigned short int
+    timebase_exposure : int
         Unit for exposure time. One of PCO_TIMEBASE_NS, PCO_TIMEBASE_US, PCO_TIMEBASE_MS.
     """
     check_status(sc2_cam.PCO_SetDelayExposureTime(handle, ctypes.wintypes.DWORD(delay), 
                                                   ctypes.wintypes.DWORD(exposure),
-                                                  ctypes.wintypes.DWORD(timebase_delay), 
-                                                  ctypes.wintypes.DWORD(timebase_exposure)))
+                                                  ctypes.wintypes.WORD(timebase_delay), 
+                                                  ctypes.wintypes.WORD(timebase_exposure)))
 
 # ---------------------------------------------------------------------
 # 2.6.26 PCO_GetImageTiming
@@ -1142,12 +1168,11 @@ def allocate_buffer(handle, index, size, buffer=None, event=None):
     event : pointer
         Pointer to an event handle
     """
-    index = ctypes.POINTER(ctypes.c_short(index))
     if buffer is None:
         buffer = ctypes.c_void_p(0)
     if event is None:
         event = ctypes.c_void_p(0)
-    check_status(sc2_cam.PCO_AllocateBuffer(handle, index, ctypes.wintypes.DWORD(size), 
+    check_status(sc2_cam.PCO_AllocateBuffer(handle, ctypes.c_short(index), ctypes.wintypes.DWORD(size), 
                                             buffer, event))
     if buffer is None and event is None:
         return index.contents, buffer, event
