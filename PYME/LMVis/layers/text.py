@@ -27,7 +27,7 @@ class Text(BaseEngine):
         self._texture_id = None
         self._img = None
         
-        self.text text
+        self.text = text
         self.pos = pos
         
         
@@ -40,7 +40,7 @@ class Text(BaseEngine):
         self._text = val
         
         #just take red channel
-        self._im = np.ascontiguousarray(self.gen_text_image(self._text)[:, :, 0])
+        self._im = np.ascontiguousarray(self.gen_text_image(self._text)[:, :, 0]/255.)
         self._h, self._w = self._im.shape
     
     
@@ -51,6 +51,7 @@ class Text(BaseEngine):
         
         dc = wx.MemoryDC()
         w, h = dc.GetTextExtent(text)
+        w, h = max(w, 1), max(h,1)
         bmp = wx.Bitmap(w, h)
         dc.SelectObject(bmp)
         dc.SetTextForeground(wx.WHITE)
