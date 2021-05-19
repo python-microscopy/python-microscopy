@@ -122,8 +122,8 @@ class LUTOverlayLayer(OverlayLayer):
                 
                 tl, tu = self._get_label(l)
                 cl, cu = l.clim
-                tu.text = '%.3G' % cu
-                tl.text = '%.3G' % cl
+                tu.text = '%.4G' % cu
+                tl.text = '%.4G' % cl
                 
                 xc = lb_ur_x - 0.5*lb_width
                 
