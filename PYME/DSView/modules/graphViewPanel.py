@@ -151,7 +151,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
                 error_msg_wx(str(e))
 
     def set_cursor(self, cursor):
-        cursor =wx.StockCursor(cursord[cursor])
+        cursor =wx.Cursor(cursord[cursor])
         self.canvas.SetCursor( cursor )
 
     def release(self, event):

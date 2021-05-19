@@ -272,7 +272,7 @@ class ImageRenderLayer(EngineLayer):
         
         if not self._im_key == im_key:
             self._im_key = im_key
-            self._im = ds.data[:,:,self.slice, self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
+            self._im = ds.data[:,:,self.slice,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
         
             x0, y0, x1, y1, _, _ = ds.imgBounds.bounds
 

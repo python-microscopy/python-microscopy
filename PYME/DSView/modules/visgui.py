@@ -100,7 +100,7 @@ class GLImageView(LMGLShaderCanvas):
     def _add_layers(self):
         from PYME.LMVis.layers import image_layer
         self.SetCurrent(self.gl_context)
-        for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
+        for name, i in zip(self._image.names, xrange(self._image.data_xyztc.shape[4])):
             l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
         
             self.layers.append(l_i)
@@ -121,23 +121,23 @@ def Plug(dsviewer):
     if not 'ivps' in dir(dsviewer):
         dsviewer.ivps = []
 
-    for name, i in zip(dsviewer.image.names, xrange(dsviewer.image.data.shape[3])):
+    for name, i in zip(dsviewer.image.names, xrange(dsviewer.image.data_xyztc.shape[4])):
         dsviewer.ivps.append(ImageViewPanel(dsviewer, dsviewer.image, dsviewer.glCanvas, dsviewer.do, chan=i))
-        if dsviewer.image.data.shape[3] > 1 and len(cmaps) > 0:
+        if dsviewer.image.data_xyztc.shape[4] > 1 and len(cmaps) > 0:
             dsviewer.do.cmaps[i] = cmaps.pop(0)
             
         dsviewer.AddPage(page=dsviewer.ivps[-1], select=True, caption=name)
         
 
-    if dsviewer.image.data.shape[2] > 1:
+    if dsviewer.image.data_xyztc.shape[2] > 1:
         dsviewer.AddPage(page=ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize), select=False, caption='Slices')
 
-    elif dsviewer.image.data.shape[3] > 1:
+    elif dsviewer.image.data_xyztc.shape[4] > 1:
         dsviewer.civp = ColourImageViewPanel(dsviewer, dsviewer.glCanvas, dsviewer.do, dsviewer.image)
         dsviewer.civp.ivps = dsviewer.ivps
         dsviewer.AddPage(page=dsviewer.civp, select=False, caption='Composite')
 
-    if dsviewer.image.data.shape[2] == 1:
+    if dsviewer.image.data_xyztc.shape[2] == 1:
         # gl canvas doesn't currently work for 3D images, crashes on linux
         dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
         dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')

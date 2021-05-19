@@ -25,6 +25,8 @@ import numpy as np
 import wx
 # import pylab
 import matplotlib.pyplot as plt
+import logging
+logger = logging.getLogger(__name__)
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
@@ -172,12 +174,12 @@ class Colocaliser(Plugin):
         chans = dlg.GetChans()
         use_mask = dlg.GetUseMask()
 
-        zs, ze = (0, self.image.data.shape[2])
-        if (self.image.data.shape[2] > 1) and restrict_z:
+        zs, ze = (0, self.image.data_xyztc.shape[2])
+        if (self.image.data_xyztc.shape[2] > 1) and restrict_z:
             zs, ze = dlg.GetZrange()
             
         zs,ze = (0,1)
-        if self.image.data.shape[2] > 1:
+        if self.image.data_xyztc.shape[2] > 1:
             zs,ze = dlg.GetZrange()
         dlg.Destroy()
         
@@ -186,11 +188,13 @@ class Colocaliser(Plugin):
         if not use_mask:
             mask=None
         
-
-        #assume we have exactly 2 channels #FIXME - add a selector
+        if self.image.data_xyztc.shape[3] > 1:
+            logger.warning('Detected time series, colocalisation will only be performed on currently displayed timepoint')
+        
         #grab image data
-        imA = self.image.data[:,:,zs:ze,chans[0]].squeeze()
-        imB = self.image.data[:,:,zs:ze,chans[1]].squeeze()
+        # FIXME - use only the currently displayed timepoint.
+        imA = self.image.data_xyztc[:,:,zs:ze,self.do.tp,chans[0]].squeeze()
+        imB = self.image.data_xyztc[:,:,zs:ze,self.do.tp,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #plt.mean(self.ivps[0].clim)
@@ -316,8 +320,8 @@ class Colocaliser(Plugin):
         
         im.mdh['Colocalisation.Channels'] = names
         im.mdh['Colocalisation.Thresholds'] = [tA, tB]
-        im.mdh['Colocalisation.Pearson'] = pearson
-        im.mdh['Colocalisation.Manders'] = [MA, MB]
+        im.mdh['Colocalisation.Pearson'] = float(pearson)
+        im.mdh['Colocalisation.Manders'] = [float(MA), float(MB)]
         try:
             im.mdh['Colocalisation.ThresholdMode'] = self.do.ThreshMode
         except:
