@@ -21,6 +21,8 @@
 import numpy
 # import pylab
 
+from PYME.recipes.traits import Bool
+
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
@@ -31,6 +33,8 @@ class LUTOverlayLayer(OverlayLayer):
     This OverlayLayer produces a bar that indicates the given color map.
     """
 
+    show_bounds = Bool(False)
+    
     def __init__(self, offset=None, **kwargs):
         """
 
@@ -120,17 +124,18 @@ class LUTOverlayLayer(OverlayLayer):
                 glVertex2f(lb_ul_x, lb_ur_y)
                 glEnd()
                 
-                tl, tu = self._get_label(l)
-                cl, cu = l.clim
-                tu.text = '%.3G' % cu
-                tl.text = '%.3G' % cl
-                
-                xc = lb_ur_x - 0.5*lb_width
-                
-                tu.pos = (xc - tu._w/2, lb_ur_y - tu._h)
-                tl.pos = (xc - tl._w/2, lb_lr_y)
-                
-                labels.extend([tl, tu])
+                if hasattr(l, 'clim') and self.show_bounds:
+                    tl, tu = self._get_label(l)
+                    cl, cu = l.clim
+                    tu.text = '%.3G' % cu
+                    tl.text = '%.3G' % cl
+                    
+                    xc = lb_ur_x - 0.5*lb_width
+                    
+                    tu.pos = (xc - tu._w/2, lb_ur_y - tu._h)
+                    tl.pos = (xc - tl._w/2, lb_lr_y)
+                    
+                    labels.extend([tl, tu])
                 
         for l in labels:
             l.render(gl_canvas)
