@@ -39,13 +39,15 @@ class GLProgram(object):
         if (vs_filename is not None) and (fs_filename is not None):
             self.create_and_set_shader_program(vs_filename, fs_filename)
 
+        self._old_prog = 0
+
     @abc.abstractmethod
     def __enter__(self):
-        pass
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
 
     @abc.abstractmethod
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)
 
     def create_and_set_shader_program(self, vs_filename, fs_filename):
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")

@@ -41,6 +41,7 @@ class GouraudShaderProgram(GLProgram):
         
 
     def __enter__(self):
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         self.get_shader_program().use()
         for name, value in GouraudShaderProgram.LIGHT_PROPS.items():
             location = self.get_uniform_location(name)
@@ -74,7 +75,7 @@ class GouraudShaderProgram(GLProgram):
         #glEnable(GL_BLEND)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_POINT_SMOOTH)
         
