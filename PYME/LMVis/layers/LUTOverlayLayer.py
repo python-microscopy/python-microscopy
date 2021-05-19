@@ -21,6 +21,8 @@
 import numpy
 # import pylab
 
+from PYME.recipes.traits import Bool
+
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
@@ -31,6 +33,8 @@ class LUTOverlayLayer(OverlayLayer):
     This OverlayLayer produces a bar that indicates the given color map.
     """
 
+    show_bounds = Bool(False)
+    
     def __init__(self, offset=None, **kwargs):
         """
 
@@ -50,6 +54,17 @@ class LUTOverlayLayer(OverlayLayer):
         self._lut_width_px = 10.0
         self._border_colour = [.5, .5, 0]
         self.set_shader_program(DefaultShaderProgram)
+        
+        self._labels = {}
+        
+    def _get_label(self, layer):
+        from . import text
+        try:
+            return self._labels[layer]
+        except KeyError:
+            self._labels[layer] = [text.Text(), text.Text()]
+
+            return self._labels[layer]
 
 
     def render(self, gl_canvas):
@@ -57,6 +72,8 @@ class LUTOverlayLayer(OverlayLayer):
             return
         
         self._clear_shader_clipping()
+        labels = []
+        
         with self.shader_program:
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_LIGHTING)
@@ -76,6 +93,8 @@ class LUTOverlayLayer(OverlayLayer):
             lb_width = self._lut_width_px #* view_size_x / gl_canvas.Size[0]
             
             visible_layers = [l for l in gl_canvas.layers if (getattr(l, 'visible', True) and getattr(l, 'show_lut', True))]
+            
+            
             
             for j, l in enumerate(visible_layers):
                 cmap = l.colour_map
@@ -104,3 +123,20 @@ class LUTOverlayLayer(OverlayLayer):
                 glVertex2f(lb_ur_x, lb_ur_y)
                 glVertex2f(lb_ul_x, lb_ur_y)
                 glEnd()
+                
+                if hasattr(l, 'clim') and self.show_bounds:
+                    tl, tu = self._get_label(l)
+                    cl, cu = l.clim
+                    tu.text = '%.3G' % cu
+                    tl.text = '%.3G' % cl
+                    
+                    xc = lb_ur_x - 0.5*lb_width
+                    
+                    tu.pos = (xc - tu._w/2, lb_ur_y - tu._h)
+                    tl.pos = (xc - tl._w/2, lb_lr_y)
+                    
+                    labels.extend([tl, tu])
+                
+        for l in labels:
+            l.render(gl_canvas)
+                

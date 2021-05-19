@@ -21,16 +21,18 @@
 import os
 
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
-    GL_FRONT_AND_BACK, GL_LINE, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, GL_DEPTH_TEST, glBlendFunc, GL_SRC_ALPHA, GL_ONE
+    GL_FRONT_AND_BACK, GL_LINE, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, GL_DEPTH_TEST, \
+    glBlendFunc, GL_SRC_ALPHA, GL_ONE, glGetInteger, GL_CURRENT_PROGRAM
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class WireFrameShaderProgram(GLProgram):
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)
         pass
 
     def __enter__(self):
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
