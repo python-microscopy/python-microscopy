@@ -1966,11 +1966,18 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int split_count = 0
         cdef int i
         cdef int n_halfedges = self._halfedges.shape[0]
+        cdef float *n1
+        cdef float *n2
+        cdef float nd
         
         for i in range(n_halfedges):
-            if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
-                self.edge_split(i)
-                split_count += 1
+            if (self._chalfedges[i].vertex != -1): # and (self._chalfedges[i].length > split_threshold):
+                n1 = &self._cvertices[self._chalfedges[i].vertex].normal0
+                n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].twin].vertex].normal0
+                nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
+                if self._chalfedges[i].length > (nd*split_threshold):
+                    self.edge_split(i)
+                    split_count += 1
                 
         print('Split count: %d' % (split_count))
         return split_count
@@ -1980,6 +1987,9 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int collapse_fails = 0
         cdef int i
         cdef int n_halfedges = self._halfedges.shape[0]
+        cdef float *n1
+        cdef float *n2
+        cdef float nd
         
         #find which vertices are locally manifold
         # TODO - move this to a helper function
@@ -1988,9 +1998,14 @@ cdef class TriangleMesh(TrianglesBase):
         
         for i in range(n_halfedges):
             if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
-                collapse_ret = self.edge_collapse(i)
-                collapse_count += collapse_ret
-                collapse_fails += (1-collapse_ret)
+                n1 = &self._cvertices[self._chalfedges[i].vertex].normal0
+                n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].twin].vertex].normal0
+                # dot product of the normals
+                nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
+                if (self._chalfedges[i].length < nd*collapse_threshold):
+                    collapse_ret = self.edge_collapse(i)
+                    collapse_count += collapse_ret
+                    collapse_fails += (1-collapse_ret)
         print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
         
         return collapse_count
