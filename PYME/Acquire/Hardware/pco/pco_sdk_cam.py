@@ -372,6 +372,9 @@ class PcoSdkCam(Camera):
     def GetBufferSize(self):
         return self._n_buffers
 
+    def SetBufferSize(self, n_buffers):
+        self._n_buffers = n_buffers
+
     def GetFPS(self):
         if self.GetCycleTime() == 0:
             return 0
@@ -380,8 +383,8 @@ class PcoSdkCam(Camera):
     def SetHotPixelCorrectionMode(self, mode):
         pco_sdk.set_hot_pixel_correction_mode(self._handle, mode)
 
-    def SetBitsPerPixel(self, bpp):
-        self._bits_per_pixel = bpp
+    def SetBitsPerPixel(self, bits_per_pixel):
+        self._bits_per_pixel = bits_per_pixel
 
     def Shutdown(self):
         pco_sdk.close_camera(self._handle)
