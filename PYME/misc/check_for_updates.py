@@ -1,4 +1,5 @@
 from PYME import version
+from PYME import config
 import os
 import json
 import logging
@@ -27,6 +28,10 @@ prompt for your PYME environment.
 #        - the -S option does a fast solve and doesn't aggressively update packages (i.e. only updates dependencies if
 #          explicitly forced to by a pin). This will hopefully a) make it faster and b) stop us breaking too may conda environments.
 
+
+update_available = None
+update_ver = None
+
 def guess_install_type():
     # check for git
     pyme_parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -53,26 +58,66 @@ def guess_install_type():
         return 'conda'
     
 
-def check_for_updates(gui=True):
+def check_for_updates(gui=True, force=False):
+    global update_available, update_ver
     import requests
     import packaging.version
     
+    if not(force or config.get('check_for_updates', True)):
+        # respect config setting and bail
+        # called with force=True when called from the menu (i.e. explicitly rather than automatically)
+        return
+    
+    logger.info('Checking for updates ...')
     try:
         version_info = requests.get('http://www.python-microscopy.org/current_version.json').json()
         
-        if packaging.version.parse(version_info['version']) > packaging.version.parse(version.version):
-            update_msg = 'A new version of PYME is available\nYou have version %s, the current version is %s' % (version.version, version_info['version'])
+        update_ver = version_info['version']
+        
+        if packaging.version.parse(update_ver) > packaging.version.parse(version.version):
+            update_msg = 'A new version of PYME is available\nYou have version %s, the current version is %s' % (version.version, update_ver)
             logger.info(update_msg)
             
             install_type = guess_install_type()
             logger.info(update_messages[install_type])
             
+            update_available = True
+            
             if gui:
-                import wx
-                msg = update_msg + '\n\n' + update_messages[install_type]
-                # tODO - add an option to supress this dialog
-                wx.MessageBox(msg, 'A PYME update is available')
+                gui_prompt_update()
+                
+        else:
+            update_available = False
         
     except:
         logger.exception('Error getting info on updates')
     
+    
+def gui_prompt_update():
+    import wx
+    
+    # make sure there is an update available
+    assert update_available
+    
+    install_type = guess_install_type()
+    update_msg = 'A new version of PYME is available\nYou have version %s, the current version is %s' % (version.version, update_ver)
+    msg = update_msg + '\n\n' + update_messages[install_type]
+    wx.MessageBox(msg, 'A PYME update is available')
+    
+    config.update_config({'last_update_offered' : update_ver})
+    
+    
+def gui_prompt_once():
+    if update_available is None:
+        #make doubly sure we've checked
+        check_for_updates(False)
+        
+        
+    if update_available and (config.get('last_update_offered', None) != update_ver):
+        gui_prompt_update()
+        
+        
+check_for_updates(False)
+        
+        
+

@@ -456,9 +456,11 @@ class VisGuiApp(wx.App):
 
 
 def main_(filename=None, use_shaders=False, args=None):
+    from PYME.misc import check_for_updates
     if filename == "":
         filename = None
     application = VisGuiApp(filename, use_shaders, args, 0)
+    check_for_updates.gui_prompt_once()
     application.MainLoop()
 
 def parse():

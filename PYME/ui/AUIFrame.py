@@ -3,6 +3,7 @@ import wx.lib.agw.aui as aui
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
 from PYME.ui import progress
+from PYME.misc import check_for_updates
 
 class AUIFrame(wx.Frame):
     """A class which encapsulated the common frame layout code used by
@@ -108,7 +109,7 @@ class AUIFrame(wx.Frame):
     def _on_check_for_updates(self, event):
         from PYME.misc import check_for_updates
         
-        check_for_updates.check_for_updates(gui=True)
+        check_for_updates.check_for_updates(gui=True, force=True)
     
     def CreateFoldPanel(self):
         """Create a panel of folding 'drawers' on the left side of the frame.
@@ -248,6 +249,8 @@ class AUIFrame(wx.Frame):
         self.AddMenuItem('File', itemType='separator')
         self.AddMenuItem('File', 'Close', lambda e : self.Close(), id=wx.ID_CLOSE)
         self.AddMenuItem('File', 'Quit', self.OnQuit, id=wx.ID_EXIT)
+        if check_for_updates.update_available:
+            self.AddMenuItem('Help','Update to %s' % check_for_updates.update_ver, self._on_check_for_updates)
         self.AddMenuItem('Help', 'Check for updates', self._on_check_for_updates)
         self.AddMenuItem('Help', "&About", self.OnAbout, id=wx.ID_ABOUT)
         

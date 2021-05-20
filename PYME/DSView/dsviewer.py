@@ -502,10 +502,12 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    from PYME.misc import check_for_updates
     #from PYME.util import mProfile
     #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
     app = MyApp(argv)
     print('Starting main loop')
+    check_for_updates.gui_prompt_once()
     app.MainLoop()
     print('Finished main loop')
     #mProfile.profileOff()
