@@ -101,6 +101,8 @@ class PcoSdkCam(Camera):
         if not self._recording:
             return False
 
+        # FIXME: This works for current use cases, but ExpReady() is supposed to be lightweight and
+        # non-blocking. This may become a problem for faster imaging.
         if self._mode == self.MODE_CONTINUOUS:
             wait_status = k32_dll.WaitForSingleObject(self._buf_event[self._curr_buf], self._timeout)
             if wait_status:
