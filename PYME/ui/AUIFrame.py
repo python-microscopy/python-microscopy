@@ -99,7 +99,17 @@ class AUIFrame(wx.Frame):
         self._mgr.Update()
         #self.Refresh()
         #self.Update()
+
+    def OnAbout(self, event):
+        from PYME.ui import about_dlg
+    
+        about_dlg.show_about_dlg(getattr(self, '_component_name', 'python-microscopy'), desc_addendum=getattr(self, '_long_desc', ''))
         
+    def _on_check_for_updates(self, event):
+        from PYME.misc import check_for_updates
+        
+        check_for_updates.check_for_updates(gui=True)
+    
     def CreateFoldPanel(self):
         """Create a panel of folding 'drawers' on the left side of the frame.
         loops over all the functions defined in self.paneHooks and calls them
@@ -197,7 +207,7 @@ class AUIFrame(wx.Frame):
                         if 'Help' in self._menus.keys():
                             lp +=1
 
-                        if '&Modules' in self._menus.keys():
+                        if '&Modules' in self._menus.keys() and not part=='Help':
                             lp += 1
 
                         self.menubar.Insert(self.menubar.GetMenuCount()-lp, menu, part)
@@ -238,6 +248,8 @@ class AUIFrame(wx.Frame):
         self.AddMenuItem('File', itemType='separator')
         self.AddMenuItem('File', 'Close', lambda e : self.Close(), id=wx.ID_CLOSE)
         self.AddMenuItem('File', 'Quit', self.OnQuit, id=wx.ID_EXIT)
+        self.AddMenuItem('Help', 'Check for updates', self._on_check_for_updates)
+        self.AddMenuItem('Help', "&About", self.OnAbout, id=wx.ID_ABOUT)
         
     def OnQuit(self, event):
         for w in wx.GetTopLevelWindows():

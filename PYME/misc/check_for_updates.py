@@ -10,21 +10,22 @@ update_messages = {
     git pull origin master
     python setup.py build_ext -i
     
-    NB: this will update to the bleeding edge (i.e. past the last official release)
-    ''',
+NB: because this is a developent install, this will update to the bleeding edge (i.e. past the last official release)''',
     
     'pypi' : '''You have a pip install, to update, close all PYME programs and execute the following in the python
-    prompt for your PYME virtual environment.
+prompt for your PYME virtual environment.
     
-    pip install python-microscopy -U
-    ''',
+    pip install python-microscopy -U''',
     
     'conda' : '''You have a conda install, to update, close all PYME programs and execute the following in the python
-    prompt for your PYME environment.
+prompt for your PYME environment.
     
-    conda update -C david_baddeley -S python-microscopy
-    '''
+    conda update -C david_baddeley -S python-microscopy'''
 }
+
+# notes: - the explicit channel specification may not strictly be required, but is the most robust option
+#        - the -S option does a fast solve and doesn't aggressively update packages (i.e. only updates dependencies if
+#          explicitly forced to by a pin). This will hopefully a) make it faster and b) stop us breaking too may conda environments.
 
 def guess_install_type():
     # check for git
@@ -57,10 +58,10 @@ def check_for_updates(gui=True):
     import packaging.version
     
     try:
-        version_info = requests.get('http://www.python-microscopy.com/current_version.json').json()
+        version_info = requests.get('http://www.python-microscopy.org/current_version.json').json()
         
         if packaging.version.parse(version_info['version']) > packaging.version.parse(version.version):
-            update_msg = 'A new version of PYME is available\nYou have version %s, the current version is %s' % (version.version, version_info['version']))
+            update_msg = 'A new version of PYME is available\nYou have version %s, the current version is %s' % (version.version, version_info['version'])
             logger.info(update_msg)
             
             install_type = guess_install_type()
