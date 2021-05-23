@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 import ctypes
 import ctypes.wintypes
 
+import queue
+import threading
+import time
+
 k32_dll = ctypes.windll.kernel32  # lets us use the recommended WaitForSingleObject call (see pco.sdk)
                                   # instead of the not-recommended-for-polling pco_sdk.get_buffer_status()
 
@@ -78,20 +82,28 @@ class PcoSdkCam(Camera):
         self._n_buffers = 0
         self._buf_event = None
         self._buf_addr = None
-        self._curr_buf = 0
-        self._initalized = True
         self._recording = False
         self._roi = None
         self._timeout = 1000  # ms
         self._n_buffered = 0
+        self._n_queued = 0
         self._binning_x = 0
         self._binning_y = 0
         self._n_timeouts = 0
+        self._buffers_to_queue = queue.Queue()
+        self._queued_buffers = queue.Queue()
+        self._full_buffers = queue.Queue()
         self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
         self.SetIntegTime(0.025)
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
         self._cam_type = pco_sdk.get_camera_type(self._handle)
         self.SetHotPixelCorrectionMode(pco_sdk.PCO_HOTPIXELCORRECTION_OFF)
+
+        self._polling = True
+        self._poll_thread = threading.Thread(target=self._poll_loop)
+        self._poll_thread.start()
+
+        self._initalized = True
 
     @property
     def noise_properties(self):
@@ -101,53 +113,57 @@ class PcoSdkCam(Camera):
         if not self._recording:
             return False
 
-        # FIXME: This works for current use cases, but ExpReady() is supposed to be lightweight and
-        # non-blocking. This may become a problem for faster imaging.
-        if self._mode == self.MODE_CONTINUOUS:
-            wait_status = k32_dll.WaitForSingleObject(self._buf_event[self._curr_buf], self._timeout)
-            if wait_status:
-                self._n_timeouts += 1
-                if self._n_timeouts >= MAX_TIMEOUTS:
-                    raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
-            self._n_buffered += 1
-            k32_dll.ResetEvent(self._buf_event[self._curr_buf])
-            return True
-        elif self._mode == self.MODE_SINGLE_SHOT:
-            return True
+        return (self._n_buffered > 0)
 
-        return False
+    def _poll_loop(self):
+        while self._polling:
+            if self._recording:
+                while not self._buffers_to_queue.empty():
+                    lx, ly = self.GetPicWidth(), self.GetPicHeight()
+                    i = self._buffers_to_queue.get()
+                    pco_sdk.add_buffer_ex(self._handle, 0, i, lx, ly, self._bits_per_pixel)
+                    self._queued_buffers.put(i)
+                    self._n_queued += 1
+                
+                if self._n_queued > 0:
+                    _curr_buf = self._queued_buffers.get()
+                    self._n_queued -= 1
+                    wait_status = k32_dll.WaitForSingleObject(self._buf_event[_curr_buf], self._timeout)
+                    if wait_status:
+                        self._n_timeouts += 1
+                        if self._n_timeouts >= MAX_TIMEOUTS:
+                            raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
+                    k32_dll.ResetEvent(self._buf_event[_curr_buf])
+                    self._full_buffers.put(_curr_buf)
+                    self._n_buffered += 1
+                else:
+                    time.sleep(0.01)
+
+                time.sleep(0.0001)
+            else:
+                time.sleep(0.01)
 
     def CamReady(self):
         return self._initalized
 
     def ExtractColor(self, chSlice, mode):
         if self._recording:
-            if self._mode == self.MODE_CONTINUOUS:
-                # Make sure this buffer works
-                _, status_drv = pco_sdk.get_buffer_status(self._handle, self._curr_buf)
-                if status_drv:
-                    raise pco_sdk.PcoSdkException(f"Error {status_drv} during buffer check.")
-
-                # copy image from _buf_addr
-                ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
-                        self._buf_addr[self._curr_buf], 
-                        chSlice.nbytes)
-
-                # recycle the buffer
-                pco_sdk.add_buffer_ex(self._handle, 0, self._curr_buf, 
-                                    self.GetPicWidth(), self.GetPicHeight(), self._bits_per_pixel)
-                self._curr_buf += 1
-                if self._curr_buf >= self._n_buffers:
-                    self._curr_buf = 0
-            elif self._mode == self.MODE_SINGLE_SHOT:
-                pco_sdk.get_image_ex(self._handle, 1, 0, 0, self.GetPicWidth(), 
-                                    self.GetPicHeight(), self._bits_per_pixel)
-                ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
-                        self._buf_addr[0], 
-                        chSlice.nbytes)
-
+            _curr_buf = self._full_buffers.get()
             # update buffer index
             self._n_buffered -= 1
+
+            # # Make sure this buffer works
+            # _, status_drv = pco_sdk.get_buffer_status(self._handle, _curr_buf)
+            # if status_drv:
+            #     raise pco_sdk.PcoSdkException(f"Error {status_drv} during buffer check.")
+
+            # copy image from _buf_addr
+            ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16)),
+                    self._buf_addr[_curr_buf], 
+                    chSlice.nbytes)
+
+            # recycle the buffer
+            self._buffers_to_queue.put(_curr_buf)
         
     def GetName(self):
         return pco_sdk.get_camera_name(self._handle)
@@ -164,7 +180,7 @@ class PcoSdkCam(Camera):
         step = float(self._desc.dwMinExposStepDESC)*1e-9
 
         # Round to a multiple of time step
-        time = np.floor(time/step)*step
+        time = np.round(time/step)*step
 
         # Don't let this go out of bounds
         time = np.clip(time, lb, ub)
@@ -339,32 +355,25 @@ class PcoSdkCam(Camera):
         if mode == self.MODE_CONTINUOUS:
             self._n_buffers = self.__default_n_buffers
         elif mode == self.MODE_SINGLE_SHOT:
-            self._n_buffers = 1
+            self._n_buffers = 2
 
     def StartExposure(self):
         self.StopAq()
         
-        self._n_buffered = 0
-        self._curr_buf = 0
-        self._n_timeouts = 0
-        self._buf_event = []
-        self._buf_addr = []
         lx, ly = self.GetPicWidth(), self.GetPicHeight()
-        self._timeout = int(max(2*1000*self.GetCycleTime(), 100))
+        self._timeout = int(max(2*100*self.GetCycleTime(), 100))
         bufsize = lx*ly*ctypes.sizeof(ctypes.wintypes.WORD)  # how many words is this image worth?
         for i in np.arange(self._n_buffers):
             self._buf_event.append(ctypes.c_void_p(0))
             self._buf_addr.append(ctypes.POINTER(ctypes.wintypes.WORD)())
             pco_sdk.allocate_buffer(self._handle, -1, bufsize, 
                                     self._buf_addr[i], self._buf_event[i])
+            self._buffers_to_queue.put(i)
 
         pco_sdk.set_image_parameters(self._handle, lx, ly, pco_sdk.PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING)
         pco_sdk.arm_camera(self._handle)
         pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_RUNNING)
         eventLog.logEvent('StartAq', '')
-        if self._mode == self.MODE_CONTINUOUS:
-            for i in np.arange(self._n_buffers):
-                pco_sdk.add_buffer_ex(self._handle, 0, i, lx, ly, self._bits_per_pixel)
         self._recording = True
 
         return 0
@@ -376,6 +385,17 @@ class PcoSdkCam(Camera):
             pco_sdk.cancel_images(self._handle)
             for i in np.arange(self._n_buffers):
                 pco_sdk.free_buffer(self._handle, i)
+            while not self._buffers_to_queue.empty():
+                self._buffers_to_queue.get()
+            while not self._queued_buffers.empty():
+                self._queued_buffers.get()
+            while not self._full_buffers.empty():
+                self._full_buffers.get()
+        self._n_buffered = 0
+        self._n_queued = 0
+        self._n_timeouts = 0
+        self._buf_event = []
+        self._buf_addr = []
         self._get_temps()
 
     def GetNumImsBuffered(self):
@@ -403,5 +423,6 @@ class PcoSdkCam(Camera):
         self._bits_per_pixel = bits_per_pixel
 
     def Shutdown(self):
+        self._polling = False
         pco_sdk.close_camera(self._handle)
         camReg.unregCamera()
