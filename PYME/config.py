@@ -555,11 +555,16 @@ def update_yaml_keys(fn, d, create_backup=False):
     # Update the appropriate keys
     for k, v in d.items():
         x = re.search(r'^{}\s*:.*$'.format(k),data,flags=re.MULTILINE)
+        if isinstance(v, str):
+            v_s = '\'' + v + '\''
+        else:
+            v_s = json.dumps(v)
+        
         if x is None:
-            data += '\n{}: {}'.format(k, json.dumps(v))
+            data += '\n{}: {}'.format(k, v_s)
         else:
             data = re.sub(r'^{}\s*:.*$'.format(k),
-                          '{}: {}'.format(k,json.dumps(v)),data,flags=re.MULTILINE)
+                          '{}: {}'.format(k,v_s),data,flags=re.MULTILINE)
 
     # Update the yaml file
     with open(fn, 'w') as f:
