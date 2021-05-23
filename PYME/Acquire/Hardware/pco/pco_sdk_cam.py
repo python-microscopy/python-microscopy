@@ -372,8 +372,8 @@ class PcoSdkCam(Camera):
     def StopAq(self):
         if self._recording:
             self._recording = False
-            pco_sdk.cancel_images(self._handle)
             pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
+            pco_sdk.cancel_images(self._handle)
             for i in np.arange(self._n_buffers):
                 pco_sdk.free_buffer(self._handle, i)
         self._get_temps()
