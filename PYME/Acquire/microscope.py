@@ -457,8 +457,8 @@ class microscope(object):
             elif self.cam.__class__.__name__ == 'FakeCamera':
                 # read voxel size from directly from our simulated camera
                 logger.info('Reading voxel size directly from simulated camera')
-                vx_um = (self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
-                vy_um = (self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
+                vx_um = float(self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
+                vy_um = float(self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
                 return vx_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
                     
 
