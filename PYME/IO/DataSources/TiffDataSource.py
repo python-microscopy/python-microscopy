@@ -37,6 +37,9 @@ except ImportError:
     
 from .BaseDataSource import XYZTCDataSource
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DataSource(XYZTCDataSource):
     moduleName = 'TiffDataSource'
     def __init__(self, filename, taskQueue=None, chanNum = 0, series=0):
@@ -73,6 +76,7 @@ class DataSource(XYZTCDataSource):
         print((self.filename))
         
         if local_tifffile:
+            logger.info('Using PYMEs built-in, old version of tifffile, better support for ImageJ tiffs can be had with the more recent pip version (`pip install tifffile`)')
             tf = tifffile.TIFFfile(self.filename)
         else:
             tf = tifffile.TiffFile(self.filename)
@@ -86,20 +90,35 @@ class DataSource(XYZTCDataSource):
         size_z = len(self.im)
         size_c, size_t = 1,1
         
-        if tf.is_ome or (not local_tifffile):
-            print('Detected OME TIFF')
+        if tf.is_ome or ((not local_tifffile)):
+            #print('Detected OME TIFF')
             sh = {'Z':1, 'T': 1,'C':1}
-            sh.update(dict(zip(tf.series[series].axes, tf.series[0].shape)))
-            print('sh = %s' % sh)
+            _axes = tf.series[series].axes
+            if 'I' in _axes:
+                logger.info('Tiff file does not fully specify axes (axes=%s)' % (_axes.replace('I', '?')[::-1]))
+                if 'Z' not in _axes:
+                    logger.info('Assuming unknown axis is Z') # TODO - explain how to change axes later
+                    _axes = _axes.replace('I', 'Z')
+                elif 'C' not in _axes:
+                    logger.info('Assuming unknown axis is C')
+                    _axes = _axes.replace('I', 'C')
+                elif 'T' not in _axes:
+                    logger.info('Assuming unkown axis is T')
+                    _axes = _axes.replace('I', 'T')
+                else:
+                    logger.warning('Unknown axis with all standard axes defined - data might not read correctly')
+                
+            sh.update(dict(zip(_axes, tf.series[0].shape)))
+            logger.debug('sh = %s' % sh)
             size_c = sh['C']
             size_z  = sh['Z']
             size_t = sh['T']
             
-            axisOrder = tf.series[series].axes[::-1]
+            axisOrder = _axes[::-1]
             
             axisOrder = axisOrder + ''.join([a for a in ['Z', 'T', 'C'] if not a in axisOrder])
             
-            print('axisOrder = ', axisOrder)
+            logger.debug('raw TIFF axisOrder = %s' %axisOrder)
             
             #self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
         elif tf.is_rgb:
