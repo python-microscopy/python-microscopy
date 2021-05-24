@@ -87,8 +87,8 @@ class PcoSdkCam(Camera):
         self._timeout = 1000  # ms
         self._n_buffered = 0
         self._n_queued = 0
-        self._binning_x = 0
-        self._binning_y = 0
+        self._binning_x = 1
+        self._binning_y = 1
         self._n_timeouts = 0
         self._buffers_to_queue = queue.Queue()
         self._queued_buffers = queue.Queue()
