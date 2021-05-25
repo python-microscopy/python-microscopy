@@ -24,6 +24,17 @@ import time
 k32_dll = ctypes.windll.kernel32  # lets us use the recommended WaitForSingleObject call (see pco.sdk)
                                   # instead of the not-recommended-for-polling pco_sdk.get_buffer_status()
 
+# Define event handle type (needed for pco_sdk.add_buffer_extern())
+# Generally we will want to use k32_dll.CreateEventA(None, 1, 0, None)
+# See https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createeventa
+class _SECURITY_ATTRIBUTES(ctypes.Structure):
+    pass
+LPSECURITY_ATTRIBUTES = ctypes.POINTER(_SECURITY_ATTRIBUTES)
+k32_dll.CreateEventA.argtypes = [LPSECURITY_ATTRIBUTES, 
+                                 ctypes.wintypes.BOOL, 
+                                 ctypes.wintypes.BOOL,
+                                 ctypes.wintypes.LPCSTR]
+
 timebase = {pco_sdk.PCO_TIMEBASE_NS : 1e-9, 
             pco_sdk.PCO_TIMEBASE_US : 1e-6, 
             pco_sdk.PCO_TIMEBASE_MS : 1e-3}  # Conversions 
@@ -366,6 +377,9 @@ class PcoSdkCam(Camera):
         for i in np.arange(self._n_buffers):
             self._buf_event.append(ctypes.c_void_p(0))
             self._buf_addr.append(ctypes.POINTER(ctypes.wintypes.WORD)())
+            # An alternative to this is to allocate the buffer ourselves (np.array)
+            # and then use AddBufferExtern
+            # https://numpy.org/doc/stable/reference/routines.ctypeslib.html may be useful
             pco_sdk.allocate_buffer(self._handle, -1, bufsize, 
                                     self._buf_addr[i], self._buf_event[i])
             self._buffers_to_queue.put(i)

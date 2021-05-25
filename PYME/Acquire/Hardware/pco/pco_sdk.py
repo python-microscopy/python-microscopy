@@ -255,6 +255,8 @@ class PcoSdkException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
 
+# TODO: Instead of wrapping everything with check_status, move to ctypes
+# errcheck https://docs.python.org/3/library/ctypes.html#ctypes._FuncPtr.errcheck
 def check_status(err, function_name=None):
     if err:
         if function_name is None:
@@ -1332,6 +1334,57 @@ def add_buffer_ex(handle, first_image, buffer_index, lx, ly,
                                          ctypes.c_short(buffer_index), 
                                          ctypes.wintypes.WORD(lx), ctypes.wintypes.WORD(ly), 
                                          ctypes.wintypes.WORD(bits_per_pixel)))
+
+# ---------------------------------------------------------------------
+# 2.11.5 PCO_AddBufferExtern
+# ---------------------------------------------------------------------
+sc2_cam.PCO_AddBufferExtern.argtypes = [ctypes.wintypes.HANDLE,
+                                        ctypes.wintypes.HANDLE,
+                                        ctypes.wintypes.WORD,
+                                        ctypes.wintypes.DWORD,
+                                        ctypes.wintypes.DWORD,
+                                        ctypes.wintypes.DWORD,
+                                        ctypes.c_void_p,         # alternatively numpy.ctypeslib.ndpointer
+                                        ctypes.wintypes.DWORD,
+                                        ctypes.wintypes.PDWORD]
+def add_buffer_extern(handle, event, segment, first_image, buf, n_bytes):
+    """
+    Set up buffer for single image transfer from the camera. Can add multiple
+    buffers for fast live recording. This function lets us use buffers we
+    create externally from the pco.sdk DLL.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+    event : ctypes.wintypes.HANDLE
+        Event handle
+    segment : int
+        Camera internal memory segment. Most of the time this will have a value 
+        of 1. In a default state, all memory is distributed to segement 1 and 
+        segment 1 is  the active segment. Camera internal memory is arranged as 
+        an array with 4 segments. 
+    first_image : int
+        Image number. 1 if PCO_GetRecordingState is PCO_CAMERA_STOPPED, 0 if it 
+        is PCO_CAMERA_RUNNING
+    buf : ctypes.c_void_p
+        Pointer to a 2D image buffer, probably a numpy array. See 
+        https://numpy.org/doc/stable/reference/routines.ctypeslib.html
+    n_bytes : int
+        Number of bytes in the 2D image buffer, buf
+
+    Returns
+    -------
+    status : unisgned long int
+        Buffer status
+    """
+    image_index = ctypes.wintypes.DWORD(first_image)
+    synch = ctypes.wintypes.DWORD(0)
+    status = ctypes.wintypes.DWORD()
+    check_status(sc2_cam.PCO_AddBufferExtern(handle, event, ctypes.wintypes.WORD(segment), 
+                                             image_index, image_index, synch, buf, 
+                                             ctypes.wintypes.DWORD(n_bytes), status))
+    return status.value
 
 # ---------------------------------------------------------------------
 # 2.11.6 PCO_CancelImages
