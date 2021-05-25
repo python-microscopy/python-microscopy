@@ -24,6 +24,7 @@
 import wx
 import wx.lib.agw.aui as aui
 # import pylab
+import wx.lib.scrolledpanel as scrolled
 from matplotlib import cm
 
 from PYME import resources
@@ -46,10 +47,11 @@ bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
 bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 bmSquiggleSelect = None
 
-class OptionsPanel(wx.Panel):
+class OptionsPanel(scrolled.ScrolledPanel):
     def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwargs)
+        #scrolled.ScrolledPanel.__init__(self, parent, **kwargs)
 
         #self.parent = parent
         self.do = displayOpts
@@ -176,7 +178,7 @@ class OptionsPanel(wx.Panel):
             ssizer.Add(self.cbShowThreshold, 0, wx.ALL, 5)
 
             
-            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer = wx.WrapSizer(wx.HORIZONTAL)
             self.bIsodataThresh = wx.Button(self, -1, 'Isodata')
             self.bIsodataThresh.Bind(wx.EVT_BUTTON, self.OnIsodataThresh)
             self.bIsodataThresh.Enable(False)
@@ -203,15 +205,21 @@ class OptionsPanel(wx.Panel):
             vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
         self.SetSizer(vsizer)
+        #self.SetupScrolling(scroll_x=False)
         
         self.do.WantChangeNotification.append(self.OnDoChange)
 
         self._hists_stale = True
         self.Bind(wx.EVT_IDLE, self.OnIdle)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
         
     def OnIdle(self, evt):
         if self._hists_stale:
             self._refresh_hists()
+        
+        #def OnSize(self, evt):
+        #_w, _h = self.GetVirtualSize()
+        #self.SetVirtualSize(-1, _h)
 
     def OnOptimise(self, event):
         self.do.Optimise()

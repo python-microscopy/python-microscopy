@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 #VoxNM = namedtuple('VoxNM', 'x, y, z')
 
-def load_psf(filename):
+def load_psf(filename, haveGUI=False):
     """Load a PSF from an image file"""
-    img = ImageStack(filename=filename)
+    img = ImageStack(filename=filename, haveGUI=haveGUI)
     ps = img.data_xytc[:, :, :,0].squeeze()
     vox_nm = img.voxelsize_nm
     

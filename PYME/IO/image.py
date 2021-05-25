@@ -208,7 +208,7 @@ class ImageStack(object):
             with different ROIs.
 
         """
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True, load_prompt=None):
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=False, load_prompt=None):
 
         global nUntitled
         self._data = data      #image data
