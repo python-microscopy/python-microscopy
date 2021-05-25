@@ -248,6 +248,18 @@ PCO_INTERFACE_TYPES = {
     0x0007 : 'CLHS'
 }
 
+PCO_TRIGGER_MODES = {
+    0x0000 : 'auto sequence',
+    0x0001 : 'software trigger',
+    0x0002 : 'external exposure start & software trigger',
+    0x0003 : 'external exposure control',
+    0x0004 : 'external synchronized',
+    0x0005 : 'fast external exposure control',
+    0x0006 : 'external CDS control',
+    0x0007 : 'slow external exposure control',
+    0x0102 : 'external synchronized HDSDI'
+}
+
 # ---------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------
@@ -831,6 +843,99 @@ def set_delay_exposure_time(handle, delay, exposure, timebase_delay, timebase_ex
                                                   ctypes.wintypes.DWORD(exposure),
                                                   ctypes.wintypes.WORD(timebase_delay), 
                                                   ctypes.wintypes.WORD(timebase_exposure)))
+
+# ---------------------------------------------------------------------
+# 2.6.12 PCO_GetTriggerMode
+# ---------------------------------------------------------------------
+sc2_cam.PCO_GetTriggerMode.argtypes = [ctypes.wintypes.HANDLE,
+                                       ctypes.wintypes.PWORD]
+def get_trigger_mode(handle, mode):
+    """
+    Get the camera trigger mode. See pco.sdk for details.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+    
+    Returns
+    -------
+    mode : unsigned short int
+        Trigger mode. One of PCO_TRIGGER_MODES.
+    """
+    mode = ctypes.wintypes.WORD()
+    check_status(sc2_cam.PCO_GetTriggerMode(handle, mode))
+
+    return mode.value
+# ---------------------------------------------------------------------
+# 2.6.13 PCO_SetTriggerMode
+# ---------------------------------------------------------------------
+sc2_cam.PCO_SetTriggerMode.argtypes = [ctypes.wintypes.HANDLE,
+                                       ctypes.wintypes.WORD]
+def set_trigger_mode(handle, mode):
+    """
+    Set the camera trigger mode. See pco.sdk for details.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+    mode : int
+        Trigger mode. One of PCO_TRIGGER_MODES.
+    """
+    check_status(sc2_cam.PCO_SetTriggerMode(handle, ctypes.wintypes.WORD(mode)))
+
+# ---------------------------------------------------------------------
+# 2.6.14 PCO_ForceTrigger
+# ---------------------------------------------------------------------
+sc2_cam.PCO_ForceTrigger.argtypes = [ctypes.wintypes.HANDLE,
+                                     ctypes.wintypes.PWORD]
+TRIGGER_FAIL = 0x0000
+TRIGGER_SUCCESS = 0x0001  # NOTE: This is counter to every other function
+                          # where a 0 indicates success
+def force_trigger(handle):
+    """
+    Trigger image acquisition in software triggered mode.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+
+    Returns
+    -------
+    triggered : unsigned short int
+        Sucess of trigger call, one of TRIGGER_FAIL (0), TRIGGER_SUCCESS (1)
+    """
+    triggered = ctypes.wintypes.WORD()
+    check_status(sc2_cam.PCO_ForceTrigger(handle, triggered))
+    return triggered.value
+
+# ---------------------------------------------------------------------
+# 2.6.15 PCO_GetCameraBusyStatus
+# ---------------------------------------------------------------------
+sc2_cam.PCO_GetCameraBusyStatus.argtypes = [ctypes.wintypes.HANDLE,
+                                            ctypes.wintypes.PWORD]
+PCO_CAMERA_NOT_BUSY = 0x0000
+PCO_CAMERA_BUSY = 0x0001
+def get_camera_busy_status(handle):
+    """
+    Return the busy status of the camera. Ideally checked before
+    a force_trigger() call.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+
+    Returns
+    -------
+    state : unsigned short int
+        Camera busy status, one of PCO_CAMERA_NOT_BUSY (0), PCO_CAMERA_BUSY (1)
+    """
+    state = ctypes.wintypes.WORD()
+    check_status(sc2_cam.PCO_GetCameraBusyStatus(handle, state))
+    return state.value
 
 # ---------------------------------------------------------------------
 # 2.6.26 PCO_GetImageTiming
