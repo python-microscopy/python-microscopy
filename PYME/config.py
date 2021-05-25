@@ -556,7 +556,7 @@ def update_yaml_keys(fn, d, create_backup=False):
     for k, v in d.items():
         x = re.search(r'^{}\s*:.*$'.format(k),data,flags=re.MULTILINE)
         if isinstance(v, str):
-            v_s = '\'' + v + '\''
+            v_s = repr(v)
         else:
             v_s = json.dumps(v)
         
