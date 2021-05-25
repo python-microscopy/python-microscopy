@@ -433,7 +433,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         from PYME.IO import image
         from PYME.DSView import ViewIm3D
         try:
-            ViewIm3D(image.ImageStack(), mode='visGUI', glCanvas=self.glCanvas)
+            ViewIm3D(image.ImageStack(haveGUI=True), mode='visGUI', glCanvas=self.glCanvas)
         except image.FileSelectionError:
             # the user canceled the open dialog
             pass

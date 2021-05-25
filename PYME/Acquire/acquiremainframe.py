@@ -452,7 +452,7 @@ class PYMEMainFrame(AUIFrame):
     def OnFileOpenStack(self, event):
         #self.dv = dsviewer.DSViewFrame(self)
         #self.dv.Show()
-        im = dsviewer.ImageStack()
+        im = dsviewer.ImageStack(haveGUI=True)
         dvf = dsviewer.DSViewFrame(im, parent=self, size=(500, 500))
         dvf.SetSize((500,500))
         dvf.Show()
