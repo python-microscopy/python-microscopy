@@ -126,6 +126,7 @@ class PointSpriteShaderProgram(GLProgram):
         return self.size_factor
 
     def __enter__(self):
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         self.get_shader_program().use()
         glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
         glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
@@ -146,7 +147,7 @@ class PointSpriteShaderProgram(GLProgram):
         self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)
         glDisable(GL_BLEND)
         glDisable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_POINT_SPRITE)

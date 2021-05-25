@@ -339,7 +339,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(pGreen)
             sX, sY = view.imagepanel.Size
             
-            sbLen = self.scaleBarLength*view.scale/view.voxelsize[0]
+            sbLen = int(self.scaleBarLength*view.scale/view.voxelsize[0])
             
             y1 = 20
             x1 = 20 + sbLen

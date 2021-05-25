@@ -25,7 +25,7 @@ from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
     glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
     GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
-    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_FALSE
+    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
@@ -38,6 +38,8 @@ class DefaultShaderProgram(GLProgram):
         _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)
+        self._old_prog = 0
+        
         
         self.xmin, self.xmax = clipping['x']
         self.ymin, self.ymax = clipping['y']
@@ -54,12 +56,15 @@ class DefaultShaderProgram(GLProgram):
         glDisable(GL_DEPTH_TEST)
         #glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
+        
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
+        
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)
         glDisable(GL_BLEND)
         #glClearDepth(1.0)
         #glClear(GL_DEPTH_BUFFER_BIT)
@@ -86,5 +91,15 @@ class ImageShaderProgram(DefaultShaderProgram):
         _shader_program = ShaderProgram(shader_path)
         _shader_program.add_shader("image_vs.glsl", GL_VERTEX_SHADER)
         _shader_program.add_shader("image_fs.glsl", GL_FRAGMENT_SHADER)
+        _shader_program.link()
+        self.set_shader_program(_shader_program)
+        
+class TextShaderProgram(DefaultShaderProgram):
+    def __init__(self):
+        GLProgram.__init__(self)
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
+        _shader_program = ShaderProgram(shader_path)
+        _shader_program.add_shader("text_vs.glsl", GL_VERTEX_SHADER)
+        _shader_program.add_shader("text_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)

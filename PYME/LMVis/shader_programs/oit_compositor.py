@@ -14,9 +14,10 @@ class OITCompositorProgram(GLProgram):
         self.set_shader_program(shader_program)
     
     def __enter__(self):
+        self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         self.get_shader_program().use()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+        glUseProgram(self._old_prog)

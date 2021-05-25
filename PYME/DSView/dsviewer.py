@@ -71,7 +71,7 @@ class dt(wx.FileDropTarget):
         print(filenames)
         
         for filename in filenames:
-            im = ImageStack(filename=filename)
+            im = ImageStack(filename=filename, haveGUI=True)
             ViewIm3D(im)
             
 #drop = dt()
@@ -317,7 +317,7 @@ class DSViewFrame(AUIFrame):
             uCallback(self)
 
     def OnOpen(self, event=None):
-        ViewIm3D(ImageStack())
+        ViewIm3D(ImageStack(haveGUI=True))
         
 
     def OnSave(self, event=None):
@@ -450,9 +450,9 @@ class MyApp(wx.App):
                 im.pixelSize = 10
                 im.sliceSize = 10
             elif len (args) > 0:
-                im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata)
+                im = ImageStack(filename=args[0], queueURI=options.queueURI, mdh=options.metadata, haveGUI=True)
             else:
-                im = ImageStack(queueURI=options.queueURI)
+                im = ImageStack(queueURI=options.queueURI, haveGUI=True)
     
             if options.mode is None:
                 mode = im.mode
@@ -482,7 +482,7 @@ class MyApp(wx.App):
             
             if len(args) > 1:
                 for fn in args[1:]:
-                    im = ImageStack(filename=fn)
+                    im = ImageStack(filename=fn, haveGUI=True)
                     ViewIm3D(im)
         finally:
             self.splash.Destroy()
