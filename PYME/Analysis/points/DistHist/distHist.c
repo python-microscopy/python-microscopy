@@ -439,49 +439,54 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x1");
-      goto fail;
+      goto fail_vd;
     }
 
     ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y1");
-      goto fail;
+      goto fail_vd;
     }
 
     ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
     if (ax2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x2");
-      goto fail;
+      goto fail_vd;
     }
 
     ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
     if (ay2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y2");
-      goto fail;
+      goto fail_vd;
     }
 
     az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, PyArray_DOUBLE, 0, 1);
     if (az1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z1");
-      goto fail;
+      goto fail_vd;
     }
 
     az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, PyArray_DOUBLE, 0, 1);
     if (az2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z2");
-      goto fail;
+      goto fail_vd;
     }
 
 
-    px1 = (double*)ax1->data;
+    /*px1 = (double*)ax1->data;
     py1 = (double*)ay1->data;
     px2 = (double*)ax2->data;
-    py2 = (double*)ay2->data;
+    py2 = (double*)ay2->data;*/
+
+    px1 = (double*)PyArray_DATA(ax1);
+    py1 = (double*)PyArray_DATA(ay1);
+    px2 = (double*)PyArray_DATA(ax2);
+    py2 = (double*)PyArray_DATA(ay2);
 
     pz1 = (double*)PyArray_DATA(az1);
     pz2 = (double*)PyArray_DATA(az2);
@@ -496,11 +501,13 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
     outDimensions[1] = n_bins_angle;
     outDimensions[2] = n_bins_angle;
 
+    //printf("x1_len: %d, x2_len: %d, od: [%d, %d, %d]\n", x1_len, x2_len, outDimensions[0], outDimensions[1], outDimensions[2]);
+
     out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_INT);
     if (out == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
-      goto fail;
+      goto fail_vd;
     }
 
     //Py_INCREF(out);
@@ -509,7 +516,7 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
 
-    res = (int*) out->data;
+    res = (int*) PyArray_DATA(out); //out->data;
 
     unwrapped_size = n_bins_r*n_bins_angle*n_bins_angle;
 
@@ -525,7 +532,7 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
         y1 = (float) py1[i1];
         z1 = (float) pz1[i1];
         for (i2 = (i1+1); i2 < x2_len; i2++)
-	  {//loop through the second set of points - Note we only need to take the upper triangle of the distance matrix
+	    {//loop through the second set of points - Note we only need to take the upper triangle of the distance matrix
 
             //calculate the delta
             dx = x1 - (float)px2[i2];
@@ -536,14 +543,17 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
             d = sqrtf(dx*dx + dy*dy + dz*dz);
 
             //calculate angles
-            theta = fmodf(atanf(dy/dx), M_PI);
+            //theta = fmodf(atanf(dy/dx), M_PI);
+            theta = atanf(dy/dx) + M_PI/2.0;
             //phi = fmodf(asinf(dz/d), M_PI);
-            phi = fmodf(atanf(dz/sqrtf(dx*dx + dy*dy)), M_PI);
+            //phi = fmodf(atanf(dz/sqrtf(dx*dx + dy*dy)), M_PI);
+            phi = atanf(dz/sqrtf(dx*dx + dy*dy)) + M_PI/2.0;
 
             //convert distance to bin index
             r_id = (int)(d*rBinSize);
             id = r_id*n_bins_angle*n_bins_angle + (int)(n_bins_angle*theta*rBinAngle) + (int)(phi*rBinAngle);
 
+            if (id < 0) printf("id=%d, theta=%3.2f, phi=%3.2f\n", id, theta, phi);
             if (id < unwrapped_size) res[id] += 1;
 
 
@@ -558,9 +568,12 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
     Py_XDECREF(az1);
     Py_XDECREF(az2);
 
+    //Py_INCREF(out);
+
     return (PyObject*) out;
 
-fail:
+fail_vd:
+    printf("failure\n");
     Py_XDECREF(ax1);
     Py_XDECREF(ax2);
     Py_XDECREF(ay1);
