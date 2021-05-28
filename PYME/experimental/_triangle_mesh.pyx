@@ -495,22 +495,32 @@ cdef class TriangleMesh(TrianglesBase):
         return list(self.vertex_properties) + list(self.extra_vertex_data.keys())
 
     
-    @cython.boundscheck(False)  # Deactivate bounds checking
-    @cython.wraparound(False)
-    cdef _set_chalfedges(self, halfedge_t[:] halfedges):
-        self._chalfedges = &halfedges[0]
+    #@cython.boundscheck(False)  # Deactivate bounds checking
+    #@cython.wraparound(False)
+    #cdef _set_chalfedges(self, halfedge_t[:] halfedges):
+    #    self._chalfedges = &halfedges[0]
+        
+    cdef _set_chalfedges(self, np.ndarray halfedges):
+        self._chalfedges = <halfedge_t *> np.PyArray_DATA(halfedges)
+        
+    cdef _set_cfaces(self, np.ndarray faces):
+        self._cfaces = <face_d *> np.PyArray_DATA(faces)
+        
+    cdef _set_cvertices(self, np.ndarray vertices):
+        self._cvertices = <vertex_d *> np.PyArray_DATA(vertices)
 
-    @cython.boundscheck(False)  # Deactivate bounds checking
-    @cython.wraparound(False)
-    cdef _set_cfaces(self, face_d[:] faces):
-        self._cfaces = &faces[0]
-
-    @cython.boundscheck(False)  # Deactivate bounds checking
-    @cython.wraparound(False)
-    cdef _set_cvertices(self, vertex_d[:] vertices):
-        #print vertices.shape
-        self._cvertices = &vertices[0]
-
+    # @cython.boundscheck(False)  # Deactivate bounds checking
+    # @cython.wraparound(False)
+    # cdef _set_cfaces(self, face_d[:] faces):
+    #     self._cfaces = &faces[0]
+    #
+    # @cython.boundscheck(False)  # Deactivate bounds checking
+    # @cython.wraparound(False)
+    # cdef _set_cvertices(self, vertex_d[:] vertices):
+    #     #print vertices.shape
+    #     self._cvertices = &vertices[0]
+    #
+    
     def _initialize_halfedges(self, vertices, faces):
         """
         Accepts unordered vertices, indices parameterization of a triangular 
@@ -1237,7 +1247,8 @@ cdef class TriangleMesh(TrianglesBase):
             ed[k] = v
             
         return ed, idx, el_arr, el_vacancies
- 
+    
+     
     def _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1):
         cdef int idx
         idx, self._halfedges, self._halfedge_vacancies = self._get_insertion_slot(self._halfedges, self._halfedge_vacancies, key_idx=INSERTION_KEY_VERTEX)
@@ -1283,7 +1294,7 @@ cdef class TriangleMesh(TrianglesBase):
         ed = self._halfedges[idx]
         return ed, idx
 
-    def _new_face(self, int _edge, bint compact=False, **kwargs):
+    cdef  int _new_face(self, int _edge):
         """
         Create a new face based on edge _edge.
 
@@ -1299,20 +1310,22 @@ cdef class TriangleMesh(TrianglesBase):
 
         Returns
         -------
-            fa : FACE_DTYPE
-                Face created
+            #fa : FACE_DTYPE
+            #    Face created
             idx : int
                 Index of the face in self._faces.
         """
         cdef int idx
         
-        fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, **kwargs)
-        _flat_faces = self._faces.view(FACE_DTYPE2)
-        self._set_cfaces(_flat_faces)
+        #fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, **kwargs)
+        
+        idx, self._faces, self._face_vacancies = self._get_insertion_slot(self._faces, self._face_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+        self._set_cfaces(self._faces)
+        self._cfaces[idx].halfedge=_edge
 
-        return fa, idx
+        return idx
 
-    def _new_vertex(self, _vertex, bint compact=False, **kwargs):
+    def _new_vertex(self, _vertex, int halfedge=-1):
         """
         Insert a new vertex into the mesh.
 
@@ -1328,22 +1341,25 @@ cdef class TriangleMesh(TrianglesBase):
 
         Returns
         -------
-            vx : VERTEX_DTYPE
-                Vertex created
+            #vx : VERTEX_DTYPE
+            #    Vertex created
             idx : int
                 Index of the vertex in self._vertices.
         """
         cdef int idx
         
-        vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, insert_key='position', **kwargs)
-        _flat_vertices = self._vertices.view(VERTEX_DTYPE2)
-        self._set_cvertices(_flat_vertices)
+        idx, self._vertices, self._vertex_vacancies = self._get_insertion_slot(self._vertices, self._vertex_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+        self._set_cvertices(self._vertices)
+        vx = self._vertices[idx]
+        vx['position'] = _vertex
+        vx['halfedge'] = halfedge
+        
 
         self._faces_by_vertex = None  # Reset
         self._H = None
         self._K = None
 
-        return vx, idx
+        return idx
 
     def edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
         """
@@ -1387,7 +1403,7 @@ cdef class TriangleMesh(TrianglesBase):
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
         _vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
-        _, _vertex_idx = self._new_vertex(_vertex)
+        _vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
         interior = (_twin != -1)  # Are we on a boundary?
@@ -1401,9 +1417,9 @@ cdef class TriangleMesh(TrianglesBase):
         self._cfaces[curr_edge.face].halfedge = _curr
         if interior:
             self._cfaces[twin_edge.face].halfedge = _twin
-            _, _face_1_idx = self._new_face(_twin_prev)
+            _face_1_idx = self._new_face(_twin_prev)
             self._chalfedges[_twin_prev].face = _face_1_idx
-        _, _face_2_idx = self._new_face(_next)
+        _face_2_idx = self._new_face(_next)
         self._chalfedges[_next].face = _face_2_idx
 
         # Insert the new faces
@@ -1966,11 +1982,18 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int split_count = 0
         cdef int i
         cdef int n_halfedges = self._halfedges.shape[0]
+        cdef float *n1
+        cdef float *n2
+        cdef float nd
         
         for i in range(n_halfedges):
-            if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length > split_threshold):
-                self.edge_split(i)
-                split_count += 1
+            if (self._chalfedges[i].vertex != -1): # and (self._chalfedges[i].length > split_threshold):
+                n1 = &self._cvertices[self._chalfedges[i].vertex].normal0
+                n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].twin].vertex].normal0
+                nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
+                if self._chalfedges[i].length > (nd*split_threshold):
+                    self.edge_split(i)
+                    split_count += 1
                 
         print('Split count: %d' % (split_count))
         return split_count
@@ -1980,6 +2003,9 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int collapse_fails = 0
         cdef int i
         cdef int n_halfedges = self._halfedges.shape[0]
+        cdef float *n1
+        cdef float *n2
+        cdef float nd
         
         #find which vertices are locally manifold
         # TODO - move this to a helper function
@@ -1988,9 +2014,14 @@ cdef class TriangleMesh(TrianglesBase):
         
         for i in range(n_halfedges):
             if (self._chalfedges[i].vertex != -1) and (self._chalfedges[i].length < collapse_threshold):
-                collapse_ret = self.edge_collapse(i)
-                collapse_count += collapse_ret
-                collapse_fails += (1-collapse_ret)
+                n1 = &self._cvertices[self._chalfedges[i].vertex].normal0
+                n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].twin].vertex].normal0
+                # dot product of the normals
+                nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
+                if (self._chalfedges[i].length < nd*collapse_threshold):
+                    collapse_ret = self.edge_collapse(i)
+                    collapse_count += collapse_ret
+                    collapse_fails += (1-collapse_ret)
         print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
         
         return collapse_count
@@ -2486,7 +2517,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         _h0_twin_vertex = self._halfedges['vertex'][h2]
         _h0_twin = self._insert_new_edge(_h0_twin_vertex, twin=h0)
-        _, _face = self._new_face(_h0_twin)
+        _face = self._new_face(_h0_twin)
         _h1_twin_vertex = self._halfedges['vertex'][h0]
         _h1_twin = self._insert_new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
         self._halfedges['face'][_h0_twin] = _face
@@ -2774,7 +2805,7 @@ cdef class TriangleMesh(TrianglesBase):
 
                 _edge = self._halfedges['next'][_modified_edges[0]]
 
-                _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
+                _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
                 # Assign edges in this component connected to _vertex to _new_vertex
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
