@@ -2885,3 +2885,27 @@ cdef class TriangleMesh(TrianglesBase):
         vertices = self._vertices['position'][live_vertices]
 
         ply.save_ply(filename, vertices, faces, colors)
+        
+    def plot(self, figure=None, axis=None):
+        """
+        Display surface using matplotlib. Useful for quick use in a notebook (or similar) when a wx GUI is not
+        available. NOTE: will be slower than displaying through PYMEVis
+        
+        Parameters
+        ----------
+        figure : [optional] a matplotlib figure instance
+        axis : [optional] a matplotlib Axes3D instance
+
+        Returns
+        -------
+
+        """
+        import matplotlib.pyplot as plt
+        
+        if axis is None:
+            if figure is None:
+                figure = plt.figure()
+                
+            axis = figure.add_subplot(projection='3d')
+
+        return axis.plot_trisurf(self.vertices[:,0], self.vertices[:,1], self.faces, self.vertices[:,2])
