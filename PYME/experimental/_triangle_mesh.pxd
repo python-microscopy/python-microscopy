@@ -99,9 +99,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _K
     cdef public object smooth_curvature
 
-    cdef _set_chalfedges(self, halfedge_t[:])
-    cdef _set_cfaces(self, face_d[:])
-    cdef _set_cvertices(self, vertex_d[:])
+    cdef _set_chalfedges(self, np.ndarray)#halfedge_t[:])
+    cdef _set_cfaces(self, np.ndarray)#face_d[:])
+    cdef _set_cvertices(self, np.ndarray)#vertex_d[:])
     cdef bint _check_neighbour_twins(self, int)
     cdef bint _check_collapse_fast(self, int, int)
     cdef bint _check_collapse_slow(self, int, int)
@@ -109,3 +109,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef _edge_delete(self, np.int32_t)
     cdef _zipper(self, np.int32_t, np.int32_t)
     cpdef int edge_flip(self, np.int32_t, bint live_update=*)
+    
+    #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
+    
+    cdef int _new_face(self, int)
+    #cdef int _new_vertex(self, np.ndarray, int)
