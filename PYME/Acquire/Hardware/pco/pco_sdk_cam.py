@@ -101,6 +101,7 @@ class PcoSdkCam(Camera):
         self._binning_x = 1
         self._binning_y = 1
         self._n_timeouts = 0
+        self._i = 0
         self._buffers_to_queue = queue.Queue()
         self._queued_buffers = queue.Queue()
         self._full_buffers = queue.Queue()
@@ -141,9 +142,10 @@ class PcoSdkCam(Camera):
                     self._n_queued -= 1
                     wait_status = k32_dll.WaitForSingleObject(self._buf_event[_curr_buf], self._timeout)
                     if wait_status:
-                        self._n_timeouts += 1
-                        if self._n_timeouts >= MAX_TIMEOUTS:
-                            raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
+                        if self._mode == self.MODE_CONTINUOUS:
+                            self._n_timeouts += 1
+                            if self._n_timeouts >= MAX_TIMEOUTS:
+                                raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
                     k32_dll.ResetEvent(self._buf_event[_curr_buf])
                     self._full_buffers.put(_curr_buf)
                     self._n_buffered += 1
@@ -173,8 +175,9 @@ class PcoSdkCam(Camera):
                     self._buf_addr[_curr_buf], 
                     chSlice.nbytes)
 
-            # recycle the buffer
-            self._buffers_to_queue.put(_curr_buf)
+            if self._mode == self.MODE_CONTINUOUS:
+                # auto-recycle the buffer
+                self._buffers_to_queue.put(_curr_buf)
         
     def GetName(self):
         return pco_sdk.get_camera_name(self._handle)
@@ -359,14 +362,21 @@ class PcoSdkCam(Camera):
         return self._mode
 
     def SetAcquisitionMode(self, mode):
-        if mode in [self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT]:
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
             self._mode = mode
         else:
             raise RuntimeError(f"Mode {mode} not supported")
-        if mode == self.MODE_CONTINUOUS:
-            self._n_buffers = self.__default_n_buffers
-        elif mode == self.MODE_SINGLE_SHOT:
-            self._n_buffers = 2
+
+        # Number of buffers may change depending on mode
+        self._n_buffers = self.__default_n_buffers
+
+        # Set trigger mode every time in case we were previously
+        # in a triggered mode
+        trigger = 0x0000
+        if mode == self.MODE_SOFTWARE_TRIGGER:
+            trigger = 0x0001
+            self._i = 0
+        pco_sdk.set_trigger_mode(self._handle, trigger)
 
     def StartExposure(self):
         self.StopAq()
@@ -382,7 +392,8 @@ class PcoSdkCam(Camera):
             # https://numpy.org/doc/stable/reference/routines.ctypeslib.html may be useful
             pco_sdk.allocate_buffer(self._handle, -1, bufsize, 
                                     self._buf_addr[i], self._buf_event[i])
-            self._buffers_to_queue.put(i)
+            if self._mode == self.MODE_CONTINUOUS:
+                self._buffers_to_queue.put(i)
 
         pco_sdk.set_image_parameters(self._handle, lx, ly, pco_sdk.PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING)
         pco_sdk.arm_camera(self._handle)
@@ -411,6 +422,18 @@ class PcoSdkCam(Camera):
         self._buf_event = []
         self._buf_addr = []
         self._get_temps()
+
+    def TriggerAq(self):
+        if self._mode == self.MODE_SOFTWARE_TRIGGER:
+            res = pco_sdk.force_trigger(self._handle)
+            # FIFO queue the queable buffers so we don't
+            # grab images before a trigger in _poll_loop
+            self._buffers_to_queue.put(self._i)
+            self._i += 1
+            if self._i >= self._n_buffers:
+                self._i = 0
+            return res
+        return 0
 
     def GetNumImsBuffered(self):
         return self._n_buffered
