@@ -1452,7 +1452,7 @@ sc2_cam.PCO_AddBufferExtern.argtypes = [ctypes.wintypes.HANDLE,
                                         ctypes.c_void_p,         # alternatively numpy.ctypeslib.ndpointer
                                         ctypes.wintypes.DWORD,
                                         ctypes.wintypes.PDWORD]
-def add_buffer_extern(handle, event, segment, first_image, buf, n_bytes):
+def add_buffer_extern(handle, event, segment, first_image, buf, n_bytes, status):
     """
     Set up buffer for single image transfer from the camera. Can add multiple
     buffers for fast live recording. This function lets us use buffers we
@@ -1477,19 +1477,15 @@ def add_buffer_extern(handle, event, segment, first_image, buf, n_bytes):
         https://numpy.org/doc/stable/reference/routines.ctypeslib.html
     n_bytes : int
         Number of bytes in the 2D image buffer, buf
-
-    Returns
-    -------
-    status : unisgned long int
-        Buffer status
+    status : ctypes.wintypes.PDWORD
+        Pointer to buffer status bit
     """
     image_index = ctypes.wintypes.DWORD(first_image)
     synch = ctypes.wintypes.DWORD(0)
-    status = ctypes.wintypes.DWORD()
     check_status(sc2_cam.PCO_AddBufferExtern(handle, event, ctypes.wintypes.WORD(segment), 
                                              image_index, image_index, synch, buf, 
-                                             ctypes.wintypes.DWORD(n_bytes), status))
-    return status.value
+                                             ctypes.wintypes.DWORD(n_bytes), 
+                                             status))
 
 # ---------------------------------------------------------------------
 # 2.11.6 PCO_CancelImages
