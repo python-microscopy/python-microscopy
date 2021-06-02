@@ -63,8 +63,10 @@ class camReg(object):
 
 camReg.regCamera()  # initialize/reset the sdk
 
-MAX_BUFFERS = 16
+MAX_BUFFERS = 100
 MAX_TIMEOUTS = 10
+MAX_QUEUED_BUFFERS = 16  # pco. has a hard limit on attaching no 
+                         # more than 16 buffers at a time to the camera
 
 class PcoSdkCam(Camera):
     def __init__(self, camNum, debuglevel='off'):
@@ -134,15 +136,13 @@ class PcoSdkCam(Camera):
     def _poll_loop(self):
         while self._polling:
             if self._recording:
-                n_iters = 0  # don't spend forever queueing buffers
-                while not self._buffers_to_queue.empty() and (n_iters < 10):
+                while not self._buffers_to_queue.empty() and (self._n_queued < MAX_QUEUED_BUFFERS):
                     i = self._buffers_to_queue.get()
                     pco_sdk.add_buffer_extern(self._handle, self._buf_event[i], 
                                               0, 0, self._buf_addr[i], self._bufsize, 
                                               self._buf_status_addr[i])
                     self._queued_buffers.put(i)
                     self._n_queued += 1
-                    n_iters += 1
                 
                 if self._n_queued > 0:
                     _curr_buf = self._queued_buffers.get()
@@ -153,14 +153,16 @@ class PcoSdkCam(Camera):
                         self._n_timeouts += 1
                         if self._n_timeouts >= MAX_TIMEOUTS:
                             raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
+                    k32_dll.ResetEvent(self._buf_event[_curr_buf])
                     # make sure this buffer is safe to use
                     status = self._buffer_status[_curr_buf]
                     if status:
-                        raise pco_sdk.PcoSdkException(f"Error {status} during buffer check.")
-                    k32_dll.ResetEvent(self._buf_event[_curr_buf])
-                    # use it
-                    self._full_buffers.put(_curr_buf)
-                    self._n_buffered += 1
+                        logger.warning(f"Error {status} during check of buffer {_curr_buf}.")
+                        # drop this buffer
+                    else:
+                        # use it
+                        self._full_buffers.put(_curr_buf)
+                        self._n_buffered += 1
                 else:
                     time.sleep(0.01)
 
