@@ -85,7 +85,6 @@ class PcoSdkCam(Camera):
             self.Shutdown()
             raise pco_sdk.PcoSdkException(f"Camera shutdown with error status {err}.")
 
-        self._bits_per_pixel = 16
         self._integ_time = 0
         self._delay_time = 0
         self._electr_temp = 0
@@ -418,8 +417,6 @@ class PcoSdkCam(Camera):
             self._recording = False
             pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
             pco_sdk.cancel_images(self._handle)
-            # for i in np.arange(self._n_buffers):
-            #     pco_sdk.free_buffer(self._handle, i)
             while not self._buffers_to_queue.empty():
                 self._buffers_to_queue.get()
             while not self._queued_buffers.empty():
@@ -468,9 +465,6 @@ class PcoSdkCam(Camera):
 
     def SetHotPixelCorrectionMode(self, mode):
         pco_sdk.set_hot_pixel_correction_mode(self._handle, mode)
-
-    def SetBitsPerPixel(self, bits_per_pixel):
-        self._bits_per_pixel = bits_per_pixel
 
     def Shutdown(self):
         self._polling = False
