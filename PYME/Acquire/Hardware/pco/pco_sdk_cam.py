@@ -139,7 +139,7 @@ class PcoSdkCam(Camera):
                 while not self._buffers_to_queue.empty() and (self._n_queued < MAX_QUEUED_BUFFERS):
                     i = self._buffers_to_queue.get()
                     pco_sdk.add_buffer_extern(self._handle, self._buf_event[i], 
-                                              0, 0, self._buf_addr[i], self._bufsize, 
+                                              1, 0, self._buf_addr[i], self._bufsize, 
                                               self._buf_status_addr[i])
                     self._queued_buffers.put(i)
                     self._n_queued += 1
