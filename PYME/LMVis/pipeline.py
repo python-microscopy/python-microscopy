@@ -705,7 +705,7 @@ class Pipeline:
                 #old style matlab import
                 ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                if 'Multichannel' in kwargs.keys():
+                if 'Multichannel' in kwargs.keys() and kwargs.get('Multichannel'):
                     ds = tabular.MatfileMultiColumnSource(filename)
                 else:
                     ds = tabular.MatfileColumnSource(filename)
@@ -714,7 +714,8 @@ class Pipeline:
                 field_names = kwargs.get('FieldNames', None)
                 if field_names:
                     if 'Multichannel' in kwargs.keys():
-                        field_names.append('probe')  # don't forget to copy this field over
+                        if kwargs.get('Multichannel'):
+                            field_names.append('probe')  # don't forget to copy this field over
                     ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
         elif os.path.splitext(filename)[1] == '.csv':
