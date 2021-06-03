@@ -52,7 +52,7 @@ class ColumnMappingDialog(wx.Dialog):
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer1.Add(wx.StaticText(self, -1, 'Please assign variable names to each column. Some variable names must be present for the program to function correctly'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(wx.StaticText(self, -1, 'Please assign variable names to each column. Some variable names must be present for the program to function correctly'), 0, wx.ALL, 5)
 
         self.GenerateDataGrid(sizer1)
 
@@ -63,14 +63,14 @@ class ColumnMappingDialog(wx.Dialog):
 
         self.stRecommendedNotPresent = wx.StaticText(self, -1, 'Recommended variables not yet defined:\n')
         sizer2.Add(self.stRecommendedNotPresent, 1, wx.ALL, 5)
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
+        sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         self.rbLocsInNM = wx.RadioButton(self, -1, "x and y positions are in nm", style=wx.RB_GROUP)
         self.rbLocsInNM.SetValue(True)
-        sizer1.Add(self.rbLocsInNM, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.EXPAND, 5)
+        sizer1.Add(self.rbLocsInNM, 0, wx.LEFT | wx.EXPAND, 5)
         self.rbLocsInPixels = wx.RadioButton(self, -1, "x and y positions are in pixels")
-        sizer1.Add(self.rbLocsInPixels, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.EXPAND, 5)
+        sizer1.Add(self.rbLocsInPixels, 0, wx.LEFT | wx.EXPAND, 5)
         
         
         self.stPixelSize = wx.StaticText(self, -1, 'Pixel size [nm]:')
@@ -79,7 +79,7 @@ class ColumnMappingDialog(wx.Dialog):
         self.tPixelSize = wx.TextCtrl(self, -1, '1.0')
         self.tPixelSize.Disable()
         sizer2.Add(self.tPixelSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL|wx.EXPAND, 5)
+        sizer1.Add(sizer2, 0, wx.ALL|wx.EXPAND, 5)
 
         self.rbLocsInPixels.Bind(wx.EVT_RADIOBUTTON, self.on_toggle_loc_units)
         self.rbLocsInNM.Bind(wx.EVT_RADIOBUTTON, self.on_toggle_loc_units)
@@ -98,7 +98,7 @@ class ColumnMappingDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.CheckColNames()
 
