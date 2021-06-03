@@ -1402,7 +1402,8 @@ cdef class TriangleMesh(TrianglesBase):
         # n0 = self._vertices['normal'][curr_edge.vertex, :]
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
-        _vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
+        #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
+        _vertex = 0.5*(x0 + x1) + .125*((n0-n1)*(x1-x0)).sum()*0.5*(n0 + n1)
         _vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
@@ -2435,7 +2436,7 @@ cdef class TriangleMesh(TrianglesBase):
         comps = np.unique(self.component) #find the unique components
         comps = comps[comps >=0] #discard the -1, or 'invalid' component
         
-        cc = [(i, (self.curvature_mean[self.component==i]).mean()) for i in comps]
+        cc = [(i, np.median(self.curvature_mean[self.component==i])) for i in comps]
         self.keep_components([i for i, c in cc if (c > 0) and (c < max_mean_curvature)])
         
     
