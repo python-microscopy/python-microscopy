@@ -1403,7 +1403,7 @@ cdef class TriangleMesh(TrianglesBase):
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
         #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
-        _vertex = 0.5*(x0 + x1) + .125*((n0-n1)*(x1-x0)).sum()*0.5*(n0 + n1)
+        _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
         _vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
