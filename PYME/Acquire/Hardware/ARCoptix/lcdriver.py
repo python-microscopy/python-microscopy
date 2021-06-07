@@ -15,14 +15,16 @@ Pre-flight to create the 32-bit server:
         - conda create -n py37_32 python=3.7.9  # change this to the python used in your pyme install
         - set CONDA_FORCE_32BIT=1
         - activate py37_32
-        - pip install msl-loadlib pyinstaller comtypes pythonnet
+        - pip install msl-loadlib pyinstaller comtypes pythonnet numpy  # make sure the versions match the versions in your 64-bit environment
+                                                                        # numpy is optional, but if you don't use it make sure you cast everything
+                                                                        # to float before passing to the server
     - python
         - from msl.loadlib import freeze_server32
         - freeze_server32.main()
         ... PyInstaller logging messages ...
         Server saved to: ...
     - Copy the generated server32-windows.exe file to 
-      miniconda3\envs\<pyme environment>\lib\site-packages\msl\loadlib
+      miniconda3\envs\<64-bit pyme environment>\lib\site-packages\msl\loadlib
     - Copy C:\Program Files\ARCoptix\ARCoptix LC Driver 1.2\CyUSB.dll to
       miniconda3\envs\<pyme environment>\lib\site-packages\msl\loadlib.
       NOTE: We shouldn't need to do this, but setting os.environ['PATH'] doesn't
