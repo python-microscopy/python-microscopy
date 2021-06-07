@@ -57,7 +57,7 @@ class PsfExtractor(Plugin):
         self.chChannel = wx.Choice(pan, -1, choices=self.do.names)
         hsizer.Add(self.chChannel, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
     
-        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)        
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL, 0)        
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 #
@@ -76,7 +76,7 @@ class PsfExtractor(Plugin):
         bClearTagged.Bind(wx.EVT_BUTTON, self.OnClearTags)
         hsizer.Add(bClearTagged, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+        vsizer.Add(hsizer, 0,wx.ALL, 5)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'ROI Half Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -85,7 +85,7 @@ class PsfExtractor(Plugin):
         hsizer.Add(self.tPSFROI, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPSFROI.Bind(wx.EVT_TEXT, self.OnPSFROI)
 
-        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Blur:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -93,7 +93,7 @@ class PsfExtractor(Plugin):
         self.tPSFBlur = wx.TextCtrl(pan, -1, value='.5,.5,1', size=(40, -1))
         hsizer.Add(self.tPSFBlur, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL, 0)
         
         # hsizer = wx.BoxSizer(wx.HORIZONTAL)
         # hsizer.Add(wx.StaticText(pan, -1, 'PSF Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -122,7 +122,7 @@ class PsfExtractor(Plugin):
             #most likely the high-throughput system, default to multi-view extraction
             self.chMethod.SetSelection(0)
 
-        vsizer.Add(hsizer, 0, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND | wx.ALL, 0)
 
         self.cbAlignZ = wx.CheckBox(pan, -1, 'Align Z')
         self.cbAlignZ.SetValue(True)
