@@ -173,7 +173,7 @@ class Annotater(Plugin):
                                       'width' : self.line_width})
             self.do.selection_trace = []
             
-        elif self.do.selectionMode == self.do.SELECTION_LNE:
+        elif self.do.selectionMode == self.do.SELECTION_LINE:
             x0, y0, x1, y1 = self.do.GetSliceSelection()
             self._annotations.append({'type' : 'line', 'points' : [(x0, y0), (x1, y1)],
                                       'labelID' : self.cur_label_index, 'z':self.do.zp,
