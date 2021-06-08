@@ -687,7 +687,7 @@ class ImageStack(object):
         """
         mdfn = self._findAndParseMetadata(filename)
         
-        data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+        data = numpy.memmap(filename, dtype=self.mdh['DataType'], mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
         self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
@@ -816,6 +816,11 @@ class ImageStack(object):
                     Z, X, Y, T = numpy.fromstring(s, '>u2')
                     s = df.read(16)
                     depth, width, height, elapsed = numpy.fromstring(s, '<f4')
+                    s = df.read(1)
+                    if ord(s) == 1:
+                        self.mdh['DataType'] = '<f4'
+                    else:
+                        self.mdh['DataType'] = '<f8'
                     
                     self.mdh['voxelsize.x'] = width/X
                     self.mdh['voxelsize.y'] = height/Y
