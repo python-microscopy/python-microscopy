@@ -55,7 +55,7 @@ class FilterTable(ModuleBase):
         from traitsui.api import Item
         from PYME.ui.custom_traits_editors import FilterEditor
         
-        return [Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False),]
+        return [Item('filters', editor=FilterEditor(parent=self), show_label=False),]
 
 
 @register_module('FilterTableByIds')

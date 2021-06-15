@@ -6,6 +6,9 @@ from traits.api import List, Instance
 import wx
 from PYME.IO import tabular
 
+import logging
+logger = logging.getLogger(__name__)
+
 class _CBEditor (Editor):
     """
     Dropdown list of options (as strings). Generally passed a list (choices=list_name).
@@ -81,7 +84,7 @@ class _FilterEditor (Editor):
         from PYME.LMVis.filterPane import FilterPanel
 
 
-        self.control = FilterPanel(parent, filterKeys=self.value, dataSource=self.factory.datasource)
+        self.control = FilterPanel(parent, filterKeys=self.value, dataSource= lambda : getattr(self.factory, 'ds'))
         return
 
 
@@ -112,6 +115,18 @@ class FilterEditor(BasicEditorFactory):
     klass = _FilterEditor
 
     datasource = Instance(tabular.TabularBase)
+    parent = Instance(object)
+    
+    @property
+    def ds(self):
+        try:
+            return self.parent._ds
+        except AttributeError:
+            logger.exception('error geting parent._ds')
+            if self.datasource:
+                return self.datasource
+            else:
+                return None
 
 class DictChoiceStrEditDialog(wx.Dialog):
     def __init__(self, parent, mode='new', possibleKeys=(), key='', val=''):
