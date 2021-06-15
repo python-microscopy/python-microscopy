@@ -64,7 +64,7 @@ class camReg(object):
 camReg.regCamera()  # initialize/reset the sdk
 
 MAX_BUFFERS = 100
-MAX_TIMEOUTS = 10
+MAX_TIMEOUTS = 100
 MAX_QUEUED_BUFFERS = 16  # pco. has a hard limit on attaching no 
                          # more than 16 buffers at a time to the camera
 
@@ -371,7 +371,7 @@ class PcoSdkCam(Camera):
         return self._mode
 
     def SetAcquisitionMode(self, mode):
-        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
+        if mode in [self.MODE_SINGLE_SHOT, self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
             self._mode = mode
         else:
             raise RuntimeError(f"Mode {mode} not supported")
@@ -382,14 +382,12 @@ class PcoSdkCam(Camera):
         # Set trigger mode every time in case we were previously
         # in a triggered mode
         trigger = 0x0000
-        if mode == self.MODE_SOFTWARE_TRIGGER:
+        if (mode == self.MODE_SINGLE_SHOT) or (mode == self.MODE_SOFTWARE_TRIGGER):
             trigger = 0x0001
             self._i = 0
         pco_sdk.set_trigger_mode(self._handle, trigger)
 
-    def StartExposure(self):
-        self.StopAq()
-
+    def _init_buffers(self):
         # Establish buffers
         lx, ly = self.GetPicWidth(), self.GetPicHeight()
         self.SetBufferSize(int(max(int(2.0*self.GetFPS()), 1)))
@@ -409,8 +407,17 @@ class PcoSdkCam(Camera):
         pco_sdk.set_image_parameters(self._handle, lx, ly, pco_sdk.PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING)
         pco_sdk.arm_camera(self._handle)
         pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_RUNNING)
+
+    def StartExposure(self):
+        self._get_temps()
+        if self._recording == False:
+            self._init_buffers()
+
         eventLog.logEvent('StartAq', '')
         self._recording = True
+
+        if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):
+            self.TriggerAq()
 
         return 0
 
@@ -436,7 +443,7 @@ class PcoSdkCam(Camera):
         self._get_temps()
 
     def TriggerAq(self):
-        if self._mode == self.MODE_SOFTWARE_TRIGGER:
+        if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):
             res = pco_sdk.force_trigger(self._handle)
             # FIFO queue the queable buffers so we don't
             # grab images before a trigger in _poll_loop
