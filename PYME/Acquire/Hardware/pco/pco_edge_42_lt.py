@@ -27,3 +27,8 @@ class PcoEdge42LT(pco_sdk_cam.PcoSdkCam):
     def Init(self):
         pco_sdk_cam.PcoSdkCam.Init(self)
         self.noiseProps = noiseProperties[self.GetSerialNumber()]
+
+    def GenStartMetadata(self, mdh):
+        pco_sdk_cam.PcoSdkCam.GenStartMetadata(self, mdh)
+        if self.active:
+            mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
