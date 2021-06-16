@@ -1160,7 +1160,7 @@ class Deconvolve(Filter):
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item(name='outputName'),
-                    Item(name='processFramesIndividually', label='2D'),
+                    Item(name='dimensionality'),
                     Group(Item(name='method'),
                           Item(name='iterations'),
                           Item(name='offset'),
