@@ -621,7 +621,7 @@ class Filter(ImageModuleBase):
                         for z in range(image.data_xyztc.shape[2]):
                             data = image.data_xyztc[:, :, z, t, c].squeeze().astype('f')
                             
-                            xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z)))
+                            xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z).squeeze()))
                     
                     xyzt.append(xyz)
             out.append(xyzt)

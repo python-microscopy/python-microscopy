@@ -1317,7 +1317,7 @@ class Deconvolve(Filter):
         if self.padding > 0:
             res = res[px:-px, py:-py, pz:-pz]
         
-        return res
+        return res.squeeze()
 
     def completeMetadata(self, im):
         im.mdh['Deconvolution.Offset'] = self.offset
