@@ -626,7 +626,7 @@ class Recipe(HasTraits):
                 # assume image is the main table in the file and give it the named key
                 self.namespace[key] = im
     
-    def loadInput(self, filename, key='input'):
+    def loadInput(self, filename, key='input', metadata_defaults={}):
         """
         Load input data from a file and inject into namespace
         """
@@ -672,7 +672,11 @@ class Recipe(HasTraits):
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
         else:
-            self.namespace[key] = ImageStack(filename=filename, haveGUI=False)
+            im = ImageStack(filename=filename, haveGUI=False)
+            if im.mdh.get('voxelize.x', None) is None:
+                logger.error('No voxelsize metadata found for image %s, using defaults' % filename)
+            im.mdh.mergeEntriesFrom(metadata_defaults)
+            self.namespace[key] = im
     
     @property
     def pipeline_view(self):

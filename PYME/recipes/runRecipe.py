@@ -65,18 +65,22 @@ def saveOutput(output, filename):
     else: #hope we can convert to a tabular format
         saveTabular(tabular.MappingFilter(output), filename)
         
-def runRecipe(recipe, inputs, outputs, context={}):
+def runRecipe(recipe, inputs, outputs, context={}, metadata_defaults={}):
     """Load inputs and run recipe, saving outputs.
     
     Parameters
     ----------
-      - recipe  : an instance of PYME.recipes.filters.ModuleCollection
-      - inputs  : a dictionary mapping recipe input names to filenames. These
-                  are loaded and inserted into the namespace before running the
-                  recipe.
-      - outputs : a dictionary mapping recipe output names to filenames. The
-                  corresponding members of the namespace are saved to disk
-                  following execution of the recipe.
+    recipe  : an instance of PYME.recipes.filters.ModuleCollection
+    inputs  : a dictionary mapping recipe input names to filenames. These
+              are loaded and inserted into the namespace before running the
+              recipe.
+    outputs : a dictionary mapping recipe output names to filenames. The
+              corresponding members of the namespace are saved to disk
+              following execution of the recipe.
+    context : a dictionary used for filename subsititutions
+    metadata_defaults: a dictionary (or metadata handler) specifying metadata
+               entries to use if input files have incomplete metadata
+        
     """
     try:
         if not isinstance(recipe, Recipe):
@@ -88,7 +92,7 @@ def runRecipe(recipe, inputs, outputs, context={}):
 
         #load any necessary inputs and populate the recipes namespace
         for key, filename in inputs.items():
-            recipe.loadInput(filename, key)
+            recipe.loadInput(filename, key, metadata_defaults)
 
         ### Run the recipe ###
         res = recipe.execute()
