@@ -800,50 +800,6 @@ class BatchFrame(wx.Frame):
         sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
         hsizer1.Add(sbsizer, 0, wx.EXPAND, 10)
         
-        # vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
-        #
-        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        #
-        # hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        # self.tGlob = wx.TextCtrl(self, -1, '')
-        # hsizer.Add(self.tGlob, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        #
-        # self.bLoadFromGlob = wx.Button(self, -1, 'Get Matches')
-        # self.bLoadFromGlob.Bind(wx.EVT_BUTTON, self.OnGetMatches)
-        # hsizer.Add(self.bLoadFromGlob, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        #
-        # vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
-        #
-        # self.lFiles = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
-        # self.lFiles.InsertColumn(0, 'Filename')
-        # self.lFiles.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
-        # self.lFiles.SetColumnWidth(0, -1)
-        #
-        # vsizer2.Add(self.lFiles, .5, wx.EXPAND, 0)
-        #
-        # hsizer1.Add(vsizer2, 0, wx.EXPAND, 10)
-        #
-        # vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files - 2nd channel [optional]:'), wx.VERTICAL)
-        #
-        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        #
-        # hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        # self.tGlob2 = wx.TextCtrl(self, -1, '')
-        # hsizer.Add(self.tGlob2, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        #
-        # self.bLoadFromGlob2 = wx.Button(self, -1, 'Get Matches')
-        # self.bLoadFromGlob2.Bind(wx.EVT_BUTTON, self.OnGetMatches2)
-        # hsizer.Add(self.bLoadFromGlob2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        #
-        # vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
-        #
-        # self.lFiles2 = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
-        # self.lFiles2.InsertColumn(0, 'Filename')
-        # self.lFiles2.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
-        # self.lFiles2.SetColumnWidth(0, -1)
-        #
-        # vsizer2.Add(self.lFiles2, .5, wx.EXPAND, 0)
-        
         
         vsizer1.Add(hsizer1, 0, wx.EXPAND|wx.TOP, 10)
         
@@ -868,40 +824,8 @@ class BatchFrame(wx.Frame):
         vsizer1.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
                 
         self.SetSizerAndFit(vsizer1)
-        
-        #self.SetDropTarget(self.drop)
-        #self.dropFiles = dt(self)
-        #self.lFiles.SetDropTarget(self.dropFiles)
 
         logger.debug('BatchFrame.__init__ done')
-        
-    # def UpdateFileList(self, filenames):
-    #     self.inputFiles = filenames
-    #
-    #     self.lFiles.DeleteAllItems()
-    #
-    #     for f in filenames:
-    #         self.lFiles.Append([f,])
-    #
-    # def OnGetMatches(self, event=None):
-    #     import glob
-    #
-    #     files = sorted(glob.glob(self.tGlob.GetValue()))
-    #     self.UpdateFileList(files)
-    #
-    # def UpdateFileList2(self, filenames):
-    #     self.inputFiles2 = filenames
-    #
-    #     self.lFiles2.DeleteAllItems()
-    #
-    #     for f in filenames:
-    #         self.lFiles2.Append([f,])
-    #
-    # def OnGetMatches2(self, event=None):
-    #     import glob
-    #
-    #     files = sorted(glob.glob(self.tGlob2.GetValue()))
-    #     self.UpdateFileList2(files)
         
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
