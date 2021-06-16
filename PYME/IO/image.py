@@ -719,6 +719,9 @@ class ImageStack(object):
                 self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(xmlfn))
                 mdf = xmlfn
+            except IndexError:
+                # has an xml file, but lacks 'MetaData' section
+                logger.error('xml file %s is not valid PYME metadata')
                 
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)

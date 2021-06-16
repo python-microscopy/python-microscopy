@@ -141,6 +141,7 @@ class DualMarchingCubes(ModuleBase):
     smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
     repair = Bool(False)
     remesh = Bool(False)
+    cull_inner_surfaces = Bool(False)
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
@@ -163,6 +164,9 @@ class DualMarchingCubes(ModuleBase):
         if self.remesh:
             # target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
             surf.remesh(5, l=0.5, n_relax=10)
+            
+        if self.cull_inner_surfaces:
+            surf.remove_inner_surfaces()
 
         namespace[self.output] = surf
 
