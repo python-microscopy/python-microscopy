@@ -442,7 +442,7 @@ class CompositeDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

@@ -40,7 +40,7 @@ class Syncer(Plugin):
     def OnSynchronise(self, event):
         dlg = wx.SingleChoiceDialog(
                 self.dsviewer, 'choose the image to composite with', 'Make Composite',
-                dsviewer.openViewers.keys(),
+                list(dsviewer.openViewers.keys()),
                 wx.CHOICEDLG_STYLE
                 )
 
