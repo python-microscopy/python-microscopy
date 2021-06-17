@@ -22,7 +22,13 @@ class WormlikeSource(PointSource):
         
         return wc.xp, wc.yp, wc.zp
 
-
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'Wormlike'
+        mdh['GeneratedPoints.Source.Kbp'] = self.kbp
+        mdh['GeneratedPoints.Source.StepLength'] = self.steplength
+        mdh['GeneratedPoints.Source.LengthPerKbp'] = self.lengthPerKbp
+        mdh['GeneratedPoints.Source.PersistLength'] = self.persistLength
+        
 class FileSource(PointSource):
     file = File()
     
@@ -31,6 +37,10 @@ class FileSource(PointSource):
     def getPoints(self):
         import numpy as np
         return np.load(self.file)
+
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'File'
+        mdh['GeneratedPoints.Source.FileName'] = self.file
 
 
 class WRDictEnum(BaseEnum):
@@ -104,7 +114,7 @@ density values therefore give rise to proportionally fewer markers per pixel.
     
     def getPoints(self):
         from PYME.simulation import locify
-        print((self.image))
+        # print((self.image))  # if still needed should be replaced by a logging statement
         
         im = image.openImages[self.image]
         #import numpy as np
@@ -119,8 +129,13 @@ density values therefore give rise to proportionally fewer markers per pixel.
         ed = self.trait('image').editor
         
         if ed:
-            ed._values_changed()
-            
+            try:
+                ed._values_changed() # this fails if the image source is not correctly configured yet
+                                     # which leaves you unable to edit config unless trapped as done here
+            except TypeError:
+                pass
+
+
             #super( HasTraits, self ).configure_traits(*args, **kwargs)
 
 #    traits_view = View( Item('points_per_pixel'),
@@ -132,3 +147,7 @@ density values therefore give rise to proportionally fewer markers per pixel.
 ##                              ),
 #                        buttons = ['OK'])
 
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'Image'
+        mdh['GeneratedPoints.Source.PointsPerPixel'] = self.points_per_pixel
+        mdh['GeneratedPoints.Source.Image'] = self.image

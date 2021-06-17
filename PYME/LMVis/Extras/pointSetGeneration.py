@@ -38,7 +38,7 @@ class Generator(HasTraits):
     meanEventNumber = Float(2)
     scaleFactor = Float(2) # Note: we don't expose the scale factor in the view
     meanTime= Float(2000)
-    mode = Enum(['STORM','PAINT'])
+    mode = Enum(['STORM','DNA PAINT'])
 
     sources = List([WormlikeSource(), ImageSource(), FileSource()])
 
@@ -134,7 +134,15 @@ There should be no need to modify this from the default and it is accordingly no
         self.edit_traits()
 
     def OnGenPoints(self, event):
-        self.xp, self.yp, self.zp = self.source.getPoints()
+        import wx
+        try:
+            self.xp, self.yp, self.zp = self.source.getPoints()
+        except KeyError:
+            dlg = wx.MessageDialog(self.visFr, "Could not access image, please configure image source",
+                                   'Warning!', wx.OK | wx.ICON_WARNING)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
         self.OnGenEvents(None)
 
     def OnGenEvents(self, event):
@@ -142,6 +150,7 @@ There should be no need to modify this from the default and it is accordingly no
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
+        from PYME.IO.image import openImages
         # import pylab
         import matplotlib.pyplot as plt
         
@@ -167,7 +176,15 @@ There should be no need to modify this from the default and it is accordingly no
         ds = tabular.MappingFilter(tabular.FitResultsSource(res))
         
         if isinstance(self.source, ImageSource):
-            pipeline.imageBounds = image.openImages[self.source.image].imgBounds
+            try:
+                pipeline.imageBounds = openImages[self.source.image].imgBounds
+            except KeyError:
+                import wx
+                dlg = wx.MessageDialog(self.visFr, "Could not access image, please configure image source",
+                                       'Warning!', wx.OK | wx.ICON_WARNING)
+                dlg.ShowModal()
+                dlg.Destroy()
+
         else:
             pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
             
@@ -180,6 +197,16 @@ There should be no need to modify this from the default and it is accordingly no
         pipeline.mdh['Camera.TrueEMGain'] = 1
         pipeline.mdh['Camera.CycleTime'] = 1
         pipeline.mdh['voxelsize.x'] = .110
+        # some info about the parameters
+        pipeline.mdh['GeneratedPoints.MeanIntensity'] = self.meanIntensity
+        pipeline.mdh['GeneratedPoints.MeanDuration'] = self.meanDuration
+        pipeline.mdh['GeneratedPoints.MeanEventNumber'] = self.meanEventNumber
+        pipeline.mdh['GeneratedPoints.BackgroundIntensity'] = self.backgroundIntensity
+        pipeline.mdh['GeneratedPoints.ScaleFactor'] = self.scaleFactor
+        pipeline.mdh['GeneratedPoints.MeanTime'] = self.meanTime
+        pipeline.mdh['GeneratedPoints.Mode'] = self.mode
+        # the source info
+        self.source.genMetaData(pipeline.mdh)
 
         try:
             pipeline.filterKeys.pop('sig')
