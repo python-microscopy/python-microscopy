@@ -28,6 +28,8 @@ from PYME.recipes import recipeLayout
 import matplotlib.pyplot as plt
 import matplotlib.cm
 from PYME.IO.image import ImageStack
+from PYME.IO import MetaDataHandler
+from PYME.Analysis import MetaData
 from PYME.DSView import ViewIm3D
 
 from PYME.contrib import wxPlotPanel
@@ -717,17 +719,70 @@ class dt(wx.FileDropTarget):
         
     def OnDropFiles(self, x, y, filenames):
         self.window.UpdateFileList(filenames)
-    
+        return True
 
-class BatchFrame(wx.Frame, wx.FileDropTarget):
+class FileListPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        wx.Panel.__init__(self,*args, **kwargs)
+
+        self._files = []
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tGlob = wx.TextCtrl(self, -1, '', size=(200, -1))
+        hsizer.Add(self.tGlob, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bLoadFromGlob = wx.Button(self, -1, 'Get Matches')
+        self.bLoadFromGlob.Bind(wx.EVT_BUTTON, self.OnGetMatches)
+        hsizer.Add(self.bLoadFromGlob, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        self.lFiles = wx.ListCtrl(self, -1, size=(450, -1), style=wx.LC_REPORT | wx.LC_HRULES)
+        self.lFiles.InsertColumn(0, 'Filename')
+        self.lFiles.Append(
+            ['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"', ])
+        self.lFiles.SetColumnWidth(0, -1)
+
+        vsizer.Add(self.lFiles, .5, wx.EXPAND, 0)
+        
+        self.dropFiles = dt(self)
+        self.lFiles.SetDropTarget(self.dropFiles)
+        
+        self.SetSizerAndFit(vsizer)
+
+    def UpdateFileList(self, filenames):
+        self._files = list(filenames)
+    
+        self.lFiles.DeleteAllItems()
+    
+        for f in filenames:
+            self.lFiles.Append([f, ])
+
+    def OnGetMatches(self, event=None):
+        import glob
+    
+        files = sorted(glob.glob(self.tGlob.GetValue()))
+        self.UpdateFileList(files)
+        
+    @property
+    def filenames(self):
+        return self._files
+
+from PYME.ui import MetadataTree
+class BatchFrame(wx.Frame):
     def __init__(self, parent=None):                
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
-        self.dropFiles = dt(self)
         logger.debug('BatchFrame.__init__ start')
         self.rm = RecipeManager()
-        self.inputFiles = []
-        self.inputFiles2 = []
+        #self.inputFiles = []
+        #self.inputFiles2 = []
+        self._default_md = MetaDataHandler.DictMDHandler(MetaData.ConfocDefault)
+        
+        self._file_lists = []
         
         vsizer1=wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Recipe:"), wx.HORIZONTAL)
@@ -738,52 +793,25 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         vsizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 2)
         
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
+        self._file_lists.append(FileListPanel(self, -1))
+        sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
+        hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
+
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files (input2) [optional]:'), wx.VERTICAL)
+        self._file_lists.append(FileListPanel(self, -1))
+        sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
+        hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
+
+        self._sb_metadata = wx.StaticBox(self, -1, 'Metadata defaults')
+        sbsizer = wx.StaticBoxSizer(self._sb_metadata, wx.VERTICAL)
+        sbsizer.Add(wx.StaticText(self, -1, 'If metadata is not found in input images,\nthe following defaults will be used:'), 0, wx.EXPAND,0)
+        self._mdpan = MetadataTree.MetadataPanel(self, self._default_md, refreshable=False)
+        sbsizer.Add(self._mdpan, 1, wx.EXPAND, 0)
+        hsizer1.Add(sbsizer, 0, wx.EXPAND, 10)
         
-        vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        
-        hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tGlob = wx.TextCtrl(self, -1, '')
-        hsizer.Add(self.tGlob, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        
-        self.bLoadFromGlob = wx.Button(self, -1, 'Get Matches')
-        self.bLoadFromGlob.Bind(wx.EVT_BUTTON, self.OnGetMatches)
-        hsizer.Add(self.bLoadFromGlob, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        
-        vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
-        
-        self.lFiles = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
-        self.lFiles.InsertColumn(0, 'Filename')
-        self.lFiles.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
-        self.lFiles.SetColumnWidth(0, -1)
-        
-        vsizer2.Add(self.lFiles, .5, wx.EXPAND, 0)        
-        
-        hsizer1.Add(vsizer2, 0, wx.EXPAND, 10)
-        
-        vsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files - 2nd channel [optional]:'), wx.VERTICAL)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        
-        hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tGlob2 = wx.TextCtrl(self, -1, '')
-        hsizer.Add(self.tGlob2, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        
-        self.bLoadFromGlob2 = wx.Button(self, -1, 'Get Matches')
-        self.bLoadFromGlob2.Bind(wx.EVT_BUTTON, self.OnGetMatches2)
-        hsizer.Add(self.bLoadFromGlob2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        
-        vsizer2.Add(hsizer, 0, wx.EXPAND, 0)
-        
-        self.lFiles2 = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_HRULES)
-        self.lFiles2.InsertColumn(0, 'Filename')
-        self.lFiles2.Append(['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"',])
-        self.lFiles2.SetColumnWidth(0, -1)
-        
-        vsizer2.Add(self.lFiles2, .5, wx.EXPAND, 0)        
-        
-        hsizer1.Add(vsizer2, 0, wx.EXPAND, 10)
         vsizer1.Add(hsizer1, 0, wx.EXPAND|wx.TOP, 10)
         
         hsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Output Directory:'), wx.HORIZONTAL)
@@ -807,39 +835,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         vsizer1.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
                 
         self.SetSizerAndFit(vsizer1)
-        
-        #self.SetDropTarget(self.drop)
-        self.lFiles.SetDropTarget(self.dropFiles)
 
         logger.debug('BatchFrame.__init__ done')
-        
-    def UpdateFileList(self, filenames):
-        self.inputFiles = filenames        
-        
-        self.lFiles.DeleteAllItems()
-        
-        for f in filenames:
-            self.lFiles.Append([f,])
-        
-    def OnGetMatches(self, event=None):
-        import glob
-        
-        files = sorted(glob.glob(self.tGlob.GetValue()))
-        self.UpdateFileList(files)
-        
-    def UpdateFileList2(self, filenames):
-        self.inputFiles2 = filenames        
-        
-        self.lFiles2.DeleteAllItems()
-        
-        for f in filenames:
-            self.lFiles2.Append([f,])
-        
-    def OnGetMatches2(self, event=None):
-        import glob
-        
-        files = sorted(glob.glob(self.tGlob2.GetValue()))
-        self.UpdateFileList2(files)
         
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
@@ -854,7 +851,9 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
             wx.MessageBox('No Recipe: Please open (or build) a recipe', 'Error', wx.OK|wx.ICON_ERROR)
             return
             
-        if not len(self.inputFiles) > 0:
+        inputs = [l.filenames for l in self._file_lists]
+        
+        if not len(inputs[0]) > 0:
             wx.MessageBox('No input files', 'Error', wx.OK|wx.ICON_ERROR)
             return
             
@@ -883,14 +882,18 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         #     wx.MessageBox("Both new and old style outputs defined, choose another name for the 'output' variable", 'Error', wx.OK | wx.ICON_ERROR)
         #     return
         
+        if (len(inputs[1]) > 0) and not (len(inputs[0]) == len(inputs[1])):
+            wx.MessageBox('Length of input file lists not equal', 'Error', wx.OK | wx.ICON_ERROR)
+            return
+        
         from PYME.ui import progress
         
         try:
             with progress.ComputationInProgress(self, 'Batch Analysis'):
-                if not len(self.inputFiles) == len(self.inputFiles2):
-                    batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
+                if not len(inputs[1]) > 0:
+                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
                 else:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir, num_procs=num_procs)
+                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
         except:
             if (num_procs > 1):
                 wx.MessageBox('Uncheck "spawn worker process for each core" for easier debugging', 'Error occurred during multiple process run', wx.OK | wx.ICON_ERROR)

@@ -408,9 +408,9 @@ class MDHandlerBase(DictMixin):
             The metadata handler from which to copy entries.
         """
         #only copies values if not already defined
-        for en in mdToCopy.getEntryNames():
+        for en in mdToCopy.keys():
             if not en in self.getEntryNames():
-                self.setEntry(en, mdToCopy.getEntry(en))
+                self.setEntry(en, mdToCopy.get(en))
 
     def __repr__(self):
         import re
