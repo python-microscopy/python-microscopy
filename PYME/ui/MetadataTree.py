@@ -294,6 +294,9 @@ class EditableTreeList(gizmos.TreeListCtrl, TextEditMixin):
         gizmos.TreeListCtrl.__init__(self,parent, id, style=style)
         TextEditMixin.__init__(self)
 
+class MyTreeListCtrl(gizmos.TreeListCtrl):
+    def DoGetBestSize(self):
+        return wx.Size(400, 200)
 
 
 class MetadataPanel(wx.Panel):
@@ -304,12 +307,12 @@ class MetadataPanel(wx.Panel):
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
-        self.tree = gizmos.TreeListCtrl(self, -1, style =
+        self.tree = MyTreeListCtrl(self, -1, style =
                                         wx.TR_DEFAULT_STYLE
                                         #| wx.TR_HAS_BUTTONS
                                         #| wx.TR_TWIST_BUTTONS
                                         #| wx.TR_ROW_LINES
-                                        #| wx.TR_EDIT_LABELS
+                                        | wx.TR_EDIT_LABELS
                                         #| wx.TR_COLUMN_LINES
                                         #| wx.TR_NO_LINES
                                         | wx.TR_FULL_ROW_HIGHLIGHT
@@ -351,8 +354,8 @@ class MetadataPanel(wx.Panel):
         else:
             self.tree.ExpandAll(self.root)
 
-        self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
+        #self.tree.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self.OnRightDown)
+        self.tree.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnRightUp)
         self.tree.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit)
         self.tree.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit)
         #self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
@@ -405,7 +408,7 @@ class MetadataPanel(wx.Panel):
 #                           (flags, col, self.tree.GetItemText(item, col)))
 
     def OnRightDown(self, event):
-        pt = event.GetPosition();
+        pt = event.GetPosition()
         item, flags, col = self.tree.HitTest(pt)
         if item:
 #            self.log.WriteText("OnRightClick: %s, %s, %s\n" %
@@ -414,7 +417,7 @@ class MetadataPanel(wx.Panel):
 
 
     def OnRightUp(self, event):
-        pt = event.GetPosition();
+        pt = event.GetPosition()
         item, flags, col = self.tree.HitTest(pt)
         #print item, flags, col
         if item and col in self.editableCols:

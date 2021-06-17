@@ -28,6 +28,8 @@ from PYME.recipes import recipeLayout
 import matplotlib.pyplot as plt
 import matplotlib.cm
 from PYME.IO.image import ImageStack
+from PYME.IO import MetaDataHandler
+from PYME.Analysis import MetaData
 from PYME.DSView import ViewIm3D
 
 from PYME.contrib import wxPlotPanel
@@ -729,7 +731,7 @@ class FileListPanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Filename pattern:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tGlob = wx.TextCtrl(self, -1, '')
+        self.tGlob = wx.TextCtrl(self, -1, '', size=(200, -1))
         hsizer.Add(self.tGlob, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
 
         self.bLoadFromGlob = wx.Button(self, -1, 'Get Matches')
@@ -738,7 +740,7 @@ class FileListPanel(wx.Panel):
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
-        self.lFiles = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_HRULES)
+        self.lFiles = wx.ListCtrl(self, -1, size=(450, -1), style=wx.LC_REPORT | wx.LC_HRULES)
         self.lFiles.InsertColumn(0, 'Filename')
         self.lFiles.Append(
             ['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"', ])
@@ -769,6 +771,7 @@ class FileListPanel(wx.Panel):
     def filenames(self):
         return self._files
 
+from PYME.ui import MetadataTree
 class BatchFrame(wx.Frame):
     def __init__(self, parent=None):                
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
@@ -777,6 +780,7 @@ class BatchFrame(wx.Frame):
         self.rm = RecipeManager()
         #self.inputFiles = []
         #self.inputFiles2 = []
+        self._default_md = MetaDataHandler.DictMDHandler(MetaData.ConfocDefault)
         
         self._file_lists = []
         
@@ -793,11 +797,18 @@ class BatchFrame(wx.Frame):
         sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
         self._file_lists.append(FileListPanel(self, -1))
         sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
-        hsizer1.Add(sbsizer, 0, wx.EXPAND, 10)
+        hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
 
         sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files (input2) [optional]:'), wx.VERTICAL)
         self._file_lists.append(FileListPanel(self, -1))
         sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
+        hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
+
+        self._sb_metadata = wx.StaticBox(self, -1, 'Metadata defaults')
+        sbsizer = wx.StaticBoxSizer(self._sb_metadata, wx.VERTICAL)
+        sbsizer.Add(wx.StaticText(self, -1, 'If metadata is not found in input images,\nthe following defaults will be used:'), 0, wx.EXPAND,0)
+        self._mdpan = MetadataTree.MetadataPanel(self, self._default_md, refreshable=False)
+        sbsizer.Add(self._mdpan, 1, wx.EXPAND, 0)
         hsizer1.Add(sbsizer, 0, wx.EXPAND, 10)
         
         
@@ -880,9 +891,9 @@ class BatchFrame(wx.Frame):
         try:
             with progress.ComputationInProgress(self, 'Batch Analysis'):
                 if not len(inputs[1]) > 0:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs)
+                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
                 else:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs)
+                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
         except:
             if (num_procs > 1):
                 wx.MessageBox('Uncheck "spawn worker process for each core" for easier debugging', 'Error occurred during multiple process run', wx.OK | wx.ICON_ERROR)

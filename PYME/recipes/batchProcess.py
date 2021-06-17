@@ -65,7 +65,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
 
         cntxt = {'output_dir' : output_dir, 'file_stub': file_stub}
 
-        taskParams.append((recipe.toYAML(), in_d, out_d, cntxt, metadata_defaults))
+        taskParams.append((recipe.toYAML(), in_d, out_d, cntxt, dict(metadata_defaults)))
 
     if num_procs == 1:
         # map(runRec, taskParams)  # map now returns iterator, which means this never runs unless we convert to list
