@@ -1,5 +1,5 @@
 from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-
+from PYME.misc.exceptions import UserError
 from PYME.IO import image
 
 
@@ -53,7 +53,7 @@ class WRDictEnum(BaseEnum):
     
     @property
     def values(self):
-        return self.wrdict.keys()
+        return list(self.wrdict.keys())
     
     #def info ( self ):
     #    return ' or '.join( [ repr( x ) for x in self.values ] )
@@ -116,7 +116,16 @@ density values therefore give rise to proportionally fewer markers per pixel.
         from PYME.simulation import locify
         # print((self.image))  # if still needed should be replaced by a logging statement
         
-        im = image.openImages[self.image]
+        try:
+            im = image.openImages[self.image]
+        except KeyError:
+            # no image of that name:
+            # If uncaught this will pop up in the error dialog from 'Computation in progress', so shouldn't need
+            # an explicit dialog / explicit handing. TODO - do we need an error subclass - e.g. UserError or ParameterError
+            # which the error dialog treats differently to more generic errors so as to make it clear that it's something
+            # the user has done wrong rather than a bug???
+            raise UserError('No open image found with name: "%s", please set "image" property of ImageSource to a valid image name\nThis must be an image which is already open.\n\n' % self.image)
+        
         #import numpy as np
         d = im.data[:, :, 0, 0].astype('f')
         
@@ -125,16 +134,14 @@ density values therefore give rise to proportionally fewer markers per pixel.
         
         return locify.locify(d, pixelSize=im.pixelSize, pointsPerPixel=self.points_per_pixel)
     
+    def get_bounds(self):
+        return image.openImages[self.image].imgBounds
+    
     def refresh_choices(self):
         ed = self.trait('image').editor
         
         if ed:
-            try:
-                ed._values_changed() # this fails if the image source is not correctly configured yet
-                                     # which leaves you unable to edit config unless trapped as done here
-            except TypeError:
-                pass
-
+            ed._values_changed()
 
             #super( HasTraits, self ).configure_traits(*args, **kwargs)
 

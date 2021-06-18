@@ -38,7 +38,7 @@ class Generator(HasTraits):
     meanEventNumber = Float(2)
     scaleFactor = Float(2) # Note: we don't expose the scale factor in the view
     meanTime= Float(2000)
-    mode = Enum(['STORM','DNA PAINT'])
+    mode = Enum(['STORM','PAINT'])
 
     sources = List([WormlikeSource(), ImageSource(), FileSource()])
 
@@ -134,15 +134,7 @@ There should be no need to modify this from the default and it is accordingly no
         self.edit_traits()
 
     def OnGenPoints(self, event):
-        import wx
-        try:
-            self.xp, self.yp, self.zp = self.source.getPoints()
-        except KeyError:
-            dlg = wx.MessageDialog(self.visFr, "Could not access image, please configure image source",
-                                   'Warning!', wx.OK | wx.ICON_WARNING)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
+        self.xp, self.yp, self.zp = self.source.getPoints()
         self.OnGenEvents(None)
 
     def OnGenEvents(self, event):
@@ -150,7 +142,6 @@ There should be no need to modify this from the default and it is accordingly no
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
-        from PYME.IO.image import openImages
         # import pylab
         import matplotlib.pyplot as plt
         
@@ -174,18 +165,14 @@ There should be no need to modify this from the default and it is accordingly no
         plt.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.MappingFilter(tabular.FitResultsSource(res))
-        
-        if isinstance(self.source, ImageSource):
-            try:
-                pipeline.imageBounds = openImages[self.source.image].imgBounds
-            except KeyError:
-                import wx
-                dlg = wx.MessageDialog(self.visFr, "Could not access image, please configure image source",
-                                       'Warning!', wx.OK | wx.ICON_WARNING)
-                dlg.ShowModal()
-                dlg.Destroy()
 
-        else:
+        try:
+            # some data sources (current ImageSource) have image bound info. Use this if available
+            # this could fail on either an AttributeError (if the data source doesn't implement bounds
+            # or another error if something fails in get_bounds(). Only catch the AttributeError, as we have
+            # should not be handling other errors here.
+            pipeline.imageBounds = self.source.get_bounds()
+        except AttributeError:
             pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
             
         pipeline.addDataSource('Generated Points', ds)
