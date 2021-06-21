@@ -141,8 +141,12 @@ density values therefore give rise to proportionally fewer markers per pixel.
         ed = self.trait('image').editor
         
         if ed:
-            ed._values_changed()
-
+            try:
+                ed._values_changed()
+            except ValueError:
+                # TODO - why can _values_changed be None??
+                # is there a better way to handle/avoid this?
+                pass
             #super( HasTraits, self ).configure_traits(*args, **kwargs)
 
 #    traits_view = View( Item('points_per_pixel'),
