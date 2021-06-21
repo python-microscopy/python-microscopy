@@ -9,6 +9,8 @@ Defines a context manager for long running processes. It does the following:
 import wx
 import traceback
 
+from PYME.misc.exceptions import UserError
+
 _package_info = '''python-microscopy={pyme_version}
 python={python_version}, platform={platform}
 numpy={numpy_version}, wx={wx_version}'''
@@ -76,9 +78,39 @@ class TracebackDialog(wx.Dialog):
             wx.TheClipboard.Close()
         else:
             wx.MessageBox("Unable to open the clipboard","Error")
+
+
+class UserErrorDialog(wx.Dialog):
+    def __init__(self, parent, description, exc_type, exc_val, exc_tb):
+        wx.Dialog.__init__(self, parent, title='Error whilst %s' % description)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        s_b = wx.StaticBitmap(self)
+        s_b.SetIcon(wx.ArtProvider.GetIcon(wx.ART_ERROR, client=wx.ART_MESSAGE_BOX, size=(32, 32)))
+        hsizer.Add(s_b, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(self, label='%s' % exc_val), 1,
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL|wx.EXPAND, 2)
+        vsizer.Add(hsizer, 0, wx.ALL, 2)
+        
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+        
+        btnsizer.Realize()
+        
+        vsizer.Add(btnsizer, 0, wx.ALL | wx.EXPAND, 2)
+        self.SetSizerAndFit(vsizer)
         
 def show_traceback_dialog(parent, description, exc_type, exc_val, exc_tb):
-    dlg = TracebackDialog(parent, description, exc_type, exc_val, exc_tb)
+    if exc_type is UserError:
+        dlg = UserErrorDialog(parent, description, exc_type, exc_val, exc_tb)
+    else:
+        dlg = TracebackDialog(parent, description, exc_type, exc_val, exc_tb)
+        
     dlg.ShowModal()
     dlg.Destroy()
 

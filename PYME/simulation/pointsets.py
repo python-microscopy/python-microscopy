@@ -1,5 +1,5 @@
 from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-
+from PYME.misc.exceptions import UserError
 from PYME.IO import image
 
 
@@ -22,7 +22,13 @@ class WormlikeSource(PointSource):
         
         return wc.xp, wc.yp, wc.zp
 
-
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'Wormlike'
+        mdh['GeneratedPoints.Source.Kbp'] = self.kbp
+        mdh['GeneratedPoints.Source.StepLength'] = self.steplength
+        mdh['GeneratedPoints.Source.LengthPerKbp'] = self.lengthPerKbp
+        mdh['GeneratedPoints.Source.PersistLength'] = self.persistLength
+        
 class FileSource(PointSource):
     file = File()
     
@@ -31,6 +37,10 @@ class FileSource(PointSource):
     def getPoints(self):
         import numpy as np
         return np.load(self.file)
+
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'File'
+        mdh['GeneratedPoints.Source.FileName'] = self.file
 
 
 class WRDictEnum(BaseEnum):
@@ -43,7 +53,7 @@ class WRDictEnum(BaseEnum):
     
     @property
     def values(self):
-        return self.wrdict.keys()
+        return list(self.wrdict.keys())
     
     #def info ( self ):
     #    return ' or '.join( [ repr( x ) for x in self.values ] )
@@ -104,9 +114,18 @@ density values therefore give rise to proportionally fewer markers per pixel.
     
     def getPoints(self):
         from PYME.simulation import locify
-        print((self.image))
+        # print((self.image))  # if still needed should be replaced by a logging statement
         
-        im = image.openImages[self.image]
+        try:
+            im = image.openImages[self.image]
+        except KeyError:
+            # no image of that name:
+            # If uncaught this will pop up in the error dialog from 'Computation in progress', so shouldn't need
+            # an explicit dialog / explicit handing. TODO - do we need an error subclass - e.g. UserError or ParameterError
+            # which the error dialog treats differently to more generic errors so as to make it clear that it's something
+            # the user has done wrong rather than a bug???
+            raise UserError('No open image found with name: "%s", please set "image" property of ImageSource to a valid image name\nThis must be an image which is already open.\n\n' % self.image)
+        
         #import numpy as np
         d = im.data[:, :, 0, 0].astype('f')
         
@@ -115,12 +134,19 @@ density values therefore give rise to proportionally fewer markers per pixel.
         
         return locify.locify(d, pixelSize=im.pixelSize, pointsPerPixel=self.points_per_pixel)
     
+    def get_bounds(self):
+        return image.openImages[self.image].imgBounds
+    
     def refresh_choices(self):
         ed = self.trait('image').editor
         
         if ed:
-            ed._values_changed()
-            
+            try:
+                ed._values_changed()
+            except ValueError:
+                # TODO - why can _values_changed be None??
+                # is there a better way to handle/avoid this?
+                pass
             #super( HasTraits, self ).configure_traits(*args, **kwargs)
 
 #    traits_view = View( Item('points_per_pixel'),
@@ -132,3 +158,7 @@ density values therefore give rise to proportionally fewer markers per pixel.
 ##                              ),
 #                        buttons = ['OK'])
 
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'Image'
+        mdh['GeneratedPoints.Source.PointsPerPixel'] = self.points_per_pixel
+        mdh['GeneratedPoints.Source.Image'] = self.image
