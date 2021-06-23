@@ -143,7 +143,7 @@ density values therefore give rise to proportionally fewer markers per pixel.
         if ed:
             try:
                 ed._values_changed()
-            except ValueError:
+            except TypeError:
                 # TODO - why can _values_changed be None??
                 # is there a better way to handle/avoid this?
                 pass
