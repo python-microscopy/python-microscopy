@@ -83,6 +83,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                  title="PYME Visualise", pos=wx.DefaultPosition,
                  size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=True, cmd_args=None, pipeline_vars = {}):
 
+        # populate about box info
+        self._component_name = 'PYMEVisualise'
+        self._long_desc = "Visualisation of localisation microscopy data."
+        
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
         
@@ -249,32 +253,6 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self._cleanup()
         
         #AUIFrame.OnQuit(self, event)
-
-
-    def OnAbout(self, event):
-        from PYME.version import version
-        from PYME.resources import getIconPath
-        import wx.adv
-        # msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
-              
-        # dlg = wx.MessageDialog(self, msg, "About PYME Visualise",
-        #                        wx.OK | wx.ICON_INFORMATION)
-        # dlg.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL, False, "Verdana"))
-        # dlg.ShowModal()
-        # dlg.Destroy()
-
-        dlg = wx.adv.AboutDialogInfo()
-        dlg.SetName("PYME Visualise")
-        dlg.SetVersion(version)
-        dlg.SetDescription("Visualisation of localisation microscopy data.")
-        dlg.SetCopyright("(C)2009-2021")
-        dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))
-        #dlg.SetLicense("GPLv3") # I think we need to either expand or omit
-        # TODO: should this be the issues page or the website
-        dlg.SetWebSite("https://github.com/python-microscopy/python-microscopy/issues", desc="Report an issue")        
-        #dlg.AddDeveloper("David Baddeley") #should probably be all or none here, punting full list for now
-
-        wx.adv.AboutBox(dlg)
 
     def OnDocumentation(self, event):
         import webbrowser
@@ -478,9 +456,11 @@ class VisGuiApp(wx.App):
 
 
 def main_(filename=None, use_shaders=False, args=None):
+    from PYME.misc import check_for_updates
     if filename == "":
         filename = None
     application = VisGuiApp(filename, use_shaders, args, 0)
+    check_for_updates.gui_prompt_once()
     application.MainLoop()
 
 def parse():

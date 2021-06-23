@@ -80,6 +80,8 @@ class dt(wx.FileDropTarget):
 class DSViewFrame(AUIFrame):
     def __init__(self, image,  parent=None, title='', mode='LM', 
                  size = (800,700), glCanvas=None):
+        self._component_name='PYMEImage'
+        
         AUIFrame.__init__(self,parent, -1, title,size=size, pos=wx.DefaultPosition)
 
         self.mode = mode
@@ -133,21 +135,26 @@ class DSViewFrame(AUIFrame):
         #self.do = self.vp.do
         
         
-        tmp_menu = wx.Menu()
-        tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
-        tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
-        tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
+        self.AddMenuItem('File', '&Open', self.OnOpen, id=wx.ID_OPEN)
+        self.AddMenuItem('File', '&Save As', self.OnSave, id=wx.ID_SAVE)
+        self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
+        #self.AddMenuItem('File>Save','Save &Results', )
+        
+        #tmp_menu = wx.Menu()
+        #tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
+        #tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
+        #tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
         
 
         #a submenu for modules to hook and install saving functions into
-        self.save_menu = wx.Menu()
-        self._menus['Save'] = self.save_menu
-        tmp_menu.Append(-1, 'Save &Results', self.save_menu)
+        #self.save_menu = wx.Menu()
+        #self._menus['Save'] = self.save_menu
+        #tmp_menu.Append(-1, 'Save &Results', self.save_menu)
         
         #tmp_menu.AppendSeparator()
         #tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
-        self.menubar.Append(tmp_menu, "File")
-        self._menus['File'] = tmp_menu
+        #self.menubar.Append(tmp_menu, "File")
+        #self._menus['File'] = tmp_menu
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
@@ -159,9 +166,9 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
+        #self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        #self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        #self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
         #self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
@@ -216,8 +223,7 @@ class DSViewFrame(AUIFrame):
         self.drop = dt()        
         self.SetDropTarget(self.drop)
         
-        self.AddMenuItem('Save', 'To Cluster', self.OnSaveToCluster)
-        
+        self.AddMenuItem('File>Save', 'To Cluster', self.OnSaveToCluster)
         
         
         openViewers[self.image.filename] = self
@@ -496,10 +502,12 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    from PYME.misc import check_for_updates
     #from PYME.util import mProfile
     #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
     app = MyApp(argv)
     print('Starting main loop')
+    check_for_updates.gui_prompt_once()
     app.MainLoop()
     print('Finished main loop')
     #mProfile.profileOff()
