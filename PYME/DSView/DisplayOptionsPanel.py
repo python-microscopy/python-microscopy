@@ -25,6 +25,8 @@ import wx
 import wx.lib.agw.aui as aui
 # import pylab
 import wx.lib.scrolledpanel as scrolled
+import PYME.ui.manualFoldPanel as afp
+
 from matplotlib import cm
 
 from PYME import resources
@@ -73,18 +75,28 @@ class OptionsPanel(scrolled.ScrolledPanel):
         if horizOrientation:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             dispSize = (100, 80)
+        else:
+            chan_pan = afp.foldPanel(self)
+            chan_pan.fold_signal.connect(self.OnChannelFold)
 
         hd = self.do.get_hist_data()
         
         for i in range(len(self.do.Chans)):
-            ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
+            if horizOrientation:
+                ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
+                p = self
+            else:
+                item = afp.foldingPane(chan_pan, -1, caption=self.do.names[i], pinned=True)
+                pane = wx.Panel(item, -1)
+                ssizer = wx.StaticBoxSizer(wx.StaticBox(pane, -1), wx.VERTICAL)
+                p = pane
 
             id = wx.NewId()
             self.hIds.append(id)
             
             c = hd[i]
                     
-            hClim = histLimits.HistLimitPanel(self, id, c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
+            hClim = histLimits.HistLimitPanel(p, id, c[::max(1, int(len(c)/1e4))], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i], size=dispSize, log=True)
 
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
             self.hcs.append(hClim)
@@ -95,14 +107,14 @@ class OptionsPanel(scrolled.ScrolledPanel):
 
             id = wx.NewId()
             self.cIds.append(id)
-            cCmap = wx.Choice(self, id, choices=cmapnames, size=(80, -1))
+            cCmap = wx.Choice(p, id, choices=cmapnames, size=(80, -1))
             cCmap.SetSelection(cmapnames.index(self.do.cmaps[i].name))
             cCmap.Bind(wx.EVT_CHOICE, self.OnCMapChanged)
             hsizer2.Add(cCmap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             
             id = wx.NewId()
             self.shIds.append(id)            
-            cbShow = wx.CheckBox(self, id)
+            cbShow = wx.CheckBox(p, id)
             cbShow.SetValue(self.do.show[i])
             cbShow.Bind(wx.EVT_CHECKBOX, self.OnShowChanged)
             hsizer2.Add(cbShow, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,2)
@@ -112,7 +124,13 @@ class OptionsPanel(scrolled.ScrolledPanel):
             if horizOrientation:
                 hsizer.Add(ssizer, 0, wx.ALL, 2)
             else:
-                vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+                # vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
+                pane.SetSizerAndFit(ssizer)
+                item.AddNewElement(pane)
+                chan_pan.AddPane(item)
+
+        if not horizOrientation:
+            vsizer.Add(chan_pan, 0, wx.ALL|wx.EXPAND, 5)
 
         self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 
@@ -432,4 +450,7 @@ class OptionsPanel(scrolled.ScrolledPanel):
         #print 'c'
         self.cbScale.SetSelection(self.do.scale + self.scale_11)
 
+    def OnChannelFold(self, **kwargs):
+        self.Layout()
+        self.Refresh()
 
