@@ -401,7 +401,7 @@ static PyObject * py_quad_surf_mf_pos_fixed(PyObject *self, PyObject *args, PyOb
     if (aZ == NULL) ABORT("Bad Z")
 
     aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_FLOAT, 0, 1);
-    printf("aP: %d, PyArray_Size(aP): %d\n", aP, PyArray_Size((PyObject*)aP));
+    printf("aP: %d, PyArray_Size(aP): %d\n", (int)aP, PyArray_Size((PyObject*)aP));
     if ((aP == NULL) || (PyArray_Size((PyObject*)aP) < 5)) ABORT("Bad P")
 
     aPos = (PyArrayObject *) PyArray_ContiguousFromObject(oPos, PyArray_FLOAT, 0, 1);
