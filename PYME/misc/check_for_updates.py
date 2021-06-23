@@ -3,7 +3,12 @@ from PYME import config
 import os
 import json
 import logging
+import subprocess
+import datetime
 logger = logging.getLogger(__name__)
+import shelve
+
+update_info_fn = os.path.join(config.user_config_dir, 'update.shv')
 
 update_messages = {
     'git' : '''You have a development install, to update, execute the following in the repository root folder:
@@ -63,10 +68,16 @@ def check_for_updates(gui=True, force=False):
     import requests
     import packaging.version
     
-    if not(force or config.get('check_for_updates', True)):
-        # respect config setting and bail
-        # called with force=True when called from the menu (i.e. explicitly rather than automatically)
-        return
+    with shelve.open(update_info_fn) as s:
+        next_update_time = s.get('last_update_check', datetime.datetime.fromtimestamp(0)) + datetime.timedelta(days=1)
+        t = datetime.datetime.now()
+    
+        if not(force or (config.get('check_for_updates', True) and t > next_update_time)):
+            # respect config setting and bail
+            # called with force=True when called from the menu (i.e. explicitly rather than automatically)
+            return
+
+        s['last_update_check'] = t
     
     logger.info('Checking for updates ...')
     try:
@@ -104,7 +115,8 @@ def gui_prompt_update():
     msg = update_msg + '\n\n' + update_messages[install_type]
     wx.MessageBox(msg, 'A PYME update is available')
     
-    config.update_config({'last_update_offered' : update_ver})
+    with shelve.open(update_info_fn) as s:
+        s['last_update_offered'] =  update_ver
     
     
 def gui_prompt_once():
@@ -113,8 +125,12 @@ def gui_prompt_once():
         check_for_updates(False)
         
         
-    if update_available and (config.get('last_update_offered', None) != update_ver):
-        gui_prompt_update()
+    if update_available:
+        with shelve.open(update_info_fn) as s:
+            last_offered = s.get('last_update_offered', None)
+            
+        if (last_offered != update_ver):
+            gui_prompt_update()
         
         
 check_for_updates(False)
