@@ -13,11 +13,10 @@ class DataSource(XYZTCDataSource):
     This lets us concatenate datasources and access them via a single data source.
     """
     def __init__(self, datasources, dimension='Z'):
+        assert(dimension in 'XYZTC')
+
         # we will concatenate and index datasources along this dimension
         self._dimension = dimension
-
-        # assert dimension is valid: real dimension, exists in this data
-        assert(self._dimension in 'XYZTC')
 
         self.n_datasources = len(datasources)
         self.datasources = []
