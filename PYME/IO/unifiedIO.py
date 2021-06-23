@@ -211,6 +211,20 @@ def openFile(filename, mode='rb'):
         raise IOError('File does not exist or URI not understood: %s' % filename)
 
 def read(filename):
+    '''
+    Read a file from disk or the cluster.
+    
+    NOTE: filename is expected to be sanitized / trusted, this should not be called
+    with user data from a web endpoint.
+    
+    Parameters
+    ----------
+    filename
+
+    Returns
+    -------
+
+    '''
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
