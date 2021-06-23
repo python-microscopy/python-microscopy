@@ -66,7 +66,7 @@ def run_template(request):
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
 
 
-    recipe_text = unifiedIO.read(recipeURI).decode('utf-8')
+    recipe_text = unifiedIO.safe_read(recipeURI).decode('utf-8')
     recipe = Recipe.fromYAML(recipe_text)
     
 
@@ -90,7 +90,7 @@ def view_svg(request):
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
-    recipe = Recipe.fromYAML(unifiedIO.read(recipeURI))
+    recipe = Recipe.fromYAML(unifiedIO.safe_read(recipeURI))
 
     svg = recipeLayout.to_svg(recipe.dependancyGraph())
 
@@ -102,7 +102,7 @@ def extra_inputs(request):
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
-    recipe = Recipe.fromYAML(unifiedIO.read(recipeURI))
+    recipe = Recipe.fromYAML(unifiedIO.safe_read(recipeURI))
     
     return render(request, 'recipes/extra_inputs.html', {'file_inputs': recipe.file_inputs, 'serverfilter' : server_filter})
 
