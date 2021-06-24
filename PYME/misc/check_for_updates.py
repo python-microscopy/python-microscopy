@@ -128,7 +128,7 @@ def gui_prompt_no_update():
     assert not update_available
     
     msg = 'You are running the latest version of PYME: %s' % version.version
-    wx.MessageBox(msg, 'No updates are available')
+    wx.MessageBox(msg, 'No update is available')
     
     
 def gui_prompt_once():
