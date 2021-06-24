@@ -154,6 +154,20 @@ class Spooler(object):
 
     """
     def __init__(self, serverfilter=clusterIO.local_serverfilter, servers=None, distribution_fcn=distribution_function_round_robin, filter=None):
+        """
+        Parameters
+        ----------
+
+        serverfilter : string
+                The cluster identifier (when multiple clusters on one network)
+        servers : list
+                A manual list of servers. Usage is not recommended
+        distribution_fcn : callable
+                a function which assigns files to frames. Takes (at least) n_servers as an argument (provided by the spooler), but optionally any addition keyword
+                arguments you pass to `put()`. In simple cases, this will be a frame number - e.g. i - see round_robin fcn above.
+        filter: callable
+                a function which performs some operation on the data before it's saved. Typically format conversion and/or compression.
+        """
         self._directory = clusterIO.get_dir_manager(serverfilter)
 
         if servers is None:
@@ -169,7 +183,11 @@ class Spooler(object):
         self._distribution_fcn = distribution_fcn
 
     def put(self, filename, data, **kwargs):
-        """ Put, choosing a stream using the distribution function"""
+        """ Put, choosing a stream using the distribution function
+        
+        kwargs are used as arguments for the server distribution function. 
+
+        """
         idx = self._distribution_fcn(n_servers = self._n_servers, **kwargs)
 
         self.put_stream(idx, filename, data)
