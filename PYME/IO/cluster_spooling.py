@@ -5,6 +5,7 @@ import threading
 import logging
 
 logger = logging.getLogger(__name__)
+QUEUE_MAX_SIZE = 200 # ~10k frames
 
 class Stream(object):
     """
@@ -12,7 +13,7 @@ class Stream(object):
     
     TODO - use this in the spoolers as well??? It's a little cleaner than the existing code.
     """
-    def __init__(self, server_address, server_port, dir_manager=None):
+    def __init__(self, server_address, server_port, dir_manager=None, filter=None):
         if not isinstance(server_address, str):
             server_address = socket.inet_ntoa(server_address)
             
@@ -20,10 +21,11 @@ class Stream(object):
         self._server_port = server_port
         
         self._dir_manager = dir_manager
+        self._filter = filter
         
         self._url = 'http://%s:%d/' % (server_address, server_port)
 
-        self._put_queue = queue.Queue()
+        self._put_queue = queue.Queue(QUEUE_MAX_SIZE)
         self._rc_queue = queue.Queue()
         #self._last_flush_time = time.time()
         self._socket = None
@@ -92,6 +94,10 @@ class Stream(object):
                     connection = b'close'
                     data = b''
                     
+                if self._filter is not None:
+                    # allow us to do, e.g. compression in the spooling thread
+                    data = self._filter(data)
+
                 dl = len(data)
 
                 header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (
@@ -147,16 +153,18 @@ class Spooler(object):
     cluster and allows non-blocking streaming of data to these nodes
 
     """
-    def __init__(self, servers=None, distribution_fcn=distribution_function_round_robin):
+    def __init__(self, serverfilter=clusterIO.local_serverfilter, servers=None, distribution_fcn=distribution_function_round_robin, filter=None):
+        self._directory = clusterIO.get_dir_manager(serverfilter)
+
         if servers is None:
-            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in clusterIO.get_ns().get_advertised_services()]
+            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in self._directory._ns().get_advertised_services()]
         else:
             self.servers = servers
 
         assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
         
         self._n_servers = len(self.servers)
-        self._streams =  [Stream(address, port) for address, port in self.servers]
+        self._streams =  [Stream(address, port, filter=filter) for address, port in self.servers]
 
         self._distribution_fcn = distribution_fcn
 
