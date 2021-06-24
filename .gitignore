@@ -52,3 +52,4 @@ tests/*.html
 fftw_wisdom.pkl
 *.css.map
 .vscode/
+pyme-bootstrap/package-lock.json
