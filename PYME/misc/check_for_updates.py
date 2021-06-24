@@ -99,9 +99,6 @@ def check_for_updates(gui=True, force=False):
                 
         else:
             update_available = False
-            
-            if gui:
-                gui_prompt_no_update()
         
     except:
         logger.exception('Error getting info on updates')
@@ -120,15 +117,6 @@ def gui_prompt_update():
     
     with shelve.open(update_info_fn) as s:
         s['last_update_offered'] =  update_ver
-
-def gui_prompt_no_update():
-    import wx
-    
-    # make sure there is no update available
-    assert not update_available
-    
-    msg = 'You are running the latest version of PYME: %s' % version.version
-    wx.MessageBox(msg, 'No update is available')
     
     
 def gui_prompt_once():
