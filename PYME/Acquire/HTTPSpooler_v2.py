@@ -37,7 +37,7 @@ except ImportError:
     import queue as Queue
 
 from PYME.IO import clusterIO
-from PYME.IO import cluster_spooling
+from PYME.IO import cluster_streaming
 from PYME.IO import PZFFormat
 from PYME import config
 
@@ -123,7 +123,7 @@ class Spooler(sp.Spooler):
             frame_data, im_num = data # packed together as a tuple
             return PZFFormat.dumps(frame_data, sequenceID=self.sequenceID, frameNum = im_num, **self.compSettings)
 
-        self._spooler = cluster_spooling.Spooler(serverfilter=self.clusterFilter, distribution_fcn=dist_fcn, filter=_pzfify)
+        self._spooler = cluster_streaming.Streamer(serverfilter=self.clusterFilter, distribution_fcn=dist_fcn, filter=_pzfify)
                 
     def finished(self):
         # FIXME - this probably needs a bit more work.

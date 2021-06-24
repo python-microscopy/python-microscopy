@@ -12,7 +12,7 @@ import logging
 import json
 
 from PYME.IO import clusterIO, PZFFormat
-from PYME.IO import cluster_spooling
+from PYME.IO import cluster_streaming
 from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO, ClusterPZFTileIO
 
 logger = logging.getLogger(__name__)
@@ -152,7 +152,7 @@ class DistributedImagePyramid(ImagePyramid):
         if servers is not None:
             servers = [(address, servers[address]) for address in servers]
 
-        self._spooler = cluster_spooling.Spooler(servers=servers)#, distribution_fcn=server_for_chunk)  
+        self._spooler = cluster_streaming.Streamer(servers=servers)#, distribution_fcn=server_for_chunk)  
         
         for server_idx in range(len(self._spooler.servers)):
             self.create_remote_part(server_idx, backend)

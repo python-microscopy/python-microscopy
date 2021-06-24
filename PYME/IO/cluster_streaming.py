@@ -148,7 +148,7 @@ class Stream(object):
 def distribution_function_round_robin(i, n_servers):
     return i % n_servers
 
-class Spooler(object):
+class Streamer(object):
     """ Create a spooler instance which keeps one persistent connection to each node on the
     cluster and allows non-blocking streaming of data to these nodes
 
