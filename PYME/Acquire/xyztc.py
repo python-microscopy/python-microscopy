@@ -21,6 +21,42 @@ class MemoryBackend(object):
         
     def store_frame(self, n, frame_data):
         self.data[:,:,n] = frame_data
+    
+    def finalise(self):
+        pass
+
+class ClusterBackend(object):
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,1,1,1]):
+        from PYME.IO import cluster_spooling
+        from PYME.IO import PZFFormat
+        self.series_name = series_name
+        self.mdh = MetaDataHandler.DictMDHandler()
+
+        def _pzfify(data):
+            # TODO sequenceID, compSettings
+            frame_data, im_num = data # packed together as a tuple
+            return PZFFormat.dumps(frame_data, sequenceID=self.sequenceID, frameNum = im_num, **self.compSettings)
+
+        def distfcn_oidic(i, n_servers):
+            # example distfcn for OIDIC, assuming an XYCZT acquisition order
+            # TODO - make a bit smarter and/or implement in derived class
+            return int(i/shape[4]) % n_servers
+
+        self._spooler = cluster_spooling.Spooler(filter=_pzfify)#, distribution_fcn=distfcn_oidic)
+
+        # TODO - Metadata
+        # TODO - Dimension order support in cluster pcs??
+        
+    def store_frame(self, n, frame_data):
+        self.data[:,:,n] = frame_data
+        fn = '/'.join([self.series_name, 'frame%05d.pzf' % self.n])
+
+        self._spooler.put(fn, (frame_data, n), i=n)
+
+    def finalise(self):
+        # TODO - write metadata here??
+        self._spooler.close()
+
 
 class XYZTCAcquisition(object):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend):

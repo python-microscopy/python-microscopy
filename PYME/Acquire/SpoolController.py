@@ -42,7 +42,7 @@ try:
     import queue
 except ImportError:
     # py2, remove this when we can
-    import Queue as queue
+    import Queue as queue # type: ignore
 
 from PYME.contrib import dispatch
 
