@@ -145,7 +145,12 @@ class Stream(object):
             fp.close()
         
         
-def distribution_function_round_robin(i, n_servers):
+def distribution_function_round_robin(n_servers, i=None):  
+    if i is None:
+        # distribute at random
+        import random
+        return random.randrange(n_servers)
+
     return i % n_servers
 
 class Streamer(object):
@@ -164,7 +169,8 @@ class Streamer(object):
                 A manual list of servers. Usage is not recommended
         distribution_fcn : callable
                 a function which assigns files to frames. Takes (at least) n_servers as an argument (provided by the spooler), but optionally any addition keyword
-                arguments you pass to `put()`. In simple cases, this will be a frame number - e.g. i - see round_robin fcn above.
+                arguments you pass to `put()`. In simple cases, this will be a frame number - e.g. i - see round_robin fcn above. distribution_fcn
+                *must* provide defaults for all parameters other than n_servers so that sensible behaviour is achived when no value is provided.
         filter: callable
                 a function which performs some operation on the data before it's saved. Typically format conversion and/or compression.
         """
