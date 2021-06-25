@@ -188,6 +188,9 @@ class Streamer(object):
 
         self._distribution_fcn = distribution_fcn
 
+    @classmethod
+   
+    
     def put(self, filename, data, **kwargs):
         """ Put, choosing a stream using the distribution function
         
@@ -205,3 +208,8 @@ class Streamer(object):
     def close(self):
         for s in self._streams:
             s.close()
+
+
+def n_cluster_servers(serverfilter):
+    """ Convenience function for hard-coding distribution functions in, e.g. the clusterh5  case"""
+    return len(clusterIO.get_dir_manager(serverfilter).dataservers)
