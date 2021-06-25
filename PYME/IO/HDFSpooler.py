@@ -83,7 +83,8 @@ class Spooler(sp.Spooler):
 
         self._backend = HDFBackend(filename, complevel=complevel, complib=complib)
         self.evtLogger = HDFEventLogger(self, self._backend.h5File, time_fcn=self._time_fcn)
-        
+
+        self.md = self._backend.md        
 
     def finalise(self):
         """ close files"""
