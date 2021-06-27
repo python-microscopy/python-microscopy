@@ -110,6 +110,12 @@ class AUIFrame(wx.Frame):
         from PYME.misc import check_for_updates
         
         check_for_updates.check_for_updates(gui=True, force=True)
+
+        if not check_for_updates.update_available:
+            from PYME import version
+            
+            msg = 'You are running the latest version of PYME: %s' % version.version
+            wx.MessageBox(msg, 'No update is available')
     
     def CreateFoldPanel(self):
         """Create a panel of folding 'drawers' on the left side of the frame.
