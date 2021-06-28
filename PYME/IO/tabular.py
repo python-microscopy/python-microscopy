@@ -957,7 +957,11 @@ class MappingFilter(TabularBase):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())).difference(self.hidden_columns))
+        keys = list(dict.fromkeys(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())))
+        for k in self.hidden_columns:
+            keys.remove(k)
+            
+        return keys
 
     def addVariable(self, name, value):
         """

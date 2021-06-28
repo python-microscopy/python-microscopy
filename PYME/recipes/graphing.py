@@ -77,15 +77,32 @@ class Plot(object):
             plt.close(f)
 
             return ret
+    
+    def _savefig(self, fig, filename, format='png'):
+        if filename is not None:
+            fig.savefig(filename)
+        else:
+            from io import BytesIO
+            b = BytesIO()
+            fig.savefig(b)
+            return b
+    
+    def as_png(self, filename=None):
+        with plotting_context('agg') as p:
+            f = self.plot()
         
-    def as_png(self):
-        # TODO - should we return a string, or save to a file?
-        raise NotImplementedError
+            return self._savefig(f, filename, 'png')
     
-    def as_pdf(self):
-        raise NotImplementedError
+    def as_pdf(self, filename=None):
+        with plotting_context('pdf') as p:
+            f = self.plot()
+            
+            return self._savefig(f, filename, 'pdf')
     
-    def as_svg(self):
-        raise NotImplementedError
+    def as_svg(self, filename=None):
+        with plotting_context('svg') as p:
+            f = self.plot()
+        
+            return self._savefig(f, filename, 'svg')
 
             

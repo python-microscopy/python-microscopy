@@ -211,6 +211,20 @@ def openFile(filename, mode='rb'):
         raise IOError('File does not exist or URI not understood: %s' % filename)
 
 def read(filename):
+    '''
+    Read a file from disk or the cluster.
+    
+    NOTE: filename is expected to be sanitized / trusted, this should not be called
+    with user data from a web endpoint.
+    
+    Parameters
+    ----------
+    filename
+
+    Returns
+    -------
+
+    '''
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
@@ -227,6 +241,27 @@ def read(filename):
         return s
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)
+
+def safe_read(filename):
+    '''
+    
+    Read in a web-endpoint safe manner (i.e. disallow local file access)
+    
+    Currently just a wrapper around clusterIO.get_file, but also as a
+    forwards-compatible stub if we expand unifiedIO to support more general HTTP
+    or, e.g. OMERO URIs.
+
+    '''
+    if is_cluster_uri(filename):
+        from . import clusterIO
+
+        sequenceName, clusterfilter = split_cluster_url(filename)
+
+        s = clusterIO.get_file(sequenceName, clusterfilter)
+        return s
+    else:
+        raise IOError('URI not understood: %s' % filename)
+
     
 def write(filename, data):
     if is_cluster_uri(filename):

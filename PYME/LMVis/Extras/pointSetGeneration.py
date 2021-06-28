@@ -165,10 +165,14 @@ There should be no need to modify this from the default and it is accordingly no
         plt.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.MappingFilter(tabular.FitResultsSource(res))
-        
-        if isinstance(self.source, ImageSource):
-            pipeline.imageBounds = image.openImages[self.source.image].imgBounds
-        else:
+
+        try:
+            # some data sources (current ImageSource) have image bound info. Use this if available
+            # this could fail on either an AttributeError (if the data source doesn't implement bounds
+            # or another error if something fails in get_bounds(). Only catch the AttributeError, as we have
+            # should not be handling other errors here.
+            pipeline.imageBounds = self.source.get_bounds()
+        except AttributeError:
             pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
             
         pipeline.addDataSource('Generated Points', ds)
@@ -180,6 +184,16 @@ There should be no need to modify this from the default and it is accordingly no
         pipeline.mdh['Camera.TrueEMGain'] = 1
         pipeline.mdh['Camera.CycleTime'] = 1
         pipeline.mdh['voxelsize.x'] = .110
+        # some info about the parameters
+        pipeline.mdh['GeneratedPoints.MeanIntensity'] = self.meanIntensity
+        pipeline.mdh['GeneratedPoints.MeanDuration'] = self.meanDuration
+        pipeline.mdh['GeneratedPoints.MeanEventNumber'] = self.meanEventNumber
+        pipeline.mdh['GeneratedPoints.BackgroundIntensity'] = self.backgroundIntensity
+        pipeline.mdh['GeneratedPoints.ScaleFactor'] = self.scaleFactor
+        pipeline.mdh['GeneratedPoints.MeanTime'] = self.meanTime
+        pipeline.mdh['GeneratedPoints.Mode'] = self.mode
+        # the source info
+        self.source.genMetaData(pipeline.mdh)
 
         try:
             pipeline.filterKeys.pop('sig')

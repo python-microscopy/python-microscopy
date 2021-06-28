@@ -604,6 +604,7 @@ class RecipeView(wx.Panel):
         
     def OnPick(self, event):
         from PYME.IO import tabular
+        from PYME.recipes import graphing
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
             if not self._editing:
@@ -627,6 +628,8 @@ class RecipeView(wx.Panel):
                 from PYME.ui import recArrayView
                 f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
                 f.Show()
+            elif isinstance(outp, graphing.Plot):
+                outp.plot()
     
     
     def configureModule(self, k):
