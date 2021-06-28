@@ -24,7 +24,9 @@ class DataSource(XYZTCDataSource):
         self.datasource_index = np.hstack([0, np.cumsum([ds.getNumSlices() for ds in self.datasources])])
         self._n_slices = self.datasource_index[-1]
 
-        kwargs['size_t'] = self._n_slices
+        if not (kwargs.get('size_z', None) and kwargs.get('size_t', None) and kwargs.get('size_c', None)):
+            # should also conveniently work for 0,0,0
+            kwargs['size_z'] = self._n_slices
      
         XYZTCDataSource.__init__(self, *args, **kwargs)
 

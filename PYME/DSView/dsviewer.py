@@ -134,7 +134,10 @@ class DSViewFrame(AUIFrame):
         
         
         tmp_menu = wx.Menu()
+        if not hasattr(self, "ID_OPEN_SEQ"):
+            self.ID_OPEN_SEQ = wx.NewId()
         tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
+        tmp_menu.Append(self.ID_OPEN_SEQ, '&Open image sequence', "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
         tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
         
@@ -160,6 +163,7 @@ class DSViewFrame(AUIFrame):
 
         # Menu Bar end
         self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnOpenSequence, id=self.ID_OPEN_SEQ)
         self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
         self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
         #self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
@@ -318,7 +322,13 @@ class DSViewFrame(AUIFrame):
 
     def OnOpen(self, event=None):
         ViewIm3D(ImageStack(haveGUI=True))
-        
+
+    def OnOpenSequence(self, event=None):
+        from PYME.DSView.OpenSequenceDialog import OpenSequenceDialog
+        dlg = OpenSequenceDialog(self)
+        if dlg.ShowModal() == wx.ID_OK:
+            ViewIm3D(ImageStack(data=dlg.get_datasource(), haveGUI=True))
+
 
     def OnSave(self, event=None):
         self.image.Save()
