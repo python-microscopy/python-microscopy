@@ -693,36 +693,37 @@ class foldPanel(wx.Panel):
                 p.Fold()
         
         self.sizer.Layout()
-        self.SetMinSize(self.sizer.GetMinSize())
+        self.SetMinSize((-1, self.sizer.GetMinSize()[1]))
 
         #expand all panes
-        for p in self.panes:
-            #if p.foldable:
-            p.Unfold()
+        #for p in self.panes:
+        #    #if p.foldable:
+        #    p.Unfold()
 
-        self.sizer.Layout()
+        #self.sizer.Layout()
         
         
-        self.SetMaxSize((-1, self.sizer.GetMinSize()[1]))  
+        #self.SetMaxSize((-1, self.sizer.GetMinSize()[1]))  
 
         #restore inital state
         for p, s in zip(self.panes, _state):
             if not p.folded == s:
                 p.Fold(s)
 
-        self._in_fold1 = False  
+        self._in_fold1 = False
+        self.sizer.Layout()  
         
     def fold1(self, pan=None):
         #print('fold1')
         self._in_fold1 = True
         self.Layout()
-        print(self.GetSize(), self.GetBestSize(), self.GetMinSize(), self.GetMaxSize())
+        #print(self.GetSize(), self.GetBestSize(), self.GetMinSize(), self.GetMaxSize())
         
         if self._one_pane_active and not (pan is None):
             self._collapse_all_other_frames(pan)
         else:
             if (self.GetBestSize()[1] > self.GetSize()[1]):
-                print('collaping old panes')
+                #print('collaping old panes')
                 self._collapse_old_frames(pan)
         
         

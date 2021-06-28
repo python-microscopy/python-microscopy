@@ -206,7 +206,7 @@ class VisGUICore(object):
 
         self.recipeView = RecipeDisplayPanel(item)
         self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView, priority=20)
+        item.AddNewElement(self.recipeView, priority=20, foldable=False)
 
         pnl.AddPane(item, 20)
         
