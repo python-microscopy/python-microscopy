@@ -26,6 +26,7 @@ import wx.lib.agw.aui as aui
 # import pylab
 import wx.lib.scrolledpanel as scrolled
 import PYME.ui.manualFoldPanel as afp
+import PYME.ui.layerFoldPanel as lfp
 
 from matplotlib import cm
 
@@ -86,9 +87,10 @@ class OptionsPanel(scrolled.ScrolledPanel):
                 ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.do.names[i]), wx.VERTICAL)
                 p = self
             else:
-                item = afp.foldingPane(chan_pan, -1, caption=self.do.names[i], pinned=True)
+                item = lfp.ChannelFoldingPane(chan_pan, id=-1, display_opts = self.do, chan=i, caption=self.do.names[i], folded=False, pinned=False)
                 pane = wx.Panel(item, -1)
-                ssizer = wx.StaticBoxSizer(wx.StaticBox(pane, -1), wx.VERTICAL)
+                #ssizer = wx.StaticBoxSizer(wx.StaticBox(pane, -1), wx.VERTICAL)
+                ssizer = wx.BoxSizer(wx.VERTICAL)
                 p = pane
 
             id = wx.NewId()
@@ -112,12 +114,13 @@ class OptionsPanel(scrolled.ScrolledPanel):
             cCmap.Bind(wx.EVT_CHOICE, self.OnCMapChanged)
             hsizer2.Add(cCmap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             
-            id = wx.NewId()
-            self.shIds.append(id)            
-            cbShow = wx.CheckBox(p, id)
-            cbShow.SetValue(self.do.show[i])
-            cbShow.Bind(wx.EVT_CHECKBOX, self.OnShowChanged)
-            hsizer2.Add(cbShow, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,2)
+            if horizOrientation:
+                id = wx.NewId()
+                self.shIds.append(id)            
+                cbShow = wx.CheckBox(p, id)
+                cbShow.SetValue(self.do.show[i])
+                cbShow.Bind(wx.EVT_CHECKBOX, self.OnShowChanged)
+                hsizer2.Add(cbShow, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL,2)
             
             ssizer.Add(hsizer2, 0, wx.ALL|wx.EXPAND, 0)
 
@@ -129,28 +132,37 @@ class OptionsPanel(scrolled.ScrolledPanel):
                 item.AddNewElement(pane)
                 chan_pan.AddPane(item)
 
-        if not horizOrientation:
-            vsizer.Add(chan_pan, 0, wx.ALL|wx.EXPAND, 5)
+        if horizOrientation:
+            pan_opt = wx.Panel(self, -1)
+        else:
+            fpan_opt = afp.foldingPane(chan_pan, -1, style=wx.BORDER_NONE)
+            pan_opt = wx.Panel(fpan_opt, -1)
 
-        self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
+        self.bOptimise = wx.Button(pan_opt, -1, "Stretch", style=wx.BU_EXACTFIT)
 
-        self.cbScale = wx.Choice(self, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1", "8:1", "16:1"])
+        self.cbScale = wx.Choice(pan_opt, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1", "8:1", "16:1"])
         self.cbScale.SetSelection(4)
         self.scale_11 = 4
 
         if horizOrientation:
             vsizer.Add(hsizer, 0, wx.ALL, 0)
+            
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bOptimise, 0, wx.ALL|wx.ALIGN_CENTER, 5)
             hsizer.Add(self.cbScale, 0, wx.ALL|wx.ALIGN_CENTER, 5)
-            vsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER, 0)
+            
+            pan_opt.SetSizerAndFit(hsizer)
+
+            vsizer.Add(pan_opt, 0, wx.ALL|wx.ALIGN_CENTER, 0)
+
         else:
-            vsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.EXPAND, 5)
+            pvsizer = wx.BoxSizer(wx.VERTICAL)
+            pvsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.EXPAND, 5)
 
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
             #ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Slice'), wx.VERTICAL)
-            self.cbSlice = wx.Choice(self, -1, choices=["X-Y", "X-Z", "Y-Z"])
+            self.cbSlice = wx.Choice(pan_opt, -1, choices=["X-Y", "X-Z", "Y-Z"])
             self.cbSlice.SetSelection(0)
             hsizer.Add(self.cbSlice, 1, wx.ALL|wx.EXPAND, 5)
 
@@ -159,9 +171,15 @@ class OptionsPanel(scrolled.ScrolledPanel):
             #ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Scale'), wx.VERTICAL)
             hsizer.Add(self.cbScale, 1, wx.ALL|wx.EXPAND, 5)
 
-            vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
+            pvsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
             self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
+
+            pan_opt.SetSizerAndFit(pvsizer)
+            #pan_opt.sizer.Fit(pan_opt)
+            fpan_opt.AddNewElement(pan_opt, foldable=False)
+            chan_pan.AddPane(fpan_opt)
+
+            vsizer.Add(chan_pan, 1, wx.ALL|wx.EXPAND, 5)
 
         
         #self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
@@ -222,7 +240,7 @@ class OptionsPanel(scrolled.ScrolledPanel):
 
             vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
-        self.SetSizer(vsizer)
+        self.SetSizerAndFit(vsizer)
         #self.SetupScrolling(scroll_x=False)
         
         self.do.WantChangeNotification.append(self.OnDoChange)

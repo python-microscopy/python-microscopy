@@ -1,5 +1,4 @@
 from . import manualFoldPanel
-from PYME.LMVis.layers import pointcloud, mesh, tracks
 import PYME.resources
 import wx
 
@@ -17,6 +16,22 @@ LAYER_CAPTION_STYLE = {
 'ELLIPSES_COLOUR'     : (170, 170, 170),
 'ELLIPSES_RADIUS'     : 2,
 'HAS_PIN' : False,
+}
+
+LAYER_CAPTION_STYLE = {
+'HEIGHT'              : 20,
+'FONT_COLOUR'         : 'BLACK',
+#'FONT_WEIGHT' : wx.BOLD,
+#'FONT_SIZE'           : 12,
+'CAPTION_INDENT'      : 5,
+'BACKGROUND_COLOUR_1' : (198, 198, 198 + 0), #default AUI caption colours
+'BACKGROUND_COLOUR_2' : (226, 226, 226),
+'INACTIVE_PIN_COLOUR' : (170, 170, 170),
+'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
+'ACTIVE_EYE_COLOUR'   : (50, 50, 198),
+'ELLIPSES_COLOUR'     : (170, 170, 170),
+'ELLIPSES_RADIUS'     : 2,
+'HAS_PIN' : True,
 }
 
 
@@ -40,9 +55,15 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
         # from pylab import cm
         from matplotlib import cm
         x = np.linspace(0, 1, 30)
-        img = (255*getattr(cm, self._layer.cmap)(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
+
+        if isinstance(self._layer.cmap, str):
+            img = (255*getattr(cm, self._layer.cmap)(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
+        else:
+            # assume an actual colourmap instance - TODO make the check explicit on a colormap base class??
+            img = (255*self._layer.cmap(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
         
         #print img.shape, img.strides
+
         
         return wx.Bitmap.FromBuffer(30, 10, img)
     
@@ -51,10 +72,9 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
         pass
         
         
-        
-
 class LayerCaptionBar(manualFoldPanel.CaptionBar):
     def __init__(self, parent, layer, **kwargs):
+        from PYME.LMVis.layers import pointcloud, mesh, tracks
         self._caption= ""
 
         manualFoldPanel.CaptionBar.__init__(self, parent, **kwargs)
@@ -130,3 +150,50 @@ class LayerFoldingPane(manualFoldPanel.foldingPane):
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
         return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=LAYER_CAPTION_STYLE)
+
+
+class _ChannelLayer(object):
+    """ Proxy so we can spoof a layer for a channel 
+    TODO - Revisit
+    """
+
+    def __init__(self, display_opts, chan):
+        self._do = display_opts # type: PYME.DSView.displayOptions.DisplayOpts
+        self._chan = chan # type: int
+
+    @property
+    def cmap(self):
+        return self._do.cmaps[self._chan]
+
+class ChannelCaptionBar(manualFoldPanel.CaptionBar):
+    def __init__(self, parent, display_opts, chan, **kwargs):
+        self._do = display_opts
+        self._chan = chan
+
+        manualFoldPanel.CaptionBar.__init__(self, parent, **kwargs)
+
+        self._inactive_eye_bitmap = manualFoldPanel.BitmapFromBits(eye_bits, 16, 16, manualFoldPanel.ColourFromStyle(self.style['INACTIVE_PIN_COLOUR']))
+        self._active_eye_bitmap = manualFoldPanel.BitmapFromBits(eye_bits, 16, 16, manualFoldPanel.ColourFromStyle(self.style['ACTIVE_EYE_COLOUR']))
+        
+        self.buttons.append(manualFoldPanel.CaptionButton(self._active_eye_bitmap, self._inactive_eye_bitmap,
+                                          show_fcn=lambda: True,
+                                          active_fcn=lambda: self._do.show[self._chan],
+                                          onclick=lambda: self.ToggleVis()))
+
+        self.buttons.append(LUTBitmap(_ChannelLayer(self._do, self._chan)))
+
+    def ToggleVis(self):
+        if self._do.show[self._chan]:
+            self._do.Show(self._chan, False)
+        else:
+            self._do.Show(self._chan, True)
+        
+class ChannelFoldingPane(manualFoldPanel.foldingPane):
+    def __init__(self, parent, display_opts, chan, **kwargs):
+        self._do = display_opts
+        self._chan = chan
+        manualFoldPanel.foldingPane.__init__(self, parent, **kwargs)
+        
+    def _create_caption_bar(self):
+        """ This is over-rideable in derived classes so that they can implement their own caption bars"""
+        return ChannelCaptionBar(self, display_opts=self._do, chan=self._chan, caption=self.caption, cbstyle=LAYER_CAPTION_STYLE)
