@@ -44,13 +44,13 @@ class OpenSequenceDialog(wx.Dialog):
 
         vsizer.Add(hsizer, 0, wx.ALL, 0)
 
-        btn_open = wx.Button(self, wx.ID_OK)
+        self.btn_open = wx.Button(self, wx.ID_OK)
         btn_cancel = wx.Button(self, wx.ID_CANCEL)
-        btn_open.SetDefault()
+        self.btn_open.SetDefault()
 
         btn_sizer = wx.StdDialogButtonSizer()
         btn_sizer.AddButton(btn_cancel)
-        btn_sizer.AddButton(btn_open)
+        btn_sizer.AddButton(self.btn_open)
         btn_sizer.Realize()
 
         vsizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
@@ -61,14 +61,18 @@ class OpenSequenceDialog(wx.Dialog):
 
     def on_update(self, **kwargs):
         self._datasources = []
+        self.btn_open.Enable()
         for fn in self.file_panel.filenames:
             image = ImageStack(filename=fn)
             self._datasources.append(image.data_xyztc)
-        self._datasource = ConcatenatedDataSource.DataSource(self._datasources)
-        size_z, size_t, size_c = self._datasource._sizes
-        self.size_z.SetValue(str(size_z))
-        self.size_t.SetValue(str(size_t))
-        self.size_c.SetValue(str(size_c))
+        try:
+            self._datasource = ConcatenatedDataSource.DataSource(self._datasources)
+            size_z, size_t, size_c = self._datasource._sizes
+            self.size_z.SetValue(str(size_z))
+            self.size_t.SetValue(str(size_t))
+            self.size_c.SetValue(str(size_c))
+        except(AssertionError):
+            self.btn_open.Disable()
 
     def get_datasource(self):
         return ConcatenatedDataSource.DataSource(self._datasources, 
