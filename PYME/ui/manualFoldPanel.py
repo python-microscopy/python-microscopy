@@ -491,7 +491,10 @@ class foldingPane(wx.Panel):
                         element.foldedWindow.Show()
 
             self.folded = True
-            self.stCaption.Refresh()
+            try:
+                self.stCaption.Refresh()
+            except AttributeError:
+                pass
             self.Layout()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
             self.fold1()
@@ -513,7 +516,10 @@ class foldingPane(wx.Panel):
                         element.foldedWindow.Hide()
 
             self.folded = False
-            self.stCaption.Refresh()
+            try:
+                self.stCaption.Refresh()
+            except AttributeError:
+                pass
             self.Layout()
             self.fold1()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
@@ -659,6 +665,8 @@ class foldPanel(wx.Panel):
         for pane, priority in zip(self.panes, self.priorities):
             self.sizer.Add(pane, priority, self.sizerflags, self.padding)
 
+        self._calc_min_max_sizes()
+
         if self._stretch_sizer:
             self.sizer.AddStretchSpacer()
 
@@ -671,17 +679,51 @@ class foldPanel(wx.Panel):
         self.panes = []
 
         self.RegenSizer()
+
+    def _calc_min_max_sizes(self):
+        #remember current states
+        _state = [p.folded for p in self.panes]
+
+        #prevent fold1 logic from running
+        self._in_fold1 = True
+
+        #fold all panes
+        for p in self.panes:
+            if p.foldable:
+                p.Fold()
+        
+        self.sizer.Layout()
+        self.SetMinSize((-1, self.sizer.GetMinSize()[1]))
+
+        #expand all panes
+        #for p in self.panes:
+        #    #if p.foldable:
+        #    p.Unfold()
+
+        #self.sizer.Layout()
+        
+        
+        #self.SetMaxSize((-1, self.sizer.GetMinSize()[1]))  
+
+        #restore inital state
+        for p, s in zip(self.panes, _state):
+            if not p.folded == s:
+                p.Fold(s)
+
+        self._in_fold1 = False
+        self.sizer.Layout()  
         
     def fold1(self, pan=None):
         #print('fold1')
         self._in_fold1 = True
         self.Layout()
-        #print(self.GetSize()[1], self.GetBestSize()[1])
+        #print(self.GetSize(), self.GetBestSize(), self.GetMinSize(), self.GetMaxSize())
         
         if self._one_pane_active and not (pan is None):
             self._collapse_all_other_frames(pan)
         else:
             if (self.GetBestSize()[1] > self.GetSize()[1]):
+                #print('collaping old panes')
                 self._collapse_old_frames(pan)
         
         
@@ -713,7 +755,7 @@ class foldPanel(wx.Panel):
         self.Refresh()
         
     def OnResize(self, event):
-        if not self._in_fold1:
+        if (not self._in_fold1) and self.IsShownOnScreen():
             self.fold1()
 
     
