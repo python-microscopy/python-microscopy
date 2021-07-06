@@ -50,7 +50,7 @@ bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
 bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 bmSquiggleSelect = None
 
-class OptionsPanel(scrolled.ScrolledPanel):
+class OptionsPanel(wx.Panel):
     def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent, **kwargs)
@@ -184,7 +184,6 @@ class OptionsPanel(scrolled.ScrolledPanel):
         
         #self.cbSlice.Bind(wx.EVT_CHOICE, self.OnSliceChanged)
         self.cbScale.Bind(wx.EVT_CHOICE, self.OnScaleChanged)
-
         self.bOptimise.Bind(wx.EVT_BUTTON, self.OnOptimise)
         
         if False: #self.do.ds.shape[2] > 1:

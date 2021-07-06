@@ -269,7 +269,7 @@ class IntensityAtPoints(ModuleBase):
 
     def _get_sum(self, data, x, y, t, radius):
         print(data.shape, x, y, t)
-        roi = data[(x - radius):(x + radius + 1), (y - radius):(y + radius + 1), t].squeeze()
+        roi = data[int(x - radius):int(x + radius + 1), int(y - radius):int(y + radius + 1), int(t)].squeeze()
         mask = self._get_mask(radius)
 
         print(mask.shape, roi.shape)#, (roi * mask).shape
