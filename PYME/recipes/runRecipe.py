@@ -103,6 +103,7 @@ def runRecipe(recipe, inputs, outputs, context={}, metadata_defaults={}):
 
         #new style output saving - using OutputModules
         recipe.save(context)
+        return recipe
     except:
         logger.exception('Error running recipe')
         raise
