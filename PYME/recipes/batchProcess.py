@@ -24,10 +24,10 @@ def runRec(args):
         old_backend = plt.get_backend()
         plt.switch_backend('SVG')
         
-        runRecipe.runRecipe(*args)
+        r = runRecipe.runRecipe(*args)
         
         plt.switch_backend(old_backend)
-        return True
+        return r
     except Exception as e:
         traceback.print_exc()
         raise
@@ -67,6 +67,8 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
 
         taskParams.append((recipe.toYAML(), in_d, out_d, cntxt, dict(metadata_defaults)))
 
+    last_rec = None
+
     if num_procs == 1:
         # map(runRec, taskParams)  # map now returns iterator, which means this never runs unless we convert to list
         #[runRec(task) for task in taskParams]  # skip the map and just make the list we need anyway
@@ -75,14 +77,14 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
             if start_callback:
                 start_callback(in_d)
             try:
-                runRec(task)
+                last_rec = runRec(task)
                 if success_callback:
                     success_callback(in_d)
             except:
                 if error_callback:
                     error_callback(in_d)
                 raise
-                
+        return last_rec        
     else:
         pool = multiprocessing.Pool(num_procs)
     
@@ -90,6 +92,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=N
         
         r.wait()
         pool.close()
+        return None
 
 def bake_recipe(recipe_filename, inputGlobs, output_dir, *args, **kwargs):
     with open(recipe_filename) as f:

@@ -36,8 +36,10 @@ class DataSource(XYTCDataSource):
         self.mdh = mdh
         #self.flat = flatfield
         
-        slices = CameraInfoManager._parseROI(mdh)
-
+        try:
+            slices = CameraInfoManager._parseROI(mdh)
+        except KeyError:
+            slices = [(slice(None), slice(None)),]
         #print((x0, x1, y0, y1))
 
         #self.offset = mdh.getEntry()

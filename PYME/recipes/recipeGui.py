@@ -776,9 +776,10 @@ class FileListPanel(wx.Panel):
         return self._files
 
 from PYME.ui import MetadataTree
-class BatchFrame(wx.Frame):
+from PYME.ui import AUIFrame
+class BatchFrame(AUIFrame.AUIFrame):
     def __init__(self, parent=None):                
-        wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
+        AUIFrame.AUIFrame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
         logger.debug('BatchFrame.__init__ start')
         self.rm = RecipeManager()
@@ -845,8 +846,17 @@ class BatchFrame(wx.Frame):
         vsizer.Add(p, 1, wx.EXPAND, 0)
         self.SetSizerAndFit(vsizer)
 
+        self.add_common_menu_items()
+        self.AddMenuItem('Utils', 'Shell', self._on_shell)
+
         logger.debug('BatchFrame.__init__ done')
         
+    def _on_shell(self, event=None):
+        from wx.py.shell import ShellFrame
+
+        f = ShellFrame(self, title='Bakeshop Shell', locals={'batch_ui' : self, 'rm' : self.rm})
+        f.Show()
+
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
 
@@ -900,9 +910,9 @@ class BatchFrame(wx.Frame):
         try:
             with progress.ComputationInProgress(self, 'Batch Analysis'):
                 if not len(inputs[1]) > 0:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
+                    self.last_run = batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
                 else:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
+                    self.last_run = batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
         except:
             if (num_procs > 1):
                 wx.MessageBox('Uncheck "spawn worker process for each core" for easier debugging', 'Error occurred during multiple process run', wx.OK | wx.ICON_ERROR)
