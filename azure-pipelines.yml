@@ -61,11 +61,11 @@ steps:
   displayName: 'codecov upload'
   
 - script: |
-    diff-cover coverage.xml
+    diff-cover coverage.xml --compare-branch=master 
   condition: succeededOrFailed()
   displayName: 'diff-cover'
 
 - script: |
-    diff-quality --violations=flake8
+    diff-quality --violations=flake8 --compare-branch=master
   condition: succeededOrFailed()
   displayName: 'diff-quality'
