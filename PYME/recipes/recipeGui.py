@@ -749,10 +749,11 @@ class FileListPanel(wx.Panel):
             ['Either drag files here, or enter a pattern (e.g. /Path/to/data/*.tif ) above and click "Get Matches"', ])
         self.lFiles.SetColumnWidth(0, -1)
 
-        vsizer.Add(self.lFiles, .5, wx.EXPAND, 0)
+        vsizer.Add(self.lFiles, 1, wx.EXPAND, 0)
         
         self.dropFiles = dt(self)
         self.lFiles.SetDropTarget(self.dropFiles)
+        self.SetDropTarget(self.dropFiles)
         
         self.SetSizerAndFit(vsizer)
 
@@ -775,9 +776,10 @@ class FileListPanel(wx.Panel):
         return self._files
 
 from PYME.ui import MetadataTree
-class BatchFrame(wx.Frame):
+from PYME.ui import AUIFrame
+class BatchFrame(AUIFrame.AUIFrame):
     def __init__(self, parent=None):                
-        wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
+        AUIFrame.AUIFrame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
         logger.debug('BatchFrame.__init__ start')
         self.rm = RecipeManager()
@@ -786,10 +788,13 @@ class BatchFrame(wx.Frame):
         self._default_md = MetaDataHandler.DictMDHandler(MetaData.ConfocDefault)
         
         self._file_lists = []
-        
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        p = wx.Panel(self, -1)
+       
         vsizer1=wx.BoxSizer(wx.VERTICAL)
-        hsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, "Recipe:"), wx.HORIZONTAL)
-        self.recipeView = RecipeView(self, self.rm)
+        hsizer = wx.StaticBoxSizer(wx.StaticBox(p, -1, "Recipe:"), wx.HORIZONTAL)
+        self.recipeView = RecipeView(p, self.rm)
         
         hsizer.Add(self.recipeView, 1, wx.ALL|wx.EXPAND, 2)
         
@@ -797,29 +802,29 @@ class BatchFrame(wx.Frame):
         
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
 
-        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files:'), wx.VERTICAL)
-        self._file_lists.append(FileListPanel(self, -1))
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(p, -1, 'Input files:'), wx.VERTICAL)
+        self._file_lists.append(FileListPanel(p, -1))
         sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
         hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
 
-        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Input files (input2) [optional]:'), wx.VERTICAL)
-        self._file_lists.append(FileListPanel(self, -1))
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(p, -1, 'Input files (input2) [optional]:'), wx.VERTICAL)
+        self._file_lists.append(FileListPanel(p, -1))
         sbsizer.Add(self._file_lists[-1], 1, wx.EXPAND, 0)
         hsizer1.Add(sbsizer, 1, wx.EXPAND, 10)
 
-        self._sb_metadata = wx.StaticBox(self, -1, 'Metadata defaults')
+        self._sb_metadata = wx.StaticBox(p, -1, 'Metadata defaults')
         sbsizer = wx.StaticBoxSizer(self._sb_metadata, wx.VERTICAL)
-        sbsizer.Add(wx.StaticText(self, -1, 'If metadata is not found in input images,\nthe following defaults will be used:'), 0, wx.EXPAND,0)
-        self._mdpan = MetadataTree.MetadataPanel(self, self._default_md, refreshable=False)
+        sbsizer.Add(wx.StaticText(p, -1, 'If metadata is not found in input images,\nthe following defaults will be used:'), 0, wx.EXPAND,0)
+        self._mdpan = MetadataTree.MetadataPanel(p, self._default_md, refreshable=False)
         sbsizer.Add(self._mdpan, 1, wx.EXPAND, 0)
         hsizer1.Add(sbsizer, 0, wx.EXPAND, 10)
         
         
         vsizer1.Add(hsizer1, 0, wx.EXPAND|wx.TOP, 10)
         
-        hsizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Output Directory:'), wx.HORIZONTAL)
+        hsizer2 = wx.StaticBoxSizer(wx.StaticBox(p, -1, 'Output Directory:'), wx.HORIZONTAL)
         
-        self.dcOutput = wx.DirPickerCtrl(self, -1, style=wx.DIRP_USE_TEXTCTRL)
+        self.dcOutput = wx.DirPickerCtrl(p, -1, style=wx.DIRP_USE_TEXTCTRL)
         hsizer2.Add(self.dcOutput, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         vsizer1.Add(hsizer2, 0, wx.EXPAND|wx.TOP, 10)
@@ -827,20 +832,31 @@ class BatchFrame(wx.Frame):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.AddStretchSpacer()
 
-        self.cbSpawnWorkerProcs = wx.CheckBox(self, -1, 'spawn worker processes for each core')
+        self.cbSpawnWorkerProcs = wx.CheckBox(p, -1, 'spawn worker processes for each core')
         self.cbSpawnWorkerProcs.SetValue(True)
         hsizer.Add(self.cbSpawnWorkerProcs, 0, wx.ALL, 5)
 
-        self.bBake = wx.Button(self, -1, 'Bake') 
+        self.bBake = wx.Button(p, -1, 'Bake') 
         hsizer.Add(self.bBake, 0, wx.ALL, 5)
         self.bBake.Bind(wx.EVT_BUTTON, self.OnBake)
         
         vsizer1.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
                 
-        self.SetSizerAndFit(vsizer1)
+        p.SetSizerAndFit(vsizer1)
+        vsizer.Add(p, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(vsizer)
+
+        self.add_common_menu_items()
+        self.AddMenuItem('Utils', 'Shell', self._on_shell)
 
         logger.debug('BatchFrame.__init__ done')
         
+    def _on_shell(self, event=None):
+        from wx.py.shell import ShellFrame
+
+        f = ShellFrame(self, title='Bakeshop Shell', locals={'batch_ui' : self, 'rm' : self.rm})
+        f.Show()
+
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
 
@@ -894,9 +910,9 @@ class BatchFrame(wx.Frame):
         try:
             with progress.ComputationInProgress(self, 'Batch Analysis'):
                 if not len(inputs[1]) > 0:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
+                    self.last_run = batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
                 else:
-                    batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
+                    self.last_run = batchProcess.bake(self.rm.activeRecipe, {'input':inputs[0], 'input2':inputs[1]}, out_dir, num_procs=num_procs, metadata_defaults=self._default_md)
         except:
             if (num_procs > 1):
                 wx.MessageBox('Uncheck "spawn worker process for each core" for easier debugging', 'Error occurred during multiple process run', wx.OK | wx.ICON_ERROR)

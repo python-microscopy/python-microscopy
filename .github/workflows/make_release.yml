@@ -40,4 +40,11 @@ jobs:
       with:
           tag_name: ${{ env.PYMEVERSION }}
           release_name: Release ${{ env.PYMEVERSION }}
+    - name: Tigger package build
+      run: |
+        curl \
+        -X POST https://api.github.com/repos/python-microscopy/pyme-conda-recipes/actions/workflows/build_pyme_packages.yml/dispatches \
+        -H "Accept: application/vnd.github.v3+json" \
+        -u ${{ secrets.REC_REPO_TOKEN }}\
+        -d '{"ref":"ref"}'
     

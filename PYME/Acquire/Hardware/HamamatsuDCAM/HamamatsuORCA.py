@@ -86,6 +86,14 @@ noiseProperties = {
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
         },
+'301777' : {
+        'ReadNoise': 1.63,
+        'ElectronsPerCount': 0.47,
+        'NGainStages': 0,
+        'ADOffset': 100,
+        'DefaultEMGain': 1,
+        'SaturationThreshold': (2**16 - 1)
+        },        
 '720795' : {
         'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
         'ElectronsPerCount': 0.416613,

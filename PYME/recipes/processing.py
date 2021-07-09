@@ -1596,12 +1596,12 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         image = namespace[self.inputImage]
         
         if self.flatfieldFilename != '':
-            flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+            flat = ImageStack(filename=self.flatfieldFilename).data_xyztc[:,:,0,0,0].squeeze()
         else:
             flat = None
         
         if not self.darkFilename == '':
-            dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
+            dark = ImageStack(filename=self.darkFilename).data_xyztc[:,:,0, 0, 0].squeeze()
         else:
             dark = None
         

@@ -271,7 +271,7 @@ class DisplayOpts(object):
                 self.cmaps = []
                 self.show = []
 
-                cms = [cm.r, cm.g, cm.b]
+                cms = [cm.r, cm.g, cm.b, cm.c, cm.m, cm.y]
 
                 for i in range(nchans):
                     self.Chans.append(i)
