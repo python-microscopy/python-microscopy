@@ -42,7 +42,7 @@ from six import string_types
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler
 from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource, BaseDataSource
+from PYME.IO.DataSources import BufferedDataSource, BaseDataSource, ConcatenatedDataSource
 from PYME.IO.FileUtils.nameUtils import getRelFilename
 from PYME.IO.compatibility import np_load_legacy
 
@@ -643,6 +643,43 @@ class ImageStack(object):
         self.mdh = data.mdh
         self.seriesName = filename
         self.mode = 'default'
+
+    def _load_concatenated(self, filename):
+        from PYME.IO.DataSources import ConcatenatedDataSource
+        import glob
+
+        if filename.upper().startswith('CONCATENATED://'):
+            filename = filename[15:]
+
+        z, t, c = None, None, None
+        if filename[0] == ':':
+            # we are explicitly passing ztc dimensions as :Z,T,C:
+            split_string = filename[1:].split(':')
+            dim_string = split_string[0]
+            z, t, c = [int(s) for s in dim_string.split(',')]
+            filename = ''.join(split_string[1:])
+
+        if filename.find(',') == -1:
+            # pattern-based
+            filenames = sorted(glob.glob(filename))
+        else:
+            # a user took the time to pass files individually,
+            # separated by commas
+            filenames = filename.split(',')
+
+            # rename, as it's not a great idea for seriesName to 
+            # be full of commas
+            filename = '_'.join(filenames)
+
+        datasources = []
+        for fn in filenames:
+            image = ImageStack(filename=fn)
+            datasources.append(image.data_xyztc)
+
+        data = ConcatenatedDataSource.DataSource(datasources, size_z=z, size_t=t, size_c=c)
+        self.SetData(data)
+        self.seriesName = filename
+        self.mode = 'default'
         
     def _loadNPY(self, filename):
         """Load numpy .npy data.
@@ -1163,6 +1200,8 @@ class ImageStack(object):
                 self._loadClusterPZF(filename)
             elif (filename.upper().startswith('SUPERTILE:')):
                 self._load_supertile(filename)
+            elif (filename.upper().startswith('CONCATENATED://')):
+                self._load_concatenated(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)
             #elif filename.endswith('.kdf'):
