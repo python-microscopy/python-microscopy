@@ -145,6 +145,15 @@ class XYTCDataSource(BaseDataSource):
         We ignore any dimensions higher than the dimensionaltyof the data.
         """
         keys = list(keys)
+        if len(keys) < self.ndim:
+            # backwards compatible indexing with < ndims
+            import warnings
+            warnings.warn('Slicing with n_slices < ndim, taking 0th item along missing dimensions', stacklevel=2)
+            while (len(keys)< self.ndim):
+                # for compatibility with ListWrap, take the 0th item if no index provided
+                # NB this is different to numpy's behaviour.
+                keys.append(0)
+
         #print keys
         for i in range(len(keys)):
             if not isinstance(keys[i], slice):
@@ -288,7 +297,7 @@ class XYZTCDataSource(BaseDataSource):
         keys = list(keys)
         
         if not len(keys) == 5:
-            raise RuntimeError('Must provide a 5-dimensional slice')
+            raise IndexError('Must provide slices/indices for all 5 dimensions')
         
         indices = {}
         
