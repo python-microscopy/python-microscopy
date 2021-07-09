@@ -632,7 +632,15 @@ class BinnedHistogram(ModuleBase):
 
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
-    """Module with one image input and one image output"""
+    """Perform 2D morphological measurements based on an image mask and optional intensity image. 
+
+    **Note:** To perform mesurements on multi-colour images, split channels first and measure each channel
+    separately. 
+    
+    **Note:** Measure2D currently works on *flattened* data where z and t dimensions have been collapsed
+    to a single "frame" dimension. TODO - fix this (or at least record the corresponding z and t indices for
+    each measurement).
+    """
     inputLabels = Input('labels')
     inputIntensity = Input('data')
     outputName = Output('measurements')
@@ -729,6 +737,8 @@ class Measure2D(ModuleBase):
         
         # end measuremnt class def
         
+        assert (labels.data_xyztc.shape[4 ==1]), 'Measure2D labels must have a single colour channel'
+
         m = measurements()
         
         if self.inputIntensity in ['None', 'none', '']:
@@ -736,6 +746,8 @@ class Measure2D(ModuleBase):
             intensity = None
         else:
             intensity = namespace[self.inputIntensity]
+
+            assert (labels.data_xyztc.shape == intensity.data_xyztc.shape), 'Measure2D labels and intensity must be the same shape'
             
         for i in xrange(labels.data.shape[2]):
             m.addFrameMeasures(i, *self._measureFrame(i, labels, intensity))
@@ -747,10 +759,10 @@ class Measure2D(ModuleBase):
     def _measureFrame(self, frameNo, labels, intensity):
         import skimage.measure
         
-        li = labels.data[:,:,frameNo].squeeze().astype('i')
+        li = labels.data_xytc[:,:,frameNo, 0].squeeze().astype('i')
 
         if intensity:
-            it = intensity.data[:,:,frameNo].squeeze()
+            it = intensity.data_xytc[:,:,frameNo, 0].squeeze()
         else:
             it = None
             

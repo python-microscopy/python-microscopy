@@ -26,9 +26,11 @@ from PYME.IO.DataSources.BaseDataSource import DefaultList, BaseDataSource
 from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource, atleast_nd
 
 class ListWrapper(BaseDataSource):
-    def __init__(self, dataList):
+    def __init__(self, dataList, strict_dims=False):
         self.dataList = dataList
-        self.wrapList = [Wrap(d) for d in dataList]
+        self.wrapList = [Wrap(d, strict_dims=strict_dims) for d in dataList]
+
+        self._strict_dims =strict_dims
 
         self.listDim = self.wrapList[0].ndim
         self._shape = DefaultList([self.wrapList[0].shape[i] for i in range(self.listDim)] + [len(self.wrapList),])
@@ -76,7 +78,12 @@ class ListWrapper(BaseDataSource):
         if len(keys) > self.listDim:
             kL = keys[self.listDim]
         else:
-            kL = 0 #default to taking the first channel
+            if self._strict_dims:
+                raise IndexError('Slicing with dims < ndim. Must provide indices/slices for each dimension present in data')
+            else:
+                import warnings
+                warnings.warn('Slicing with n_slices < ndim, taking 0th item along missing dimensions', stacklevel=2)
+                kL = 0 #default to taking the first channel
             
         #if kL.__class__ == slice:
         #    return ListWrap([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))])
@@ -87,11 +94,11 @@ class ListWrapper(BaseDataSource):
             return self.wrapList[kL].__getitem__(keys[:self.listDim])
 
 
-def Wrap(datasource):
+def Wrap(datasource, strict_dims=False):
     """Wrap a data source such that it is indexable like a numpy array."""
     
     if isinstance(datasource, list):
-        datasource = ListWrapper(datasource)
+        datasource = ListWrapper(datasource, strict_dims=strict_dims)
     elif not isinstance(datasource, (BaseDataSource,)): #only if not already wrapped
         if isinstance(datasource, tables.EArray):
             datasource = ArrayDataSource(datasource, dim_1_is_z=True)
