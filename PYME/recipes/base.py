@@ -605,6 +605,7 @@ class Filter(ImageModuleBase):
         return {self.outputName : input_shapes[self.inputName]}
     
     def filter(self, image):
+        from PYME.IO.dataWrap import ListWrapper
         out = []
         for c in range(image.data_xyztc.shape[4]):
             if self.dimensionality == 'XYZT':
@@ -624,9 +625,9 @@ class Filter(ImageModuleBase):
                             xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z).squeeze()))
                     
                     xyzt.append(xyz)
-            out.append(xyzt)
-                
-        im = ImageStack(out, titleStub = self.outputName)
+            out.append(xyzt)        
+        
+        im = ImageStack(ListWrapper(out, strict_dims=True), titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
         im.mdh['Parent'] = image.filename
         
