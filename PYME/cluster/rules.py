@@ -446,6 +446,7 @@ class RecipeRule(Rule):
     def _task_template(self, context):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
                     "type": "recipe",
+                    "optimal-chunk-size" : 1,
                     "inputs" : {{taskInputs}},
                     %s
                 }'''
