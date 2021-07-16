@@ -30,13 +30,15 @@ class WormlikeSource(PointSource):
         mdh['GeneratedPoints.Source.PersistLength'] = self.persistLength
         
 class FileSource(PointSource):
-    file = File()
+    file = File(filter=['*.csv'],exists=True)
     
     #name = Str('Points File')
     
     def getPoints(self):
-        import numpy as np
-        return np.load(self.file)
+        # switched to csv based storage format
+        import pandas as pd
+        df = pd.read_csv(self.file)
+        return (df['x'].values,df['y'].values,df['z'].values)
 
     def genMetaData(self, mdh):
         mdh['GeneratedPoints.Source.Type'] = 'File'
