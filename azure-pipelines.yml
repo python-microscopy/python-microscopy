@@ -60,12 +60,12 @@ steps:
   condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
   displayName: 'codecov upload'
   
-- script: |
-    diff-cover coverage.xml --compare-branch=master 
-  condition: succeededOrFailed()
-  displayName: 'diff-cover'
+# - script: |
+#     diff-cover coverage.xml --compare-branch=master 
+#   condition: succeededOrFailed()
+#   displayName: 'diff-cover'
 
-- script: |
-    diff-quality --violations=flake8 --compare-branch=master
-  condition: succeededOrFailed()
-  displayName: 'diff-quality'
+# - script: |
+#     diff-quality --violations=flake8 --compare-branch=master
+#   condition: succeededOrFailed()
+#   displayName: 'diff-quality'
