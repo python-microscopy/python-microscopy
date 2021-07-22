@@ -745,6 +745,67 @@ class ScaledShell(object):
                            x_shell.max(), y_shell.max(),
                            z_shell.min(), z_shell.max())
 
+    def uniform_random_radial_density(self, n_radial_bins=20, batch_size=100000, target_sampling_nm=75.):
+        """
+        Estimate a radial density histogram for uniform spatial sampling within the shell. Performs calculation in batches to give bounded memory usage.
+
+        Parameters
+        ----------
+
+        n_radial_bins : int
+            Number of radial bins to divide the radius into
+        batch_size : int
+            number of test points to generate in one batch. Note that the default (100000) might be a bit conservative
+        target_sampling_nm: float
+            desired sampling density of combined batches. Used in conjuction with batch_size to determine the number of batches required.
+        """
+
+        bounds = self.approximate_image_bounds()
+
+        w = bounds.x1 - bounds.x0 #+ 2*target_sampling_nm
+        h = bounds.y1 - bounds.y0 #+ 2*target_sampling_nm
+        d = bounds.z1 - bounds.z0 #+ 2*target_sampling_nm
+
+        # to ensure spatial uniformity, simulate in a cube with an edge length equal to the longest bound.
+        # this means we chuck away quite a few points at the rejection step, but is logically simple
+        cube_size =max([w, h, d])
+
+        # calculate number of batches to give uniform random sampling with a desired spacing,
+        # whilst not exceeding the memory requirements dictated by a single batch 
+        n_batches = ((cube_size/target_sampling_nm)**3)/batch_size
+        logger.debug('Using %d batches for density estimation' % n_batches)
+
+        # calculate where to put our edges
+        bin_edges = np.linspace(0, 1, n_radial_bins)
+
+        #pre-allocate and output array
+        counts = np.zeros(len(bin_edges)-1, 'i4')
+
+        for i in range(n_batches):
+            # simulate batch_size uniformly distributed points within a bounding cube
+            x = np.random.uniform(bounds.x0, bounds.x0 + cube_size, batch_size)
+            y = np.random.uniform(bounds.y0, bounds.y0 + cube_size, batch_size)
+            z = np.random.uniform(bounds.z0, bounds.z0 + cube_size, batch_size)
+
+            # if shell_coordinates and/or reconstruct_shell prove expensive, we could clip to the rectangular (non-cube) bounding box here
+            # before calculating shell coordinates. Omitting for now as this is likely to be premature optimisation (and the additionaly indexing
+            # might well prove more expensive than just calculating the shell co-ordinates)
+
+            # convert these to polar, shell referenced coordinates
+            azi, zen, r = self.shell_coordinates((x, y, z))
+            r_shell = reconstruct_shell(self.modes,self.coefficients,azi, zen)
+
+            # find which points are inside the shell
+            inside = r < r_shell
+            # reject all points outside the shell
+            r_norm = r[inside]/r_shell[inside]
+
+            counts += np.histogram(r_norm, bin_edges)
+
+        return bin_edges, counts
+
+
+
 class SHShell(ScaledShell):
     '''
     Initial work on a replacement interface for ScaledShell
