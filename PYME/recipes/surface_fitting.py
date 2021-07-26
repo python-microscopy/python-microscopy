@@ -374,8 +374,9 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     input_shell = Input('harmonic_shell')
 
     r_bin_spacing = Float(0.05)
-    sampling_nm = ListFloat([75, 75, 75])
-    jitter_iterations = Int(3)
+    sampling_nm = ListFloat([75, 75, 75]) # TODO - convert this to a single float - we only use the first entry
+    #jitter_iterations = Int(3)
+    batch_size = Int(100000)
 
     output = Output('r_uniform_kde')
 
@@ -388,6 +389,33 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
+        bin_edges, counts = shell.uniform_random_radial_density(n_radial_bins=int(1./self.r_bin_spacing), batch_size=self.batch_size, target_sampling_nm=self.sampling_nm[0])
+        bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+        # estimate the volume, convert from nm^3 to um^3
+        # note, volume estimate will have an error of around +- sqrt(N_counts)
+        volume = counts.sum() * (np.prod(self.sampling_nm) / (1e9))
+
+        res = tabular.DictSource({
+            'bin_centers': bin_centers,
+            'counts': counts
+        })
+        
+        res.mdh = MetaDataHandler.DictMDHandler(getattr(shell, 'mdh', None))
+
+        # FIXME - this is really gross - we must not pass data / results in metadata
+        # Leaving here for now, for backwards compatibility, but needs to be fixed / removed somewhat urgently
+        # if we record sampling in the metadata, as we should, the volume calculation could easily be done in the consuming module)      
+        res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
+
+        # record module parameters  - FIXME this should be under the 'Analysis' top-level metadata key.
+        res.mdh['SHShellRadiusDensityEstimate.sampling_nm'] = self.sampling_nm[0] 
+
+        namespace[self.output] = res
+        
+        return
+
+        ## old code (unreacable, but kept for now in case we need to re-animate parts)
         bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
         out_hist = np.zeros(len(bin_centers), float)
