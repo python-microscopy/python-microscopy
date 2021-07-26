@@ -47,8 +47,10 @@ class FilterTable(ModuleBase):
     @property
     def _ds(self):
         try:
+            logger.debug('%s, %s' % (self.input_name, self._parent.namespace[self.inputName]))
             return self._parent.namespace[self.inputName]
         except:
+            logger.exception('error getting datasource')
             return None
 
     def _view_items(self, params=None):
