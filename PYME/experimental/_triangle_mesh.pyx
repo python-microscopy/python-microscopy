@@ -2187,8 +2187,9 @@ cdef class TriangleMesh(TrianglesBase):
                 self.edge_split(i, upsample=True)
             
             # 2. Flip any new edge that touches an old vertex and a new vertex
-            edges_to_flip = list(set(self._halfedges['vertex'][self._loop_subdivision_flip_edges]) - set(self._loop_subdivision_new_vertices))
-            for e in edges_to_flip:
+            for e in self._loop_subdivision_flip_edges:
+                if self._halfedges['vertex'][e] in self._loop_subdivision_new_vertices:
+                    continue
                 self.edge_flip(e)
 
             # Get any boundary vertices
