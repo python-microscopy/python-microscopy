@@ -667,15 +667,19 @@ class ImageStack(object):
             try:
                 z = int(urllib.parse.parse_qs(query)['z'][0])
             except KeyError:
-                pass
+                z = 1
             try:
                 t = int(urllib.parse.parse_qs(query)['t'][0])
             except KeyError:
-                pass
+                t = 1
             try:
                 c = int(urllib.parse.parse_qs(query)['c'][0])
             except KeyError:
-                pass
+                c = 1
+
+            if ((z==1) and (t==1) and (c==1)):
+                #we have a query string but no dimensions specified
+                z, t, c = None, None, None
 
         if filename.find(',') == -1:
             # pattern-based
