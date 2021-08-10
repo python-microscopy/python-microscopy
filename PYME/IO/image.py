@@ -653,11 +653,29 @@ class ImageStack(object):
 
         z, t, c = None, None, None
         if filename[0] == ':':
-            # we are explicitly passing ztc dimensions as :Z,T,C:
+            # we are explicitly passing ztc dimensions as ?z=zval&t=tval&c=cval
             split_string = filename[1:].split(':')
             dim_string = split_string[0]
             z, t, c = [int(s) for s in dim_string.split(',')]
             filename = ''.join(split_string[1:])
+
+        if '?' in filename:
+            #we have a query string to pick the series
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                z = int(urllib.parse.parse_qs(query)['z'][0])
+            except KeyError:
+                pass
+            try:
+                t = int(urllib.parse.parse_qs(query)['t'][0])
+            except KeyError:
+                pass
+            try:
+                c = int(urllib.parse.parse_qs(query)['c'][0])
+            except KeyError:
+                pass
 
         if filename.find(',') == -1:
             # pattern-based
