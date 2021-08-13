@@ -185,7 +185,10 @@ class HTTPRulePusher(object):
         #set up results file:
         logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
-        clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
+        evts = self.ds.getEvents()
+        if evts:
+            # only push events if we have them (supresses an error message when trying to parse and save null events on server)
+            clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.put_file(resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=serverfilter)
