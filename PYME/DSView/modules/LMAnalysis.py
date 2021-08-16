@@ -780,7 +780,7 @@ class LMAnalyser2(Plugin):
             #newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
             
             # load from server as .npy
-            cont = requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content
+            cont = requests.get(self.analysisController.pusher.worker_resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content
             newResults = np.load(BytesIO(cont))
             
             self._add_new_results(newResults)
