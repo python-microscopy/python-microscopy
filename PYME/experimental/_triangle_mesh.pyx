@@ -1403,7 +1403,10 @@ cdef class TriangleMesh(TrianglesBase):
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
         #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
-        _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
+        if upsample:
+            _vertex = 0.5*(x0 + x1)
+        else:
+            _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
         _vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
@@ -2184,8 +2187,9 @@ cdef class TriangleMesh(TrianglesBase):
                 self.edge_split(i, upsample=True)
             
             # 2. Flip any new edge that touches an old vertex and a new vertex
-            edges_to_flip = list(set(self._halfedges['vertex'][self._loop_subdivision_flip_edges]) - set(self._loop_subdivision_new_vertices))
-            for e in edges_to_flip:
+            for e in self._loop_subdivision_flip_edges:
+                if self._halfedges['vertex'][e] in self._loop_subdivision_new_vertices:
+                    continue
                 self.edge_flip(e)
 
             # Get any boundary vertices
