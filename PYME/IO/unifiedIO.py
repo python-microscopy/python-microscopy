@@ -65,6 +65,16 @@ def assert_uri_ok(name):
     except AssertionError:
         raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
 
+def assert_uri_name_ok(name):
+    """
+    combination of assert_name_ok and assert_uri_ok - runs assert_uri_ok if we have a URI, assert_name_ok if we have a name
+    """
+
+    if is_cluster_uri(name):
+        assert_uri_ok(name)
+    else:
+        assert_name_ok(name)
+
 def fix_name(name):
     """
     Cleans filename / url for use with, e.g. clusterIO, by replacing spaces with underscores and removing all
