@@ -100,7 +100,7 @@ class ICTMDeconvolution(object):
         """ convenience function for deconvolving in parallel using processing.Pool.map"""
         self.deconv(*args)
     
-    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0):
+    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0, pos=True):
         """This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -109,9 +109,12 @@ class ICTMDeconvolution(object):
         num_iters - number of iterations (note that the convergence is fast when
                     compared to many algorithms - e.g Richardson-Lucy - and the
                     default of 10 will usually already give a reasonable result)
-
+        weights - a weighting on the residuals to deweight missing data and/or adjust the
+                  noise behaviour
         alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
                 really be refactored out into the dec_4pi classes.
+        bg - Dummy variable
+        pos - Flag to turn positivity constraints on/off
         """
         #remember what shape we are
         self.dataShape = data.shape
@@ -192,7 +195,8 @@ class ICTMDeconvolution(object):
 
             #positivity constraint (not part of original algorithm & could be ommitted)
             
-            fnew = (fnew*(fnew > 0))
+            if pos:
+                fnew = (fnew*(fnew > 0))
 
             #add last step to search directions, as per classical conj. gradient
             S[:,2] = (fnew - self.f)
