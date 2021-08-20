@@ -47,10 +47,11 @@ def main():
     args = op.parse_args()
 
     serverPort = args.port
-    externalAddr = socket.gethostbyname(socket.gethostname())
+    #externalAddr = socket.gethostbyname(socket.gethostname())
     
     if args.advertisements == 'zeroconf':
         ns = pyme_zeroconf.getNS('_pyme-taskdist')
+        externalAddr = socket.gethostbyname(socket.gethostname())
     else:
         #assume local
         ns = sqlite_ns.getNS('_pyme-taskdist')

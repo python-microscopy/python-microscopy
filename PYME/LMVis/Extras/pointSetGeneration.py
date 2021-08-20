@@ -126,6 +126,7 @@ There should be no need to modify this from the default and it is accordingly no
             visFr.AddMenuItem('Extras>Synthetic Data', "Configure", self.OnConfigure)
             visFr.AddMenuItem('Extras>Synthetic Data', 'Generate fluorophore positions and events', self.OnGenPoints)
             visFr.AddMenuItem('Extras>Synthetic Data', 'Generate events', self.OnGenEvents)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Save fluorophore positions', self.OnSavePoints)
 
 
 
@@ -137,6 +138,27 @@ There should be no need to modify this from the default and it is accordingly no
         self.xp, self.yp, self.zp = self.source.getPoints()
         self.OnGenEvents(None)
 
+
+    def OnSavePoints(self, event):
+        import wx
+        try:
+            x = self.xp
+        except AttributeError:
+            wx.MessageBox('No points! Generate fluorophore positions first', 'Warning', style=wx.OK)
+            return
+
+        # using a pandas based CSV IO here, there may be preferences for a more direct implementation
+        # I (CS) like it for the high-level interface
+        import pandas as pd
+        df = pd.DataFrame({'x': self.xp,
+                           'y': self.yp,
+                           'z': self.zp})
+        filename = wx.FileSelector("Save coordinates as",
+                                   wildcard='Comma separated values (*.csv)|*.csv',
+                                   flags=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        df.to_csv(filename,index=False)
+
+        
     def OnGenEvents(self, event):
         from PYME.simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2

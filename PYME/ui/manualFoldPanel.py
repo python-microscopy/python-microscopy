@@ -647,6 +647,7 @@ class foldPanel(wx.Panel):
         
         self.Bind(wx.EVT_SIZE, self.OnResize)
         self.Bind(EVT_CMD_PANEL_FOLD, self.OnResize)
+        self.Bind(wx.EVT_SHOW, self.OnResize)
 
         #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 

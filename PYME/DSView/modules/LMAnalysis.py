@@ -328,19 +328,25 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.cluster import HTTPRulePusher
+        from PYME.cluster import rules #HTTPRulePusher
 
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.filename))
         logging.debug('Results file: ' + resultsFilename)
 
 
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
-        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+        if self.resultsMdh.get('DataFileID', None) is None:
+            self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.filename,
-                                                    metadata=self.resultsMdh, resultsFilename=resultsFilename)
+        #self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.filename,
+        #                                            metadata=self.resultsMdh, resultsFilename=resultsFilename, startAt=self.analysisMDH.get('Analysis.StartAt', 10))
 
-        self.queueName = self.pusher.queueID
+        rule = rules.LocalisationRule(seriesName=image.filename, analysisMetadata=self.resultsMdh, resultsFilename=resultsFilename, startAt=self.analysisMDH.get('Analysis.StartAt', 10))
+        rule.push()
+
+        self.pusher = rule #for compatibility - TODO refactor??
+
+        self.queueName = rule._ruleID #self.pusher.queueID
         self.results_filename = resultsFilename
 
         debugPrint('Queue created')
@@ -774,7 +780,7 @@ class LMAnalyser2(Plugin):
             #newResults = pickle.loads(requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults?from=%d' % len(self.fitResults)).content)
             
             # load from server as .npy
-            cont = requests.get(self.analysisController.pusher.resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content
+            cont = requests.get(self.analysisController.pusher.worker_resultsURI.replace('__aggregate_h5r/', '') + '/FitResults.npy?from=%d' % len(self.fitResults)).content
             newResults = np.load(BytesIO(cont))
             
             self._add_new_results(newResults)
