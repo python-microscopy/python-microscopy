@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 alpha_regex = re.compile(r'^[\w/\.\-]+$')
+win_regex = re.compile(r'^[\w/(\\)\.\-]+$') #permit backslashes for windows paths
 
-def check_name(name):
+def check_name(name, win=False):
     """
     Check if filename / url is OK to use with, e.g. clusterIO.
 
@@ -23,13 +24,19 @@ def check_name(name):
     name: str
         The filename or url to query
 
+    win: bool
+        is name a windows path
+
     Returns
     -------
     ok: bool
         True if filename/url is fully compatible
 
     """
-    return bool(alpha_regex.match(name))
+    if win:
+        return bool(alpha_regex.match(name))
+    else:
+        return bool(alpha_regex.match(name))
     #return name == fix_name(name)
 
 def check_uri(name):
