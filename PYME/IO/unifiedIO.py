@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-alpha_regex = re.compile(r'^[\w/\.\-]+$')
+alpha_regex = re.compile(r'^[\w/(\\)\.\-]+$')
 
 def check_name(name):
     """
@@ -29,7 +29,7 @@ def check_name(name):
         True if filename/url is fully compatible
 
     """
-    return bool(alpha_regex.match(name))
+    return bool(alpha_regex.match(name.split(':')[-1]))
     #return name == fix_name(name)
 
 def check_uri(name):
