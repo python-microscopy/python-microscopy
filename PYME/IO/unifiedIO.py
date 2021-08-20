@@ -1,5 +1,6 @@
 from PYME.IO.FileUtils import nameUtils
 import os
+import sys
 from io import BytesIO
 from contextlib import contextmanager
 import tempfile
@@ -34,7 +35,7 @@ def check_name(name, win=False):
 
     """
     if win:
-        return bool(alpha_regex.match(name))
+        return bool(win_regex.match(name))
     else:
         return bool(alpha_regex.match(name))
     #return name == fix_name(name)
@@ -57,6 +58,15 @@ def assert_name_ok(name):
     except AssertionError:
         raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
 
+def check_path(name):
+    if sys.platform.startswith('win32'):
+        return check_name(os.path.splitdrive(name)[-1],win=True)
+    else:
+        return check_name(name)
+
+def assert_path_ok(name):
+    assert check_path(name) == True
+
 def assert_uri_ok(name):
     """
     Raise if name contains reserved/invalid characters for use with, e.g. clusterIO.
@@ -72,15 +82,15 @@ def assert_uri_ok(name):
     except AssertionError:
         raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
 
-def assert_uri_name_ok(name):
+def assert_uri_path_ok(name):
     """
-    combination of assert_name_ok and assert_uri_ok - runs assert_uri_ok if we have a URI, assert_name_ok if we have a name
+    combination of assert_path_ok and assert_uri_ok - runs assert_uri_ok if we have a URI, assert_name_ok if we have a name
     """
 
     if is_cluster_uri(name):
         assert_uri_ok(name)
     else:
-        assert_name_ok(name)
+        assert_path_ok(name)
 
 def fix_name(name):
     """

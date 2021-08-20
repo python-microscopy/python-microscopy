@@ -479,7 +479,7 @@ class LocalisationRule(Rule):
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
         from PYME.IO import unifiedIO
     
-        unifiedIO.assert_uri_name_ok(seriesName)
+        unifiedIO.assert_uri_path_ok(seriesName)
     
         if resultsFilename is None:
             resultsFilename = genClusterResultFileName(seriesName)
