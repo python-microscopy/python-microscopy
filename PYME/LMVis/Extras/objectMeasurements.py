@@ -23,6 +23,51 @@
 import wx
 import numpy as np
 
+class OMDialog(wx.Dialog):
+    def __init__(self, candidate_keys = ['objectID', 'dbscanClumpID', 'clumpIndex'], *args, **kw):
+        super().__init__(*args, **kw)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Label column:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.cLabel = wx.Choice(self, -1, choices=candidate_keys)
+        try:
+            self.cLabel.SetSelection(candidate_keys.index('objectID'))
+        except ValueError:
+            try:
+                self.cLabel.SetSelection(candidate_keys.index('clumpIndex'))
+            except ValueError:
+                try:
+                    self.cLabel.SetSelection(candidate_keys.index('dbscanClumpID'))
+                except ValueError:
+                    pass
+
+        hsizer.Add(self.cLabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Max edge length [nm]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.tLen = wx.TextCtrl(self, -1, '10')
+        hsizer.Add(self.tLen, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        vsizer.Add(hsizer)
+
+        bsizer = wx.StdDialogButtonSizer()
+        self.bOK = wx.Button(self, wx.ID_OK, 'OK')
+        bsizer.AddButton(self.bOK)
+        bsizer.Realize()
+        vsizer.Add(bsizer)
+
+        self.SetSizerAndFit(vsizer)
+
+    @property
+    def label_key(self):
+        return self.cLabel.GetStringSelection()
+
+    @property
+    def edge_cutoff(self):
+        return float(self.tLen.GetValue())
+
 class ObjectMeasurer:
     def __init__(self, visFr):
         self.visFr = visFr
@@ -90,22 +135,34 @@ class ObjectMeasurer:
         # - look for objectID and carry on if present
         # - if not present, display a dialog "No objectID found - did you segment objects? Either cancel, 
         # segment, and come back, or choose an alternative column to use as an ID.
-        keys = ['objectID', 'dbscanClumpID', 'clumpIndex']
-        key = 'objectID'
+        # keys = ['objectID', 'dbscanClumpID', 'clumpIndex']
+        # key = 'objectID'
 
-        for k in keys:
-            try:
-                ids = set(pipeline.mapping[k].astype('i'))
-                key = k
-                break
-            except(KeyError):
-                continue
+        # for k in keys:
+        #     try:
+        #         ids = set(pipeline.mapping[k].astype('i'))
+        #         key = k
+        #         break
+        #     except(KeyError):
+        #         continue
+
+        dlg = OMDialog(pipeline.keys())
+        if not dlg.ShowModal() == wx.ID_OK:
+            dlg.Destroy()
+            raise RuntimeError('User cancelled column selection')
+
+        key = dlg.label_key
+        ids = set(pipeline.mapping[key].astype('i'))
+        edge_cutoff = dlg.edge_cutoff
+
+        dlg.Destroy()
+            
         # ids = set(pipeline.mapping['objectID'].astype('i'))
 
         pipeline.objectMeasures = {}
 
         if len(chans) == 0:
-            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
                                                                                      key)
 
             from PYME.ui import recArrayView
@@ -127,7 +184,7 @@ class ObjectMeasurer:
             for ch, i in zip(chans, range(len(chans))):
                 pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10, ids,
+                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
                                                                                          key)
             
             pipeline.colourFilter.setColour(curChan)
