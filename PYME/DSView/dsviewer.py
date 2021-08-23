@@ -135,9 +135,12 @@ class DSViewFrame(AUIFrame):
         #self.do = self.vp.do
         
         
+        if not hasattr(self, "ID_OPEN_SEQ"):
+            self.ID_OPEN_SEQ = wx.NewId()
         self.AddMenuItem('File', '&Open', self.OnOpen, id=wx.ID_OPEN)
         self.AddMenuItem('File', '&Save As', self.OnSave, id=wx.ID_SAVE)
         self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
+        self.AddMenuItem('File', 'Open Image Se&quence', self.OnOpenSequence, id=self.ID_OPEN_SEQ)
         #self.AddMenuItem('File>Save','Save &Results', )
         
         #tmp_menu = wx.Menu()
@@ -324,7 +327,13 @@ class DSViewFrame(AUIFrame):
 
     def OnOpen(self, event=None):
         ViewIm3D(ImageStack(haveGUI=True))
-        
+
+    def OnOpenSequence(self, event=None):
+        from PYME.DSView.OpenSequenceDialog import OpenSequenceDialog
+        dlg = OpenSequenceDialog(self)
+        if dlg.ShowModal() == wx.ID_OK:
+            ViewIm3D(ImageStack(data=dlg.get_datasource(), haveGUI=True))
+
 
     def OnSave(self, event=None):
         self.image.Save()
