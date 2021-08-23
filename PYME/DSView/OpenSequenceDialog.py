@@ -65,6 +65,7 @@ class OpenSequenceDialog(wx.Dialog):
         for fn in self.file_panel.filenames:
             image = ImageStack(filename=fn)
             self._datasources.append(image.data_xyztc)
+        
         try:
             self._datasource = ConcatenatedDataSource.DataSource(self._datasources)
             size_z, size_t, size_c = self._datasource._sizes
