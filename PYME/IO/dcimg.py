@@ -129,7 +129,9 @@ class DCIMGFile(object):
             session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES)], 
                                         dtype=SESSION_HEADER_DTYPE)[0]
 
-        elif info['format_version'] == 0x1000000:
+        elif info['format_version'] >= 0x1000000:
+            if info['format_version'] > 0x1000000:
+                print("Warning: you are using version {}, but only version {} is guaranteed to work.".format(info['format_version'], 0x1000000))
             session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES_INT2P24)],
                                     dtype=SESSION_HEADER_DTYPE_INT2P24)[0]
 
