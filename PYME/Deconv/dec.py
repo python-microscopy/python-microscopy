@@ -136,13 +136,13 @@ class ICTMDeconvolution(object):
 
         #guess a starting estimate for the object
         self.f = self.startGuess(data).ravel()
-        self.res = 0*self.f
 
         self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
+        self.res = 0*data
         
         if not np.isscalar(weights):
             weights = weights / weights.mean()
