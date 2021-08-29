@@ -85,9 +85,9 @@ def triangle_sdf(p, pv):
 
     return s*np.sqrt(m)
 
-def sdf_min(sdf, smooth=True, k=0.5):
-    # TODO: Default value of k=0.5 is very much arbitrary. Is there a better choice?
-    # Means the function is smoothed by ~1/2 nm
+def sdf_min(sdf, smooth=True, k=0.1):
+    # TODO: Default value of k=0.1 is very much arbitrary. Is there a better choice?
+    # Means the function is smoothed by ~1/10 nm
     if smooth:
         # Exponentially smoothed minimum
         # https://iquilezles.org/www/articles/smin/smin.htm
