@@ -8,14 +8,26 @@ Created on Wed Apr 01 16:29:38 2015
 import wx
 
 class EnumControl(wx.Panel):
-    def __init__(self, parent, target):
+    def __init__(self, parent, target, display_name=None):
         wx.Panel.__init__(self, parent)
         self.scope = parent.scope
         self.parent = parent
         self.target = target
         
+        # this keyword allows us to override unwieldy property Names
+        if display_name is None:
+            self.display_name = target.propertyName
+        else:
+            self.display_name = display_name
+            
+        # TODO - do we really need to support read only enums????
+        try:
+            self._read_only = target.isReadOnly()
+        except AttributeError:
+            self._read_only = False
+        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, target.propertyName), 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, self.display_name), 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         self.cChoice = wx.Choice(self, -1, size = [100,-1])
         self.cChoice.Bind(wx.EVT_CHOICE, self.onChange)
@@ -26,10 +38,11 @@ class EnumControl(wx.Panel):
         self.SetSizerAndFit(hsizer)
         
     def onChange(self, event=None):
-        self.scope.frameWrangler.stop()
-        self.target.setString(self.cChoice.GetStringSelection())
-        self.scope.frameWrangler.start()
-        self.parent.update()
+        if not self._read_only:
+            self.scope.frameWrangler.stop()
+            self.target.setString(self.cChoice.GetStringSelection())
+            self.scope.frameWrangler.start()
+            self.parent.update()
         
     def update(self):
         choices = list(self.target.getAvailableValues())
@@ -73,16 +86,20 @@ class ZylaControl(wx.Panel):
         self.cam = cam
         self.scope = scope
         
-        self.ctrls = [EnumControl(self, cam.SimpleGainEnumInstance),
+        self.ctrls = [EnumControl(self, cam.SimpleGainEnumInstance), # use enum class as it also sets pixel encoding
                       EnumControl(self, cam.PixelReadoutRate),
                       BoolControl(self, cam.SpuriousNoiseFilter),
                       BoolControl(self, cam.StaticBlemishCorrection),
                       EnumControl(self, cam.CycleMode),]
-        
+
+
+        if len(cam.TemperatureControl.getAvailableValues()) > 1: # we only add this if there is a real choice
+            self.ctrls.append(EnumControl(self, cam.TemperatureControl))
+
         self._init_ctrls()
         
     def update(self):
         for c in self.ctrls:
             c.update()
-        
+
         
