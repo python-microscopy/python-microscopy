@@ -49,7 +49,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
-    DefaultPixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
+    ZylaPixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
                                    '12-bit (high well capacity)': 'Mono12',
                                    '16-bit (low noise & high well capacity)' : 'Mono16'
     }
@@ -246,6 +246,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
 
         # figure out preamp gain modes for this camera type
         if not self.CameraModel.getValue().startswith('SIM'):
+            # Special case for Sona cams
             self.PixelEncodingForGain = {}
             for mode in self.SimplePreAmpGainControl.getAvailableValues():
                 if mode.startswith('12'):
@@ -255,7 +256,8 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                 else:
                     raise RuntimeError('PixelEncodingForGain mode "%s" unknown bit depth (neither 12 nor 16 bit)' % (mode))
         else:
-            self.PixelEncodingForGain = self.DefaultPixelEncodingForGain
+            # Assume Zyla
+            self.PixelEncodingForGain = self.ZylaPixelEncodingForGain
 
         # this instance is compatible with use in Zylacontrolpanel
         # note we make this only once the camera has been initialised and PixelEncodingForGain been made
@@ -768,6 +770,8 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         return self._frameRate
 
     def TemperatureStatusText(self):
+        # TODO - rename (potentially when considering PEP8ing  / genral camera interface refactor)
+        # TODO - uniform interface for device status text across devices - should be more generic than temperature
         return "Zyla target T %s - %s" % (self.TemperatureControl.getString(),
                                           self.TemperatureStatus.getString())
 
