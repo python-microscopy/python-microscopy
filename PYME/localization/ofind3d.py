@@ -36,7 +36,7 @@ import scipy
 import scipy.ndimage as ndimage
 # import pylab
 import numpy as np
-from PYME.DSView import View3D
+#from PYME.DSView import View3D
 
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):

@@ -78,7 +78,7 @@ class _FilterEditor (Editor):
         """
         Finishes initializing the editor by creating the underlying widget.
         """
-        from PYME.LMVis.filterPane import FilterPanel
+        from PYME.ui.filterPane import FilterPanel
 
 
         self.control = FilterPanel(parent, filterKeys=self.value, dataSource=self.factory.datasource)
@@ -326,7 +326,7 @@ class _DictChoiceStrEditor(Editor):
         """
         Finishes initializing the editor by creating the underlying widget.
         """
-        from PYME.LMVis.filterPane import FilterPanel
+        from PYME.ui.filterPane import FilterPanel
 
 
         self.control = DictChoiceStrPanel(parent, filterKeys=self.value, 
