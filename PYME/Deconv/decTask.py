@@ -25,7 +25,7 @@
 #import tcluster
 #import dec
 #from scipy import *
-from PYME.ParallelTasks import taskDef
+from PYME.misc import taskDef
 
 
 queueID = None
