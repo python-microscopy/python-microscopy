@@ -720,7 +720,10 @@ class VisGUICore(object):
                     args['Multichannel'] = dlg.GetMultichannel()
                 
                     dlg.Destroy()
-    
+        # only use our new CSV reader when enabled via config option 'VisGUI-use_csv_reader'
+        # currently bypasses the ImportTextDialog; just for proof of principle
+        elif (os.path.splitext(filename)[1] == '.csv') and PYME.config.get('VisGUI-use_csv_reader', False):
+            pass # we do not need any args when using our CSVSMLMReader
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
         

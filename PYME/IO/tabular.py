@@ -593,6 +593,20 @@ class TextfileSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
+    
+class TextfileSourceCSV(TextfileSource):
+    _name = "Text File Source CSV"
+    def __init__(self, filename):
+        """ Input filter for use with CSV. Tries to read some
+        of the SMLM flavours out there"""
+
+        from PYME.IO.FileUtils.CSVflavoursSMLM import CSVSMLMReader
+        csvreader = CSVSMLMReader(filename)
+        self.res = csvreader.read_csv_flavour()
+        
+        self._keys = list(csvreader.translatedNames)
+
+
 @deprecated_name('matfileSource')
 class MatfileSource(TabularBase):
     _name = "Matlab Source"

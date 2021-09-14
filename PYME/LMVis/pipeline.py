@@ -718,8 +718,10 @@ class Pipeline:
                     ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
         elif os.path.splitext(filename)[1] == '.csv':
+            if not 'FieldNames' in kwargs.keys():
+                ds = tabular.TextfileSourceCSV(filename)
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
-            if 'SkipRows' in kwargs.keys():
+            elif 'SkipRows' in kwargs.keys():
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',')
