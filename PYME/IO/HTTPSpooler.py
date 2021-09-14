@@ -23,7 +23,7 @@
 
 from PYME.IO import MetaDataHandler
 from PYME.IO.events import MemoryEventLogger
-import PYME.Acquire.Spooler as sp
+import PYME.IO.Spooler as sp
 
 import os
 import time

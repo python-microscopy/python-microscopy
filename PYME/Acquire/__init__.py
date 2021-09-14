@@ -31,8 +31,8 @@ The core components are:
 - :py:mod:`PYME.Acquire.microscope` : a handler / collection point for all the hardware and microscope state
 - :py:mod:`PYME.Acquire.frameWrangler` : controls the flow of data from the camera(s)
 
-Most of the additional modules serve a supporting role. Of special note are the spoolers (:py:mod:`PYME.Acquire.HDFSpooler`,
-:py:mod:`PYME.Acquire.QueueSpooler`, and :py:mod:`PYME.Acquire.HTTPSpooler`) which are the backends for spooling data acquisition.
+Most of the additional modules serve a supporting role. Of special note are the spoolers (:py:mod:`PYME.IO.HDFSpooler`,
+:py:mod:`PYME.IO.QueueSpooler`, and :py:mod:`PYME.IO.HTTPSpooler`) which are the backends for spooling data acquisition.
 
 Drivers for different pieces of experimental hardware are found in :py:mod:`PYME.Acquire.Hardware`
 

@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-from PYME.Acquire import HTTPSpooler
+from PYME.IO import HTTPSpooler
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler, clusterIO, unifiedIO
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
