@@ -26,7 +26,7 @@ class CSVSMLMReader(object):
             'must_ignore_errors' : True, # these files bomb unless we tell np.genfromtxt to ignore errors
             # 'column_translations' : {}, # a dict to populate a MappingFilter (To be confirmed)
         },
-        'simple' : { # placeholder for more vanilla QuickPALM/ThunderSTORM, but not quite sure about TS
+        'simple' : { # placeholder for more vanilla QuickPALM/ThunderSTORM
             'idnames' : ['frame','int'],
             'delimiter' : ',',
             'comment_char' : '#', # it does not really work to use these the comment char to ignore lines with missing data
@@ -64,6 +64,8 @@ class CSVSMLMReader(object):
     def flavour_value_or_default(self,key,default=None):
         if not hasattr(self,'flavour'):
             raise RuntimeError('flavour not yet defined!')
+        if self.flavour is None:
+            return default
         if key in self.csv_flavours[self.flavour]:
             return self.csv_flavours[self.flavour][key]
         else:
@@ -99,7 +101,7 @@ class CSVSMLMReader(object):
         delims = [',','\t']
         delim = ',' # default
 
-        while n < 10: # only look at first 10 lines max
+        while n < 10: # only look at first 10 data lines max
             line = fid.readline()
             if line.startswith('#'): #check for comments
                 commentLines.append(line[1:])
