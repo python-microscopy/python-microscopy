@@ -603,8 +603,13 @@ class TextfileSourceCSV(TextfileSource):
         from PYME.IO.FileUtils.CSVflavoursSMLM import CSVSMLMReader
         csvreader = CSVSMLMReader(filename)
         self.res = csvreader.read_csv_flavour()
+        self.mdh = csvreader.get_mdh()
         
         self._keys = list(csvreader.translatedNames)
+
+
+    def get_mdh(self):
+        return self.mdh
 
 
 @deprecated_name('matfileSource')

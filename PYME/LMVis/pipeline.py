@@ -720,6 +720,7 @@ class Pipeline:
         elif os.path.splitext(filename)[1] == '.csv':
             if not 'FieldNames' in kwargs.keys():
                 ds = tabular.TextfileSourceCSV(filename)
+                mdh = ds.get_mdh()
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
             elif 'SkipRows' in kwargs.keys():
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
@@ -729,6 +730,7 @@ class Pipeline:
         else: #assume it's a tab (or other whitespace) delimited text file
             if not 'FieldNames' in kwargs.keys():
                 ds = tabular.TextfileSourceCSV(filename)
+                mdh = ds.get_mdh()
             elif 'SkipRows' in kwargs.keys():
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:

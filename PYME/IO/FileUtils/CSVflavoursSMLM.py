@@ -1,4 +1,6 @@
 import numpy as np
+from PYME.IO import MetaDataHandler
+
 def isnumber(s):
     try:
         float(s)
@@ -171,13 +173,28 @@ class CSVSMLMReader(object):
     def print_flavour(self):
         print('Flavour is %s' % self.flavour)
 
+    def gen_mdh(self): # generate some metaData that will be passed up the chain
+                       # to record some bits of this import
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh['SMLMImporter.flavour'] = self.flavour
+        mdh['SMLMImporter.originalNames'] = self.colNames
+        mdh['SMLMImporter.translatedNames'] = self.translatedNames
+        
+        self._mdh = mdh
+       
+
+    def get_mdh(self):
+        if not hasattr(self,'_mdh'):
+            self.gen_mdh()
+        return self._mdh
+
+    
     def read_csv_flavour(self):
         self.parse_header_csv()
         self.check_flavour()
         self.replace_names()
         data = self.read_csv_data()
         col0 = self.translatedNames[0]
-        if np.any(np.isnan(data[col0])):
-            return data[np.logical_not(np.isnan(data[col0]))] # delete rows with missing values
-        else:
-            return data
+        if np.any(np.isnan(data[col0])): # this only looks in the first column, there may be others
+            data = data[np.logical_not(np.isnan(data[col0]))] # delete rows with missing values
+        return data
