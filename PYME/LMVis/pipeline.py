@@ -727,7 +727,9 @@ class Pipeline:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',')
 
         else: #assume it's a tab (or other whitespace) delimited text file
-            if 'SkipRows' in kwargs.keys():
+            if not 'FieldNames' in kwargs.keys():
+                ds = tabular.TextfileSourceCSV(filename)
+            elif 'SkipRows' in kwargs.keys():
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
