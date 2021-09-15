@@ -59,12 +59,12 @@ class CSVSMLMReader(object):
 
     def __init__(self, file):
         self.filename = file # do we allow file to be something other than a name?
-        self.comment_char = '#'
-        
+        self.flavour = 'default'
+
     def flavour_value_or_default(self,key,default=None):
         if not hasattr(self,'flavour'):
             raise RuntimeError('flavour not yet defined!')
-        if self.flavour is None:
+        if self.flavour == 'default':
             return default
         if key in self.csv_flavours[self.flavour]:
             return self.csv_flavours[self.flavour][key]
@@ -132,22 +132,27 @@ class CSVSMLMReader(object):
 
 
     def replace_names(self):
-        if self.flavour is not None:
-            newnames = []
-            repdict = self.csv_flavours[self.flavour]['column_name_mappings']
-            for name in self.colNames:
-                if name in repdict.keys():
-                    newnames.append(repdict[name])
-                else:
-                    newnames.append(name)
-            self.translatedNames = newnames
+        newnames = []
+        if self.flavour == 'default':
+            repdict = { # a few default translations, just in case
+                'X' : 'x',
+                'Y' : 'y',
+                'Z' : 'z',
+            }
         else:
-            self.translatedNames = self.colNames
+            repdict = self.csv_flavours[self.flavour]['column_name_mappings']
+
+        for name in self.colNames:
+            if name in repdict.keys():
+                newnames.append(repdict[name])
+            else:
+                newnames.append(name)
+        self.translatedNames = newnames
 
 
     def read_csv_data(self):
         return np.genfromtxt(self.filename,
-                             comments=self.comment_char,
+                             comments=self.flavour_value_or_default('comment_char','#'),
                              delimiter=self.flavour_value_or_default('delimiter',','),
                              skip_header=self.nHeaderLines,
                              skip_footer=self.flavour_value_or_default('skip_footer',0),
@@ -158,17 +163,13 @@ class CSVSMLMReader(object):
 
     
     def check_flavour(self):
-        self.flavour = None
         for flavour in self.csv_flavours:
             if all(idn in self.colNames for idn in self.csv_flavours[flavour]['idnames']):
                 self.flavour = flavour
 
 
     def print_flavour(self):
-        if self.flavour is None:
-            print('Flavour is None (default)')
-        else:
-            print('Flavour is %s' % self.flavour)
+        print('Flavour is %s' % self.flavour)
 
     def read_csv_flavour(self):
         self.parse_header_csv()
