@@ -772,7 +772,7 @@ class ScaledShell(object):
 
         # calculate number of batches to give uniform random sampling with a desired spacing,
         # whilst not exceeding the memory requirements dictated by a single batch 
-        n_batches = ((cube_size/target_sampling_nm)**3)/batch_size
+        n_batches = int(((cube_size/target_sampling_nm)**3)/batch_size)
         logger.debug('Using %d batches for density estimation' % n_batches)
 
         # calculate where to put our edges
@@ -800,7 +800,7 @@ class ScaledShell(object):
             # reject all points outside the shell
             r_norm = r[inside]/r_shell[inside]
 
-            counts += np.histogram(r_norm, bin_edges)
+            counts += np.histogram(r_norm, bin_edges)[0]
 
         return bin_edges, counts
 
