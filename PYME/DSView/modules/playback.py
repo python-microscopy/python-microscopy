@@ -20,7 +20,6 @@
 #
 ##################
 import os
-from tests.PYME.Analysis.points.test_spherical_harmonics import R
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
