@@ -146,9 +146,10 @@ class CSVSMLMReader(object):
 
         for name in self.colNames:
             if name in repdict.keys():
-                newnames.append(repdict[name])
+                newname = repdict[name]
             else:
-                newnames.append(name)
+                newname = name
+            newnames.append(newname.replace(' ','_')) # we replace spaces with underscores
         self.translatedNames = newnames
 
 
@@ -158,7 +159,7 @@ class CSVSMLMReader(object):
                              delimiter=self.flavour_value_or_default('delimiter',','),
                              skip_header=self.nHeaderLines,
                              skip_footer=self.flavour_value_or_default('skip_footer',0),
-                             names=self.translatedNames, dtype='f4', 
+                             names=self.translatedNames, dtype='f4', replace_space='_',
                              missing_values=None, filling_values=np.nan, # use NaN to flag missing values
                              invalid_raise=not self.flavour_value_or_default('must_ignore_errors', False),
                              encoding='latin-1') # Zeiss Elyra bombs unless we go for latin-1 encoding, maybe make flavour specific?
@@ -194,7 +195,8 @@ class CSVSMLMReader(object):
         self.check_flavour()
         self.replace_names()
         data = self.read_csv_data()
-        col0 = self.translatedNames[0]
-        if np.any(np.isnan(data[col0])): # this only looks in the first column, there may be others
-            data = data[np.logical_not(np.isnan(data[col0]))] # delete rows with missing values
+        col_first = self.translatedNames[0]
+        col_last = self.translatedNames[-1]
+        if np.any(np.logical_or(np.isnan(data[col_first]),np.isnan(data[col_last]))): # this only looks in the first column, there may be others
+            data = data[np.logical_not(np.logical_or(np.isnan(data[col_first]),np.isnan(data[col_last])))] # delete rows with missing values
         return data
