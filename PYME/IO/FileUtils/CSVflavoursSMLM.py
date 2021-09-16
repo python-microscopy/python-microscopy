@@ -59,6 +59,9 @@ class CSVSMLMReader(object):
         },
     }
 
+    requiredNames = {'x':'x position [nm]',
+                     'y':'y position [nm]'}
+
     def __init__(self, file):
         self.filename = file # do we allow file to be something other than a name?
         self.flavour = 'default'
@@ -153,6 +156,14 @@ class CSVSMLMReader(object):
         self.translatedNames = newnames
 
 
+    def check_required_names(self):
+        reqNotDef = [name for name in self.requiredNames.keys() if not name in self.translatedNames]
+        if len(reqNotDef) > 0:
+            raise RuntimeError("some required names are not defined in file header: " + repr(reqNotDef))
+            # this is a stopgap; the proper implementation will need to call into the textimportdialog
+            # at this stage
+
+            
     def read_csv_data(self):
         return np.genfromtxt(self.filename,
                              comments=self.flavour_value_or_default('comment_char','#'),
@@ -194,9 +205,15 @@ class CSVSMLMReader(object):
         self.parse_header_csv()
         self.check_flavour()
         self.replace_names()
+        self.check_required_names()
+        
         data = self.read_csv_data()
+        # remove rows with NaNs
         col_first = self.translatedNames[0]
         col_last = self.translatedNames[-1]
-        if np.any(np.logical_or(np.isnan(data[col_first]),np.isnan(data[col_last]))): # this only looks in the first column, there may be others
-            data = data[np.logical_not(np.logical_or(np.isnan(data[col_first]),np.isnan(data[col_last])))] # delete rows with missing values
+        if np.any(np.logical_or(np.isnan(data[col_first]),
+                                np.isnan(data[col_last]))): # this only looks in first and last columns
+                                                            # need a better and complete check
+            data = data[np.logical_not(np.logical_or(np.isnan(data[col_first]),
+                                                     np.isnan(data[col_last])))] # delete rows with missing values
         return data
