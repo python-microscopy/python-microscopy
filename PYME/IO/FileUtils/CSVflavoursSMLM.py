@@ -136,6 +136,7 @@ class CSVSMLMReader(object):
         self.dataLines = dataLines
         self.nHeaderLines = numCommentLines + numHeaderNameLines
         self.guessedDelim = delim
+        self.commentLines = commentLines
 
 
     def replace_names(self):
@@ -198,6 +199,8 @@ class CSVSMLMReader(object):
         mdh['SMLMImporter.flavour'] = self.flavour
         mdh['SMLMImporter.originalNames'] = self.colNames
         mdh['SMLMImporter.translatedNames'] = self.translatedNames
+        if len(self.commentLines) > 0:
+            mdh['SMLMImporter.commentLines'] = self.commentLines 
         
         self._mdh = mdh
        
