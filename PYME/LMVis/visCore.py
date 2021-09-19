@@ -720,8 +720,16 @@ class VisGUICore(object):
                     args['Multichannel'] = dlg.GetMultichannel()
                 
                     dlg.Destroy()
-        # only use our new CSV reader when enabled via config option 'VisGUI-use_csv_reader'
-        # currently bypasses the ImportTextDialog; just for proof of principle
+        # currently we use, for testing only, a simple check for .csv and .tsv files
+        # and then implictly flag that the new reader should be used (indicated by no args being set)
+        # we only do this though if the 'VisGUI-use_csv_reader' config option is set which would
+        # enable integrating this into the main PYME release even in an immature form while not affecting
+        # anybody who hasn't eplicitly set this config option
+        # 
+        # Note: currently completely bypasses the ImportTextDialog - just for proof of principle
+        #       eventual proper integration should likely integrate going through a suitably
+        #       modified ImportTextDialog, at least if any issues are encountered upon parsing the
+        #       file and/or a suitable chosen config option is set
         elif ((os.path.splitext(filename)[1] == '.csv' or
                os.path.splitext(filename)[1] == '.tsv') and
               PYME.config.get('VisGUI-use_csv_reader', False)):

@@ -718,6 +718,13 @@ class Pipeline:
                     ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
         elif os.path.splitext(filename)[1] == '.csv':
+            # this is a kludge for now to enable simple testing that the reading code works in principle:
+            #      rather than "properly" plugging in the processing of .csv (and .tsv) files
+            #      we intercept these in VisCore.py and implictly flag this via 'FieldNames' (or any other kwarg)
+            #      not being set.
+            #      The other side effect is that we can test the file reading in scripts via a simple call
+            #      to open a pipeline from file, e.g.:
+            #            pl = pipeline.Pipeline(filename='testfile.csv')
             if not 'FieldNames' in kwargs.keys():
                 ds = tabular.TextfileSourceCSV(filename)
                 mdh = ds.get_mdh()
@@ -728,6 +735,8 @@ class Pipeline:
                 ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',')
 
         else: #assume it's a tab (or other whitespace) delimited text file
+            # same testing kludge as above, just check for absence of 'FieldNames' to
+            # indicate our new reader should be used
             if not 'FieldNames' in kwargs.keys():
                 ds = tabular.TextfileSourceCSV(filename)
                 mdh = ds.get_mdh()
