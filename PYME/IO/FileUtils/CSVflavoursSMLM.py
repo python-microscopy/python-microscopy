@@ -22,13 +22,13 @@ class CSVSMLMReader(object):
                 'Number Photons': 'nPhotons',
                 'First Frame': 't',
                 'Chi square': 'nchi2',
-                'PSF half width [nm]': 'sigfwhm',
+                'PSF half width [nm]': 'sigfwhm', # this one needs a mapping to sig really
                 'Precision [nm]': 'error_x'
             },
             'must_ignore_errors' : True, # these files bomb unless we tell np.genfromtxt to ignore errors
             # 'column_translations' : {}, # a dict to populate a MappingFilter (To be confirmed)
         },
-        'simple' : { # placeholder for more vanilla QuickPALM/ThunderSTORM
+        'simple' : { # placeholder for more vanilla QuickPALM/simple ThunderSTORM
             'idnames' : ['frame','int'],
             'delimiter' : ',',
             'comment_char' : '#', # it does not really work to use these the comment char to ignore lines with missing data
@@ -84,38 +84,39 @@ class CSVSMLMReader(object):
         headerNameLines = []
 
         def is_header_candidate(line, delims):
-            guessDelim = guess_delim(line,delims)
-            if guessDelim is not None:
-                return not isnumber(line.split(guessDelim)[0])
+            guessedDelim = guess_delim(line,delims)
+            if guessedDelim is not None:
+                return not isnumber(line.split(guessedDelim)[0])
             else:
                 return False
 
         def guess_delim(line,delims):
             maxItems = 1
-            guess_delim = None
+            guessedDelim = None
             
             for delim in delims:
-                if len(line.split(delim)) > maxItems: #or textual header that is not a comment
+                # simple heuristic that the proper delimiter will produce more items when used for split
+                if len(line.split(delim)) > maxItems:
                     maxItems = len(line.split(delim))
-                    guessDelim = delim
+                    guessedDelim = delim
 
-            return guessDelim
+            return guessedDelim
         
         fid = open(self.filename, 'r')
-        # TODO: need to check for '\t' vs ',' delimiter
         delims = [',','\t']
-        delim = ',' # default
+        delim = None # default
 
         while n < 10: # only look at first 10 data lines max
             line = fid.readline()
             if line.startswith('#'): #check for comments
                 commentLines.append(line[1:])
             elif is_header_candidate(line, delims): # textual header that is not a comment
-                # TODO: distinguish between comment lines and headerline!
                 headerNameLines.append(line)
                 delim = guess_delim(line,delims)
             else:
-                # TODO: upon first encounter we need to check if ','-delimited or '\t'-delimited!
+                # upon first encounter we may need to check if ','-delimited or '\t'-delimited!
+                if delim is None:
+                    delim = guess_delim(line,delims)
                 dataLines.append(line.split(delim))
                 n += 1
                 
@@ -134,6 +135,7 @@ class CSVSMLMReader(object):
         self.colNames = colNames
         self.dataLines = dataLines
         self.nHeaderLines = numCommentLines + numHeaderNameLines
+        self.guessedDelim = delim
 
 
     def replace_names(self):
@@ -152,7 +154,7 @@ class CSVSMLMReader(object):
                 newname = repdict[name]
             else:
                 newname = name
-            newnames.append(newname.replace(' ','_')) # we replace spaces with underscores
+            newnames.append(newname.replace(' ','_')) # in names we replace spaces with underscores
         self.translatedNames = newnames
 
 
@@ -180,6 +182,11 @@ class CSVSMLMReader(object):
         for flavour in self.csv_flavours:
             if all(idn in self.colNames for idn in self.csv_flavours[flavour]['idnames']):
                 self.flavour = flavour
+        if self.guessedDelim is not None:
+            # consistency check
+            if self.flavour_value_or_default('delimiter',',') != self.guessedDelim:
+                raise RuntimeError('guessed delimiter %s and flavour delimiter %s do not match' %
+                                   (self.guessedDelim, self.flavour_value_or_default('delimiter',',')))
 
 
     def print_flavour(self):
