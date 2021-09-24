@@ -190,6 +190,10 @@ class PlayPanel(wx.Panel):
 
             if not self.tPlay.IsRunning():
                 self.dsviewer.optionspanel.RefreshHists()
+
+    @property
+    def playback_running(self):
+        return self.tPlay.IsRunning()
                 
 
 class PlayZTPanel(wx.Panel):
@@ -220,6 +224,10 @@ class PlayZTPanel(wx.Panel):
     def update(self):
         for p in self._pans:
             p.update()
+
+    @property
+    def playback_running(self):
+        return self.pan_t.playback_running or self.pan_z.playback_running
 
 
 

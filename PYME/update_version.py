@@ -26,6 +26,8 @@
 from datetime import datetime
 import os
 import subprocess
+import urllib
+import json
 
 def hook(ui, repo, **kwargs):
     update_version()
@@ -49,18 +51,33 @@ def update_version_hg():
 def update_version():
     now = datetime.utcnow()
     
-    p = subprocess.Popen('git describe --abbrev=12 --always --dirty=+', shell=True, stdout=subprocess.PIPE)
-    id = p.stdout.readline().strip().decode()
+    p = subprocess.Popen('git describe --abbrev=12 --always --dirty=+', shell=True, stdout=subprocess.PIPE, encoding='utf8')
+    id = p.stdout.readline().strip()
     
     f = open(os.path.join(os.path.split(__file__)[0], 'version.py'), 'w')
+
+    new_version = '%d.%02d.%02d' % (now.year - 2000, now.month, now.day)
+
+    # check to see if there is already a release / tag with this version number,
+    # if there is, this is a post-release, append post<n>
+    p = subprocess.Popen('git tag', shell=True, stdout=subprocess.PIPE, encoding='utf8')
+    git_tags = [l.strip() for l in p.stdout.readlines()]
+
+    post_count=0
+    nv = new_version
+    while nv in git_tags:
+        nv = '%s.post%d' %(new_version, post_count)
+        post_count += 1
+
+    new_version = nv
     
     f.write('#PYME uses date based versions (yy.m.d)\n')
-    f.write("version = '%d.%02d.%02d'\n\n" % (now.year - 2000, now.month, now.day))
+    f.write("version = '%s'\n\n" % new_version)
     f.write('#Git changeset id\n')
     f.write("changeset = '%s'\n" % id)
     f.close()
     
-    print('PYMEVERSION=%d.%02d.%02d' %(now.year - 2000, now.month, now.day))
+    print('PYMEVERSION=%s' % new_version)
     
 if __name__ == '__main__':
     update_version()

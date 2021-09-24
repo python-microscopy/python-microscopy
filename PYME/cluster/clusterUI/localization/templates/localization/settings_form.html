@@ -46,7 +46,7 @@
             $('.cu-hidden-seriesname').remove();
             var seriesNames=[];
             $('.cu-selected').each(function(index, item){
-                var sn = item.getAttribute('data-cu-seriesname');
+                var sn = item.getAttribute('data-cu-seriesname').text();
                 if (sn != null) {
                     seriesNames.push(sn);
                     f.append('<input name="series" class="cu-hidden-seriesname" type="hidden" value="' + sn + '">')

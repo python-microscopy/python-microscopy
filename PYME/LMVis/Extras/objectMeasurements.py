@@ -146,67 +146,68 @@ class ObjectMeasurer:
         #     except(KeyError):
         #         continue
 
-        dlg = OMDialog(pipeline.keys())
+        dlg = OMDialog(pipeline.keys(), parent=self.visFr)
         if not dlg.ShowModal() == wx.ID_OK:
             dlg.Destroy()
             raise RuntimeError('User cancelled column selection')
-
-        key = dlg.label_key
-        ids = set(pipeline.mapping[key].astype('i'))
-        edge_cutoff = dlg.edge_cutoff
-
-        dlg.Destroy()
-            
-        # ids = set(pipeline.mapping['objectID'].astype('i'))
-
-        pipeline.objectMeasures = {}
-
-        if len(chans) == 0:
-            pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
-                                                                                     key)
-
-            from PYME.ui import recArrayView
-            f = recArrayView.ArrayFrame(pipeline.objectMeasures['Everything'], parent=self.visFr, title='Object Measurements')
-            f.Show()
-        
         else:
-            curChan = pipeline.colourFilter.currentColour
 
-            chanNames = chans[:]
+            key = dlg.label_key
+            ids = set(pipeline.mapping[key].astype('i'))
+            edge_cutoff = dlg.edge_cutoff
 
-#            if 'Sample.Labelling' in metadata.getEntryNames():
-#                lab = metadata.getEntry('Sample.Labelling')
-#
-#                for i in range(len(lab)):
-#                    if lab[i][0] in chanNames:
-#                        chanNames[chanNames.index(lab[i][0])] = lab[i][1]
-
-            for ch, i in zip(chans, range(len(chans))):
-                pipeline.colourFilter.setColour(ch)
-                #fitDecayChan(colourFilter, metadata, chanNames[i], i)
-                pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
-                                                                                         key)
-            
-            pipeline.colourFilter.setColour(curChan)
-
-            from PYME.ui import recArrayView
-            from PYME.IO import tabular
-            from PYME.recipes.tablefilters import AggregateMeasurements
-            
-            om = {k : tabular.RecArraySource(v) for k, v in pipeline.objectMeasures.items()}
-            
-            args = {}
-            for i, name in enumerate(chanNames):
-                args['inputMeasurements%d' % (i+1)] = name
-                args['suffix%d' % (i + 1)] = ('_' + name)
+            dlg.Destroy()
                 
-            args['outputName'] = 'aggregated'
+            # ids = set(pipeline.mapping['objectID'].astype('i'))
+
+            pipeline.objectMeasures = {}
+
+            if len(chans) == 0:
+                pipeline.objectMeasures['Everything'] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
+                                                                                        key)
+
+                from PYME.ui import recArrayView
+                f = recArrayView.ArrayFrame(pipeline.objectMeasures['Everything'], parent=self.visFr, title='Object Measurements')
+                f.Show()
             
-            agg = AggregateMeasurements(**args)
-            agg.execute(om)
-            
-            f = recArrayView.ArrayFrame(om['aggregated'], parent=self.visFr, title='Object Measurements')
-            f.Show()
+            else:
+                curChan = pipeline.colourFilter.currentColour
+
+                chanNames = chans[:]
+
+    #            if 'Sample.Labelling' in metadata.getEntryNames():
+    #                lab = metadata.getEntry('Sample.Labelling')
+    #
+    #                for i in range(len(lab)):
+    #                    if lab[i][0] in chanNames:
+    #                        chanNames[chanNames.index(lab[i][0])] = lab[i][1]
+
+                for ch, i in zip(chans, range(len(chans))):
+                    pipeline.colourFilter.setColour(ch)
+                    #fitDecayChan(colourFilter, metadata, chanNames[i], i)
+                    pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, edge_cutoff, ids,
+                                                                                            key)
+                
+                pipeline.colourFilter.setColour(curChan)
+
+                from PYME.ui import recArrayView
+                from PYME.IO import tabular
+                from PYME.recipes.tablefilters import AggregateMeasurements
+                
+                om = {k : tabular.RecArraySource(v) for k, v in pipeline.objectMeasures.items()}
+                
+                args = {}
+                for i, name in enumerate(chanNames):
+                    args['inputMeasurements%d' % (i+1)] = name
+                    args['suffix%d' % (i + 1)] = ('_' + name)
+                    
+                args['outputName'] = 'aggregated'
+                
+                agg = AggregateMeasurements(**args)
+                agg.execute(om)
+                
+                f = recArrayView.ArrayFrame(om['aggregated'], parent=self.visFr, title='Object Measurements')
+                f.Show()
             
     
     def gen_pairwise_distance_features(self, event=None):
