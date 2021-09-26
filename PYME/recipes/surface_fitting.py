@@ -376,6 +376,7 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     r_bin_spacing = Float(0.05)
     sampling_nm = ListFloat([75, 75, 75])
     jitter_iterations = Int(3)
+    n_choose_stddev = Int(1000)
 
     output = Output('r_uniform_kde')
 
@@ -388,26 +389,29 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
-        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing)
+        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing, 
+                              dtype=np.float32)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
-        out_hist = np.zeros(len(bin_centers), float)
+        out_hist = np.zeros(len(bin_centers), dtype=np.float32)
 
         # get shell bounds, make grid within
         shell_bounds = shell.approximate_image_bounds()
         xv = np.arange(shell_bounds.x0, shell_bounds.x1 + self.sampling_nm[0],
-                       self.sampling_nm[0])
+                       self.sampling_nm[0], dtype=np.float32)
         yv = np.arange(shell_bounds.y0, shell_bounds.y1 + self.sampling_nm[1],
-                       self.sampling_nm[1])
+                       self.sampling_nm[1], dtype=np.float32)
         zv = np.arange(shell_bounds.z0, shell_bounds.z1 + self.sampling_nm[2],
-                       self.sampling_nm[2])
-        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij')
+                       self.sampling_nm[2], dtype=np.float32)
+        # meshgrid with copy false to use a view (don't write x,y,z after)
+        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij', copy=False)
 
         v_estimates = []
         sdev_estimates = []
-        n_choose = 10000
         
         for _ in range(self.jitter_iterations):
-            xr, yr, zr = np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv))
+            xr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
+            yr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
+            zr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
             xr = (xr - 0.5) * self.sampling_nm[0] + x
             yr = (yr - 0.5) * self.sampling_nm[1] + y
             zr = (zr - 0.5) * self.sampling_nm[2] + z
@@ -417,17 +421,18 @@ class SHShellRadiusDensityEstimate(ModuleBase):
                                                             azi, zen)
             inside = r < r_shell
             N = np.sum(inside)
-            r_norm = r[inside] / r_shell[inside]
+            # normalize r, and writeover to save memory
+            r = r[inside] / r_shell[inside]
             # sum-normalize this iteration and add to output
-            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / N
+            out_hist += np.histogram(r, bins=bin_edges)[0] / N
 
             # record volume estimate
             v_estimates.append(N)
             # estimate spread along principle axes of the shell
             X = np.vstack([xr[inside], yr[inside], zr[inside]])
-            if N > n_choose:
+            if N > self.n_choose_stddev:
                 # downsample to avoid memory error
-                X = X[:, np.random.choice(N, n_choose, replace=False)]
+                X = X[:, np.random.choice(N, self.n_choose_stddev, replace=False)]
             # TODO - do we need to be mean-centered?
             X = X - X.mean(axis=1)[:, None]
             _, s, _ = np.linalg.svd(X.T)
@@ -455,7 +460,7 @@ class SHShellRadiusDensityEstimate(ModuleBase):
             res.mdh = MetaDataHandler.DictMDHandler()
         
         res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
-        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.tolist()
+        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.astype(float).tolist()
         res.mdh['SHShellRadiusDensityEstimate.Anisotropy'] = float(anisotropy)
 
         namespace[self.output] = res
