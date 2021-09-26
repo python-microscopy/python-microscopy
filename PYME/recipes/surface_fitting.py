@@ -297,10 +297,13 @@ class SphericalHarmonicShell(ModuleBase):
         points = tabular.MappingFilter(namespace[self.input_name])
 
         shell = spherical_harmonics.ScaledShell()
-        shell.set_fitting_points(points['x'], points['y'], points['z'])
+        x = points['x'].astype(np.float32, copy=False)
+        y = points['y'].astype(np.float32, copy=False)
+        z = points['z'].astype(np.float32, copy=False)
+        shell.set_fitting_points(x, y, z)
         shell.fit_shell(max_iterations=self.max_iterations, tol_init=self.init_tolerance)
 
-        separations, closest_points = shell.distance_to_shell((points['x'], points['y'], points['z']),
+        separations, closest_points = shell.distance_to_shell((x, y, z),
                                                               d_angles=self.d_angles)
 
         points.addColumn(self.name_distance_to_shell, separations)
@@ -340,8 +343,10 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
         # map points to scaled spherical coordinates
-        azimuth, zenith, r = shell.shell_coordinates((points['x'], points['y'],
-                                                      points['z']))
+        azimuth, zenith, r = shell.shell_coordinates((points['x'].astype(np.float32, copy=False),
+                                                      points['y'].astype(np.float32, copy=False),
+                                                      points['z'].astype(np.float32, copy=False)))
+        
         # lookup shell radius at those angles
         r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
                                                         shell.coefficients,
@@ -409,9 +414,9 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         sdev_estimates = []
         
         for _ in range(self.jitter_iterations):
-            xr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
-            yr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
-            zr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32)
+            xr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
+            yr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
+            zr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
             xr = (xr - 0.5) * self.sampling_nm[0] + x
             yr = (yr - 0.5) * self.sampling_nm[1] + y
             zr = (zr - 0.5) * self.sampling_nm[2] + z

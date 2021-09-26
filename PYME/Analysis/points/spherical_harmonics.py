@@ -371,7 +371,7 @@ class ScaledShell(object):
 
     def set_fitting_points(self, x, y, z):
         assert (x.shape == y.shape) and (y.shape == z.shape)
-        self.x, self.y, self.z = np.copy(x), np.copy(y), np.copy(z)
+        self.x, self.y, self.z = x.astype(np.float32, copy=True), y.astype(np.float32, copy=True), z.astype(np.float32, copy=True)
         self.x0, self.y0, self.z0 = self.x.mean(), self.y.mean(), self.z.mean()
 
         self.x_c, self.y_c, self.z_c = self.x - self.x0, self.y - self.y0, self.z - self.z0
@@ -415,7 +415,7 @@ class ScaledShell(object):
         # need to scale things "down" since they were scaled "up" in the fit
         # scaling_factors = 1. / self.scaling_factors
 
-        scaled_axes = self.principal_axes / self.scaling_factors[:, None]
+        scaled_axes = (self.principal_axes / self.scaling_factors[:, None]).astype(azimuth.dtype, copy=False)
 
         coords = x_scaled.ravel()[:, None] * scaled_axes[0, :] + y_scaled.ravel()[:, None] * scaled_axes[1,
                                                                                              :] + z_scaled.ravel()[:,
@@ -523,7 +523,8 @@ class ScaledShell(object):
         n_points = len(x)
         zenith, azimuth = np.mgrid[0:(np.pi + d_angles):d_angles, 0:(2 * np.pi + d_angles):d_angles]
 
-        x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
+        x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth.astype(np.float32, copy=False),
+                                                          zenith.astype(np.float32, copy=False))
         # calculate the distance between all our points and the shell
         dist = np.sqrt(
             (x - x_shell[:, :, None]) ** 2 + (y - y_shell[:, :, None]) ** 2 + ((z - z_shell[:, :, None]) ** 2))
