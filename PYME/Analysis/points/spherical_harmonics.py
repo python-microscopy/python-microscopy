@@ -151,7 +151,7 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
     for (m, n), c in zip(modes, coeffs):
-        r += c * (r_sph_harm(m, n, azimuth, zenith))
+        r += (c * (r_sph_harm(m, n, azimuth, zenith))).astype(azimuth.dtype)
 
     return r
 
