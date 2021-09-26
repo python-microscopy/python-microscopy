@@ -82,7 +82,7 @@ def find_principle_axes(x, y, z, sample_fraction=None):
 def scaled_projection(x, y, z, scaling_factors, scaling_axes):
     # make sure everything is 1D
     points = np.stack([x.ravel(), y.ravel(), z.ravel()], axis=0)
-    xp, yp, zp = [np.dot(scaling_factors[ind] * scaling_axes[ind], points) for ind in range(3)]
+    xp, yp, zp = [np.dot((scaling_factors[ind] * scaling_axes[ind]).astype(points.dtype), points) for ind in range(3)]
     # return in original shape
     return xp.reshape(x.shape), yp.reshape(y.shape), zp.reshape(z.shape)
 
