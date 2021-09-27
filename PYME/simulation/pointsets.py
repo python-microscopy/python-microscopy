@@ -1,4 +1,4 @@
-from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
+from PYME.recipes.pyme_traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
 from PYME.misc.exceptions import UserError
 from PYME.IO import image
 

@@ -1,6 +1,6 @@
 
 from .base import register_module, OutputModule
-from .traits import Input, Output, CStr, DictStrAny, Bool, Float, Int
+from .pyme_traits import Input, Output, CStr, DictStrAny, Bool, Float, Int
 import requests
 import json
 import numpy as np

@@ -9,7 +9,7 @@ import os
 import posixpath
 import logging
 from PYME.contrib import dispatch, wxPlotPanel
-from PYME.recipes.traits import HasTraits, Enum, Float, CStr
+from PYME.recipes.pyme_traits import HasTraits, Enum, Float, CStr
 import textwrap
 import numpy as np
 import matplotlib.pyplot as plt

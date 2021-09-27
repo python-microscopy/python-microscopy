@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
+from .pyme_traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
 
 import numpy as np
 from PYME.IO import tabular

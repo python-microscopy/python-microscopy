@@ -1,5 +1,5 @@
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI
+from PYME.recipes.pyme_traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group

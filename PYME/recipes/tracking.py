@@ -5,7 +5,7 @@ Created on Tue Dec 29 19:59:15 2015
 @author: david
 """
 from .base import register_module, ModuleBase,Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrFloat, DictStrBool, on_trait_change
+from .pyme_traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrFloat, DictStrBool, on_trait_change
 
 import numpy as np
 #import pandas as pd

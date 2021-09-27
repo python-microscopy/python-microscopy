@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
+from PYME.recipes.pyme_traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
 
 #try:
 #    from traitsui.api import View, Item, Group

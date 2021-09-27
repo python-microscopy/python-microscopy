@@ -1,6 +1,6 @@
 
 from .base import ModuleBase, register_module, register_legacy_module, OutputModule
-from .traits import Input, Output, CStr, Int
+from .pyme_traits import Input, Output, CStr, Int
 from PYME.IO import tabular
 import warnings
 import logging

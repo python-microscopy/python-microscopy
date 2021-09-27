@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
+from .pyme_traits import Input, Output, Float, Int, Bool, CStr, ListFloat
 import numpy as np
 from PYME.IO import tabular
 import logging

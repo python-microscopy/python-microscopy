@@ -59,7 +59,7 @@ def create(parent):
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
 
 
-from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List
+from PYME.recipes.pyme_traits import HasTraits, Float, Dict, Bool, List
 class PSFSettings(HasTraits):
     wavelength_nm = Float(700.)
     NA = Float(1.47)

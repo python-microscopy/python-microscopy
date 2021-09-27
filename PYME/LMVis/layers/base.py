@@ -23,7 +23,7 @@ import warnings
 
 from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 
-from PYME.recipes.traits import HasTraits, Bool, Instance
+from PYME.recipes.pyme_traits import HasTraits, Bool, Instance
 import numpy as np
 
 try:

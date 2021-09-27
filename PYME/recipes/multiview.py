@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
+from .pyme_traits import Input, Output, Float, CStr, Bool, Int, FileOrURI
 import numpy as np
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler

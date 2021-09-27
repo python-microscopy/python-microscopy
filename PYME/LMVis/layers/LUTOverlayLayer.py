@@ -21,7 +21,7 @@
 import numpy
 # import pylab
 
-from PYME.recipes.traits import Bool
+from PYME.recipes.pyme_traits import Bool
 
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *

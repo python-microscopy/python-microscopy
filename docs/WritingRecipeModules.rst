@@ -42,12 +42,12 @@ usual 'glue' code. A couple of good resources are `http://docs.enthought.com/tra
 and `http://docs.enthought.com/traitsui/tutorials/traits_ui_scientific_app.html`_.
 
 The code below shows an example of a slightly more sophisticated module which uses Traits for it's parameters. Note that
-we import the traits from ``PYME.recipes.traits`` rather than ``traits.api`` [#traitsimport]_
+we import the traits from ``PYME.recipes.pyme_traits`` rather than ``traits.api`` [#traitsimport]_
 
 ::
 
     from PYME.recipes.base import register_module, ModuleBase
-    from PYME.recipes.traits import Input, Output, Float, Int, Bool
+    from PYME.recipes.pyme_traits import Input, Output, Float, Int, Bool
 
     @register_module('OffsetAndScale')
     class OffsetAndScale(ModuleBase):
@@ -169,7 +169,7 @@ An example where a view has been over-ridden (in this case to use a custom edito
 
 .. rubric:: Footnotes
 
-.. [#traitsimport] ``PYME.recipes.traits`` is a very thin wrapper of ``traits.api``. This wrapper exists for two reasons:
+.. [#traitsimport] ``PYME.recipes.pyme_traits`` is a very thin wrapper of ``traits.api``. This wrapper exists for two reasons:
 
     1. To allow us to add new traits such as ``Input`` and ``Output`` and to subclass individual
     Traits or even replace the Traits module completely at some point in the future without changing module code.

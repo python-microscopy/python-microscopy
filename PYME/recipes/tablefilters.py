@@ -1,5 +1,5 @@
 from .base import register_module, register_legacy_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
+from .pyme_traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
 
 import numpy as np
 #import pandas as pd

@@ -4,7 +4,7 @@ from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderPro
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
+from PYME.recipes.pyme_traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
 from matplotlib import cm
 import numpy as np

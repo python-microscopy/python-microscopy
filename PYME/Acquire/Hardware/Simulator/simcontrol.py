@@ -9,7 +9,7 @@ from . import rend_im
 import logging
 logger = logging.getLogger(__name__)
 
-from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List
+from PYME.recipes.pyme_traits import HasTraits, Float, Dict, Bool, List
 
 
 class PSFSettings(HasTraits):

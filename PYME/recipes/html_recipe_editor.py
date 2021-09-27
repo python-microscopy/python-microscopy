@@ -2,7 +2,7 @@
 #from __future__ import print_function
 
 from tornado.ioloop import IOLoop
-from .traits import HasTraits, Int, Str
+from .pyme_traits import HasTraits, Int, Str
 from jigna.web_app import WebApp
 #from jigna.template import Template
 from jigna.vue_template import VueTemplate

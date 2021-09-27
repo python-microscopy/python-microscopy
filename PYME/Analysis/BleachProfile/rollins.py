@@ -19,7 +19,7 @@ from scipy.special import erf, gamma
 from scipy.misc import comb
 
 import wx #FIXME - not really appropriate for low level function module
-from PYME.recipes.traits import Int # FIXME - ditto - is this needed?
+from PYME.recipes.pyme_traits import Int # FIXME - ditto - is this needed?
 import matplotlib as plt
 
 USE_GUI = True
