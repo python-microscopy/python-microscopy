@@ -1,4 +1,4 @@
-from traits.api import HasTraits, Float, CStr
+from PYME.recipes.traits import HasTraits, Float, CStr
 import numpy as np
 
 import matplotlib.pyplot as plt
