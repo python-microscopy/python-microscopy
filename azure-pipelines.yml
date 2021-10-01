@@ -56,7 +56,10 @@ steps:
   
 - script: |
     #cd tests
-    bash <(curl -s https://codecov.io/bash)
+    #bash <(curl -s https://codecov.io/bash)
+    curl -Os https://uploader.codecov.io/latest/linux/codecov 
+    chmod +x codecov
+    ./codecov -f coverage.xml -F all -F core
   condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
   displayName: 'codecov upload'
   
