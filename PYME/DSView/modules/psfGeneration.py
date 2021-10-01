@@ -25,14 +25,7 @@ import wx.grid
 #import pylab
 #from PYME.IO.image import ImageStack
 
-try:
-    from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
-    #from enthought.traits.ui.api import View, Item, InstanceEditor
-    #from enthought.traits.ui.menu import OKButton
-except ImportError:
-    from traits.api import HasTraits, Float, Int, List, Instance, Property
-    #from traitsui.api import View, Item, InstanceEditor
-    #from traitsui.menu import OKButton
+from PYME.recipes.traits import HasTraits, Float, Int, List, Instance, Property
 
 from PYME.Analysis.PSFGen import fourierHNA
 from PYME.IO import image

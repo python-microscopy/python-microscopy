@@ -21,12 +21,7 @@
 ##################
 
 
-try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
-except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    #from traitsui.api import View, Item, EnumEditor, InstanceEditor
+from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     
 from PYME.simulation.pointsets import PointSource, WormlikeSource, ImageSource, FileSource
 
