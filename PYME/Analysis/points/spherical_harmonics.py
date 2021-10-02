@@ -2,6 +2,7 @@
 Estimate spherical harmonics from a point data set
 Initial fitting/conversions ripped 100% from David Baddeley / scipy
 """
+from PYME.IO.image import ImageBounds
 import numpy as np
 from scipy.special import sph_harm
 from scipy import linalg
@@ -293,8 +294,10 @@ class ScaledShell(object):
     ]
 
     def __init__(self, sampling_fraction=1.):
-        self.sampling_fraction = sampling_fraction
+        from PYME.IO import MetaDataHandler
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
 
+        self.sampling_fraction = sampling_fraction
         self.modes = None
         self.coefficients = None
 
@@ -328,22 +331,22 @@ class ScaledShell(object):
         return record
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
-        from PYME.IO import h5rFile, MetaDataHandler
-        # NOTE that we ignore metadata input
-        metadata = MetaDataHandler.NestedClassMDHandler()
-        metadata['spherical_harmonic_shell.standard_deviations'] = self.standard_deviations.tolist()
-        metadata['spherical_harmonic_shell.scaling_factors'] = self.scaling_factors.tolist()
-        metadata['spherical_harmonic_shell.principal_axes'] = self.principal_axes.tolist()
-        metadata['spherical_harmonic_shell.summed_residuals'] = self._summed_residuals
-        metadata['spherical_harmonic_shell.n_points_used_in_fitting'] = len(self.x)
-        metadata['spherical_harmonic_shell.x0'] = self.x0
-        metadata['spherical_harmonic_shell.y0'] = self.y0
-        metadata['spherical_harmonic_shell.z0'] = self.z0
-        metadata['spherical_harmonic_shell.sampling_fraction'] = self.sampling_fraction
-
+        from PYME.IO import h5rFile
         with h5rFile.H5RFile(filename, 'a') as f:
             f.appendToTable(tablename, self.to_recarray(keys))
-            f.updateMetadata(metadata)
+            # NOTE that we ignore metadata input
+            f.updateMetadata(self.mdh)
+    
+    def _fill_metadata(self):
+        self.mdh['spherical_harmonic_shell.standard_deviations'] = self.standard_deviations.tolist()
+        self.mdh['spherical_harmonic_shell.scaling_factors'] = self.scaling_factors.tolist()
+        self.mdh['spherical_harmonic_shell.principal_axes'] = self.principal_axes.tolist()
+        self.mdh['spherical_harmonic_shell.summed_residuals'] = self._summed_residuals
+        self.mdh['spherical_harmonic_shell.n_points_used_in_fitting'] = len(self.x)
+        self.mdh['spherical_harmonic_shell.x0'] = self.x0
+        self.mdh['spherical_harmonic_shell.y0'] = self.y0
+        self.mdh['spherical_harmonic_shell.z0'] = self.z0
+        self.mdh['spherical_harmonic_shell.sampling_fraction'] = self.sampling_fraction
 
     @staticmethod
     def from_tabular(shell_table):
@@ -370,8 +373,13 @@ class ScaledShell(object):
         self.coefficients = coefficients
 
     def set_fitting_points(self, x, y, z):
+        from PYME.IO.image import ImageBounds
+
         assert (x.shape == y.shape) and (y.shape == z.shape)
         self.x, self.y, self.z = x.astype(np.float32, copy=True), y.astype(np.float32, copy=True), z.astype(np.float32, copy=True)
+        self._fitting_point_bounds = ImageBounds(self.x.min(), self.y.min(),
+                                                 self.x.max(), self.y.max(),
+                                                 self.z.min(), self.z.max())
         self.x0, self.y0, self.z0 = self.x.mean(), self.y.mean(), self.z.mean()
 
         self.x_c, self.y_c, self.z_c = self.x - self.x0, self.y - self.y0, self.z - self.z0
@@ -431,6 +439,7 @@ class ScaledShell(object):
                                                                        max_iterations, tol_init)
         self._set_coefficients(modes, coefficients)
         self._summed_residuals = summed_residuals
+        self._fill_metadata()
 
     def check_inside(self, x=None, y=None, z=None):
         if x is None:
