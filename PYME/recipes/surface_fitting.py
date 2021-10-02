@@ -260,6 +260,11 @@ class SphericalHarmonicShell(ModuleBase):
     d_angles: Float
         Sets the step size in radians of zenith and azimuth arrays used in reconstructing the spherical harmonic shell.
         Only relevant for distance_to_shell column of mapped output.
+    bound_tolerance: Float
+        Factor of fitting point spatial extent to allow in each dimension. The
+        default of 0 means this tolerance is not checked, otherwise if the
+        spatial extent of shell is a factor of `bound_tolerance` larger than 
+        extent of the fitting points, the fit is failed.
 
 
     Returns
@@ -286,6 +291,7 @@ class SphericalHarmonicShell(ModuleBase):
     name_inside_shell = CStr('inside_shell')
     name_distance_to_shell = CStr('distance_to_shell')
     d_angles = Float(0.1)
+    bound_tolerance = Float(0.0, desc='Factor of fitting point image bounds to allow.')
 
     output_name = Output('harmonic_shell')
     output_name_mapped = Output('shell_mapped')
@@ -305,10 +311,16 @@ class SphericalHarmonicShell(ModuleBase):
 
         separations, closest_points = shell.distance_to_shell((x, y, z),
                                                               d_angles=self.d_angles)
-
+        if self.bound_tolerance != 0:
+            shell_bounds = shell.approximate_image_bounds()
+            max_extent = np.asarray(shell._fitting_point_bounds.extent) * self.bound_tolerance
+            if np.any(shell_bounds.extent > max_extent):
+                raise AssertionError('Shell bounces exceed fit-point bound tolerance')
+            
         points.addColumn(self.name_distance_to_shell, separations)
         points.addColumn(self.name_inside_shell, shell.check_inside())
-
+        # add median distance to shell as a goodness of fit parameter
+        shell.mdh['spherical_harmonic_shell.median_residual'] = np.median(separations)
         namespace[self.output_name] = shell
         namespace[self.output_name_mapped] = points
 
