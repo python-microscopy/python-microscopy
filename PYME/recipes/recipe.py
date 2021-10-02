@@ -1,4 +1,4 @@
-from traits.api import HasTraits, List, Bool
+from PYME.recipes.traits import HasTraits, List, Bool
 from PYME.contrib import dispatch
 from .base import ModuleBase, OutputModule
 from PYME.recipes import base

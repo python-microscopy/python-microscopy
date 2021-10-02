@@ -1,7 +1,7 @@
 from traitsui.wx.editor import Editor
 from traitsui.wx.basic_editor_factory import BasicEditorFactory
 
-from traits.api import List, Instance
+from PYME.recipes.traits import List, Instance
 
 import wx
 from PYME.IO import tabular

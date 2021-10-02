@@ -17,3 +17,21 @@ ignore:
 #    - "*/ui/*"
 #    - "*/loft/*"
 #    - "*/Loft/*"
+
+flags:
+  all:
+    paths:
+      - "*"
+      
+   core:
+     ignore:
+       - "*/ui/*"
+       - "*/Acquire/*"
+       - "*/DSView/*"
+       - "*/LMVis/*"
+       - "*/recipes/recipeGui.py"
+       - "*/recipes/vertical_recipe_display.py"
+       - "*/ParallelTasks/*"
+       - "*/tileviewer/*"
+       - "*/contrib/*"
+      

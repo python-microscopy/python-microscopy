@@ -26,16 +26,8 @@ import wx.grid
 
 from jinja2 import Environment, PackageLoader
 env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
-#import pylab
-#from PYME.IO.image import ImageStack
-try:
-    from enthought.traits.api import HasTraits, Float, Int, Bool
-    #from enthought.traits.ui.api import View, Item
-    #from enthought.traits.ui.menu import OKButton
-except ImportError:
-    from traits.api import HasTraits, Float, Int, Bool
-    #from traitsui.api import View, Item
-    #from traitsui.menu import OKButton
+
+from PYME.recipes.traits import HasTraits, Float, Int, Bool
 
 from .graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
