@@ -315,7 +315,7 @@ class SphericalHarmonicShell(ModuleBase):
             shell_bounds = shell.approximate_image_bounds()
             max_extent = np.asarray(shell._fitting_point_bounds.extent) * self.bound_tolerance
             if np.any(shell_bounds.extent > max_extent):
-                raise AssertionError('Shell bounces exceed fit-point bound tolerance')
+                raise AssertionError('Shell bounds exceed fit-point bound tolerance')
             
         points.addColumn(self.name_distance_to_shell, separations)
         points.addColumn(self.name_inside_shell, shell.check_inside())
