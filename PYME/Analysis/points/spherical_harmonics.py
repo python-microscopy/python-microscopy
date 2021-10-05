@@ -751,9 +751,11 @@ class ScaledShell(object):
 
         x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
 
-        return ImageBounds(x_shell.min(), y_shell.min(), 
-                           x_shell.max(), y_shell.max(),
-                           z_shell.min(), z_shell.max())
+        imb = ImageBounds(x_shell.min(), y_shell.min(), 
+                          x_shell.max(), y_shell.max(),
+                          z_shell.min(), z_shell.max())
+        imb.write_to_metadata(self.mdh)
+        return imb
 
 class SHShell(ScaledShell):
     '''
