@@ -102,7 +102,25 @@ class ImageBounds:
                 y1 = y1 / 2
 
         return cls(x0, y0, x1, y1)
+    
+    def write_to_metadata(self, mdh):
+        """For objects abusing imagebounds metadata that aren't voxel images.
+        For ImageStack objects (voxel images) see @imgBounds.setter
 
+        Parameters
+        ----------
+        mdh : PYME.IO.MetaDataHandler.MDHandlerBase
+        """
+        mdh['ImageBounds.x0'] = self.x0
+        mdh['ImageBounds.y0'] = self.y0
+        mdh['ImageBounds.x1'] = self.x1
+        mdh['ImageBounds.y1'] = self.y1
+        mdh['ImageBounds.z0'] = self.z0
+        mdh['ImageBounds.z1'] = self.z1
+    
+    @property
+    def extent(self):
+        return self.x1 - self.x0, self.y1 - self.y0, self.z1 - self.z0
 
 lastdir = ''
 
