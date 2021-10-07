@@ -59,7 +59,7 @@ steps:
     #bash <(curl -s https://codecov.io/bash)
     curl -Os https://uploader.codecov.io/latest/linux/codecov 
     chmod +x codecov
-    ./codecov -f coverage.xml -F all -F core
+    ./codecov -f coverage.xml -F all -F core -C $(Build.SourceVersion)
   condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
   displayName: 'codecov upload'
   
