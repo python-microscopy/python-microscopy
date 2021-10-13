@@ -62,6 +62,8 @@ steps:
     ./codecov -f coverage.xml -F all -F core -C $(Build.SourceVersion)
   condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
   displayName: 'codecov upload'
+  env:
+    CODECOV_TOKEN: $(CODECOV_T)
   
 # - script: |
 #     diff-cover coverage.xml --compare-branch=master 
