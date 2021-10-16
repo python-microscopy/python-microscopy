@@ -97,8 +97,8 @@ class CameraMapMixin(object):
         self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
 
 
-class CameraNoiseProperties(object):
-    _hardcoded_noise_properties = {} # no hardcoded cams
+class CameraProperties(object):
+    _hardcoded_properties = {} # no hardcoded cams
     
     def _preamp_mode_repr(self):
         """
@@ -107,8 +107,8 @@ class CameraNoiseProperties(object):
         """        
         raise RuntimeError('not implemented')
 
-    def _getCamNoiseProps(self):
-        cnp = config.get_cam_noiseprops()
+    def _get_cam_noise_props(self):
+        cnp = config.get_cam_props()
         serno = self.GetSerialNumber()
         preampmode = self._preamp_mode_repr()
         if serno in cnp:
@@ -121,18 +121,35 @@ class CameraNoiseProperties(object):
         else:
             return None
 
+    def get_cam_prop_or_default(self,prop,default):
+        cnp = config.get_cam_props()
+        serno = self.GetSerialNumber()
+        if serno in cnp:
+            if prop in cnp[serno]:
+                return cnp[serno][prop]
+            else:
+                return default
+        elif serno in self._hardcoded_properties:
+            if prop in self._hardcoded_properties[serno]:
+                return self._hardcoded_properties[serno][prop]
+            else:
+                return default
+        else:
+            return default
+
+
     @property
     def noise_properties(self):
         """return the noise properties for the given camera
 
         """
         serno = self.GetSerialNumber()
-        np = self._getCamNoiseProps()
+        np = self._get_cam_noise_props()
         if np is not None:
             return np
         # if we get to here fall back to hardcoded cameras
         try:
-            return self._hardcoded_noise_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
+            return self._hardcoded_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
         except KeyError: # last resort is a runtime error - we can debate what the best solution is
             raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
                                % (serno,self._preamp_mode_repr()))

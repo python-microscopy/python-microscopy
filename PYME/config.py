@@ -359,7 +359,7 @@ logger.setLevel(logging.DEBUG)
 report_template_dirs = {}
 report_filters = {}
 plugins = {}
-cam_noiseprops = {}
+cam_props = {}
 
 def _parse_plugin_config():
     import importlib
@@ -443,19 +443,19 @@ def get_plugins(application):
     """
     return plugins[application]
 
-def _load_cam_noiseprops():
+def _load_cam_props():
     for config_dir in config_dirs:
         #parse the new style .yaml based config first
         cam_yamls = glob.glob(os.path.join(config_dir, 'cameras','*.yaml'))
 
         for yamlfile in cam_yamls:
             with open(yamlfile,'r') as fi:
-                cam_noiseprops.update(yaml.safe_load(fi))
+                cam_props.update(yaml.safe_load(fi))
 
-_load_cam_noiseprops()
+_load_cam_props()
 
-def get_cam_noiseprops():
-    return cam_noiseprops
+def get_cam_props():
+    return cam_props
 
 def get_custom_protocols():
     """

@@ -29,7 +29,7 @@
 
 from .HamamatsuDCAM import *
 from PYME.Acquire import eventLog
-from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin, CameraMapMixin
+from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin, CameraMapMixin, CameraProperties
 import logging
 logger = logging.getLogger(__name__)
 
@@ -77,45 +77,54 @@ DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
-noiseProperties = {
-'100233' : {
-        'ReadNoise': 1.65, #CHECKME - converted from an ADU value of 3.51
-        'ElectronsPerCount': 0.47,
-        'NGainStages': 0,
-        'ADOffset': 100,
-        'DefaultEMGain': 1,
-        'SaturationThreshold': (2**16 - 1)
-        },
-'301777' : {
-        'ReadNoise': 1.63,
-        'ElectronsPerCount': 0.47,
-        'NGainStages': 0,
-        'ADOffset': 100,
-        'DefaultEMGain': 1,
-        'SaturationThreshold': (2**16 - 1)
-        },        
-'720795' : {
-        'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
-        'ElectronsPerCount': 0.416613,
-        'NGainStages': 0,
-        'ADOffset': 101.753685,
-        'DefaultEMGain': 1,
-        'SaturationThreshold': (2**16 - 1)
-        },
-}
 
 class DCAMZeroBufferedException(Exception):
     pass
 
 
-class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
+class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin, CameraProperties):
 
+    _hardcoded_properties = {
+        '100233' : {
+            'noiseProperties': {
+                'fixed' : {
+                    'ReadNoise': 1.65, #CHECKME - converted from an ADU value of 3.51
+                    'ElectronsPerCount': 0.47,
+                    'NGainStages': 0,
+                    'ADOffset': 100,
+                    'DefaultEMGain': 1,
+                    'SaturationThreshold': (2**16 - 1)
+                }}},
+        '301777' : {
+            'noiseProperties': {
+                'fixed' : {
+                    'ReadNoise': 1.63,
+                    'ElectronsPerCount': 0.47,
+                    'NGainStages': 0,
+                    'ADOffset': 100,
+                    'DefaultEMGain': 1,
+                    'SaturationThreshold': (2**16 - 1)
+                }}},        
+        '720795' : {
+            'noiseProperties': {
+                'fixed' : {
+                    'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
+                    'ElectronsPerCount': 0.416613,
+                    'NGainStages': 0,
+                    'ADOffset': 101.753685,
+                    'DefaultEMGain': 1,
+                    'SaturationThreshold': (2**16 - 1)
+                }}},
+    }
+    
     numpy_frames = 1
+
+    def _preamp_mode_repr(self):
+        return 'fixed' # I am assuming there are no different preamp gain modes
 
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)
 
-        self.noiseProps = {}
         self.waitopen = DCAMWAIT_OPEN()
         self.waitstart = DCAMWAIT_START()
         self.initialized = False
@@ -139,7 +148,6 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         logger.debug('Initializing Hamamatsu Orca')
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
-            self.noiseProps = noiseProperties[self.GetSerialNumber()]
             # Create a wait handle
             self.waitopen.size = ctypes.sizeof(self.waitopen)
             self.waitopen.hdcam = self.handle
@@ -384,9 +392,9 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
     def CamReady(self):
         return self.initialized
     
-    @property
-    def noise_properties(self):
-        return self.noiseProps
+    #@property
+    #def noise_properties(self):
+    #    return self.noiseProps
     
     def GetCCDTemp(self):
         # FIXME - actually read the CCD temperature
@@ -418,7 +426,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         HamamatsuDCAM.GenStartMetadata(self, mdh)
         if self.active:
             self.fill_camera_map_metadata(mdh)
-            mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
+            # why is only ADOffset saved, not readnoise etc???
+            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset'])
 
     def SetShutter(self, mode):
         """

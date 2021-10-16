@@ -39,17 +39,17 @@ import traceback
 from PYME.misc.aligned_array import create_aligned_array
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
-from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin, CameraNoiseProperties
+from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin, CameraProperties
 
 logger = logging.getLogger(__name__)
 
 
-class AndorBase(SDK3Camera, CameraMapMixin, CameraNoiseProperties):
+class AndorBase(SDK3Camera, CameraMapMixin, CameraProperties):
     numpy_frames=1
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
-    _hardcoded_noise_properties = {
+    _hardcoded_properties = {
         'VSC-00954': {
             'model' : 'Zyla', # model param currently not used 
             'noiseProperties': {
