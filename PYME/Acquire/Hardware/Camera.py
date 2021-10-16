@@ -29,6 +29,8 @@
 from threading import Lock
 
 from PYME.IO import MetaDataHandler
+from PYME import config
+
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -93,6 +95,47 @@ class CameraMapMixin(object):
         self._fill_camera_map_id(mdh, 'Camera.DarkMapID', map_type='dark')
         self._fill_camera_map_id(mdh, 'Camera.VarianceMapID', map_type='variance')
         self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
+
+
+class CameraNoiseProperties(object):
+    _hardcoded_noise_properties = {} # no hardcoded cams
+    
+    def _preamp_mode_repr(self):
+        """
+        Should return a representation of the camera preamp mode that can be used as a dictionary key.
+        Needs to be overriden in derived classes
+        """        
+        raise RuntimeError('not implemented')
+
+    def _getCamNoiseProps(self):
+        cnp = config.get_cam_noiseprops()
+        serno = self.GetSerialNumber()
+        preampmode = self._preamp_mode_repr()
+        if serno in cnp:
+            try:
+                return cnp[serno]['noiseProperties'][preampmode]
+            except KeyError:
+                logger.warn('camera with serial no "%s" found but no noiseProperties with suitable preamp mode "%s"' 
+                            % (serno,preampmode))
+                return None
+        else:
+            return None
+
+    @property
+    def noise_properties(self):
+        """return the noise properties for the given camera
+
+        """
+        serno = self.GetSerialNumber()
+        np = self._getCamNoiseProps()
+        if np is not None:
+            return np
+        # if we get to here fall back to hardcoded cameras
+        try:
+            return self._hardcoded_noise_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
+        except KeyError: # last resort is a runtime error - we can debate what the best solution is
+            raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
+                               % (serno,self._preamp_mode_repr()))
 
 
 class Camera(object):

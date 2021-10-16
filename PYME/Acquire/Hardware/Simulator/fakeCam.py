@@ -346,8 +346,8 @@ class compThread(threading.Thread):
 
 
 
-from PYME.Acquire.Hardware.Camera import Camera
-class FakeCamera(Camera):
+from PYME.Acquire.Hardware.Camera import Camera, CameraNoiseProperties
+class FakeCamera(Camera, CameraNoiseProperties):
     numpy_frames=1
     order= 'C'
     #MODE_CONTINUOUS=True
@@ -374,7 +374,8 @@ class FakeCamera(Camera):
 
         self.SaturationThreshold = (2**16) - 1
         self.DefaultEMGain = 150
-
+        self.preampGain = 1
+        
         self.laserPowers=laserPowers
         self.illumFcn = illumFcn
 
@@ -425,8 +426,11 @@ class FakeCamera(Camera):
         if restart:
             self._restart_compT()
 
+    def _preamp_mode_repr(self):
+        return 'Preamp mode %d' % self.preampGain
+    
     def GetSerialNumber(self):
-        return 0
+        return 'FAKE-000'
     
     def SetIntegTime(self, iTime): 
         self.intTime=iTime#*1e-3
