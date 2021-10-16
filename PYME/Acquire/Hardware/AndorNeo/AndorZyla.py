@@ -39,93 +39,96 @@ import traceback
 from PYME.misc.aligned_array import create_aligned_array
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
-from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin
+from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin, CameraNoiseProperties
 
 logger = logging.getLogger(__name__)
 
 
-class AndorBase(SDK3Camera, CameraMapMixin):
+class AndorBase(SDK3Camera, CameraMapMixin, CameraNoiseProperties):
     numpy_frames=1
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
-    ZylaPixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
-                                   '12-bit (high well capacity)': 'Mono12',
-                                   '16-bit (low noise & high well capacity)' : 'Mono16'
-    }
-
-    _noise_properties = {
+    _hardcoded_noise_properties = {
         'VSC-00954': {
-            '12-bit (low noise)': {
-                'ReadNoise' : 1.1,
-                'ElectronsPerCount' : 0.28,
-                'ADOffset' : 100, # check mean (or median) offset
-                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-            },
-            '12-bit (high well capacity)': {
-                'ReadNoise' : 5.96,
-                'ElectronsPerCount' : 6.97,
-                'ADOffset' : 100,
-                'SaturationThreshold' : 2**11-1#(2**16 -1)         
-            },
-            '16-bit (low noise & high well capacity)': {
-                'ReadNoise' : 1.33,
-                'ElectronsPerCount' : 0.5,
-                'ADOffset' : 100,
-                'SaturationThreshold' : (2**16 -1)
-            }},
+            'model' : 'Zyla', # model param currently not used 
+            'noiseProperties': {
+                '12-bit (low noise)': {
+                    'ReadNoise' : 1.1,
+                    'ElectronsPerCount' : 0.28,
+                    'ADOffset' : 100, # check mean (or median) offset
+                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+                },
+                '12-bit (high well capacity)': {
+                    'ReadNoise' : 5.96,
+                    'ElectronsPerCount' : 6.97,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
+                },
+                '16-bit (low noise & high well capacity)': {
+                    'ReadNoise' : 1.33,
+                    'ElectronsPerCount' : 0.5,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : (2**16 -1)
+                }}},
         'CSC-00425': { # this is info for a Sona
-            u'12-bit (low noise)': {
-                'ReadNoise' : 1.21,
-                'ElectronsPerCount' : 0.45,
-                'ADOffset' : 100, # check mean (or median) offset
-                'SaturationThreshold' : 1776  #(2**16 -1) # check this is really 11 bit
-            },
-            u'16-bit (high dynamic range)': {
-                'ReadNoise' : 1.84,
-                'ElectronsPerCount' : 1.08,
-                'ADOffset' : 100,
-                'SaturationThreshold' : 44185
-            }},
+            'noiseProperties': {
+                u'12-bit (low noise)': {
+                    'ReadNoise' : 1.21,
+                    'ElectronsPerCount' : 0.45,
+                    'ADOffset' : 100, # check mean (or median) offset
+                    'SaturationThreshold' : 1776  #(2**16 -1) # check this is really 11 bit
+                },
+                u'16-bit (high dynamic range)': {
+                    'ReadNoise' : 1.84,
+                    'ElectronsPerCount' : 1.08,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : 44185
+                }}},
         'VSC-02858': {
-             '12-bit (low noise)': {
-                'ReadNoise' : 1.19,
-                'ElectronsPerCount' : 0.3,
-                'ADOffset' : 100, # check mean (or median) offset
-                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-            },
-            '12-bit (high well capacity)': {
-                'ReadNoise' : 6.18,
-                'ElectronsPerCount' : 7.2,
-                'ADOffset' : 100,
-                'SaturationThreshold' : 2**11-1#(2**16 -1)         
-            },
-            '16-bit (low noise & high well capacity)': {
-                'ReadNoise' : 1.42,
-                'ElectronsPerCount' : 0.5,
-                'ADOffset' : 100,
-                'SaturationThreshold' : (2**16 -1)
-            }},
+            'noiseProperties': {
+                '12-bit (low noise)': {
+                    'ReadNoise' : 1.19,
+                    'ElectronsPerCount' : 0.3,
+                    'ADOffset' : 100, # check mean (or median) offset
+                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+                },
+                '12-bit (high well capacity)': {
+                    'ReadNoise' : 6.18,
+                    'ElectronsPerCount' : 7.2,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
+                },
+                '16-bit (low noise & high well capacity)': {
+                    'ReadNoise' : 1.42,
+                    'ElectronsPerCount' : 0.5,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : (2**16 -1)
+                }}},
         'VSC-02698': {
-             '12-bit (low noise)': {
-                'ReadNoise' : 1.16,
-                'ElectronsPerCount' : 0.26,
-                'ADOffset' : 100, # check mean (or median) offset
-                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-            },
-            '12-bit (high well capacity)': {
-                'ReadNoise' : 6.64,
-                'ElectronsPerCount' : 7.38,
-                'ADOffset' : 100,
-                'SaturationThreshold' : 2**11-1#(2**16 -1)         
-            },
-            '16-bit (low noise & high well capacity)': {
-                'ReadNoise' : 1.36,
-                'ElectronsPerCount' : 0.49,
-                'ADOffset' : 100,
-                'SaturationThreshold' : (2**16 -1)
-            }}}
+            'noiseProperties': {
+                '12-bit (low noise)': {
+                    'ReadNoise' : 1.16,
+                    'ElectronsPerCount' : 0.26,
+                    'ADOffset' : 100, # check mean (or median) offset
+                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+                },
+                '12-bit (high well capacity)': {
+                    'ReadNoise' : 6.64,
+                    'ElectronsPerCount' : 7.38,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
+                },
+                '16-bit (low noise & high well capacity)': {
+                    'ReadNoise' : 1.36,
+                    'ElectronsPerCount' : 0.49,
+                    'ADOffset' : 100,
+                    'SaturationThreshold' : (2**16 -1)
+                }}}}
 
+    def _preamp_mode_repr(self):
+        return self.GetSimpleGainMode()
+    
     # this class is compatible with the ATEnum object properties that are used in ZylaControlPanel
     # we use it as a higher level alternative to setting gainmode and encoding directly
     class SimpleGainEnum(object):
@@ -143,23 +146,6 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         def getString(self):
             return self.cam.GetSimpleGainMode()
 
-
-    
-    @property
-    def noise_properties(self):
-        """return the noise properties for a the given camera
-
-        TODO: make this look in config, rather than storing noise properties here
-        """
-        try:
-            return self._noise_properties[self.GetSerialNumber()][self.GetSimpleGainMode()]
-        except KeyError:
-            logger.warn('camera specific noise props not found - using default noise props')
-            return {'ReadNoise' : 1.1,
-                    'ElectronsPerCount' : 0.28,
-                    'ADOffset' : 100, # check mean (or median) offset
-                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit,
-                    }
 
 
     def __init__(self, camNum):
@@ -241,9 +227,6 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     def Init(self):
         SDK3Camera.Init(self)        
         
-        #set some intial parameters
-        #self.setNoisePropertiesByCam(self.GetSerialNumber())
-
         # figure out preamp gain modes for this camera type
         if not self.CameraModel.getValue().startswith('SIM'):
             # Special case for Sona cams
@@ -255,9 +238,6 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                     self.PixelEncodingForGain[mode] = 'Mono16'
                 else:
                     raise RuntimeError('PixelEncodingForGain mode "%s" unknown bit depth (neither 12 nor 16 bit)' % (mode))
-        else:
-            # Assume Zyla
-            self.PixelEncodingForGain = self.ZylaPixelEncodingForGain
 
         # this instance is compatible with use in Zylacontrolpanel
         # note we make this only once the camera has been initialised and PixelEncodingForGain been made
@@ -313,7 +293,6 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        #self.noiseProps = self.baseNoiseProps[self.GetSimpleGainMode()]
 
         self.SetIntegTime(.100)
         
