@@ -84,6 +84,7 @@ class DCAMZeroBufferedException(Exception):
 
 class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin, CameraProperties):
 
+    # settings for Hamamatsu specific camera properties
     _hardcoded_properties = {
         '100233' : {
             'noiseProperties': {
@@ -119,8 +120,9 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin, CameraProperties):
     
     numpy_frames = 1
 
-    def _preamp_mode_repr(self):
-        return 'fixed' # I am assuming there are no different preamp gain modes
+    # we are using the base class definition which returns 'fixed'
+    #def _preamp_mode_repr(self):
+    #    return 'fixed' # I am assuming there are no different preamp gain modes
 
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)

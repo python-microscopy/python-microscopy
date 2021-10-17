@@ -103,9 +103,9 @@ class CameraProperties(object):
     def _preamp_mode_repr(self):
         """
         Should return a representation of the camera preamp mode that can be used as a dictionary key.
-        Needs to be overriden in derived classes
+        Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
         """        
-        raise RuntimeError('not implemented')
+        return 'fixed'
 
     def _get_cam_noise_props(self):
         cnp = config.get_cam_props()
@@ -115,6 +115,7 @@ class CameraProperties(object):
             try:
                 return cnp[serno]['noiseProperties'][preampmode]
             except KeyError:
+                # this should not happen with propery formatted yaml entries
                 logger.warn('camera with serial no "%s" found but no noiseProperties with suitable preamp mode "%s"' 
                             % (serno,preampmode))
                 return None
@@ -140,7 +141,17 @@ class CameraProperties(object):
 
     @property
     def noise_properties(self):
-        """return the noise properties for the given camera
+        """
+           return the noise properties for the given camera
+
+           Looks in user added config files first and then tries entries in the dict
+           `_hardcoded_properties` which derived classes should populate for backwards
+           compatibility.
+
+           Cameras are identified by serial number. An error is raised if no matching entry
+           is found.
+
+           See also PYME.config.get_cam_props()
 
         """
         serno = self.GetSerialNumber()
@@ -151,6 +162,7 @@ class CameraProperties(object):
         try:
             return self._hardcoded_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
         except KeyError: # last resort is a runtime error - we can debate what the best solution is
+            # we could also look for a 'default' entry in the _hardcoded_properties
             raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
                                % (serno,self._preamp_mode_repr()))
 
