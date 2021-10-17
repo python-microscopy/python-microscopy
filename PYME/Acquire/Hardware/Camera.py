@@ -139,13 +139,17 @@ class CameraProperties(object):
             return default
 
 
+    # note potential issue with Camera base class as this currently defines the same
+    # property that needs to be overriden in derived classes
+    # I suggest we drop this in the camera class and have this one via the
+    # CameraProperties base class that backends should include via multiple inheritance
     @property
     def noise_properties(self):
         """
            return the noise properties for the given camera
 
            Looks in user added config files first and then tries entries in the dict
-           `_hardcoded_properties` which derived classes should populate for backwards
+           `_hardcoded_properties` which derived camera classes should populate for backwards
            compatibility.
 
            Cameras are identified by serial number. An error is raised if no matching entry
