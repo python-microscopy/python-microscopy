@@ -759,28 +759,32 @@ class Camera(object):
         raise NotImplementedError("Implemented in derived class.")
 
 
-    @property
-    def noise_properties(self):
-        """
+    # this is now defined in the CameraProperties Class
+    # if all our camera backends use the Camera base class then probably nothing would argue against
+    # including the CameraProperties functionality directly in this Camera class here
+    
+    # @property
+    # def noise_properties(self):
+    #     """
 
-                Returns
-                -------
+    #             Returns
+    #             -------
 
-                a dictionary with the following entries:
+    #             a dictionary with the following entries:
 
-                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-                    doi: 10.1109/TED.2003.813462
+    #             'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+    #             'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+    #             'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+    #                 doi: 10.1109/TED.2003.813462
 
-                and optionally
-                'ADOffset' : the dark level (in ADU)
-                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-                'SaturationThreshold' : the full well capacity (in ADU)
+    #             and optionally
+    #             'ADOffset' : the dark level (in ADU)
+    #             'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+    #             'SaturationThreshold' : the full well capacity (in ADU)
 
-                """
+    #             """
         
-        raise AttributeError('Implement in derived class')
+    #     raise AttributeError('Implement in derived class')
         
 
     def GetStatus(self):
