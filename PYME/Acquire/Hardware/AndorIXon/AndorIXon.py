@@ -37,8 +37,8 @@ from PYME.Acquire import eventLog
 
 #import threading
 
-from PYME.Acquire.Hardware.Camera import Camera, CameraProperties
-class iXonCamera(Camera, CameraProperties):
+from PYME.Acquire.Hardware.Camera import Camera
+class iXonCamera(Camera):
     numpy_frames=False
 
     _hardcoded_properties = {

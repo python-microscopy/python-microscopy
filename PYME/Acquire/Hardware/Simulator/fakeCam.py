@@ -346,8 +346,8 @@ class compThread(threading.Thread):
 
 
 
-from PYME.Acquire.Hardware.Camera import Camera, CameraProperties
-class FakeCamera(Camera, CameraProperties):
+from PYME.Acquire.Hardware.Camera import Camera
+class FakeCamera(Camera):
     numpy_frames=1
     order= 'C'
     #MODE_CONTINUOUS=True

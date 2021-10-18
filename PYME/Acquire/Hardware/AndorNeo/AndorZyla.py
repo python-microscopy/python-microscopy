@@ -39,12 +39,12 @@ import traceback
 from PYME.misc.aligned_array import create_aligned_array
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
-from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin, CameraProperties
+from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin
 
 logger = logging.getLogger(__name__)
 
 
-class AndorBase(SDK3Camera, CameraMapMixin, CameraProperties):
+class AndorBase(SDK3Camera, CameraMapMixin):
     numpy_frames=1
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0

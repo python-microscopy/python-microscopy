@@ -97,80 +97,6 @@ class CameraMapMixin(object):
         self._fill_camera_map_id(mdh, 'Camera.FlatfieldMapID', map_type='flatfield')
 
 
-class CameraProperties(object):
-    _hardcoded_properties = {} # no hardcoded cams
-    
-    def _preamp_mode_repr(self):
-        """
-        Should return a representation of the camera preamp mode that can be used as a dictionary key.
-        Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
-        """        
-        return 'fixed'
-
-    def _get_cam_noise_props(self):
-        cnp = config.get_cam_props()
-        serno = self.GetSerialNumber()
-        preampmode = self._preamp_mode_repr()
-        if serno in cnp:
-            try:
-                return cnp[serno]['noiseProperties'][preampmode]
-            except KeyError:
-                # this should not happen with propery formatted yaml entries
-                logger.warn('camera with serial no "%s" found but no noiseProperties with suitable preamp mode "%s"' 
-                            % (serno,preampmode))
-                return None
-        else:
-            return None
-
-    def get_cam_prop_or_default(self,prop,default):
-        cnp = config.get_cam_props()
-        serno = self.GetSerialNumber()
-        if serno in cnp:
-            if prop in cnp[serno]:
-                return cnp[serno][prop]
-            else:
-                return default
-        elif serno in self._hardcoded_properties:
-            if prop in self._hardcoded_properties[serno]:
-                return self._hardcoded_properties[serno][prop]
-            else:
-                return default
-        else:
-            return default
-
-
-    # note potential issue with Camera base class as this currently defines the same
-    # property that needs to be overriden in derived classes
-    # I suggest we drop this in the camera class and have this one via the
-    # CameraProperties base class that backends should include via multiple inheritance
-    @property
-    def noise_properties(self):
-        """
-           return the noise properties for the given camera
-
-           Looks in user added config files first and then tries entries in the dict
-           `_hardcoded_properties` which derived camera classes should populate for backwards
-           compatibility.
-
-           Cameras are identified by serial number. An error is raised if no matching entry
-           is found.
-
-           See also PYME.config.get_cam_props()
-
-        """
-        serno = self.GetSerialNumber()
-        np = self._get_cam_noise_props()
-        if np is not None:
-            return np
-        # if we get to here fall back to hardcoded cameras
-        try:
-            return self._hardcoded_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
-        except KeyError: # last resort is a runtime error - we can debate what the best solution is
-            # we could also look for a 'default' entry in the _hardcoded_properties
-            raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
-                               % (serno,self._preamp_mode_repr()))
-
-
 class Camera(object):
     # Frame format - PYME previously supported frames in a custom format, but numpy_frames should always be true for current code
     numpy_frames = 1 #Frames are delivered as numpy arrays.
@@ -758,34 +684,104 @@ class Camera(object):
         """
         raise NotImplementedError("Implemented in derived class.")
 
-
-    # this is now defined in the CameraProperties Class
-    # if all our camera backends use the Camera base class then probably nothing would argue against
-    # including the CameraProperties functionality directly in this Camera class here
     
-    # @property
-    # def noise_properties(self):
-    #     """
+    _hardcoded_properties = {} # no hardcoded cams by default - generally used only for backwards compatibility
+    
+    def _preamp_mode_repr(self):
+        """
+        Should return a representation of the camera preamp mode that can be used as a dictionary key.
+        Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
+        This is used to look up noise properties by preamp setting, see noise_properties below.
+        """        
+        return 'fixed'
 
-    #             Returns
-    #             -------
+    def _get_cam_noise_props_from_config(self):
+        cnp = config.get_cam_props()
+        serno = self.GetSerialNumber()
+        preampmode = self._preamp_mode_repr()
+        if serno in cnp:
+            try:
+                return cnp[serno]['noiseProperties'][preampmode]
+            except KeyError:
+                # this should not happen with propery formatted yaml entries
+                logger.warn('camera with serial no "%s" found but no noiseProperties with suitable preamp mode "%s"' 
+                            % (serno,preampmode))
+                return None
+        else:
+            return None
 
-    #             a dictionary with the following entries:
+    def get_cam_prop_or_default(self,prop,default):
+        """
+        return general camera specific properties, typically set in user configuration files;
+        see also PYME.config.get_cam_props().
 
-    #             'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-    #             'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-    #             'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-    #                 doi: 10.1109/TED.2003.813462
+        Cameras are identified by serial number. Looks for the property first in user config settings. If
+        an entry is found but the property is not defined in the entry, the default value is returned. If
+        no entry is found in the user configuration files then a possibly hardcoded entry is tried (for
+        backwards compatibility).
 
-    #             and optionally
-    #             'ADOffset' : the dark level (in ADU)
-    #             'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-    #             'SaturationThreshold' : the full well capacity (in ADU)
-
-    #             """
+        This should not be used for noise_properties which have their own method/property below
+        """
         
-    #     raise AttributeError('Implement in derived class')
-        
+        cnp = config.get_cam_props()
+        serno = self.GetSerialNumber()
+        if serno in cnp:
+            if prop in cnp[serno]:
+                return cnp[serno][prop]
+            else:
+                return default
+        elif serno in self._hardcoded_properties:
+            if prop in self._hardcoded_properties[serno]:
+                return self._hardcoded_properties[serno][prop]
+            else:
+                return default
+        else:
+            return default
+
+
+    @property
+    def noise_properties(self):
+        """
+           return the noise properties for the given camera
+
+           Looks in user added config files first and then tries entries in the dict
+           `_hardcoded_properties` which derived camera classes should populate for backwards
+           compatibility.
+
+           Cameras are identified by serial number. An error is raised if no matching entry
+           is found.
+
+           See PYME.config.get_cam_props() for the format that entries should have; in general
+           the noise properties should be indexed by preamp setting
+
+           When all works as designed a dictionary with the following entries should be returned by noise_properties:
+
+                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+                    doi: 10.1109/TED.2003.813462
+
+                and optionally
+
+                'ADOffset' : the dark level (in ADU)
+                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+                'SaturationThreshold' : the full well capacity (in ADU)
+
+           For further examples see PYME.config.get_cam_props(). Details are camera specific.
+
+        """
+        serno = self.GetSerialNumber()
+        np = self._get_cam_noise_props_from_config()
+        if np is not None:
+            return np
+        # if we get to here fall back to hardcoded cameras
+        try:
+            return self._hardcoded_properties[serno]['noiseProperties'][self._preamp_mode_repr()]
+        except KeyError: # last resort is a runtime error - we can debate what the best solution is
+            # we could also look for a 'default' entry in the _hardcoded_properties
+            raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
+                               % (serno,self._preamp_mode_repr()))
+
 
     def GetStatus(self):
         """

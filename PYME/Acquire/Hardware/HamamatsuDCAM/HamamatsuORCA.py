@@ -29,7 +29,7 @@
 
 from .HamamatsuDCAM import *
 from PYME.Acquire import eventLog
-from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin, CameraMapMixin, CameraProperties
+from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin, CameraMapMixin
 import logging
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ class DCAMZeroBufferedException(Exception):
     pass
 
 
-class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin, CameraProperties):
+class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
     # settings for Hamamatsu specific camera properties
     _hardcoded_properties = {
@@ -428,7 +428,6 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin, CameraProperties):
         HamamatsuDCAM.GenStartMetadata(self, mdh)
         if self.active:
             self.fill_camera_map_metadata(mdh)
-            # why is only ADOffset saved, not readnoise etc???
             mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset'])
 
     def SetShutter(self, mode):
