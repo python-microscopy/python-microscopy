@@ -409,7 +409,7 @@ class ExtractMultiviewChannel(ModuleBase):
     output_name = Output('extracted')
 
     def execute(self, namespace):
-        from PYME.IO.DataSources.CropDataSource import DataSource
+        from PYME.IO.DataSources.CropDataSource import _DataSource as DataSource #TODO - fix to use new crop data source
         from PYME.IO.MetaDataHandler import DictMDHandler
         from PYME.IO.image import ImageStack
 

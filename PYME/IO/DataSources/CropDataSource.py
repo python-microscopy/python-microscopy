@@ -21,9 +21,9 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYTCDataSource, XYZTCDataSource
 
-class DataSource(XYTCDataSource):
+class _DataSource(XYTCDataSource):
     moduleName = 'CropDataSource'
     def __init__(self,dataSource, xrange=None, yrange=None, trange=None):
         #self.unmixer = unmixer
@@ -64,6 +64,87 @@ class DataSource(XYTCDataSource):
     def release(self):
         return self.dataSource.release()
         
+
+    def reloadData(self):
+        return self.dataSource.reloadData()
+
+class DataSource(XYZTCDataSource):
+    moduleName = 'CropDataSource'
+
+    @classmethod
+    def _sliceify(cls, range, nmax):
+        if range is None:
+            return slice(0, nmax, 1)
+        else:
+            if not isinstance(range, slice):
+                range = slice(*range)
+            
+            return slice(*range.indices(nmax))
+
+    def __init__(self,dataSource, xrange=None, yrange=None, zrange=None, trange=None):
+        #self.unmixer = unmixer
+        self.dataSource = dataSource #type: XYZTCDataSource
+
+        assert(isinstance(dataSource, XYZTCDataSource))
+
+        self.xslice = self._sliceify(xrange, self.dataSource.shape[0])
+        self.yslice = self._sliceify(yrange, self.dataSource.shape[1])
+        self.zslice = self._sliceify(zrange, self.dataSource.shape[2])
+        self.tslice = self._sliceify(trange, self.dataSource.shape[3])
+        
+        
+        szs = [int(np.floor((r.stop-r.start)/r.step)) for r in [self.xslice, self.yslice, self.zslice, self.tslice]] + [self.dataSource.shape[4],]
+
+        self.set_dim_order_and_size(self.dataSource._input_order, szs[2], szs[3], szs[4])
+        
+        self._shape = tuple(szs)
+        self._dtype = dataSource.dtype
+        
+        self._i_z_stride = self.dataSource._z_stride
+        self._i_t_stride = self.dataSource._t_stride
+        self._i_c_stride = self.dataSource._c_stride
+
+
+    
+    def getSlice(self,ind):
+        o_strides = np.array((self._z_stride, self._t_stride, self._c_stride))
+        i_strides = np.array((self._i_z_stride*self.zslice.step, self._i_t_stride*self.tslice.step, self._i_c_stride)).astype('i')
+        i_offsets = np.array((self.zslice.start, self.tslice.start, 0))
+
+        stride_order = np.argsort(o_strides)
+        #print(stride_order, o_strides, i_strides)
+        so_strides = o_strides[stride_order]
+
+        i = int(np.floor(ind/so_strides[-1]))
+        j = int(np.floor((ind-i*so_strides[-1])/so_strides[-2]))
+        k = ind - i*so_strides[-1] -j*so_strides[-2]
+
+        ijk = int(((np.array([k,j,i]) + i_offsets[stride_order])*i_strides[stride_order]).sum())
+
+        #print(ind, ijk, (k, j, i))
+
+        sl = self.dataSource.getSlice(ijk)
+
+        #print(sl.shape)
+        
+        sl = sl[self.xslice, self.yslice]
+
+        #print(sl.shape)
+        return sl
+
+    def getSliceShape(self):
+        #return (self.im.size[1], self.im.size[0])
+        #return (self.xrange[1] - self.xrange[0], self.yrange[1] - self.yrange[0])
+        return self._shape[:2]
+
+    def getNumSlices(self):
+        return np.prod(self.shape[2:])
+
+    def getEvents(self):
+        return self.dataSource.getEvents()
+
+    def release(self):
+        return self.dataSource.release()  
 
     def reloadData(self):
         return self.dataSource.reloadData()
