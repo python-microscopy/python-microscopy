@@ -151,3 +151,31 @@ class DataSource(XYZTCDataSource):
         
 
 
+def crop_image(image, roi, z=True, t=False):
+    from PYME.IO.image import ImageStack
+
+    vx, vy, vz = image.voxelsize
+    ox, oy, oz = image.origin
+    
+    if z:
+        zrange = roi[2]
+        oz = oz + roi[2][0] * vz
+    else:
+        zrange = None
+
+    if t:
+        trange = roi[3]
+    else:
+        trange = None
+
+    cropped = DataSource(image.data_xyztc, xrange=roi[0], yrange=roi[1], zrange=zrange, trange=trange)
+    
+    im = ImageStack(cropped, titleStub='Cropped Image')
+    im.mdh.copyEntriesFrom(image.mdh)
+    im.mdh['Parent'] = image.filename
+    im.mdh['Processing.CropROI'] = roi
+    
+    im.mdh['Origin.x'] = ox + roi[0][0] * vx
+    im.mdh['Origin.y'] = oy + roi[1][0] * vy
+    im.mdh['Origin.z'] = oz 
+    return im
