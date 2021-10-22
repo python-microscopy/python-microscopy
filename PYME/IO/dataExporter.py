@@ -171,7 +171,8 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
         outMDH.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-        outMDH.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
+        if tslice is not None:
+            outMDH.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
 
         if not events is None and len(events) > 0:
             assert isinstance(events, numpy.ndarray), "expected type of events object to be numpy array, but was {}".format(type(events))
@@ -629,7 +630,7 @@ try:
             ext = '*' + os.path.splitext(filename)[1]
             exp = exportersByExtension[ext]()
     
-            exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName, tslice=dlg.GetTSlice())
+            exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(), mdh, events, origName, tslice=dlg.GetTSlice())
     
         dlg.Destroy()
     
