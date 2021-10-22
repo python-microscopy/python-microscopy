@@ -74,26 +74,30 @@ class Exporter:
 
     def _prepare(self, data, xslice, yslice, zslice, tslice):
         from PYME.IO.dataWrap import Wrap
-        from PYME.IO.DataSources import BaseDataSource
+        from PYME.IO.DataSources import BaseDataSource, CropDataSource
         data = Wrap(data) #make sure we can index along a colour dimension
     
         if data.ndim != 5:
             # promote to xyztc
             data = BaseDataSource.XYZTCWrapper.auto_promote(data)
         
-        if tslice is None:
-            tslice = slice(0, data.shape[3], 1)
+        cropped = CropDataSource.DataSource(data, xrange=xslice, yrange=yslice, zrange=zslice, trange=tslice)
         
-        nChans = data.shape[4]
-        nZ = (zslice.stop - zslice.start) // zslice.step
-        nT = (tslice.stop - tslice.start) // tslice.step
+        #if tslice is None:
+        #    tslice = slice(0, data.shape[3], 1)
+        
+        #nChans = data.shape[4]
+        #nZ = (zslice.stop - zslice.start) // zslice.step
+        #nT = (tslice.stop - tslice.start) // tslice.step
+
+        xSize, ySize, nZ, nT, nChans = cropped.shape
         
         nframes = nZ * nT
 
-        slice0 = data[xslice, yslice, 0, 0, 0]
-        xSize, ySize = slice0.shape[:2]
+        #slice0 = data[xslice, yslice, 0, 0, 0]
+        #xSize, ySize = slice0.shape[:2]
         
-        return data, tslice, xSize, ySize, nZ, nT, nChans, nframes
+        return cropped, tslice, xSize, ySize, nZ, nT, nChans, nframes
         
 
 #@exporter
@@ -110,6 +114,8 @@ class H5Exporter(Exporter):
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
         
 
+        # prepare now does cropping, no need to handle in individual exporters
+        # TODO - allow averaging as an alternative to sub-sampling
         data, tslice, xSize, ySize, nZ, nT, nChans, nframes = self._prepare(data, xslice, yslice, zslice, tslice)
         
         print((xSize, ySize))
@@ -125,15 +131,10 @@ class H5Exporter(Exporter):
 
         curFrame = 0
         for ch_num in range(nChans):
-            for z in range(zslice.start, zslice.stop, zslice.step):
-                for t in range(tslice.start, tslice.stop, tslice.step):
+            for t in range(nT):
+                for z in range(nZ):
                     curFrame += 1
-                    im = data[xslice, yslice, z, t, ch_num].squeeze()
-                    
-                    # average is downsampling in z
-                    #TODO - do something similar in t ???
-                    for z_N in range(z +1, z +zslice.step):
-                        im += data[xslice, yslice, z, t, ch_num].squeeze()
+                    im = data[:, :, z, t, ch_num].squeeze()
                         
                     if im.ndim == 1:
                         im = im.reshape((-1, 1))[None, :,:]
@@ -276,7 +277,7 @@ class OMETiffExporter(Exporter):
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None, tslice=None):
         from PYME.contrib.gohlke import tifffile
 
-        data, tslice, _, _, _, _, _, _ = self._prepare(data, xslice, yslice, zslice, tslice)
+        data, _, _, _, _, _, _, _ = self._prepare(data, xslice, yslice, zslice, tslice)
              
         if data.dtype == 'bool':
             data = _CastWrapper(data, 'uint8')
@@ -496,7 +497,7 @@ try:
     
             if not roi is None:
                 bsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cropping'), wx.VERTICAL)
-                gsizer = wx.FlexGridSizer(4,4,5,5)
+                gsizer = wx.FlexGridSizer(5,4,5,5)
     
                 self.tXStart = wx.TextCtrl(self, -1, '%d' % roi[0][0])
                 self.tXStop = wx.TextCtrl(self, -1, '%d' % roi[0][1])
@@ -509,6 +510,10 @@ try:
                 self.tZStart = wx.TextCtrl(self, -1, '%d' % roi[2][0])
                 self.tZStop = wx.TextCtrl(self, -1, '%d' % roi[2][1])
                 self.tZStep = wx.TextCtrl(self, -1, '1')
+
+                self.tTStart = wx.TextCtrl(self, -1, '%d' % roi[3][0])
+                self.tTStop = wx.TextCtrl(self, -1, '%d' % roi[3][1])
+                self.tTStep = wx.TextCtrl(self, -1, '1')
     
                 gsizer.AddMany([(10,10),
                                 wx.StaticText(self, -1, 'Start'),
@@ -516,7 +521,8 @@ try:
                                 wx.StaticText(self, -1, 'Step'),
                                 wx.StaticText(self, -1, 'X:'), self.tXStart, self.tXStop, self.tXStep,
                                 wx.StaticText(self, -1, 'Y:'), self.tYStart, self.tYStop, self.tYStep,
-                                wx.StaticText(self, -1, 'Z:'), self.tZStart, self.tZStop, self.tZStep
+                                wx.StaticText(self, -1, 'Z:'), self.tZStart, self.tZStop, self.tZStep,
+                                wx.StaticText(self, -1, 'T:'), self.tTStart, self.tTStop, self.tTStep
                                 ])
     
                 bsizer.Add(gsizer, 0, wx.ALL, 5)
@@ -551,6 +557,9 @@ try:
     
         def GetZSlice(self):
             return slice(int(self.tZStart.GetValue()), int(self.tZStop.GetValue()),int(self.tZStep.GetValue()))
+
+        def GetTSlice(self):
+            return slice(int(self.tTStart.GetValue()), int(self.tTStop.GetValue()),int(self.tTStep.GetValue()))
     
     
     def _getFilename(defaultExt = '*.tif'):
@@ -600,6 +609,8 @@ try:
         
         if roi is None:
             roi = [[0,data.shape[0]], [0,data.shape[1]], [0,data.shape[2]]]
+
+        roi = roi + [[0, data.shape[3]],]
         
         #else:
         #   roi = [[0, ds.shape[0]],[0, ds.shape[1]],[0, ds.shape[2]]]
@@ -618,7 +629,7 @@ try:
             ext = '*' + os.path.splitext(filename)[1]
             exp = exportersByExtension[ext]()
     
-            exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+            exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName, tslice=dlg.GetTSlice())
     
         dlg.Destroy()
     
