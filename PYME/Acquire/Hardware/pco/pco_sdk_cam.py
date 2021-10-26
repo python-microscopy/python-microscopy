@@ -360,11 +360,11 @@ class PcoSdkCam(Camera):
         self._ccd_temp_set_point = temp
         self._get_temps()
 
-    def GetFanModeSpeed(self):
+    def _get_fan_mode_speed(self):
         mode, speed = pco_sdk.get_fan_control_parameters(self._handle)
         return mode, speed
 
-    def SetFanModeSpeed(self, mode, speed):
+    def _set_fan_mode_speed(self, mode, speed):
         pco_sdk.set_fan_control_parameters(self._handle, mode, speed)
 
     def _get_temps(self):
