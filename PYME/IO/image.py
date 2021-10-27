@@ -1315,7 +1315,10 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
+            import warnings
+            warnings.warn('The "crop" argument is deprecated, please use CropDataSource.crop_image(...).Save() instead')
+            from PYME.ui.crop_dialog import CropExportData
+            CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

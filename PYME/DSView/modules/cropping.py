@@ -31,7 +31,7 @@ class Cropper(Plugin):
 
     def OnCrop(self, event):
         import numpy as np
-        from PYME.IO.DataSources.CropDataSource import crop_image
+        from PYME.IO.DataSources.CropDataSource import roi_crop_image
         #from scipy.ndimage import gaussian_filter
         
         from PYME.DSView import ViewIm3D
@@ -44,10 +44,10 @@ class Cropper(Plugin):
         
         if False:
             roi = [[x0, x1 + 1],[y0, y1 +1], [0, self.image.data_xyztc.shape[2]]]
-            im = crop_image(self.image, roi, z=False)
+            im = roi_crop_image(self.image, roi, z=False)
         else:
             roi = [[x0, x1 + 1], [y0, y1 + 1], [z0, z1+1]]
-            im = crop_image(self.image, roi)
+            im = roi_crop_image(self.image, roi)
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
