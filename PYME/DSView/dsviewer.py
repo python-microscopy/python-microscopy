@@ -353,6 +353,8 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
+        from PYME.ui import crop_dialog
+        from PYME.IO.DataSources.CropDataSource import crop_image
         bx = min(self.do.selection_begin_x, self.do.selection_end_x)
         ex = max(self.do.selection_begin_x, self.do.selection_end_x)
         by = min(self.do.selection_begin_y, self.do.selection_end_y)
@@ -360,7 +362,15 @@ class DSViewFrame(AUIFrame):
         
         roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
         
-        self.image.Save(crop = True, roi=roi)
+        dlg = crop_dialog.ExportDialog(self, roi)
+        try:
+            succ = dlg.ShowModel()
+            if (succ == wx.ID_OK):
+                img = crop_image(self.image, xrange=dlg.GetXSlice(), yrange=dlg.GetYSlice(), zrange=dlg.GetZSlice(), trange=dlg.GetTSlice())
+                img.Save()
+
+        finally:
+            dlg.Destroy()
 
     def OnCrop(self):
         pass
