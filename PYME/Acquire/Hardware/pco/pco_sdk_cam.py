@@ -365,6 +365,7 @@ class PcoSdkCam(Camera):
         return mode, speed
 
     def _set_fan_mode_speed(self, mode, speed):
+        # TODO - unified fan control interface for all cameras (see also AndorIxon `SetFan()` and comments on PR1135)
         pco_sdk.set_fan_control_parameters(self._handle, mode, speed)
 
     def _get_temps(self):
