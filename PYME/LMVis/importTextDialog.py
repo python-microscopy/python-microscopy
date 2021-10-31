@@ -199,43 +199,6 @@ class ImportTextDialog(ColumnMappingDialog):
     fileType='text'
 
     def _parse_header(self, file):
-        n = 0
-        commentLines = []
-        dataLines = []
-
-        fid = open(file, 'r')
-        
-        if file.endswith('.csv'):
-            delim = ','
-        else:
-            delim = None #whitespace
-
-        while n < 10:
-            line = fid.readline()
-            if line.startswith('#'): #check for comments
-                commentLines.append(line[1:])
-            elif not isnumber(line.split(delim)[0]): #or textual header that is not a comment
-                commentLines.append(line)
-            else:
-                dataLines.append(line.split(delim))
-                n += 1
-                
-        self.numCommentLines = len(commentLines)
-
-        numCols = len(dataLines[0])
-        
-        #print commentLines
-        
-        #print commentLines[-1].split(delim), len(commentLines[-1].split(delim)), numCols
-
-        if len(commentLines) > 0 and len(commentLines[-1].split(delim)) == numCols:
-            colNames = [s.strip() for s in commentLines[-1].split(delim)]
-        else:
-            colNames = ['column_%d' % i for i in range(numCols)]
-
-        return colNames, dataLines
-
-    def _parse_header(self, file):
         from PYME.IO import csv_flavours
 
         colNames, dataLines, self.numCommentLines, self.delim = csv_flavours.parse_csv_header(file)
