@@ -600,7 +600,7 @@ class TextfileSourceCSV(TextfileSource):
         """ Input filter for use with CSV. Tries to read some
         of the SMLM flavours out there"""
 
-        from PYME.IO.FileUtils.CSVflavoursSMLM import CSVSMLMReader
+        from PYME.IO.csv_flavours import CSVSMLMReader
         csvreader = CSVSMLMReader(filename)
         self.res = csvreader.read_csv_flavour()
         self.mdh = csvreader.get_mdh()
