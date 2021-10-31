@@ -235,6 +235,12 @@ class ImportTextDialog(ColumnMappingDialog):
 
         return colNames, dataLines
 
+    def _parse_header(self, file):
+        from PYME.IO import csv_flavours
+
+        colNames, dataLines, self.numCommentLines, self.delim = csv_flavours.parse_csv_header(file)
+        return colNames, dataLines
+
 
 class ImportMatDialog(wx.Dialog):
     # Old-style MATLAB importer
