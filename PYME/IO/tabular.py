@@ -565,13 +565,15 @@ class TextfileSource(TabularBase):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0, skip_footer=0, invalid_raise=True, comments='#'):
         """ Input filter for use with delimited text data. Defaults
-        to whitespace delimiter. need to provide a list of variable names
+        to whitespace delimiter. Need to provide a list of variable names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
 
         #self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
         #                                       'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
+
+        print('invalid_raise:', invalid_raise)
 
         self.res = np.genfromtxt(filename,
                              comments=comments,
@@ -591,7 +593,7 @@ class TextfileSource(TabularBase):
         if np.any(np.isnan(r)):
             logger.warning('Text file contains missing values, discarding lines with missing values')
             self.res = self.res[~np.isnan(r)]
-        
+
         self._keys = list(columnnames)
        
 

@@ -717,33 +717,17 @@ class Pipeline:
                         field_names.append('probe')  # don't forget to copy this field over
                     ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
-        elif os.path.splitext(filename)[1] == '.csv':
-            # this is a kludge for now to enable simple testing that the reading code works in principle:
-            #      rather than "properly" plugging in the processing of .csv (and .tsv) files
-            #      we intercept these in VisCore.py and implictly flag this via 'FieldNames' (or any other kwarg)
-            #      not being set.
-            #      The other side effect is that we can test the file reading in scripts via a simple call
-            #      to open a pipeline from file, e.g.:
-            #            pl = pipeline.Pipeline(filename='testfile.csv')
-            if not 'FieldNames' in kwargs.keys():
-                ds = tabular.TextfileSourceCSV(filename)
-                mdh = ds.get_mdh()
-            #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
-            elif 'SkipRows' in kwargs.keys():
-                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
-            else:
-                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',')
+        else: #assume it's a delimited (tab or csv) text file
+            # use provided `text_options` argument to Open(), or guess using csv_flavours
+            text_options = kwargs.get('text_options', None)
+            if text_options is None:
+                # we didn't get any info about how to interpret the text file, guess
+                logger.info('No text file format info provided, guessing ...')
+                from PYME.IO import csv_flavours
+                text_options = csv_flavours.guess_text_options(filename)
 
-        else: #assume it's a tab (or other whitespace) delimited text file
-            # same testing kludge as above, just check for absence of 'FieldNames' to
-            # indicate our new reader should be used
-            if not 'FieldNames' in kwargs.keys():
-                ds = tabular.TextfileSourceCSV(filename)
-                mdh = ds.get_mdh()
-            elif 'SkipRows' in kwargs.keys():
-                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
-            else:
-                ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
+            ds = tabular.TextfileSource(filename, **text_options)
+            
         
         # make sure mdh is writable (file-based might not be)
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)

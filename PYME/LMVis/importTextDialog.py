@@ -54,6 +54,9 @@ class ColumnMappingDialog(wx.Dialog):
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer1.Add(wx.StaticText(self, -1, 'Please assign variable names to each column. Some variable names must be present for the program to function correctly'), 0, wx.ALL, 5)
 
+        # show any file-type specific UI controls
+        self._custom_ui(sizer1)    
+        
         self.GenerateDataGrid(sizer1)
 
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -105,6 +108,13 @@ class ColumnMappingDialog(wx.Dialog):
         self.SetSizer(sizer1)
         sizer1.Fit(self)
         
+    def _custom_ui(self, sizer):
+        ''' hook for derived classes to override to add their own UI elements
+        
+        Last action should be to add themselves to the passed sizer
+        '''
+        pass
+    
     def on_toggle_loc_units(self, e):
         #print('rbLocInPix:' + repr(self.rbLocsInPixels.GetValue()))
         pix = self.rbLocsInPixels.GetValue()
@@ -200,9 +210,45 @@ class ImportTextDialog(ColumnMappingDialog):
 
     def _parse_header(self, file):
         from PYME.IO import csv_flavours
+        # TODO - reduce duplication with csv_flavours.guess_text_options
 
         colNames, dataLines, self.numCommentLines, self.delim = csv_flavours.parse_csv_header(file)
+        self.text_flavour = csv_flavours.guess_flavour(colNames, self.delim)
+
+        self.raw_names = colNames
+        colNames = csv_flavours.replace_names(colNames, self.text_flavour)
+
         return colNames, dataLines
+
+    def _custom_ui(self, sizer):
+        # TODO - move this out of base class
+        from PYME.IO import csv_flavours
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Text file flavour:'), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        flavour_choices = list(csv_flavours.csv_flavours.keys())
+        self.chFlavour = wx.Choice(self, -1, choices = flavour_choices)
+        self.chFlavour.SetSelection(flavour_choices.index(self.text_flavour))
+        self.chFlavour.Bind(wx.EVT_CHOICE, self.OnFlavourChange)
+        hsizer.Add(self.chFlavour, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        sizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
+    
+    def GetDelim(self):
+        return self.delim
+
+    def GetFlavour(self):
+        return self.text_flavour
+
+    def change_text_flavour(self, flavour):
+        from PYME.IO import csv_flavours
+        self.text_flavour = flavour
+        self.colNames = csv_flavours.replace_names(self.raw_names, flavour)
+
+    def OnFlavourChange(self, event):
+        self.change_text_flavour(self.chFlavour.GetStringSelection())
+        self.CheckColNames()
 
 
 class ImportMatDialog(wx.Dialog):

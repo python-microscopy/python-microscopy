@@ -1,6 +1,9 @@
 import numpy as np
 from PYME.IO import MetaDataHandler
 
+import logging
+logger = logging.getLogger(__file__)
+
 def isnumber(s):
     try:
         float(s)
@@ -20,10 +23,11 @@ csv_flavours = {
             'Number Photons': 'nPhotons',
             'First Frame': 't',
             'Chi square': 'nchi2',
-            'PSF half width [nm]': 'sigfwhm', # this one needs a mapping to sig really
-            'Precision [nm]': 'error_x'
+            'PSF half width [nm]': 'fwhm', # this one needs a mapping to sig really
+            'Precision [nm]': 'error_x',
+            'Channel' : 'probe',
         },
-        'must_ignore_errors' : True, # these files bomb unless we tell np.genfromtxt to ignore errors
+        'ignore_errors' : True, # these files bomb unless we tell np.genfromtxt to ignore errors
         # 'column_translations' : {}, # a dict to populate a MappingFilter (To be confirmed)
     },
     'simple' : { # placeholder for more vanilla QuickPALM/simple ThunderSTORM
@@ -55,7 +59,9 @@ csv_flavours = {
             'sigma [nm]' : 'sig',
         },
     },
-    'default' : {},
+    'default' : {
+        'column_name_mappings' : {},
+    },
 }
 
 requiredNames = {'x':'x position [nm]',
@@ -100,6 +106,7 @@ def parse_csv_header(filename):
             commentLines.append(line[1:])
         elif is_header_candidate(line, delims): # textual header that is not a comment
             # we later assume that the last comment line contains the column headers
+            # this is required, as the default .csv format uses a commented header for the column names.
             commentLines.append(line)
             delim = guess_delim(line,delims)
         else:
@@ -115,31 +122,41 @@ def parse_csv_header(filename):
         colNamesRaw = [s.strip() for s in commentLines[-1].split(delim)]
         # the stuff below seemed necessary since (1) some names came with byte order mark, or BOM, prepended
         # and (2) some had quotes around the names
-        colNames = [name.encode('utf-8').decode('utf-8-sig').strip('"') for name in colNamesRaw]
+        colNames = [name.encode('utf-8').decode('utf-8-sig').strip('"').replace('-', '').rstrip() for name in colNamesRaw]
     else:
         colNames = ['column_%d' % i for i in range(numCols)]
 
     return colNames, dataLines, len(commentLines), delim
 
 
-def replace_names(self):
+def replace_names(old_names, flavour):
     newnames = []
-    if self.flavour == 'default':
-        repdict = { # a few default translations, just in case
-            'X' : 'x',
-            'Y' : 'y',
-            'Z' : 'z',
-        }
-    else:
-        repdict = self.csv_flavours[self.flavour]['column_name_mappings']
 
-    for name in self.colNames:
+    repdict = csv_flavours[flavour]['column_name_mappings']
+
+    for name in old_names:
         if name in repdict.keys():
             newname = repdict[name]
         else:
             newname = name
         newnames.append(newname.replace(' ','_')) # in names we replace spaces with underscores
-    self.translatedNames = newnames
+    
+    return newnames
+
+def guess_text_options(filename):
+    colNames, _, n_skip, delim = parse_csv_header(filename)
+    flavour = guess_flavour(colNames, delim)
+
+    logger.info('Guessed text file flavour: %s' % flavour)
+    colNames = replace_names(colNames, flavour)
+
+    text_options = {'columnnames': colNames,
+                    'skiprows' : n_skip,
+                    'delimiter' : delim,
+                    'invalid_raise' : not csv_flavours[flavour].get('ignore_errors', False)
+                    }
+
+    return text_options
 
 
 def check_required_names(self):
@@ -150,31 +167,29 @@ def check_required_names(self):
         # at this stage
 
         
-def read_csv_data(self):
-    return np.genfromtxt(self.filename,
-                            comments=self.flavour_value_or_default('comment_char','#'),
-                            delimiter=self.flavour_value_or_default('delimiter',','),
-                            skip_header=self.nHeaderLines,
-                            skip_footer=self.flavour_value_or_default('skip_footer',0),
-                            names=self.translatedNames, dtype='f4', replace_space='_',
-                            missing_values=None, filling_values=np.nan, # use NaN to flag missing values
-                            invalid_raise=not self.flavour_value_or_default('must_ignore_errors', False),
-                            encoding='latin-1') # Zeiss Elyra bombs unless we go for latin-1 encoding, maybe make flavour specific?
 
-
-def check_flavour(self):
-    for flavour in self.csv_flavours:
-        if all(idn in self.colNames for idn in self.csv_flavours[flavour]['idnames']):
-            self.flavour = flavour
-    if self.guessedDelim is not None:
+def guess_flavour(colNames, delim=None):
+    # guess csv flavour by matching column names
+    fl = None
+    for flavour in csv_flavours:
+        if (not flavour == 'default') and all(idn in colNames for idn in csv_flavours[flavour]['idnames']):
+            if not fl is None:
+                raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+            fl = flavour
+    
+    if (fl is not None) and (delim is not None):
         # consistency check
-        if self.flavour_value_or_default('delimiter',',') != self.guessedDelim:
+        if csv_flavours[fl].get('delimiter',',') != delim:
             raise RuntimeError('guessed delimiter %s and flavour delimiter %s do not match' %
-                                (self.guessedDelim, self.flavour_value_or_default('delimiter',',')))
+                                (delim, csv_flavours[fl].get('delimiter',',')))
+
+    if fl is None:
+        fl = 'default'
+
+    return fl
 
 
-def print_flavour(self):
-    print('Flavour is %s' % self.flavour)
+
 
 def gen_mdh(self): # generate some metaData that will be passed up the chain
                     # to record some bits of this import
@@ -187,26 +202,3 @@ def gen_mdh(self): # generate some metaData that will be passed up the chain
     
     self._mdh = mdh
     
-
-def get_mdh(self):
-    if not hasattr(self,'_mdh'):
-        self.gen_mdh()
-    return self._mdh
-
-
-def read_csv_flavour(self):
-    self.parse_header_csv()
-    self.check_flavour()
-    self.replace_names()
-    self.check_required_names()
-    
-    data = self.read_csv_data()
-    # remove rows with NaNs
-    col_first = self.translatedNames[0]
-    col_last = self.translatedNames[-1]
-    if np.any(np.logical_or(np.isnan(data[col_first]),
-                            np.isnan(data[col_last]))): # this only looks in first and last columns
-                                                        # need a better and complete check
-        data = data[np.logical_not(np.logical_or(np.isnan(data[col_first]),
-                                                    np.isnan(data[col_last])))] # delete rows with missing values
-    return data
