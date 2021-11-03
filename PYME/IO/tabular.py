@@ -563,19 +563,39 @@ class HDFSource(H5RSource):
 @deprecated_name('textfileSource')
 class TextfileSource(TabularBase):
     _name = "Text File Source"
-    def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
+    def __init__(self, filename, columnnames, delimiter=None, skiprows=0, skip_footer=0, invalid_raise=True, comments='#'):
         """ Input filter for use with delimited text data. Defaults
-        to whitespace delimiter. need to provide a list of variable names
+        to whitespace delimiter. Need to provide a list of variable names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
 
-        self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
-                                               'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
-        
+        #self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
+        #                                       'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
+
+        print('invalid_raise:', invalid_raise)
+
+        self.res = np.genfromtxt(filename,
+                             comments=comments,
+                             delimiter=delimiter,
+                             skip_header=skiprows,
+                             skip_footer=skip_footer,
+                             names=columnnames, 
+                             dtype='f4', replace_space='_',
+                             missing_values=None, filling_values=np.nan, # use NaN to flag missing values
+                             invalid_raise=invalid_raise,
+                             encoding='latin-1') # Zeiss Elyra bombs unless we go for latin-1 encoding, maybe make flavour specific?
+
+        # check for missing values:
+        # TODO - is this needed/helpful, or should we propagate missing values further?
+        # cast to a non-structured dtype and use the fact than the sum will be NaN if any of the individual values is NaN
+        r = self.res.view(('f4', len(columnnames))).sum(1)
+        if np.any(np.isnan(r)):
+            logger.warning('Text file contains missing values, discarding lines with missing values')
+            self.res = self.res[~np.isnan(r)]
+
         self._keys = list(columnnames)
        
-
 
     def keys(self):
         return self._keys
@@ -592,6 +612,7 @@ class TextfileSource(TabularBase):
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+
 
 @deprecated_name('matfileSource')
 class MatfileSource(TabularBase):
