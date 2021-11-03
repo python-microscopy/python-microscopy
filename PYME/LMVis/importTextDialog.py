@@ -225,7 +225,7 @@ class ImportTextDialog(ColumnMappingDialog):
         from PYME.IO import csv_flavours
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Text file flavour:'), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Text file flavour:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
         flavour_choices = list(csv_flavours.csv_flavours.keys())
         self.chFlavour = wx.Choice(self, -1, choices = flavour_choices)
