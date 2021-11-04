@@ -83,46 +83,7 @@ class DCAMZeroBufferedException(Exception):
 
 
 class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
-
-    # settings for Hamamatsu specific camera properties
-    _hardcoded_properties = {
-        '100233' : {
-            'noiseProperties': {
-                'fixed' : {
-                    'ReadNoise': 1.65, #CHECKME - converted from an ADU value of 3.51
-                    'ElectronsPerCount': 0.47,
-                    'NGainStages': 0,
-                    'ADOffset': 100,
-                    'DefaultEMGain': 1,
-                    'SaturationThreshold': (2**16 - 1)
-                }}},
-        '301777' : {
-            'noiseProperties': {
-                'fixed' : {
-                    'ReadNoise': 1.63,
-                    'ElectronsPerCount': 0.47,
-                    'NGainStages': 0,
-                    'ADOffset': 100,
-                    'DefaultEMGain': 1,
-                    'SaturationThreshold': (2**16 - 1)
-                }}},        
-        '720795' : {
-            'noiseProperties': {
-                'fixed' : {
-                    'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
-                    'ElectronsPerCount': 0.416613,
-                    'NGainStages': 0,
-                    'ADOffset': 101.753685,
-                    'DefaultEMGain': 1,
-                    'SaturationThreshold': (2**16 - 1)
-                }}},
-    }
-    
     numpy_frames = 1
-
-    # we are using the base class definition which returns 'fixed'
-    #def _preamp_mode_repr(self):
-    #    return 'fixed' # I am assuming there are no different preamp gain modes
 
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)

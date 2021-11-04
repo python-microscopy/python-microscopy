@@ -49,84 +49,13 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
-    _hardcoded_properties = {
-        'VSC-00954': {
-            'model' : 'Zyla', # model param currently not used 
-            'noiseProperties': {
-                '12-bit (low noise)': {
-                    'ReadNoise' : 1.1,
-                    'ElectronsPerCount' : 0.28,
-                    'ADOffset' : 100, # check mean (or median) offset
-                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-                },
-                '12-bit (high well capacity)': {
-                    'ReadNoise' : 5.96,
-                    'ElectronsPerCount' : 6.97,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
-                },
-                '16-bit (low noise & high well capacity)': {
-                    'ReadNoise' : 1.33,
-                    'ElectronsPerCount' : 0.5,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : (2**16 -1)
-                }}},
-        'CSC-00425': { # this is info for a Sona
-            'noiseProperties': {
-                u'12-bit (low noise)': {
-                    'ReadNoise' : 1.21,
-                    'ElectronsPerCount' : 0.45,
-                    'ADOffset' : 100, # check mean (or median) offset
-                    'SaturationThreshold' : 1776  #(2**16 -1) # check this is really 11 bit
-                },
-                u'16-bit (high dynamic range)': {
-                    'ReadNoise' : 1.84,
-                    'ElectronsPerCount' : 1.08,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : 44185
-                }}},
-        'VSC-02858': {
-            'noiseProperties': {
-                '12-bit (low noise)': {
-                    'ReadNoise' : 1.19,
-                    'ElectronsPerCount' : 0.3,
-                    'ADOffset' : 100, # check mean (or median) offset
-                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-                },
-                '12-bit (high well capacity)': {
-                    'ReadNoise' : 6.18,
-                    'ElectronsPerCount' : 7.2,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
-                },
-                '16-bit (low noise & high well capacity)': {
-                    'ReadNoise' : 1.42,
-                    'ElectronsPerCount' : 0.5,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : (2**16 -1)
-                }}},
-        'VSC-02698': {
-            'noiseProperties': {
-                '12-bit (low noise)': {
-                    'ReadNoise' : 1.16,
-                    'ElectronsPerCount' : 0.26,
-                    'ADOffset' : 100, # check mean (or median) offset
-                    'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-                },
-                '12-bit (high well capacity)': {
-                    'ReadNoise' : 6.64,
-                    'ElectronsPerCount' : 7.38,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : 2**11-1#(2**16 -1)         
-                },
-                '16-bit (low noise & high well capacity)': {
-                    'ReadNoise' : 1.36,
-                    'ElectronsPerCount' : 0.49,
-                    'ADOffset' : 100,
-                    'SaturationThreshold' : (2**16 -1)
-                }}}}
-
-    def _preamp_mode_repr(self):
+    ZylaPixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
+                                   '12-bit (high well capacity)': 'Mono12',
+                                   '16-bit (low noise & high well capacity)' : 'Mono16'
+    }
+    
+    @property
+    def _gain_mode(self):
         return self.GetSimpleGainMode()
     
     # this class is compatible with the ATEnum object properties that are used in ZylaControlPanel

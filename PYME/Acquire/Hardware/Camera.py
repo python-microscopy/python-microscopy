@@ -30,6 +30,7 @@ from threading import Lock
 
 from PYME.IO import MetaDataHandler
 from PYME import config
+from . import camera_noise
 
 import numpy as np
 import logging
@@ -685,38 +686,14 @@ class Camera(object):
         raise NotImplementedError("Implemented in derived class.")
 
     
-    _hardcoded_properties = {} # no hardcoded cams by default - generally used only for backwards compatibility
-    
-    def _preamp_mode_repr(self):
+    @property
+    def _gain_mode(self):
         """
         Should return a representation of the camera preamp mode that can be used as a dictionary key.
         Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
         This is used to look up noise properties by preamp setting, see noise_properties below.
         """        
         return 'fixed'
-
-
-    def GetCamPropOrDefault(self,prop,default=None):
-        """
-        return general camera specific properties, typically set in user configuration files;
-        see also PYME.config.get_cam_props().
-
-        Cameras are identified by serial number. Looks for the property first in user config settings. If
-        an entry is found but the property is not defined in the entry, the default value is returned. If
-        no entry is found in the user configuration files then a possibly hardcoded entry is tried (for
-        backwards compatibility).
-
-        This should not be used for noise_properties which have their own method/property below
-        """
-        
-        cnp = config.get_cam_props()
-        serno = self.GetSerialNumber()
-        if serno in cnp:
-            return cnp[serno].get(prop,default)
-        elif serno in self._hardcoded_properties:
-            return self._hardcoded_properties[serno].get(prop,default)
-        else:
-            return default
 
 
     @property
@@ -751,11 +728,11 @@ class Camera(object):
 
         """
         try:
-            return self.GetCamPropOrDefault('noiseProperties')[self._preamp_mode_repr()]
+            return camera_noise.noise_properties[self.GetSerialNumber()]['noise_properties'][self._gain_mode]
         except KeyError: # last resort is a runtime error - we can debate what the best solution is
-            # we could also look for a 'default' entry in the _hardcoded_properties
-            raise RuntimeError('camera specific noise props not found for serial no "%s" and preamp mode "%s"' 
-                               % (self.GetSerialNumber(),self._preamp_mode_repr()))
+            # we could also look for a 'default' entry in the properties
+            raise RuntimeError('Camera specific noise props not found for serial no "%s" and preamp mode "%s". See PYME.Acquire.Hardware.camera_noise for info on how to setup your camera' 
+                               % (self.GetSerialNumber(),self._gain_mode))
 
     def GetStatus(self):
         """

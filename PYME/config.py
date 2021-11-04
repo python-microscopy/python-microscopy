@@ -363,7 +363,6 @@ logger.setLevel(logging.DEBUG)
 report_template_dirs = {}
 report_filters = {}
 plugins = {}
-cam_props = {}
 
 def _parse_plugin_config():
     import importlib
@@ -447,87 +446,7 @@ def get_plugins(application):
     """
     return plugins[application]
 
-def _load_cam_props():
-    for config_dir in config_dirs:
-        #parse the new style .yaml based config first
-        cam_yamls = glob.glob(os.path.join(config_dir, 'cameras','*.yaml'))
 
-        for yamlfile in cam_yamls:
-            with open(yamlfile,'r') as fi:
-                cam_props.update(yaml.safe_load(fi))
-
-_load_cam_props()
-
-def get_cam_props():
-    """
-    Get a dictionary of camera properties from the `cameras` subdirectories in the config directories
-
-    To populate this dictionary all .yaml files in the `cameras` directories are read and entries merged
-    into the dictionary that is returned.
-
-    The camera backends use this information to set noise properties and any other property that they want to consider,
-    but noise properties are the canonical case.
-
-    The entries are identified by serial number of the camera, currently using the assumption that all serial numbers
-    are unique even across manufacturers and models.
-
-    An entry for a Zyla for example looks like:
-
-VSC-00954:
-  model: Andor Zyla
-  noiseProperties:
-    12-bit (high well capacity):
-      ADOffset: 100
-      ElectronsPerCount: 6.97
-      ReadNoise: 5.96
-      SaturationThreshold: 2047
-    12-bit (low noise):
-      ADOffset: 100
-      ElectronsPerCount: 0.28
-      ReadNoise: 1.1
-      SaturationThreshold: 2047
-    16-bit (low noise & high well capacity):
-      ADOffset: 100
-      ElectronsPerCount: 0.5
-      ReadNoise: 1.33
-      SaturationThreshold: 65535
-
-    An Andor IXon entry:
-
-5414:
-  model: Andor IXON emCCD
-  defaultPreampGain: 0
-  noiseProperties:
-    Preamp Gain 0:
-      ADOffset: 413
-      DefaultEMGain: 90
-      ElectronsPerCount: 25.24
-      NGainStages: 536
-      ReadNoise: 61.33
-      SaturationThreshold: 16383
-
-    A HamamatsuORCA entry:
-
-'100233':
-  noiseProperties:
-    fixed:
-      ADOffset: 100
-      DefaultEMGain: 1
-      ElectronsPerCount: 0.47
-      NGainStages: 0
-      ReadNoise: 1.65
-      SaturationThreshold: 65535
-
-    All cameras should have a `noiseProperties` entry that is a dict indexed by Preamplifier Gain modes,
-    as shown above. The format is camera specific. If a camera has no variable preamp gain modes the
-    single key `fixed` is used.
-
-    Additional properties can also be provided and can be retrieved with default values for missing entries
-    by the camera backends. An example is the `defaultPreampGain` for the IXons which is used to set the
-    preferred preamp gain at startup.
-
-    """
-    return cam_props
 
 def get_custom_protocols():
     """
