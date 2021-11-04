@@ -126,7 +126,7 @@ _legacy_noise_properties = {
     # Andor Zyla cameras
     'VSC-00954': {
         'model' : 'Zyla', # model param currently not used 
-        'noiseProperties': {
+        'noise_properties': {
             '12-bit (low noise)': {
                 'ReadNoise' : 1.1,
                 'ElectronsPerCount' : 0.28,
@@ -146,7 +146,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold' : (2**16 -1)
             }}},
     'CSC-00425': { # this is info for a Sona
-        'noiseProperties': {
+        'noise_properties': {
             u'12-bit (low noise)': {
                 'ReadNoise' : 1.21,
                 'ElectronsPerCount' : 0.45,
@@ -160,7 +160,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold' : 44185
             }}},
     'VSC-02858': {
-        'noiseProperties': {
+        'noise_properties': {
             '12-bit (low noise)': {
                 'ReadNoise' : 1.19,
                 'ElectronsPerCount' : 0.3,
@@ -180,7 +180,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold' : (2**16 -1)
             }}},
     'VSC-02698': {
-        'noiseProperties': {
+        'noise_properties': {
             '12-bit (low noise)': {
                 'ReadNoise' : 1.16,
                 'ElectronsPerCount' : 0.26,
@@ -202,7 +202,7 @@ _legacy_noise_properties = {
     
     # Hamamatsu ORCA flash
     '100233' : {
-        'noiseProperties': {
+        'noise_properties': {
             'fixed' : {
                 'ReadNoise': 1.65, #CHECKME - converted from an ADU value of 3.51
                 'ElectronsPerCount': 0.47,
@@ -212,7 +212,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold': (2**16 - 1)
             }}},
     '301777' : {
-        'noiseProperties': {
+        'noise_properties': {
             'fixed' : {
                 'ReadNoise': 1.63,
                 'ElectronsPerCount': 0.47,
@@ -222,7 +222,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold': (2**16 - 1)
             }}},        
     '720795' : {
-        'noiseProperties': {
+        'noise_properties': {
             'fixed' : {
                 'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
                 'ElectronsPerCount': 0.416613,
@@ -237,10 +237,11 @@ _legacy_noise_properties = {
 noise_properties.update(_legacy_noise_properties)
 
 # parse info from .yamls in config/cameras/
-cam_yamls = glob.glob(os.path.join(config.config_dir, 'cameras','*.yaml'))
-for yamlfile in cam_yamls:
-    with open(yamlfile,'r') as fi:
-        noise_properties.update(yaml.safe_load(fi))
+for config_dir in config.config_dirs:
+    cam_yamls = glob.glob(os.path.join(config_dir, 'cameras','*.yaml'))
+    for yamlfile in cam_yamls:
+        with open(yamlfile,'r') as fi:
+            noise_properties.update(yaml.safe_load(fi))
 
 def add_camera_noise_info(serial_num, noise_info):
     """
