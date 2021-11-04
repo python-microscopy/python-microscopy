@@ -689,7 +689,7 @@ class Camera(object):
     @property
     def _gain_mode(self):
         """
-        Should return a representation of the camera preamp mode that can be used as a dictionary key.
+        Should return a representation of the camera gain and/or preamp mode that can be used as a dictionary key.
         Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
         This is used to look up noise properties by preamp setting, see noise_properties below.
         """        
@@ -699,33 +699,23 @@ class Camera(object):
     @property
     def noise_properties(self):
         """
-           return the noise properties for the given camera
+        Return the noise properties for the given camera. This is a dictionary with the following entries
 
-           Looks in user added config files first and then tries entries in the dict
-           `_hardcoded_properties` which derived camera classes should populate for backwards
-           compatibility.
+        'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+        'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+            doi: 10.1109/TED.2003.813462
 
-           Cameras are identified by serial number. An error is raised if no matching entry
-           is found.
+        and optionally
 
-           See PYME.config.get_cam_props() for the format that entries should have; in general
-           the noise properties should be indexed by preamp setting
+        'ADOffset' : the dark level (in ADU)
+        'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+        'SaturationThreshold' : the full well capacity (in ADU)  
 
-           When all works as designed a dictionary with the following entries should be returned by noise_properties:
 
-                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-                    doi: 10.1109/TED.2003.813462
-
-                and optionally
-
-                'ADOffset' : the dark level (in ADU)
-                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-                'SaturationThreshold' : the full well capacity (in ADU)
-
-           For further examples see PYME.config.get_cam_props(). Details are camera specific.
-
+        These are sourced from config files, referenced by camera serial number and gain mode. 
+        See :py:mod:`PYME.Acquire.Hardware.camera_noise` for details. There can be camera to camera to camera variations in
+        the valid values and meanings of `self._gain_mode`.
         """
         try:
             return camera_noise.noise_properties[self.GetSerialNumber()]['noise_properties'][self._gain_mode]
