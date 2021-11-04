@@ -167,7 +167,11 @@ class AndorBase(SDK3Camera, CameraMapMixin):
                     self.PixelEncodingForGain[mode] = 'Mono16'
                 else:
                     raise RuntimeError('PixelEncodingForGain mode "%s" unknown bit depth (neither 12 nor 16 bit)' % (mode))
-
+        else:
+            # Assume Zyla
+            self.PixelEncodingForGain = self.ZylaPixelEncodingForGain
+        
+        
         # this instance is compatible with use in Zylacontrolpanel
         # note we make this only once the camera has been initialised and PixelEncodingForGain been made
         self.SimpleGainEnumInstance = self.SimpleGainEnum(self)
