@@ -98,7 +98,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold' : (2**14 -1)
             }}},
     7863 : { #Gain setting of 3
-        'defaultPreampGain' : 2,
+        'default_preamp_gain' : 2,
         'noise_properties': {
             'Preamp Gain 2': {
                 'ReadNoise' : 88.1,
@@ -109,7 +109,7 @@ _legacy_noise_properties = {
                 'SaturationThreshold' : 5.4e4#(2**16 -1)
             }}},
     7546 : {
-        'defaultPreampGain' : 2,
+        'default_preamp_gain' : 2,
         'noise_properties': {
             'Preamp Gain 2': {
                 #  preamp: currently using most sensitive setting (default according to docs)
