@@ -301,7 +301,11 @@ class OMETiffExporter(Exporter):
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-            xmd.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
+            try:
+                xmd.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
+            except AttributeError:
+                warnings.warn('tslice not found, skipping')
+                pass
             
             description=xmd.getXML(data)
         else:
