@@ -83,9 +83,9 @@ def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
     '''
     dx = 1.2 * r_max
     
-    vx, vy, vz = [v.ravel() for v in 1.2 * np.mgrid[-1:2, -1:2, -1:2]]
+    vx, vy, vz = [v.ravel() for v in np.mgrid[-1:2, -1:2, -1:2]]
     
-    verts = dx * np.vstack([vx, vy, vz])
+    verts = dx * np.vstack([vx, vy, vz]) + np.array(centre)[:,None]
     #print(verts.shape)
     
     c_offs = np.array(
