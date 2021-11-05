@@ -29,7 +29,7 @@ import numpy as np
 from PYME.contrib import dispatch
 
 from PYME.ui import histLimits
-from PYME.LMVis import editFilterDialog
+from PYME.ui import editFilterDialog
 
 def CreateFilterPane(panel, mapping, pipeline, visFr):
     pane = FilterPane(panel, mapping, pipeline, visFr)

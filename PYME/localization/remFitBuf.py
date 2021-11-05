@@ -21,7 +21,7 @@
 #
 ##################
 
-from PYME.ParallelTasks import taskDef
+from PYME.misc import taskDef
 from PYME.localization import ofind
 #import ofind_nofilt #use for drift estimation - faster
 #import ofind_xcorr

@@ -47,7 +47,7 @@ HAVE_DRIFT_CORRECTION = False
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis import displayPane
-from PYME.LMVis.filterPane import CreateFilterPane
+from PYME.ui.filterPane import CreateFilterPane
 
 from PYME.LMVis import pointSettingsPanel
 from PYME.LMVis import quadTreeSettings

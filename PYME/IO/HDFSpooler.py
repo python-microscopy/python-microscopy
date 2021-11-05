@@ -28,7 +28,7 @@ from PYME.IO.events import HDFEventLogger
 
 import time
 
-import PYME.Acquire.Spooler as sp
+import PYME.IO.Spooler as sp
 
 from PYME.IO.FileUtils import fileID
 

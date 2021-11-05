@@ -26,7 +26,7 @@ from PYME.IO import MetaDataHandler
 import os
 import time
 
-import PYME.Acquire.Spooler as sp
+import PYME.IO.Spooler as sp
 #from PYME.Acquire import protocol as p
 from PYME.IO.FileUtils import fileID
 
