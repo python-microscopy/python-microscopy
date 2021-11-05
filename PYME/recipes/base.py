@@ -988,3 +988,20 @@ def _issubclass(cl, c):
         return issubclass(cl, c)
     except TypeError:
         return False
+
+@register_module('Crop')
+class Crop(ModuleBase):
+    # adapted from PR #831
+    input = Input('input')
+    x_range = List(Int)([0, -1])
+    y_range = List(Int)([0, -1])
+    z_range = List(Int)([0, -1])
+    t_range = List(Int)([0, -1])
+    output = Output('cropped')
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources.CropDataSource import crop_image
+
+        im = namespace[self.input]
+        cropped = crop_image(im, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
+        namespace[self.output] = cropped
