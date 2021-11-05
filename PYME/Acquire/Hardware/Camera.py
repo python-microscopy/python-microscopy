@@ -29,6 +29,9 @@
 from threading import Lock
 
 from PYME.IO import MetaDataHandler
+from PYME import config
+from . import camera_noise
+
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -682,30 +685,44 @@ class Camera(object):
         """
         raise NotImplementedError("Implemented in derived class.")
 
+    
+    @property
+    def _gain_mode(self):
+        """
+        Should return a representation of the camera gain and/or preamp mode that can be used as a dictionary key.
+        Should be overriden in derived classes if they have any setable preamp gain modes to speak of.
+        This is used to look up noise properties by preamp setting, see noise_properties below.
+        """        
+        return 'fixed'
+
 
     @property
     def noise_properties(self):
         """
+        Return the noise properties for the given camera. This is a dictionary with the following entries
 
-                Returns
-                -------
+        'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+        'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+            doi: 10.1109/TED.2003.813462
 
-                a dictionary with the following entries:
+        and optionally
 
-                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-                    doi: 10.1109/TED.2003.813462
+        'ADOffset' : the dark level (in ADU)
+        'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+        'SaturationThreshold' : the full well capacity (in ADU)  
 
-                and optionally
-                'ADOffset' : the dark level (in ADU)
-                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-                'SaturationThreshold' : the full well capacity (in ADU)
 
-                """
-        
-        raise AttributeError('Implement in derived class')
-        
+        These are sourced from config files, referenced by camera serial number and gain mode. 
+        See :py:mod:`PYME.Acquire.Hardware.camera_noise` for details. There can be camera to camera to camera variations in
+        the valid values and meanings of `self._gain_mode`.
+        """
+        try:
+            return camera_noise.noise_properties[self.GetSerialNumber()]['noise_properties'][self._gain_mode]
+        except KeyError: # last resort is a runtime error - we can debate what the best solution is
+            # we could also look for a 'default' entry in the properties
+            raise RuntimeError('Camera specific noise props not found for serial no "%s" and preamp mode "%s". See PYME.Acquire.Hardware.camera_noise for info on how to setup your camera' 
+                               % (self.GetSerialNumber(),self._gain_mode))
 
     def GetStatus(self):
         """
