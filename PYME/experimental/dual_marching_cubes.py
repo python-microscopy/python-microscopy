@@ -6,12 +6,14 @@ from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes
 from PYME.experimental._octree import has_children
 
 import time
+import multiprocessing
 
 class DualMarchingCubes(ModifiedMarchingCubes):
     
-    def __init__(self, isolevel=0):
+    def __init__(self, isolevel=0, parallel=True):
         super(DualMarchingCubes, self).__init__(isolevel)
         self._ot = None
+        self._parallel = parallel
 
     def set_octree(self, ot):
         t_ = time.time()
@@ -24,6 +26,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         self.vertices = []
         self.values = []
         self.depths = []
+        if self._parallel:
+            self._manager = multiprocessing.Manager()
+            self.vertices = self._manager.list()
+            self.values = self._manager.list()
+            self.depths = self._manager.list()
         
         #precalculate shift scales for empty boxes
         max_depth = self._ot._nodes['depth'].max()
@@ -34,8 +41,13 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         #TODO - get this from the octree
         self._octant_sign = np.array([[2 * (n & 1) - 1, (n & 2) - 1, (n & 4) / 2 - 1] for n in range(8)])
         
-
+        if self._parallel:
+            self._pool = multiprocessing.Pool(multiprocessing.cpu_count())
         self.node_proc(self._ot._nodes[0])  # Create the dual grid
+        self._pool.apply_async(time.sleep, (10,))
+        if self._parallel:
+            self._pool.close()
+            self._pool.join()
 
         # Make vertices/values np arrays
         self.vertices = np.vstack(self.vertices).astype('float64')
@@ -50,7 +62,6 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         print('March in %3.3f s' % (time.time() - t_))
         return res
         
-
     def position_empty_node(self, n0, n1, shift):
         """
         Function that considers nodes pairwise to replace 0-node if one of the
@@ -210,8 +221,6 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
             children = np.hstack((n0, n1, n2, n3, n4, n5, n6, n7))
 
-            self.node_proc(children)
-
             # We call face_proc_<plane> and edge_proc_<plane> on nodes
             # in a specific orderso we can track where subdivided nodes will be
             # in reference to adjacent subdivided nodes
@@ -220,31 +229,62 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             # At present you are any non-occupied nodes will be interpreted as the root node
 
             # Call self.face_proc_xy on the correct nodes
-            self.face_proc_xy(n0, n4)
-            self.face_proc_xy(n2, n6)
-            self.face_proc_xy(n1, n5)
-            self.face_proc_xy(n3, n7)
+            if self._parallel:
+                self._pool.apply_async(self.node_proc, (children,))
 
-            self.face_proc_xz(n0, n2)
-            self.face_proc_xz(n1, n3)
-            self.face_proc_xz(n4, n6)
-            self.face_proc_xz(n5, n7)
+                self._pool.apply_async(self.face_proc_xy, (n0, n4))
+                self._pool.apply_async(self.face_proc_xy, (n2, n6))
+                self._pool.apply_async(self.face_proc_xy, (n1, n5))
+                self._pool.apply_async(self.face_proc_xy, (n3, n7))
 
-            self.face_proc_yz(n0, n1)
-            self.face_proc_yz(n2, n3)
-            self.face_proc_yz(n4, n5)
-            self.face_proc_yz(n6, n7)
+                self._pool.apply_async(self.face_proc_xz, (n0, n2))
+                self._pool.apply_async(self.face_proc_xz, (n1, n3))
+                self._pool.apply_async(self.face_proc_xz, (n4, n6))
+                self._pool.apply_async(self.face_proc_xz, (n5, n7))
 
-            self.edge_proc_x(n1, n5, n7, n3)
-            self.edge_proc_x(n0, n4, n6, n2)
+                self._pool.apply_async(self.face_proc_yz, (n0, n1))
+                self._pool.apply_async(self.face_proc_yz, (n2, n3))
+                self._pool.apply_async(self.face_proc_yz, (n4, n5))
+                self._pool.apply_async(self.face_proc_yz, (n6, n7))
 
-            self.edge_proc_y(n2, n3, n7, n6)
-            self.edge_proc_y(n0, n1, n5, n4)
+                self._pool.apply_async(self.edge_proc_x, (n1, n5, n7, n3))
+                self._pool.apply_async(self.edge_proc_x, (n0, n4, n6, n2))
 
-            self.edge_proc_z(n0, n2, n3, n1)
-            self.edge_proc_z(n4, n6, n7, n5)
+                self._pool.apply_async(self.edge_proc_y, (n2, n3, n7, n6))
+                self._pool.apply_async(self.edge_proc_y, (n0, n1, n5, n4))
 
-            self.vert_proc(n0, n1, n2, n3, n4, n5, n6, n7)
+                self._pool.apply_async(self.edge_proc_z, (n0, n2, n3, n1))
+                self._pool.apply_async(self.edge_proc_z, (n4, n6, n7, n5))
+
+                self._pool.apply_async(self.vert_proc, (n0, n1, n2, n3, n4, n5, n6, n7))
+            else:
+                self.node_proc(children)
+
+                self.face_proc_xy(n0, n4)
+                self.face_proc_xy(n2, n6)
+                self.face_proc_xy(n1, n5)
+                self.face_proc_xy(n3, n7)
+
+                self.face_proc_xz(n0, n2)
+                self.face_proc_xz(n1, n3)
+                self.face_proc_xz(n4, n6)
+                self.face_proc_xz(n5, n7)
+
+                self.face_proc_yz(n0, n1)
+                self.face_proc_yz(n2, n3)
+                self.face_proc_yz(n4, n5)
+                self.face_proc_yz(n6, n7)
+
+                self.edge_proc_x(n1, n5, n7, n3)
+                self.edge_proc_x(n0, n4, n6, n2)
+
+                self.edge_proc_y(n2, n3, n7, n6)
+                self.edge_proc_y(n0, n1, n5, n4)
+
+                self.edge_proc_z(n0, n2, n3, n1)
+                self.edge_proc_z(n4, n6, n7, n5)
+
+                self.vert_proc(n0, n1, n2, n3, n4, n5, n6, n7)
 
     def face_proc_xy(self, n0, n1):
 
@@ -276,18 +316,32 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
 
-            self.face_proc_xy(c0, c4)
-            self.face_proc_xy(c2, c6)
-            self.face_proc_xy(c1, c5)
-            self.face_proc_xy(c3, c7)
+            if self._parallel:
+                self._pool.apply_async(self.face_proc_xy, (c0, c4))
+                self._pool.apply_async(self.face_proc_xy, (c2, c6))
+                self._pool.apply_async(self.face_proc_xy, (c1, c5))
+                self._pool.apply_async(self.face_proc_xy, (c3, c7))
 
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+                self._pool.apply_async(self.edge_proc_x, (c1, c5, c7, c3))
+                self._pool.apply_async(self.edge_proc_x, (c0, c4, c6, c2))
 
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
+                self._pool.apply_async(self.edge_proc_y, (c2, c3, c7, c6))
+                self._pool.apply_async(self.edge_proc_y, (c0, c1, c5, c4))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+            else:
+                self.face_proc_xy(c0, c4)
+                self.face_proc_xy(c2, c6)
+                self.face_proc_xy(c1, c5)
+                self.face_proc_xy(c3, c7)
+
+                self.edge_proc_x(c1, c5, c7, c3)
+                self.edge_proc_x(c0, c4, c6, c2)
+
+                self.edge_proc_y(c2, c3, c7, c6)
+                self.edge_proc_y(c0, c1, c5, c4)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_xz(self, n0, n1):
 
@@ -319,18 +373,33 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         if is_n0_subdivided or is_n1_subdivided:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
-            self.face_proc_xz(c0, c2)
-            self.face_proc_xz(c1, c3)
-            self.face_proc_xz(c4, c6)
-            self.face_proc_xz(c5, c7)
+            if self._parallel:
+                self._pool.apply_async(self.face_proc_xz, (c0, c2))
+                self._pool.apply_async(self.face_proc_xz, (c1, c3))
+                self._pool.apply_async(self.face_proc_xz, (c4, c6))
+                self._pool.apply_async(self.face_proc_xz, (c5, c7))
 
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+                self._pool.apply_async(self.edge_proc_x, (c1, c5, c7, c3))
+                self._pool.apply_async(self.edge_proc_x, (c0, c4, c6, c2))
 
-            self.edge_proc_z(c0, c2, c3, c1)
-            self.edge_proc_z(c4, c6, c7, c5)
+                self._pool.apply_async(self.edge_proc_z, (c0, c2, c3, c1))
+                self._pool.apply_async(self.edge_proc_z, (c4, c6, c7, c5))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+
+            else:
+                self.face_proc_xz(c0, c2)
+                self.face_proc_xz(c1, c3)
+                self.face_proc_xz(c4, c6)
+                self.face_proc_xz(c5, c7)
+
+                self.edge_proc_x(c1, c5, c7, c3)
+                self.edge_proc_x(c0, c4, c6, c2)
+
+                self.edge_proc_z(c0, c2, c3, c1)
+                self.edge_proc_z(c4, c6, c7, c5)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_yz(self, n0, n1):
 
@@ -364,18 +433,32 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         if is_n0_subdivided or is_n1_subdivided:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
-            self.face_proc_yz(c0, c1)
-            self.face_proc_yz(c2, c3)
-            self.face_proc_yz(c4, c5)
-            self.face_proc_yz(c6, c7)
+            if self._parallel:
+                    self._pool.apply_async(self.face_proc_yz, (c0, c1))
+                    self._pool.apply_async(self.face_proc_yz, (c2, c3))
+                    self._pool.apply_async(self.face_proc_yz, (c4, c5))
+                    self._pool.apply_async(self.face_proc_yz, (c6, c7))
 
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
+                    self._pool.apply_async(self.edge_proc_y, (c2, c3, c7, c6))
+                    self._pool.apply_async(self.edge_proc_y, (c0, c1, c5, c4))
 
-            self.edge_proc_z(c0, c2, c3, c1)
-            self.edge_proc_z(c4, c6, c7, c5)
+                    self._pool.apply_async(self.edge_proc_z, (c0, c2, c3, c1))
+                    self._pool.apply_async(self.edge_proc_z, (c4, c6, c7, c5))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                    self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+            else:
+                self.face_proc_yz(c0, c1)
+                self.face_proc_yz(c2, c3)
+                self.face_proc_yz(c4, c5)
+                self.face_proc_yz(c6, c7)
+
+                self.edge_proc_y(c2, c3, c7, c6)
+                self.edge_proc_y(c0, c1, c5, c4)
+
+                self.edge_proc_z(c0, c2, c3, c1)
+                self.edge_proc_z(c4, c6, c7, c5)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_x(self, n0, n1, n2, n3):
 
@@ -416,10 +499,16 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c5[n1_subdivided] = u3
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+            if self._parallel:
+                self._pool.apply_async(self.edge_proc_x, (c1, c5, c7, c3))
+                self._pool.apply_async(self.edge_proc_x, (c0, c4, c6, c2))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+            else:
+                self.edge_proc_x(c1, c5, c7, c3)
+                self.edge_proc_x(c0, c4, c6, c2)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_y(self, n0, n1, n2, n3):
 
@@ -461,10 +550,16 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c3[n1_subdivided] = u6
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
+            if self._parallel:
+                self._pool.apply_async(self.edge_proc_y, (c2, c3, c7, c6))
+                self._pool.apply_async(self.edge_proc_y, (c0, c1, c5, c4))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+            else:
+                self.edge_proc_y(c2, c3, c7, c6)
+                self.edge_proc_y(c0, c1, c5, c4)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_z(self, n0, n1, n2, n3):
 
@@ -505,10 +600,16 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c6[n1_subdivided] = u5
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_z(c4, c6, c7, c5)
-            self.edge_proc_z(c0, c2, c3, c1)
+            if self._parallel:
+                self._pool.apply_async(self.edge_proc_z, (c4, c6, c7, c5))
+                self._pool.apply_async(self.edge_proc_z, (c0, c2, c3, c1))
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                self._pool.apply_async(self.vert_proc, (c0, c1, c2, c3, c4, c5, c6, c7))
+            else:
+                self.edge_proc_z(c4, c6, c7, c5)
+                self.edge_proc_z(c0, c2, c3, c1)
+
+                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def _vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
         if not self._MC_MAP_MODE_MODIFIED:
