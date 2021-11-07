@@ -275,6 +275,8 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         if is_n0_subdivided or is_n1_subdivided:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
+            subdiv = n0_subdivided | n1_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
 
             self.face_proc_xy(c0, c4)
             self.face_proc_xy(c2, c6)
@@ -319,6 +321,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         if is_n0_subdivided or is_n1_subdivided:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
+            subdiv = n0_subdivided | n1_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
+
             self.face_proc_xz(c0, c2)
             self.face_proc_xz(c1, c3)
             self.face_proc_xz(c4, c6)
@@ -364,6 +369,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         if is_n0_subdivided or is_n1_subdivided:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
             # self.vert_proc on resulting nodes
+            subdiv = n0_subdivided | n1_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
+
             self.face_proc_yz(c0, c1)
             self.face_proc_yz(c2, c3)
             self.face_proc_yz(c4, c5)
@@ -416,6 +424,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c5[n1_subdivided] = u3
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
+            subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
+
             self.edge_proc_x(c1, c5, c7, c3)
             self.edge_proc_x(c0, c4, c6, c2)
 
@@ -461,6 +472,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c3[n1_subdivided] = u6
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
+            subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
+            
             self.edge_proc_y(c2, c3, c7, c6)
             self.edge_proc_y(c0, c1, c5, c4)
 
@@ -505,6 +519,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c6[n1_subdivided] = u5
 
         if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
+            subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+            c0, c1, c2, c3, c4, c5, c6, c7 = c0[subdiv], c1[subdiv], c2[subdiv], c3[subdiv], c4[subdiv], c5[subdiv], c6[subdiv], c7[subdiv]
+            
             self.edge_proc_z(c4, c6, c7, c5)
             self.edge_proc_z(c0, c2, c3, c1)
 
