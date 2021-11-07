@@ -10,7 +10,7 @@ import multiprocessing
 
 class DualMarchingCubes(ModifiedMarchingCubes):
     
-    def __init__(self, isolevel=0, parallel=True):
+    def __init__(self, isolevel=0, parallel=False):
         super(DualMarchingCubes, self).__init__(isolevel)
         self._ot = None
         self._parallel = parallel
@@ -43,11 +43,12 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         
         if self._parallel:
             self._pool = multiprocessing.Pool(multiprocessing.cpu_count())
-        self.node_proc(self._ot._nodes[0])  # Create the dual grid
-        self._pool.apply_async(time.sleep, (10,))
-        if self._parallel:
+            ret = self._pool.apply_async(self.node_proc, (self._ot._nodes[0],))
+            ret.get()
             self._pool.close()
             self._pool.join()
+        else:
+            self.node_proc(self._ot._nodes[0])  # Create the dual grid
 
         # Make vertices/values np arrays
         self.vertices = np.vstack(self.vertices).astype('float64')
