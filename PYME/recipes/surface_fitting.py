@@ -239,8 +239,8 @@ class DistanceToMesh(ModuleBase):
 
         namespace[self.output] = out
 
-@register_module('FilterMeshComponentsBySize')
-class FilterMeshComponentsBySize(ModuleBase):
+@register_module('FilterMeshComponentsByVolume')
+class FilterMeshComponentsByVolume(ModuleBase):
     input_mesh = Input('mesh')
     min_size = Float(100.0)
     max_size = Float(1e9)
@@ -250,7 +250,7 @@ class FilterMeshComponentsBySize(ModuleBase):
         from PYME.experimental import _triangle_mesh as triangle_mesh
 
         mesh = triangle_mesh.TriangleMesh(mesh=namespace[self.input_mesh])
-        mesh.keep_components_by_size(self.min_size, self.max_size)
+        mesh.keep_components_by_volume(self.min_size, self.max_size)
 
         namespace[self.output] = mesh
 

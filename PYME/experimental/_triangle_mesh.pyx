@@ -2431,7 +2431,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return volume.sum()
 
-    def keep_components_by_size(self, min_size=0, max_size=1e9):
+    def keep_components_by_volume(self, min_size=0, max_size=1e9):
         # Find the connected components
         self.find_connected_components()
 
