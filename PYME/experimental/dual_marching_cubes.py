@@ -682,11 +682,12 @@ class DualMarchingCubes(ModifiedMarchingCubes):
                      (n4['n_children'] == 0) & (n5['n_children'] == 0) & \
                      (n6['n_children'] == 0) & (n7['n_children'] == 0)
 
-        leaf_nodes = leaf_nodes.astype(bool)      
+        leaf_nodes = leaf_nodes.astype(bool)
+        n_l = leaf_nodes.sum()      
         
-        if np.any(leaf_nodes):
+        if n_l > 0:
             #inds = np.where(leaf_nodes)[0]
-            n_l = leaf_nodes.sum()
+            
     
             vt = np.zeros([n_l, 8, 3])
             vv = np.zeros([n_l, 8])
@@ -705,7 +706,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             self.depths.append(vd)
 
         ix = ~(leaf_nodes).astype(bool)
-        if np.any(ix):
+        if n_l < leaf_nodes.shape[0]:
             #inds = np.where(~(leaf_nodes).astype(bool))
     
             # Initialize resulting nodes to current nodes
