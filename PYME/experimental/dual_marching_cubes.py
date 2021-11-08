@@ -686,8 +686,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         n_l = leaf_nodes.sum()      
         
         if n_l > 0:
-            #inds = np.where(leaf_nodes)[0]
-            
+            #inds = np.where(leaf_nodes)[0]       
     
             vt = np.zeros([n_l, 8, 3])
             vv = np.zeros([n_l, 8])
