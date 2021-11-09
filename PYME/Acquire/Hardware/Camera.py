@@ -57,7 +57,14 @@ def check_mapexists(mdh, type='dark', fill=True):
     local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
     cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
 
-    if clusterIO.exists(cluster_path):
+    try:
+        cluster_map_exists = clusterIO.exists(cluster_path)
+    except OSError:
+        # The cluster might not be running, if the cluster is not running, we clusterIO.exists throws an error.
+        # catch this to allow offline spooling (see issue #1141)
+        cluster_map_exists = False
+
+    if cluster_map_exists:
         c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
         if fill:
             mdh[id] = c_path
