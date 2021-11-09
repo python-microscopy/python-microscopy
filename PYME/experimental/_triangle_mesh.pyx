@@ -2404,12 +2404,15 @@ cdef class TriangleMesh(TrianglesBase):
 
     def volume(self, faces):
         """
-        Sum the signed distances of tetrahedrons formed by the faces and the origin.
+        Sum the signed volumes of tetrahedrons formed by the faces and the origin.
 
         Cha Zhang and Tsuhan Chen. "Efficient Feature Extraction for 2D/3D Objects in Mesh Representation." 
         In Proceedings 2001 International Conference on Image Processing (Cat. No.01CH37205), 2:935–38. 
         Thessaloniki, Greece: IEEE, 2001. https://doi.org/10.1109/ICIP.2001.958278.
         """
+        
+        # TODO?? - refactor to take a component # rather than face list?
+        # TODO?? - more component refactoring - e.g. a component object / class / iterator?
 
         faces = self._faces['halfedge'][faces]
         v0 = self._halfedges['vertex'][self._halfedges['prev'][faces]]
