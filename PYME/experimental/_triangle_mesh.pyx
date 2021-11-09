@@ -2402,6 +2402,54 @@ cdef class TriangleMesh(TrianglesBase):
             # iteration's search will be part of another component.
             component += 1
 
+    def volume(self, faces):
+        """
+        Sum the signed volumes of tetrahedrons formed by the faces and the origin.
+
+        Cha Zhang and Tsuhan Chen. "Efficient Feature Extraction for 2D/3D Objects in Mesh Representation." 
+        In Proceedings 2001 International Conference on Image Processing (Cat. No.01CH37205), 2:935–38. 
+        Thessaloniki, Greece: IEEE, 2001. https://doi.org/10.1109/ICIP.2001.958278.
+        """
+        
+        # TODO?? - refactor to take a component # rather than face list?
+        # TODO?? - more component refactoring - e.g. a component object / class / iterator?
+
+        faces = self._faces['halfedge'][faces]
+        v0 = self._halfedges['vertex'][self._halfedges['prev'][faces]]
+        v1 = self._halfedges['vertex'][faces]
+        v2 = self._halfedges['vertex'][self._halfedges['next'][faces]]
+
+        p0 = self._vertices['position'][v0]
+        p1 = self._vertices['position'][v1]
+        p2 = self._vertices['position'][v2]
+
+        t0 = p2[:,0]*p1[:,1]*p0[:,2]
+        t1 = -p1[:,0]*p2[:,1]*p0[:,2]
+        t2 = -p2[:,0]*p0[:,1]*p1[:,2]
+        t3 = p0[:,0]*p2[:,1]*p1[:,2]
+        t4 = p1[:,0]*p0[:,1]*p2[:,2]
+        t5 = -p0[:,0]*p1[:,1]*p2[:,2]
+
+        volume = (1.0/6.0)*(t0+t1+t2+t3+t4+t5)
+
+        return volume.sum()
+
+    def keep_components_by_volume(self, min_size=0, max_size=1e9):
+        # Find the connected components
+        self.find_connected_components()
+
+        # Get unique component values
+        coms = np.unique(self._faces['component'][self._faces['component']!=-1])
+
+        # Get volumes in nanometers^3
+        sizes = np.array([self.volume(np.flatnonzero(self._faces['component']==c)) for c in coms])
+
+        # keep components within size range
+        kept_coms = coms[(sizes > min_size) & (sizes < max_size)]
+
+        self.keep_components(kept_coms)
+
+
     def keep_largest_connected_component(self, n=1):
         # Find the connected components
         self.find_connected_components()
