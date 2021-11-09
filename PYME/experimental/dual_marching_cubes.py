@@ -247,268 +247,351 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             self.vert_proc(n0, n1, n2, n3, n4, n5, n6, n7)
 
     def face_proc_xy(self, n0, n1):
-
-        # Initialize resulting nodes to current nodes
-        c0, c1, c2, c3 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
-        c4, c5, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
-
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
 
+        if not (is_n0_subdivided or is_n1_subdivided):
+            return
+
+        # Is either node subdivided?
+        subdiv = n0_subdivided | n1_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
+
         if is_n0_subdivided:
             u4, u5, u6, u7 = self.update_subdivision(n0[n0_subdivided], [4, 5, 6, 7])
+
+            c0, c1, c2, c3 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
 
             c0[n0_subdivided] = u4
             c1[n0_subdivided] = u5
             c2[n0_subdivided] = u6
             c3[n0_subdivided] = u7
+        else:
+            c0, c1, c2, c3 = n0, n0, n0, n0
 
         if is_n1_subdivided:
             u0, u1, u2, u3 = self.update_subdivision(n1[n1_subdivided], [0,1,2,3])
 
+            c4, c5, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
+            
             c4[n1_subdivided] = u0
             c5[n1_subdivided] = u1
             c6[n1_subdivided] = u2
             c7[n1_subdivided] = u3
+        else:
+            c4, c5, c6, c7 = n1, n1, n1, n1
 
-        if is_n0_subdivided or is_n1_subdivided:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
-            # self.vert_proc on resulting nodes
+        self.face_proc_xy(c0, c4)
+        self.face_proc_xy(c2, c6)
+        self.face_proc_xy(c1, c5)
+        self.face_proc_xy(c3, c7)
 
-            self.face_proc_xy(c0, c4)
-            self.face_proc_xy(c2, c6)
-            self.face_proc_xy(c1, c5)
-            self.face_proc_xy(c3, c7)
+        self.edge_proc_x(c1, c5, c7, c3)
+        self.edge_proc_x(c0, c4, c6, c2)
 
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+        self.edge_proc_y(c2, c3, c7, c6)
+        self.edge_proc_y(c0, c1, c5, c4)
 
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
-
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_xz(self, n0, n1):
-
-        # Initialize resulting nodes to current nodes
-        c0, c1, c4, c5 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
-        c2, c3, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
-        
-
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
 
+        if not (is_n0_subdivided or is_n1_subdivided):
+            return
+
+        # Is either node subdivided?
+        subdiv = n0_subdivided | n1_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
+
         if is_n0_subdivided:
             u2, u3, u6, u7 = self.update_subdivision(n0[n0_subdivided], [2,3,6,7])
 
+            c0, c1, c4, c5 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
+            
             c0[n0_subdivided] = u2
             c1[n0_subdivided] = u3
             c4[n0_subdivided] = u6
             c5[n0_subdivided] = u7
+        else:
+            c0, c1, c4, c5 = n0, n0, n0,n0
 
         if is_n1_subdivided:
             u0, u1, u4, u5 = self.update_subdivision(n1[n1_subdivided], [0,1,4,5])
+
+            c2, c3, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
 
             c2[n1_subdivided] = u0
             c3[n1_subdivided] = u1
             c6[n1_subdivided] = u4
             c7[n1_subdivided] = u5
-            
-        if is_n0_subdivided or is_n1_subdivided:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
-            # self.vert_proc on resulting nodes
-            self.face_proc_xz(c0, c2)
-            self.face_proc_xz(c1, c3)
-            self.face_proc_xz(c4, c6)
-            self.face_proc_xz(c5, c7)
+        else:
+            c2, c3, c6, c7 = n1, n1, n1, n1   
 
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+        self.face_proc_xz(c0, c2)
+        self.face_proc_xz(c1, c3)
+        self.face_proc_xz(c4, c6)
+        self.face_proc_xz(c5, c7)
 
-            self.edge_proc_z(c0, c2, c3, c1)
-            self.edge_proc_z(c4, c6, c7, c5)
+        self.edge_proc_x(c1, c5, c7, c3)
+        self.edge_proc_x(c0, c4, c6, c2)
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.edge_proc_z(c0, c2, c3, c1)
+        self.edge_proc_z(c4, c6, c7, c5)
+
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_yz(self, n0, n1):
-
-        # Initialize resulting nodes to current nodes
-        c0, c2, c4, c6 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
-        c1, c3, c5, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
-
-
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
+
+        if not (is_n0_subdivided or is_n1_subdivided):
+            return
+
+        # Is either node subdivided?
+        subdiv = n0_subdivided | n1_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
 
         if is_n0_subdivided:
             
             u1, u3, u5, u7 = self.update_subdivision(n0[n0_subdivided], [1,3,5,7])
 
+            c0, c2, c4, c6 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
+
             c0[n0_subdivided] = u1
             c2[n0_subdivided] = u3
             c4[n0_subdivided] = u5
             c6[n0_subdivided] = u7
+        else:
+            c0, c2, c4, c6 = n0, n0, n0, n0
 
         if is_n1_subdivided:
 
             u0, u2, u4, u6 = self.update_subdivision(n1[n1_subdivided], [0,2,4,6])
 
+            c1, c3, c5, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
+
             c1[n1_subdivided] = u0
             c3[n1_subdivided] = u2
             c5[n1_subdivided] = u4
             c7[n1_subdivided] = u6
+        else:
+            c1, c3, c5, c7 = n1, n1, n1, n1
 
-        if is_n0_subdivided or is_n1_subdivided:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
-            # self.vert_proc on resulting nodes
-            self.face_proc_yz(c0, c1)
-            self.face_proc_yz(c2, c3)
-            self.face_proc_yz(c4, c5)
-            self.face_proc_yz(c6, c7)
+        self.face_proc_yz(c0, c1)
+        self.face_proc_yz(c2, c3)
+        self.face_proc_yz(c4, c5)
+        self.face_proc_yz(c6, c7)
 
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
+        self.edge_proc_y(c2, c3, c7, c6)
+        self.edge_proc_y(c0, c1, c5, c4)
 
-            self.edge_proc_z(c0, c2, c3, c1)
-            self.edge_proc_z(c4, c6, c7, c5)
+        self.edge_proc_z(c0, c2, c3, c1)
+        self.edge_proc_z(c4, c6, c7, c5)
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_x(self, n0, n1, n2, n3):
-
-        # Initialize resulting nodes to current nodes
-        c0, c1 = np.copy(n0), np.copy(n0)
-        c4, c5 = np.copy(n1), np.copy(n1)
-        c6, c7 = np.copy(n2), np.copy(n2)
-        c2, c3 = np.copy(n3), np.copy(n3)
-
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
         n2_subdivided, is_n2_subdivided = self.subdivided(n2)
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
+
+        if not(is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided):
+            return
+
+        #are any nodes subdivided>
+        subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
+        n2, n2_subdivided = n2[subdiv], n2_subdivided[subdiv]
+        n3, n3_subdivided = n3[subdiv], n3_subdivided[subdiv]
 
         if is_n2_subdivided:
             u0, u1 = self.update_subdivision(n2[n2_subdivided], [0,1])
 
+            c6, c7 = np.copy(n2), np.copy(n2)
+            
             c6[n2_subdivided] = u0
             c7[n2_subdivided] = u1
+        else:
+            c6, c7 = n2, n2
 
         if is_n3_subdivided:
             u4, u5 = self.update_subdivision(n3[n3_subdivided], [4,5])
             
+            c2, c3 = np.copy(n3), np.copy(n3)
+            
             c2[n3_subdivided] = u4
             c3[n3_subdivided] = u5
+        else:
+            c2, c3 = n3, n3
 
         if is_n0_subdivided:
             u6, u7 = self.update_subdivision(n0[n0_subdivided], [6,7])
 
+            c0, c1 = np.copy(n0), np.copy(n0)
+
             c0[n0_subdivided] = u6
             c1[n0_subdivided] = u7
+        else:
+            c0, c1 = n0, n0
 
         if is_n1_subdivided:
             u2, u3 = self.update_subdivision(n1[n1_subdivided], [2,3])
 
+            c4, c5 = np.copy(n1), np.copy(n1)
+
             c4[n1_subdivided] = u2
             c5[n1_subdivided] = u3
+        else:
+            c4, c5 = n1, n1
 
-        if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_x(c1, c5, c7, c3)
-            self.edge_proc_x(c0, c4, c6, c2)
+        self.edge_proc_x(c1, c5, c7, c3)
+        self.edge_proc_x(c0, c4, c6, c2)
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_y(self, n0, n1, n2, n3):
-
-        # Initialize resulting nodes to current nodes
-        c0, c2 = np.copy(n0), np.copy(n0)
-        c1, c3 = np.copy(n1), np.copy(n1)
-        c5, c7 = np.copy(n2), np.copy(n2)
-        c4, c6 = np.copy(n3), np.copy(n3)
-
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
         n2_subdivided, is_n2_subdivided = self.subdivided(n2)
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
 
+        if not(is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided):
+            return
+
+        #are any nodes subdivided>
+        subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
+        n2, n2_subdivided = n2[subdiv], n2_subdivided[subdiv]
+        n3, n3_subdivided = n3[subdiv], n3_subdivided[subdiv]
+
         if is_n2_subdivided:
             u0, u2 = self.update_subdivision(n2[n2_subdivided], [0,2])
 
+            c5, c7 = np.copy(n2), np.copy(n2)
+            
             c5[n2_subdivided] = u0
             c7[n2_subdivided] = u2
+        else:
+            c5, c7 = n2, n2
 
         if is_n3_subdivided:
             u1, u3 = self.update_subdivision(n3[n3_subdivided], [1,3])
 
+            c4, c6 = np.copy(n3), np.copy(n3)
+            
             c4[n3_subdivided] = u1
             c6[n3_subdivided] = u3
+        else:
+            c4, c6 = n3, n3
 
         if is_n0_subdivided:
             u5, u7 = self.update_subdivision(n0[n0_subdivided], [5,7])
 
+            c0, c2 = np.copy(n0), np.copy(n0)
+            
             c0[n0_subdivided] = u5
             c2[n0_subdivided] = u7
+        else:
+            c0, c2 = n0, n0
 
 
         if is_n1_subdivided:
             u4, u6 = self.update_subdivision(n1[n1_subdivided], [4,6])
 
+            c1, c3 = np.copy(n1), np.copy(n1)
+            
             c1[n1_subdivided] = u4
             c3[n1_subdivided] = u6
+        else:
+            c1, c3 = n1, n1
 
-        if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_y(c2, c3, c7, c6)
-            self.edge_proc_y(c0, c1, c5, c4)
+            
+        self.edge_proc_y(c2, c3, c7, c6)
+        self.edge_proc_y(c0, c1, c5, c4)
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
-    def edge_proc_z(self, n0, n1, n2, n3):
-
-        # Initialize resulting nodes to current nodes
-        c0, c4 = np.copy(n0), np.copy(n0)
-        c2, c6 = np.copy(n1), np.copy(n1)
-        c3, c7 = np.copy(n2), np.copy(n2)
-        c1, c5 = np.copy(n3), np.copy(n3)
-
+    def edge_proc_z(self, n0, n1, n2, n3): 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
         n2_subdivided, is_n2_subdivided = self.subdivided(n2)
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
 
+        if not(is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided):
+            return
+
+        #are any nodes subdivided>
+        subdiv = n0_subdivided | n1_subdivided | n2_subdivided | n3_subdivided
+
+        n0, n0_subdivided = n0[subdiv], n0_subdivided[subdiv]
+        n1, n1_subdivided = n1[subdiv], n1_subdivided[subdiv]
+        n2, n2_subdivided = n2[subdiv], n2_subdivided[subdiv]
+        n3, n3_subdivided = n3[subdiv], n3_subdivided[subdiv]
+
         if is_n2_subdivided:
             u0, u4 = self.update_subdivision(n2[n2_subdivided], [0,4])
 
+            c3, c7 = np.copy(n2), np.copy(n2)
+            
             c3[n2_subdivided] = u0
             c7[n2_subdivided] = u4
+        else:
+            c3, c7 = n2, n2
 
         if is_n3_subdivided:
             u2,u6 = self.update_subdivision(n3[n3_subdivided], [2,6])
             
+            c1, c5 = np.copy(n3), np.copy(n3)
+            
             c1[n3_subdivided] = u2
             c5[n3_subdivided] = u6
+        else:
+            c1, c5 = n3, n3
 
         if is_n0_subdivided:
             u3, u7 = self.update_subdivision(n0[n0_subdivided], [3, 7])
 
+            c0, c4 = np.copy(n0), np.copy(n0)
+
             c0[n0_subdivided] = u3
             c4[n0_subdivided] = u7
+        else:
+            c0, c4 = n0, n0
 
         if is_n1_subdivided:
             u1, u5 = self.update_subdivision(n1[n1_subdivided], [1, 5])
 
+            c2, c6 = np.copy(n1), np.copy(n1)
+            
             c2[n1_subdivided] = u1
             c6[n1_subdivided] = u5
+        else:
+            c2, c6 = n1, n1
 
-        if is_n0_subdivided or is_n1_subdivided or is_n2_subdivided or is_n3_subdivided:
-            self.edge_proc_z(c4, c6, c7, c5)
-            self.edge_proc_z(c0, c2, c3, c1)
 
-            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+        self.edge_proc_z(c4, c6, c7, c5)
+        self.edge_proc_z(c0, c2, c3, c1)
+
+        self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def _vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
         if not self._MC_MAP_MODE_MODIFIED:
@@ -599,15 +682,18 @@ class DualMarchingCubes(ModifiedMarchingCubes):
                      (n4['n_children'] == 0) & (n5['n_children'] == 0) & \
                      (n6['n_children'] == 0) & (n7['n_children'] == 0)
 
-        if np.any(leaf_nodes):
-            inds = np.where(leaf_nodes)[0]
+        leaf_nodes = leaf_nodes.astype(bool)
+        n_l = leaf_nodes.sum()      
+        
+        if n_l > 0:
+            #inds = np.where(leaf_nodes)[0]       
     
-            vt = np.zeros([len(inds), 8, 3])
-            vv = np.zeros([len(inds), 8])
-            vd = np.zeros([len(inds), 8])
+            vt = np.zeros([n_l, 8, 3])
+            vv = np.zeros([n_l, 8])
+            vd = np.zeros([n_l, 8])
     
             for j, nj in enumerate(nds):
-                nji = nj[inds]
+                nji = nj[leaf_nodes]
         
                 #vt[:, j, :] = 0
                 vt[:, j, :] = nji['centre']
@@ -618,13 +704,12 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             self.values.append(vv)
             self.depths.append(vd)
 
-        if np.any(~(leaf_nodes).astype(bool)):
-    
-            inds = np.where(~(leaf_nodes).astype(bool))
+        ix = ~(leaf_nodes).astype(bool)
+        if n_l < leaf_nodes.shape[0]:
+            #inds = np.where(~(leaf_nodes).astype(bool))
     
             # Initialize resulting nodes to current nodes
-            cns = [np.copy(nj[inds]) for nj in nds]
-            c0, c1, c2, c3, c4, c5, c6, c7 = cns
+            cns = [nj[ix] for nj in nds]
     
             # Replace current nodes with their ordered children if present
             any_subdiv = False
@@ -634,8 +719,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
                 cn_s = cn[divs]
                 if cn_s.size:
+                    cn = np.copy(cn) #only copy if we are going to modify
                     cn[divs] = self._empty_node_v2(np.copy(self._ot._nodes[cn_s['children'][:, 7-j]]), cn_s, 7-j)
+                    cns[j] = cn
     
+            c0, c1, c2, c3, c4, c5, c6, c7 = cns
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
                 
 
