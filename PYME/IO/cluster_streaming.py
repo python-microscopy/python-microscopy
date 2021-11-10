@@ -177,7 +177,8 @@ class Streamer(object):
         self._directory = clusterIO.get_dir_manager(serverfilter)
 
         if servers is None:
-            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in self._directory._ns().get_advertised_services()]
+            # FIXME - avoid private _ns usage
+            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in self._directory._ns.get_advertised_services()]
         else:
             self.servers = servers
 
@@ -188,7 +189,7 @@ class Streamer(object):
 
         self._distribution_fcn = distribution_fcn
 
-    @classmethod
+    #@classmethod
    
     
     def put(self, filename, data, **kwargs):

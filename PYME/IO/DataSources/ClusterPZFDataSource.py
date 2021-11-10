@@ -65,11 +65,11 @@ class DataSource(XYZTCDataSource):
         size_z = self.mdh.get('SizeZ', -1)
         size_c = self.mdh.get('SizeC', 1)
         size_t = self.mdh.get('SizeT', 1)
-        
-        XYZTCDataSource.__init__(self, dimorder, size_z=size_z, size_t=size_t, size_c=size_c)
-        
+
         # if the series is complete when we start, we don't need to update the number of slices
         self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
+        
+        XYZTCDataSource.__init__(self, dimorder, size_z=size_z, size_t=size_t, size_c=size_c)
     
     def _getNumFrames(self):
         frameNames = [f for f in clusterIO.listdir(self.sequenceName, self.clusterfilter) if f.endswith('.pzf')]

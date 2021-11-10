@@ -21,27 +21,27 @@
 #
 ##################
 
-from PYME.IO import MetaDataHandler
+#from PYME.IO import MetaDataHandler
 from PYME.IO.events import MemoryEventLogger
 import PYME.IO.Spooler as sp
 
 import os
-import time
-import threading
+# import time
+# import threading
 
-try:
-    # noinspection PyCompatibility
-    import Queue # type: ignore
-except ImportError:
-    #py3
-    import queue as Queue
+# try:
+#     # noinspection PyCompatibility
+#     import Queue # type: ignore
+# except ImportError:
+#     #py3
+#     import queue as Queue
 
 from PYME.IO import clusterIO
-from PYME.IO import cluster_streaming
-from PYME.IO import PZFFormat
+#from PYME.IO import cluster_streaming
+#from PYME.IO import PZFFormat
 from PYME import config
 
-import random
+#import random
 import logging
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,12 @@ class Spooler(sp.Spooler):
         
         
         chunk_size = config.get('httpspooler-chunksize', 50)
-        def dist_fcn(i, n_servers):
+        def dist_fcn(n_servers, i=None):
+            if i is None:
+                # distribute at random
+                import random
+                return random.randrange(n_servers)
+            
             return int(i/chunk_size) % n_servers
         
         

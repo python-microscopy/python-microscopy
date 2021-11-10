@@ -112,13 +112,19 @@ class ClusterBackend(Backend):
         if cluster_h5:
             # we need to send all frames to the one server
             server_n = random.randrange(cluster_streaming.n_cluster_servers(serverfilter))
-            def dist_fcn_1_server(n_servers):
+            def dist_fcn_1_server(n_servers, i=None):
                 return server_n
 
             distribution_fcn = dist_fcn_1_server
 
         
         def _pzfify(data):
+            if not isinstance(data, tuple):
+                # data is already pre-formatted (normally metadata or similar) - usually a bytes string
+                # image data is passed as (frame_data, im_num)
+                # TODO - make this a bit cleaner
+                return data
+
             frame_data, im_num = data # packed together as a tuple
             return PZFFormat.dumps(frame_data, sequenceID=self.sequence_id, frameNum = im_num, **self._check_comp_settings(compression_settings))
 
@@ -152,17 +158,16 @@ class ClusterBackend(Backend):
             return self.series_name
     
     def store_frame(self, n, frame_data):
-        self.data[:,:,n] = frame_data
-        fn = '/'.join([self._series_location, 'frame%05d.pzf' % self.n])
+        fn = '/'.join([self._series_location, 'frame%05d.pzf' % n])
 
         self._streamer.put(fn, (frame_data, n), i=n)
 
     def initialise(self):
-        self._streamer.put(self._series_location + '/metadata.json', self.md.to_JSON().encode())
+        self._streamer.put(self._series_location + '/metadata.json', self.mdh.to_JSON().encode())
     
     def finalise(self, events='[]'):
         #TODO - is this needed
-        self._streamer.put(self._series_location + '/final_metadata.json', self.md.to_JSON().encode())
+        self._streamer.put(self._series_location + '/final_metadata.json', self.mdh.to_JSON().encode())
 
         # events are used as a signal in the ClusterPZFDataSource that a series is complete.
         # TODO - better events support - current assumption is that they are passed already formatted as json
