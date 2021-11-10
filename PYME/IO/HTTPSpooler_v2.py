@@ -59,7 +59,7 @@ def exists(seriesName):
     return clusterIO.exists(getReducedFilename(seriesName))
 
 
-from . import acquisition_backends
+from PYME.IO import acquisition_backends
 
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
@@ -83,7 +83,7 @@ class Spooler(sp.Spooler):
                                                             cluster_h5=self._aggregate_h5,
                                                             serverfilter=self.clusterFilter)
         
-        self.md = self._backend.md
+        self.md = self._backend.mdh
         self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)
                 
     def finished(self):

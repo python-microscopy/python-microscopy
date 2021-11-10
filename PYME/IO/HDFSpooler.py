@@ -79,12 +79,12 @@ class Spooler(sp.Spooler):
     """
     def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
-        from .acquisition_backends import HDFBackend
+        from PYME.IO.acquisition_backends import HDFBackend
 
         self._backend = HDFBackend(filename, complevel=complevel, complib=complib)
         self.evtLogger = HDFEventLogger(self, self._backend.h5File, time_fcn=self._time_fcn)
 
-        self.md = self._backend.md        
+        self.md = self._backend.mdh        
 
     def finalise(self):
         """ close files"""

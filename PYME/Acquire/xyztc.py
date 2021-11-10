@@ -3,7 +3,7 @@ import time
 
 from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
-from .acquisition_backends import MemoryBackend
+from PYME.IO.acquisition_backends import MemoryBackend
 
 
 class XYZTCAcquisition(object):
