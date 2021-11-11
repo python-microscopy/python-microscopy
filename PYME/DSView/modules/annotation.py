@@ -357,7 +357,8 @@ class Annotater(Plugin):
                         self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
                 elif a['type'] == 'polygon':
                     from skimage import draw
-                    rr, cc = draw.polygon(*np.array(pts).T)
+                    rr, cc = draw.polygon(*np.array(pts).T, shape=output.shape)
+                    #rr = np.clip(rr, 0, output.shape[0] -1, output)
                     output[rr, cc] = label
                     
         return output
