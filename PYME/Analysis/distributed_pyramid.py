@@ -12,19 +12,20 @@ import logging
 import json
 
 from PYME.IO import clusterIO, PZFFormat
+from PYME.IO import cluster_streaming
 from PYME.Analysis.tile_pyramid import TILEIO_EXT, ImagePyramid, get_position_from_events, PZFTileIO, ClusterPZFTileIO
 
 logger = logging.getLogger(__name__)
 MAXLINE = 65536
 
 
-def server_for_chunk(x, y, z=0, chunk_shape=[8,8,1], nr_servers=1):
+def server_for_chunk(x, y, z=0, chunk_shape=[8,8,1], n_servers=1):
     """
     Returns the server responsible for the chunk of tiles at given (x, y, z).
     """
     server_id = np.floor(x / chunk_shape[0])
-    server_id = server_id + np.floor(y / chunk_shape[1]) * nr_servers
-    server_id = (server_id + np.floor(z / chunk_shape[2])) % nr_servers
+    server_id = server_id + np.floor(y / chunk_shape[1]) * n_servers
+    server_id = (server_id + np.floor(z / chunk_shape[2])) % n_servers
     server_id = int(server_id)
     return server_id
 
@@ -131,143 +132,6 @@ class PartialPyramid(ImagePyramid):
         self._imgs.flush()
         logger.debug("updating part pyramid done")
 
-
-class TileSpooler(object):
-    """
-    Class to handle spooling tiles to a single server
-    
-    TODO - use this in the spoolers as well??? It's a little cleaner than the existing code.
-    """
-    def __init__(self, server_address, server_port, dir_manager=None):
-        if not isinstance(server_address, str):
-            server_address = socket.inet_ntoa(server_address)
-            
-        self._server_address = server_address
-        self._server_port = server_port
-        
-        self._dir_manager = dir_manager
-        
-        self._url = 'http://%s:%d/' % (server_address, server_port)
-
-        self._put_queue = queue.Queue()
-        self._rc_queue = queue.Queue()
-        #self._last_flush_time = time.time()
-        self._socket = None
-        self._alive = True
-        
-        self._connect()
-        
-        self._t_send = threading.Thread(target=self._send_loop)
-        self._t_send.daemon = True
-        self._t_send.start()
-
-        self._t_recv = threading.Thread(target=self._recv_loop)
-        self._t_recv.daemon = True
-        self._t_recv.start()
-        
-    def _connect(self):
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        self._socket.settimeout(30)
-        
-        self._socket.connect((self._server_address, self._server_port))
-    
-    def finalize(self, filename=None):
-        """
-        Stop our threads and tidy up
-
-        """
-        if filename:
-            #if we provide a sentinal file, put that
-            self.put(filename, None)
-            self._t_send.join(2)
-        
-        
-        #self._alive = False
-        
-    def close(self):
-        #TODO - wait on the put queue to empty?
-        self._alive = False
-        self._t_send.join()
-        self._t_recv.join()
-        
-        self._socket.close()
-        
-    def put(self, filename, data):
-        """Add a file to the queue to be put
-        
-        calling put with data == None is a sentinel that no more data will follow, and that keep-alive
-        should be switched off. This should normaly be accompanied by a filename = '__part_pyramid_finish/<pyramid_dir>'
-        
-        """
-        self._put_queue.put((filename, data))
-    
-    def _send_loop(self):
-        """
-        Loop which runs in it's own thread, pushing chunks as they come in. Because we now run sending and recieving
-        in separate threads, and keep the socket open for the entire duration, we don't need to batch puts.
-
-        """
-        connection = b'keep-alive'
-        
-        while self._alive:
-            try:
-                filename, data = self._put_queue.get(timeout=.1)
-
-                if data is None:
-                    connection = b'close'
-                    data = b''
-                    
-                dl = len(data)
-
-                header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (
-                    filename.encode(), connection, dl)
-                
-                logger.debug(header)
-                
-                self._socket.sendall(header)
-                if dl > 0:
-                    self._socket.sendall(data)
-                    
-                self._put_queue.task_done()
-
-                #datalen += dl
-                #nChunksSpooled += 1
-                #nChunksRemaining -= 1
-                
-            except queue.Empty:
-                pass
-                
-            
-    def _recv_loop(self):
-        fp = self._socket.makefile('rb', 65536)
-        
-        try:
-            while self._alive:
-                try:
-                    filename = self._rc_queue.get(timeout=.1)
-                    status, reason, msg = clusterIO._parse_response(fp)
-                    if not status == 200:
-                        logger.error(('Error spooling %s: Response %d - status %d' % (filename, i, status)) + ' msg: ' + str(msg))
-                    else:
-                        if self._dir_manager:
-                            # register file in cluster directory
-                            fn = filename.split('?')[0]
-                            url = self.url_ + fn
-                            self._dir_manager.register_file(fn, url, dl)
-                            
-                except queue.Empty:
-                    pass
-                
-                #TODO - more detailed error handling - e.g. socket timeouts
-                
-        finally:
-            fp.close()
-        
-        
-        
-
-
 class DistributedImagePyramid(ImagePyramid):
     """
     Subclass of ImagePyramid which supports distribution of pyramid files over a PYME
@@ -285,16 +149,12 @@ class DistributedImagePyramid(ImagePyramid):
         self.timeout = timeout
         self.repeats = repeats
         
-        if servers is None:
-            self.servers = [(socket.inet_ntoa(v.address), v.port) for k, v in clusterIO.get_ns().get_advertised_services()]
-        else:
-            self.servers = [(address, servers[address]) for address in servers]
-            
-        assert len(self.servers) > 0, "No servers found for distribution. Make sure that cluster servers are running and can be reached from this device."
+        if servers is not None:
+            servers = [(address, servers[address]) for address in servers]
+
+        self._spooler = cluster_streaming.Streamer(servers=servers)#, distribution_fcn=server_for_chunk)  
         
-        self._tile_spoolers = [TileSpooler(address, port) for address, port in self.servers]
-        
-        for server_idx in range(len(self.servers)):
+        for server_idx in range(len(self._spooler.servers)):
             self.create_remote_part(server_idx, backend)
         
         # TODO - do we need to put the chunk shape in the metadata?
@@ -308,7 +168,7 @@ class DistributedImagePyramid(ImagePyramid):
         """
         data = json.dumps({"pyramid_tile_size": self.tile_size,"chunk_shape": self.chunk_shape,}).encode()
         
-        address, port = self.servers[server_idx]
+        address, port = self._spooler.servers[server_idx]
         p_dir = self.base_dir.lstrip('/')
         url = f'http://{address}:{port}/__pyramid_create/{p_dir}'
 
@@ -336,7 +196,7 @@ class DistributedImagePyramid(ImagePyramid):
         (one for each server).
         """
         import json
-        server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, nr_servers=len(self.servers))
+        server_idx = server_for_chunk(tile_x, tile_y, chunk_shape=self.chunk_shape, n_servers=len(self.servers))
         
         if weights is not 'auto':
             raise RuntimeError('Distributed pyramid only supports auto weights')
@@ -345,7 +205,7 @@ class DistributedImagePyramid(ImagePyramid):
              f'tox={tile_offset[0]}&toy={tile_offset[1]}&fox={frame_offset[0]}&foy={frame_offset[1]}&' + \
              f'fsx={frame_shape[0]}&fsy={frame_shape[1]}'
         
-        self._tile_spoolers[server_idx].put(fn,PZFFormat.dumps(data))
+        self._spooler.put_stream(server_idx, fn,PZFFormat.dumps(data))
              
     
     def finish_base_tiles(self):
@@ -354,13 +214,12 @@ class DistributedImagePyramid(ImagePyramid):
         microscope end. Blocks until the servers have finished constructing their partial pyramids
         """
         
-        for ts in self._tile_spoolers:
+        for ts in self._spooler.servers:
             ts.finalize('__pyramid_finish/' + self.base_dir.lstrip('/'))
             
-        for ts in self._tile_spoolers:
-            # put this in a separate loop to the above as .close() joins the pushing threads, which
-            # would serialise computation (rather than having it triggered in all threads)
-            ts.close()
+        # put this in a separate loop to the above as .close() joins the pushing threads, which
+        # would serialise computation (rather than having it triggered in all threads)
+        self._spooler.close()
 
     
     @property

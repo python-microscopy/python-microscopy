@@ -32,7 +32,7 @@ import PYME.IO.Spooler as sp
 
 from PYME.IO.FileUtils import fileID
 
-class Spooler(sp.Spooler):
+class _Spooler(sp.Spooler):
     """Responsible for the mechanics of spooling to a pytables/hdf file.
     """
     def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
@@ -67,6 +67,38 @@ class Spooler(sp.Spooler):
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
+            
+        sp.Spooler.OnFrame(self)
+        
+    def __del__(self):
+        if self.spoolOn:
+            self.StopSpool()
+
+class Spooler(sp.Spooler):
+    """Responsible for the mechanics of spooling to a pytables/hdf file.
+    """
+    def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
+        from PYME.IO.acquisition_backends import HDFBackend
+
+        self._backend = HDFBackend(filename, complevel=complevel, complib=complib)
+        self.evtLogger = HDFEventLogger(self, self._backend.h5File, time_fcn=self._time_fcn)
+
+        self.md = self._backend.mdh        
+
+    def finalise(self):
+        """ close files"""
+           
+        self._backend.finalise()
+        
+    def OnFrame(self, sender, frameData, **kwargs):
+        """Called on each frame"""
+
+        if not self.watchingFrames:
+            # drop frames if we've already stopped spooling. TODO - do we also need to check if disconnect works?
+            return
+        
+        self._backend.store_frame(self.imNum, frameData)
             
         sp.Spooler.OnFrame(self)
         

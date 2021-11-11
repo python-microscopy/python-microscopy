@@ -30,7 +30,7 @@ import warnings
 try:
     from PIL import Image
 except ImportError:
-    import Image
+    import Image # type: ignore
     
 import os
 from PYME.IO.FileUtils import saveTiffStack

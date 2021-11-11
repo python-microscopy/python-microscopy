@@ -23,7 +23,7 @@
 
 #from PYME.ParallelTasks.relativeFiles import getFullFilename
 #import tables
-from .BaseDataSource import XYTCDataSource
+from .BaseDataSource import XYZTCDataSource
 
 #import httplib
 #import urllib
@@ -39,7 +39,7 @@ from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
 from PYME.IO import MetaDataHandler
 
-class DataSource(XYTCDataSource):
+class DataSource(XYZTCDataSource):
     moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
         self.seriesName = url
@@ -60,9 +60,16 @@ class DataSource(XYTCDataSource):
         self.fshape = None#(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
         
         self._getNumFrames()
-        
+
+        dimorder= self.mdh.get('DimOrder', 'XYZTC')
+        size_z = self.mdh.get('SizeZ', -1)
+        size_c = self.mdh.get('SizeC', 1)
+        size_t = self.mdh.get('SizeT', 1)
+
         # if the series is complete when we start, we don't need to update the number of slices
         self._complete = clusterIO.exists(self.eventFileName, self.clusterfilter)
+        
+        XYZTCDataSource.__init__(self, dimorder, size_z=size_z, size_t=size_t, size_c=size_c)
     
     def _getNumFrames(self):
         frameNames = [f for f in clusterIO.listdir(self.sequenceName, self.clusterfilter) if f.endswith('.pzf')]

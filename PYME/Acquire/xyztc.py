@@ -1,26 +1,10 @@
 import numpy as np
-from PYME.contrib import dispatch
-from PYME.IO import MetaDataHandler
-from PYME.IO import image
-from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
-from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
-
 import time
 
-class MemoryBackend(object):
-    def __init__(self, size_x, size_y, n_frames, dtype='uint16', dim_order='XYCZT', shape=[-1, -1,1,1,1]):
-        self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
-        self.mdh = MetaDataHandler.DictMDHandler()
-        
-        # once we have proper xyztc support in the image viewer
-        ds = XYZTCWrapper(ArrayDataSource(self.data), dim_order, shape[2], shape[3], shape[4])
-        #self.image = image.ImageStack(data=ds, mdh=self.mdh)
-        
-        # in the meantime - note that this will flatten the ctz dimensions
-        self.image = image.ImageStack(data=ds, mdh=self.mdh)
-        
-    def store_frame(self, n, frame_data):
-        self.data[:,:,n] = frame_data
+from PYME.contrib import dispatch
+from PYME.IO import MetaDataHandler
+from PYME.IO.acquisition_backends import MemoryBackend
+
 
 class XYZTCAcquisition(object):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend):

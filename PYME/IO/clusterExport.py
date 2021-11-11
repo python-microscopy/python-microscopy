@@ -5,7 +5,7 @@ Created on Sun May 22 17:13:51 2016
 @author: david
 """
 
-from PYME.IO import HTTPSpooler
+from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
 from PYME.IO import MetaDataHandler
 
 from PYME.contrib import dispatch
