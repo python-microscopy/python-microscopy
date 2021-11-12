@@ -278,10 +278,10 @@ class ParticleTrackingView(HasTraits, Plugin):
             else:
                 return template.render(clump=self.clumps[int(trackNum)], img=self.dsviewer.image)
         
-    def OnViewSelect(self, view):
+    def OnViewSelect(self, pos):
         #select a track by clicking on it
         
-        pos = (view.do.xp, view.do.yp, view.do.zp)
+        #pos = (view.do.xp, view.do.yp, view.do.zp)
         
         candidates = [i for i, c in enumerate(self.clumps) if self._hittest(c, pos)]
         

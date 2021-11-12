@@ -191,6 +191,26 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         xp, yp = self._ScreenToAbsCoordinates(x, y)
         
         return xp/self.scale, yp/(self.scale*self.aspect)
+
+    def _evt_pixel_coords(self, event, three_d=False):
+        dc = wx.ClientDC(self.imagepanel)
+        #self.imagepanel.PrepareDC(dc)
+        pos = event.GetLogicalPosition(dc)
+        if three_d:
+            return self._ScreenToPixelCoordinates3D(*pos)
+        else:
+            return self._ScreenToPixelCoordinates(*pos)
+
+    def _ScreenToPixelCoordinates3D(self, x, y):
+        #sc = pow(2.0,(self.do.scale-2))
+        xp, yp = self._ScreenToAbsCoordinates(x, y)
+
+        if (self.do.slice == self.do.SLICE_XY):
+            return xp/self.scale, yp/(self.scale*self.aspect), self.do.zp
+        elif (self.do.slice == self.do.SLICE_XZ):
+            return xp/self.scale, self.do.yp, yp/(self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            return self.do.xp, xp/self.scale, yp/(self.scale*self.aspect)
         
 
     def _AbsToScreenCoordinates(self, x, y):
@@ -731,6 +751,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
             self.ProgressSelection(event)
             self.EndSelection()
+        elif self.do.leftButtonAction == self.do.ACTION_SELECT_OBJECT:
+            self.OnSelectObject(event)
         else:
             self.OnSetPosition(event)
             
@@ -794,36 +816,31 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return xs, ys
 
     def OnSetPosition(self,event):
-        dc = wx.ClientDC(self.imagepanel)
-        #self.imagepanel.PrepareDC(dc)
-        pos = event.GetLogicalPosition(dc)
-        pos = self.CalcUnscrolledPosition(*pos)
+        pos_3d = self._evt_pixel_coords(event, three_d=True)
 
-        #print(pos)
         self.do.inOnChange = True
         try:
-            sc = pow(2.0,(self.do.scale))
-            #print(sc)
-            if (self.do.slice == self.do.SLICE_XY):
-                self.do.xp =int(pos[0]/sc)
-                self.do.yp = int(pos[1]/(sc*self.aspect))
-            elif (self.do.slice == self.do.SLICE_XZ):
-                self.do.xp =int(pos[0]/sc)
-                self.do.zp =int(pos[1]/(sc*self.aspect))
-            elif (self.do.slice == self.do.SLICE_YZ):
-                self.do.yp =int(pos[0]/sc)
-                self.do.zp =int(pos[1]/(sc*self.aspect))
+            self.do.xp, self.do.yp, self.do.zp = [int(p) for p in pos_3d]
         finally:
             self.do.inOnChange = False
             
         self.do.OnChange()
         
         for cb in self.selectHandlers:
-            cb(self)
+            if cb(pos_3d):
+                break
         #if ('update' in dir(self.GetParent())):
         #     self.GetParent().update()
         #else:
         #    self.imagepanel.Refresh()
+
+    def OnSelectObject(self, event):
+        pos_3d = self._evt_pixel_coords(event, three_d=True)
+        
+        for cb in self.selectHandlers:
+            if cb(pos_3d):
+                #only continue until we hit something
+                break
 
     def PointsHitTest(self):
         if len(self.points) > 0:
@@ -849,24 +866,17 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def StartSelection(self,event):
         self.selecting = True
         
-        dc = wx.ClientDC(self.imagepanel)
-        #self.imagepanel.PrepareDC(dc)
-        pos = event.GetLogicalPosition(dc)
-        pos = self.CalcUnscrolledPosition(*pos)
-        #print pos
-        sc = pow(2.0,(self.do.scale))
+        pos = self._evt_pixel_coords(event)
+        
         if (self.do.slice == self.do.SLICE_XY):
-            self.do.selection_begin_x = int(pos[0]/sc)
-            self.do.selection_begin_y = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_x, self.do.selection_begin_y = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.selection_begin_x = int(pos[0]/sc)
-            self.do.selection_begin_z = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_x, self.do.selection_begin_z = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.selection_begin_y = int(pos[0]/sc)
-            self.do.selection_begin_z = int(pos[1]/(sc*self.aspect))
+            self.do.selection_begin_y, self.do.selection_begin_z = [int(p) for p in pos]
             
         self.do.selection_trace = []
-        self.do.selection_trace.append(((pos[0]/sc), (pos[1]/(sc*self.aspect))))
+        self.do.selection_trace.append(tuple(pos))
 
     def OnRightUp(self,event):
         self.ProgressSelection(event)
@@ -877,28 +887,18 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.ProgressSelection(event)
             
     def ProgressSelection(self,event):
-        dc = wx.ClientDC(self.imagepanel)
-        #self.imagepanel.PrepareDC(dc)
-        pos = event.GetLogicalPosition(dc)
-        pos = self.CalcUnscrolledPosition(*pos)
-        #print pos
+        pos = self._evt_pixel_coords(event)
         
-        sc = pow(2.0,(self.do.scale))
+        if (self.do.slice == self.do.SLICE_XY):
+            self.do.selection_end_x, self.do.selection_end_y = [int(p) for p in pos]
+        elif (self.do.slice == self.do.SLICE_XZ):
+            self.do.selection_end_x, self.do.selection_end_z = [int(p) for p in pos]
+        elif (self.do.slice == self.do.SLICE_YZ):
+            self.do.selection_end_y, self.do.selection_end_z = [int(p) for p in pos]
 
-        if not event.ShiftDown():
+
+        if event.ShiftDown(): #lock
             if (self.do.slice == self.do.SLICE_XY):
-                self.do.selection_end_x = int(pos[0]/sc)
-                self.do.selection_end_y = int(pos[1]/(sc*self.aspect))
-            elif (self.do.slice == self.do.SLICE_XZ):
-                self.do.selection_end_x = int(pos[0]/sc)
-                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
-            elif (self.do.slice == self.do.SLICE_YZ):
-                self.do.selection_end_y = int(pos[0]/sc)
-                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
-        else: #lock
-            if (self.do.slice == self.do.SLICE_XY):
-                self.do.selection_end_x = int(pos[0]/sc)
-                self.do.selection_end_y = int(pos[1]/(sc*self.aspect))
 
                 dx = abs(self.do.selection_end_x - self.do.selection_begin_x)
                 dy = abs(self.do.selection_end_y - self.do.selection_begin_y)
@@ -909,15 +909,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     self.do.selection_end_x = self.do.selection_begin_x
                 else: #diagonal
                     self.do.selection_end_y = self.do.selection_begin_y + dx*numpy.sign(self.do.selection_end_y - self.do.selection_begin_y)
-
-            elif (self.do.slice == self.do.SLICE_XZ):
-                self.do.selection_end_x = int(pos[0]/sc)
-                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
-            elif (self.do.slice == self.do.SLICE_YZ):
-                self.do.selection_end_y = int(pos[0]/sc)
-                self.do.selection_end_z = int(pos[1]/(sc*self.aspect))
                 
-        self.do.selection_trace.append(((pos[0]/sc), (pos[1]/(sc*self.aspect))))
+        self.do.selection_trace.append(pos)
 
         self.Refresh()
         self.Update()
