@@ -209,7 +209,7 @@ class uc480Camera(Camera):
         if not ret == 0:
             raise RuntimeError('Error getting camera info: %d: %s' % GetError(self.boardHandle))
         
-        self.serialNum = caminfo.SerNo
+        self.serialNum = caminfo.SerNo.decode('UTF-8')
 
         logger.debug('caminfo: %s' %caminfo)
 

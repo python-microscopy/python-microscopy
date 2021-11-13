@@ -361,13 +361,19 @@ class UEyeCamera(Camera):
         x2 -= x_change
         y2 -= y_change
         logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
-        aoi = ueye.IS_RECT(x1, y1, x2 - x1, y2 - y1)
+
+        aoi = ueye.IS_RECT()
+        aoi.s32X = ueye.int(x1)
+        aoi.s32Y = ueye.int(y1)
+        aoi.s32Width = ueye.int(x2 - x1)
+        aoi.s32Height = ueye.int(y2 - y1)
         
         self.check_success(ueye.is_AOI(self.h, ueye.IS_AOI_IMAGE_SET_AOI, aoi,
                                        ueye.sizeof(aoi)))
         # have to set the integration time explicitly after changing AOI
         self.SetIntegTime(self.GetIntegTime())
-    
+
+        
     def GetROI(self):
         """
         
@@ -383,6 +389,7 @@ class UEyeCamera(Camera):
         x0, y0 = aoi.s32X.value, aoi.s32Y.value
         return x0, y0, x0 + aoi.s32Width.value, y0 + aoi.s32Height.value
 
+    
     def GetNumImsBuffered(self):
         """
         Return the number of images in the buffer.
@@ -449,3 +456,14 @@ class UEyeCamera(Camera):
         fps = ueye.double()
         self.check_success(ueye.is_GetFramesPerSecond(self.h, fps))
         return fps.value
+
+    def GetSerialNumber(self):
+        return '10000'
+
+    def GetName(self):
+        return 'ueye'
+
+    def GetHeadModel(self):
+        return 'ucam-unknown'
+
+    
