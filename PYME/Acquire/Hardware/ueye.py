@@ -473,7 +473,7 @@ class UEyeCamera(Camera):
 
     def SetGain(self, gain=100):
         self.check_success(ueye.is_SetHardwareGain(self.h, gain, ueye.IS_IGNORE_PARAMETER,
-                                                   uc480.ueye.IS_IGNORE_PARAMETER, uc480.ueye.IS_IGNORE_PARAMETER))
+                                                   ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER))
         
     def GetGain(self):
         ret = ueye.is_SetHardwareGain(self.h, ueye.IS_GET_MASTER_GAIN,
