@@ -63,6 +63,11 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_InitCamera(self.h, None))
         self.initialized = True
 
+        # get serial number
+        cam_info = ueye.CAMINFO()
+        self.check_success(ueye.is_GetCameraInfo(self.h, cam_info))
+        self._serno = cam_info.SerNo.decode()
+        
         # get chip size
         sensor_info = ueye.SENSORINFO()
         self.check_success(ueye.is_GetSensorInfo(self.h, sensor_info))
@@ -458,12 +463,20 @@ class UEyeCamera(Camera):
         return fps.value
 
     def GetSerialNumber(self):
-        return '10000'
+        return self._serno
 
     def GetName(self):
-        return 'ueye'
+        return 'ueye-camera'
 
     def GetHeadModel(self):
-        return 'ucam-unknown'
+        return self.sensor_type
 
+    def SetGain(self, gain=100):
+        self.check_success(ueye.is_SetHardwareGain(self.h, gain, ueye.IS_IGNORE_PARAMETER,
+                                                   uc480.ueye.IS_IGNORE_PARAMETER, uc480.ueye.IS_IGNORE_PARAMETER))
+        
+    def GetGain(self):
+        ret = ueye.is_SetHardwareGain(self.h, ueye.IS_GET_MASTER_GAIN,
+                                      ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER)
+        return ret
     
