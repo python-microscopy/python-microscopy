@@ -223,10 +223,10 @@ class uc480Camera(Camera):
         self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
         sensname = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
         self._sensor_name = sensname.value.decode()
-        self.sensor_type = self._sensor_name().split('x')[0] + 'x'
+        self.sensor_type = self._sensor_name.split('x')[0] + 'x'
         
         # work out the ROI limits for this sensortype
-        self.ROIlimits = ROIlimitlist.get(self.sensor_type,ROIlimitlist['UI324x'])
+        self.ROIlimits = self.ROIlimitlist.get(self.sensor_type,self.ROIlimitlist['UI324x'])
 
         # work out the camera base parameters for this sensortype
         self.baseProps = self.BaseProps.get(self.sensor_type,self.BaseProps['default'])
@@ -748,9 +748,9 @@ class uc480Camera(Camera):
 
             mdh.setEntry('Camera.HardwareGain', self.GetGain())
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
-            mdh.setEntry('Camera.ElectronsPerCount', self.noise_properties['ElectronsPerCount']
-            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset']
-            mdh.setEntry('Camera.ReadNoise',self.noise_properties['ReadNoise'] # in units of e-
+            mdh.setEntry('Camera.ElectronsPerCount', self.noise_properties['ElectronsPerCount'])
+            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset'])
+            mdh.setEntry('Camera.ReadNoise',self.noise_properties['ReadNoise']) # in units of e-
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())
