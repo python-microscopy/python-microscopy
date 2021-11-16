@@ -41,7 +41,7 @@ class ucCamPanel(wx.Panel):
         self.l = wx.StaticText(self, -1, '%3.1f'%(100.0*self.cam.GetGain()/100)+'%') #ideally this should be self.cam.GetGain()/self.cam.MaxGain, where MaxGain is set to 100 for the specific camera.
         hsizer.Add(self.l, 0, wx.ALL, 2)
         self.sl = wx.Slider(self, -1, 100.0*self.cam.GetGain()/100, 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL | wx.SL_HORIZONTAL | wx.SL_AUTOTICKS )
-        self.sl.SetTickFreq(10,1)
+        self.sl.SetTickFreq(10)
         wx.EVT_SCROLL(self,self.onSlide)
         hsizer.Add(self.sl, 1, wx.ALL|wx.EXPAND, 2)
         ucGain.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)

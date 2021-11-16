@@ -480,3 +480,7 @@ class UEyeCamera(Camera):
                                       ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER)
         return ret
     
+    def GetGainFactor(self):
+        gain = self.GetGain()
+        ret = ueye.is_SetHWGainFactor(self.h, ueye.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
+        return 0.01*ret
