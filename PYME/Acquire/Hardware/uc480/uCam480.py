@@ -221,24 +221,15 @@ class uc480Camera(Camera):
             raise RuntimeError('Error getting CCD size: %d: %s' % GetError(self.boardHandle))
 
         self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
-        senstype = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
-        self.sensortype = senstype.value.decode()
-
+        sensname = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
+        self._sensor_name = sensname.value.decode()
+        self.sensor_type = self._sensor_name().split('x')[0] + 'x'
+        
         # work out the ROI limits for this sensortype
-        matches = [self.ROIlimitlist[st] for st in self.ROIlimitlist.keys()
-                   if self.sensortype.startswith(st)]
-        if len(matches) > 0:
-            self.ROIlimits = matches[0]
-        else:
-            self.ROIlimits = self.ROIlimitsDefault
+        self.ROIlimits = ROIlimitlist.get(self.sensor_type,ROIlimitlist['UI324x'])
 
         # work out the camera base parameters for this sensortype
-        matches = [self.BaseProps[st] for st in self.BaseProps.keys()
-                   if self.sensortype.startswith(st)]
-        if len(matches) > 0:
-            self.baseProps = matches[0]
-        else:
-            self.baseProps= self.BaseProps['default']
+        self.baseProps = self.BaseProps.get(self.sensor_type,self.BaseProps['default'])
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
@@ -735,22 +726,13 @@ class uc480Camera(Camera):
         return self.serialNum
 
     def GetHeadModel(self):
-        return self.sensortype
-
-    def GetElectronsPerCount(self):
-        return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())
-
-    def GetReadNoise(self): # readnoise in e-
-        return (self.baseProps['ReadNoise'])
-
-    def GetADOffset(self):
-        return self.baseProps['ADOffset']
+        return self._sensor_name
     
     @property
     def noise_properties(self):
-        return {'ElectronsPerCount': self.GetElectronsPerCount(),
-                'ReadNoise': self.GetReadNoise(),
-                'ADOffset': self.GetADOffset(),
+        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                'ReadNoise': self.baseProps['ReadNoise'],
+                'ADOffset': self.baseProps['ADOffset'],
                 'SaturationThreshold': 2 ** self.nbits  - 1}
 
     def GenStartMetadata(self, mdh):
@@ -766,9 +748,9 @@ class uc480Camera(Camera):
 
             mdh.setEntry('Camera.HardwareGain', self.GetGain())
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
-            mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
-            mdh.setEntry('Camera.ADOffset', self.GetADOffset())
-            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e-
+            mdh.setEntry('Camera.ElectronsPerCount', self.noise_properties['ElectronsPerCount']
+            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset']
+            mdh.setEntry('Camera.ReadNoise',self.noise_properties['ReadNoise'] # in units of e-
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())

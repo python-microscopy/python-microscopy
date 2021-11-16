@@ -49,7 +49,7 @@ class ucCamPanel(wx.Panel):
         self.stGainFactor = wx.StaticText(self, -1, 'Gain Factor = %3.2f' % self.cam.GetGainFactor())
         ucGain.Add(self.stGainFactor, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        self.stepc = wx.StaticText(self, -1, 'Electrons/Count = %3.2f' % (7.97/self.cam.GetGainFactor()))
+        self.stepc = wx.StaticText(self, -1, 'Electrons/Count = %3.2f' % (self.cam.noise_properties['ElectronsPerCount']))
         ucGain.Add(self.stepc, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
 
@@ -70,7 +70,7 @@ class ucCamPanel(wx.Panel):
             self.cam.SetGain(int(round(sl.GetValue()/100.0*100)))
             self.l.SetLabel('%3.1f'%(100.0*self.cam.GetGain()/100)+'%')
             self.stGainFactor.SetLabel('Gain Factor = %3.2f' % self.cam.GetGainFactor())
-            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.GetElectronsPerCount())
+            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.noise_properties['ElectronsPerCount'])
         finally:
             self.sliding = False
 
@@ -79,5 +79,5 @@ class ucCamPanel(wx.Panel):
             self.sl.SetValue(round(self.cam.GetGain()/100))
             self.l.SetLabel(str(self.cam.GetGain()/100)+'%%')
             self.stGainFactor.SetLabel('Gain Factor = %3.2f' % self.cam.GetGainFactor())
-            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.GetElectronsPerCount())
+            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.noise_properties['ElectronsPerCount'])
 
