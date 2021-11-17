@@ -113,26 +113,6 @@ def GetCameraList():
     return translateCaminfo(camlist)
 
 
-def check_mapexists(mdh, type = 'dark'):
-    import os
-    import PYME.Analysis.gen_sCMOS_maps as gmaps
-    
-    if type == 'dark':
-        id = 'Camera.DarkMapID'
-    elif type == 'variance':
-        id = 'Camera.VarianceMapID'
-    elif type == 'flatfield':
-        id = 'Camera.FlatfieldMapID'
-    else:
-        raise RuntimeError('unknown map type %s' % type)
-        
-    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
-    if os.path.exists(mapPath):
-        mdh[id] = mapPath
-        return mapPath
-    else:
-        return None
-
 from PYME.Acquire.Hardware.Camera import Camera
 class uc480Camera(Camera):
     numpy_frames=1
@@ -265,24 +245,7 @@ class uc480Camera(Camera):
         self.binning=False #binning flag - binning is off
         self.binX=1 #1x1
         self.binY=1
-        
-        self.background = None
-        self.flatfield = None
-        self.flat = None
-        self.dark = None
-        
-        #load flatfield (if present)
-        calpath = nameUtils.getCalibrationDir(self.serialNum)
-        ffname = os.path.join(calpath, 'flatfield.npy')
-        if os.path.exists(ffname):
-            self.flatfield = np.load(ffname).squeeze()
-            self.flat = self.flatfield
-
-        darkname = os.path.join(calpath, 'dark.npy')
-        if os.path.exists(darkname):
-            self.dark = np.load(darkname).squeeze()
-            self.background = self.dark
-        
+                
         self.SetROI(0,0, self.CCDSize[0],self.CCDSize[1])
         #self.ROIx=(1,self.CCDSize[0])
         #self.ROIy=(1,self.CCDSize[1])
@@ -299,6 +262,14 @@ class uc480Camera(Camera):
         
         self.Init()
         self.SetIntegTime(.1)
+
+
+    @property
+    def noise_properties(self):
+        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                'ReadNoise': self.baseProps['ReadNoise'],
+                'ADOffset': self.baseProps['ADOffset'],
+                'SaturationThreshold': 2 ** self.nbits  - 1}
         
     def errcheck(self,value,msg,fatal=True):
         if not value == uc480.IS_SUCCESS:
@@ -451,6 +422,16 @@ class uc480Camera(Camera):
     def GetIntegTime(self):
         return self.expTime
 
+    def GetCycleTime(self):
+        """
+        Get camera cycle time (1/fps) in seconds (float)
+
+        Returns
+        -------
+        float
+            Camera cycle time (seconds)
+        """
+        return 1 / self.GetFPS()    
 
     def GetCCDWidth(self):
         return self.CCDSize[0]
@@ -590,12 +571,6 @@ class uc480Camera(Camera):
         if not ret == 0:
             raise RuntimeError('Error setting ROI: %d: %s' % GetError(self.boardHandle))
             
-        if not self.flatfield is None:
-            self.flat = self.flatfield[x1:x2, y1:y2]
-
-        if not self.dark is None:
-            self.background = self.dark[x1:x2, y1:y2]
-
         # we apparently have to set the integration time explicitly after a call to change the AOI
         # not sure if this is only for some IDS cameras or applies to all of them
         if self.GetIntegTime() is not None:
@@ -648,12 +623,6 @@ class uc480Camera(Camera):
         #chSlice[:] = self.transferBuffer[:].T #.reshape(chSlice.shape)
         chSlice[:] = buf.T
         
-        if (not self.background is None) and self.background.shape == chSlice.shape:
-            chSlice[:] = (chSlice - np.minimum(chSlice, self.background))[:]
-            
-        if (not self.flat is None) and self.flat.shape == chSlice.shape:
-            chSlice[:] = (chSlice*self.flat).astype('uint16')[:]
-        
         #ret = uc480.CALL('UnlockSeqBuf', self.boardHandle, uc480.IS_IGNORE_PARAMETER, pData)
 
         if not self.freeBuffers is None:
@@ -668,12 +637,6 @@ class uc480Camera(Camera):
     def SetCCDTemp(self, temp):
         pass
 
-    def SetEMGain(self, gain):
-        raise NotImplementedError()
-
-    def GetEMGain(self):
-        return self.EMGain
-        
     def SetGainBoost(self, on):
         if on:
             uc480.CALL('SetGainBoost', self.boardHandle, uc480.IS_SET_GAINBOOST_ON)
@@ -727,51 +690,6 @@ class uc480Camera(Camera):
 
     def GetHeadModel(self):
         return self._sensor_name
-    
-    @property
-    def noise_properties(self):
-        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
-                'ReadNoise': self.baseProps['ReadNoise'],
-                'ADOffset': self.baseProps['ADOffset'],
-                'SaturationThreshold': 2 ** self.nbits  - 1}
 
-    def GenStartMetadata(self, mdh):
-        if self.active: #we are active -> write metadata
-            self.GetStatus()
-
-            mdh.setEntry('Camera.Name', 'UC480-UEYE')
-            mdh.setEntry('Camera.Model', self.GetHeadModel())
-            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
-
-            mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
-            mdh.setEntry('Camera.CycleTime', 1./self.GetFPS())
-
-            mdh.setEntry('Camera.HardwareGain', self.GetGain())
-            mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
-            mdh.setEntry('Camera.ElectronsPerCount', self.noise_properties['ElectronsPerCount'])
-            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset'])
-            mdh.setEntry('Camera.ReadNoise',self.noise_properties['ReadNoise']) # in units of e-
-            mdh.setEntry('Camera.NoiseFactor', 1.0)
-
-            mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())
-            mdh.setEntry('Camera.SensorHeight',self.GetCCDHeight())
-            mdh.setEntry('Camera.TrueEMGain', 1)
-
-            #mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            #mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
-            
-            x1, y1, x2, y2 = self.GetROI()
-            mdh.setEntry('Camera.ROIOriginX', x1)
-            mdh.setEntry('Camera.ROIOriginY', y1)
-            mdh.setEntry('Camera.ROIWidth', x2 - x1)
-            mdh.setEntry('Camera.ROIHeight', y2 - y1)
-            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
-
-            check_mapexists(mdh,type='dark')
-            check_mapexists(mdh,type='variance')
-            check_mapexists(mdh,type='flatfield')
-
-    def __del__(self):
-        if self.initialised:
-            self.Shutdown()
-
+    def GetName(self):
+        return 'uc480-ueye'
