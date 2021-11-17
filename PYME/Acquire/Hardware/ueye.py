@@ -418,7 +418,19 @@ class UEyeCamera(Camera):
         return len(self._buffers)
     
     def GetCCDTemp(self):
-        return  0
+        di =  self._GetDeviceInfo()
+        tword = di.infoDevHeartbeat.wTemperature.value
+        # from IDS docs:
+        #    wTemperature
+	#        Camera temperature in degrees Celsius
+        #        Bits 15: algebraic sign
+        #        Bits 14...11: filled according to algebraic sign
+        #        Bits 10...4: temperature (places before the decimal point)
+        #        Bits 3...0: temperature (places after the decimal point)
+        tempfloat = 1.0*(tword >> 4 & 0b1111111) + 0.1 * (tword & 0b1111)
+        if (tword >> 15):
+            tempfloat = -1.0 * tempfloat
+        return tempfloat
     
     @property
     def noise_properties(self):
@@ -484,3 +496,11 @@ class UEyeCamera(Camera):
         gain = self.GetGain()
         ret = ueye.is_SetHWGainFactor(self.h, ueye.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
         return 0.01*ret
+
+    #### Some extra functions for this camera
+
+    def _GetDeviceInfo(self):
+        dev_info = ueye.IS_DEVICE_INFO()
+        self.check_success(ueye.is_DeviceInfo(self.h,ueye.IS_DEVICE_INFO_CMD_GET_DEVICE_INFO,
+                                              dev_info,ueye.sizeof(dev_info)))
+        return dev_info
