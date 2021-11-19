@@ -474,6 +474,7 @@ class foldingPane(wx.Panel):
 
     def fold1(self, pan=None):
         try:
+            self.Layout()
             self.GetParent().fold1(self)
         except AttributeError:
             pass
@@ -627,6 +628,8 @@ class foldPanel(wx.Panel):
 
         self._stretch_sizer = kwargs.pop('bottom_spacer', True)
         self._one_pane_active = kwargs.pop('single_active_pane', False)
+
+        #kwargs['style'] = wx.BORDER_SIMPLE
 
         wx.Panel.__init__(self, *args, **kwargs)
 
