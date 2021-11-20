@@ -48,6 +48,25 @@ ROI_LIMITS = {
     }
 }
 
+# this info is partly from the IDS datasheets that one can request for each camera model
+BaseProps = {
+    'UI306x' : {
+        # from Steve Hearn (IDS)
+        #    The default gain of that camera is the absolute minimum gain the camera can deliver.
+        #    All other gain factors are higher than that. This means, the system gain of 0.125 DN
+        #    per electron, as specified in the camera test sheet, is the smallest possible value.
+        'ElectronsPerCount'  : 7.97,
+        'ReadNoise' : 6.0,
+        'ADOffset' : 10
+    },
+    'default' : { # fairly arbitrary values
+        'ElectronsPerCount'  : 10,
+        'ReadNoise' : 20,
+        'ADOffset' : 10
+    }
+}
+
+
 class UEyeCamera(Camera):
     def __init__(self, device_number=0, nbits=8):
         Camera.__init__(self)
@@ -74,6 +93,9 @@ class UEyeCamera(Camera):
         
         self._chip_size = (sensor_info.nMaxWidth, sensor_info.nMaxHeight)
         self.sensor_type = sensor_info.strSensorName.decode().split('x')[0] + 'x'
+
+        # work out the camera base parameters for this sensortype
+        self.baseProps = BaseProps.get(self.sensor_type,BaseProps['default'])
                 
         self.SetROI(0, 0, self._chip_size[0], self._chip_size[1])
         
@@ -422,7 +444,7 @@ class UEyeCamera(Camera):
         tword = di.infoDevHeartbeat.wTemperature.value
         # from IDS docs:
         #    wTemperature
-	#        Camera temperature in degrees Celsius
+        #        Camera temperature in degrees Celsius
         #        Bits 15: algebraic sign
         #        Bits 14...11: filled according to algebraic sign
         #        Bits 10...4: temperature (places before the decimal point)
@@ -434,32 +456,40 @@ class UEyeCamera(Camera):
     
     @property
     def noise_properties(self):
-        """
+        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                'ReadNoise': self.baseProps['ReadNoise'],
+                'ADOffset': self.baseProps['ADOffset'],
+                'SaturationThreshold': 2 ** self.nbits  - 1}
 
-                Returns
-                -------
+    
+    # @property
+    # def noise_properties(self):
+    #     """
 
-                a dictionary with the following entries:
+    #             Returns
+    #             -------
 
-                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-                    doi: 10.1109/TED.2003.813462
+    #             a dictionary with the following entries:
 
-                and optionally
-                'ADOffset' : the dark level (in ADU)
-                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-                'SaturationThreshold' : the full well capacity (in ADU)
+    #             'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+    #             'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+    #             'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+    #                 doi: 10.1109/TED.2003.813462
 
-                """
+    #             and optionally
+    #             'ADOffset' : the dark level (in ADU)
+    #             'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+    #             'SaturationThreshold' : the full well capacity (in ADU)
+
+    #             """
         
-        return {
-            'ReadNoise': 1,
-            'ElectronsPerCount': 1,
-            'NoiseFactor': 1,
-            'ADOffset': 0,
-            'SaturationThreshold': 2 ** self.nbits  - 1
-        }
+    #     return {
+    #         'ReadNoise': 1,
+    #         'ElectronsPerCount': 1,
+    #         'NoiseFactor': 1,
+    #         'ADOffset': 0,
+    #         'SaturationThreshold': 2 ** self.nbits  - 1
+    #     }
     
     def GetFPS(self):
         """
