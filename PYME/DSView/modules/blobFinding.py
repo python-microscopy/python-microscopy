@@ -183,7 +183,7 @@ class BlobFinder(Plugin):
 
         if not hasattr(self, '_ovl'):
             from PYME.DSView import overlays
-            self._ovl = overlays.PointDisplayOverlay(self.points)
+            self._ovl = overlays.PointDisplayOverlay(points=self.points, display_name='Blobs')
             self.do.overlays.append(self._ovl)
         else:
             self._ovl.points = self.points

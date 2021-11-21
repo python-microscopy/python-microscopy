@@ -588,18 +588,28 @@ class LMAnalyser2(Plugin):
         self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
     def SetFitInfo(self):
-        self.view.pointMode = 'lm'
+        # TODO - use filter / raw fit results rather than creating a points array.
+        # TODO - de-duplicate with method of same name in  LMDisplay
+
         mdh = self.analysisController.analysisMDH
         voxx, voxy, _ = mdh.voxelsize_nm
-        
-        self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+        pts = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+        if not hasattr(self, '_ovl'):
+            from PYME.DSView import overlays
+            self._ovl = overlays.PointDisplayOverlay(points=pts, display_name='Detections')
+            self._ovl.pointMode = 'lm'
+            self.do.overlays.append(self._ovl)
+        else:
+            self._ovl.points = pts
 
         if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
-            self.view.pointMode = 'splitter'
+            self._ovl.pointMode = 'splitter'
             if 'BNR' in mdh['Analysis.FitModule']:
-                self.view.pointColours = self.fitResults['ratio'] > 0.5
+                self._ovl.pointColours = self.fitResults['ratio'] > 0.5
             else:
-                self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+                self._ovl.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -743,7 +753,7 @@ class LMAnalyser2(Plugin):
                 self.dsviewer.pipeline.recipe.invalidate_data()
         
             self.progPan.fitResults = self.fitResults
-            self.view.points = np.vstack(
+            self._ovl.points = np.vstack(
                 (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
             self.numEvents = len(self.fitResults)
         
@@ -822,7 +832,7 @@ class LMAnalyser2(Plugin):
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.playback_running:
             try:
-                self.fitInf.UpdateDisp(self.view.PointsHitTest())
+                self.fitInf.UpdateDisp(self._ovl.PointsHitTest())
             except:
                 import traceback
                 print((traceback.format_exc()))

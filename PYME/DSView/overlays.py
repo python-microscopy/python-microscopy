@@ -7,13 +7,40 @@ Created on Fri Mar  6 15:28:03 2015
 import wx
 import numpy as np
 from PYME.DSView.displayOptions import DisplayOpts
+from PYME.LMVis.layers.base import SimpleLayer
+from PYME.recipes.traits import CStr
+import abc
+
+class Overlay(SimpleLayer):
+    # make our overlays inherit from PYMEVis layers, even if we don't implement opengl display for now
+    # NOTE this gives us a 'visible' property
+
+    display_name = CStr('')
+
+        
+    @abc.abstractmethod
+    def __call__(self, vp, dc):
+        """
+        Draw this overly using wx, as an overlay on an arrayviewpanel
+
+
+        Parameters
+        ==========
+
+        vp : arrayViewPanle.ArrayViewPanel instance
+            Generally only to be used for getting display options, pixel coordinate transformations, etc ... please do not store or acess data through vp
+            (vp was a mess, containing lots of data, rather than just view, and we are slowly trying to move all fot that out)
+        dc : wx.DC instance
+            The device context to draw onto
+
+        TODO - refactor this to e.g. draw_wx
+        """
+        pass
 
 SLICE_AXIS_LUT = {DisplayOpts.SLICE_XY:2, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:0}
 TOL_AXIS_LUT = {DisplayOpts.SLICE_XY:0, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:2}
-class PointDisplayOverlay(object):
-    def __init__(self, points = [], filter=None):
-        self.show = True
-
+class PointDisplayOverlay(Overlay):
+    def __init__(self, points = [], filter=None, **kwargs):
         self.points = points
         self.pointColours = []
         self.pointSize = 11
@@ -40,7 +67,7 @@ class PointDisplayOverlay(object):
 
         vx, vy = vp.voxelsize[:2]
 
-        if self.show and ('filter' in dir(self) or len(self.points) > 0):
+        if self.visible and ('filter' in dir(self) or len(self.points) > 0):
             #print('plotting points')
             if 'filter' in dir(self):
                 t = self.filter['t'] #prob safe as int
@@ -132,3 +159,20 @@ class PointDisplayOverlay(object):
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+
+    def points_hit_test(self, xp, yp, zp):
+        if len(self.points) > 0:
+            iCand = np.where((abs(self.points[:,2] - self.do.zp) < 1)*(abs(self.points[:,0] - self.do.xp) < 3)*(abs(self.points[:,1] - self.do.yp) < 3))[0]
+
+            if len(iCand) == 0:
+                return None
+            elif len(iCand) == 1:
+                return iCand[0]
+            else:
+                pCand = self.points[iCand, :]
+
+                iNearest = np.argmin((pCand[:,0] - self.do.xp)**2 + (pCand[:,1] - self.do.yp)**2)
+
+                return iCand[iNearest]
+        else:
+            return None

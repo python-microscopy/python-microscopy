@@ -19,6 +19,7 @@ import matplotlib.cm
 #import PYME.ui.autoFoldPanel as afp
 
 from PYME.DSView import fitInfo
+from PYME.DSView import overlays
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
@@ -67,7 +68,10 @@ class LMDisplay(visCore.VisGUICore, Plugin):
         
         self.pipeline = dsviewer.pipeline
         self.pipeline.visFr = self
-        self.view.filter = self.pipeline
+
+        self._ovl = overlays.PointDisplayOverlay(filter = self.pipeline, display_name='Localisations')
+        self.do.overlays.append(self._ovl)
+        #self.view.filter = self.pipeline
         
         #self.Quads = None
         #dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, self.CreateMenuBar(subMenu=True), 'Points')
@@ -150,17 +154,26 @@ class LMDisplay(visCore.VisGUICore, Plugin):
         self.pointsAdded = False
         
     def SetFitInfo(self):
-        self.view.pointMode = 'lm'
+        # TODO - use filter / raw fit results rather than creating a points array.
+        # TODO - deduplicate with LMAnalysis
         voxx, voxy = self.image.voxelsize_nm
-        
-        self.view.points = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
+        pts = numpy.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+
+        if not hasattr(self, '_ovl'):
+            from PYME.DSView import overlays
+            self._ovl = overlays.PointDisplayOverlay(pts)
+            self._ovl.pointMode = 'lm'
+            self.do.overlays.append(self._ovl)
+        else:
+            self._ovl.points = pts
+        
         if 'Splitter' in self.image.mdh.getEntry('Analysis.FitModule'):
-            self.view.pointMode = 'splitter'
+            self._ovl.pointMode = 'splitter'
             if 'BNR' in self.image.mdh['Analysis.FitModule']:
-                self.view.pointColours = self.fitResults['ratio'] > 0.5
+                self._ovl.pointColours = self.fitResults['ratio'] > 0.5
             else:
-                self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+                self._ovl.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -310,7 +323,7 @@ class LMDisplay(visCore.VisGUICore, Plugin):
         #self.RefreshView()
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.IsRunning():
             try:
-                self.fitInf.UpdateDisp(self.view.PointsHitTest())
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp))
             except:
                 import traceback
                 print((traceback.format_exc()))

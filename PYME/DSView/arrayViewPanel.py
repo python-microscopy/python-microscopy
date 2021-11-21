@@ -81,17 +81,17 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.imagepanel.SetSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
         
 
-        self.points =[]
-        self.pointsR = []
-        self.showPoints = True
-        self.showTracks = True
+        #self.points =[]
+        #self.pointsR = []
+        #self.showPoints = True
+        #self.showTracks = True
         self.showContours = True
         self.showScaleBar = True
         self.scaleBarLength = 2000
-        self.pointMode = 'confoc'
-        self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
-        self.showAdjacentPoints = False
-        self.pointSize = 11
+        #self.pointMode = 'confoc'
+        #self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
+        #self.showAdjacentPoints = False
+        #self.pointSize = 11
         self.layerMode = 'Add'
 
         self.psfROIs = []
@@ -327,30 +327,30 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
             
-    def DrawTracks(self, view, dc):
-        if self.showTracks and 'filter' in dir(self) and 'clumpIndex' in self.filter.keys():
-            t = self.filter['t'] #prob safe as int
-            x = self.filter['x']/self.voxelsize[0]
-            y = self.filter['y']/self.voxelsize[1]
+    # def DrawTracks(self, view, dc):
+    #     if self.showTracks and 'filter' in dir(self) and 'clumpIndex' in self.filter.keys():
+    #         t = self.filter['t'] #prob safe as int
+    #         x = self.filter['x']/self.voxelsize[0]
+    #         y = self.filter['y']/self.voxelsize[1]
             
-            xb, yb, zb = self._calcVisibleBounds()
+    #         xb, yb, zb = self._calcVisibleBounds()
             
-            IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+    #         IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
             
-            tFoc = list(set(self.filter['clumpIndex'][IFoc]))
+    #         tFoc = list(set(self.filter['clumpIndex'][IFoc]))
 
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+    #         dc.SetBrush(wx.TRANSPARENT_BRUSH)
             
 
-            for tN in tFoc:
-                IFoc = (self.filter['clumpIndex'] == tN)
-                if IFoc.sum() < 2:
-                    return
-                pFoc = numpy.vstack(self._PixelToScreenCoordinates3D(x[IFoc], y[IFoc], t[IFoc])).T
+    #         for tN in tFoc:
+    #             IFoc = (self.filter['clumpIndex'] == tN)
+    #             if IFoc.sum() < 2:
+    #                 return
+    #             pFoc = numpy.vstack(self._PixelToScreenCoordinates3D(x[IFoc], y[IFoc], t[IFoc])).T
                 
-                #print pFoc.shape
-                dc.SetPen(self.labelPens[tN%16])
-                dc.DrawLines(pFoc)
+    #             #print pFoc.shape
+    #             dc.SetPen(self.labelPens[tN%16])
+    #             dc.DrawLines(pFoc)
                 
     def DrawScaleBar(self, view, dc):
         if self.showScaleBar:
@@ -402,93 +402,93 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 
     
        
-    def DrawPoints(self, view, dc):
-        dx = 0
-        dy = 0
+    # def DrawPoints(self, view, dc):
+    #     dx = 0
+    #     dy = 0
         
-        aN = SLICE_AXIS_LUT[self.do.slice]
-        tolN = TOL_AXIS_LUT[self.do.slice]
-        pos = [self.do.xp, self.do.yp, self.do.zp]
+    #     aN = SLICE_AXIS_LUT[self.do.slice]
+    #     tolN = TOL_AXIS_LUT[self.do.slice]
+    #     pos = [self.do.xp, self.do.yp, self.do.zp]
 
-        if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
-            if 'filter' in dir(self):
-                t = self.filter['t'] #prob safe as int
-                x = self.filter['x']/self.voxelsize[0]
-                y = self.filter['y']/self.voxelsize[1]
+    #     if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
+    #         if 'filter' in dir(self):
+    #             t = self.filter['t'] #prob safe as int
+    #             x = self.filter['x']/self.voxelsize[0]
+    #             y = self.filter['y']/self.voxelsize[1]
                 
-                xb, yb, zb = self._calcVisibleBounds()
+    #             xb, yb, zb = self._calcVisibleBounds()
                 
-                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+    #             IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
                     
-                pFoc = numpy.vstack((x[IFoc], y[IFoc], t[IFoc])).T
-                if self.pointMode == 'splitter':
-                    pCol = self.filter['gFrac'][IFoc] > .5                
-                pNFoc = []
+    #             pFoc = numpy.vstack((x[IFoc], y[IFoc], t[IFoc])).T
+    #             if self.pointMode == 'splitter':
+    #                 pCol = self.filter['gFrac'][IFoc] > .5                
+    #             pNFoc = []
 
-            #intrinsic points            
-            elif len(self.points) > 0:
-                pointTol = self.pointTolNFoc[self.pointMode]
+    #         #intrinsic points            
+    #         elif len(self.points) > 0:
+    #             pointTol = self.pointTolNFoc[self.pointMode]
                 
-                IFoc = abs(self.points[:,aN] - pos[aN]) < 1
-                INFoc = abs(self.points[:,aN] - pos[aN]) < pointTol[tolN]
+    #             IFoc = abs(self.points[:,aN] - pos[aN]) < 1
+    #             INFoc = abs(self.points[:,aN] - pos[aN]) < pointTol[tolN]
                     
-                pFoc = self.points[IFoc]
-                pNFoc = self.points[INFoc]
+    #             pFoc = self.points[IFoc]
+    #             pNFoc = self.points[INFoc]
                 
-                if self.pointMode == 'splitter':
-                    pCol = self.pointColours[IFoc]
+    #             if self.pointMode == 'splitter':
+    #                 pCol = self.pointColours[IFoc]
                     
-            if self.pointMode == 'splitter':
-                if 'chroma' in dir(self):
-                    dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
-                    dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
-                else:
-                    dx = 0*pFoc[:,0]
-                    dy = 0*pFoc[:,0]
+    #         if self.pointMode == 'splitter':
+    #             if 'chroma' in dir(self):
+    #                 dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
+    #                 dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.voxelsize[0], pFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
+    #             else:
+    #                 dx = 0*pFoc[:,0]
+    #                 dy = 0*pFoc[:,0]
 
-                if 'chroma' in dir(self):
-                    dxn = self.chroma.dx.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
-                    dyn = self.chroma.dy.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
-                else:
-                    dxn = 0*pNFoc[:,0]
-                    dyn = 0*pNFoc[:,0]
+    #             if 'chroma' in dir(self):
+    #                 dxn = self.chroma.dx.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
+    #                 dyn = self.chroma.dy.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
+    #             else:
+    #                 dxn = 0*pNFoc[:,0]
+    #                 dyn = 0*pNFoc[:,0]
 
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            ps = self.pointSize
+    #         dc.SetBrush(wx.TRANSPARENT_BRUSH)
+    #         ps = self.pointSize
 
-            if self.showAdjacentPoints:
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
+    #         if self.showAdjacentPoints:
+    #             dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
                 
-                if self.pointMode == 'splitter':
-                    for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
-                        self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
+    #             if self.pointMode == 'splitter':
+    #                 for p, dxi, dyi in zip(pNFoc, dxn, dyn):
+    #                     self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+    #                     self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
 
-                else:
-                    for p in pNFoc:
-                        self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+    #             else:
+    #                 for p in pNFoc:
+    #                     self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
 
 
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
-            pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            dc.SetPen(pGreen)
+    #         pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
+    #         pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
+    #         dc.SetPen(pGreen)
             
-            if self.pointMode == 'splitter':
-                for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
-                    if c:
-                        dc.SetPen(pGreen)
-                    else:
-                        dc.SetPen(pRed)
+    #         if self.pointMode == 'splitter':
+    #             for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
+    #                 if c:
+    #                     dc.SetPen(pGreen)
+    #                 else:
+    #                     dc.SetPen(pRed)
                         
-                    self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
-                    self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
+    #                 self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+    #                 self._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*self.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
                     
-            else:
-                for p in pFoc:
-                    self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+    #         else:
+    #             for p in pFoc:
+    #                 self._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
             
-            dc.SetPen(wx.NullPen)
-            dc.SetBrush(wx.NullBrush)
+    #         dc.SetPen(wx.NullPen)
+    #         dc.SetBrush(wx.NullBrush)
 
     def _calcVisibleBounds(self):
         sc = pow(2.0,(self.do.scale)) 
@@ -533,7 +533,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.DrawScaleBar(self, dc)
 
         #self.DrawTracks(self, dc)
-        self.DrawPoints(self, dc)
+        #self.DrawPoints(self, dc)
         self.DrawContours(self, dc)
 
         dc.SetPen(wx.NullPen)
@@ -842,22 +842,22 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 #only continue until we hit something
                 break
 
-    def PointsHitTest(self):
-        if len(self.points) > 0:
-            iCand = numpy.where((abs(self.points[:,2] - self.do.zp) < 1)*(abs(self.points[:,0] - self.do.xp) < 3)*(abs(self.points[:,1] - self.do.yp) < 3))[0]
+    # def PointsHitTest(self):
+    #     if len(self.points) > 0:
+    #         iCand = numpy.where((abs(self.points[:,2] - self.do.zp) < 1)*(abs(self.points[:,0] - self.do.xp) < 3)*(abs(self.points[:,1] - self.do.yp) < 3))[0]
 
-            if len(iCand) == 0:
-                return None
-            elif len(iCand) == 1:
-                return iCand[0]
-            else:
-                pCand = self.points[iCand, :]
+    #         if len(iCand) == 0:
+    #             return None
+    #         elif len(iCand) == 1:
+    #             return iCand[0]
+    #         else:
+    #             pCand = self.points[iCand, :]
 
-                iNearest = numpy.argmin((pCand[:,0] - self.do.xp)**2 + (pCand[:,1] - self.do.yp)**2)
+    #             iNearest = numpy.argmin((pCand[:,0] - self.do.xp)**2 + (pCand[:,1] - self.do.yp)**2)
 
-                return iCand[iNearest]
-        else:
-            return None
+    #             return iCand[iNearest]
+    #     else:
+    #         return None
 
 
     def OnRightDown(self, event):
