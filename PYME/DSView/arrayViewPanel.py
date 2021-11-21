@@ -1108,10 +1108,10 @@ class ArraySettingsAndViewPanel(wx.Panel):
         pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Display Settings').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
         self._mgr.AddPane(self.optionspanel, pinfo)
 
-        self.overlaypanel = OverlayPanel(self, self.view, mdh)
-        self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
-        pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        self._mgr.AddPane(self.overlaypanel, pinfo2)
+        # self.overlaypanel = OverlayPanel(self, self.view, mdh)
+        # self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
+        # pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+        # self._mgr.AddPane(self.overlaypanel, pinfo2)
 
         self._mgr.AddPane(self.view.CreateToolBar(self), aui.AuiPaneInfo().Name("ViewTools").Caption("View Tools").CloseButton(False).
                           ToolbarPane().Right().GripperTop())
@@ -1140,7 +1140,7 @@ class ArraySettingsAndViewPanel(wx.Panel):
 
         self._mgr.Update()
         self._mgr.MinimizePane(pinfo)
-        self._mgr.MinimizePane(pinfo2)
+        # self._mgr.MinimizePane(pinfo2)
         #pinfo.Minimize()
         #self._mgr.Update()
 

@@ -162,7 +162,7 @@ class PointDisplayOverlay(Overlay):
 
     def points_hit_test(self, xp, yp, zp):
         if len(self.points) > 0:
-            iCand = np.where((abs(self.points[:,2] - self.do.zp) < 1)*(abs(self.points[:,0] - self.do.xp) < 3)*(abs(self.points[:,1] - self.do.yp) < 3))[0]
+            iCand = np.where((abs(self.points[:,2] - zp) < 1)*(abs(self.points[:,0] - xp) < 3)*(abs(self.points[:,1] - yp) < 3))[0]
 
             if len(iCand) == 0:
                 return None
@@ -171,7 +171,7 @@ class PointDisplayOverlay(Overlay):
             else:
                 pCand = self.points[iCand, :]
 
-                iNearest = np.argmin((pCand[:,0] - self.do.xp)**2 + (pCand[:,1] - self.do.yp)**2)
+                iNearest = np.argmin((pCand[:,0] - xp)**2 + (pCand[:,1] - yp)**2)
 
                 return iCand[iNearest]
         else:

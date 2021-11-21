@@ -830,9 +830,9 @@ class LMAnalyser2(Plugin):
 
 
     def update(self, dsviewer):
-        if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.playback_running:
+        if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
             try:
-                self.fitInf.UpdateDisp(self._ovl.PointsHitTest())
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp))
             except:
                 import traceback
                 print((traceback.format_exc()))
