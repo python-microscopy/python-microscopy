@@ -31,12 +31,17 @@ class PointDisplayOverlay(object):
         
         aN = SLICE_AXIS_LUT[vp.do.slice]
         tolN = TOL_AXIS_LUT[vp.do.slice]
-        pos = [vp.do.xp, vp.do.yp, vp.do.zp]
+        if vp.do.ds.shape[2] > 1:
+            # stack has z
+            pos = [vp.do.xp, vp.do.yp, vp.do.zp]
+        else:
+            # stack is a time series
+            pos = [vp.do.xp, vp.do.yp, vp.do.tp]
 
         vx, vy = vp.voxelsize[:2]
 
         if self.show and ('filter' in dir(self) or len(self.points) > 0):
-            print('plotting points')
+            #print('plotting points')
             if 'filter' in dir(self):
                 t = self.filter['t'] #prob safe as int
                 x = self.filter['x']/vx
@@ -67,7 +72,7 @@ class PointDisplayOverlay(object):
                     
                 pFoc = self.points[IFoc]
 
-                print(pFoc)
+                #print(pFoc)
 
                 pNFoc = self.points[INFoc]
                 
