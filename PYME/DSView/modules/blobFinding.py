@@ -25,6 +25,7 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 from PYME.ui import recArrayView
 import numpy
+import numpy as np
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import os
@@ -156,7 +157,7 @@ class BlobFinder(Plugin):
 
         if not 'ofd' in dir(self) or not self.ofd.chnum == chnum:
             #create an object identifier
-            self.ofd = ObjectIdentifier(self.image.data[:,:,:, chnum])
+            self.ofd = ObjectIdentifier(np.atleast_3d(self.image.data[:,:,:, chnum]))
             self.ofd.chnum = chnum
 
         #and identify objects ...
@@ -170,15 +171,22 @@ class BlobFinder(Plugin):
         else:
             self.ofd.FindObjects(threshold,0)
 
-        self.dsviewer.view.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+        self.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
 
-        self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
+        self.objPosRA = numpy.rec.fromrecords(self.points, names='x,y,z')
 
         if self.vObjPos is None:
             self.vObjPos = recArrayView.ArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
+
+        if not hasattr(self, '_ovl'):
+            from PYME.DSView import overlays
+            self._ovl = overlays.PointDisplayOverlay(self.points)
+            self.do.overlays.append(self._ovl)
+        else:
+            self._ovl.points = self.points
 
         self.dsviewer.update()
 

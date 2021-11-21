@@ -26,6 +26,9 @@ import numpy
 
 from ._base import Plugin
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PsfExtractor(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
@@ -199,7 +202,12 @@ class PsfExtractor(Plugin):
         from PYME.Analysis.PSFEst import extractImages
         chnum = self.chChannel.GetSelection()
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        for xp, yp, zp in self.view.points:
+        try:
+            pts = self.dsviewer.blobFinding.points
+        except AttributeError:
+            raise AttributeError('Could not find blobFinding.points, make sure the `blobFinding` module is loaded and you have clicked `Find`')
+
+        for xp, yp, zp in pts:
             if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
                 (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
                     
