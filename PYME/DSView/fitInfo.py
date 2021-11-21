@@ -238,6 +238,18 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
     def _extractROI(self, fri):
         from PYME.IO.MetaDataHandler import get_camera_roi_origin
         roi_x0, roi_y0 = get_camera_roi_origin(self.mdh)
+
+        if (self.ds.shape[2] > 1):
+            # TODO - revisit for proper 3D fits
+            logger.warning('z and t dimensions potentially incorrectly assigned, working around and assuming z dimension really t') 
+            zi = int(fri['tIndex'])
+            ti = 0
+            ci = 0 # we only support monochrome at present, but pull it out here so we can alter in one place if needed
+        else:
+            # t=t
+            zi = 0
+            ti = int(fri['tIndex'])
+            ci = 0 # we only support monochrome at present, but pull it out here so we can alter in one place if needed
         
         if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
@@ -271,6 +283,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             
             #sx0 = slice(x0+ slux[0], x0+slux[1])
             #sy0 = slice(y0+ sluy[0], y0+sluy[1])
+
             
             if 'NR' in self.mdh['Analysis.FitModule']:
                 #for fits which take chromatic shift into account when selecting ROIs
@@ -308,12 +321,12 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             print((slx, sx1, sly, sy1))
             print(h, y0, y1, sluy)
                 
-            g = self.ds[slx, sly, int(fri['tIndex'])].squeeze()
-            r = self.ds[sx1, sy1, int(fri['tIndex'])].squeeze()
+            g = self.ds[slx, sly, zi, ti, ci].squeeze()
+            r = self.ds[sx1, sy1, zi, ti, ci].squeeze()
                 
-            return np.hstack([g,r])
+            return np.hstack([g,r])  - self.mdh.get('Camera.ADOffset', 0)
         else:
-            return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
+            return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), zi, ci, ti].squeeze()  - self.mdh.get('Camera.ADOffset', 0)
 
     def _extractROI_1(self, fri):
         from PYME.IO.MetaDataHandler import get_camera_roi_origin
