@@ -184,6 +184,7 @@ class DSViewFrame(AUIFrame):
         self.CreateModuleMenu()
 
         self.add_common_menu_items()
+        self.create_overlay_panel()
 
         self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
         self.optionspanel.SetSize(self.optionspanel.GetBestSize())
@@ -209,10 +210,10 @@ class DSViewFrame(AUIFrame):
         self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
-        self.create_overlay_panel()
+        
 
-        for pn in self.panesToMinimise:
-            self._mgr.MinimizePane(pn)
+        #for pn in self.panesToMinimise:
+        #    self._mgr.MinimizePane(pn)
         #self._mgr.MinimizePane(pinfo2)
         self.Layout()
 
@@ -230,7 +231,15 @@ class DSViewFrame(AUIFrame):
         
         
         openViewers[self.image.filename] = self
-        
+
+        wx.CallAfter(self._minimise_panes)
+
+
+    def _minimise_panes(self):
+        for pn in self.panesToMinimise:
+            self._mgr.MinimizePane(pn)
+
+        self.Layout()
    
 
     def CreateModuleMenu(self):
