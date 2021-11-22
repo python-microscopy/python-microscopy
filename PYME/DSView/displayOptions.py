@@ -26,7 +26,6 @@ import numpy as np
 #import tables
 
 from PYME.contrib import dispatch
-
 from PYME.IO import dataWrap
 
 import logging
@@ -107,9 +106,6 @@ class DisplayOpts(object):
         # e.g. using active contours in the annotation module
         self.on_selection_end = dispatch.Signal()
         
-        self.overlays = []
-        
-
 
     @property
     def zp(self):

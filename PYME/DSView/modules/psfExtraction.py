@@ -42,7 +42,7 @@ class PsfExtractor(Plugin):
         self.PSFLocs = []
         self.psfROISize = [30,30,30]
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'PSF ROIs')
 
         dsviewer.paneHooks.append(self.GenPSFPanel)
 

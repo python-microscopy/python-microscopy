@@ -207,7 +207,7 @@ class ParticleTrackingView(HasTraits, Plugin):
         self.trackview = wx.html2.WebView.New(dsviewer)
         dsviewer.AddPage(self.trackview, True, 'Track Info')  
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Tracks')
 
         dsviewer.paneHooks.append(self.GenTrackingPanel)
     

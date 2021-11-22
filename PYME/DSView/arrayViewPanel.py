@@ -21,6 +21,7 @@
 #
 ##################
 
+import warnings
 import wx
 import wx.lib.agw.aui as aui
 
@@ -30,6 +31,7 @@ import os
 from PYME.DSView import scrolledImagePanel
 from PYME.DSView.displayOptions import DisplayOpts, labeled
 from PYME.DSView.DisplayOptionsPanel import OptionsPanel
+from PYME.DSView import overlays
 from PYME.DSView.OverlaysPanel import OverlayPanel
 
 from PYME.DSView.modules import playback
@@ -86,8 +88,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.showPoints = True
         #self.showTracks = True
         self.showContours = True
-        self.showScaleBar = True
-        self.scaleBarLength = 2000
+        #self.showScaleBar = True
+        #self.scaleBarLength = 2000
         #self.pointMode = 'confoc'
         #self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
         #self.showAdjacentPoints = False
@@ -101,7 +103,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.lastFrameTime = 2e-3
 
         #self.do.scale = 0
-        self.crosshairs = True
+        #self.crosshairs = True
         #self.showSelection = True
         self.selecting = False
 
@@ -110,7 +112,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._slice = None
         self._sc = None
         
-        self.overlays = []
+        self.overlays = [
+            # TODO - do these belong here, or with the display opts?
+            overlays.ScaleBarOverlay(display_name='Scale bar'),
+            overlays.CrosshairsOverlay(display_name='Crosshairs'),
+        ]
+
         
         self._oldIm = None
         self._oldImSig = None
@@ -257,27 +264,27 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         return pow(2.0,(self.do.scale))
         
     
-    def DrawCrosshairs(self, view, dc):
-        if self.crosshairs:
-            sX, sY = view.imagepanel.Size
+    # def DrawCrosshairs(self, view, dc):
+    #     if self.crosshairs:
+    #         sX, sY = view.imagepanel.Size
             
-            dc.SetPen(wx.Pen(wx.CYAN,1))
-            if(view.do.slice == view.do.SLICE_XY):
-                lx = view.do.xp
-                ly = view.do.yp
-            elif(view.do.slice == view.do.SLICE_XZ):
-                lx = view.do.xp
-                ly = view.do.zp
-            elif(view.do.slice == view.do.SLICE_YZ):
-                lx = view.do.yp
-                ly = view.do.zp
+    #         dc.SetPen(wx.Pen(wx.CYAN,1))
+    #         if(view.do.slice == view.do.SLICE_XY):
+    #             lx = view.do.xp
+    #             ly = view.do.yp
+    #         elif(view.do.slice == view.do.SLICE_XZ):
+    #             lx = view.do.xp
+    #             ly = view.do.zp
+    #         elif(view.do.slice == view.do.SLICE_YZ):
+    #             lx = view.do.yp
+    #             ly = view.do.zp
         
             
-            xc, yc = view._PixelToScreenCoordinates(lx, ly)            
-            dc.DrawLine(0, yc, sX, yc)
-            dc.DrawLine(xc, 0, xc, sY)
+    #         xc, yc = view._PixelToScreenCoordinates(lx, ly)            
+    #         dc.DrawLine(0, yc, sX, yc)
+    #         dc.DrawLine(xc, 0, xc, sY)
             
-            dc.SetPen(wx.NullPen)
+    #         dc.SetPen(wx.NullPen)
             
     def DrawSelection(self, view, dc):
         if self.do.showSelection:
@@ -352,27 +359,27 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     #             dc.SetPen(self.labelPens[tN%16])
     #             dc.DrawLines(pFoc)
                 
-    def DrawScaleBar(self, view, dc):
-        if self.showScaleBar:
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('WHITE'),10)
-            pGreen.SetCap(wx.CAP_BUTT)
-            dc.SetPen(pGreen)
-            sX, sY = view.imagepanel.Size
+    # def DrawScaleBar(self, view, dc):
+    #     if self.showScaleBar:
+    #         pGreen = wx.Pen(wx.TheColourDatabase.FindColour('WHITE'),10)
+    #         pGreen.SetCap(wx.CAP_BUTT)
+    #         dc.SetPen(pGreen)
+    #         sX, sY = view.imagepanel.Size
             
-            sbLen = int(self.scaleBarLength*view.scale/view.voxelsize[0])
+    #         sbLen = int(self.scaleBarLength*view.scale/view.voxelsize[0])
             
-            y1 = 20
-            x1 = 20 + sbLen
-            x0 = x1 - sbLen
-            dc.DrawLine(x0, y1, x1, y1)
+    #         y1 = 20
+    #         x1 = 20 + sbLen
+    #         x0 = x1 - sbLen
+    #         dc.DrawLine(x0, y1, x1, y1)
             
-            dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
-            if self.scaleBarLength > 1000:
-                s = u'%1.1f \u00B5m' % (self.scaleBarLength / 1000.)
-            else:
-                s = u'%d nm' % int(self.scaleBarLength)
-            w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
+    #         dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
+    #         if self.scaleBarLength > 1000:
+    #             s = u'%1.1f \u00B5m' % (self.scaleBarLength / 1000.)
+    #         else:
+    #             s = u'%d nm' % int(self.scaleBarLength)
+    #         w, h = dc.GetTextExtent(s)
+    #         dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
                 
     def DrawContours(self, view, dc):
         if self.showContours and 'filter' in dir(self) and 'contour' in self.filter.keys() and self.do.slice ==self.do.SLICE_XY:
@@ -528,9 +535,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         #sX, sY = im.GetWidth(), im.GetHeight()
 
-        self.DrawCrosshairs(self, dc)
+        #self.DrawCrosshairs(self, dc)
         self.DrawSelection(self, dc) 
-        self.DrawScaleBar(self, dc)
+        #self.DrawScaleBar(self, dc)
 
         #self.DrawTracks(self, dc)
         #self.DrawPoints(self, dc)
@@ -539,7 +546,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         dc.SetPen(wx.NullPen)
         dc.SetBrush(wx.NullBrush)
             
-        for ovl in self.do.overlays:
+        for ovl in self.overlays:
             ovl(self, dc)
 
     def GrabImage(self, fullImage=True):
@@ -1082,7 +1089,31 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._oldImSig = sig
         return img
 
+    def add_overlay(self, ovl, display_name=None):
+        """
+        Add an overlay. 
+        
+        The overlay should ideally be an object derived from overlays.Overlay and follow the instance outlined in that class, 
+        function overlays are also supported in the interim for backwards compatibility.
 
+        If using a functional overlay, a display_name must be provided
+
+        Parameters
+        ==========
+
+        ovl : overlays.Overlay instance, optionaly a function or method
+            The overlay code
+
+        display_name : string
+            a name to use when controlling overlay visibility. Must be provided for function overlays, ignored for instances of the Overlay class (which have a display_name property)
+
+        """
+        if not isinstance(ovl, overlays.Overlay):
+            warnings.warn(numpy.VisibleDeprecationWarning('using old-style overlay function, please re-write as a class'))
+            ovl = overlays.FunctionOverlay(ovl, display_name)
+        
+        self.overlays.append(ovl)
+        self.do.OnChange()
 
 class ArraySettingsAndViewPanel(wx.Panel):
     def __init__(self, parent, dstack = None, aspect=1, horizOptions = False, wantUpdates = [], mdh=None, **kwds):

@@ -20,7 +20,6 @@ import matplotlib.cm
 
 from PYME.DSView import fitInfo
 from PYME.DSView import overlays
-from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 
 from PYME.misc import extraCMaps
@@ -70,7 +69,7 @@ class LMDisplay(visCore.VisGUICore, Plugin):
         self.pipeline.visFr = self
 
         self._ovl = overlays.PointDisplayOverlay(filter = self.pipeline, display_name='Localisations')
-        self.do.overlays.append(self._ovl)
+        self.view.add_overlay(self._ovl)
 
         # initialize the common parts
         visCore.VisGUICore.__init__(self)

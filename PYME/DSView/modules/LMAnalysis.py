@@ -29,7 +29,6 @@ import numpy as np
 import wx
 import wx.lib.agw.aui as aui
 from PYME.DSView import fitInfo
-#from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO import MetaDataHandler
 from PYME.IO import tabular
 from PYME.IO.FileUtils import fileID
@@ -599,7 +598,7 @@ class LMAnalyser2(Plugin):
             filt = tabular.FitResultsSource(self.fitResults)
             self._ovl = overlays.PointDisplayOverlay(filter=filt, display_name='Detections')
             self._ovl.pointMode = 'lm'
-            self.do.overlays.append(self._ovl)
+            self.view.add_overlay(self._ovl)
         else:
             self._ovl.filter.setResults(self.fitResults)
             

@@ -125,7 +125,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                     cache = tabular.CachingResultsFilter(self.activeRecipe.namespace['out_meas'])
                     
                     dv.pipeline.OpenFile(ds=cache) # TODO - is needed?
-                    dv.do.overlays.append(overlays.PointDisplayOverlay(filter=cache, display_name='out_meas'))
+                    dv.view.add_overlay(overlays.PointDisplayOverlay(filter=cache, display_name='out_meas'))
                     
                     #dv.view.filter = dv.pipeline
     
@@ -164,7 +164,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
 
                 if not hasattr(self, '_ovl'):
                     self._ovl = overlays.PointDisplayOverlay(filter=self.dsviewer.pipeline, display_name='Recipe output')
-                    self.dsviewer.do.overlays.append(self.ovl)
+                    self.view.add_overlay(self.ovl)
                     
                 
             for out_ in self.activeRecipe.gather_outputs():
@@ -239,7 +239,7 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
 
             if not hasattr(self, '_ovl'):
                 self._ovl = overlays.PointDisplayOverlay(filter=self.dsviewer.pipeline, display_name=filename)
-                self.dsviewer.do.overlays.append(self.ovl)
+                self.view.add_overlay(self.ovl)
                 
                 
             

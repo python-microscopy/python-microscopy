@@ -788,7 +788,7 @@ class Measurements(wx.Panel, Plugin):
         wx.Panel.__init__(self, dsviewer)
         Plugin.__init__(self, dsviewer)
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Blob measurements')
         
         vsizer=wx.BoxSizer(wx.VERTICAL)
         

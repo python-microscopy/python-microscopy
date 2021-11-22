@@ -68,13 +68,13 @@ class FlowView(HasTraits):
         self.CreatePens()
 
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Optic flow')
 
         dsviewer.paneHooks.append(self.GenFlowPanel)
         
-    def Unplug(self):
-        self._dsviewer.do.overlays.remove(self.DrawOverlays)
-        self._dsviewer.paneHooks.remove(self.GenFlowPanel)
+    #def Unplug(self):
+    #    self._dsviewer.do.overlays.remove(self.DrawOverlays)
+    #    self._dsviewer.paneHooks.remove(self.GenFlowPanel)
     
     @on_trait_change('flowVectWidth')    
     def CreatePens(self):

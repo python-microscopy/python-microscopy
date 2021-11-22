@@ -149,7 +149,7 @@ class Annotater(Plugin):
         self._mi_run.Enable(False)
         
         self.do.on_selection_end.connect(self.snake_refine_trace)
-        self.do.overlays.append(self.DrawOverlays)
+        self.view.add_overlay(self.DrawOverlays, 'Annotations')
 
         self.view.selectHandlers.append(self.select_annotation)
 

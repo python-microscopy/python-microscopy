@@ -8,7 +8,7 @@ import wx
 import numpy as np
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.LMVis.layers.base import SimpleLayer
-from PYME.recipes.traits import CStr
+from PYME.recipes.traits import CStr, Int
 import abc
 
 class Overlay(SimpleLayer):
@@ -50,6 +50,8 @@ class PointDisplayOverlay(Overlay):
 
         if filter:
             self.filter = filter
+
+        Overlay.__init__(self, **kwargs)
 
     
     def __call__(self, vp, dc):
@@ -182,3 +184,63 @@ class PointDisplayOverlay(Overlay):
             return iCand[iNearest]
 
         
+class ScaleBarOverlay(Overlay):
+    length_nm = Int(2000)
+
+    def __call__(self, vp, dc):
+        if self.visible:
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('WHITE'),10)
+            pGreen.SetCap(wx.CAP_BUTT)
+            dc.SetPen(pGreen)
+            sX, sY = vp.imagepanel.Size
+            
+            sbLen = int(self.length_nm*vp.scale/vp.voxelsize[0])
+            
+            y1 = 20
+            x1 = 20 + sbLen
+            x0 = x1 - sbLen
+            dc.DrawLine(x0, y1, x1, y1)
+            
+            dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
+            if self.length_nm > 1000:
+                s = u'%1.1f \u00B5m' % (self.length_nm / 1000.)
+            else:
+                s = u'%d nm' % int(self.length_nm)
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
+
+class CrosshairsOverlay(Overlay):
+    def __call__(self, vp, dc):
+        if self.visible:
+            sX, sY = vp.imagepanel.Size
+            
+            dc.SetPen(wx.Pen(wx.CYAN,1))
+            if(vp.do.slice == vp.do.SLICE_XY):
+                lx = vp.do.xp
+                ly = vp.do.yp
+            elif(vp.do.slice == vp.do.SLICE_XZ):
+                lx = vp.do.xp
+                ly = vp.do.zp
+            elif(vp.do.slice == vp.do.SLICE_YZ):
+                lx = vp.do.yp
+                ly = vp.do.zp
+        
+            
+            xc, yc = vp._PixelToScreenCoordinates(lx, ly)            
+            dc.DrawLine(0, yc, sX, yc)
+            dc.DrawLine(xc, 0, xc, sY)
+            
+            dc.SetPen(wx.NullPen)
+
+class FunctionOverlay(Overlay):
+    """
+    Class to permit backwards compatible use of overlay functions
+    """
+
+    def __init__(self, fcn, display_name):
+        self._fcn = fcn
+        Overlay.__init__(display_name=display_name)
+
+    def __call__(self, vp, dc):
+        if self.visible:
+            self._fcn(vp, dc)

@@ -285,7 +285,7 @@ class DSViewFrame(AUIFrame):
     
     def create_overlay_panel(self):
         from PYME.DSView.OverlaysPanel import OverlayPanel
-        if False: #not 'overlaypanel' in dir(self):
+        if not 'overlaypanel' in dir(self):
             self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
             self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
             pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(
