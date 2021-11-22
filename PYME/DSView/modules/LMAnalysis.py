@@ -592,24 +592,16 @@ class LMAnalyser2(Plugin):
         # TODO - de-duplicate with method of same name in  LMDisplay
 
         mdh = self.analysisController.analysisMDH
-        voxx, voxy, _ = mdh.voxelsize_nm
-
-        pts = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
 
         if not hasattr(self, '_ovl'):
             from PYME.DSView import overlays
-            self._ovl = overlays.PointDisplayOverlay(points=pts, display_name='Detections')
+            from PYME.IO import tabular
+            filt = tabular.FitResultsSource(self.fitResults)
+            self._ovl = overlays.PointDisplayOverlay(filter=filt, display_name='Detections')
             self._ovl.pointMode = 'lm'
             self.do.overlays.append(self._ovl)
         else:
-            self._ovl.points = pts
-
-        if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
-            self._ovl.pointMode = 'splitter'
-            if 'BNR' in mdh['Analysis.FitModule']:
-                self._ovl.pointColours = self.fitResults['ratio'] > 0.5
-            else:
-                self._ovl.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+            self._ovl.filter.setResults(self.fitResults)
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -753,8 +745,9 @@ class LMAnalyser2(Plugin):
                 self.dsviewer.pipeline.recipe.invalidate_data()
         
             self.progPan.fitResults = self.fitResults
-            self._ovl.points = np.vstack(
-                (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            # self._ovl.points = np.vstack(
+            #    (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            self._ovl.filter.setResults(self.fitResults)
             self.numEvents = len(self.fitResults)
         
             try:
@@ -832,7 +825,7 @@ class LMAnalyser2(Plugin):
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
             try:
-                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp))
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp, voxelsize=self.view.voxelsize))
             except:
                 import traceback
                 print((traceback.format_exc()))

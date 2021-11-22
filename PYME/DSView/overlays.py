@@ -160,19 +160,25 @@ class PointDisplayOverlay(Overlay):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
 
-    def points_hit_test(self, xp, yp, zp):
+    def points_hit_test(self, xp, yp, zp, voxelsize=None):
         if len(self.points) > 0:
-            iCand = np.where((abs(self.points[:,2] - zp) < 1)*(abs(self.points[:,0] - xp) < 3)*(abs(self.points[:,1] - yp) < 3))[0]
-
-            if len(iCand) == 0:
-                return None
-            elif len(iCand) == 1:
-                return iCand[0]
-            else:
-                pCand = self.points[iCand, :]
-
-                iNearest = np.argmin((pCand[:,0] - xp)**2 + (pCand[:,1] - yp)**2)
-
-                return iCand[iNearest]
+            x, y, z = self.points
+        elif hasattr(self, 'filter'):
+            vx, vy = voxelsize[:2]
+            z = self.filter['t'] #prob safe as int
+            x = self.filter['x']/vx
+            y = self.filter['y']/vy
         else:
             return None
+
+        iCand = np.where((abs(z - zp) < 1)*(abs(x - xp) < 3)*(abs(y - yp) < 3))[0]
+
+        if len(iCand) == 0:
+            return None
+        elif len(iCand) == 1:
+            return iCand[0]
+        else:
+            iNearest = np.argmin((x[iCand] - xp)**2 + (y[iCand] - yp)**2)
+            return iCand[iNearest]
+
+        
