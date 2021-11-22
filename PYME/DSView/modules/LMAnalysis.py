@@ -596,7 +596,7 @@ class LMAnalyser2(Plugin):
             from PYME.DSView import overlays
             from PYME.IO import tabular
             filt = tabular.FitResultsSource(self.fitResults)
-            self._ovl = overlays.PointDisplayOverlay(filter=filt, display_name='Detections')
+            self._ovl = overlays.PointDisplayOverlay(filter=filt, md=mdh, display_name='Detections')
             self._ovl.pointMode = 'lm'
             self.view.add_overlay(self._ovl)
         else:

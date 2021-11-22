@@ -40,8 +40,9 @@ class Overlay(SimpleLayer):
 SLICE_AXIS_LUT = {DisplayOpts.SLICE_XY:2, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:0}
 TOL_AXIS_LUT = {DisplayOpts.SLICE_XY:0, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:2}
 class PointDisplayOverlay(Overlay):
-    def __init__(self, points = [], filter=None, **kwargs):
+    def __init__(self, points = [], filter=None, md=None, **kwargs):
         self.points = points
+        self.md = md
         self.pointColours = []
         self.pointSize = 11
         self.pointMode = 'confoc'
@@ -53,6 +54,18 @@ class PointDisplayOverlay(Overlay):
 
         Overlay.__init__(self, **kwargs)
 
+    
+    def _map_splitter_coords(self, x, y, ds_shape):
+        from PYME.Analysis import splitting
+
+        if self.md is None:
+            md = getattr(self.filter, 'mdh', {})
+        else:
+            md = self.md
+
+        xgs, xrs, ygs, yrs = splitting.get_splitter_rois(md, ds_shape)
+        return splitting.remap_splitter_coords_(x, y, [xgs, xrs], [ygs, yrs], quadrant=1, flip=(yrs.step < 0))
+    
     
     def __call__(self, vp, dc):
         dx = 0
@@ -100,29 +113,10 @@ class PointDisplayOverlay(Overlay):
                 INFoc = abs(self.points[:,aN] - pos[aN]) < pointTol[tolN]
                     
                 pFoc = self.points[IFoc]
-
-                #print(pFoc)
-
                 pNFoc = self.points[INFoc]
                 
                 if self.pointMode == 'splitter':
                     pCol = self.pointColours[IFoc]
-                    
-            if self.pointMode == 'splitter':
-                if 'chroma' in dir(self):
-                    vx_nm, vy_nm = 1e3*vx, 1e3*vy
-
-                    dx = self.chroma.dx.ev(pFoc[:,0]*vx_nm, pFoc[:,1]*vy_nm)/(vx_nm)
-                    dy = self.chroma.dy.ev(pFoc[:,0]*vx_nm, pFoc[:,1]*vy_nm)/(vx_nm)
-
-                    dxn = self.chroma.dx.ev(pNFoc[:,0]*vx_nm, pNFoc[:,1]*vy_nm)/(vx_nm)
-                    dyn = self.chroma.dy.ev(pNFoc[:,0]*vx_nm, pNFoc[:,1]*vy_nm)/(vx_nm)
-                else:
-                    dx = 0*pFoc[:,0]
-                    dy = 0*pFoc[:,0]
-
-                    dxn = 0*pNFoc[:,0]
-                    dyn = 0*pNFoc[:,0]
                     
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
@@ -131,14 +125,14 @@ class PointDisplayOverlay(Overlay):
             if self.showAdjacentPoints:
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
                 
+                for xi, yi, zi in pNFoc:
+                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
+                
                 if self.pointMode == 'splitter':
-                    for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        vp._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
-                        vp._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*vp.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
-
-                else:
-                    for p in pNFoc:
-                        vp._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+                    x, y, z = pNFoc
+                    x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
+                    for xi, yi, zi in zip(x_, y_, z):#, dxi, dyi in zip(pNFoc, dxn, dyn):
+                        vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
@@ -146,18 +140,20 @@ class PointDisplayOverlay(Overlay):
             dc.SetPen(pGreen)
             
             if self.pointMode == 'splitter':
-                for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
+                x, y, z = pFoc
+                x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
+                for xi, x_i, yi, y_i, zi, c in zip(x, x_, y, y_, z, pCol):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
                         
-                    vp._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
-                    vp._drawBoxPixelCoords(dc, p[0]-dxi, 0.5*vp.do.ds.shape[1] + p[1]-dyi, p[2], ps, ps, ps)
+                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
+                    vp._drawBoxPixelCoords(dc, x_i, y_i, zi, ps, ps, ps)
                     
             else:
-                for p in pFoc:
-                    vp._drawBoxPixelCoords(dc, p[0], p[1], p[2], ps, ps, ps)
+                for xi, yi, zi in pFoc:
+                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
