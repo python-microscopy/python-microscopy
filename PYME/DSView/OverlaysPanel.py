@@ -77,10 +77,11 @@ class OverlayPanel(wx.Panel):
     def create_ctrls(self, evt=None):
         self.vsizer.Clear(delete_windows=True)
         for ovl in self.view.overlays:
-            cb = OverlayControl(self, ovl)
+            cb = OverlayControl(self, ovl, self.view.do)
             self.vsizer.Add(cb, 0, wx.ALL|wx.ALIGN_LEFT, 5)
 
         self.SetSizerAndFit(self.vsizer)
+        self.Layout()
 
 
 

@@ -209,7 +209,7 @@ class DSViewFrame(AUIFrame):
         self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
-       
+        self.create_overlay_panel()
 
         for pn in self.panesToMinimise:
             self._mgr.MinimizePane(pn)
@@ -290,7 +290,7 @@ class DSViewFrame(AUIFrame):
             self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
             pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(
                 False).MinimizeButton(True).MinimizeMode(
-                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT).BestSize(self.overlaypanel.GetBestSize())#.CaptionVisible(False)
             self._mgr.AddPane(self.overlaypanel, pinfo2)
         
             self.panesToMinimise.append(pinfo2)

@@ -235,7 +235,7 @@ class FunctionOverlay(Overlay):
 
     def __init__(self, fcn, display_name):
         self._fcn = fcn
-        Overlay.__init__(display_name=display_name)
+        Overlay.__init__(self, display_name=display_name)
 
     def __call__(self, vp, dc):
         if self.visible:
