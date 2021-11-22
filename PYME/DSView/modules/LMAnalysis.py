@@ -610,16 +610,6 @@ class LMAnalyser2(Plugin):
             self.fitInf.SetResults(self.fitResults, self.resultsMdh)
             
         
-    def OnPointSelect(self, xp, yp):
-        dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
-        
-        cand = dist.argmin()
-
-        vs = self.image.voxelsize_nm
-        self.dsviewer.do.xp = xp/(vs.x)
-        self.dsviewer.do.yp = yp/(vs.y)
-        self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
-        
 
     def OnToggleBackground(self, event):
         #self.SetMDItems()

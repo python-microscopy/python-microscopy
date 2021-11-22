@@ -351,7 +351,7 @@ class LMGLCanvas(GLCanvas):
         if not self.IsShown():
             print('ns')
             return
-        wx.PaintDC(self)
+        #wx.PaintDC(self)
         # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent(self.gl_context)
