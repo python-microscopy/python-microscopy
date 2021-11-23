@@ -248,8 +248,8 @@ class PsfExtractor(Plugin):
                 
             for p in self.PSFLocs:
                 #dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
-                xp0, yp0 = view._PixelToScreenCoordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
-                xp1, yp1 = view._PixelToScreenCoordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
+                xp0, yp0 = view.pixel_to_screen_coordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
+                xp1, yp1 = view.pixel_to_screen_coordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
                 dc.DrawRectangle(xp0, yp0, xp1-xp0,yp1-yp0)
 
         

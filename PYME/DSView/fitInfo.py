@@ -179,9 +179,9 @@ class FitInfoPanel(wx.Panel):
                     dc.SetPen(pGreen)
                 else:
                     dc.SetPen(pRed)
-                px, py = vp._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
+                px, py = vp.pixel_to_screen_coordinates(p[0] - ps2, p[1] - ps2)
                 dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                px, py = vp._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
+                px, py = vp.pixel_to_screen_coordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
                 dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
                 
         else:
@@ -196,8 +196,8 @@ class FitInfoPanel(wx.Panel):
                 y0 = res['slicesUsed']['y']['start']
                 y1 = res['slicesUsed']['y']['stop']
                 
-                px0, py0 = vp._PixelToScreenCoordinates(x0, y0)
-                px1, py1 = vp._PixelToScreenCoordinates(x1, y1)
+                px0, py0 = vp.pixel_to_screen_coordinates(x0, y0)
+                px1, py1 = vp.pixel_to_screen_coordinates(x1, y1)
                 
                 dc.DrawRectangle(px0,py0, px1 - px0,py1 - py0)
                 
@@ -205,7 +205,7 @@ class FitInfoPanel(wx.Panel):
                 xs = res['startParams']['x0']/vx
                 ys = res['startParams']['y0']/vy
                 
-                pxs, pys = vp._PixelToScreenCoordinates(xs, ys)
+                pxs, pys = vp.pixel_to_screen_coordinates(xs, ys)
                 
                 #print xs, ys, pxs, pys
                 
@@ -216,7 +216,7 @@ class FitInfoPanel(wx.Panel):
                 xs = res['fitResults']['x0']/vx
                 ys = res['fitResults']['y0']/vy
                 
-                pxs, pys = vp._PixelToScreenCoordinates(xs, ys)
+                pxs, pys = vp.pixel_to_screen_coordinates(xs, ys)
                 
                 dc.DrawLine(pxs-3, pys-3, pxs+3, pys+3)
                 dc.DrawLine(pxs-3, pys+3, pxs+3, pys-3)

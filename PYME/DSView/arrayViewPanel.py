@@ -64,9 +64,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         self.voxelsize = voxelsize
 
-        scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self.DoPaint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
+        scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self._do_paint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
-        self.do.WantChangeNotification.append(self.GetOpts)
+        self.do.WantChangeNotification.append(self._display_options_updated)
         #self.do.WantChangeNotification.append(self.Refresh)
 
         self.SetVirtualSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
@@ -109,34 +109,31 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.optionspanel.RefreshHists()
         self.updating = 0
 
-        self.refrTimer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
-
-        self.imagepanel.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
-        self.imagepanel.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
+        self.imagepanel.Bind(wx.EVT_MOUSEWHEEL, self._on_wheel)
+        self.imagepanel.Bind(wx.EVT_KEY_DOWN, self._on_key_press)
         #wx.EVT_KEY_DOWN(self.Parent(), self.OnKeyPress)
-        self.imagepanel.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        self.imagepanel.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.imagepanel.Bind(wx.EVT_LEFT_DOWN, self._on_left_down)
+        self.imagepanel.Bind(wx.EVT_LEFT_UP, self._on_left_up)
 
-        self.imagepanel.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDown)
-        self.imagepanel.Bind(wx.EVT_MIDDLE_UP, self.OnMiddleUp)
+        self.imagepanel.Bind(wx.EVT_MIDDLE_DOWN, self._on_middle_down)
+        self.imagepanel.Bind(wx.EVT_MIDDLE_UP, self._on_middle_up)
 
-        self.imagepanel.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-        self.imagepanel.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
+        self.imagepanel.Bind(wx.EVT_RIGHT_DOWN, self._on_right_down)
+        self.imagepanel.Bind(wx.EVT_RIGHT_UP, self._on_right_up)
 
-        self.imagepanel.Bind(wx.EVT_MIDDLE_DCLICK, self.OnMiddleDClick)
+        self.imagepanel.Bind(wx.EVT_MIDDLE_DCLICK, self._on_middle_double_click)
 
-        self.imagepanel.Bind(wx.EVT_MOTION, self.OnMotion)
+        self.imagepanel.Bind(wx.EVT_MOTION, self._on_motion)
 
         #
-        self.imagepanel.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
-
-    def OnRefrTimer(self, event):
-        self.Refresh()
-        self.Update()
+        self.imagepanel.Bind(wx.EVT_ERASE_BACKGROUND, self._do_nothing)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self._do_nothing)
         
     def SetDataStack(self, ds):
+        """
+        Make this viewer point at a new data source, resetting all the view options
+        (the viewer will behave as though the new data set was cleanly loaded)
+        """
         self.do.SetDataStack(ds)
         self.SetVirtualSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
                 
@@ -151,17 +148,20 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 #        self.Refresh()
 
     def ResetDataStack(self, ds):
+        """
+        Make this viewer point at a new data source, whilst keeping all the display options constant / unchanged
+        """
         self.do.SetDataStack(ds)
 
-    def _ScreenToAbsCoordinates(self, x, y):
+    def _screen_to_abs_coordinates(self, x, y):
         xp,yp = self.CalcUnscrolledPosition(x,y)
         if self.do.orientation == self.do.UPRIGHT:
             return xp, yp
         else:
             return yp, xp
 
-    def _ScreenToPixelCoordinates(self, x, y):
-        xp, yp = self._ScreenToAbsCoordinates(x, y)
+    def _screen_to_pixel_coordinates(self, x, y):
+        xp, yp = self._screen_to_abs_coordinates(x, y)
         
         return xp/self.scale, yp/(self.scale*self.aspect)
 
@@ -169,12 +169,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         dc = wx.ClientDC(self.imagepanel)
         pos = event.GetLogicalPosition(dc)
         if three_d:
-            return self._ScreenToPixelCoordinates3D(*pos)
+            return self._screen_to_pixel_coordinates_3D(*pos)
         else:
-            return self._ScreenToPixelCoordinates(*pos)
+            return self._screen_to_pixel_coordinates(*pos)
 
-    def _ScreenToPixelCoordinates3D(self, x, y):
-        xp, yp = self._ScreenToAbsCoordinates(x, y)
+    def _screen_to_pixel_coordinates_3D(self, x, y):
+        xp, yp = self._screen_to_abs_coordinates(x, y)
 
         if (self.do.slice == self.do.SLICE_XY):
             return xp/self.scale, yp/(self.scale*self.aspect), self.do.zp
@@ -184,7 +184,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             return self.do.xp, xp/self.scale, yp/(self.scale*self.aspect)
         
 
-    def _AbsToScreenCoordinates(self, x, y):
+    def _abs_to_screen_coordinates(self, x, y):
         x0,y0 = self.CalcUnscrolledPosition(0,0)
 
         if self.do.orientation == self.do.UPRIGHT:        
@@ -192,29 +192,85 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         else:
             return y - x0, x - y0
 
-    def _PixelToScreenCoordinates(self, x, y):
-        return self._AbsToScreenCoordinates(x*self.scale, y*self.scale*self.aspect)
+    def pixel_to_screen_coordinates(self, x, y):
+        """
+        Return the screen coordinates for a given pixel coordinate, taking view scaling and translation into account
+
+        Useful in overlays, etc ... to position them correctly on the screen
+
+        NOTE: this assumes that slicing has already been accounted for - code calling this should be slice aware, or use 
+        pixel_to_screen_coordinates3D() instead
+
+        Parameters
+        ==========
+
+        x : float, or np.ndarray
+            x position(s) in units of image pixels
+        y : float, or np.ndarray
+            y position(s) in units of image pixels 
+
         
-    def _PixelToScreenCoordinates3D(self, x, y, z):
+        Returns
+        =======
+         x : float or np.ndarray
+            x position(s) in device context (drawing) coordinates
+        y : float or np.ndarray
+            y position(s) in device context (drawing) coordinates
+
+        """
+        return self._abs_to_screen_coordinates(x*self.scale, y*self.scale*self.aspect)
+        
+    def pixel_to_screen_coordinates3D(self, x, y, z):
+        """
+        Return the screen coordinates for a given pixel coordinate, taking view scaling, translation and slicing into account
+
+        Useful in overlays, etc ... to position them correctly on the screen
+
+        TODO: change this to a 5D data model with t as well (when we add, e.g. x-t slicing)
+
+        Parameters
+        ==========
+
+        x : float, or np.ndarray
+            x position(s) in units of image pixels
+        y : float, or np.ndarray
+            y position(s) in units of image pixels 
+        z : float, or np.ndarray
+            z position(s) in units of image pixels
+        
+        Returns
+        =======
+         x : float or np.ndarray
+            x position(s) in device context (drawing) coordinates
+        y : float or np.ndarray
+            y position(s) in device context (drawing) coordinates
+
+        """
         if (self.do.slice == self.do.SLICE_XY):
-            xs, ys = self._PixelToScreenCoordinates(x,y)
+            xs, ys = self.pixel_to_screen_coordinates(x,y)
         elif (self.do.slice == self.do.SLICE_XZ):
-            xs, ys = self._PixelToScreenCoordinates(x,z)
+            xs, ys = self.pixel_to_screen_coordinates(x,z)
         elif (self.do.slice == self.do.SLICE_YZ):
-            xs, ys = self._PixelToScreenCoordinates(y,z)
+            xs, ys = self.pixel_to_screen_coordinates(y,z)
             
         return xs, ys
         
-    def _drawBoxPixelCoords(self, dc, x, y, z, w, h, d):
-        """Draws a box in screen space given 3D co-ordinates"""
+    def draw_box_pixel_coords(self, dc, x, y, z, w, h, d):
+        """Draws a box on a given device contect (dc) given 3D co-ordinates
+        in image pixel space.
+
+        Usually called from overlays. NOTE: the dc should be the same one that is passed TO the overlay, and which comes from 
+        our OnPaint handler, not any arbitrary device context.
+
+        """
         if (self.do.slice == self.do.SLICE_XY):
-            xs, ys = self._PixelToScreenCoordinates(x,y)
+            xs, ys = self.pixel_to_screen_coordinates(x,y)
             ws, hs = (w*self.scale, h*self.scale*self.aspect)
         elif (self.do.slice == self.do.SLICE_XZ):
-            xs, ys = self._PixelToScreenCoordinates(x,z)
+            xs, ys = self.pixel_to_screen_coordinates(x,z)
             ws, hs = (w*self.scale, d*self.scale*self.aspect)
         elif (self.do.slice == self.do.SLICE_YZ):
-            xs, ys = self._PixelToScreenCoordinates(y,z)
+            xs, ys = self.pixel_to_screen_coordinates(y,z)
             ws, hs = (h*self.scale, d*self.scale*self.aspect)
             
         dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
@@ -222,9 +278,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     @property
     def scale(self):
+        """
+        The scaling between image pixels and display pixels
+
+        NOTE: this is linear, DisplayOptions.scale is log2(this)
+        """
         return pow(2.0,(self.do.scale))
             
-    def DrawSelection(self, view, dc):
+    def _draw_selection(self, view, dc):
         if self.do.showSelection:
             col = wx.TheColourDatabase.FindColour('YELLOW')
             #col.Set(col.red, col.green, col.blue, 125)
@@ -232,8 +293,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
             lx, ly, hx, hy = self.do.GetSliceSelection()
-            lx, ly = self._PixelToScreenCoordinates(lx, ly)
-            hx, hy = self._PixelToScreenCoordinates(hx, hy)
+            lx, ly = self.pixel_to_screen_coordinates(lx, ly)
+            hx, hy = self.pixel_to_screen_coordinates(hx, hy)
             
             if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
@@ -241,7 +302,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
                 if len(self.do.selection_trace) > 2:
                     x, y = numpy.array(self.do.selection_trace).T
-                    pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
+                    pts = numpy.vstack(self.pixel_to_screen_coordinates(x, y)).T
                     dc.DrawSpline(pts)
             elif self.do.selectionWidth == 1:
                 dc.DrawLine(lx,ly, hx,hy)
@@ -257,13 +318,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     d_x = 0.5*self.do.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
                     d_y = 0.5*self.do.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
                     
-                x_0, y_0 = self._PixelToScreenCoordinates(lx + d_x, ly - d_y)
-                x_1, y_1 = self._PixelToScreenCoordinates(lx - d_x, ly + d_y)
-                x_2, y_2 = self._PixelToScreenCoordinates(hx - d_x, hy + d_y)
-                x_3, y_3 = self._PixelToScreenCoordinates(hx + d_x, hy - d_y)
+                x_0, y_0 = self.pixel_to_screen_coordinates(lx + d_x, ly - d_y)
+                x_1, y_1 = self.pixel_to_screen_coordinates(lx - d_x, ly + d_y)
+                x_2, y_2 = self.pixel_to_screen_coordinates(hx - d_x, hy + d_y)
+                x_3, y_3 = self.pixel_to_screen_coordinates(hx + d_x, hy - d_y)
                 
-                lx, ly = self._PixelToScreenCoordinates(lx, ly)
-                hx, hy = self._PixelToScreenCoordinates(hx, hy)
+                lx, ly = self.pixel_to_screen_coordinates(lx, ly)
+                hx, hy = self.pixel_to_screen_coordinates(hx, hy)
                
 
                 dc.DrawLine(lx, ly, hx, hy)
@@ -272,13 +333,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
                 
-    def DrawContours(self, view, dc):
+    def _draw_contours(self, view, dc):
+        # TODO - shift to overlay [currently triggered as a result of specific recipe output - work out how to detect this in the recipe handling]
         if self.showContours and 'filter' in dir(self) and 'contour' in self.filter.keys() and self.do.slice ==self.do.SLICE_XY:
             t = self.filter['t'] # prob safe as int
             x = self.filter['x']/self.voxelsize[0]
             y = self.filter['y']/self.voxelsize[1]
             
-            xb, yb, zb = self._calcVisibleBounds()
+            xb, yb, zb = self.visible_bounds
             
             IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
 
@@ -296,11 +358,20 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             for c, colI in zip(contours, colInds):
                 xc, yc = c.T
                 dc.SetPen(self.labelPens[int(colI)])
-                dc.DrawSpline(numpy.vstack(self._PixelToScreenCoordinates(xc, yc)).T)
+                dc.DrawSpline(numpy.vstack(self.pixel_to_screen_coordinates(xc, yc)).T)
                 
 
-    def _calcVisibleBounds(self):
-        sc = pow(2.0,(self.do.scale)) 
+    @property
+    def visible_bounds(self):
+        """
+        The currently visible bounds of the image, in image pixel coordinates [x, y, z]
+
+        Used to avoid drawing overlays in regions of the image which are not shown.
+
+        TODO - make 4D (when we add xt etc .... slicing). Overlays (and especially those in plugins) should be written
+        so they will also work if this method retuns a 4-tuple, [x,y,z,t]
+        """
+        sc = self.scale
         x0,y0 = self.CalcUnscrolledPosition(0,0)
         sX, sY = self.imagepanel.Size
         
@@ -315,14 +386,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     
     
-    def DoPaint(self, dc, fullImage=False):
+    def _do_paint(self, dc, fullImage=False):
         #print 'p'
         
         dc.Clear()
                                      
-        im = self.Render(fullImage)
+        im = self._render(fullImage)
 
-        sc = pow(2.0,(self.do.scale))
+        sc = self.scale
         sc2 = sc
         
         if sc >= 1:
@@ -335,8 +406,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         im2 = wx.BitmapFromImage(im)
         dc.DrawBitmap(im2,-sc2/2,-sc2/2)
         
-        self.DrawSelection(self, dc) 
-        self.DrawContours(self, dc)
+        self._draw_selection(self, dc) 
+        self._draw_contours(self, dc)
 
         dc.SetPen(wx.NullPen)
         dc.SetBrush(wx.NullBrush)
@@ -360,7 +431,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
 
-        self.DoPaint(MemDC, fullImage)
+        self._do_paint(MemDC, fullImage)
 
         return MemBitmap
 
@@ -391,7 +462,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             wx.TheClipboard.Close()
             
 
-    def OnWheel(self, event):
+    def _on_wheel(self, event):
         rot = event.GetWheelRotation()
         if rot < 0:
             if event.RightIsDown():
@@ -418,18 +489,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.imagepanel.Refresh()
         #self.update()
     
-    def OnKeyPress(self, event):
+    def _on_key_press(self, event):
         if event.GetKeyCode() == wx.WXK_PAGEUP:
             self.do.zp = max(0, self.do.zp - 1)
             #self.optionspanel.RefreshHists()
             if ('update' in dir(self.GetParent())):
                 self.GetParent().update()
             else:
-                #if not self.painting:
                 self.imagepanel.Refresh()
-                #else:
-                #    if not self.refrTimer.IsRunning():
-                #        self.refrTimer.Start(.2, True)
+                
 
         elif event.GetKeyCode() == wx.WXK_PAGEDOWN:
             self.do.zp = min(self.do.zp + 1, self.do.ds.shape[2] - 1)
@@ -438,12 +506,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 self.GetParent().update()
                 #print 'upd'
             else:
-                #if not self.painting:
                 self.imagepanel.Refresh()
-                #else:
-                #    if not self.refrTimer.IsRunning():
-                        #print 'upt'
-                #        self.refrTimer.Start(.2, True)
                 
         elif event.GetKeyCode() == 74: #J
             self.do.xp = (self.do.xp - 1)
@@ -484,11 +547,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
 
         
-    def GetOpts(self,event=None):
+    def _display_options_updated(self,event=None):
         if (self.updating == 0):
 
             sc = pow(2.0,(self.do.scale))
-            s = self.CalcImSize()
+            s = self._calc_im_size()
             self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
 
             if (self._slice != self.do.slice) or (self._sc != sc):
@@ -520,16 +583,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.Refresh()
             self.Update()
             
-    def Optim(self, event = None):
-        self.do.Optimise(self.do.ds, int(self.do.zp))
-        self.updating=1
-        #self.SetOpts()
-        #self.optionspanel.RefreshHists()
-        self.Refresh()
-        self.Update()
-        self.updating=0
         
-    def CalcImSize(self):
+    def _calc_im_size(self):
+        # calculate the full size of an image when grabbing a full-size colour mapped image as PNG or similar
         if (self.do.slice == self.do.SLICE_XY):
             if (self.do.orientation == self.do.UPRIGHT):
                 return (self.do.ds.shape[0],self.do.ds.shape[1])
@@ -540,34 +596,35 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         else:
             return(self.do.ds.shape[1],self.do.ds.shape[2] )
         
-    def DoNix(self, event):
+    def _do_nothing(self, event):
+        # used to catch ERASE_BACKGROUND events, to reduce flicker
         pass
 
-    def OnLeftDown(self,event):
+    def _on_left_down(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
-            self.StartSelection(event)
+            self._start_selection(event)
             
         event.Skip()
     
-    def OnLeftUp(self,event):
+    def _on_left_up(self,event):
         if self.do.leftButtonAction == self.do.ACTION_SELECTION:
-            self.ProgressSelection(event)
-            self.EndSelection()
+            self._progress_selection(event)
+            self._end_selection()
         elif self.do.leftButtonAction == self.do.ACTION_SELECT_OBJECT:
-            self.OnSelectObject(event)
+            self._on_select_object(event)
         else:
-            self.OnSetPosition(event)
+            self._on_set_position(event)
             
         event.Skip()
         
-    def OnMiddleDown(self,event):
+    def _on_middle_down(self,event):
         dc = wx.ClientDC(self.imagepanel)
 #        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
         self.middleDownPos = self.CalcUnscrolledPosition(*pos)
         event.Skip()
     
-    def OnMiddleUp(self,event):
+    def _on_middle_up(self,event):
         dc = wx.ClientDC(self.imagepanel)
 #        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
@@ -584,7 +641,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         event.Skip()
         
-    def OnMiddleDClick(self,event):
+    def _on_middle_double_click(self,event):
         dc = wx.ClientDC(self.imagepanel)
 #        self.imagepanel.PrepareDC(dc)
         pos = event.GetLogicalPosition(dc)
@@ -617,7 +674,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         return xs, ys
 
-    def OnSetPosition(self,event):
+    def _on_set_position(self,event):
         pos_3d = self._evt_pixel_coords(event, three_d=True)
 
         self.do.inOnChange = True
@@ -631,12 +688,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         for cb in self.selectHandlers:
             if cb(pos_3d):
                 break
-        #if ('update' in dir(self.GetParent())):
-        #     self.GetParent().update()
-        #else:
-        #    self.imagepanel.Refresh()
 
-    def OnSelectObject(self, event):
+    def _on_select_object(self, event):
         pos_3d = self._evt_pixel_coords(event, three_d=True)
         
         for cb in self.selectHandlers:
@@ -645,10 +698,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 break
 
 
-    def OnRightDown(self, event):
-        self.StartSelection(event)
+    def _on_right_down(self, event):
+        self._start_selection(event)
             
-    def StartSelection(self,event):
+    def _start_selection(self,event):
         self.selecting = True
         
         pos = self._evt_pixel_coords(event)
@@ -663,15 +716,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.do.selection_trace = []
         self.do.selection_trace.append(tuple(pos))
 
-    def OnRightUp(self,event):
-        self.ProgressSelection(event)
-        self.EndSelection()
+    def _on_right_up(self,event):
+        self._progress_selection(event)
+        self._end_selection()
 
-    def OnMotion(self, event):
+    def _on_motion(self, event):
         if event.Dragging() and self.selecting:
-            self.ProgressSelection(event)
+            self._progress_selection(event)
             
-    def ProgressSelection(self,event):
+    def _progress_selection(self,event):
         pos = self._evt_pixel_coords(event)
         
         if (self.do.slice == self.do.SLICE_XY):
@@ -700,13 +753,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.Refresh()
         self.Update()
 
-    def EndSelection(self):
+    def _end_selection(self):
         self.selecting = False
         self.do.EndSelection()
             
 
         
-    def _gensig(self, x0, y0, sX,sY, do):
+    def _image_signature(self, x0, y0, sX,sY, do):
+        # generate a signature for the current image settings to work out if we need to re-render (colour-map) the image
+        # or if we can use a cached copy
         sig = [x0, y0, sX, sY, do.scale, do.slice, do.GetActiveChans(), do.ds.shape]
         if do.slice == DisplayOpts.SLICE_XY:
             sig += [do.zp, do.maximumProjection]
@@ -749,7 +804,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             #print seg.shape
             applyLUT(seg, gain, offset, lut, ima)
 
-    def Render(self, fullImage=False):
+    def _render(self, fullImage=False):
         #print 'rend'
         if fullImage:
             x0, y0 = 0,0
@@ -758,7 +813,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             x0,y0 = self.CalcUnscrolledPosition(0,0)
             sX, sY = self.imagepanel.Size
         
-        sig = self._gensig(x0, y0, sX, sY, self.do)
+        sig = self._image_signature(x0, y0, sX, sY, self.do)
         if sig == self._oldImSig:# and not self._oldIm is None:
             #if nothing has changed, don't re-render
             return self._oldIm

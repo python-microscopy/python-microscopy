@@ -256,7 +256,7 @@ class Annotater(Plugin):
 
     def DrawOverlays(self, view, dc):
         if self.show_annotations and (len(self._annotations) > 0):
-            bounds = view._calcVisibleBounds()
+            bounds = view.visible_bounds
             #vx, vy, vz = self.image.voxelsize
             visible_annotations = [c for c in self._annotations if self._visibletest(c, bounds)]
         
@@ -266,7 +266,7 @@ class Annotater(Plugin):
                 pts = np.array(c['points'])
                 x, y = pts.T
                 z = int(c['z'])
-                pFoc = np.vstack(view._PixelToScreenCoordinates3D(x, y, z)).T
+                pFoc = np.vstack(view.pixel_to_screen_coordinates3D(x, y, z)).T
 
                 if c in self.selected_annotations:
                     wf = 2.0

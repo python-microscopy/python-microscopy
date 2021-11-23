@@ -90,7 +90,7 @@ class PointDisplayOverlay(Overlay):
                 x = self.filter['x']/vx
                 y = self.filter['y']/vy
                 
-                xb, yb, zb = vp._calcVisibleBounds()
+                xb, yb, zb = vp.visible_bounds
                 
                 IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
                     
@@ -133,13 +133,13 @@ class PointDisplayOverlay(Overlay):
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
                 
                 for xi, yi, zi in pNFoc:
-                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
                 
                 if pm == 'splitter':
                     x, y, z = pNFoc.T
                     x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
                     for xi, yi, zi in zip(x_, y_, z):#, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
+                        vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
@@ -155,12 +155,12 @@ class PointDisplayOverlay(Overlay):
                     else:
                         dc.SetPen(pRed)
                         
-                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
-                    vp._drawBoxPixelCoords(dc, x_i, y_i, zi, ps, ps, ps)
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+                    vp.draw_box_pixel_coords(dc, x_i, y_i, zi, ps, ps, ps)
                     
             else:
                 for xi, yi, zi in pFoc:
-                    vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
@@ -229,7 +229,7 @@ class CrosshairsOverlay(Overlay):
                 ly = vp.do.zp
         
             
-            xc, yc = vp._PixelToScreenCoordinates(lx, ly)            
+            xc, yc = vp.pixel_to_screen_coordinates(lx, ly)            
             dc.DrawLine(0, yc, sX, yc)
             dc.DrawLine(xc, 0, xc, sY)
             
