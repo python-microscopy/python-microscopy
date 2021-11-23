@@ -23,27 +23,17 @@
 
 import warnings
 import wx
-import wx.lib.agw.aui as aui
 
-#import sys
-import os
-#sys.path.append(".")
 from PYME.DSView import scrolledImagePanel
 from PYME.DSView.displayOptions import DisplayOpts, labeled
-from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 from PYME.DSView import overlays
-from PYME.DSView.OverlaysPanel import OverlayPanel
-
-from PYME.DSView.modules import playback
 from PYME.DSView.LUT import applyLUT
 
 import numpy
 import scipy
 # import pylab
-import matplotlib.pyplot as plt
 import matplotlib.cm
 
-from PYME.contrib import dispatch
 
 LUTCache = {}
 
