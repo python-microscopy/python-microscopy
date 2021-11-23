@@ -123,17 +123,7 @@ class DSViewFrame(AUIFrame):
             if len(chan_names) == self.image.data_xyztc.shape[4]:
                 self.do.names = chan_names
 
-        #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
-        #self.view = ArrayViewPanel(self, do=self.do)
-        #self.AddPage(self.view, True, 'Data')
-        #self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
-        #                  Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
-
-        
-
         self.mainFrame = weakref.ref(self)
-        #self.do = self.vp.do
-        
         
         if not hasattr(self, "ID_OPEN_SEQ"):
             self.ID_OPEN_SEQ = wx.NewId()
@@ -142,22 +132,6 @@ class DSViewFrame(AUIFrame):
         self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
         self.AddMenuItem('File', 'Open Image Se&quence', self.OnOpenSequence, id=self.ID_OPEN_SEQ)
         #self.AddMenuItem('File>Save','Save &Results', )
-        
-        #tmp_menu = wx.Menu()
-        #tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
-        #tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
-        #tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
-        
-
-        #a submenu for modules to hook and install saving functions into
-        #self.save_menu = wx.Menu()
-        #self._menus['Save'] = self.save_menu
-        #tmp_menu.Append(-1, 'Save &Results', self.save_menu)
-        
-        #tmp_menu.AppendSeparator()
-        #tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(tmp_menu, "File")
-        #self._menus['File'] = tmp_menu
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
@@ -169,10 +143,6 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        #self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
-        #self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        #self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
-        #self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 		
@@ -205,16 +175,10 @@ class DSViewFrame(AUIFrame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
-        #self.mWindows =  wx.Menu()
-        #self.menubar.append(self.mWindows, '&Composite With')
         self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
         
-
-        #for pn in self.panesToMinimise:
-        #    self._mgr.MinimizePane(pn)
-        #self._mgr.MinimizePane(pinfo2)
         self.Layout()
 
         if 'view' in dir(self):
