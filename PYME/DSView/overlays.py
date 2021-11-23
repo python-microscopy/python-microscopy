@@ -56,7 +56,7 @@ class PointDisplayOverlay(Overlay):
 
     
     def _map_splitter_coords(self, x, y, ds_shape):
-        from PYME.Analysis import splitting
+        from PYME.localization import splitting
 
         if self.md is None:
             md = getattr(self.filter, 'mdh', {})
@@ -84,6 +84,7 @@ class PointDisplayOverlay(Overlay):
 
         if self.visible and ('filter' in dir(self) or len(self.points) > 0):
             #print('plotting points')
+            
             if 'filter' in dir(self):
                 t = self.filter['t'] #prob safe as int
                 x = self.filter['x']/vx
@@ -94,19 +95,25 @@ class PointDisplayOverlay(Overlay):
                 IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
                     
                 pFoc = np.vstack((x[IFoc], y[IFoc], t[IFoc])).T
-                if self.pointMode == 'splitter':
-                    f_keys = self.filter.keys()
-                    if 'gFrac' in f_keys:
-                        pCol = self.filter['gFrac'][IFoc] > .5 
-                    elif 'ratio' in f_keys:
-                        pCol = self.fitResults['ratio'][IFoc] > 0.5
-                    else:
-                        pCol = self.fitResults['fitResults']['Ag'][IFoc] > self.fitResults['fitResults']['Ar'][IFoc]               
+
+                f_keys = self.filter.keys()
+                
+                #assume splitter, then test for keys
+                pm = 'splitter'    
+                if 'gFrac' in f_keys:
+                    pCol = self.filter['gFrac'][IFoc] > .5 
+                elif 'ratio' in f_keys:
+                    pCol = self.filter['ratio'][IFoc] > 0.5
+                elif 'fitResults_Ag' in f_keys:
+                    pCol = self.filter['fitResults_Ag'][IFoc] > self.filter['fitResults_Ar'][IFoc]
+                else:
+                    pm = self.pointMode               
                 
                 pNFoc = []
 
             #intrinsic points            
             elif len(self.points) > 0:
+                pm = self.pointMode
                 pointTol = self.pointTolNFoc[self.pointMode]
                 
                 IFoc = abs(self.points[:,aN] - pos[aN]) < 1
@@ -128,8 +135,8 @@ class PointDisplayOverlay(Overlay):
                 for xi, yi, zi in pNFoc:
                     vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
                 
-                if self.pointMode == 'splitter':
-                    x, y, z = pNFoc
+                if pm == 'splitter':
+                    x, y, z = pNFoc.T
                     x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
                     for xi, yi, zi in zip(x_, y_, z):#, dxi, dyi in zip(pNFoc, dxn, dyn):
                         vp._drawBoxPixelCoords(dc, xi, yi, zi, ps, ps, ps)
@@ -139,8 +146,8 @@ class PointDisplayOverlay(Overlay):
             pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
             
-            if self.pointMode == 'splitter':
-                x, y, z = pFoc
+            if pm == 'splitter':
+                x, y, z = pFoc.T
                 x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
                 for xi, x_i, yi, y_i, zi, c in zip(x, x_, y, y_, z, pCol):
                     if c:
