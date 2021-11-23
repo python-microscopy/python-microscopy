@@ -81,19 +81,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         self.SetVirtualSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
         #self.imagepanel.SetSize(wx.Size(self.do.ds.shape[0],self.do.ds.shape[1]))
-        
 
-        #self.points =[]
-        #self.pointsR = []
-        #self.showPoints = True
-        #self.showTracks = True
         self.showContours = True
-        #self.showScaleBar = True
-        #self.scaleBarLength = 2000
-        #self.pointMode = 'confoc'
-        #self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
-        #self.showAdjacentPoints = False
-        #self.pointSize = 11
         self.layerMode = 'Add'
 
         self.psfROIs = []
@@ -103,7 +92,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.lastFrameTime = 2e-3
 
         #self.do.scale = 0
-        #self.crosshairs = True
         #self.showSelection = True
         self.selecting = False
 
@@ -123,7 +111,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._oldImSig = None
         
         self.CenteringHandlers = []
-        
         self.selectHandlers = []
         
         self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in matplotlib.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
@@ -131,7 +118,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #self.SetOpts()
         #self.optionspanel.RefreshHists()
         self.updating = 0
-        self.showOptsPanel = 1
 
         self.refrTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
