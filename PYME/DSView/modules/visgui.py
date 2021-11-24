@@ -85,8 +85,10 @@ class GLImageView(LMGLShaderCanvas):
     def __init__(self, parent, image, glCanvas, display_opts, show_lut=False, **kwargs):
         if glCanvas is None:
             view = None
+            self.own_view = True
         else:
-            view = glCanvas.view  
+            view = glCanvas.view 
+            self.ownView = False 
 
         LMGLShaderCanvas.__init__(self, parent=parent, show_lut=show_lut, view=view, **kwargs)
         
@@ -111,6 +113,9 @@ class GLImageView(LMGLShaderCanvas):
         
             self.layers.append(l_i)
     
+        if self.own_view:
+            self.fit_bbox()
+
         self._sync_display_opts()
         
     def _sync_display_opts(self):
