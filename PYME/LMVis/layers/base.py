@@ -81,7 +81,7 @@ class BaseLayer(HasTraits):
     
     def __init__(self, context=None, **kwargs):
         self._context = context
-        #HasTraits.__init__(**kwargs)
+        HasTraits.__init__(self, **kwargs)
         
     @property
     def bbox(self):

@@ -31,7 +31,7 @@ import six
 from PYME.recipes import recipeGui
 from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
-
+from PYME.DSView import overlays
 from PYME.LMVis import pipeline
 
 import os
@@ -44,7 +44,6 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
         Plugin.__init__(self, dsviewer)
         
         self.cannedIDs = {}
-        
 
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
         self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
@@ -124,8 +123,11 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
         
                     from PYME.IO import tabular
                     cache = tabular.CachingResultsFilter(self.activeRecipe.namespace['out_meas'])
-                    dv.pipeline.OpenFile(ds=cache)
-                    dv.view.filter = dv.pipeline
+                    
+                    dv.pipeline.OpenFile(ds=cache) # TODO - is needed?
+                    dv.view.add_overlay(overlays.PointDisplayOverlay(filter=cache, display_name='out_meas'))
+                    
+                    #dv.view.filter = dv.pipeline
     
                 #set scaling to (0,1)
                 for i in range(outp.data.shape[3]):
@@ -159,7 +161,10 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
-                self.dsviewer.view.filter = self.dsviewer.pipeline
+
+                if not hasattr(self, '_ovl'):
+                    self._ovl = overlays.PointDisplayOverlay(filter=self.dsviewer.pipeline, display_name='Recipe output')
+                    self.view.add_overlay(self.ovl)
                     
                 
             for out_ in self.activeRecipe.gather_outputs():
@@ -231,7 +236,10 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
                 
             cache = tabular.CachingResultsFilter(data)
             self.dsviewer.pipeline.OpenFile(ds = cache)
-            self.dsviewer.view.filter = self.dsviewer.pipeline
+
+            if not hasattr(self, '_ovl'):
+                self._ovl = overlays.PointDisplayOverlay(filter=self.dsviewer.pipeline, display_name=filename)
+                self.view.add_overlay(self.ovl)
                 
                 
             

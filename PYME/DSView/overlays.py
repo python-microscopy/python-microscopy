@@ -6,165 +6,245 @@ Created on Fri Mar  6 15:28:03 2015
 """
 import wx
 import numpy as np
+from PYME.DSView.displayOptions import DisplayOpts
+from PYME.LMVis.layers.base import SimpleLayer
+from PYME.recipes.traits import CStr, Int
+import abc
 
-class PSFROIs(object):
+class Overlay(SimpleLayer):
+    # make our overlays inherit from PYMEVis layers, even if we don't implement opengl display for now
+    # NOTE this gives us a 'visible' property
+
+    display_name = CStr('')
+
+        
+    @abc.abstractmethod
     def __call__(self, vp, dc):
-        if (len(self.psfROIs) > 0):
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1))
-            if(self.do.slice == self.do.SLICE_XY):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
-            elif(self.do.slice == self.do.SLICE_XZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[2]*sc*self.aspect)
-            elif(self.do.slice == self.do.SLICE_YZ):
-                for p in self.psfROIs:
-                    dc.DrawRectangle(sc*p[1]-self.psfROISize[1]*sc - x0,sc*p[2]*self.aspect - self.psfROISize[2]*sc*self.aspect - y0, 2*self.psfROISize[1]*sc,2*self.psfROISize[2]*sc*self.aspect)
+        """
+        Draw this overly using wx, as an overlay on an arrayviewpanel
 
-class TrackDisplay(object):
+
+        Parameters
+        ==========
+
+        vp : arrayViewPanle.ArrayViewPanel instance
+            Generally only to be used for getting display options, pixel coordinate transformations, etc ... please do not store or acess data through vp
+            (vp was a mess, containing lots of data, rather than just view, and we are slowly trying to move all fot that out)
+        dc : wx.DC instance
+            The device context to draw onto
+
+        TODO - refactor this to e.g. draw_wx
+        """
+        pass
+
+SLICE_AXIS_LUT = {DisplayOpts.SLICE_XY:2, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:0}
+TOL_AXIS_LUT = {DisplayOpts.SLICE_XY:0, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:2}
+class PointDisplayOverlay(Overlay):
+    def __init__(self, points = [], filter=None, md=None, **kwargs):
+        self.points = points
+        self.md = md
+        self.pointColours = []
+        self.pointSize = 11
+        self.pointMode = 'confoc'
+        self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
+        self.showAdjacentPoints = False
+
+        if filter:
+            self.filter = filter
+
+        Overlay.__init__(self, **kwargs)
+
+    
+    def _map_splitter_coords(self, x, y, ds_shape):
+        from PYME.localization import splitting
+
+        if self.md is None:
+            md = getattr(self.filter, 'mdh', {})
+        else:
+            md = self.md
+
+        xgs, xrs, ygs, yrs = splitting.get_splitter_rois(md, ds_shape)
+        return splitting.remap_splitter_coords_(x, y, [xgs, xrs], [ygs, yrs], quadrant=1, flip=(yrs.step < 0))
+    
+    
     def __call__(self, vp, dc):
-        if self.showTracks and 'filter' in dir(self) and 'clumpIndex' in self.filter.keys():
-            if(self.do.slice == self.do.SLICE_XY):
-                IFoc = (abs(self.filter['t'] - vp.do.zp) < 1)
-                               
-            elif(self.do.slice == self.do.SLICE_XZ):
-                IFoc = (abs(self.filter['y'] - vp.do.yp*self.vox_y) < 3*vp.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)      
-
-            else:#(self.do.slice == self.do.SLICE_YZ):
-                IFoc = (abs(self.filter['x'] - vp.do.xp*self.vox_x) < 3*vp.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-
-            tFoc = list(set(self.filter['clumpIndex'][IFoc]))
-
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            #pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            dc.SetPen(pGreen)
-
-            for tN in tFoc:
-                IFoc = (self.filter['clumpIndex'] == tN)
-                if(self.do.slice == self.do.SLICE_XY):
-                    pFoc = np.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['y'][IFoc]/self.vox_y - y0)).T
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    pFoc = np.vstack((sc*self.filter['x'][IFoc]/self.vox_x - x0, sc*self.filter['t'][IFoc] - y0)).T
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    pFoc = np.vstack((sc*self.filter['y'][IFoc]/self.vox_y - y0, sc*self.filter['t'][IFoc] - y0)).T
-
-                dc.DrawLines(pFoc)
-
-
         dx = 0
         dy = 0
+        
+        aN = SLICE_AXIS_LUT[vp.do.slice]
+        tolN = TOL_AXIS_LUT[vp.do.slice]
+        if vp.do.ds.shape[2] > 1:
+            # stack has z
+            pos = [vp.do.xp, vp.do.yp, vp.do.zp]
+        else:
+            # stack is a time series
+            pos = [vp.do.xp, vp.do.yp, vp.do.tp]
 
-class PointDisplay(object):
-    def __call__(self, vp, dc):
-        if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
+        vx, vy = vp.voxelsize[:2]
+
+        if self.visible and ('filter' in dir(self) or len(self.points) > 0):
+            #print('plotting points')
+            
             if 'filter' in dir(self):
-                #pointTol = self.pointTolNFoc[self.pointMode]
+                t = self.filter['t'] #prob safe as int
+                x = self.filter['x']/vx
+                y = self.filter['y']/vy
+                
+                xb, yb, zb = vp.visible_bounds
+                
+                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+                    
+                pFoc = np.vstack((x[IFoc], y[IFoc], t[IFoc])).T
 
-                if(self.do.slice == self.do.SLICE_XY):
-                    IFoc = (abs(self.filter['t'] - self.do.zp) < 1)
-                    pFoc = np.vstack((self.filter['x'][IFoc]/vp.vox_x, self.filter['y'][IFoc]/vp.vox_y)).T
-                    if self.pointMode == 'splitter':
-                        pCol = self.filter['gFrac'] > .5
-
-                        if 'chroma' in dir(self):
-                            dx = self.chroma.dx.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/vp.vox_x
-                            dy = self.chroma.dy.ev(self.filter['x'][IFoc], self.filter['y'][IFoc])/vp.vox_y
-                        else:
-                            dx = 0*pFoc[:,0]
-                            dy = 0*pFoc[:,0]
-                            
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    IFoc = (abs(self.filter['y'] - self.do.yp*vp.vox_y) < 3*vp.vox_y)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-                    pFoc = np.vstack((self.filter['x'][IFoc]/vp.vox_x, self.filter['t'][IFoc])).T
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    IFoc = (abs(self.filter['x'] - vp.do.xp*vp.vox_x) < 3*vp.vox_x)*(self.filter['t'] > y0/sc)*(self.filter['t'] < (y0 +sY)/sc)
-                    pFoc = np.vstack((self.filter['y'][IFoc]/vp.vox_y, self.filter['t'][IFoc])).T
-
-                #pFoc = numpy.vstack((self.filter['x'][IFoc]/self.vox_x, self.filter['y'][IFoc]/self.vox_y, self.filter['t'][IFoc])).T
+                f_keys = self.filter.keys()
+                
+                #assume splitter, then test for keys
+                pm = 'splitter'    
+                if 'gFrac' in f_keys:
+                    pCol = self.filter['gFrac'][IFoc] > .5 
+                elif 'ratio' in f_keys:
+                    pCol = self.filter['ratio'][IFoc] > 0.5
+                elif 'fitResults_Ag' in f_keys:
+                    pCol = self.filter['fitResults_Ag'][IFoc] > self.filter['fitResults_Ar'][IFoc]
+                else:
+                    pm = self.pointMode               
+                
                 pNFoc = []
 
-            elif len(self.points) > 0 and self.showPoints:
-                #if self.pointsMode == 'confoc':
+            #intrinsic points            
+            elif len(self.points) > 0:
+                pm = self.pointMode
                 pointTol = self.pointTolNFoc[self.pointMode]
-                if(self.do.slice == self.do.SLICE_XY):
-                    pFoc = self.points[abs(self.points[:,2] - self.do.zp) < 1][:,:2]
-                    if self.pointMode == 'splitter':
-                        pCol = self.pointColours[abs(self.points[:,2] - self.do.zp) < 1]
-                        
-                        if 'chroma' in dir(self):
-                            dx = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
-                            dy = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
-                        else:
-                            dx = 0*pFoc[:,0]
-                            dy = 0*pFoc[:,0]
-
-                    pNFoc = self.points[abs(self.points[:,2] - self.do.zp) < pointTol[0]][:,:2]
-                    if self.pointMode == 'splitter':
-                        if 'chroma' in dir(self):
-                            dxn = self.chroma.dx.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_x)
-                            dyn = self.chroma.dy.ev(pFoc[:,0]*1e3*self.vox_x, pFoc[:,1]*1e3*self.vox_y)/(1e3*self.vox_y)
-                        else:
-                            dxn = 0*pFoc[:,0]
-                            dyn = 0*pFoc[:,0]
-
-                elif(self.do.slice == self.do.SLICE_XZ):
-                    pFoc = self.points[abs(self.points[:,1] - self.do.yp) < 1][:, ::2]
-                    pNFoc = self.points[abs(self.points[:,1] - self.do.yp) < pointTol[1]][:,::2]
-
-                else:#(self.do.slice == self.do.SLICE_YZ):
-                    pFoc = self.points[abs(self.points[:,0] - self.do.xp) < 1][:, 1:]
-                    pNFoc = self.points[abs(self.points[:,0] - self.do.xp) < pointTol[2]][:,1:]
-
-
-
+                
+                IFoc = abs(self.points[:,aN] - pos[aN]) < 1
+                INFoc = abs(self.points[:,aN] - pos[aN]) < pointTol[tolN]
+                    
+                pFoc = self.points[IFoc]
+                pNFoc = self.points[INFoc]
+                
+                if self.pointMode == 'splitter':
+                    pCol = self.pointColours[IFoc]
+                    
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             ps = self.pointSize
-            ps2 = ps/2
 
             if self.showAdjacentPoints:
                 dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
                 
-                if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
-                    for p, dxi, dyi in zip(pNFoc, dxn, dyn):
-                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                        px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-
-                else:
-                    for p in pNFoc:
-                        px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                        dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                for xi, yi, zi in pNFoc:
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+                
+                if pm == 'splitter':
+                    x, y, z = pNFoc.T
+                    x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
+                    for xi, yi, zi in zip(x_, y_, z):#, dxi, dyi in zip(pNFoc, dxn, dyn):
+                        vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
 
 
             pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
             pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
             dc.SetPen(pGreen)
             
-            if self.pointMode == 'splitter' and self.do.slice == self.do.SLICE_XY:
-                for p, c, dxi, dyi in zip(pFoc, pCol, dx, dy):
+            if pm == 'splitter':
+                x, y, z = pFoc.T
+                x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
+                for xi, x_i, yi, y_i, zi, c in zip(x, x_, y, y_, z, pCol):
                     if c:
                         dc.SetPen(pGreen)
                     else:
                         dc.SetPen(pRed)
-                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-                    px, py = self._PixelToScreenCoordinates(p[0] -dxi - ps2, self.do.ds.shape[1] - p[1] + dyi - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
+                        
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+                    vp.draw_box_pixel_coords(dc, x_i, y_i, zi, ps, ps, ps)
                     
             else:
-                for p in pFoc:
-                    px, py = self._PixelToScreenCoordinates(p[0] - ps2, p[1] - ps2)
-                    dc.DrawRectangle(px,py, ps*sc,ps*sc*self.aspect)
-
+                for xi, yi, zi in pFoc:
+                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+
+    def points_hit_test(self, xp, yp, zp, voxelsize=None):
+        if len(self.points) > 0:
+            x, y, z = self.points
+        elif hasattr(self, 'filter'):
+            vx, vy = voxelsize[:2]
+            z = self.filter['t'] #prob safe as int
+            x = self.filter['x']/vx
+            y = self.filter['y']/vy
+        else:
+            return None
+
+        iCand = np.where((abs(z - zp) < 1)*(abs(x - xp) < 3)*(abs(y - yp) < 3))[0]
+
+        if len(iCand) == 0:
+            return None
+        elif len(iCand) == 1:
+            return iCand[0]
+        else:
+            iNearest = np.argmin((x[iCand] - xp)**2 + (y[iCand] - yp)**2)
+            return iCand[iNearest]
+
+        
+class ScaleBarOverlay(Overlay):
+    # TODO - combine with LMVis scale bar
+    length_nm = Int(2000)
+
+    def __call__(self, vp, dc):
+        if self.visible:
+            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('WHITE'),10)
+            pGreen.SetCap(wx.CAP_BUTT)
+            dc.SetPen(pGreen)
+            sX, sY = vp.imagepanel.Size
+            
+            sbLen = int(self.length_nm*vp.scale/vp.voxelsize[0])
+            
+            y1 = 20
+            x1 = 20 + sbLen
+            x0 = x1 - sbLen
+            dc.DrawLine(x0, y1, x1, y1)
+            
+            dc.SetTextForeground(wx.TheColourDatabase.FindColour('WHITE'))
+            if self.length_nm > 1000:
+                s = u'%1.1f \u00B5m' % (self.length_nm / 1000.)
+            else:
+                s = u'%d nm' % int(self.length_nm)
+            w, h = dc.GetTextExtent(s)
+            dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
+
+class CrosshairsOverlay(Overlay):
+    def __call__(self, vp, dc):
+        if self.visible:
+            sX, sY = vp.imagepanel.Size
+            
+            dc.SetPen(wx.Pen(wx.CYAN,1))
+            if(vp.do.slice == vp.do.SLICE_XY):
+                lx = vp.do.xp
+                ly = vp.do.yp
+            elif(vp.do.slice == vp.do.SLICE_XZ):
+                lx = vp.do.xp
+                ly = vp.do.zp
+            elif(vp.do.slice == vp.do.SLICE_YZ):
+                lx = vp.do.yp
+                ly = vp.do.zp
+        
+            
+            xc, yc = vp.pixel_to_screen_coordinates(lx, ly)            
+            dc.DrawLine(0, yc, sX, yc)
+            dc.DrawLine(xc, 0, xc, sY)
+            
+            dc.SetPen(wx.NullPen)
+
+class FunctionOverlay(Overlay):
+    """
+    Class to permit backwards compatible use of overlay functions
+    """
+
+    def __init__(self, fcn, display_name):
+        self._fcn = fcn
+        Overlay.__init__(self, display_name=display_name)
+
+    def __call__(self, vp, dc):
+        if self.visible:
+            self._fcn(vp, dc)

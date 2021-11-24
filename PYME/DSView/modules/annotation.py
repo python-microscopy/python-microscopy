@@ -133,6 +133,7 @@ class Annotater(Plugin):
         dsviewer.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
         dsviewer.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
         dsviewer.AddMenuItem('Annotation', "Draw filled polygon\tCtrl-F", self.add_filled_polygon)
+        dsviewer.AddMenuItem('Annotation', 'Clear selected anotations\tCtrl-Back', self.clear_selected)
         dsviewer.AddMenuItem('Annotation', itemType='separator')
         dsviewer.AddMenuItem('Annotation', 'Generate label image', self.get_label_image)
         dsviewer.AddMenuItem('Annotation', 'Generate mask', lambda e : self.get_label_image(mask=True))
@@ -148,7 +149,9 @@ class Annotater(Plugin):
         self._mi_run.Enable(False)
         
         self.do.on_selection_end.connect(self.snake_refine_trace)
-        self.do.overlays.append(self.DrawOverlays)
+        self.view.add_overlay(self.DrawOverlays, 'Annotations')
+
+        self.view.selectHandlers.append(self.select_annotation)
 
         self.labelPanel = LabelPanel(dsviewer, self)
         self.labelPanel.SetSize(self.labelPanel.GetBestSize())
@@ -253,7 +256,7 @@ class Annotater(Plugin):
 
     def DrawOverlays(self, view, dc):
         if self.show_annotations and (len(self._annotations) > 0):
-            bounds = view._calcVisibleBounds()
+            bounds = view.visible_bounds
             #vx, vy, vz = self.image.voxelsize
             visible_annotations = [c for c in self._annotations if self._visibletest(c, bounds)]
         
@@ -263,9 +266,14 @@ class Annotater(Plugin):
                 pts = np.array(c['points'])
                 x, y = pts.T
                 z = int(c['z'])
-                pFoc = np.vstack(view._PixelToScreenCoordinates3D(x, y, z)).T
+                pFoc = np.vstack(view.pixel_to_screen_coordinates3D(x, y, z)).T
+
+                if c in self.selected_annotations:
+                    wf = 2.0
+                else:
+                    wf = 1.0
             
-                dc.SetPen(wx.Pen(self.penColsA[c['labelID'] % 16], max(2, c['width']*2.0**(self.do.scale))))
+                dc.SetPen(wx.Pen(self.penColsA[c['labelID'] % 16], wf*max(2, c['width']*2.0**(self.do.scale))))
                 
                 if (c['type'] == 'polygon'):
                     dc.SetBrush(wx.TheBrushList.FindOrCreateBrush(self.brushColsA[c['labelID'] % 16], wx.BRUSHSTYLE_CROSS_HATCH))
@@ -273,8 +281,68 @@ class Annotater(Plugin):
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                 else:
                     dc.DrawLines(pFoc)
-            
+
+    def render(self, gl_canvas):
+        import  OpenGL.GL as gl
+        if self.visible:
+            with self.shader_program:
+                gl.glDisable(gl.GL_LIGHTING)
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+                gl.glDisable(gl.GL_DEPTH_TEST)
+
+                for c in self._annotations:
+                    pts = np.array(c['points'])
+                    x, y = pts.T
+                    z = int(c['z'])
+
+                    if c in self.selected_annotations:
+                        gl.glLineWidth(2.0)
+                    else:
+                        gl.glLineWidth(1.0)
+                    
+                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+                    vertices = vertices.T.ravel().reshape(len(x), 3)
+
+                    normals = -0.69 * np.ones(vertices.shape)
+                    cols = np.ones_like(x)[:,None]*self.penColsA[c['labelID'] % 16][None,:]
+                    #n_vertices = vertices.shape[0]
+                
+                    gl.glVertexPointerf(vertices)
+                    gl.glNormalPointerf(normals)
+                    gl.glColorPointerf(cols)
+
+                    gl.glDrawArrays(gl.GL_LINE_STRIP, 0, 3*len(x))
+
+
+    def select_annotation(self, pos):
+        for c in self._annotations:
+            if self._hittest(c, pos):
+                if c in self.selected_annotations:
+                    self.selected_annotations.remove(c)
+                    print('deselecting annotation)')
+                else:
+                    self.selected_annotations.append(c)
+                    print('selecting annotation')
+
+                
+                self.dsviewer.Refresh()
+                self.dsviewer.Update()
+                return True
+
+        else:
+            self.selected_annotations.clear()
+            print('clearing selections')
+            self.dsviewer.Refresh()
+            self.dsviewer.Update()
+            return False
     
+    def clear_selected(self, event=None):
+        for c in self.selected_annotations:
+            self._annotations.remove(c)
+
+        self.selected_annotations.clear()
+        self.dsviewer.Refresh()
+        self.dsviewer.Update()
 
     def _visibletest(self, clump, bounds):
     
