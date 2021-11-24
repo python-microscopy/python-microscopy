@@ -25,6 +25,7 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 from PYME.ui import recArrayView
 import numpy
+import numpy as np
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import os
@@ -55,10 +56,10 @@ class BlobFinder(Plugin):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Threshold:'), 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tThreshold = wx.TextCtrl(pan, -1, value='50', size=(40, -1))
 
-        hsizer.Add(self.tThreshold, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tThreshold, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
@@ -75,7 +76,7 @@ class BlobFinder(Plugin):
         self.chMethod.SetSelection(0)
         self.chMethod.Bind(wx.EVT_CHOICE, self.OnChangeMethod)
 
-        hsizer.Add(self.chMethod, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.chMethod, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
         
 
         pan.SetSizer(hsizer)
@@ -86,11 +87,11 @@ class BlobFinder(Plugin):
         
         pan = wx.Panel(item, -1)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Channel:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Channel:'), 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
     
         self.chChannel = wx.Choice(pan, -1, choices=self.do.names)
             
-        hsizer.Add(self.chChannel, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.chChannel, 1,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
     
         pan.SetSizer(hsizer)
         hsizer.Fit(pan) 
@@ -101,11 +102,11 @@ class BlobFinder(Plugin):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(pan, -1, 'Blur size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Blur size:'), 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tBlurSize = wx.TextCtrl(pan, -1, value='1.5', size=(40, -1))
         self.tBlurSize.Disable()
 
-        hsizer.Add(self.tBlurSize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tBlurSize, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
 
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
@@ -156,7 +157,7 @@ class BlobFinder(Plugin):
 
         if not 'ofd' in dir(self) or not self.ofd.chnum == chnum:
             #create an object identifier
-            self.ofd = ObjectIdentifier(self.image.data[:,:,:, chnum])
+            self.ofd = ObjectIdentifier(np.atleast_3d(self.image.data[:,:,:, chnum]))
             self.ofd.chnum = chnum
 
         #and identify objects ...
@@ -170,15 +171,22 @@ class BlobFinder(Plugin):
         else:
             self.ofd.FindObjects(threshold,0)
 
-        self.dsviewer.view.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
+        self.points = numpy.array([[p.x, p.y, p.z] for p in self.ofd])
 
-        self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
+        self.objPosRA = numpy.rec.fromrecords(self.points, names='x,y,z')
 
         if self.vObjPos is None:
             self.vObjPos = recArrayView.ArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:
             self.vObjPos.grid.SetData(self.objPosRA)
+
+        if not hasattr(self, '_ovl'):
+            from PYME.DSView import overlays
+            self._ovl = overlays.PointDisplayOverlay(points=self.points, display_name='Blobs')
+            self.view.add_overlay(self._ovl)
+        else:
+            self._ovl.points = self.points
 
         self.dsviewer.update()
 

@@ -21,7 +21,7 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from .BaseDataSource import XYTCDataSource, XYZTCDataSource
+from .BaseDataSource import XYTCDataSource, XYZTCDataSource, BaseDataSource
 
 class _DataSource(XYTCDataSource):
     moduleName = 'CropDataSource'
@@ -85,7 +85,9 @@ class DataSource(XYZTCDataSource):
         #self.unmixer = unmixer
         self.dataSource = dataSource #type: XYZTCDataSource
 
-        assert(isinstance(dataSource, XYZTCDataSource))
+        # check than input datasource is xyztc (duck-typed by checking dimension number so that 5D ListWraps are also OK) 
+        assert(isinstance(dataSource, BaseDataSource))
+        assert(dataSource.ndim == 5)
 
         self.xslice = self._sliceify(xrange, self.dataSource.shape[0])
         self.yslice = self._sliceify(yrange, self.dataSource.shape[1])

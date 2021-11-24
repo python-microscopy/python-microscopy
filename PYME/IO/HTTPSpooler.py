@@ -31,7 +31,7 @@ import threading
 
 try:
     # noinspection PyCompatibility
-    import Queue
+    import Queue # type: ignore
 except ImportError:
     #py3
     import queue as Queue

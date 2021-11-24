@@ -51,7 +51,9 @@ from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
-from PYME.IO import HTTPSpooler, HDFSpooler
+from PYME.IO import HDFSpooler
+from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+from PYME.IO import PZFFormat
 
 import time
 from PYME.contrib import dispatch
@@ -97,8 +99,8 @@ class TestSpooler:
             else:
                 self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
                                                    frameShape = None, serverfilter=self.serverfilter,
-                                                   compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
-                                                                        'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
+                                                   compressionSettings={'compression': PZFFormat.DATA_COMP_RAW,
+                                                                        'quantization':PZFFormat.DATA_QUANT_NONE})
         
         try:
             #spool our data

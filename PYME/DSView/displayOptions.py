@@ -26,7 +26,6 @@ import numpy as np
 #import tables
 
 from PYME.contrib import dispatch
-
 from PYME.IO import dataWrap
 
 import logging
@@ -58,7 +57,7 @@ class DisplayOpts(object):
     UPRIGHT, ROT90 = range(2)
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
 
-    ACTION_POSITION, ACTION_SELECTION = range(2)
+    ACTION_POSITION, ACTION_SELECTION, ACTION_SELECT_OBJECT = range(3)
     SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGGLE = range(3)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
@@ -107,9 +106,6 @@ class DisplayOpts(object):
         # e.g. using active contours in the annotation module
         self.on_selection_end = dispatch.Signal()
         
-        self.overlays = []
-        
-
 
     @property
     def zp(self):

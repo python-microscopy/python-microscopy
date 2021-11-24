@@ -91,7 +91,7 @@ import threading
 from PYME.IO import unifiedIO
 
 if six.PY2:
-    import httplib
+    import httplib # type: ignore
 else:
     import http.client as httplib
 
@@ -132,7 +132,7 @@ import sys
 
 try:
     # noinspection PyCompatibility
-    from urlparse import urlparse
+    from urlparse import urlparse # type: ignore
 except ImportError:
     #py3
     # noinspection PyCompatibility

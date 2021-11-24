@@ -4,7 +4,7 @@ from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderPro
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
+from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int, observe
 # from pylab import cm
 from matplotlib import cm
 import numpy as np
@@ -132,8 +132,9 @@ class ImageRenderLayer(EngineLayer):
     method = Enum(*ENGINES.keys(), desc='Method used to display image')
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as an image')
     channel = Int(0)
-    slice = Int(0)
-    z_pos = Float(0)
+    #slice = Int(0)
+    z_pos = Int(0)
+    t_pos = Int(0)
     _datasource_choices = List()
     _datasource_keys = List()
 
@@ -203,6 +204,7 @@ class ImageRenderLayer(EngineLayer):
     #     self.clim = [float(cdata.min()), float(cdata.max())]
     #     self.update(*args, **kwargs)
 
+    @observe('z_pos, t_pos')
     def update(self, *args, **kwargs):
         try:
             self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
@@ -233,7 +235,7 @@ class ImageRenderLayer(EngineLayer):
         cmap = do.cmaps[self.channel].name
         visible = do.show[self.channel]
         
-        self.set(clim=clim, cmap=cmap, visible=visible)
+        self.set(clim=clim, cmap=cmap, visible=visible, z_pos=do.zp, t_pos=do.tp)
         
 
     def update_from_datasource(self, ds):
@@ -268,11 +270,11 @@ class ImageRenderLayer(EngineLayer):
         
         c0, c1 = clim
         
-        im_key = (self.dsname, self.slice, self.channel)
+        im_key = (self.dsname, self.z_pos, self.t_pos, self.channel)
         
         if not self._im_key == im_key:
             self._im_key = im_key
-            self._im = ds.data[:,:,self.slice,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
+            self._im = ds.data_xyztc[:,:,self.z_pos, self.t_pos,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
         
             x0, y0, x1, y1, _, _ = ds.imgBounds.bounds
 
