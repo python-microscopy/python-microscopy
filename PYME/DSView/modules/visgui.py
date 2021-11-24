@@ -83,14 +83,20 @@ class visGuiExtras:
                 
 class GLImageView(LMGLShaderCanvas):
     def __init__(self, parent, image, glCanvas, display_opts, show_lut=False, **kwargs):
-        LMGLShaderCanvas.__init__(self, parent=parent, show_lut=show_lut, view=glCanvas.view, **kwargs)
+        if glCanvas is None:
+            view = None
+        else:
+            view = glCanvas.view  
+
+        LMGLShaderCanvas.__init__(self, parent=parent, show_lut=show_lut, view=view, **kwargs)
         
         #cmaps = ['r', 'g', 'b']
         
         self._do = display_opts
         self._do.WantChangeNotification.append(self._sync_display_opts)
         
-        self.wantViewChangeNotification.add(glCanvas)
+        if not glCanvas is None:
+            self.wantViewChangeNotification.add(glCanvas)
         
         self._image = image
         

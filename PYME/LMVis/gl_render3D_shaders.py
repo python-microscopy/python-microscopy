@@ -408,7 +408,9 @@ class LMGLShaderCanvas(GLCanvas):
             finally:
                 glPopMatrix()
 
+            #scale bar gets drawn without the rotation
             self.ScaleBarOverlayLayer.render(self)
+
             if self.LUTDraw:
                 # set us up to draw in pixel coordinates
                 glMatrixMode(GL_PROJECTION)

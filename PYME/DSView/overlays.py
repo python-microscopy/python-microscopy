@@ -188,6 +188,7 @@ class PointDisplayOverlay(Overlay):
 
         
 class ScaleBarOverlay(Overlay):
+    # TODO - combine with LMVis scale bar
     length_nm = Int(2000)
 
     def __call__(self, vp, dc):

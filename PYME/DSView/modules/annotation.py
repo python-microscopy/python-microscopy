@@ -282,6 +282,38 @@ class Annotater(Plugin):
                 else:
                     dc.DrawLines(pFoc)
 
+    def render(self, gl_canvas):
+        import  OpenGL.GL as gl
+        if self.visible:
+            with self.shader_program:
+                gl.glDisable(gl.GL_LIGHTING)
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+                gl.glDisable(gl.GL_DEPTH_TEST)
+
+                for c in self._annotations:
+                    pts = np.array(c['points'])
+                    x, y = pts.T
+                    z = int(c['z'])
+
+                    if c in self.selected_annotations:
+                        gl.glLineWidth(2.0)
+                    else:
+                        gl.glLineWidth(1.0)
+                    
+                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+                    vertices = vertices.T.ravel().reshape(len(x), 3)
+
+                    normals = -0.69 * np.ones(vertices.shape)
+                    cols = np.ones_like(x)[:,None]*self.penColsA[c['labelID'] % 16][None,:]
+                    #n_vertices = vertices.shape[0]
+                
+                    gl.glVertexPointerf(vertices)
+                    gl.glNormalPointerf(normals)
+                    gl.glColorPointerf(cols)
+
+                    gl.glDrawArrays(gl.GL_LINE_STRIP, 0, 3*len(x))
+
+
     def select_annotation(self, pos):
         for c in self._annotations:
             if self._hittest(c, pos):
