@@ -1,3 +1,9 @@
+"""
+Provides a GL based image viewer independent of PYMEVis/visgui.
+
+Currently mostly exists for testing the GL viewer (and eventually GL overlays etc ...).
+"""
+
 from .visgui import GLImageView
 
 def Plug(dsviewer):
