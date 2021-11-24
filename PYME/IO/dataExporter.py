@@ -77,9 +77,11 @@ class Exporter:
         from PYME.IO.DataSources import BaseDataSource, CropDataSource
         data = dataWrap.Wrap(data) #make sure we can index along a colour dimension
     
-        if data.ndim != 5 or isinstance(data, dataWrap.ListWrapper):
+        if data.ndim != 5:
             # promote to xyztc and force to array datasource
             data = BaseDataSource.XYZTCWrapper.auto_promote(data)
+        elif isinstance(data, dataWrap.ListWrapper):
+            data = BaseDataSource.XYZTCWrapper(data, size_z=data.shape[2], size_t=data.shape[3], size_c=data.shape[4])
         
         cropped = CropDataSource.DataSource(data, xrange=xslice, yrange=yslice, zrange=zslice, trange=tslice)
         
