@@ -82,12 +82,10 @@ class _FilterEditor (Editor):
         Finishes initializing the editor by creating the underlying widget.
         """
         from PYME.ui.filterPane import FilterPanel
-
-
-        self.control = FilterPanel(parent, filterKeys=self.value, dataSource= lambda : getattr(self.factory, 'ds'))
+        
+        self.control = FilterPanel(parent, filterKeys=self.value, dataSource= lambda : getattr(self.object, '_ds'))
         return
-
-
+    
     def update_editor ( self ):
         """
         Updates the editor when the object trait changes externally to the
@@ -95,12 +93,6 @@ class _FilterEditor (Editor):
         """
         if self.value:
             self.control.populate()
-            #choices = [self.control.GetString(n) for n in range(self.control.GetCount())]
-            #try:
-            #    n = choices.index(self.value)
-            #    self.control.SetSelection(n)
-            #except ValueError:
-            #    self.control.SetValue(self.value)
 
         return
     
@@ -113,20 +105,6 @@ class _FilterEditor (Editor):
 
 class FilterEditor(BasicEditorFactory):
     klass = _FilterEditor
-
-    datasource = Instance(tabular.TabularBase)
-    parent = Instance(object)
-    
-    @property
-    def ds(self):
-        try:
-            return self.parent._ds
-        except AttributeError:
-            logger.exception('error geting parent._ds')
-            if self.datasource:
-                return self.datasource
-            else:
-                return None
 
 class DictChoiceStrEditDialog(wx.Dialog):
     def __init__(self, parent, mode='new', possibleKeys=(), key='', val=''):

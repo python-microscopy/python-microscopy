@@ -1,5 +1,5 @@
 from .base import register_module, register_legacy_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt, observe
 
 import numpy as np
 #import pandas as pd
@@ -47,7 +47,8 @@ class FilterTable(ModuleBase):
     @property
     def _ds(self):
         try:
-            logger.debug('%s, %s' % (self.input_name, self._parent.namespace[self.inputName]))
+            logger.debug('%s, %s' % (self, self.inputName))
+            logger.debug('%s, %s' % (self.inputName, self._parent.namespace[self.inputName]))
             return self._parent.namespace[self.inputName]
         except:
             logger.exception('error getting datasource')
@@ -57,7 +58,7 @@ class FilterTable(ModuleBase):
         from traitsui.api import Item
         from PYME.ui.custom_traits_editors import FilterEditor
         
-        return [Item('filters', editor=FilterEditor(parent=self), show_label=False),]
+        return [Item('filters', editor=FilterEditor(), show_label=False),]
 
 
 @register_module('FilterTableByIds')
