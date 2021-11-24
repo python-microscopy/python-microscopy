@@ -21,12 +21,7 @@
 ##################
 
 
-try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
-except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    #from traitsui.api import View, Item, EnumEditor, InstanceEditor
+from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
     
 from PYME.simulation.pointsets import PointSource, WormlikeSource, ImageSource, FileSource
 
@@ -126,6 +121,7 @@ There should be no need to modify this from the default and it is accordingly no
             visFr.AddMenuItem('Extras>Synthetic Data', "Configure", self.OnConfigure)
             visFr.AddMenuItem('Extras>Synthetic Data', 'Generate fluorophore positions and events', self.OnGenPoints)
             visFr.AddMenuItem('Extras>Synthetic Data', 'Generate events', self.OnGenEvents)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Save fluorophore positions', self.OnSavePoints)
 
 
 
@@ -137,6 +133,27 @@ There should be no need to modify this from the default and it is accordingly no
         self.xp, self.yp, self.zp = self.source.getPoints()
         self.OnGenEvents(None)
 
+
+    def OnSavePoints(self, event):
+        import wx
+        try:
+            x = self.xp
+        except AttributeError:
+            wx.MessageBox('No points! Generate fluorophore positions first', 'Warning', style=wx.OK)
+            return
+
+        # using a pandas based CSV IO here, there may be preferences for a more direct implementation
+        # I (CS) like it for the high-level interface
+        import pandas as pd
+        df = pd.DataFrame({'x': self.xp,
+                           'y': self.yp,
+                           'z': self.zp})
+        filename = wx.FileSelector("Save coordinates as",
+                                   wildcard='Comma separated values (*.csv)|*.csv',
+                                   flags=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        df.to_csv(filename,index=False)
+
+        
     def OnGenEvents(self, event):
         from PYME.simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
@@ -165,10 +182,14 @@ There should be no need to modify this from the default and it is accordingly no
         plt.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.MappingFilter(tabular.FitResultsSource(res))
-        
-        if isinstance(self.source, ImageSource):
-            pipeline.imageBounds = image.openImages[self.source.image].imgBounds
-        else:
+
+        try:
+            # some data sources (current ImageSource) have image bound info. Use this if available
+            # this could fail on either an AttributeError (if the data source doesn't implement bounds
+            # or another error if something fails in get_bounds(). Only catch the AttributeError, as we have
+            # should not be handling other errors here.
+            pipeline.imageBounds = self.source.get_bounds()
+        except AttributeError:
             pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
             
         pipeline.addDataSource('Generated Points', ds)
@@ -180,6 +201,16 @@ There should be no need to modify this from the default and it is accordingly no
         pipeline.mdh['Camera.TrueEMGain'] = 1
         pipeline.mdh['Camera.CycleTime'] = 1
         pipeline.mdh['voxelsize.x'] = .110
+        # some info about the parameters
+        pipeline.mdh['GeneratedPoints.MeanIntensity'] = self.meanIntensity
+        pipeline.mdh['GeneratedPoints.MeanDuration'] = self.meanDuration
+        pipeline.mdh['GeneratedPoints.MeanEventNumber'] = self.meanEventNumber
+        pipeline.mdh['GeneratedPoints.BackgroundIntensity'] = self.backgroundIntensity
+        pipeline.mdh['GeneratedPoints.ScaleFactor'] = self.scaleFactor
+        pipeline.mdh['GeneratedPoints.MeanTime'] = self.meanTime
+        pipeline.mdh['GeneratedPoints.Mode'] = self.mode
+        # the source info
+        self.source.genMetaData(pipeline.mdh)
 
         try:
             pipeline.filterKeys.pop('sig')

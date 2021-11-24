@@ -438,10 +438,14 @@ def get_local_path(filename, serverfilter):
     serverfilter = (serverfilter)
     
     if (serverfilter == local_serverfilter or serverfilter == '') and local_dataroot:
-        #look for the file in the local server folder (short-circuit the server)
-        localpath = os.path.join(local_dataroot, filename)
-        if os.path.exists(localpath):
+        # look for the file in the local server folder (short-circuit the server)
+        # force file-name expansion so that we can verify that the requested file is actually under our
+        # dataroot.
+        localpath = os.path.abspath(os.path.join(local_dataroot, filename))
+        if localpath.startswith(local_dataroot) and os.path.exists(localpath):
             return localpath
+        else:
+            return None
 
 def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True, local_short_circuit=True, timeout=5):
     """

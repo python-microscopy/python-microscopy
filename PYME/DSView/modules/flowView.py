@@ -16,7 +16,7 @@ import numpy as np
 #import pandas as pd
 # import pylab
 
-from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
+from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
     
 import weakref
 

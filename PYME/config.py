@@ -44,9 +44,13 @@ overall template for a configuration directory is as follows: ::
       |     |- myOtherRecipe.yaml
       |
       |- init_scripts
-            |- init_mymachine.py
-            |- init_my_other_config.py
-            
+      |     |- init_mymachine.py
+      |     |- init_my_other_config.py
+      |
+      |- cameras
+      |     |- bunch_of_cams.yaml
+      |     |- single_cam.yaml
+      |     |- my_other_cam.yaml
             
 If you want to verify which directories will be searched on your particular python installation, running the following
 on the command line will tell you:
@@ -441,6 +445,8 @@ def get_plugins(application):
 
     """
     return plugins[application]
+
+
 
 def get_custom_protocols():
     """

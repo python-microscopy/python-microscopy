@@ -446,6 +446,7 @@ class RecipeRule(Rule):
     def _task_template(self, context):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
                     "type": "recipe",
+                    "optimal-chunk-size" : 1,
                     "inputs" : {{taskInputs}},
                     %s
                 }'''
@@ -478,7 +479,7 @@ class LocalisationRule(Rule):
         from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
         from PYME.IO import unifiedIO
     
-        unifiedIO.assert_uri_ok(seriesName)
+        unifiedIO.assert_uri_path_ok(seriesName)
     
         if resultsFilename is None:
             resultsFilename = genClusterResultFileName(seriesName)
@@ -488,7 +489,10 @@ class LocalisationRule(Rule):
     
         resultsMdh = MetaDataHandler.NestedClassMDHandler()
         # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
-        resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
+        try:
+            resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
+        except IOError:
+            logger.exception('Raw file metadata (%s) not found, continuing with analysis metadata alone. Can probably be ignored for .tiff analysis' % (seriesName + '/metadata.json') )
         resultsMdh.update(analysisMetadata)
     
         resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo',

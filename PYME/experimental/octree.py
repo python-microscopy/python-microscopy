@@ -164,8 +164,10 @@ class PyOctree(object):
 def gen_octree_from_points(table, min_pixel_size=5, max_depth=20, samples_per_node=1):
     pts = np.vstack([table['x'], table['y'], table['z']]).T.astype('f4')
     
-    r_min = pts.min(axis=0)
-    r_max = pts.max(axis=0)
+    r_min = pts.min(axis=0) - 250
+    r_max = pts.max(axis=0) + 250
+    
+    print(f'rmin:{r_min}, r_max:{r_max}')
     
     bbox_size = (r_max - r_min).max()
     

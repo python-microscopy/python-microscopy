@@ -19,55 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-#import numpy
 import wx
-#import pylab
-#from PYME.IO.image import ImageStack
-
 from ._base import Plugin
-
-def crop_2D(image, roi):
-    # TODO - make or refactor into recipe module
-    from PYME.IO.image import ImageStack
-    import numpy as np
-    filt_ims = [np.atleast_3d(image.data_xyztc[roi[0][0]:roi[0][1], roi[1][0]:roi[1][1], :, 0, chanNum].squeeze()) for
-                chanNum in range(image.data_xyztc.shape[4])]
-    
-    im = ImageStack(filt_ims, titleStub='Cropped Image')
-    im.mdh.copyEntriesFrom(image.mdh)
-    im.mdh['Parent'] = image.filename
-    im.mdh['Processing.CropROI'] = roi
-    
-    vx, vy, vz = image.voxelsize
-    ox, oy, oz = image.origin
-    
-    im.mdh['Origin.x'] = ox + roi[0][0] * vx
-    im.mdh['Origin.y'] = oy + roi[1][0] * vy
-    im.mdh['Origin.z'] = oz
-    
-    return im
-
-
-def crop_3D(image, roi):
-    # TODO - make or refactor into recipe module
-    from PYME.IO.image import ImageStack
-    import numpy as np
-    filt_ims = [np.atleast_3d(image.data_xyztc[roi[0][0]:roi[0][1], roi[1][0]:roi[1][1], roi[2][0]:roi[2][1], 0, chanNum].squeeze()) for
-                chanNum in range(image.data_xyztc.shape[4])]
-    
-    im = ImageStack(filt_ims, titleStub='Cropped Image')
-    im.mdh.copyEntriesFrom(image.mdh)
-    im.mdh['Parent'] = image.filename
-    im.mdh['Processing.CropROI'] = roi
-    
-    vx, vy, vz = image.voxelsize
-    ox, oy, oz = image.origin
-    
-    im.mdh['Origin.x'] = ox + roi[0][0] * vx
-    im.mdh['Origin.y'] = oy + roi[1][0] * vy
-    im.mdh['Origin.z'] = oz + roi[2][0] * vz
-    
-    return im
 
 class Cropper(Plugin):
     def __init__(self, dsviewer):
@@ -78,6 +31,7 @@ class Cropper(Plugin):
 
     def OnCrop(self, event):
         import numpy as np
+        from PYME.IO.DataSources.CropDataSource import roi_crop_image
         #from scipy.ndimage import gaussian_filter
         
         from PYME.DSView import ViewIm3D
@@ -90,10 +44,10 @@ class Cropper(Plugin):
         
         if False:
             roi = [[x0, x1 + 1],[y0, y1 +1], [0, self.image.data_xyztc.shape[2]]]
-            im = crop_2D(self.image, roi)
+            im = roi_crop_image(self.image, roi, z=False)
         else:
             roi = [[x0, x1 + 1], [y0, y1 + 1], [z0, z1+1]]
-            im = crop_3D(self.image, roi)
+            im = roi_crop_image(self.image, roi)
 
         if self.dsviewer.mode == 'visGUI':
             mode = 'visGUI'
@@ -102,9 +56,10 @@ class Cropper(Plugin):
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
-        #set scaling to (0,1)
+        #copy scaling from original image
         for i in range(im.data_xyztc.shape[4]):
-            dv.do.Gains[i] = 1.0
+            dv.do.Gains[i] = self.do.Gains[i]
+            dv.do.Offs[i] = self.do.Offs[i]
 
             #imfc = MultiChannelImageViewFrame(self.parent, self.parent.glCanvas, filt_ims, self.image.names, title='Filtered Image - %3.1fnm bins' % self.image.pixelSize)
 

@@ -471,7 +471,7 @@ class SeqProgressPanel(wx.Panel):
 
         self.gProgress = wx.Gauge(self, -1, self.zs.nz)
 
-        sizer1.Add(self.gProgress, 5, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(self.gProgress, 5, wx.EXPAND| wx.ALL, 5)
 
         #btSizer = wx.StdDialogButtonSizer()
 

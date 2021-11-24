@@ -180,7 +180,7 @@ class piezo_e816(PiezoBase):
 
 import numpy as np
 class piezo_e816T(PiezoBase):
-    def __init__(self, portname='COM1', maxtravel=12.00, Osen=None, hasTrigger=False):
+    def __init__(self, portname='COM1', maxtravel=12.00, Osen=None, hasTrigger=False, targetTolerance=0.002):
         self.max_travel = maxtravel
         #self.waveData = None
         #self.numWavePoints = 0
@@ -205,6 +205,7 @@ class piezo_e816T(PiezoBase):
         self.servo = True
         self.errCode = 0
         self.onTarget = False
+        self.targetTolerance = targetTolerance
 
         #self.lastPos = self.GetPos()
 
@@ -263,7 +264,7 @@ class piezo_e816T(PiezoBase):
                     # print('p')
                     logging.debug('Moving piezo to target: %f' % (pos[0],))
 
-                if np.allclose(self.position, self.targetPosition, atol=.002):
+                if np.allclose(self.position, self.targetPosition, atol=self.targetTolerance):
                     self.onTarget = True
 
                 # check to see if we're on target

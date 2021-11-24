@@ -712,9 +712,10 @@ class FindCaWaves(ModuleBase):
             if len(wv_idx) >= self.minWaveFrames:
                 
                 trange = (wv_idx[0], wv_idx[-1])
-                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts.data, trange=trange),
+                # TODO - Fix to use new and improved XYZTC CropDataSource.DataSource
+                cropped_wavefronts = ImageStack(CropDataSource._DataSource(wavefronts.data, trange=trange),
                                                 mdh=getattr(wavefronts, 'mdh', None))
-                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
+                cropped_intensity = ImageStack(CropDataSource._DataSource(intensity.data, trange=trange),
                                                 mdh=getattr(intensity, 'mdh', None))
                 waves.append(CaWave(cropped_wavefronts, cropped_intensity, trange))
                 
@@ -1160,7 +1161,7 @@ class Deconvolve(Filter):
 
         return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item(name='outputName'),
-                    Item(name='processFramesIndividually', label='2D'),
+                    Item(name='dimensionality'),
                     Group(Item(name='method'),
                           Item(name='iterations'),
                           Item(name='offset'),
@@ -1317,7 +1318,7 @@ class Deconvolve(Filter):
         if self.padding > 0:
             res = res[px:-px, py:-py, pz:-pz]
         
-        return res
+        return res.squeeze()
 
     def completeMetadata(self, im):
         im.mdh['Deconvolution.Offset'] = self.offset
@@ -1596,12 +1597,12 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         image = namespace[self.inputImage]
         
         if self.flatfieldFilename != '':
-            flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+            flat = ImageStack(filename=self.flatfieldFilename).data_xyztc[:,:,0,0,0].squeeze()
         else:
             flat = None
         
         if not self.darkFilename == '':
-            dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
+            dark = ImageStack(filename=self.darkFilename).data_xyztc[:,:,0, 0, 0].squeeze()
         else:
             dark = None
         

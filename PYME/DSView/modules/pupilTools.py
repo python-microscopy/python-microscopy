@@ -26,14 +26,7 @@ import wx.grid
 #from PYME.IO.image import ImageStack
 from six.moves import xrange
 
-try:
-    from enthought.traits.api import HasTraits, Float, Int, CStr, Bool
-    #from enthought.traits.ui.api import View, Item
-    #from enthought.traits.ui.menu import OKButton
-except ImportError:
-    from traits.api import HasTraits, Float, Int, CStr, Bool
-    #from traitsui.api import View, Item
-    #from traitsui.menu import OKButton
+from PYME.recipes.traits import HasTraits, Float, Int, CStr, Bool
 
 class ZernikeView(wx.ScrolledWindow):
     def __init__(self, dsviewer):

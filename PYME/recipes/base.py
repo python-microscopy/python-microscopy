@@ -605,6 +605,7 @@ class Filter(ImageModuleBase):
         return {self.outputName : input_shapes[self.inputName]}
     
     def filter(self, image):
+        from PYME.IO.dataWrap import ListWrapper
         out = []
         for c in range(image.data_xyztc.shape[4]):
             if self.dimensionality == 'XYZT':
@@ -621,12 +622,12 @@ class Filter(ImageModuleBase):
                         for z in range(image.data_xyztc.shape[2]):
                             data = image.data_xyztc[:, :, z, t, c].squeeze().astype('f')
                             
-                            xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z)))
+                            xyz.append(np.atleast_2d(self._apply_filter(data, image, c=c, t=t, z=z).squeeze()))
                     
                     xyzt.append(xyz)
-            out.append(xyzt)
-                
-        im = ImageStack(out, titleStub = self.outputName)
+            out.append(xyzt)        
+        
+        im = ImageStack(ListWrapper(out, strict_dims=True), titleStub = self.outputName)
         im.mdh.copyEntriesFrom(image.mdh)
         im.mdh['Parent'] = image.filename
         
@@ -987,3 +988,20 @@ def _issubclass(cl, c):
         return issubclass(cl, c)
     except TypeError:
         return False
+
+@register_module('Crop')
+class Crop(ModuleBase):
+    # adapted from PR #831
+    input = Input('input')
+    x_range = List(Int)([0, -1])
+    y_range = List(Int)([0, -1])
+    z_range = List(Int)([0, -1])
+    t_range = List(Int)([0, -1])
+    output = Output('cropped')
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources.CropDataSource import crop_image
+
+        im = namespace[self.input]
+        cropped = crop_image(im, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
+        namespace[self.output] = cropped

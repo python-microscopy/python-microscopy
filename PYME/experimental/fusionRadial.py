@@ -98,7 +98,7 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhancement=1.0, vesc_size=0):
     nyquist_pixel_size = wavelength/(2*2.3*NA)
     if pixelsize > nyquist_pixel_size:
         #data is undersampled, but we need to generate a properly sampled PSF when simulating.
-        mag_factor = np.ceil(pixelsize/nyquist_pixel_size)
+        mag_factor = int(np.ceil(pixelsize/nyquist_pixel_size))
         sim_pixel_size = pixelsize/mag_factor
     else:
         mag_factor = 1
@@ -140,10 +140,10 @@ def getPSFRadialValue(r, r_cal=11, SCA_enhancement=1.0, **kwargs):
     sca_f = SCA_enhancement - sca_0
 
     rc0 = _getPSFRadialCurve(SCA_enhancement=sca_0, **kwargs)
-    rc0 = rc0[r]/rc0[r_cal]
+    rc0 = rc0[r.astype('i')]/rc0[int(r_cal)]
 
     rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + .1), **kwargs)
-    rc1 = rc1[r] / rc1[r_cal]
+    rc1 = rc1[r.astype('i')] / rc1[int(r_cal)]
 
     return sca_f*rc0 + (1-sca_f)*rc1
 
@@ -223,7 +223,7 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     dt_ = t_[1] - t_[0]
     conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + dt_) / tau)
     
-    #print conv_weights.sum()
+    print(conv_weights.sum())
 
     #pre-calculate temporal component to the docked vesicle signal
     #this has 3 components - a unit step when the vesicle docks, an expoential decay due to release, and a second

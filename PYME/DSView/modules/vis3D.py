@@ -63,8 +63,61 @@ class MeshViewFrame(AUIFrame):
         
         for pn in self.panesToMinimise:
             self._mgr.MinimizePane(pn)
+
+        self.AddMenuItem('File', 'Save mesh', lambda e: self.save_surface())
         
         self.Layout()
+
+    def save_surface(self):
+        #from PYME.experimental import _triangle_mesh as triangle_mesh
+        
+        surf_keys = [l.dsname for l in self.canvas.layers] # if isinstance(l, triangle_mesh.TriangleMesh)]
+        
+        if len(surf_keys) == 0:
+            raise RuntimeError('No surfaces present')
+        
+        if len(surf_keys) == 1:
+            key = 0
+        else:
+            dlg = wx.SingleChoiceDialog(self, "Which surface do you want to save?", "Choose a surface to save", surf_keys)
+            
+            if not dlg.ShowModal():
+                dlg.Destroy()
+                return
+            else:
+                key = surf_keys.index(dlg.GetStringSelection())
+                dlg.Destroy()
+
+        filename = wx.FileSelector('Save surface as...',
+                                default_extension='stl',
+                                wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply',
+                                flags=wx.FD_SAVE)
+
+        if not filename == '':
+            ext = filename.split('.')[-1]
+            if ext == 'stl':
+                self.canvas.layers[key].datasource.to_stl(filename)
+            elif ext == 'ply':
+                import numpy as np
+                colors = None
+                # If we have, save the PLY with its colors
+                layer = self.canvas.layers[key]
+                # Construct a re-indexing for non-negative vertices
+                live_vertices = np.flatnonzero(layer.datasource._vertices['halfedge'] != -1)
+                new_vertex_indices = np.arange(live_vertices.shape[0])
+                vertex_lookup = np.zeros(layer.datasource._vertices.shape[0])
+                
+                vertex_lookup[live_vertices] = new_vertex_indices
+
+                # Grab the faces and vertices we want
+                faces = vertex_lookup[layer.datasource.faces]
+
+                colors = np.zeros((live_vertices.size, 3), dtype=np.ubyte)
+                colors[faces.ravel().astype(np.int)] = np.floor(layer._colors[:,:3]*255).astype(np.ubyte)
+                    
+                layer.datasource.to_ply(filename, colors)
+            else:
+                raise ValueError('Invalid file extension .' + str(ext))
         
         
 def new_mesh_viewer(parent=None,*args, **kwargs):

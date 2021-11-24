@@ -8,7 +8,7 @@ Created on Sat May 28 20:42:16 2016
 
 #import datetime
 #from PYME.Acquire import HDFSpooler, QueueSpooler
-from PYME.Acquire import HTTPSpooler
+from PYME.IO import HTTPSpooler
 # TODO: change to use a metadata handler / provideStartMetadata hook
 #   MetaDataHandler.provideStartMetadata from the init file when
 #   loading the sampleinfo interface, see Acquire/Scripts/init.py
@@ -262,7 +262,7 @@ class SpoolController(object):
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
-            from PYME.Acquire import HTTPSpooler
+            from PYME.IO import HTTPSpooler
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
             logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
@@ -470,14 +470,14 @@ class SpoolController(object):
         frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Queue':
-            from PYME.Acquire import QueueSpooler
+            from PYME.IO import QueueSpooler
             self.queueName = getRelFilename(self._get_queue_name(fn, subdirectory=subdirectory))
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
         elif self.spoolType == 'Cluster':
-            from PYME.Acquire import HTTPSpooler
+            from PYME.IO import HTTPSpooler
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
                                                   subdirectory=subdirectory)
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
@@ -487,7 +487,7 @@ class SpoolController(object):
                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, stack_settings=stack_settings)
            
         else:
-            from PYME.Acquire import HDFSpooler
+            from PYME.IO import HDFSpooler
             self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn, subdirectory=subdirectory),
                                               self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
@@ -566,7 +566,7 @@ class SpoolController(object):
     def LaunchAnalysis(self):
         """Launch analysis
         """
-        from PYME.Acquire import QueueSpooler, HTTPSpooler
+        from PYME.IO import QueueSpooler, HTTPSpooler
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':

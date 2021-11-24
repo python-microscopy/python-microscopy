@@ -34,7 +34,7 @@ class LayerPane(afp.foldingPane):
         
         print('Image list size: %d' % self.il.GetImageCount())
 
-        self.fp = afp.foldPanel(self, single_active_pane=True)
+        self.fp = afp.foldPanel(self, single_active_pane=True, bottom_spacer=False)
 
         self.AddNewElement(self.fp)
         
@@ -62,8 +62,15 @@ class LayerPane(afp.foldingPane):
         #print('Creating layer panel')
         
         self.visFr.layer_added.connect(self.update)
+        #self.fp.fold_signal.connect(self._layout)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+
+    def _layout(self, *args, **kwargs):
+        print('layout')
+        self.vsizer.Fit(self)
+        self.Layout()
+        self.GetParent().Layout()
 
     def update(self, *args, **kwargs):
     

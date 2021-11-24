@@ -1,5 +1,6 @@
 import numpy as np
 import wx
+import os
 
 
 
@@ -103,13 +104,14 @@ def open_surface(visFr):
                                    wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
     #print filename
     if not filename == '':
-        surf_count = 0
-        surf_name = 'surf%d' % surf_count
+        tail = os.path.split(filename)[-1]
+        base_name = tail.split('.')[0]
+        surf_name, surf_count = base_name, 0
         while surf_name in visFr.pipeline.dataSources.keys():
             surf_count += 1
-            surf_name = 'surf%d' % surf_count
+            surf_name = '%s%d' % (base_name, surf_count)
 
-        ext = filename.split('.')[-1]
+        ext = tail.split('.')[-1]
         if ext == 'stl':
             visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
         elif ext == 'ply':

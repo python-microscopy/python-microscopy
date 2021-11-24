@@ -47,7 +47,7 @@ HAVE_DRIFT_CORRECTION = False
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis import displayPane
-from PYME.LMVis.filterPane import CreateFilterPane
+from PYME.ui.filterPane import CreateFilterPane
 
 from PYME.LMVis import pointSettingsPanel
 from PYME.LMVis import quadTreeSettings
@@ -206,7 +206,7 @@ class VisGUICore(object):
 
         self.recipeView = RecipeDisplayPanel(item)
         self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView, priority=20)
+        item.AddNewElement(self.recipeView, priority=20, foldable=False)
 
         pnl.AddPane(item, 20)
         
@@ -314,7 +314,7 @@ class VisGUICore(object):
 
         if not subMenu:
             self.AddMenuItem('Help', "&Documentation", self.OnDocumentation)
-            self.AddMenuItem('Help', "&About", self.OnAbout)
+            #self.AddMenuItem('Help', "&About", self.OnAbout)
             
     def create_tool_bar(self, parent):
         from .displayPane import DisplayPaneHorizontal
@@ -720,9 +720,10 @@ class VisGUICore(object):
                     args['Multichannel'] = dlg.GetMultichannel()
                 
                     dlg.Destroy()
-    
+
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
+            from PYME.IO import csv_flavours
         
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()
@@ -730,11 +731,18 @@ class VisGUICore(object):
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
+            
+            text_options = {'columnnames': dlg.GetFieldNames(),
+                            'skiprows' : dlg.GetNumberComments(),
+                            'delimiter' : dlg.GetDelim(),
+                            'invalid_raise' : not csv_flavours.csv_flavours[dlg.GetFlavour()].get('ignore_errors', False),
+                            }
         
-            args['FieldNames'] = dlg.GetFieldNames()
+            #args['FieldNames'] = dlg.GetFieldNames()
             # remove trailing whitespace/line brake on last field name
-            args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
-            args['SkipRows'] = dlg.GetNumberComments()
+            #args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
+            #args['SkipRows'] = dlg.GetNumberComments()
+            args['text_options'] = text_options
             args['PixelSize'] = dlg.GetPixelSize()
         
             #print 'Skipping %d rows' %args['SkipRows']

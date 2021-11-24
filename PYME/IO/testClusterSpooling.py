@@ -51,7 +51,7 @@ from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
-from PYME.Acquire import HTTPSpooler, HDFSpooler
+from PYME.IO import HTTPSpooler, HDFSpooler
 
 import time
 from PYME.contrib import dispatch

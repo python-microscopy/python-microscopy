@@ -86,9 +86,12 @@ class StackSettings(object):
         
         self.direction = self.FORWARDS
         
-        from PYME.Acquire import webui
-        # add webui endpoints (if running under webui)
-        webui.add_endpoints(self, '/stack_settings')
+        try:
+            from PYME.Acquire import webui
+            # add webui endpoints (if running under webui)
+            webui.add_endpoints(self, '/stack_settings')
+        except IndexError:
+            logger.exception('Error loading webui - use a development install if you need webui')
 
     
     def update(self, ScanMode=None, StartPos=None, EndPos=None, StepSize=None, NumSlices=None, ScanPiezo=None, DwellFrames=None):

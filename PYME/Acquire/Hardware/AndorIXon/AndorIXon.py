@@ -27,6 +27,7 @@ import time
 import sys
 from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import ccdCalibrator
+from PYME.Acquire.Hardware import camera_noise
 
 #import example
 #import scipy
@@ -37,53 +38,13 @@ from PYME.Acquire import eventLog
 
 #import threading
 
-noiseProperties = {
-1823 : {
-        'ReadNoise' : 109.8,
-        'ElectronsPerCount' : 27.32,
-        'NGainStages' : 536,
-        'ADOffset' : 971,
-        'DefaultEMGain' : 150,
-        'SaturationThreshold' : (2**14 -1)
-        },
-5414 : {
-        'ReadNoise' : 61.33,
-        'ElectronsPerCount' : 25.24,
-        'NGainStages' : 536,
-        'ADOffset' : 413,
-        'DefaultEMGain' : 90,
-        'SaturationThreshold' : (2**14 -1)
-        },
-7863 : { #Gain setting of 3
-        'ReadNoise' : 88.1,
-        'ElectronsPerCount' : 4.99,
-        'NGainStages' : 536,
-        'ADOffset' : 203,
-        'DefaultEMGain' : 90,
-        'SaturationThreshold' : 5.4e4#(2**16 -1)
-        },
-7546 : {
-        #  preamp: currently using most sensitive setting (default according to docs)
-        # if I understand the code correctly the fastest Horizontal Shift Speed will be selected
-        # which should be 17 MHz for this camera; therefore using 17 MHz data
-        'ReadNoise' : 85.23,
-        'ElectronsPerCount' : 4.82,
-        'NGainStages' : 536, # relevant?
-        'ADOffset' : 150, # from test measurement at EMGain 85 (realgain ~30)
-        'DefaultEMGain' : 85, # we start carefully and can bumb this later to be in the vicinity of 30
-        'SaturationThreshold' : (2**16 -1) # this cam has 16 bit data
-    },
-}
-
-preamp_gains = {
-    1823 : 0,
-    5414 : 0,
-    7863 : 2,
-}
-
 from PYME.Acquire.Hardware.Camera import Camera
 class iXonCamera(Camera):
     numpy_frames=False
+
+    @property
+    def _gain_mode(self):
+        return 'Preamp Gain %d' % self.preampGain
 
     #define a couple of acquisition modes
 
@@ -130,7 +91,7 @@ class iXonCamera(Camera):
         else:
             self.initialised = True
 
-        self.noiseProps = noiseProperties[self.GetSerialNumber()]
+        #self.noiseProps = noiseProperties[self.GetSerialNumber()]
 
         #get the CCD size
         ccdWidth = ac.GetDetector.argtypes[0]._type_()
@@ -206,7 +167,8 @@ class iXonCamera(Camera):
         
         #set the preamp gain if we have data for our camera, otherwise default to highest
         # NOTE: this is important as other software may have left it in an undefined state
-        self.preampGain = preamp_gains.get(self.GetSerialNumber(), 2) #gain of "3"
+        # NOTE: We cheat a bit here and store this in noise_properties
+        self.preampGain = camera_noise.noise_properties.get(self.GetSerialNumber(), {}).get('default_preamp_gain',2)
         ret = ac.SetPreAmpGain(self.preampGain)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
@@ -690,9 +652,9 @@ class iXonCamera(Camera):
         ac.GetHeadModel(hm)
         return hm.value.decode()
     
-    @property
-    def noise_properties(self):
-        return self.noiseProps
+    #@property
+    #def noise_properties(self):
+    #    return self.noiseProps
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata
@@ -720,7 +682,7 @@ class iXonCamera(Camera):
             #these should really be read from a configuration file
             #hard code them here until I get around to it
             #current values are at 10Mhz using e.m. amplifier
-            np = noiseProperties[self.GetSerialNumber()]
+            np = self.noise_properties
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.41)
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
@@ -729,10 +691,11 @@ class iXonCamera(Camera):
             if not realEMGain is None:
                 mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
-    def __getattr__(self, name):
-        if name in list(self.noiseProps.keys()):
-            return self.noiseProps[name]
-        else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
+    # we should not need this
+    #def __getattr__(self, name):
+    #    if name in list(self.noiseProps.keys()):
+    #        return self.noiseProps[name]
+    #    else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
 
 
     def __del__(self):

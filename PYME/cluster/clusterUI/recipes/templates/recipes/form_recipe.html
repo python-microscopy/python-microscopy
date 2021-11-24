@@ -49,13 +49,13 @@
             $('.cu-hidden-filename').remove();
             var fileNames=[];
             $('.cu-selected').each(function(index, item){
-                var sn = item.getAttribute('data-cu-filename');
+                var sn = item.getAttribute('data-cu-filename').text();
                 if (sn != null) {
                     fileNames.push(sn);
                     f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
                 }
                 // Also check for series, e.g. pcs extensions
-                var sn = item.getAttribute('data-cu-seriesname');
+                var sn = item.getAttribute('data-cu-seriesname').text();
                 if (sn != null) {
                     fileNames.push(sn);
                     f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')

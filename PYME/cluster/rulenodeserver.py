@@ -414,12 +414,11 @@ class ServerThread(threading.Thread):
             externalAddr = socket.gethostbyname(socket.gethostname())
             
         self.externalAddr = externalAddr
+        self.nodeserver = WFNodeServer('http://' + self.distributor + '/', port=self.port, ip_address=self.externalAddr)
         
         threading.Thread.__init__(self)
     
     def run(self):
-        self.nodeserver = WFNodeServer('http://' + self.distributor + '/', port=self.port, ip_address=self.externalAddr)
-
         try:
             logger.info('Starting nodeserver on %s:%d' % (self.externalAddr, self.port))
             self.nodeserver.serve_forever()

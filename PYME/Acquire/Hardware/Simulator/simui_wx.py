@@ -423,7 +423,7 @@ class dSimControl(afp.foldPanel):
     
     def __init__(self, parent, sim_controller):
         afp.foldPanel.__init__(self, parent, -1)
-        self.sim_controller = sim_controller # type: .simcontrol.SimController
+        self.sim_controller = sim_controller # type: PYME.Acquire.Hardware.Simulator.simcontrol.SimController
         
         self._init_ctrls(parent)
         

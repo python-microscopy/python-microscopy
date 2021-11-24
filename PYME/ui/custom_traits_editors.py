@@ -1,7 +1,7 @@
 from traitsui.wx.editor import Editor
 from traitsui.wx.basic_editor_factory import BasicEditorFactory
 
-from traits.api import List, Instance
+from PYME.recipes.traits import List, Instance
 
 import wx
 from PYME.IO import tabular
@@ -81,7 +81,7 @@ class _FilterEditor (Editor):
         """
         Finishes initializing the editor by creating the underlying widget.
         """
-        from PYME.LMVis.filterPane import FilterPanel
+        from PYME.ui.filterPane import FilterPanel
 
 
         self.control = FilterPanel(parent, filterKeys=self.value, dataSource= lambda : getattr(self.factory, 'ds'))
@@ -341,7 +341,7 @@ class _DictChoiceStrEditor(Editor):
         """
         Finishes initializing the editor by creating the underlying widget.
         """
-        from PYME.LMVis.filterPane import FilterPanel
+        from PYME.ui.filterPane import FilterPanel
 
 
         self.control = DictChoiceStrPanel(parent, filterKeys=self.value, 

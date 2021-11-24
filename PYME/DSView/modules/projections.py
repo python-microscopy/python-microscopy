@@ -5,10 +5,10 @@ def project(dsviewer, axis, type, crop=False):
     from PYME.DSView import ViewIm3D
     
     if crop:
-        from .cropping import crop_2D
+        from PYME.IO.DataSources.CropDataSource import roi_crop_image
         x0, x1, y0, y1, z0, z1 = dsviewer.do.sorted_selection
         roi = [[x0, x1 + 1],[y0, y1 +1], [0, dsviewer.image.data.shape[2]]]
-        im = crop_2D(dsviewer.image, roi)
+        im = roi_crop_image(dsviewer.image, roi, z=False)
     else:
         im = dsviewer.image
     

@@ -141,6 +141,7 @@ class DualMarchingCubes(ModuleBase):
     smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
     repair = Bool(False)
     remesh = Bool(False)
+    cull_inner_surfaces = Bool(False)
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
@@ -163,6 +164,9 @@ class DualMarchingCubes(ModuleBase):
         if self.remesh:
             # target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
             surf.remesh(5, l=0.5, n_relax=10)
+            
+        if self.cull_inner_surfaces:
+            surf.remove_inner_surfaces()
 
         namespace[self.output] = surf
 
@@ -235,6 +239,30 @@ class DistanceToMesh(ModuleBase):
 
         namespace[self.output] = out
 
+@register_module('FilterMeshComponentsByVolume')
+class FilterMeshComponentsByVolume(ModuleBase):
+    """
+    USE WITH CAUTION - Will likely change/dissapear in future versions without deprecation.
+    
+    Create a new mesh which only contains components within a given size range
+    
+    NOTES: 
+    - this is extremely specific (arguably too specific for it's own recipe module), it would be good to incorporate the functionality 
+      in a more generic mesh filtering/manipulation module in the future.
+    - this would be better positioned (along with some of the others here) in, e.g., a `mesh.py` or `meshes.py` top level set of recipes, rather than `surface_fitting`  
+    """
+    input_mesh = Input('mesh')
+    min_size = Float(100.0)
+    max_size = Float(1e9)
+    output = Output('filtered_mesh')
+
+    def execute(self, namespace):
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+
+        mesh = triangle_mesh.TriangleMesh(mesh=namespace[self.input_mesh])
+        mesh.keep_components_by_volume(self.min_size, self.max_size)
+
+        namespace[self.output] = mesh
 
 @register_module('SphericalHarmonicShell')
 class SphericalHarmonicShell(ModuleBase):

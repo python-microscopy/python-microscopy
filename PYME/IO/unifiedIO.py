@@ -1,5 +1,6 @@
 from PYME.IO.FileUtils import nameUtils
 import os
+import sys
 from io import BytesIO
 from contextlib import contextmanager
 import tempfile
@@ -13,8 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 alpha_regex = re.compile(r'^[\w/\.\-]+$')
+win_regex = re.compile(r'^[\w/(\\)\.\-]+$') #permit backslashes for windows paths
 
-def check_name(name):
+def check_name(name, win=False):
     """
     Check if filename / url is OK to use with, e.g. clusterIO.
 
@@ -23,13 +25,19 @@ def check_name(name):
     name: str
         The filename or url to query
 
+    win: bool
+        is name a windows path
+
     Returns
     -------
     ok: bool
         True if filename/url is fully compatible
 
     """
-    return bool(alpha_regex.match(name))
+    if win:
+        return bool(win_regex.match(name))
+    else:
+        return bool(alpha_regex.match(name))
     #return name == fix_name(name)
 
 def check_uri(name):
@@ -50,6 +58,15 @@ def assert_name_ok(name):
     except AssertionError:
         raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
 
+def check_path(name):
+    if sys.platform.startswith('win32'):
+        return check_name(os.path.splitdrive(name)[-1],win=True)
+    else:
+        return check_name(name)
+
+def assert_path_ok(name):
+    assert check_path(name) == True
+
 def assert_uri_ok(name):
     """
     Raise if name contains reserved/invalid characters for use with, e.g. clusterIO.
@@ -64,6 +81,16 @@ def assert_uri_ok(name):
         assert check_uri(name) == True
     except AssertionError:
         raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
+
+def assert_uri_path_ok(name):
+    """
+    combination of assert_path_ok and assert_uri_ok - runs assert_uri_ok if we have a URI, assert_name_ok if we have a name
+    """
+
+    if is_cluster_uri(name):
+        assert_uri_ok(name)
+    else:
+        assert_path_ok(name)
 
 def fix_name(name):
     """
@@ -211,6 +238,20 @@ def openFile(filename, mode='rb'):
         raise IOError('File does not exist or URI not understood: %s' % filename)
 
 def read(filename):
+    '''
+    Read a file from disk or the cluster.
+    
+    NOTE: filename is expected to be sanitized / trusted, this should not be called
+    with user data from a web endpoint.
+    
+    Parameters
+    ----------
+    filename
+
+    Returns
+    -------
+
+    '''
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
@@ -227,6 +268,27 @@ def read(filename):
         return s
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)
+
+def safe_read(filename):
+    '''
+    
+    Read in a web-endpoint safe manner (i.e. disallow local file access)
+    
+    Currently just a wrapper around clusterIO.get_file, but also as a
+    forwards-compatible stub if we expand unifiedIO to support more general HTTP
+    or, e.g. OMERO URIs.
+
+    '''
+    if is_cluster_uri(filename):
+        from . import clusterIO
+
+        sequenceName, clusterfilter = split_cluster_url(filename)
+
+        s = clusterIO.get_file(sequenceName, clusterfilter)
+        return s
+    else:
+        raise IOError('URI not understood: %s' % filename)
+
     
 def write(filename, data):
     if is_cluster_uri(filename):

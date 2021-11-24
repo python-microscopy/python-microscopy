@@ -42,7 +42,7 @@ from six import string_types
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler
 from PYME.IO import dataWrap
-from PYME.IO.DataSources import BufferedDataSource, BaseDataSource
+from PYME.IO.DataSources import BufferedDataSource, BaseDataSource, ConcatenatedDataSource
 from PYME.IO.FileUtils.nameUtils import getRelFilename
 from PYME.IO.compatibility import np_load_legacy
 
@@ -643,6 +643,65 @@ class ImageStack(object):
         self.mdh = data.mdh
         self.seriesName = filename
         self.mode = 'default'
+
+    def _load_concatenated(self, filename):
+        from PYME.IO.DataSources import ConcatenatedDataSource
+        import glob
+
+        if filename.upper().startswith('CONCATENATED://'):
+            filename = filename[15:]
+
+        z, t, c = None, None, None
+        if filename[0] == ':':
+            # we are explicitly passing ztc dimensions as ?z=zval&t=tval&c=cval
+            split_string = filename[1:].split(':')
+            dim_string = split_string[0]
+            z, t, c = [int(s) for s in dim_string.split(',')]
+            filename = ''.join(split_string[1:])
+
+        if '?' in filename:
+            #we have a query string to pick the series
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                z = int(urllib.parse.parse_qs(query)['z'][0])
+            except KeyError:
+                z = 1
+            try:
+                t = int(urllib.parse.parse_qs(query)['t'][0])
+            except KeyError:
+                t = 1
+            try:
+                c = int(urllib.parse.parse_qs(query)['c'][0])
+            except KeyError:
+                c = 1
+
+            if ((z==1) and (t==1) and (c==1)):
+                #we have a query string but no dimensions specified
+                z, t, c = None, None, None
+
+        if filename.find(',') == -1:
+            # pattern-based
+            filenames = sorted(glob.glob(filename))
+        else:
+            # a user took the time to pass files individually,
+            # separated by commas
+            filenames = filename.split(',')
+
+            # rename, as it's not a great idea for seriesName to 
+            # be full of commas
+            filename = '_'.join(filenames)
+
+        datasources = []
+        for fn in filenames:
+            image = ImageStack(filename=fn)
+            datasources.append(image.data_xyztc)
+
+        data = ConcatenatedDataSource.DataSource(datasources, size_z=z, size_t=t, size_c=c)
+        self.SetData(data)
+        self.seriesName = filename
+        self.mode = 'default'
         
     def _loadNPY(self, filename):
         """Load numpy .npy data.
@@ -687,7 +746,7 @@ class ImageStack(object):
         """
         mdfn = self._findAndParseMetadata(filename)
         
-        data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
+        data = numpy.memmap(filename, dtype=self.mdh['DataType'], mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
         self.SetData(data)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
@@ -719,6 +778,9 @@ class ImageStack(object):
                 self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
                 self.mdh.copyEntriesFrom(MetaDataHandler.SimpleMDHandler(xmlfn))
                 mdf = xmlfn
+            except IndexError:
+                # has an xml file, but lacks 'MetaData' section
+                logger.error('xml file %s is not valid PYME metadata')
                 
         elif os.path.exists(xmlfnmc): #this is a single colour channel of a pair
             self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
@@ -816,6 +878,11 @@ class ImageStack(object):
                     Z, X, Y, T = numpy.fromstring(s, '>u2')
                     s = df.read(16)
                     depth, width, height, elapsed = numpy.fromstring(s, '<f4')
+                    s = df.read(1)
+                    if ord(s) == 1:
+                        self.mdh['DataType'] = '<f4'
+                    else:
+                        self.mdh['DataType'] = '<f8'
                     
                     self.mdh['voxelsize.x'] = width/X
                     self.mdh['voxelsize.y'] = height/Y
@@ -1155,6 +1222,8 @@ class ImageStack(object):
                 self._loadClusterPZF(filename)
             elif (filename.upper().startswith('SUPERTILE:')):
                 self._load_supertile(filename)
+            elif (filename.upper().startswith('CONCATENATED://')):
+                self._load_concatenated(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)
             #elif filename.endswith('.kdf'):
@@ -1246,7 +1315,10 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
+            import warnings
+            warnings.warn('The "crop" argument is deprecated, please use CropDataSource.crop_image(...).Save() instead')
+            from PYME.ui.crop_dialog import CropExportData
+            CropExportData(self.data_xyztc, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data_xyztc, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

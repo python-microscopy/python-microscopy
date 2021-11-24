@@ -100,7 +100,7 @@ class ICTMDeconvolution(object):
         """ convenience function for deconvolving in parallel using processing.Pool.map"""
         self.deconv(*args)
     
-    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0):
+    def deconv(self, data, lamb, num_iters=10, weights=1, alpha=None, bg=0, pos=True):
         """This is what you actually call to do the deconvolution.
         parameters are:
 
@@ -109,9 +109,12 @@ class ICTMDeconvolution(object):
         num_iters - number of iterations (note that the convergence is fast when
                     compared to many algorithms - e.g Richardson-Lucy - and the
                     default of 10 will usually already give a reasonable result)
-
+        weights - a weighting on the residuals to deweight missing data and/or adjust the
+                  noise behaviour
         alpha - PSF phase - hacked in for variable phase 4Pi deconvolution, should
                 really be refactored out into the dec_4pi classes.
+        bg - Dummy variable
+        pos - Flag to turn positivity constraints on/off
         """
         #remember what shape we are
         self.dataShape = data.shape
@@ -133,13 +136,13 @@ class ICTMDeconvolution(object):
 
         #guess a starting estimate for the object
         self.f = self.startGuess(data).ravel()
-        self.res = 0*self.f
 
         self.fs = self.f.reshape(self.shape)
 
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
+        self.res = 0*data
         
         if not np.isscalar(weights):
             weights = weights / weights.mean()
@@ -154,7 +157,7 @@ class ICTMDeconvolution(object):
         nsrch = 2
         self.loopcount = 0
 
-        while self.loopcount  < num_iters:
+        while (self.loopcount  < num_iters) and (not self._stop_cond()):
             self.loopcount += 1
             #the direction our prior/ Likelihood function wants us to go
             pref = self.Lfunc(self.f - fdef)
@@ -192,7 +195,8 @@ class ICTMDeconvolution(object):
 
             #positivity constraint (not part of original algorithm & could be ommitted)
             
-            fnew = (fnew*(fnew > 0))
+            if pos:
+                fnew = (fnew*(fnew > 0))
 
             #add last step to search directions, as per classical conj. gradient
             S[:,2] = (fnew - self.f)
@@ -202,6 +206,10 @@ class ICTMDeconvolution(object):
             self.f[:] = fnew
 
         return np.real(self.fs)
+
+    def _stop_cond(self):
+        """Optional stopping condition to end deconvolution early."""
+        return False
         
     def sim_pic(self,data,alpha):
         """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""

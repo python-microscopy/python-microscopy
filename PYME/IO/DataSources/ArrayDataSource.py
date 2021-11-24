@@ -8,8 +8,11 @@ _array_types = (np.ndarray, tables.EArray)
 try:
     import dask.array as da
     _array_types = _array_types + (da.Array,)
+    _dask_array = da.Array
 except ImportError:
-    pass
+    # used for an isinstance check - exploit the fact that it can be an empty
+    # tuple and will return false
+    _dask_array = ()
 
 try:
     import zarr
@@ -87,7 +90,7 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         #if self.type == 'Array':
         r = self.data.__getitem__(tuple(keys))
         
-        if not isinstance(r, (np.ndarray, np.number)):
+        if isinstance(r, _dask_array):
             # make slicing work for dask arrays TODO - revisit??
             r = r.compute()
         
