@@ -73,12 +73,12 @@ class Exporter:
         pass
 
     def _prepare(self, data, xslice, yslice, zslice, tslice):
-        from PYME.IO.dataWrap import Wrap
+        from PYME.IO import dataWrap
         from PYME.IO.DataSources import BaseDataSource, CropDataSource
-        data = Wrap(data) #make sure we can index along a colour dimension
+        data = dataWrap.Wrap(data) #make sure we can index along a colour dimension
     
-        if data.ndim != 5:
-            # promote to xyztc
+        if data.ndim != 5 or isinstance(data, dataWrap.ListWrapper):
+            # promote to xyztc and force to array datasource
             data = BaseDataSource.XYZTCWrapper.auto_promote(data)
         
         cropped = CropDataSource.DataSource(data, xrange=xslice, yrange=yslice, zrange=zslice, trange=tslice)
