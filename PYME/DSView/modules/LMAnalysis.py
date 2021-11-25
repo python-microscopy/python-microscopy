@@ -301,6 +301,7 @@ class AnalysisSettingsView(object):
 class AnalysisController(object):
     def __init__(self, imageMdh=None, tq = None):
         self.analysisMDH = MetaDataHandler.CopyOnWriteMDHandler(imageMdh) #MetaDataHandler.NestedClassMDHandler(imageMdh)
+        self.analysisMDH.record_pyme_version() # update version to version we are running for the analysis - TODO - record worker versions as well
         self.onImagesPushed = dispatch.Signal()
         self.onMetaDataChange = dispatch.Signal()
 
