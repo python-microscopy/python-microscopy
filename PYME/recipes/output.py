@@ -192,7 +192,9 @@ class ImageOutput(OutputModule):
     filePattern = '{output_dir}/{file_stub}.tif'
     
     def generate(self, namespace, recipe_context={}):
-        return namespace[self.inputName]
+        im =  namespace[self.inputName]
+        im.mdh.record_pyme_version()
+        return im
 
     def save(self, namespace, context={}):
         """

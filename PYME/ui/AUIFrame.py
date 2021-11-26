@@ -114,7 +114,7 @@ class AUIFrame(wx.Frame):
         if not check_for_updates.update_available:
             from PYME import version
             
-            msg = 'You are running the latest version of PYME: %s' % version.version
+            msg = 'You are running the latest version of PYME: %s' % version.detailed_version()
             wx.MessageBox(msg, 'No update is available')
     
     def CreateFoldPanel(self):
