@@ -88,7 +88,7 @@ class GLImageView(LMGLShaderCanvas):
             self.own_view = True
         else:
             view = glCanvas.view 
-            self.ownView = False 
+            self.own_view = False 
 
         LMGLShaderCanvas.__init__(self, parent=parent, show_lut=show_lut, view=view, **kwargs)
         
