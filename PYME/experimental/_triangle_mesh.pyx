@@ -1462,7 +1462,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef bint interior
         cdef np.int32_t v0, v1
         cdef int i
-        cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot, vx, vy, vz
+        cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot
+        cdef np.float32_t[VECTORSIZE] _vertex
 
         if _curr == -1:
             return 0
@@ -1492,9 +1493,9 @@ cdef class TriangleMesh(TrianglesBase):
         # n0 = self._vertices['normal'][curr_edge.vertex, :]
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
-        vx = 0.5*(x0x + x1x)
-        vy = 0.5*(x0y + x1y)
-        vz = 0.5*(x0z + x1z)
+        _vertex[0] = 0.5*(x0x + x1x)
+        _vertex[1] = 0.5*(x0y + x1y)
+        _vertex[2] = 0.5*(x0z + x1z)
         if not upsample:
             n0x = self._cvertices[v0].normal0
             n0y = self._cvertices[v0].normal1
@@ -1505,16 +1506,16 @@ cdef class TriangleMesh(TrianglesBase):
 
             ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
 
-            vx += 0.0625*ndot*(n0x + n1x)
-            vy += 0.0625*ndot*(n0y + n1y)
-            vz += 0.0625*ndot*(n0z + n1z)
+            _vertex[0] += 0.0625*ndot*(n0x + n1x)
+            _vertex[1] += 0.0625*ndot*(n0y + n1y)
+            _vertex[2] += 0.0625*ndot*(n0z + n1z)
 
         #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
         #if upsample:
         #    _vertex = 0.5*(x0 + x1)
         #else:
         #    _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
-        _vertex_idx = self._new_vertex(np.array([vx,vy,vz]))
+        _vertex_idx = self._new_vertex(_vertex)
         #_vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
