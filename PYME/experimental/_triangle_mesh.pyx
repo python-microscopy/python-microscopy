@@ -930,7 +930,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef np.int32_t shared_vertex
         cdef np.float32_t px, py, pz
         cdef bint fast_collapse_bool, interior
-        cdef int i, j, twin_count
+        cdef int i, j, twin_count, dead_count
+        cdef np.int32_t[5*NEIGHBORSIZE] dead_vertices
 
         if _curr == -1:
             return 0
@@ -1012,8 +1013,12 @@ cdef class TriangleMesh(TrianglesBase):
                             twin_count += 1
                 if twin_count > 2:
                     break
+
+            # no more than two vertices shared by the neighbors of dead and live vertex
             if twin_count != 2:
                 return 0
+
+            # assign
             for i in range(NEIGHBORSIZE):
                 if (neighbours_dead[i] == -1):
                     continue
@@ -1026,17 +1031,52 @@ cdef class TriangleMesh(TrianglesBase):
             #live_list = self._halfedges['vertex'][live_nn[live_mask]]
             #dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
         else:
-            twin_mask = (self._halfedges['twin'] != -1)
-            dead_mask = (self._halfedges['vertex'] == _dead_vertex)
-            dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
-            live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
-
-            twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
-            if len(twin_list) != 2:
+            # grab the set of halfedges pointing to dead_vertices
+            dead_count = 0
+            for i in range(self._halfedges.shape[0]):
+                if self._chalfedges[i].vertex == _dead_vertex:
+                    dead_vertices[dead_count] = i
+                    dead_count += 1
+                    if dead_count > 5*NEIGHBORSIZE:
+                        print('WARNING: Way too many dead vertices!')
+                        break
+            
+            # loop over all live vertices and check for twins in dead_vertices,
+            # as we do in fast_collapse
+            twin_count = 0
+            for i in range(self._halfedges.shape[0]):
+                if self._chalfedges[i].twin == -1:
+                    continue
+                if self._chalfedges[i].vertex == _live_vertex:
+                    for j in range(dead_count):
+                        if self._chalfedges[dead_vertices[j]].twin == -1:
+                            continue
+                        if self._chalfedges[self._chalfedges[i].twin].vertex == self._chalfedges[self._chalfedges[dead_vertices[j]].twin].vertex:
+                            if twin_count > 2:
+                                break
+                            if (twin_count == 0) or ((twin_count > 0) and (self._chalfedges[self._chalfedges[dead_vertices[j]].twin].vertex != shared_vertex)):
+                                shared_vertex = self._chalfedges[self._chalfedges[dead_vertices[j]].twin].vertex
+                                twin_count += 1
+                    if twin_count > 2:
+                        break
+            
+            # no more than two vertices shared by the neighbors of dead and live vertex
+            if twin_count != 2:
                 return 0
 
-            self._halfedges['vertex'][dead_mask] = _live_vertex
+            # assign
+            for i in range(dead_count):
+                self._chalfedges[dead_vertices[i]].vertex = _live_vertex
 
+            #twin_mask = (self._halfedges['twin'] != -1)
+            #dead_mask = (self._halfedges['vertex'] == _dead_vertex)
+            #dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
+            #live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
+
+        # twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
+        # if len(twin_list) != 2:
+        #     return 0
+            
         # Collapse to the midpoint of the original edge vertices
         # if fast_collapse_bool:
         #    self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
