@@ -212,8 +212,10 @@ cdef class TriangleMesh(TrianglesBase):
 
         # Populate the normals
         #print('populating face normals')
+        self._face_normals_valid = False
         self.face_normals
         #print('populating vertex normals')
+        self._vertex_normals_valid = False
         self.vertex_normals
         #print('done populating normals')
 
@@ -427,8 +429,9 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the normal of each triangular face.
         """
-        if np.all(self._faces['normal'] == -1):
+        if not self._face_normals_valid:
             triangle_mesh_utils.c_update_face_normals(list(np.arange(len(self._faces)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            self._face_normals_valid = True
         return self._faces['normal'][self._faces['halfedge'] != -1]
 
     @property
@@ -437,7 +440,7 @@ cdef class TriangleMesh(TrianglesBase):
         Return the area of each triangular face.
         """
         if np.all(self._faces['area'] == -1):
-            self._faces['normal'][:] = -1
+            self._face_normals_valid = False
             self.face_normals
         return self._faces['area']
     
@@ -446,8 +449,9 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the up to NEIGHBORSIZE neighbors of each vertex.
         """
-        if np.all(self._vertices['neighbors'] == -1):
+        if not self._vertex_normals_valid:
             triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            self._vertex_normals_valid = True
 
         return self._vertices['neighbors']
 
@@ -456,9 +460,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the normal of each vertex.
         """
-        if np.all(self._vertices['normal'] == -1):
-            self._vertices['neighbors'][:] = -1
-            self.vertex_neighbors
+        self.vertex_neighbors
         return self._vertices['normal']
 
     @property
@@ -623,7 +625,9 @@ cdef class TriangleMesh(TrianglesBase):
             self._manifold = None
             self._singular_edges = None
             self._singular_vertices = None
+            self._face_normals_valid = False
             self.face_normals
+            self._vertex_normals_valid = False
             self.vertex_neighbors
             self._H = None
             self._K = None
@@ -2105,8 +2109,10 @@ cdef class TriangleMesh(TrianglesBase):
             #triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
 
             # Now we gotta recalculate the normals
-            self._faces['normal'][:] = -1
-            self._vertices['normal'][:] = -1
+            # self._faces['normal'][:] = -1
+            # self._vertices['normal'][:] = -1
+            self._face_normals_valid = False
+            self._vertex_normals_valid = False
             self.face_normals
             self.vertex_normals
 
@@ -3105,8 +3111,10 @@ cdef class TriangleMesh(TrianglesBase):
         self._manifold = None
 
         # Now we gotta recalculate the normals
-        self._faces['normal'][:] = -1
-        self._vertices['normal'][:] = -1
+        # self._faces['normal'][:] = -1
+        # self._vertices['normal'][:] = -1
+        self._face_normals_valid = False
+        self._vertex_normals_valid = False
         self.face_normals
         self.vertex_normals
 

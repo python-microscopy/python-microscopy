@@ -95,6 +95,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object fix_boundary
     cdef object _manifold
 
+    cdef object _vertex_normals_valid
+    cdef object _face_normals_valid
+
     cdef object _H
     cdef object _K
     cdef public object smooth_curvature
