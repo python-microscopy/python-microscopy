@@ -1901,7 +1901,7 @@ cdef class TriangleMesh(TrianglesBase):
         if (t2 != -1):
             self._chalfedges[t2].twin = t1
 
-    def regularize(self):
+    cpdef int regularize(self):
         """
         Adjust vertices so they tend toward valence VALENCE 
         (or BOUNDARY_VALENCE for boundaries).
@@ -1959,7 +1959,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     @cython.cdivision(True)
     @cython.boundscheck(False)
-    def relax(self, float l=1, int n=1):
+    cpdef int relax(self, float l=1, int n=1):
         """
         Perform n iterations of Lloyd relaxation on the mesh.
 
@@ -2107,6 +2107,8 @@ cdef class TriangleMesh(TrianglesBase):
             self._vertices['normal'][:] = -1
             self.face_normals
             self.vertex_normals
+
+        return 1
         
     def split_edges(self, float split_threshold):
         cdef int split_count = 0
