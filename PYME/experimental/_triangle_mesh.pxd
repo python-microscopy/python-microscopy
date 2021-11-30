@@ -109,6 +109,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef _edge_delete(self, np.int32_t)
     cdef _zipper(self, np.int32_t, np.int32_t)
     cpdef int edge_flip(self, np.int32_t, bint live_update=*)
+    cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
+    cpdef int edge_split(self, np.int32_t, bint live_update=*, bint upsample=*)
     
     #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
     

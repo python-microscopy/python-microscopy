@@ -907,7 +907,7 @@ cdef class TriangleMesh(TrianglesBase):
         
         return 1
     
-    def edge_collapse(self, np.int32_t _curr, bint live_update=1):
+    cpdef int edge_collapse(self, np.int32_t _curr, bint live_update=1):
         """
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr,
         and its associated triangles, while keeping mesh connectivity.
@@ -1439,7 +1439,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return idx
 
-    def edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
+    cpdef int edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
         """
         Split triangles evenly along an edge specified by halfedge index _curr.
 
