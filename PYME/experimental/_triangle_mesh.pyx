@@ -1971,13 +1971,15 @@ cdef class TriangleMesh(TrianglesBase):
                 Number of iterations to apply.
         """
         cdef int k, i, j, v, n_vertices, n_idx
-        cdef float weight_sum, w, dx, dy, dz
+        cdef np.float32_t weight_sum, w, dx, dy, dz
         cdef np.int32_t *neighbours
         cdef bint fix_boundary = self.fix_boundary
-        cdef vertex_t *verts = <vertex_t*> self._cvertices
-        cdef float [3] centroid = [0,0,0]
-        cdef float *pos
-        cdef float * normal
+        #cdef vertex_t *verts = <vertex_t*> self._cvertices
+        cdef np.float32_t[3] centroid = [0,0,0]
+        cdef np.float32_t[3] shift = [0,0,0]
+        cdef np.float32_t *pos
+        cdef np.float32_t *normal
+        cdef halfedge_t *curr_edge
         
         n_vertices = self._vertices.shape[0]
         
@@ -1988,16 +1990,16 @@ cdef class TriangleMesh(TrianglesBase):
         # nn = nn[nn_mask]
         # vn_idx = self._halfedges['vertex'][nn]
         
-        if self.fix_boundary:
-            # Don't move vertices on a boundary
-            boundary = self._halfedges[(self._halfedges['twin'] == -1)]
-            tn = np.hstack([boundary['vertex'], self._halfedges['vertex'][boundary['prev']]])
+        # if self.fix_boundary:
+        #     # Don't move vertices on a boundary
+        #     boundary = self._halfedges[(self._halfedges['twin'] == -1)]
+        #     tn = np.hstack([boundary['vertex'], self._halfedges['vertex'][boundary['prev']]])
         
-        bverts = np.zeros(n_vertices, 'i')
-        bverts[tn] = 1
-        cdef bint [:] boundary_mask = bverts
-        shifts = np.zeros([n_vertices, 3], 'f4')
-        cdef float [:,:] c_shifts = shifts
+        # bverts = np.zeros(n_vertices, 'i')
+        # bverts[tn] = 1
+        # cdef bint [:] boundary_mask = bverts
+        #shifts = np.zeros([n_vertices, 3], 'f4')
+        #cdef float [:,:] c_shifts = shifts
 
         
         # for k in range(n):
@@ -2029,11 +2031,12 @@ cdef class TriangleMesh(TrianglesBase):
         # First steps towards a non-vectorised version of the above. Currently much slower (needs vector operations ported to c rather than calling numpy functions).
         for k in range(n):
             for v in range(n_vertices):
-                if fix_boundary and boundary_mask[v]:
+                if self._cvertices[v].halfedge == -1:
+                    continue
+                curr_edge = &self._chalfedges[self._cvertices[v].halfedge]
+                if fix_boundary and ((curr_edge.twin == -1) or (self._chalfedges[curr_edge.prev].twin == -1)):
                     # Don't move vertices on a boundary
-                    c_shifts[v,0] = 0
-                    c_shifts[v,1] = 0
-                    c_shifts[v,2] = 0
+                    shift[:] = [0,0,0]
                     continue
 
                 if self._cvertices[v].valence > NEIGHBORSIZE:
@@ -2045,20 +2048,24 @@ cdef class TriangleMesh(TrianglesBase):
                 pos = &self._cvertices[v].position0
                 normal = &self._cvertices[v].normal0
                 centroid[:] = [0,0,0]
+                neighbours = &self._cvertices[v].neighbor0
                 
                 for j in range(NEIGHBORSIZE):
-                    n_idx = verts[v].neighbors[j]
-                    if (n_idx != -1) and (self._chalfedges[n_idx].length !=0):
+                    if (neighbours[j] == -1):
+                        break
+                    if (self._chalfedges[neighbours[j]].length == 0):
+                        continue
+                    #if (n_idx != -1) and (self._chalfedges[n_idx].length !=0):
                         # Get vertex neighbor positions
-                        vn = self._cvertices[self._chalfedges[n_idx].vertex]
+                    vn = self._cvertices[self._chalfedges[neighbours[j]].vertex]
 
-                        # Weight by distance to neighbors
-                        w = (1./self._chalfedges[n_idx].length)
-                        weight_sum += w
-                        
-                        centroid[0] += vn.position0*w
-                        centroid[1] += vn.position1*w
-                        centroid[2] += vn.position2*w
+                    # Weight by distance to neighbors
+                    w = (1./self._chalfedges[neighbours[j]].length)
+                    weight_sum += w
+                    
+                    centroid[0] += vn.position0*w
+                    centroid[1] += vn.position1*w
+                    centroid[2] += vn.position2*w
 
                 if (weight_sum == 0):
                     continue
@@ -2077,9 +2084,9 @@ cdef class TriangleMesh(TrianglesBase):
                 dz = centroid[2] - pos[2]
 
                 # Update vertex positions
-                c_shifts[v, 0] = l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
-                c_shifts[v, 1] = l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
-                c_shifts[v, 2] = l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
+                shift[0] = l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
+                shift[1] = l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
+                shift[2] = l*( -normal[0]*normal[2]*dx - normal[1]*normal[2]*dy + (1.0 - normal[2]*normal[2])*dz)
                 
                 #self._cvertices[v].position0 = pos[0] + l*( (1.0 - normal[0]*normal[0])*dx - normal[0]*normal[1]*dy - normal[0]*normal[2]*dz)
                 #self._cvertices[v].position1 = pos[1] + l*( -normal[0]*normal[1]*dx + (1.0 - normal[1]*normal[1])*dy - normal[1]*normal[2]*dz)
@@ -2087,15 +2094,19 @@ cdef class TriangleMesh(TrianglesBase):
                 
                 #update_single_vertex_neighbours(v, self._chalfedges, self._cvertices, self._cfaces)
                 
-            self._vertices['position'] += shifts
-            triangle_mesh_utils.c_update_face_normals(list(np.arange(len(self._faces)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
-            triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+                self._cvertices[v].position0 += shift[0]
+                self._cvertices[v].position1 += shift[1]
+                self._cvertices[v].position2 += shift[2]
 
-        # Now we gotta recalculate the normals
-        self._faces['normal'][:] = -1
-        self._vertices['normal'][:] = -1
-        self.face_normals
-        self.vertex_normals
+            #self._vertices['position'] += shifts
+            #triangle_mesh_utils.c_update_face_normals(list(np.arange(len(self._faces)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            #triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+
+            # Now we gotta recalculate the normals
+            self._faces['normal'][:] = -1
+            self._vertices['normal'][:] = -1
+            self.face_normals
+            self.vertex_normals
         
     def split_edges(self, float split_threshold):
         cdef int split_count = 0
