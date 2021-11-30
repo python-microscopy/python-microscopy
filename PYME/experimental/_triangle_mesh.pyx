@@ -925,7 +925,12 @@ cdef class TriangleMesh(TrianglesBase):
         cdef halfedge_t *curr_halfedge
         cdef halfedge_t *twin_halfedge
         cdef np.int32_t _prev, _twin, _next, _prev_twin, _prev_twin_vertex, _next_prev_twin, _next_prev_twin_vertex, _twin_next_vertex, _next_twin_twin_next, _next_twin_twin_next_vertex, vl, vd, _dead_vertex, _live_vertex, vn, vtn, face0, face1, face2, face3
+        cdef np.int32_t *neighbours_live
+        cdef np.int32_t *neighbours_dead
+        cdef np.int32_t shared_vertex
+        cdef np.float32_t px, py, pz
         cdef bint fast_collapse_bool, interior
+        cdef int i, j, twin_count
 
         if _curr == -1:
             return 0
@@ -990,27 +995,53 @@ cdef class TriangleMesh(TrianglesBase):
         fast_collapse_bool = (locally_manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
         if fast_collapse_bool:
             # Do it the fast way if we can
-            live_nn = self._vertices['neighbors'][_live_vertex]
-            dead_nn =  self._vertices['neighbors'][_dead_vertex]
-            live_mask = (live_nn != -1)
-            dead_mask = (dead_nn != -1)
-            live_list = self._halfedges['vertex'][live_nn[live_mask]]
-            dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
+            neighbours_live = &self._cvertices[_live_vertex].neighbor0
+            neighbours_dead = &self._cvertices[_dead_vertex].neighbor0
+            twin_count = 0
+            for i in range(NEIGHBORSIZE):
+                if neighbours_live[i] == -1:
+                    break
+                for j in range(NEIGHBORSIZE):
+                    if neighbours_dead[j] == -1:
+                        break
+                    if self._chalfedges[neighbours_live[i]].vertex == self._chalfedges[neighbours_dead[j]].vertex:
+                        if twin_count > 2:
+                            break
+                        if (twin_count == 0) or ((twin_count > 0) and (self._chalfedges[neighbours_dead[j]].vertex != shared_vertex)):
+                            shared_vertex = self._chalfedges[neighbours_dead[j]].vertex
+                            twin_count += 1
+                if twin_count > 2:
+                    break
+            if twin_count != 2:
+                return 0
+            for i in range(NEIGHBORSIZE):
+                if (neighbours_dead[i] == -1):
+                    continue
+                self._chalfedges[self._chalfedges[neighbours_dead[i]].twin].vertex = _live_vertex
+
+            #live_nn = self._vertices['neighbors'][_live_vertex]
+            #dead_nn =  self._vertices['neighbors'][_dead_vertex]
+            #live_mask = (live_nn != -1)
+            #dead_mask = (dead_nn != -1)
+            #live_list = self._halfedges['vertex'][live_nn[live_mask]]
+            #dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
         else:
             twin_mask = (self._halfedges['twin'] != -1)
             dead_mask = (self._halfedges['vertex'] == _dead_vertex)
             dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
             live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
 
-        twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
-        if len(twin_list) != 2:
-            return 0
+            twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
+            if len(twin_list) != 2:
+                return 0
+
+            self._halfedges['vertex'][dead_mask] = _live_vertex
 
         # Collapse to the midpoint of the original edge vertices
-        if fast_collapse_bool:
-            self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
-        else:
-            self._halfedges['vertex'][dead_mask] = _live_vertex
+        # if fast_collapse_bool:
+        #    self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
+        # else:
+        #     self._halfedges['vertex'][dead_mask] = _live_vertex
         
         # if fast_collapse_bool:
         #     if not self._check_collapse_fast(_live_vertex, _dead_vertex):
@@ -1019,9 +1050,16 @@ cdef class TriangleMesh(TrianglesBase):
         #     if not self._check_collapse_slow(_live_vertex, _dead_vertex):
         #         return
         
-        _live_pos = self._vertices['position'][_live_vertex]
-        _dead_pos = self._vertices['position'][_dead_vertex]
-        self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
+        # _live_pos = self._vertices['position'][_live_vertex]
+        # _dead_pos = self._vertices['position'][_dead_vertex]
+        # self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
+
+        px = 0.5*(self._cvertices[_live_vertex].position0 + self._cvertices[_dead_vertex].position0)
+        py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
+        pz = 0.5*(self._cvertices[_live_vertex].position2 + self._cvertices[_dead_vertex].position2)
+        self._cvertices[_live_vertex].position0 = px
+        self._cvertices[_live_vertex].position1 = py
+        self._cvertices[_live_vertex].position2 = pz
         
         # update valence of vertex we keep
         self._cvertices[_live_vertex].valence = vl + vd - 3
