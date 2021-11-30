@@ -164,6 +164,7 @@ class Visualiser(Plugin):
         from PYME.experimental import isosurface
         from PYME.LMVis import gl_render3D_shaders as glrender
         from PYME.LMVis.layers.mesh import TriangleRenderLayer
+        from PYME.misc.colormaps import cm
 
         glcanvas = new_mesh_viewer()#glrender.showGLFrame()
         glcanvas.layer_data={}
@@ -173,7 +174,7 @@ class Visualiser(Plugin):
             T = isosurface.isosurface(self.image.data[:,:,:,i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
             glcanvas.layer_data[self.image.names[i]] = T
             layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context,
-                                        cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i % 6],
+                                        cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)],
                                         #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
                                         )
             glcanvas.add_layer(layer)

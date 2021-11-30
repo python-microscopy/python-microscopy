@@ -53,11 +53,11 @@ class LUTBitmap(manualFoldPanel.CaptionButton):
     def _active_bitmap(self):
         import numpy as np
         # from pylab import cm
-        from matplotlib import cm
+        from PYME.misc.colormaps import cm
         x = np.linspace(0, 1, 30)
 
         if isinstance(self._layer.cmap, str):
-            img = (255*getattr(cm, self._layer.cmap)(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
+            img = (255*cm[self._layer.cmap](np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')
         else:
             # assume an actual colourmap instance - TODO make the check explicit on a colormap base class??
             img = (255*self._layer.cmap(np.ones(10)[:, None]*x[None, :]))[:,:,:3].astype('uint8')

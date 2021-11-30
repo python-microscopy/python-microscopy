@@ -5,7 +5,7 @@ from PYME.experimental._octree import Octree
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 
 
@@ -135,7 +135,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             alpha = np.repeat(alpha.ravel(), 3)
             print('Octree scaled alpha range: %g, %g' % (alpha.min(), alpha.max()))
 
-            cmap = getattr(cm, self.cmap)
+            cmap = cm[self.cmap]
 
             # Do we have coordinates? Concatenate into vertices.
             if x is not None and y is not None and z is not None:

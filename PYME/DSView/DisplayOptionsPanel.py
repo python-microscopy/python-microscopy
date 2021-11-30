@@ -28,18 +28,20 @@ import wx.lib.scrolledpanel as scrolled
 import PYME.ui.manualFoldPanel as afp
 import PYME.ui.layerFoldPanel as lfp
 
-from matplotlib import cm
+#from matplotlib import cm
+from PYME.misc.colormaps import cm
 
 from PYME import resources
 
-try:
-    from PYME.misc import extraCMaps
-except:
-    pass
+# try:
+#     from PYME.misc import extraCMaps
+# except:
+#     pass
+
 import numpy as np
 #from matplotlib import cm
 from PYME.ui import histLimits
-from .displayOptions import DisplayOpts, fast_grey, labeled
+from .displayOptions import DisplayOpts #, fast_grey, labeled
 
 import os
 dirname = os.path.dirname(__file__)
@@ -68,8 +70,8 @@ class OptionsPanel(wx.Panel):
         self.hcs = []
         self.shIds = []
 
-        cmapnames = list(cm.cmapnames) + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
-        cmapnames.sort()
+        cmapnames = list(cm.graded_cmaps)  #+ ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
+        #cmapnames.sort()
         ##do = parent.do
 
         dispSize = (120, 80)
@@ -286,13 +288,7 @@ class OptionsPanel(wx.Panel):
         ind = self.cIds.index(event.GetId())
 
         cmn = event.GetString()
-        if cmn == 'fastGrey':
-            self.do.SetCMap(ind, fast_grey)
-
-        elif cmn == 'labeled':
-            self.do.SetCMap(ind, labeled)
-        else:
-            self.do.SetCMap(ind, cm.__getattribute__(cmn))
+        self.do.SetCMap(ind, cm[cmn])
             
     def OnComplexChanged(self, event):
         #print event.GetId()

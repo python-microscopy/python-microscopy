@@ -985,9 +985,9 @@ class LegacyGLCanvas(LMGLShaderCanvas):
     def __init__(self, *args, **kwargs):
         LMGLShaderCanvas.__init__(self, *args, **kwargs)
         
-        import matplotlib.cm
+        from PYME.misc.colormaps import cm
 
-        self.cmap = matplotlib.cm.gist_rainbow
+        self.cmap = cm.gist_rainbow
         self.clim = [0, 1]
         self.alim = [0, 1]
 

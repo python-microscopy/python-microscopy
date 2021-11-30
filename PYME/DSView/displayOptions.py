@@ -21,7 +21,8 @@
 #
 ##################
 
-from matplotlib import cm
+#from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 #import tables
 
