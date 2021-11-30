@@ -1910,7 +1910,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int i, flip_count, target_valence, r, failed_flip_count
         cdef halfedge_t *curr_edge
         cdef halfedge_t *twin_edge
-        cdef np.int32_t _twin, v1, v2, v3, v4, score_post, score_pre
+        cdef np.int32_t _twin
+        cdef int v1, v2, v3, v4, score_post, score_pre
 
         flip_count = 0
         failed_flip_count = 0
@@ -1945,10 +1946,8 @@ cdef class TriangleMesh(TrianglesBase):
             #score_pre = abs([v1,v2,v3,v4]).sum()
             #score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
             
-            #score_pre = abs(v1) + abs(v2) + abs(v3) + abs(v4)
-            #score_post = abs(v1-1) + abs(v2-1) + abs(v3+1) + abs(v4+1)
-            score_pre = v1*v1 + v2*v2 + v3*v3 + v4*v4
-            score_post = (v1-1)*(v1-1) + (v2-1)*(v2-1) + (v3+1)*(v3+1) + (v4+1)*(v4+1)
+            score_pre = abs(v1) + abs(v2) + abs(v3) + abs(v4)
+            score_post = abs(v1-1) + abs(v2-1) + abs(v3+1) + abs(v4+1)
 
             if score_post < score_pre:
                 # Flip minimizes deviation of vertex valences from VALENCE (or
