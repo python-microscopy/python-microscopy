@@ -1982,11 +1982,11 @@ cdef class TriangleMesh(TrianglesBase):
         n_vertices = self._vertices.shape[0]
         
         # Get vertex neighbors
-        nn = self._vertices['neighbors']
-        nn_mask = (self._vertices['neighbors'] != -1)
-        #print
-        #nn = nn[nn_mask]
-        vn_idx = self._halfedges['vertex'][nn]
+        # nn = self._vertices['neighbors']
+        # nn_mask = (self._vertices['neighbors'] != -1)
+        # print
+        # nn = nn[nn_mask]
+        # vn_idx = self._halfedges['vertex'][nn]
         
         if self.fix_boundary:
             # Don't move vertices on a boundary
