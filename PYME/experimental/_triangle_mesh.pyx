@@ -1460,32 +1460,62 @@ cdef class TriangleMesh(TrianglesBase):
         cdef halfedge_t *twin_edge
         cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, _face_1_idx, _face_2_idx, _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx, _vertex_idx
         cdef bint interior
+        cdef np.int32_t v0, v1
+        cdef int i
+        cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot, vx, vy, vz
 
         if _curr == -1:
-            return
+            return 0
         
         curr_edge = &self._chalfedges[_curr]
         _prev = curr_edge.prev
         _next = curr_edge.next
 
         # Grab the new vertex position
+        v0 = curr_edge.vertex
+        v1 = self._chalfedges[_prev].vertex
+        x0x = self._cvertices[v0].position0
+        x0y = self._cvertices[v0].position1
+        x0z = self._cvertices[v0].position2
+        x1x = self._cvertices[v1].position0
+        x1y = self._cvertices[v1].position1
+        x1z = self._cvertices[v1].position2
+
         # _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
-        x0 = self._vertices['position'][curr_edge.vertex, :]
-        x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
-        n0 = self._vertices['normal'][curr_edge.vertex, :]
-        n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
-        
+        # x0 = self._vertices['position'][curr_edge.vertex, :]
+        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+        # n0 = self._vertices['normal'][curr_edge.vertex, :]
+        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+         
         # x0 = self._cvertices['position'][curr_edge.vertex, :]
         # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
         # n0 = self._vertices['normal'][curr_edge.vertex, :]
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
         
+        vx = 0.5*(x0x + x1x)
+        vy = 0.5*(x0y + x1y)
+        vz = 0.5*(x0z + x1z)
+        if not upsample:
+            n0x = self._cvertices[v0].normal0
+            n0y = self._cvertices[v0].normal1
+            n0z = self._cvertices[v0].normal2
+            n1x = self._cvertices[v1].normal0
+            n1y = self._cvertices[v1].normal1
+            n1z = self._cvertices[v1].normal2
+
+            ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
+
+            vx += 0.0625*ndot*(n0x + n1x)
+            vy += 0.0625*ndot*(n0y + n1y)
+            vz += 0.0625*ndot*(n0z + n1z)
+
         #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
-        if upsample:
-            _vertex = 0.5*(x0 + x1)
-        else:
-            _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
-        _vertex_idx = self._new_vertex(_vertex)
+        #if upsample:
+        #    _vertex = 0.5*(x0 + x1)
+        #else:
+        #    _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
+        _vertex_idx = self._new_vertex(np.array([vx,vy,vz]))
+        #_vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin
         interior = (_twin != -1)  # Are we on a boundary?
@@ -1591,6 +1621,8 @@ cdef class TriangleMesh(TrianglesBase):
             self._faces_by_vertex = None
             self._H = None
             self._K = None
+        
+        return 1
     
     cpdef int edge_flip(self, np.int32_t _curr, bint live_update=1):
         """
