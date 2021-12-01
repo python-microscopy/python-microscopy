@@ -429,8 +429,9 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the normal of each triangular face.
         """
+        cdef int size = self._faces.shape[0]
         if not self._face_normals_valid:
-            triangle_mesh_utils.c_update_face_normals(list(np.arange(len(self._faces)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            triangle_mesh_utils.c_update_all_face_normals(size, self._halfedges, self._vertices, self._faces)
             self._face_normals_valid = 1
         return self._faces['normal'][self._faces['halfedge'] != -1]
 
@@ -449,8 +450,9 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the up to NEIGHBORSIZE neighbors of each vertex.
         """
+        cdef int size = self._vertices.shape[0]
         if not self._vertex_normals_valid:
-            triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
+            triangle_mesh_utils.c_update_all_vertex_neighbors(size, self._halfedges, self._vertices, self._faces)
             self._vertex_normals_valid = 1
 
         return self._vertices['neighbors']
