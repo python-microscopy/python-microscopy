@@ -294,6 +294,7 @@ static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
 
     for (j = 0; j < n_idxs; ++j)
     {
+        if (p_vertices[j].halfedge == -1) continue;
         update_single_vertex_neighbours(j, p_halfedges, p_vertices, p_faces);
     }
 
@@ -448,6 +449,7 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 
     for (j = 0; j < n_idxs; ++j)
     {
+        if (p_faces[j].halfedge == -1) continue;
         update_face_normal(j, p_halfedges, p_vertices, p_faces);
     }
 
