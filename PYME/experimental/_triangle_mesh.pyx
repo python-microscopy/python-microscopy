@@ -470,8 +470,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the valence of each vertex.
         """
-        if np.all(self._vertices['valence'] == -1):
-            self._vertices['neighbors'][:] = -1
+        if not self._vertex_normals_valid:
             self.vertex_neighbors
         return self._vertices['valence']
 
