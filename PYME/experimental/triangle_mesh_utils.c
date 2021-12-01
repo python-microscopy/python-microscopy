@@ -264,7 +264,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
 {
     PyObject *halfedges=0, *vertices=0, *faces=0;
-    int32_t j, n_idxs;
+    int j, n_idxs;
     halfedge_t *p_halfedges;
     vertex_t *p_vertices;
     face_t *p_faces;
@@ -419,7 +419,7 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
 static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *halfedges=0, *vertices=0, *faces=0;
-    int32_t j, n_idxs;
+    int j, n_idxs;
     halfedge_t *p_halfedges;
     face_t *p_faces;
     vertex_t *p_vertices;
