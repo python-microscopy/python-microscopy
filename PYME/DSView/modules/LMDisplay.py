@@ -22,7 +22,7 @@ from PYME.DSView import fitInfo
 from PYME.DSView import overlays
 import wx.lib.agw.aui as aui
 
-from PYME.misc import extraCMaps
+#from PYME.misc import extraCMaps
 
 
 from PYME.LMVis import pipeline

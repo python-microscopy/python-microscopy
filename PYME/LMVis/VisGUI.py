@@ -43,7 +43,7 @@ matplotlib.use('wxagg')
 # import pylab
 
 from PYME import config
-from PYME.misc import extraCMaps
+#from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 #import os

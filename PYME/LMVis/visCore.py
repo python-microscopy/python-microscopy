@@ -21,7 +21,7 @@ from PYME.LMVis import gl_render3D as gl_render
 # import pylab
 
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-from PYME.misc import extraCMaps
+#from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
@@ -659,6 +659,7 @@ class VisGUICore(object):
         self.dsviewer.AddMenuItem('Points>' + menuName, *args, **kwargs)
         
     def _create_base_layer(self):
+        from PYME.misc.colormaps import cm
         if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
             #add a new layer
             l = self.add_pointcloud_layer(method='points')
@@ -671,7 +672,7 @@ class VisGUICore(object):
         if len(colour_chans) > 1:
             #add a layer for each colour channel
             for i, c in enumerate(sorted(colour_chans)):
-                self.add_pointcloud_layer(ds_name=('output.' + c), cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i%6], visible=False)
+                self.add_pointcloud_layer(ds_name=('output.' + c), cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)], visible=False)
                 
     def _populate_open_args(self, filename):
         args = {}

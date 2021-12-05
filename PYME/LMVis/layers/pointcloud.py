@@ -5,7 +5,7 @@ from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 from PYME.contrib import dispatch
 
@@ -215,9 +215,9 @@ class PointCloudRenderLayer(EngineLayer):
             
         if self.xn_key in ds.keys():
             xn, yn, zn = ds[self.xn_key], ds[self.yn_key], ds[self.zn_key]
-            self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
+            self.update_data(x, y, z, c, cmap=cm[self.cmap], clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
         else:
-            self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha)
+            self.update_data(x, y, z, c, cmap=cm[self.cmap], clim=self.clim, alpha=self.alpha)
     
     
     def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
@@ -294,11 +294,13 @@ class PointCloudRenderLayer(EngineLayer):
     def default_view(self):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor, TextEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
+
+        vis_when = 'cmap not in %s' % cm.solid_cmaps
     
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
-                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour', visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
-                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
+                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour', visible_when=vis_when),
+                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when=vis_when),
                      Group(Item('cmap', label='LUT'),
                            Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']", editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
                            Item('point_size', label=u'Point\u00A0size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])

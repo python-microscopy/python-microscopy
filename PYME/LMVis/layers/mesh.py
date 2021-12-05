@@ -6,7 +6,7 @@ from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 from PYME.contrib import dispatch
 
@@ -270,7 +270,7 @@ class TriangleRenderLayer(EngineLayer):
             c = ds[self.vertexColour][ds.faces].ravel()
             clim = self.clim
 
-        cmap = getattr(cm, self.cmap)
+        cmap = cm[self.cmap]
         alpha = float(self.alpha)
 
         # Do we have coordinates? Concatenate into vertices.

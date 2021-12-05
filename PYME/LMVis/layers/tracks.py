@@ -8,7 +8,7 @@ from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 from PYME.contrib import dispatch
 
@@ -233,7 +233,7 @@ class TrackRenderLayer(EngineLayer):
         self._bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
         
         clim = self.clim
-        cmap = getattr(cm, self.cmap)
+        cmap = cm[self.cmap]
         
         if clim is not None:
             cs_ = ((c - clim[0]) / (clim[1] - clim[0]))
@@ -273,13 +273,15 @@ class TrackRenderLayer(EngineLayer):
     def default_view(self):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor, TextEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
+
+        vis_when = 'cmap not in %s' % cm.solid_cmaps
         
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour',
-                          visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
+                          visible_when=vis_when),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update),
-                                 show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
+                                 show_label=False), ], visible_when=vis_when),
                      Group(Item('cmap', label='LUT'),
                            Item('alpha', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
                            Item('line_width')

@@ -27,7 +27,7 @@ import wx.lib.newevent
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
 # import pylab
-import matplotlib.cm
+from PYME.misc import colormaps
 import numpy as np
 
 from PYME.ui import histLimits
@@ -61,7 +61,7 @@ class DisplayPane(afp.foldingPane):
         self._pc_clim_change = False
 
         #Colourmap
-        cmapnames = matplotlib.cm.cmapnames
+        cmapnames = colormaps.cm.cmapnames
         
         #print((cmapnames, self.glCanvas.cmap.name))
 
@@ -221,11 +221,11 @@ class DisplayPane(afp.foldingPane):
 
 
     def OnCMapChange(self, event):
-        cmapname = matplotlib.cm.cmapnames[self.cColourmap.GetSelection()]
+        cmapname = colormaps.cm.cmapnames[self.cColourmap.GetSelection()]
         #if self.cbCmapReverse.GetValue():
         #    cmapname += '_r'
 
-        self.glCanvas.setCMap(matplotlib.cm.__dict__[cmapname])
+        self.glCanvas.setCMap(colormaps.cm[cmapname])
         #self.visFr.OnGLViewChanged()
         evt = DisplayInvalidEvent(self.GetId())
         self.ProcessEvent(evt)
