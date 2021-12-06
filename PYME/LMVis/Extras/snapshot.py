@@ -41,6 +41,9 @@ class SnapshotSettings(traits.HasTraits):
     height_inches = traits.Property(traits.Float, depends_on='_height_nm, pixelsize, ppi')
     pixelsize = traits.Property(traits.Float, depends_on='_width_nm, width_inches ,ppi')
 
+    width_pixels = traits.Property(traits.Float, depends_on='_width_nm, pixelsize')
+    height_pixels = traits.Property(traits.Float, depends_on='_height_nm, pixelsize')
+
     filename = traits.File(filter=['*.png']) #"PNG files(*.png)|*.png")
 
     def _get_height_inches(self):
@@ -48,6 +51,15 @@ class SnapshotSettings(traits.HasTraits):
 
     def _get_pixelsize(self):
         return (self._width_nm/(self.width_inches*self.ppi))
+
+    def _get_width_pixels(self):
+        return (self._width_nm/self.pixelsize)
+
+    def _set_width_pixels(self, value):
+        self.width_inches = value/self.ppi
+
+    def _get_height_pixels(self):
+        return (self._height_nm/self.pixelsize)
 
     def __init__(self, *args, **kwargs):
         if 'viewport_size_px' in kwargs:
@@ -72,7 +84,9 @@ class SnapshotSettings(traits.HasTraits):
         return View([Item('ppi'),
                      Item('width_inches'),
                      Item('height_inches', style='readonly'),
-                     Item('pixelsize', style='readonly'),
+                     Item('width_pixels'),
+                     Item('height_pixels', style='readonly'),
+                     #Item('pixelsize', style='readonly'),
                      Item('_'),
                      Item('filename'),
                     ], buttons=['OK']) #TODO - should we have cancel? Traits update whilst being edited and cancel doesn't roll back
