@@ -100,7 +100,7 @@ def save_snapshot(canvas):
         
         if settings.filename:
             # snap = canvas.getIm(pixel_size, GL_LUMINANCE)
-            snap = canvas.getIm(pixel_size, GL_RGB)
+            snap = canvas.getIm(settings.pixelsize, GL_RGB)
             print(snap.dtype, snap.shape, snap.max())
             if snap.ndim == 3:
                 img = PIL.Image.fromarray(snap.transpose(1, 0, 2))
