@@ -225,6 +225,7 @@ class CurrentRenderer:
         # import matplotlib.pyplot as plt
         # oldcmap = self.visFr.glCanvas.cmap
         # self.visFr.glCanvas.setCMap(plt.cm.gray)
+        assert(self.visFr.glCanvas.displayMode=='2D')
         im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
         # self.visFr.glCanvas.setCMap(oldcmap)

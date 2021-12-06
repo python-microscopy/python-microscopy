@@ -917,22 +917,39 @@ class LMGLShaderCanvas(GLCanvas):
             return self.getSnapshot(mode=mode)
         else:
             # set size before moving the view, since self.setView includes a self.Refresh() call
-            if image_bounds is None:
-                from PYME.IO.image import ImageBounds
-                x0, y0, z0, x1, y1, z1 = self.bbox
-                #FIXME - do model-view translation to cope with 3D rotated views.
-                image_bounds = ImageBounds(x0, x1, y0, y1, z0, z1)
-                
-            self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
-                                   int((image_bounds.y1 - image_bounds.y0) / pixel_size))
-            logging.debug('viewport size %s' % (self.view_port_size,))
-            self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
-                         image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
-            snap = self.getSnapshot(mode=mode)
+            old_view = self.get_view()
+            old_size = self.view_port_size
+
+            try:
+                if image_bounds is None:
+                    # for snapshots, just scale the viewport by the ratio of desired and current pixel sizes
+                    # as this works well with 3D rotated (and perspective) views
+                    # NOTE: rounding to the nearest pixel causes the pixel size to be inexact, and images produced this way should NOT
+                    # be used for quantification.
+                    sc = pixel_size/self.pixelsize
+                    self.view_port_size = (int(old_size[0]/sc), int(old_size[1]/sc))
+
+                else:
+                    # legacy fallback for CurrentRenderer
+                    # NOTE - does not work for 3D views - strictly 2D only
+                    x0, y0, x1, y1, z0, z1 = image_bounds.bounds 
+
             
-            print(pixel_size, self.pixelsize)
-            assert(self.pixelsize == pixel_size)
-            self.view_port_size = self.Size
+                    self.view_port_size = (int((x1 - x0) / pixel_size),
+                                    int((y1 - y0) / pixel_size))
+                    logging.debug('viewport size %s' % (self.view_port_size,))
+                
+                    self.setView(x0, x0 + self.view_port_size[0]*pixel_size,
+                            y0, y0 + self.view_port_size[1]*pixel_size)
+
+                    print(pixel_size, self.pixelsize)
+                    assert(self.pixelsize == pixel_size)
+                
+                snap = self.getSnapshot(mode=mode)
+
+            finally:
+                self.view_port_size = old_size
+                self.set_view(old_view)
             return snap
 
     def recenter(self, x, y):
