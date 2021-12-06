@@ -239,13 +239,13 @@ class XYZTCDataSource(BaseDataSource):
             input_order = getattr(self, '_input_order', 'XYZTC')
         
         old_sizes = getattr(self, '_sizes', (-1,1,1))
-        if size_z is None:
+        if (size_z is None) or (size_z == 0):
             size_z = old_sizes[0]
         
-        if size_t is None:
+        if (size_t is None) or (size_t == 0):
             size_t = old_sizes[1]
             
-        if size_c is None:
+        if (size_c is None) or (size_c == 0):
             size_c = old_sizes[2]
             
         if size_z == -1:

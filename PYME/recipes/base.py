@@ -1005,3 +1005,53 @@ class Crop(ModuleBase):
         im = namespace[self.input]
         cropped = crop_image(im, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
         namespace[self.output] = cropped
+
+
+@register_module('Redimension')
+class Redimension(ModuleBase):
+    """
+    Interprete input image as one having a different dimension order / slicing
+
+    Used for, e.g. recovering colour dimensions in data saved without metadata correctly indicating dimensionality
+
+    Treats the input data as a flat series of XY slices (using default ordering of the input data) and then interprets into 5D using
+    the given dimention ordering.
+
+    Parameters
+    -----------
+
+    dim_order : enum, the order of dimensions in the image sequence
+    size_z : int, number of z slices
+    size_t : int, number of t slices
+    size_c : int, number of c slices
+
+    Note:
+    -----
+
+    The size_ parameters accept two special values:
+
+    0 : this dimension should be the same size as it is in the input
+    -1 : set this dimension automatically based on the total number of slices / the product of the other two dimentsions. Only one of the dimensions can have a size
+         of -1 
+    """
+    input = Input('imput')
+    output = Output('redimensioned')
+
+    dim_order = Enum(values=['XYZTC', 'XYTZC', 'XYCZT', 'XYCTZ', 'XYZCT', 'XYTCZ'])
+    size_z = Int(-1)
+    size_t = Int(1)
+    size_c = Int(1)
+
+    def execute(self, namespace):
+        from PYME.IO.image import ImageStack
+        from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
+
+        im = namespace[self.input]
+
+        d = XYZTCWrapper(im.data_xyztc)
+        d.set_dim_order_and_size(self.dim_order, size_z=self.size_z,size_t=self.size_t, size_c=self.size_c)
+        im = ImageStack(data=d, titleStub='Redimensioned')
+        
+        im.mdh.copyEntriesFrom(getattr(im, 'mdh', {})) 
+
+        namespace[self.output] = d
