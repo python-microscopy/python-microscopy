@@ -58,7 +58,7 @@ warnings.simplefilter('once',PYMEDeprecationWarning)
 #Alias for backwards compatibility
 VS = MetaDataHandler.VoxelSize
 
-class ImageBounds:
+class ImageBounds(object):
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
         self.x0 = x0
         self.y0 = y0
@@ -102,6 +102,10 @@ class ImageBounds:
                 y1 = y1 / 2
 
         return cls(x0, y0, x1, y1)
+
+    def __repr__(self):
+        # FIXME - requires python >3.6
+        return f'ImageBounds(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1}, z0={self.z0}, z1 = {self.z1}) instance at 0x{id(self):0X}'
 
 
 lastdir = ''

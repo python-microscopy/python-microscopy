@@ -923,16 +923,23 @@ class LMGLShaderCanvas(GLCanvas):
                 #FIXME - do model-view translation to cope with 3D rotated views.
                 image_bounds = ImageBounds(x0, x1, y0, y1, z0, z1)
                 
-            self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
-                                   int((image_bounds.y1 - image_bounds.y0) / pixel_size))
-            logging.debug('viewport size %s' % (self.view_port_size,))
-            self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
-                         image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
-            snap = self.getSnapshot(mode=mode)
-            
-            print(pixel_size, self.pixelsize)
-            assert(self.pixelsize == pixel_size)
-            self.view_port_size = self.Size
+            print(image_bounds)
+
+            old_view = self.get_view()
+
+            try:
+                self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
+                                    int((image_bounds.y1 - image_bounds.y0) / pixel_size))
+                logging.debug('viewport size %s' % (self.view_port_size,))
+                self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
+                            image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
+                snap = self.getSnapshot(mode=mode)
+                
+                print(pixel_size, self.pixelsize)
+                assert(self.pixelsize == pixel_size)
+                #self.view_port_size = self.Size
+            finally:
+                self.set_view(old_view)
             return snap
 
     def recenter(self, x, y):
