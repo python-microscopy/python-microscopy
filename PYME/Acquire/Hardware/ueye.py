@@ -107,6 +107,12 @@ class UEyeCamera(Camera):
     def GetSerialNumber(self):
         return self._serial_number
     
+    def GetName(self):
+        return self.sensor_type
+    
+    def GetHeadModel(self):
+        return self.sensor_type
+    
     def GetCCDWidth(self):
         return self._chip_size[0]
 
