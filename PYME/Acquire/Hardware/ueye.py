@@ -63,6 +63,12 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_InitCamera(self.h, None))
         self.initialized = True
 
+        # get serial number
+        cam_info = ueye.CAMINFO()
+        self.check_success(ueye.is_GetCameraInfo(self.h, cam_info))
+        # see PYME.Acquire.Hardware.Camera, want this forced to str
+        self._serial_number = cam_info.SerNo.decode()
+
         # get chip size
         sensor_info = ueye.SENSORINFO()
         self.check_success(ueye.is_GetSensorInfo(self.h, sensor_info))
@@ -97,6 +103,9 @@ class UEyeCamera(Camera):
         self.poll_loop_active = True
         self.poll_thread = threading.Thread(target=self._poll_loop)
         self.poll_thread.start()
+    
+    def GetSerialNumber(self):
+        return self._serial_number
     
     def GetCCDWidth(self):
         return self._chip_size[0]
@@ -361,7 +370,11 @@ class UEyeCamera(Camera):
         x2 -= x_change
         y2 -= y_change
         logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
-        aoi = ueye.IS_RECT(x1, y1, x2 - x1, y2 - y1)
+        aoi = ueye.IS_RECT()
+        aoi.s32X = x1
+        aoi.s32Y = y1
+        aoi.s32Width = x2 - x1
+        aoi.s32Height = y2 - y1
         
         self.check_success(ueye.is_AOI(self.h, ueye.IS_AOI_IMAGE_SET_AOI, aoi,
                                        ueye.sizeof(aoi)))
