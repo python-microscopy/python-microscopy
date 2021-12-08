@@ -114,8 +114,8 @@ class PointCloudRenderLayer(EngineLayer):
     _datasource_keys = List()
     _datasource_choices = List()
 
-    def __init__(self, pipeline, method='points', dsname='', context=None, **kwargs):
-        EngineLayer.__init__(self, context=context, **kwargs)
+    def __init__(self, pipeline, method='points', dsname='', **kwargs):
+        EngineLayer.__init__(self, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -165,7 +165,7 @@ class PointCloudRenderLayer(EngineLayer):
 
     def _set_method(self):
         #logger.debug('Setting layer method to %s' % self.method)
-        self.engine = ENGINES[self.method](self._context, self._window)
+        self.engine = ENGINES[self.method]()
         self.update()
 
     def _get_cdata(self):

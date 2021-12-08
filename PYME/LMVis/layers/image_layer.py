@@ -15,8 +15,8 @@ from OpenGL.GL import *
 
 class ImageEngine(BaseEngine):
     _outlines = True
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
         self.set_shader_program(ImageShaderProgram)
         
         self._texture_id = None
@@ -138,8 +138,8 @@ class ImageRenderLayer(EngineLayer):
     _datasource_choices = List()
     _datasource_keys = List()
 
-    def __init__(self, pipeline, method='image', dsname='', display_opts=None, context=None, **kwargs):
-        EngineLayer.__init__(self, context=context, **kwargs)
+    def __init__(self, pipeline, method='image', dsname='', display_opts=None, **kwargs):
+        EngineLayer.__init__(self, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gray'
@@ -194,7 +194,7 @@ class ImageRenderLayer(EngineLayer):
         return image.ImageStack
 
     def _set_method(self):
-        self.engine = ENGINES[self.method](self._context, self._window)
+        self.engine = ENGINES[self.method]()
         self.update()
 
 

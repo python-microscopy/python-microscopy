@@ -29,8 +29,8 @@ class OctreeRenderLayer(TriangleRenderLayer):
     density = Float(0.0, desc='Minimum density of octree node to display.')
     min_points = Int(10, desc='Number of points/node to truncate octree at')
 
-    def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
-        TriangleRenderLayer.__init__(self, pipeline, method, dsname, context, **kwargs)
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+        TriangleRenderLayer.__init__(self, pipeline, method, dsname, **kwargs)
 
         self.on_trait_change(self.update, 'depth')
         self.on_trait_change(self.update, 'density')

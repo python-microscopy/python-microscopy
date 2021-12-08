@@ -20,8 +20,8 @@ class Text(BaseEngine):
     TODO - Shader. My first instinct here would be to make the text values (as derived from the array) control transparency.
            This should give an attractive anti-aliasing/blending effect, but we'd need to try it out in practice.
     """
-    def __init__(self, context=None, text='', pos=(0,0)):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self, text='', pos=(0,0)):
+        BaseEngine.__init__(self)
         self.set_shader_program(TextShaderProgram)
         
         self._texture_id = None

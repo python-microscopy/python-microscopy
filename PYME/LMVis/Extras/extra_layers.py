@@ -36,7 +36,7 @@ def add_octree_layer(visFr):
     if not 'octree0' in visFr.pipeline.dataSources.keys():
         gen_octree_from_points(visFr)
         
-    l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree0', depth=0, alpha=1.0, context=visFr.glCanvas.gl_context, window=visFr.glCanvas)
+    l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree0', depth=0, alpha=1.0)
     visFr.add_layer(l)
         
     print('Octree layer added')
@@ -89,7 +89,7 @@ def gen_isosurface(visFr):
         recipe.add_modules_and_execute([dmc,])
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)], context=visFr.glCanvas.gl_context, window=visFr.glCanvas)
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
         print('Isosurface layer added')
@@ -119,7 +119,7 @@ def open_surface(visFr):
             visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_ply(filename)
         else:
             raise ValueError('Invalid file extension .' + str(ext))
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', context=visFr.glCanvas.gl_context, window=visFr.glCanvas)
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
         visFr.add_layer(layer)
         
 def save_surface(visFr):
@@ -280,7 +280,7 @@ def add_tesselation_layer(visFr):
     surf_name = add_tesselation(visFr)
     if surf_name is not None:
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='flat',
-                                    cmap='hot', context=visFr.glCanvas.gl_context, window=visFr.glCanvas)
+                                    cmap='hot')
         visFr.add_layer(layer)
         print('Tesselation layer added')
 
@@ -308,7 +308,7 @@ def gen_isosurface_from_tesselation(visFr):
         recipe.add_modules_and_execute([mt,])
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)], context=visFr.glCanvas.gl_context, window=visFr.glCanvas)
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
         visFr.add_layer(layer)
         mt._invalidate_parent = True
         print('Isosurface layer added')

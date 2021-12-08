@@ -36,10 +36,8 @@ except ImportError:
     HAVE_QUATERNION = False
 
 class BaseEngine(object):
-    def __init__(self, context=None, window=None):
-        self._context = context
+    def __init__(self):
         self._shader_program_cls = None
-        self._window = window
     
     def set_shader_program(self, shader_program):
         #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
@@ -86,9 +84,7 @@ class BaseLayer(HasTraits):
     """
     visible = Bool(True)
     
-    def __init__(self, context=None, window=None, **kwargs):
-        self._context = context
-        self._window = window
+    def __init__(self, **kwargs):
         HasTraits.__init__(self, **kwargs)
         
     @property

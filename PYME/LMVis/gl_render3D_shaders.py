@@ -252,13 +252,13 @@ class LMGLShaderCanvas(GLCanvas):
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
-        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer(context=self.gl_context, window=self)
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(context=self.gl_context, window=self)
+        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
 
-        self.LUTOverlayLayer = LUTOverlayLayer(context=self.gl_context, window=self)
-        self.AxesOverlayLayer = AxesOverlayLayer(context=self.gl_context, window=self)
+        self.LUTOverlayLayer = LUTOverlayLayer()
+        self.AxesOverlayLayer = AxesOverlayLayer()
         
-        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,context=self.gl_context, window=self))
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
