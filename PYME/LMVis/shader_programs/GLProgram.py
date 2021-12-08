@@ -44,6 +44,7 @@ class GLProgram(object):
     @abc.abstractmethod
     def __enter__(self):
         self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
+        return self
 
     @abc.abstractmethod
     def __exit__(self, exc_type, exc_val, exc_tb):

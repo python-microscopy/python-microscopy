@@ -41,6 +41,8 @@ class WireFrameShaderProgram(GLProgram):
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
+        return self
+
     def __init__(self):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")

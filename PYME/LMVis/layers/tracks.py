@@ -23,7 +23,7 @@ class Track3DEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
         
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas):
             glDisable(GL_LIGHTING)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             glDisable(GL_DEPTH_TEST)

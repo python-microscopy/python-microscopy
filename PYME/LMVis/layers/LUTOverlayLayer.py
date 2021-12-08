@@ -71,10 +71,10 @@ class LUTOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping()
+        self._clear_shader_clipping(gl_canvas)
         labels = []
         
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas):
             glDisable(GL_DEPTH_TEST)
             glDisable(GL_LIGHTING)
             glDisable(GL_BLEND)

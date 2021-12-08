@@ -23,7 +23,7 @@ class WireframeEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas):
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
 

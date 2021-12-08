@@ -79,19 +79,19 @@ class ImageEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas) as sp:
             self.set_lut(layer.colour_map)
             glActiveTexture(GL_TEXTURE1)
             glBindTexture(GL_TEXTURE_1D, self._lut_id) # bind to our texture, has id of 1 */
-            glUniform1i(self.shader_program.get_uniform_location("lut"), 1)
+            glUniform1i(sp.get_uniform_location("lut"), 1)
             
             self.set_texture(layer._im)
-            glUniform2f(self.shader_program.get_uniform_location("clim"), *layer.get_color_limit())
+            glUniform2f(sp.get_uniform_location("clim"), *layer.get_color_limit())
             
             glEnable(GL_TEXTURE_2D) # enable texture mapping */
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id) # bind to our texture, has id of 1 */
-            glUniform1i(self.shader_program.get_uniform_location("im_sampler"), 0)
+            glUniform1i(sp.get_uniform_location("im_sampler"), 0)
             
             x0, y0, x1, y1 = layer._bounds
 

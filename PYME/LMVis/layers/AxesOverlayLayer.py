@@ -49,8 +49,8 @@ class AxesOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping()
-        with self.shader_program:
+        self._clear_shader_clipping(gl_canvas)
+        with self.get_shader_program(gl_canvas):
             glDisable(GL_LIGHTING)
             glPushMatrix()
 
