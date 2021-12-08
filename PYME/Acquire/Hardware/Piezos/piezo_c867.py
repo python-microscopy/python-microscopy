@@ -42,12 +42,12 @@ class piezo_c867(PiezoBase):
         self.ser_port = serial.Serial(portname, 38400, timeout=.1, writeTimeout=.1)
         
         #turn servo mode on
-        self.ser_port.write('SVO 1 1\n')
-        self.ser_port.write('SVO 2 1\n')
+        self.ser_port.write(b'SVO 1 1\n')
+        self.ser_port.write(b'SVO 2 1\n')
         
         if reference:
             #find reference switch (should be in centre of range)
-            self.ser_port.write('FRF\n')
+            self.ser_port.write(b'FRF\n')
         
         #self.lastPos = self.GetPos()
         #self.lastPos = [self.GetPos(1), self.GetPos(2)]
@@ -56,28 +56,28 @@ class piezo_c867(PiezoBase):
         self.hasTrigger = hasTrigger
         
     def SetServo(self, state=1):
-        self.ser_port.write('SVO 1 %d\n' % state)
-        self.ser_port.write('SVO 2 %d\n' % state)
+        self.ser_port.write(b'SVO 1 %d\n' % state)
+        self.ser_port.write(b'SVO 2 %d\n' % state)
 
     def ReInit(self, reference=True):
-        #self.ser_port.write('WTO A0\n')
-        self.ser_port.write('SVO 1 1\n')
-        self.ser_port.write('SVO 2 1\n')
+        #self.ser_port.write(b'WTO A0\n')
+        self.ser_port.write(b'SVO 1 1\n')
+        self.ser_port.write(b'SVO 2 1\n')
         
         if reference:
             #find reference switch (should be in centre of range)
-            self.ser_port.write('FRF\n')
+            self.ser_port.write(b'FRF\n')
         
         #self.lastPos = [self.GetPos(1), self.GetPos(2)]
         
     def SetVelocity(self, chan, vel):
-        self.ser_port.write('VEL %d %3.4f\n' % (chan, vel))
-        #self.ser_port.write('VEL 2 %3.4f\n' % vel)
+        self.ser_port.write(b'VEL %d %3.4f\n' % (chan, vel))
+        #self.ser_port.write(b'VEL 2 %3.4f\n' % vel)
         
     def GetVelocity(self, chan):
         self.ser_port.flushInput()
         self.ser_port.flushOutput()
-        self.ser_port.write('VEL?\n')
+        self.ser_port.write(b'VEL?\n')
         self.ser_port.flushOutput()
         #time.sleep(0.005)
         res = self.ser_port.readline()
@@ -89,24 +89,24 @@ class piezo_c867(PiezoBase):
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         if (fPos >= 0):
             if (fPos <= self.max_travel):
-                self.ser_port.write('MOV %d %3.6f\n' % (iChannel, fPos))
+                self.ser_port.write(b'MOV %d %3.6f\n' % (iChannel, fPos))
                 #self.lastPos[iChannel-1] = fPos
             else:
-                self.ser_port.write('MOV %d %3.6f\n' % (iChannel, self.max_travel))
+                self.ser_port.write(b'MOV %d %3.6f\n' % (iChannel, self.max_travel))
                 #self.lastPos[iChannel-1] = self.max_travel
         else:
-            self.ser_port.write('MOV %d %3.6f\n' % (iChannel, 0.0))
+            self.ser_port.write(b'MOV %d %3.6f\n' % (iChannel, 0.0))
             #self.lastPos[iChannel-1] = 0.0
             
     def MoveRel(self, iChannel, incr, bTimeOut=True):
-            self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
+            self.ser_port.write(b'MVR %d %3.6f\n' % (iChannel, incr))
             
             
     def MoveToXY(self, xPos, yPos, bTimeOut=True):
         xPos = min(max(xPos, 0),self.max_travel)
         yPos = min(max(yPos, 0),self.max_travel)
         
-        self.ser_port.write('MOV 1 %3.6f 2 %3.6f\n' % (xPos, yPos))
+        self.ser_port.write(b'MOV 1 %3.6f 2 %3.6f\n' % (xPos, yPos))
         #self.lastPos = [self.GetPos(1), self.GetPos(2)]
         #self.lastPos = fPos
             
@@ -114,7 +114,7 @@ class piezo_c867(PiezoBase):
     def GetPos(self, iChannel=0):
         #self.ser_port.flush()
         #time.sleep(0.005)
-        #self.ser_port.write('POS? %d\n' % iChannel)
+        #self.ser_port.write(b'POS? %d\n' % iChannel)
         #self.ser_port.flushOutput()
         #time.sleep(0.005)
         #res = self.ser_port.readline()
@@ -126,13 +126,13 @@ class piezo_c867(PiezoBase):
         self.ser_port.flushInput()
         self.ser_port.flushOutput()
         #time.sleep(0.005)
-        self.ser_port.write('POS? 1 2\n')
+        self.ser_port.write(b'POS? 1 2\n')
         self.ser_port.flushOutput()
         #time.sleep(0.005)
         res1 = self.ser_port.readline()
         res2 = self.ser_port.readline()
         print((res1, res2))
-        return float(res1.split('=')[1]), float(res2.split('=')[1])
+        return float(res1.split(b'=')[1]), float(res2.split(b'=')[1])
 
 
     
@@ -149,7 +149,7 @@ class piezo_c867(PiezoBase):
         
     def GetFirmwareVersion(self):
         import re
-        self.ser_port.write('*IDN?\n')
+        self.ser_port.write(b'*IDN?\n')
         self.ser_port.flush()
         
         verstring = self.ser_port.readline()
@@ -175,14 +175,14 @@ class piezo_c867T(PiezoBase):
         self.ptol = 5e-4
         
         #reboot stage
-        self.ser_port.write('RBT\n')
+        self.ser_port.write(b'RBT\n')
         time.sleep(1)
         #try to make motion smooth
-        self.ser_port.write('SPA 1 0x4D 2\n')
-        self.ser_port.write('SPA 2 0x4D 2\n')
+        self.ser_port.write(b'SPA 1 0x4D 2\n')
+        self.ser_port.write(b'SPA 2 0x4D 2\n')
         #turn servo mode on
-        self.ser_port.write('SVO 1 1\n')
-        self.ser_port.write('SVO 2 1\n')
+        self.ser_port.write(b'SVO 1 1\n')
+        self.ser_port.write(b'SVO 2 1\n')
         
         self.servo = True
         self.onTarget = False
@@ -192,7 +192,7 @@ class piezo_c867T(PiezoBase):
         
         if reference:
             #find reference switch (should be in centre of range)
-            self.ser_port.write('FRF\n')
+            self.ser_port.write(b'FRF\n')
         
             time.sleep(.5)        
         #self.lastPos = self.GetPos()
@@ -222,16 +222,16 @@ class piezo_c867T(PiezoBase):
                 self.ser_port.flushOutput()
             
                 #check position
-                self.ser_port.write('POS? 1 2\n')
+                self.ser_port.write(b'POS? 1 2\n')
                 self.ser_port.flushOutput()
                 #time.sleep(0.005)
                 res1 = self.ser_port.readline()
                 res2 = self.ser_port.readline()
                 #print res1, res2
-                self.position[0] = float(res1.split('=')[1])
-                self.position[1] = float(res2.split('=')[1])
+                self.position[0] = float(res1.split(b'=')[1])
+                self.position[1] = float(res2.split(b'=')[1])
                 
-                self.ser_port.write('ERR?\n')
+                self.ser_port.write(b'ERR?\n')
                 self.ser_port.flushOutput()
                 self.errCode = int(self.ser_port.readline())
                 
@@ -242,16 +242,16 @@ class piezo_c867T(PiezoBase):
                 #print self.targetPosition, self.stopMove
                 
                 if self.stopMove:
-                    self.ser_port.write('HLT\n')
+                    self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
-                    self.ser_port.write('POS? 1 2\n')
+                    self.ser_port.write(b'POS? 1 2\n')
                     self.ser_port.flushOutput()
                     #time.sleep(0.005)
                     res1 = self.ser_port.readline()
                     res2 = self.ser_port.readline()
                     #print res1, res2
-                    self.position[0] = float(res1.split('=')[1])
-                    self.position[1] = float(res2.split('=')[1])
+                    self.position[0] = float(res1.split(b'=')[1])
+                    self.position[1] = float(res2.split(b'=')[1])
                     self.targetPosition[:] = self.position[:]
                     self.stopMove = False
                     
@@ -259,7 +259,7 @@ class piezo_c867T(PiezoBase):
                 if self.servo:
                     if not np.all(self.velocity == self.targetVelocity):
                         for i, vel in enumerate(self.targetVelocity):
-                            self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
+                            self.ser_port.write(b'VEL %d %3.9f\n' % (i+1, vel))
                         self.velocity = self.targetVelocity.copy()
                         #print('v')
                         logger.debug('Setting stage target vel: %s' % self.targetVelocity)
@@ -269,20 +269,20 @@ class piezo_c867T(PiezoBase):
                         #update our target position
                         pos = np.clip(self.targetPosition, 0,self.max_travel)
             
-                        self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
+                        self.ser_port.write(b'MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
                         self.lastTargetPosition = pos.copy()
                         #print('p')
                         logger.debug('Setting stage target pos: %s' % pos)
                         time.sleep(.01)
                     
                 #check to see if we're on target
-                self.ser_port.write('ONT?\n')
+                self.ser_port.write(b'ONT?\n')
                 self.ser_port.flushOutput()
                 time.sleep(0.005)
                 res1 = self.ser_port.readline()
-                ont1 = int(res1.split('=')[1]) == 1
+                ont1 = int(res1.split(b'=')[1]) == 1
                 res1 = self.ser_port.readline()
-                ont2 = int(res1.split('=')[1]) == 1
+                ont2 = int(res1.split(b'=')[1]) == 1
                 
                 onT = (ont1 and ont2) or (self.servo == False)
                 self.onTarget = onT and self.onTargetLast
@@ -314,8 +314,8 @@ class piezo_c867T(PiezoBase):
     def SetServo(self, state=1):
         self.lock.acquire()
         try:
-            self.ser_port.write('SVO 1 %d\n' % state)
-            self.ser_port.write('SVO 2 %d\n' % state)
+            self.ser_port.write(b'SVO 1 %d\n' % state)
+            self.ser_port.write(b'SVO 2 %d\n' % state)
             self.servo = state == 1
         finally:
             self.lock.release()
@@ -323,25 +323,25 @@ class piezo_c867T(PiezoBase):
 #    def SetParameter(self, paramID, state):
 #        self.lock.acquire()
 #        try:
-#            self.ser_port.write('SVO 1 %d\n' % state)
-#            self.ser_port.write('SVO 2 %d\n' % state)
+#            self.ser_port.write(b'SVO 1 %d\n' % state)
+#            self.ser_port.write(b'SVO 2 %d\n' % state)
 #            self.servo = state == 1
 #        finally:
 #            self.lock.release()
 
     def ReInit(self, reference=True):
-        #self.ser_port.write('WTO A0\n')
+        #self.ser_port.write(b'WTO A0\n')
         self.lock.acquire()
         try:
-            self.ser_port.write('RBT\n')
+            self.ser_port.write(b'RBT\n')
             time.sleep(1)
-            self.ser_port.write('SVO 1 1\n')
-            self.ser_port.write('SVO 2 1\n')
+            self.ser_port.write(b'SVO 1 1\n')
+            self.ser_port.write(b'SVO 2 1\n')
             self.servo = True
         
             if reference:
             #find reference switch (should be in centre of range)
-               self.ser_port.write('FRF\n')
+               self.ser_port.write(b'FRF\n')
              
             time.sleep(1)
             self.stopMove = True
@@ -351,8 +351,8 @@ class piezo_c867T(PiezoBase):
         #self.lastPos = [self.GetPos(1), self.GetPos(2)]
         
     def SetVelocity(self, chan, vel):
-        #self.ser_port.write('VEL %d %3.4f\n' % (chan, vel))
-        #self.ser_port.write('VEL 2 %3.4f\n' % vel)
+        #self.ser_port.write(b'VEL %d %3.4f\n' % (chan, vel))
+        #self.ser_port.write(b'VEL 2 %3.4f\n' % vel)
         self.targetVelocity[chan-1] = vel
         
     def GetVelocity(self, chan):
@@ -367,7 +367,7 @@ class piezo_c867T(PiezoBase):
         self.onTarget = False
             
     #def MoveRel(self, iChannel, incr, bTimeOut=True):
-    #        self.ser_port.write('MVR %d %3.6f\n' % (iChannel, incr))
+    #        self.ser_port.write(b'MVR %d %3.6f\n' % (iChannel, incr))
             
             
     def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
@@ -382,7 +382,7 @@ class piezo_c867T(PiezoBase):
     def GetPos(self, iChannel=0):
         #self.ser_port.flush()
         #time.sleep(0.005)
-        #self.ser_port.write('POS? %d\n' % iChannel)
+        #self.ser_port.write(b'POS? %d\n' % iChannel)
         #self.ser_port.flushOutput()
         #time.sleep(0.005)
         #res = self.ser_port.readline()
@@ -434,7 +434,7 @@ class piezo_c867T(PiezoBase):
         
     def GetFirmwareVersion(self):
         import re
-        self.ser_port.write('*IDN?\n')
+        self.ser_port.write(b'*IDN?\n')
         self.ser_port.flush()
         
         verstring = self.ser_port.readline()
