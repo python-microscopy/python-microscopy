@@ -416,7 +416,7 @@ class VisGUICore(object):
     def add_pointcloud_layer(self, method='points', ds_name='output', **kwargs):
         #from .layer_wrapper import LayerWrapper
         from .layers.pointcloud import PointCloudRenderLayer
-        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name, **kwargs)
+        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name, context=self.glCanvas.gl_context, window=self.glCanvas, **kwargs)
         self.add_layer(l)
 
         logger.debug('Added layer, datasouce=%s' % l.dsname)

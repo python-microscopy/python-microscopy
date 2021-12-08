@@ -173,7 +173,7 @@ class Visualiser(Plugin):
             isolevel = self.do.Offs[i] + .5/self.do.Gains[i]
             T = isosurface.isosurface(self.image.data[:,:,:,i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
             glcanvas.layer_data[self.image.names[i]] = T
-            layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context,
+            layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context, window = glcanvas,
                                         cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)],
                                         #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
                                         )

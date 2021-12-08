@@ -111,7 +111,7 @@ class TrackRenderLayer(EngineLayer):
     
     def _set_method(self):
         #logger.debug('Setting layer method to %s' % self.method)
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method](self._context, self._window)
         self.update()
     
     def _get_cdata(self):

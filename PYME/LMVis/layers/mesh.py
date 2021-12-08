@@ -200,7 +200,7 @@ class TriangleRenderLayer(EngineLayer):
         return triangle_mesh.TrianglesBase
 
     def _set_method(self):
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method](self._context, self._window)
         self.update()
 
     def _get_cdata(self):

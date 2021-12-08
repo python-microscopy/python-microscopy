@@ -194,7 +194,7 @@ class ImageRenderLayer(EngineLayer):
         return image.ImageStack
 
     def _set_method(self):
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method](self._context, self._window)
         self.update()
 
 
