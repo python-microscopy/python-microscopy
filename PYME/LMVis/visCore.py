@@ -660,7 +660,7 @@ class VisGUICore(object):
         
     def _create_base_layer(self):
         from PYME.misc.colormaps import cm
-        if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
+        if self._new_layers and len(self.layers) == 0:
             #add a new layer
             l = self.add_pointcloud_layer(method='points')
             if 't' in self.pipeline.keys():
