@@ -48,6 +48,25 @@ ROI_LIMITS = {
     }
 }
 
+# this info is partly from the IDS datasheets that one can request for each camera model
+BaseProps = {
+    'UI306x' : {
+        # from Steve Hearn (IDS)
+        #    The default gain of that camera is the absolute minimum gain the camera can deliver.
+        #    All other gain factors are higher than that. This means, the system gain of 0.125 DN
+        #    per electron, as specified in the camera test sheet, is the smallest possible value.
+        'ElectronsPerCount'  : 7.97,
+        'ReadNoise' : 6.0,
+        'ADOffset' : 10
+    },
+    'default' : { # fairly arbitrary values
+        'ElectronsPerCount'  : 10,
+        'ReadNoise' : 20,
+        'ADOffset' : 10
+    }
+}
+
+
 class UEyeCamera(Camera):
     def __init__(self, device_number=0, nbits=8):
         Camera.__init__(self)
@@ -63,12 +82,20 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_InitCamera(self.h, None))
         self.initialized = True
 
+        # get serial number
+        cam_info = ueye.CAMINFO()
+        self.check_success(ueye.is_GetCameraInfo(self.h, cam_info))
+        self._serno = cam_info.SerNo.decode()
+        
         # get chip size
         sensor_info = ueye.SENSORINFO()
         self.check_success(ueye.is_GetSensorInfo(self.h, sensor_info))
         
         self._chip_size = (sensor_info.nMaxWidth, sensor_info.nMaxHeight)
         self.sensor_type = sensor_info.strSensorName.decode().split('x')[0] + 'x'
+
+        # work out the camera base parameters for this sensortype
+        self.baseProps = BaseProps.get(self.sensor_type,BaseProps['default'])
                 
         self.SetROI(0, 0, self._chip_size[0], self._chip_size[1])
         
@@ -361,13 +388,19 @@ class UEyeCamera(Camera):
         x2 -= x_change
         y2 -= y_change
         logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
-        aoi = ueye.IS_RECT(x1, y1, x2 - x1, y2 - y1)
+
+        aoi = ueye.IS_RECT()
+        aoi.s32X = ueye.int(x1)
+        aoi.s32Y = ueye.int(y1)
+        aoi.s32Width = ueye.int(x2 - x1)
+        aoi.s32Height = ueye.int(y2 - y1)
         
         self.check_success(ueye.is_AOI(self.h, ueye.IS_AOI_IMAGE_SET_AOI, aoi,
                                        ueye.sizeof(aoi)))
         # have to set the integration time explicitly after changing AOI
         self.SetIntegTime(self.GetIntegTime())
-    
+
+        
     def GetROI(self):
         """
         
@@ -383,6 +416,7 @@ class UEyeCamera(Camera):
         x0, y0 = aoi.s32X.value, aoi.s32Y.value
         return x0, y0, x0 + aoi.s32Width.value, y0 + aoi.s32Height.value
 
+    
     def GetNumImsBuffered(self):
         """
         Return the number of images in the buffer.
@@ -406,36 +440,56 @@ class UEyeCamera(Camera):
         return len(self._buffers)
     
     def GetCCDTemp(self):
-        return  0
+        di =  self._GetDeviceInfo()
+        tword = di.infoDevHeartbeat.wTemperature.value
+        # from IDS docs:
+        #    wTemperature
+        #        Camera temperature in degrees Celsius
+        #        Bits 15: algebraic sign
+        #        Bits 14...11: filled according to algebraic sign
+        #        Bits 10...4: temperature (places before the decimal point)
+        #        Bits 3...0: temperature (places after the decimal point)
+        tempfloat = 1.0*(tword >> 4 & 0b1111111) + 0.1 * (tword & 0b1111)
+        if (tword >> 15):
+            tempfloat = -1.0 * tempfloat
+        return tempfloat
     
     @property
     def noise_properties(self):
-        """
+        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                'ReadNoise': self.baseProps['ReadNoise'],
+                'ADOffset': self.baseProps['ADOffset'],
+                'SaturationThreshold': 2 ** self.nbits  - 1}
 
-                Returns
-                -------
+    
+    # @property
+    # def noise_properties(self):
+    #     """
 
-                a dictionary with the following entries:
+    #             Returns
+    #             -------
 
-                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
-                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-                    doi: 10.1109/TED.2003.813462
+    #             a dictionary with the following entries:
 
-                and optionally
-                'ADOffset' : the dark level (in ADU)
-                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-                'SaturationThreshold' : the full well capacity (in ADU)
+    #             'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
+    #             'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+    #             'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+    #                 doi: 10.1109/TED.2003.813462
 
-                """
+    #             and optionally
+    #             'ADOffset' : the dark level (in ADU)
+    #             'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+    #             'SaturationThreshold' : the full well capacity (in ADU)
+
+    #             """
         
-        return {
-            'ReadNoise': 1,
-            'ElectronsPerCount': 1,
-            'NoiseFactor': 1,
-            'ADOffset': 0,
-            'SaturationThreshold': 2 ** self.nbits  - 1
-        }
+    #     return {
+    #         'ReadNoise': 1,
+    #         'ElectronsPerCount': 1,
+    #         'NoiseFactor': 1,
+    #         'ADOffset': 0,
+    #         'SaturationThreshold': 2 ** self.nbits  - 1
+    #     }
     
     def GetFPS(self):
         """
@@ -449,3 +503,34 @@ class UEyeCamera(Camera):
         fps = ueye.double()
         self.check_success(ueye.is_GetFramesPerSecond(self.h, fps))
         return fps.value
+
+    def GetSerialNumber(self):
+        return self._serno
+
+    def GetName(self):
+        return 'ueye-camera'
+
+    def GetHeadModel(self):
+        return self.sensor_type
+
+    def SetGain(self, gain=100):
+        self.check_success(ueye.is_SetHardwareGain(self.h, gain, ueye.IS_IGNORE_PARAMETER,
+                                                   ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER))
+        
+    def GetGain(self):
+        ret = ueye.is_SetHardwareGain(self.h, ueye.IS_GET_MASTER_GAIN,
+                                      ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER, ueye.IS_IGNORE_PARAMETER)
+        return ret
+    
+    def GetGainFactor(self):
+        gain = self.GetGain()
+        ret = ueye.is_SetHWGainFactor(self.h, ueye.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
+        return 0.01*ret
+
+    #### Some extra functions for this camera
+
+    def _GetDeviceInfo(self):
+        dev_info = ueye.IS_DEVICE_INFO()
+        self.check_success(ueye.is_DeviceInfo(self.h,ueye.IS_DEVICE_INFO_CMD_GET_DEVICE_INFO,
+                                              dev_info,ueye.sizeof(dev_info)))
+        return dev_info
