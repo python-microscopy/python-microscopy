@@ -7,7 +7,8 @@ Specifying your Hardware
 ========================
 
 The hardware in PYME is configured and initialised in a customised initialisation script. These typically start with ``init`` and live in ``PYME/Acquire/Scripts``. You can tell PYME Acquire which script to use with the ``--init-script`` (short form ``-i``) command line option eg:
-::
+
+.. code-block:: bash
 
   python PYMEAquire.py -i init_script.py
 
@@ -61,10 +62,80 @@ PYME Acquire stores a lot of it's settings in ``PYME/Acquire/PYMESettings.db``. 
 Calibration
 ===========
 
-Andor Noise Properties
-----------------------
+CCD Pixel Size
+--------------
 
-The analysis software wants to know about the camera noise properties, which can be gleaned from the performance sheet shipped with the camera. At present you need to edit ``PYME/Acquire/Hardware/AndorIXon/AndorIXon.py`` and add an entry to the ``noiseProperties`` dictionary. The key should be your camera serial number, and the settings should be for a readout speed of 10Mhz and a pre-amp gain of ??.
+PYME stores it's pixel sizes in a two step process - first there is a named list of
+pixel size settings, and then an index to the setting that is currently active.
+This is to facilitate the easy changing of cameras / objectives etc. To set the
+pixel size you thus have to create a new setting, and then make that active.
+
+This can be done by selecting **Controls > Camera > Set Pixel Size** from the menu.
+
+Alternatively one can execute the following commands in the console:
+
+.. code-block:: python
+
+  scope.AddVoxelSizeSetting(name, x_size, y_size)
+  scope.SetVoxelSize(name)
+
+where ``x_size`` and ``y_size`` are the x and y pixel sizes **in the sample** in um.
+
+Camera Noise Properties
+-----------------------
+
+The analysis software wants to know about the camera noise properties, which can be obtained from the performance sheet shipped with the camera. Noise characteristics
+are stored in a database, keyed by camera serial number. To add the noise characteristics for you camera(s), add a .yaml file to the ``~/.PYME/cameras/`` directory (or
+te corresponding install or site-directory for multi-user installs - see :py:mod:`PYME.config`). The exact name of the file is your choice - all .yaml files in the ``.PYME/cameras``
+directory will be read and ammalgamated. The exact format of an entry differs slightly between camerase (see examples below), but follows the basic pattern of a top-level dictionary
+keyed on serial number, with each entry having a ``noise_properties`` entry which is in turn a dictionary keyed by gain mode. See also :py:mod:`PYME.Acquire.Hardware.camera_noise`
+
+
+.. code-block:: yaml
+    
+    # An Andor Zyla entry
+    VSC-00954:
+        noise_properties:
+            12-bit (high well capacity):
+                ADOffset: 100
+                ElectronsPerCount: 6.97
+                ReadNoise: 5.96
+                SaturationThreshold: 2047
+            12-bit (low noise):
+                ADOffset: 100
+                ElectronsPerCount: 0.28
+                ReadNoise: 1.1
+                SaturationThreshold: 2047
+            16-bit (low noise & high well capacity):
+                ADOffset: 100
+                ElectronsPerCount: 0.5
+                ReadNoise: 1.33
+                SaturationThreshold: 65535
+
+    # An Andor IXon entry:
+    5414:
+        default_preamp_gain: 0
+        noise_properties:
+            Preamp Gain 0:
+                ADOffset: 413
+                DefaultEMGain: 90
+                ElectronsPerCount: 25.24
+                NGainStages: 536
+                ReadNoise: 61.33
+                SaturationThreshold: 16383
+
+    # A HamamatsuORCA entry:
+    '100233':
+        noise_properties:
+            fixed:
+                ADOffset: 100
+                DefaultEMGain: 1
+                ElectronsPerCount: 0.47
+                NGainStages: 0
+                ReadNoise: 1.65
+                SaturationThreshold: 65535
+
+
 
 EMCCD Gain
 ----------
@@ -79,33 +150,17 @@ The old Andor EMCCD cameras use a method of setting the gain with is non-linear,
 
 4. In the console window, execute the following commands:
 
- ::
+.. code-block:: python
 
   from PYME.Acquire.Hardware import ccdCalibrator
   ccdCalibrator.ccdCalibrator()
 
  or (if you want to calibrate over a range other than 0 to 220):
- ::
+ 
+.. code-block:: python
 
   import numpy
   from PYME.Acquire.Hardware import ccdCalibrator
   ccdCalibrator.ccdCalibrator(numpy.arange(0, <max_gain>, 5))
 
 
-CCD Pixel Size
---------------
-
-PYME stores it's pixel sizes in a two step process - first there is a named list of
-pixel size settings, and then an index to the setting that is currently active.
-This is to facilitate the easy changing of cameras / objectives etc. To set the
-pixel size you thus have to create a new setting, and then make that active.
-
-This can be done by selecting **Controls > Camera > Set Pixel Size** from the menu.
-
-Alternatively one can execute the following commands in the console:
-::
-
-  scope.AddVoxelSizeSetting(name, x_size, y_size)
-  scope.SetVoxelSize(name)
-
-where ``x_size`` and ``y_size`` are the x and y pixel sizes **in the sample** in um.
