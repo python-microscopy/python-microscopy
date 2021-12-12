@@ -781,8 +781,14 @@ class Camera(object):
             self.GetStatus()
 
             # Personal identification
-            mdh.setEntry('Camera.Name', self.GetName())
-            mdh.setEntry('Camera.Model', self.GetHeadModel())
+            try:
+                mdh.setEntry('Camera.Name', self.GetName())
+                mdh.setEntry('Camera.Model', self.GetHeadModel())
+            except NotImplementedError:
+                # cameras are not required to provide GetName(), GetHeadModel()
+                # and these metadata entries should not be depended on (might change).
+                pass
+
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
             # Time
