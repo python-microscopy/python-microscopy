@@ -422,8 +422,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 class Fusion(HamamatsuORCA):
     """
     Orca Fusion is functionally the same as the Flash, however uses multiple gain modes.
-    TODO - check whether Flash fails nicely on READOUT SPEED property so we can catch/return 'fixed'
-    and not introduce an extra class
+    TODO - check Flash return/fail on READOUT SPEED property so we can catch/return 'fixed'
+    and not necessarily introduce an extra class
     """
     _gain_modes = {
         1:'Ultra-quiet',
