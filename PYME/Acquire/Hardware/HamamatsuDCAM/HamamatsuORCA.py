@@ -150,7 +150,14 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         #OFF =1 , ON = 2
 
         onoff = 2.0 if on else 1.0
-        self.setCamPropValue('SENSOR COOLER', onoff)
+        try:
+            self.setCamPropValue('SENSOR COOLER', onoff)
+        except DCAMException as e:
+            # api v20.10.641, BT FUSION does not have SENSOR COOLER property
+            # don't worry about it if cooling is already on 
+            status = self.getCamPropValue('SENSOR COOLER STATUS')
+            if status != onoff:
+                raise e
 
         
     def GetAcquisitionMode(self):
