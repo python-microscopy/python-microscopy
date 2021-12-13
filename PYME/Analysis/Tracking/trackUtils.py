@@ -23,11 +23,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import mpld3
 import warnings
-if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
-    #mpld3 has messed with warnings - undo
-    warnings.filters.pop(0)
+
+try:
+    import mpld3
+    if warnings.filters[0] == ('always', None, DeprecationWarning, None, 0):
+        #mpld3 has messed with warnings - undo
+        warnings.filters.pop(0)
+except ImportError:
+    warnings.warn('Could not import mpld3, track plotting will not work')
 
 import pandas as pd
 import os

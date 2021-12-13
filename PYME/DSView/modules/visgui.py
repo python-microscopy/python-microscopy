@@ -51,7 +51,7 @@ class visGuiExtras:
             l_i = image_layer.ImageRenderLayer({'im': img}, dsname='im',
                                                display_opts=self.dsviewer.do, #slave the display scaling to the image viewer scaling
                                                channel=i,
-                                               context=glCanvas.gl_context)
+                                               context=glCanvas.gl_context, window=glCanvas)
     
             glCanvas.layers.insert(0, l_i) #prepend layers so they are drawn before points
             
@@ -110,7 +110,7 @@ class GLImageView(LMGLShaderCanvas):
         from PYME.LMVis.layers import image_layer
         self.SetCurrent(self.gl_context)
         for name, i in zip(self._image.names, xrange(self._image.data_xyztc.shape[4])):
-            l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
+            l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context, window=self)
         
             self.layers.append(l_i)
     

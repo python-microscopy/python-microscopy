@@ -46,7 +46,7 @@ class SphericalHarmonicShellManager(object):
             surf = triangle_mesh.TriangleMesh(v, f)
             self.pipeline.dataSources['shell_surface'] = surf
     
-            layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
+            layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'SolidCyan')
             self.vis_frame.add_layer(layer)
     
             self.vis_frame.RefreshView()
@@ -86,7 +86,7 @@ class SphericalHarmonicShellManager(object):
         surf = triangle_mesh.TriangleMesh(v, f)
         self.pipeline.dataSources['shell_surface'] = surf
 
-        layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'C')
+        layer = TriangleRenderLayer(self.pipeline, dsname='shell_surface', method='shaded', cmap = 'SolidCyan')
         self.vis_frame.add_layer(layer)
 
         self.vis_frame.RefreshView()

@@ -62,6 +62,7 @@ class DefaultShaderProgram(GLProgram):
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(self._old_prog)
@@ -82,6 +83,8 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self
 
 
 class ImageShaderProgram(DefaultShaderProgram):

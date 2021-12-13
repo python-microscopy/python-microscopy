@@ -36,33 +36,38 @@ except ImportError:
     HAVE_QUATERNION = False
 
 class BaseEngine(object):
-    def __init__(self, context=None):
-        self._context = context
-        self._shader_program = None
+    def __init__(self):
+        self._shader_program_cls = None
     
     def set_shader_program(self, shader_program):
-        self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context)
+        #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
+        self._shader_program_cls = shader_program
 
     @property
     def shader_program(self):
-        return self._shader_program
+        warnings.warn(DeprecationWarning('Use get_shader_program(canvas) instead'))
+        return ShaderProgramFactory.get_program(self._shader_program_cls)
     
+    def get_shader_program(self, canvas):
+        return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
+
     @abc.abstractmethod
     def render(self, gl_canvas, layer):
         pass
     
     def _set_shader_clipping(self, gl_canvas):
-        self.shader_program.xmin, self.shader_program.xmax = gl_canvas.bounds['x'][0]
-        self.shader_program.ymin, self.shader_program.ymax = gl_canvas.bounds['y'][0]
-        self.shader_program.zmin, self.shader_program.zmax = gl_canvas.bounds['z'][0]
-        self.shader_program.vmin, self.shader_program.vmax = gl_canvas.bounds['v'][0]
+        sp = self.get_shader_program(gl_canvas)
+        sp.xmin, sp.xmax = gl_canvas.bounds['x'][0]
+        sp.ymin, sp.ymax = gl_canvas.bounds['y'][0]
+        sp.zmin, sp.zmax = gl_canvas.bounds['z'][0]
+        sp.vmin, sp.vmax = gl_canvas.bounds['v'][0]
         if False:#HAVE_QUATERNION:
-            self.shader_program.v_matrix[:3, :3] = quaternion.as_rotation_matrix(gl_canvas.view.clip_plane_orientation)
-            self.shader_program.v_matrix[3, :3] = -gl_canvas.view.clip_plane_position
+            sp.v_matrix[:3, :3] = quaternion.as_rotation_matrix(gl_canvas.view.clip_plane_orientation)
+            sp.v_matrix[3, :3] = -gl_canvas.view.clip_plane_position
         else:
             #use current view
-            self.shader_program.v_matrix[:,:] = gl_canvas.object_rotation_matrix
-            self.shader_program.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
+            sp.v_matrix[:,:] = gl_canvas.object_rotation_matrix
+            sp.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
         
 
 class BaseLayer(HasTraits):
@@ -79,8 +84,7 @@ class BaseLayer(HasTraits):
     """
     visible = Bool(True)
     
-    def __init__(self, context=None, **kwargs):
-        self._context = context
+    def __init__(self, **kwargs):
         HasTraits.__init__(self, **kwargs)
         
     @property
@@ -161,21 +165,23 @@ class SimpleLayer(BaseLayer):
     """
     def __init__(self, **kwargs):
         BaseLayer.__init__(self, **kwargs)
-        self._shader_program = None
+        self._shader_program_cls = None
     
     def set_shader_program(self, shader_program):
-        self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context)
+        #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
+        self._shader_program_cls = shader_program
 
     @property
     def shader_program(self):
-        return self._shader_program
-
-    def get_shader_program(self):
-        warnings.warn("use the shader_program property instead", DeprecationWarning)
-        return self.shader_program
+        warnings.warn(DeprecationWarning('Use get_shader_program(canvas) instead'))
+        return ShaderProgramFactory.get_program(self._shader_program_cls)
     
-    def _clear_shader_clipping(self):
-        self.shader_program.xmin, self.shader_program.xmax = [-1e6, 1e6]
-        self.shader_program.ymin, self.shader_program.ymax = [-1e6, 1e6]
-        self.shader_program.zmin, self.shader_program.zmax = [-1e6, 1e6]
-        self.shader_program.vmin, self.shader_program.vmax = [-1e6, 1e6]
+    def get_shader_program(self, canvas):
+        return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
+    
+    def _clear_shader_clipping(self, canvas):
+        sp = self.get_shader_program(canvas)
+        sp.xmin, sp.xmax = [-1e6, 1e6]
+        sp.ymin, sp.ymax = [-1e6, 1e6]
+        sp.zmin, sp.zmax = [-1e6, 1e6]
+        sp.vmin, sp.vmax = [-1e6, 1e6]

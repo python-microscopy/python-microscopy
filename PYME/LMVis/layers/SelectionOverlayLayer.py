@@ -46,8 +46,8 @@ class SelectionOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping()
-        with self.shader_program:
+        self._clear_shader_clipping(gl_canvas)
+        with self.get_shader_program(gl_canvas):
             if self._selection_settings.show:
                 glDisable(GL_LIGHTING)
                 x0, y0 = self._selection_settings.start

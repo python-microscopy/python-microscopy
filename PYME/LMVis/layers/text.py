@@ -20,8 +20,8 @@ class Text(BaseEngine):
     TODO - Shader. My first instinct here would be to make the text values (as derived from the array) control transparency.
            This should give an attractive anti-aliasing/blending effect, but we'd need to try it out in practice.
     """
-    def __init__(self, context=None, text='', pos=(0,0)):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self, text='', pos=(0,0)):
+        BaseEngine.__init__(self)
         self.set_shader_program(TextShaderProgram)
         
         self._texture_id = None
@@ -91,13 +91,13 @@ class Text(BaseEngine):
                          image.astype('f4'))
     
     def render(self, gl_canvas):
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas) as sp:
             self.set_texture(self._im)
         
             glEnable(GL_TEXTURE_2D) # enable texture mapping */
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id) # bind to our texture, has id of 1 */
-            glUniform1i(self.shader_program.get_uniform_location("im_sampler"), 0)
+            glUniform1i(sp.get_uniform_location("im_sampler"), 0)
         
             # FIXME - choose appropriately for current viewport - want to make it so that the text renders real size
             # (i.e. unwind any model-view / and projection stuff).

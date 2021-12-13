@@ -26,7 +26,7 @@ from OpenGL.GL import *
 from PYME.LMVis.shader_programs.shader_loader import *
 
 
-class ShaderProgram:
+class ShaderProgram(object):
     """
     This class handles all  OpenGl-PROGRAM related stuff
 

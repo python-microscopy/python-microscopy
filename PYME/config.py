@@ -155,73 +155,76 @@ Known Config Keys
 
 This is a non-exhaustive list of configuration keys - if adding a new key, please add it here.
 
-PYMEAcquire-extra_init_dir : default=None, a path to an extra directory to search for PYMEAcquire init files.
+.. csv-table:: Config keys
+    :header: Key, Default, Description
+    :widths: auto
 
-SplitterRatioDatabase : default=None, path to a .json formatted file containing information about ratiometric splitting ratios
+    PYMEAcquire-extra_init_dir, default=None, a path to an extra directory to search for PYMEAcquire init files.
 
-VisGUI-console-startup-file : default=None, path to a script to run within the VisGUI interactive console on startup,
+    SplitterRatioDatabase,  default=None, path to a .json formatted file containing information about ratiometric splitting ratios
+
+    VisGUI-console-startup-file,  default=None, "path to a script to run within the VisGUI interactive console on startup,
     used to populate the console namespace with additional functions. Note that this script should not manipulate the
-    pipeline as this cannot be assumed to be loaded when the script runs.
-    
-dh5View-console-startup-file : default=None,   path to a script to run within the dh5View interactive console on startup,
+    pipeline as this cannot be assumed to be loaded when the script runs."
+        
+    dh5View-console-startup-file,  default=None,  "path to a script to run within the dh5View interactive console on startup,
     used to populate the console namespace with additional functions. Note that this script should not manipulate the
-    data as this cannot be assumed to be loaded when the script runs.
+    data as this cannot be assumed to be loaded when the script runs."
 
-TaskServer.process_queues_in_order : default = True, an optimisation for old style task distribution so that it processes
+    TaskServer.process_queues_in_order,  default = True, "an optimisation for old style task distribution so that it processes
     series in the order that they were added to the queue (rather than the previous approach of choosing from a series
     at random). Means that caches behave sensibly, rather than potentially getting scrambled when multiple analyses run
     at once, but also means that you need to wait for previous series to finish before you get any results from the
-    current series if you are doing real time analysis and not keeping up.
+    current series if you are doing real time analysis and not keeping up."
 
-dataserver-root : what directory should PYMEDataSever serve. Overridden by the `--root` command line option. If undefined,
+    dataserver-root, None, "what directory should PYMEDataSever serve. Overridden by the `--root` command line option. If undefined,
     the current directory is served. Note that this is also used in `clusterIO` to allow short-circuit access to data on
-    the same node.
-    
-dataserver-filter : default = '', multi-cluster support. Specifies a cluster name / clusterfilter which identifies which
+    the same node."
+        
+    dataserver-filter, default = '', "multi-cluster support. Specifies a cluster name / clusterfilter which identifies which
     cluster PYMEDataServer should identify with. First part of the PYME-CLUSTER url. Overridden by the `--server-filter`
-    command line option.
+    command line option."
 
-dataserver-port : default=8080, what port to run the PYMEDataServer on. Overridden by the --port command line option (e.g. if you want to run multiple servers on one machine).
+    dataserver-port, default=8080, what port to run the PYMEDataServer on. Overridden by the --port command line option (e.g. if you want to run multiple servers on one machine).
 
-cluster-listing-no-countdir : default=False, hack to disable (True) the loading of the low-level countdir module which allows rapid
+    cluster-listing-no-countdir, default=False, "hack to disable (True) the loading of the low-level countdir module which allows rapid
     directory statistics on posix systems. Needed on OSX if `dataserver-root` is a mapped network drive rather than a
-    physical disk
+    physical disk"
 
-clusterIO-hybridns : default=True, toggles whether a protocol compatibility 
+    clusterIO-hybridns, default=True, "toggles whether a protocol compatibility 
     nameserver (True) or zeroconf only (False) is used in clusterIO. The hybrid
     nameserver offers greater protocol/version compatibility but is effectively
     two nameservers, which has performance implications on very high bandwidth 
-    systems.
+    systems."
 
-h5r-flush_interval : default=1, how often (in s) should we call the .flush() method and write records from the HDF/pytables
-    caches to disk when writing h5r files.
-    
+    h5r-flush_interval, default=1, "how often (in s) should we call the .flush() method and write records from the HDF/pytables
+    caches to disk when writing h5r files."
 
-nodeserver-chunksize : default=50, how many frames should we give a worker process at once (larger numbers = better
+    nodeserver-chunksize, default=50, "how many frames should we give a worker process at once (larger numbers = better
     background cache performance, but potentially not distributing as widely). Should be larger than the number of
-    background frames when doing running average / percentile background subtraction [new style distribution].
+    background frames when doing running average / percentile background subtraction [new style distribution]."
 
-nodeserver-worker-get-timeout : default=60, a timeout (in s). When the worker asks for tasks, the nodeserver tries to
+    nodeserver-worker-get-timeout, default=60, "a timeout (in s). When the worker asks for tasks, the nodeserver tries to
     get nodeserver-chunksize tasks off its internal queue (which is filled by a separate thread which communicates with
     the ruleserver). This timeout specifies how long should the nodeserver wait when accessing this queue in the hope of
     finding a full chunk. If it times out, a partial chunk will be given to the worker. In practice, this timeout
-    behaviour is responsible for clearing the small tail of tasks at the end of a series. [new-style distribution].
+    behaviour is responsible for clearing the small tail of tasks at the end of a series. [new-style distribution]."
 
-nodeserver-num_workers : default= CPU count. Number of workers to launch on an individual node.
+    nodeserver-num_workers, default= CPU count, Number of workers to launch on an individual node.
 
-ruleserver-retries : default = 3. [new-style task distribution]. The number of times to retry a given task before it is deemed to have failed.
+    ruleserver-retries, default = 3, [new-style task distribution]. The number of times to retry a given task before it is deemed to have failed.
 
-rulenodeserver-nonlocal : default = True. Whether to bid for non-local tasks if no local tasks are found. Disabling
+    rulenodeserver-nonlocal, default = True, "Whether to bid for non-local tasks if no local tasks are found. Disabling
     non-local bidding (setting this to False) will make task distribution less robust, but is potentially a viable
     workarond if trying to e.g. run recipes which use stupid ammounts of memory and will crash when run non-locally.
-    The need for this should be removed by better recipe costing.
+    The need for this should be removed by better recipe costing."
 
-httpspooler-chunksize : default=50, how many frames we spool in each chunk 
+    httpspooler-chunksize, default=50, "how many frames we spool in each chunk 
     before (potentially) switching which PYMEDataServer we send the next chunk
     to. Increasing the chunksize can increase data-locality for faster analysis,
-    but has spooling/writing bandwidth implications.
+    but has spooling/writing bandwidth implications."
 
-pymevis-zoom-factor : default = 1.1, adjusts zoom sensitivity by adjusting magnification factor per scroll event
+    pymevis-zoom-factor, default = 1.1, adjusts zoom sensitivity by adjusting magnification factor per scroll event
 
 
 Deprecated config options

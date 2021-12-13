@@ -15,15 +15,15 @@ from OpenGL.GL import *
 
 class WireframeEngine(BaseEngine):
     _outlines = True
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
         self.set_shader_program(WireFrameShaderProgram)
 
 
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas):
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
 
@@ -64,8 +64,8 @@ class WireframeEngine(BaseEngine):
 
 
 class FlatFaceEngine(WireframeEngine):
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(DefaultShaderProgram)
@@ -73,8 +73,8 @@ class FlatFaceEngine(WireframeEngine):
 
 class ShadedFaceEngine(WireframeEngine):
     _outlines = False
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(GouraudShaderProgram)
@@ -83,8 +83,8 @@ class ShadedFaceEngine(WireframeEngine):
 class OITShadedFaceEngine(WireframeEngine):
     _outlines = False
     
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
         
     def use_oit(self, layer):
         return layer.alpha < 0.99
@@ -100,8 +100,8 @@ class OITShadedFaceEngine(WireframeEngine):
         
 class TesselEngine(WireframeEngine):
     _outlines = False
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(TesselShaderProgram)
@@ -134,8 +134,8 @@ class TriangleRenderLayer(EngineLayer):
     _datasource_choices = List()
     _datasource_keys = List()
 
-    def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
-        EngineLayer.__init__(self, context=context, **kwargs)
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+        EngineLayer.__init__(self, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -200,7 +200,7 @@ class TriangleRenderLayer(EngineLayer):
         return triangle_mesh.TrianglesBase
 
     def _set_method(self):
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method]()
         self.update()
 
     def _get_cdata(self):

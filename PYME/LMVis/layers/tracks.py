@@ -16,14 +16,14 @@ from PYME.Analysis.Tracking.trackUtils import ClumpManager
 
 
 class Track3DEngine(BaseEngine):
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
         self.set_shader_program(DefaultShaderProgram)
     
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
         
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas):
             glDisable(GL_LIGHTING)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             glDisable(GL_DEPTH_TEST)
@@ -65,8 +65,8 @@ class TrackRenderLayer(EngineLayer):
     _datasource_keys = List()
     _datasource_choices = List()
     
-    def __init__(self, pipeline, method='tracks', dsname='', context=None, **kwargs):
-        EngineLayer.__init__(self, context=context, **kwargs)
+    def __init__(self, pipeline, method='tracks', dsname='', **kwargs):
+        EngineLayer.__init__(self, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -111,7 +111,7 @@ class TrackRenderLayer(EngineLayer):
     
     def _set_method(self):
         #logger.debug('Setting layer method to %s' % self.method)
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method]()
         self.update()
     
     def _get_cdata(self):

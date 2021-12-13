@@ -252,13 +252,13 @@ class LMGLShaderCanvas(GLCanvas):
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
-        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer(context=self.gl_context)
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(context=self.gl_context)
+        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
 
-        self.LUTOverlayLayer = LUTOverlayLayer(context=self.gl_context)
-        self.AxesOverlayLayer = AxesOverlayLayer(context=self.gl_context)
+        self.LUTOverlayLayer = LUTOverlayLayer()
+        self.AxesOverlayLayer = AxesOverlayLayer()
         
-        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,context=self.gl_context))
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
@@ -338,6 +338,7 @@ class LMGLShaderCanvas(GLCanvas):
             return ['centre']
     
     def OnDraw(self):
+        self.SetCurrent(self.gl_context)
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         
@@ -585,7 +586,7 @@ class LMGLShaderCanvas(GLCanvas):
         from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
         from PYME.LMVis.shader_programs.oit_compositor import OITCompositorProgram
         if not hasattr(self, '_composite_shader'):
-            self._composite_shader = ShaderProgramFactory.get_program(OITCompositorProgram, self.gl_context)
+            self._composite_shader = ShaderProgramFactory.get_program(OITCompositorProgram, self.gl_context, self)
             
         return self._composite_shader
 
