@@ -150,7 +150,14 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         #OFF =1 , ON = 2
 
         onoff = 2.0 if on else 1.0
-        self.setCamPropValue('SENSOR COOLER', onoff)
+        try:
+            self.setCamPropValue('SENSOR COOLER', onoff)
+        except DCAMException as e:
+            # api v20.10.641, BT FUSION does not have SENSOR COOLER property
+            # don't worry about it if cooling is already on 
+            status = self.getCamPropValue('SENSOR COOLER STATUS')
+            if status != onoff:
+                raise e
 
         
     def GetAcquisitionMode(self):
@@ -411,6 +418,22 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
             # self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
             #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)
+
+class Fusion(HamamatsuORCA):
+    """
+    Orca Fusion is functionally the same as the Flash, however uses multiple gain modes.
+    TODO - check Flash return/fail on READOUT SPEED property so we can catch/return 'fixed'
+    and not necessarily introduce an extra class
+    """
+    _gain_modes = {
+        1:'Ultra-quiet',
+        2:'Standard',
+        3:'Fast'
+    }
+
+    @property
+    def _gain_mode(self):
+        return self._gain_modes[int(self.getCamPropValue('READOUT SPEED'))]
 
 
 class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
