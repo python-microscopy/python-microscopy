@@ -419,6 +419,22 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
             #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)
 
+class Fusion(HamamatsuORCA):
+    """
+    Orca Fusion is functionally the same as the Flash, however uses multiple gain modes.
+    TODO - check whether Flash fails nicely on READOUT SPEED property so we can catch/return 'fixed'
+    and not introduce an extra class
+    """
+    _gain_modes = {
+        1:'Ultra-quiet',
+        2:'Standard',
+        3:'Fast'
+    }
+
+    @property
+    def _gain_mode(self):
+        return self._gain_modes[int(self.getCamPropValue('READOUT SPEED'))]
+
 
 class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
     def __init__(self, camNum, multiview_info):
