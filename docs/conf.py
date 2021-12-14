@@ -99,6 +99,8 @@ sys.modules['matplotlib'] = mock.MagicMock()
 sys.modules['matplotlib.cm'] = mock.Mock()
 sys.modules['matplotlib.colors'] = mock.Mock()
 sys.modules['matplotlib.backends'] = mock.Mock()
+sys.modules['matplotlib.backends.backend_wxagg'] = mock.Mock()
+sys.modules['matplotlib.backends.backend_wx'] = mock.Mock()
 
 sys.modules['tables'] = mock.Mock()
 sys.modules['yaml'] = mock.Mock()
