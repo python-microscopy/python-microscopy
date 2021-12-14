@@ -19,6 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+
+"""
+Extract dye infomation / statistics from sample database
+"""
+
 from PYME.misc.djangoRecarray import qsToRecarray
 from SampleDB2 import populateStats
 from SampleDB2.samples import models
