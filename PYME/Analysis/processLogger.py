@@ -34,10 +34,12 @@ class ContextLayer(object):
     def __init__(self, parent, contextInfo):
         """A layer in the 'context stack'
         
-        Parameters:
-        -----------
-          parent        the preceeding layer
-          contextInfo   information about current context (a numpy record array, or a dictionary of key value pairs)
+        Parameters
+        ----------
+          parent  :      the preceeding layer
+          contextInfo :  information about current context (a numpy record array, or a dictionary of key value pairs)
+
+
         """
         self.parent = parent
         if isinstance(contextInfo, np.ndarray):

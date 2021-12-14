@@ -138,20 +138,31 @@ def pointDensityAtDistance(points, mask, voxelsize, maskOffset, bins=100):
     """Calculates the distribution of a label at varying distances from a mask.
     Negative distances are on the inside of the mask.
 
-    Parameters:
-    points - array containing point coordinates
-    mask - binary mask
-    voxelsize - size of the pixels/voxels in mask - should be an iterable
-                with a length equal to the number of dimensions in the data
-    maskOffset - iterable with lengh equal to number of dims giving coordinates (in point space)
-                 or the 0th pixel in the mask
-    bins - either a number of bins, or an array of bin edges
+    Parameters
+    ----------
+    points : np.ndarray
+        array containing point coordinates
+    mask : np.ndarray 
+        binary mask
+    voxelsize : iterable 
+        size of the pixels/voxels in mask - should be an iterable
+        with a length equal to the number of dimensions in the data
+    maskOffset : iterable
+        iterable with lengh equal to number of dims giving coordinates (in point space)
+        or the 0th pixel in the mask
+    bins : int or ndarray, default=100 
+        either a number of bins, or an array of bin edges
 
 
-    Returns:
-    bn - integrated intensity in distance bin
-    bm - mean intensity in distance bin
-    bins - the bin edges
+    Returns
+    -------
+    bn : ndarray 
+        integrated intensity in distance bin
+    bm : ndarray 
+        mean intensity in distance bin
+    bins : ndarray
+        the bin edges
+
     """
 
     voxelsize = numpy.array(voxelsize)

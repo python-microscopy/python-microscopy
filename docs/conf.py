@@ -98,9 +98,11 @@ sys.modules['sklearn'] = mock.Mock()
 sys.modules['matplotlib'] = mock.MagicMock()
 sys.modules['matplotlib.cm'] = mock.Mock()
 sys.modules['matplotlib.colors'] = mock.Mock()
+sys.modules['matplotlib.figure'] = mock.Mock()
 sys.modules['matplotlib.backends'] = mock.Mock()
 sys.modules['matplotlib.backends.backend_wxagg'] = mock.Mock()
 sys.modules['matplotlib.backends.backend_wx'] = mock.Mock()
+sys.modules['matplotlib.backend_bases'] = mock.Mock()
 
 sys.modules['tables'] = mock.Mock()
 sys.modules['yaml'] = mock.Mock()
@@ -112,8 +114,11 @@ sys.modules['pandas'] = mock.Mock()
 sys.modules['zeroconf'] = mock.Mock()
 sys.modules['django'] = mock.Mock()
 sys.modules['django.utils'] = mock.Mock()
+sys.modules['django.utils.encoding'] = mock.Mock()
+sys.modules['django.utils.html'] = mock.Mock()
 sys.modules['django.forms'] = mock.Mock()
 sys.modules['django.forms.widgets'] = mock.Mock()
+sys.modules['django.forms.utils'] = mock.Mock()
 sys.modules['pandas'] = mock.Mock()
 
 sys.modules['Pyro'] = mock.Mock() # TODO - expunge pyro??
@@ -142,6 +147,7 @@ sys.modules['PYME.contrib.TextCtrlAutoComplete'] = mock.Mock()
 import wx
 import wx.gizmos
 import wx.lib.mixins.listctrl
+import wx.lib.agw.aui
 #import wx.py.shell
 #from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 
@@ -158,12 +164,17 @@ wx.Dialog = mClass
 wx.ListCtrl = mClass
 wx.gizmos.TreeListCtrl = mClass1
 wx.lib.mixins.listctrl.ListCtrlAutoWidthMixin = mClass2
+wx.lib.agw.aui.AuiToolBar = mClass1
 
 import wx.lib.newevent
 wx.lib.newevent.NewCommandEvent = lambda : (None,None)
 
+#import matplotlib
+#matplotlib.colormaps = {}
 import matplotlib.cm
 matplotlib.cm.cmapnames = []
+import matplotlib.backend_bases
+matplotlib.backend_bases.NavigationToolbar2 = mClass2
 
 
 # -- General configuration -----------------------------------------------------

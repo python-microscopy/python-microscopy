@@ -445,8 +445,8 @@ class ImageStack(object):
         """Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
         Pyro.
         
-        Parameters:
-        -----------
+        Parameters
+        ----------
 
         filename  : string
             the name of the queue         

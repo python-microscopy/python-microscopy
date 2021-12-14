@@ -185,8 +185,8 @@ class SelectTableColumns(ModuleBase):
 class RandomSubset(ModuleBase):
     """Select a random subset of rows from a table
     
-    Parameters:
-    -----------
+    Parameters
+    ----------
     
     input :
     output :

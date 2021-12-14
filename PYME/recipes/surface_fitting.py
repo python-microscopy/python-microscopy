@@ -246,10 +246,12 @@ class FilterMeshComponentsByVolume(ModuleBase):
     
     Create a new mesh which only contains components within a given size range
     
-    NOTES: 
+    Notes
+    ----- 
     - this is extremely specific (arguably too specific for it's own recipe module), it would be good to incorporate the functionality 
       in a more generic mesh filtering/manipulation module in the future.
     - this would be better positioned (along with some of the others here) in, e.g., a `mesh.py` or `meshes.py` top level set of recipes, rather than `surface_fitting`  
+    
     """
     input_mesh = Input('mesh')
     min_size = Float(100.0)
