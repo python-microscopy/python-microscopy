@@ -283,21 +283,40 @@ config_defaults = {
     'dataserver-root' : nameUtils.datadir,
 }
 
-config = {}
-config.update(config_defaults)
-
 config_dirs = [user_config_dir, site_config_directory, dist_config_directory]
 
-for fn in [dist_config_file, site_config_file, user_config_file]:
-    #loop over the three configuration locations and read files, if present.
-    try:
-        with open(fn) as f:
-            dist_conf = yaml.safe_load(f)
-            config.update(dist_conf)
-    except (IOError, TypeError):
-        #no configuration file found, or not formatted correctly
-        pass
+def load_config(filename='config.yaml', defaults={}):
+    """
+    Load a config file from the PYME config dirs. Used to load the default configureation, but may also be used
+    to load module specific config files (e.g. visualisation layer defaults)
 
+    Parameters
+    ==========
+
+    filename : str
+        the filename (without path)
+
+    defaults : dictionary
+
+    """
+
+    config = {}
+    config.update(defaults)
+
+    for dn in config_dirs:
+        fn = os.path.join(dn, filename)
+        #loop over the three configuration locations and read files, if present.
+        try:
+            with open(fn) as f:
+                dist_conf = yaml.safe_load(f)
+                config.update(dist_conf)
+        except (IOError, TypeError):
+            #no configuration file found, or not formatted correctly
+            pass
+
+    return config
+
+config = load_config('config.yaml', config_defaults)
 
 def get(key, default=None):
     """

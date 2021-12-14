@@ -541,7 +541,7 @@ class ScaledShell(object):
     def radial_distance_to_shell(self, points):
         """ finds distance to shell along a vector from the centre of the shell to a point.
         
-        NOTE:
+        Notes
         -----
         
         This is not a geometric/euclidean distance, but should be a good approximation close to the shell (or far away).

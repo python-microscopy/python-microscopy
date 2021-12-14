@@ -221,6 +221,7 @@ PYME binds to the IP address associated with the host computer name. On linux th
 is association is set in the `/etc/hosts` file, which often defaults to
 
 .. code-block::
+    
     127.0.0.1	localhost
     127.0.1.1	<hostname>
 
@@ -258,7 +259,8 @@ into issues with it on later kernels (Ubuntu 16, 18), which can present as PYMED
 (and e.g. clusterUI timing out when navigating to `<ip:port>/files`). The offending function call can
 be avoided by adding the following to ``.PYME/config.yaml``
 
-.. code-block::
+.. code-block:: yaml
+    
     cluster-listing-no-countdir: True
 
 
@@ -268,7 +270,8 @@ If you are seeing timeout or retry errors on `clusterIO.get_file` calls, conside
 disabling the PYME hybrid nameserver (SQL and zeroconf) and using the PYME 
 zeroconf nameserver only by adding the following to ``.PYME/config.yaml``
 
-.. code-block::
+.. code-block:: yaml
+    
     clusterIO-hybridns: False
 
 If you are performing sliding-window background estimation during localization
@@ -278,7 +281,8 @@ defaults to 50 frames; depending on the window sizes you use in analysis you may
 consider increasing this to increase data locality (and decrease network I/O).
 This can be done in ``.PYME/config.yaml``. For 100 frame chunks, you would have:
 
-.. code-block::
+.. code-block:: yaml
+    
     httpspooler-chunksize: 100
 
 

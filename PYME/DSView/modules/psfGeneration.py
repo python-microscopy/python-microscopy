@@ -29,7 +29,7 @@ from PYME.recipes.traits import HasTraits, Float, Int, List, Instance, Property
 
 from PYME.Analysis.PSFGen import fourierHNA
 from PYME.IO import image
-from PYME.LMVis.Extras.pointSetGeneration import WRDictEnum
+from PYME.simulation.pointsets import WRDictEnum
 from PYME.misc import zernike
 
 class Pupil(HasTraits):

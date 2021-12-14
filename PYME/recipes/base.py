@@ -966,15 +966,15 @@ class IsClose(ArithmaticFilter):
     """
     Wrapper for numpy.isclose
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     abs_tolerance: Float
         absolute tolerance
     rel_tolerance: Float
         relative tolerance
 
-    Notes:
-    ------
+    Notes
+    -----
     from numpy docs, tolerances are combined as: absolute(a - b) <= (atol + rtol * absolute(b))
 
     """
@@ -1025,7 +1025,7 @@ class Redimension(ModuleBase):
     size_t : int, number of t slices
     size_c : int, number of c slices
 
-    Note:
+    Notes
     -----
 
     The size_ parameters accept two special values:

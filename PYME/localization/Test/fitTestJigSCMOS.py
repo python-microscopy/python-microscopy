@@ -432,7 +432,7 @@ class fitTestJig(object):
         msginfo = 'Mean: %f, std. dev: %f, IQR: %f, median: %f' % (dv.mean(), dv.std(), iq, np.median(dv))
         if errThreshold is not None:
             msginfo += ', %d bad fits (fitError > %d)' %(good.size-np.sum(good),errThreshold)
-        print msginfo
+        print(msginfo)
         plt.hist(dv, np.linspace(np.median(dv)-3*iq, np.median(dv) + 3*iq))
         plt.xlabel('Position Error [nm]')
         plt.ylabel('Frequency')

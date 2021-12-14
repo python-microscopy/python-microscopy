@@ -14,14 +14,7 @@ import wx.lib.agw.aui as aui
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
 
-from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
-#import sys
-
-# import pylab
-
-from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-#from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
@@ -91,7 +84,8 @@ class VisGUICore(object):
 
         
         if not use_shaders:
-            self.glCanvas = gl_render.LMGLCanvas(gl_pan)
+            from PYME.LMVis import gl_render3D
+            self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
             from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
             if self._new_layers:
@@ -660,19 +654,21 @@ class VisGUICore(object):
         
     def _create_base_layer(self):
         from PYME.misc.colormaps import cm
+        from PYME.LMVis.layers import layer_defaults
         if self._new_layers and len(self.layers) == 0:
             #add a new layer
-            l = self.add_pointcloud_layer(method='points')
-            if 't' in self.pipeline.keys():
-                l.set(vertexColour='t')
-            elif 'z' in self.pipeline.keys():
-                l.set(vertexColour='z')
+            l = self.add_pointcloud_layer(**layer_defaults.new_layer_settings('points', ds_keys=list(self.pipeline.keys())))
+            # if 't' in self.pipeline.keys():
+            #     l.set(vertexColour='t')
+            # elif 'z' in self.pipeline.keys():
+            #     l.set(vertexColour='z')
                 
         colour_chans = self.pipeline.colourFilter.getColourChans()
         if len(colour_chans) > 1:
             #add a layer for each colour channel
             for i, c in enumerate(sorted(colour_chans)):
-                self.add_pointcloud_layer(ds_name=('output.' + c), cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)], visible=False)
+                #self.add_pointcloud_layer(ds_name=('output.' + c), cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)], visible=False)
+                self.add_pointcloud_layer(ds_name=('output.' + c), **layer_defaults.new_layer_settings('points_channel', i, overrides=dict(visible=False)))
                 
     def _populate_open_args(self, filename):
         args = {}

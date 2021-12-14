@@ -4,8 +4,8 @@ Mock standins for traits classes for use in documentation generation
 """
 
 class HasTraits(object):
-    pass
-
+    def __init__(self, *args, **kwargs):
+        pass
 class CStr(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -13,7 +13,9 @@ class CStr(object):
 class Float(HasTraits):
     pass
 class List(HasTraits):
-    pass
+    def __call__(self, *args, **kwargs):
+        pass
+
 Int = CStr
 Bool = CStr
 Str = CStr
@@ -29,6 +31,8 @@ ListFloat = CStr
 ListStr = CStr
 ListInt = CStr
 BaseFloat = CStr
+
+Property = CStr
 class BaseEnum(HasTraits):
     pass
 
@@ -44,3 +48,4 @@ def mock_decorator(*args, **kwargs):
     return decorator
 
 on_trait_change = mock_decorator
+observe = mock_decorator

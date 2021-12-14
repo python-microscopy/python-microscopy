@@ -48,9 +48,8 @@ class CSVOutput(OutputModule):
     method to save. When using `pyme-cluster:// - aggregate` we convert to a recarray and
     use `PYME.IO.clusterResults.fileResults`.
 
-    pyme-cluster awareness
-    ----------------------
-
+    **pyme-cluster awareness**
+    
     csv output is cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the
     processing node is also running a dataserver [TODO - make this more robust] .
@@ -120,9 +119,8 @@ class XLSOutput(OutputModule):
 
     This casts the data to a pandas `DataFrame` and uses the `to_excel` method to save
 
-    pyme-cluster awareness
-    ----------------------
-
+    **pyme-cluster awareness**
+    
     xlsx output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing
     node is also running a dataserver [TODO - make this more robust] .
@@ -179,9 +177,8 @@ class ImageOutput(OutputModule):
 
     This is a very thin wrapper which simply calls the `.save()` method on the `PYME.IO.image.ImageStack` object.
 
-    pyme-cluster awareness
-    ----------------------
-
+    **pyme-cluster awareness**
+    
     Image output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing
     node is also running a dataserver [TODO - make this more robust].
@@ -239,10 +236,11 @@ class RGBImageOutput(OutputModule):
         The storage method, one of 'File', 'pyme-cluster://' or 'pyme-cluster:// - aggregate`. File is the default
         and saves to a file on disk.
 
+    Notes
+    -----
 
-    pyme-cluster awareness
-    ----------------------
-
+    **pyme-cluster awareness**
+    
     Image output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing
     node is also running a dataserver [TODO - make this more robust].
@@ -311,9 +309,11 @@ class HDFOutput(OutputModule):
         The storage method, one of 'File', 'pyme-cluster://' or 'pyme-cluster:// - aggregate`. File is the default
         and saves to a file on disk.
 
-    pyme-cluster awareness
-    ----------------------
-
+    Notes
+    -----
+    
+    **pyme-cluster awareness**
+    
     csv output is cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the
     processing node is also running a dataserver [TODO - make this more robust] .
@@ -409,8 +409,7 @@ class ReportOutput(OutputModule):
 
     This is a very thin wrapper which simply calls the `.save()` method on the `PYME.IO.image.ImageStack` object.
 
-    pyme-cluster awareness
-    ----------------------
+    **pyme-cluster awareness**
 
     report output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing
@@ -481,8 +480,7 @@ class ReportForEachOutput(OutputModule):
 
     This is a very thin wrapper which simply calls the `.save()` method on the `PYME.IO.image.ImageStack` object.
 
-    pyme-cluster awareness
-    ----------------------
+    **pyme-cluster awareness**
 
     report output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing
@@ -547,9 +545,10 @@ class PlotOutput(OutputModule):
     format: enum
         the format to save as.
 
+    Notes
+    -----
     
-    pyme-cluster awareness
-    ----------------------
+    **pyme-cluster awareness**
 
     Image output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing

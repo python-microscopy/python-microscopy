@@ -11,7 +11,7 @@
 
 
 import numpy as np
-import ps_app
+from PYME.Analysis.PSFGen import ps_app
 
 
 def test_ps_app():

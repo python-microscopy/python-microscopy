@@ -175,6 +175,8 @@ class SpoolController(object):
                     the protocol file (even if it is already selected).
             Notable keys which are not supported through this method include 
             'series_name', 'seriesName' and 'dirname'.
+        
+        
         """
         method = settings.pop('method', None)
         if method and method != self.spoolType:
@@ -389,6 +391,7 @@ class SpoolController(object):
             display a dialog and prompt the user, log a warning and continue, and log an error and abort, or skip completely.
             The former is suitable for interactive acquisition, whereas one of the latter modes is likely better for automated spooling
             via the action manager.
+
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals

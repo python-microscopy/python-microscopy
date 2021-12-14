@@ -40,8 +40,8 @@ FLAGS = gflags.FLAGS
 # The client_id and client_secret are copied from the API Access tab on
 # the Google APIs Console
 FLOW = OAuth2WebServerFlow(
-    client_id='264532138515.apps.googleusercontent.com',
-    client_secret='B5RpwE_3_a1yIiPMOm6kp8n9',
+    client_id='SECRET',
+    client_secret='SECRET',
     scope='https://www.googleapis.com/auth/calendar',
     user_agent='PYMEBookings/2011_1_11')
 
@@ -65,7 +65,7 @@ http = credentials.authorize(http)
 # the Google APIs Console
 # to get a developerKey for your own application.
 service = build(serviceName='calendar', version='v3', http=http,
-       developerKey='AIzaSyCT5SrmxbFuwIxx_eWEdY-cz-aqcxKuRzI')
+       developerKey='SECRET')
        
 def AddBooking(person, sample, date, startTime, endTime):
     event = {'summary':'%s - %s' % (person, sample), 

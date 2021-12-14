@@ -44,16 +44,29 @@ def pack_results(dtype, tIndex, fitResults, fitError=None, startParams=None, sli
     Collects logic from fit factories to a central place which hopefully makes it easier to
     maintain.
     
-    Parameters:
-    -----------
-    dtype  : the numpy dtype of the structured array we want to pack into
-    tIndex : int - the current frame number
-    fitResults : a numpy array with the fit parameters in the order they are defined in the dtype
-    fitError   : a numpy array with the fit errors in the order they are defined in the dtype
-    startParams : [optional] a numpy array with the start parameters in the order they are defined in the dtype
-    slicesUsed : [optionall] a 3-tuple of slice objects (xslice, yslice, zslice) that define the ROI used for this molecule
-    resultCode : [optional] the result code as returned by the fitting routine
-    **kwargs : any additional information which gets stored in the structured array, either a scalar or a numpy array
+    Parameters
+    ----------
+    dtype  : np.dtype
+        the numpy dtype of the structured array we want to pack into
+    tIndex : int 
+        the current frame number
+    fitResults : np.ndarray
+        the fit parameters in the order they are defined in the dtype
+    fitError   : np.ndarray
+        the fit errors in the order they are defined in the dtype
+    startParams : np.ndarray, optional 
+        the start parameters in the order they are defined in the dtype
+    slicesUsed : tuple, optional 
+        a 3-tuple of slice objects (xslice, yslice, zslice) that define the ROI used for this molecule
+    resultCode : int, optional 
+        the result code as returned by the fitting routine
+    **kwargs :  dict, optional
+        any additional information which gets stored in the structured array, either a scalar or a numpy array
+    
+    Returns
+    -------
+    np.recarray
+        The packed results array
     
     TODOS:
     - Support length mismatch on data

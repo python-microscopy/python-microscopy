@@ -33,6 +33,8 @@ import PYME.version
 from PYME.misc import mock_traitsui
 sys.modules['traitsui.api'] = mock_traitsui
 sys.modules['traitsui.wx'] = mock.Mock()
+sys.modules['traitsui.wx.editor'] = mock.Mock()
+sys.modules['traitsui.wx.basic_editor_factory'] = mock.Mock()
 
 from PYME.misc import mock_traits
 sys.modules['traits.api'] = mock_traits
@@ -49,22 +51,31 @@ sys.modules['skimage'] = mock.Mock()
 sys.modules['pyfftw'] = mock.Mock()
 sys.modules['quaternion'] = mock.Mock()
     
-sys.modules['wx'] = mock.Mock()
+sys.modules['wx'] = mock.MagicMock()
 sys.modules['wx.aui'] = mock.Mock()
 sys.modules['wx.lib'] = mock.Mock()
+sys.modules['wx.stc'] = mock.Mock()
+sys.modules['wx.core'] = mock.Mock()
 sys.modules['wx.lib.newevent'] = mock.Mock()
-sys.modules['wx.lib.mixins'] = mock.Mock()
+sys.modules['wx.lib.mixins'] = mock.MagicMock()
+sys.modules['wx.lib.mixins.listctrl'] = mock.Mock()
+#sys.modules['wx.lib.mixins.listctrl'] = mock.Mock()
 sys.modules['wx.lib.dialogs'] = mock.Mock()
 sys.modules['wx.lib.agw'] = mock.Mock()
 sys.modules['wx.lib.agw.aui'] = mock.Mock()
+sys.modules['wx.lib.agw.cubecolourdialog'] = mock.Mock()
+sys.modules['wx.lib.scrolledpanel'] = mock.Mock()
 sys.modules['wx.gizmos'] = mock.Mock()
 sys.modules['wx.grid'] = mock.Mock()
+sys.modules['wx.html2'] = mock.Mock()
+sys.modules['wx.html'] = mock.Mock()
 sys.modules['wx.lib.agw.aui.aui_utilities'] = mock.Mock()
 sys.modules['wx.py.shell'] = mock.Mock()
 sys.modules['wx.glcanvas'] = mock.Mock()
 
 sys.modules['OpenGL'] = mock.Mock()
 sys.modules['OpenGL.GL'] = mock.Mock()
+sys.modules['OpenGL.GLU'] = mock.Mock()
 
 sys.modules['scipy'] = mock.Mock()
 sys.modules['scipy.ndimage'] = mock.Mock()
@@ -78,42 +89,92 @@ sys.modules['scipy.special'] = mock.Mock()
 sys.modules['scipy.stats'] = mock.Mock()
 sys.modules['scipy.misc'] = mock.Mock()
 sys.modules['scipy.integrate'] = mock.Mock()
+sys.modules['scipy.linalg'] = mock.Mock()
 
 sys.modules['skimage.filters'] = mock.Mock()
+sys.modules['skimage.measure'] = mock.Mock()
 sys.modules['sklearn'] = mock.Mock()
 
-sys.modules['matplotlib'] = mock.Mock()
+sys.modules['matplotlib'] = mock.MagicMock()
 sys.modules['matplotlib.cm'] = mock.Mock()
 sys.modules['matplotlib.colors'] = mock.Mock()
+sys.modules['matplotlib.figure'] = mock.Mock()
+sys.modules['matplotlib.backends'] = mock.Mock()
+sys.modules['matplotlib.backends.backend_wxagg'] = mock.Mock()
+sys.modules['matplotlib.backends.backend_wx'] = mock.Mock()
+sys.modules['matplotlib.backend_bases'] = mock.Mock()
 
 sys.modules['tables'] = mock.Mock()
 sys.modules['yaml'] = mock.Mock()
 sys.modules['toposort'] = mock.Mock()
 sys.modules['matplotlib.pyplot'] = mock.Mock()
+#sys.modules['matplotlib.colormaps'] = {}
 sys.modules['cherrypy'] = mock.Mock()
 sys.modules['pandas'] = mock.Mock()
 sys.modules['zeroconf'] = mock.Mock()
 sys.modules['django'] = mock.Mock()
+sys.modules['django.utils'] = mock.Mock()
+sys.modules['django.utils.encoding'] = mock.Mock()
+sys.modules['django.utils.html'] = mock.Mock()
+sys.modules['django.forms'] = mock.Mock()
+sys.modules['django.forms.widgets'] = mock.Mock()
+sys.modules['django.forms.utils'] = mock.Mock()
 sys.modules['pandas'] = mock.Mock()
-sys.modules['Pyro'] = mock.Mock()
+
+sys.modules['Pyro'] = mock.Mock() # TODO - expunge pyro??
+sys.modules['Pyro.core'] = mock.Mock()
+sys.modules['Pyro.util'] = mock.Mock()
+sys.modules['Pyro.constants'] = mock.Mock()
+
 sys.modules['ujson'] = mock.Mock()
+sys.modules['dask'] = mock.Mock()
+sys.modules['dask.array'] = mock.Mock()
+sys.modules['javabridge'] = mock.Mock()
+sys.modules['bioformats'] = mock.Mock()
+sys.modules['mayavi'] = mock.Mock()
+sys.modules['fftw3f'] = mock.Mock()
+sys.modules['jigna'] = mock.Mock()
+sys.modules['jigna.web_app'] = mock.Mock()
+sys.modules['jigna.vue_template'] = mock.Mock()
+sys.modules['MySQLdb'] = mock.Mock()
+sys.modules['guppy'] = mock.Mock()
+sys.modules['apt'] = mock.Mock()
+sys.modules['gflags'] = mock.Mock()
+sys.modules['tweepy'] = mock.Mock()
+
+sys.modules['PYME.contrib.TextCtrlAutoComplete'] = mock.Mock()
 
 import wx
+import wx.gizmos
+import wx.lib.mixins.listctrl
+import wx.lib.agw.aui
 #import wx.py.shell
 #from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 
-class mClass:
+class mClass(object):
     pass
+class mClass1(object):
+  pass
+class mClass2(object):
+  pass
 
 wx.Frame = mClass
 wx.Panel = mClass
 wx.Dialog = mClass
+wx.ListCtrl = mClass
+wx.gizmos.TreeListCtrl = mClass1
+wx.lib.mixins.listctrl.ListCtrlAutoWidthMixin = mClass2
+wx.lib.agw.aui.AuiToolBar = mClass1
 
 import wx.lib.newevent
 wx.lib.newevent.NewCommandEvent = lambda : (None,None)
 
+#import matplotlib
+#matplotlib.colormaps = {}
 import matplotlib.cm
 matplotlib.cm.cmapnames = []
+import matplotlib.backend_bases
+matplotlib.backend_bases.NavigationToolbar2 = mClass2
 
 
 # -- General configuration -----------------------------------------------------
@@ -185,7 +246,7 @@ pygments_style = 'sphinx'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
-numpydoc_show_class_members = True
+numpydoc_show_class_members = False #True
 numpydoc_show_inherited_class_members = False
 class_members_toctree=False
 autoclass_content = 'both'
