@@ -20,8 +20,8 @@
 #
 ##################
 from PYME.misc.djangoRecarray import qsToRecarray
-from PYME.SampleDB2 import populateStats
-from PYME.SampleDB2.samples import models
+from SampleDB2 import populateStats
+from SampleDB2.samples import models
 import numpy as np
 import matplotlib.pyplot as plt
 #from pylab import *

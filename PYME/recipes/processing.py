@@ -920,6 +920,7 @@ class VectorfieldCurl(ModuleBase):
     .. math::
 
         (\frac{\del F_z}{\del y} - \frac{\del F_y}{\del z}, \frac{\del F_x}{\del z} - \frac{\del F_z}{\del x}, \frac{\del F_y}{\del x} - \frac{\del F_x}{\del y})$$
+    
     """
     inputX = Input('inp_x')
     inputY = Input('inp_y')

@@ -22,8 +22,8 @@
 ################
 
 
-from guppy import hpy
-hp = hpy()
+#from guppy import hpy
+#hp = hpy()
 
 import numpy as np
 import sys
