@@ -75,6 +75,6 @@ def walkFunc(arg, dirname, fnames):
 
 
 
-
-os.path.walk('/home/david/PYME/PYME', walkFunc, 0)
+if __name__ == '__main__':  
+    os.path.walk('/home/david/PYME/PYME', walkFunc, 0)
 

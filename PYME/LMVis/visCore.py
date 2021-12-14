@@ -14,14 +14,7 @@ import wx.lib.agw.aui as aui
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
 
-from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
-#import sys
-
-# import pylab
-
-from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-#from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
@@ -91,7 +84,8 @@ class VisGUICore(object):
 
         
         if not use_shaders:
-            self.glCanvas = gl_render.LMGLCanvas(gl_pan)
+            from PYME.LMVis import gl_render3D
+            self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
             from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
             if self._new_layers:

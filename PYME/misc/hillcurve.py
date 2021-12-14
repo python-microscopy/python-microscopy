@@ -40,49 +40,49 @@ def hill(p, ratio):
     n, Ka, Fmax, Fmin = p 
     return Fmin + Fmax*(ratio**n)/(Ka**n + ratio**n)
 
+if __name__ == '__main__':
+    #load control data
+    ratio_control, stress_control = np.loadtxt('control.csv').T
+    plt.plot(ratio_control, stress_control, 'x', label='control')
 
-#load control data
-ratio_control, stress_control = np.loadtxt('control.csv').T
-plt.plot(ratio_control, stress_control, 'x', label='control')
+    #do fit
+    fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_control)
+    p_control = fit_results[0]
 
-#do fit
-fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_control)
-p_control = fit_results[0]
+    print(("""
+    Control:
+    ---------
+    n = %3.2f
+    EC50 = %3.2f
+    Fmax = %3.2f
+    Fmin = %3.2f
 
-print(("""
-Control:
----------
-n = %3.2f
-EC50 = %3.2f
-Fmax = %3.2f
-Fmin = %3.2f
+    """ % p_control))
 
-""" % p_control))
-
-ratio = np.linspace(1.5, 4)
-plt.plot(ratio, hill(p_control, ratio))
+    ratio = np.linspace(1.5, 4)
+    plt.plot(ratio, hill(p_control, ratio))
 
 
-#load cptome data
-ratio_cptome, stress_cptome = np.loadtxt('cptome.csv').T
-plt.plot(ratio_cptome, stress_cptome, 'x', label='CPTOME')
+    #load cptome data
+    ratio_cptome, stress_cptome = np.loadtxt('cptome.csv').T
+    plt.plot(ratio_cptome, stress_cptome, 'x', label='CPTOME')
 
-#do fit
-fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_cptome)
-p_cptome = fit_results[0]
+    #do fit
+    fit_results = FitModel(hill, [1, 2.7, 50, 1], ratio_cptome)
+    p_cptome = fit_results[0]
 
-print(("""
-CPTOME:
----------
-n = %3.2f
-EC50 = %3.2f
-Fmax = %3.2f
-Fmin = %3.2f
+    print(("""
+    CPTOME:
+    ---------
+    n = %3.2f
+    EC50 = %3.2f
+    Fmax = %3.2f
+    Fmin = %3.2f
 
-""" % p_cptome))
+    """ % p_cptome))
 
-plt.plot(ratio, hill(p_cptome, ratio))
+    plt.plot(ratio, hill(p_cptome, ratio))
 
-plt.xlabel('Ratio - 340/380')
-plt.ylabel('Stress')
-plt.legend()
+    plt.xlabel('Ratio - 340/380')
+    plt.ylabel('Stress')
+    plt.legend()

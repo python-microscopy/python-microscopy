@@ -26,8 +26,8 @@ import numpy
 import numpy as np
 import wx
 import wx.glcanvas
-from OpenGL.GL import *
-from OpenGL.GLU import *
+from OpenGL import GL, GLU
+#from OpenGL import GLU
 
 from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, ScaleBarOverlayLayer, SelectionOverlayLayer
     #QuadTreeRenderLayer, VertexRenderLayer, , ShadedPointRenderLayer, \
@@ -291,40 +291,40 @@ class LMGLShaderCanvas(GLCanvas):
         window_width = self.view_port_size[0]
         window_height = self.view_port_size[1]
         # setting screen-corresponding geometry
-        glViewport(0, 0, window_width, window_height)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        gluOrtho2D(0.0, window_width - 1, 0.0, window_height - 1)
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
+        GL.glViewport(0, 0, window_width, window_height)
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
+        GL.glMatrixMode(GL.GL_PROJECTION)
+        GL.glLoadIdentity()
+        GLU.gluOrtho2D(0.0, window_width - 1, 0.0, window_height - 1)
+        GL.glMatrixMode(GL.GL_MODELVIEW)
+        GL.glLoadIdentity()
 
         # clearing and configuring stencil drawing
         if self.on_screen:
-            glDrawBuffer(GL_BACK)
-        glEnable(GL_STENCIL_TEST)
-        glClearStencil(0)
-        glClear(GL_STENCIL_BUFFER_BIT)
-        glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE)  # colorbuffer is copied to stencil
-        glDisable(GL_DEPTH_TEST)
-        glStencilFunc(GL_ALWAYS, 1, 1)  # to avoid interaction with stencil content
+            GL.glDrawBuffer(GL.GL_BACK)
+        GL.glEnable(GL.GL_STENCIL_TEST)
+        GL.glClearStencil(0)
+        GL.glClear(GL.GL_STENCIL_BUFFER_BIT)
+        GL.glStencilOp(GL.GL_REPLACE, GL.GL_REPLACE, GL.GL_REPLACE)  # colorbuffer is copied to stencil
+        GL.glDisable(GL.GL_DEPTH_TEST)
+        GL.glStencilFunc(GL.GL_ALWAYS, 1, 1)  # to avoid interaction with stencil content
 
         # drawing stencil pattern
-        glColor4f(1, 1, 1, 0)  # alfa is 0 not to interfere with alpha tests
+        GL.glColor4f(1, 1, 1, 0)  # alfa is 0 not to interfere with alpha tests
 
         start = self.ScreenPosition[1] % 2
         # print start
 
         for y in range(start, window_height, 2):
-            glLineWidth(1)
-            glBegin(GL_LINES)
-            glVertex2f(0, y)
-            glVertex2f(window_width, y)
-            glEnd()
+            GL.glLineWidth(1)
+            GL.glBegin(GL.GL_LINES)
+            GL.glVertex2f(0, y)
+            GL.glVertex2f(window_width, y)
+            GL.glEnd()
 
-        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP)  # // disabling changes in stencil buffer
-        glFlush()
+        GL.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP)  # // disabling changes in stencil buffer
+        GL.glFlush()
 
         # print 'is'
 
@@ -340,10 +340,10 @@ class LMGLShaderCanvas(GLCanvas):
     def OnDraw(self):
         self.SetCurrent(self.gl_context)
         self.interlace_stencil()
-        glEnable(GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         
-        glClearColor(*self.clear_colour)
-        glClear(GL_COLOR_BUFFER_BIT)
+        GL.glClearColor(*self.clear_colour)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
         #aspect ratio of window
         ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
@@ -351,42 +351,42 @@ class LMGLShaderCanvas(GLCanvas):
         for stereo_view in self._stereo_views:
             if stereo_view == 'left':
                 eye = -self.eye_dist
-                glStencilFunc(GL_NOTEQUAL, 1, 1)
+                GL.glStencilFunc(GL.GL_NOTEQUAL, 1, 1)
             elif stereo_view == 'right':
                 eye = +self.eye_dist
-                glStencilFunc(GL_EQUAL, 1, 1)
+                GL.glStencilFunc(GL.GL_EQUAL, 1, 1)
             else:
                 eye = 0
 
-            glClear(GL_DEPTH_BUFFER_BIT)
-            glMatrixMode(GL_MODELVIEW)
-            glLoadIdentity()
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
+            GL.glClear(GL.GL_DEPTH_BUFFER_BIT)
+            GL.glMatrixMode(GL.GL_MODELVIEW)
+            GL.glLoadIdentity()
+            GL.glMatrixMode(GL.GL_PROJECTION)
+            GL.glLoadIdentity()
 
             if self.displayMode == '3DPersp':
                 # our object will be be scaled to fit a 2x2x2 box at z=10 - see translate and scale calls below
-                glFrustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
+                GL.glFrustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
             else:
-                glOrtho(-1, 1, ys, -ys, -1000, 1000)
+                GL.glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
-            glMatrixMode(GL_MODELVIEW)
-            glTranslatef(eye, 0.0, 0.0)
+            GL.glMatrixMode(GL.GL_MODELVIEW)
+            GL.glTranslatef(eye, 0.0, 0.0)
 
             # move our object to be centred at -10
-            glTranslatef(0, 0, -10)
+            GL.glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)
 
             # scale object to fit a 2x2x2 box
-            glScalef(self.view.scale, self.view.scale, self.view.scale)
+            GL.glScalef(self.view.scale, self.view.scale, self.view.scale)
 
             try:
-                glPushMatrix()
+                GL.glPushMatrix()
                 # rotate object
-                glMultMatrixf(self.object_rotation_matrix)
-                glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
+                GL.glMultMatrixf(self.object_rotation_matrix)
+                GL.glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
                 
                 for l in self.underlays:
                     l.render(self)
@@ -407,90 +407,90 @@ class LMGLShaderCanvas(GLCanvas):
                 for o in self.overlays:
                     o.render(self)
             finally:
-                glPopMatrix()
+                GL.glPopMatrix()
 
             #scale bar gets drawn without the rotation
             self.ScaleBarOverlayLayer.render(self)
 
             if self.LUTDraw:
                 # set us up to draw in pixel coordinates
-                glMatrixMode(GL_PROJECTION)
-                glLoadIdentity()
-                glOrtho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
+                GL.glMatrixMode(GL.GL_PROJECTION)
+                GL.glLoadIdentity()
+                GL.glOrtho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
 
-                glMatrixMode(GL_MODELVIEW)
-                glLoadIdentity()
+                GL.glMatrixMode(GL.GL_MODELVIEW)
+                GL.glLoadIdentity()
                 
                 self.LUTOverlayLayer.render(self)
 
-        glFlush()
+        GL.glFlush()
 
         self.SwapBuffers()
 
     def init_oit(self):
-        self._fb = glGenFramebuffers(1)
-        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+        self._fb = GL.glGenFramebuffers(1)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self._fb)
     
-        self._accumT = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self._accumT)
+        self._accumT = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._accumT)
     
-        self._revealT = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, self._revealT)
+        self._revealT = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._revealT)
     
-        self._db = glGenRenderbuffers(1)
-        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
+        self._db = GL.glGenRenderbuffers(1)
+        GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, self._db)
     
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
 
     def cleanup_oit(self):
-        glDeleteFramebuffers(1, self._fb)
-        glDeleteTextures(1, self._accumT)
-        glDeleteTextures(1, self._revealT)
-        glDeleteRenderbuffers(1, self._db)
+        GL.glDeleteFramebuffers(1, self._fb)
+        GL.glDeleteTextures(1, self._accumT)
+        GL.glDeleteTextures(1, self._revealT)
+        GL.glDeleteRenderbuffers(1, self._db)
     
     def resize_gl_oit(self, w, h):
         #print('resize_gl')
         self._oit_w = w
         self._oit_h = h
     
-        glViewport(0, 0, w, h)
+        GL.glViewport(0, 0, w, h)
         #self._accumdata = np.zeros([4,w,h], 'f')
     
         #print('bind fb')
-        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self._fb)
     
         #print('bind accum texture')
-        glBindTexture(GL_TEXTURE_2D, self._accumT)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, None)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._accumT)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA32F, w, h, 0, GL.GL_RGBA, GL.GL_FLOAT, None)
     
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
     
         #print('framebuffer texture')
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self._accumT, 0)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, self._accumT, 0)
     
         #print('bind reveal texture')
-        glBindTexture(GL_TEXTURE_2D, self._revealT)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, w, h, 0, GL_RED, GL_FLOAT, None)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self._revealT)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_R32F, w, h, 0, GL.GL_RED, GL.GL_FLOAT, None)
     
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
     
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, self._revealT, 0)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT1, GL.GL_TEXTURE_2D, self._revealT, 0)
     
-        glBindTexture(GL_TEXTURE_2D, 0)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
     
         #print('bind render buffer')
-        glBindRenderbuffer(GL_RENDERBUFFER, self._db)
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h)
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self._db)
-        glBindRenderbuffer(GL_RENDERBUFFER, 0)
+        GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, self._db)
+        GL.glRenderbufferStorage(GL.GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT, w, h)
+        GL.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, self._db)
+        GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, 0)
     
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
     
     def render_oit_layers(self, layers):
         # initialise OIT if not already done
@@ -504,82 +504,82 @@ class LMGLShaderCanvas(GLCanvas):
     
     
         # draw to an offscreen framebuffer
-        current_fb = glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING) #keep a reference to the current framebuffer so we can restore after we're done
-        glBindFramebuffer(GL_FRAMEBUFFER, self._fb) #bind our offscreen framebuffer
+        current_fb = GL.glGetIntegerv(GL.GL_DRAW_FRAMEBUFFER_BINDING) #keep a reference to the current framebuffer so we can restore after we're done
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self._fb) #bind our offscreen framebuffer
     
         #clear the offscreen framebuffer
     
-        #glClearBufferfv(GL_COLOR, 0, (0., 0., 0., 1.))
-        #glClearBufferfv(GL_COLOR, 1, (1., 0., 0., 0.))
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClearDepth(1.0)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        #glClearBufferfv(GL.GL_COLOR, 0, (0., 0., 0., 1.))
+        #glClearBufferfv(GL.GL_COLOR, 1, (1., 0., 0., 0.))
+        GL.glClearColor(0.0, 0.0, 0.0, 1.0)
+        GL.glClearDepth(1.0)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT)
     
         #Copy depth buffer from opaque stuff rendered previously
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self._fb)
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
-        glBlitFramebuffer(0, 0, self._oit_w, self._oit_h,
+        GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, self._fb)
+        GL.glBindFramebuffer(GL.GL_READ_FRAMEBUFFER, 0)
+        GL.glBlitFramebuffer(0, 0, self._oit_w, self._oit_h,
                           0, 0, self._oit_w, self._oit_h,
-                          GL_DEPTH_BUFFER_BIT, GL_NEAREST)
-        glBindFramebuffer(GL_FRAMEBUFFER, self._fb)
+                          GL.GL_DEPTH_BUFFER_BIT, GL.GL_NEAREST)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self._fb)
     
-        #glDrawBuffer(GL_COLOR_ATTACHMENT0)
-        #glClear(GL_COLOR_BUFFER_BIT) #| GL_DEPTH_BUFFER_BIT)
+        #glDrawBuffer(GL.GL_COLOR_ATTACHMENT0)
+        #glClear(GL.GL_COLOR_BUFFER_BIT) #| GL.GL_DEPTH_BUFFER_BIT)
     
         #clear the second colour attachment buffer
-        glDrawBuffers(1, [GL_COLOR_ATTACHMENT1, ])
-        glClearColor(1.0, 0.0, 0.0, 1.0)
-        glClear(GL_COLOR_BUFFER_BIT)
+        GL.glDrawBuffers(1, [GL.GL_COLOR_ATTACHMENT1, ])
+        GL.glClearColor(1.0, 0.0, 0.0, 1.0)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
     
-        glDrawBuffers(2, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1])
+        GL.glDrawBuffers(2, [GL.GL_COLOR_ATTACHMENT0, GL.GL_COLOR_ATTACHMENT1])
         
         #draw the OIT layers
         for l in layers:
             l.render(self)
 
         # set the framebuffer back
-        glBindFramebuffer(GL_FRAMEBUFFER, current_fb)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, current_fb)
 
         #now do the compositing pass
         with self.composite_shader as c:
             # bind our pre-rendered textures
 
-            glActiveTexture(GL_TEXTURE0)
-            glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self._accumT)
-            self._acc_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT)
-            glUniform1i(c.get_uniform_location('accum_t'), 0)
+            GL.glActiveTexture(GL.GL_TEXTURE0)
+            GL.glEnable(GL.GL_TEXTURE_2D)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, self._accumT)
+            self._acc_buf = GL.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_FLOAT)
+            GL.glUniform1i(c.get_uniform_location('accum_t'), 0)
 
-            glActiveTexture(GL_TEXTURE1)
-            glEnable(GL_TEXTURE_2D)
-            glBindTexture(GL_TEXTURE_2D, self._revealT)
-            self._reveal_buf = glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT)
-            glUniform1i(c.get_uniform_location('reveal_t'), 1)
+            GL.glActiveTexture(GL.GL_TEXTURE1)
+            GL.glEnable(GL.GL_TEXTURE_2D)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, self._revealT)
+            self._reveal_buf = GL.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RED, GL.GL_FLOAT)
+            GL.glUniform1i(c.get_uniform_location('reveal_t'), 1)
 
-            glEnable(GL_BLEND)
-            glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA)
+            GL.glEnable(GL.GL_BLEND)
+            GL.glBlendFunc(GL.GL_ONE_MINUS_SRC_ALPHA, GL.GL_SRC_ALPHA)
 
             # Draw triangles to display texture on
-            glColor4f(1., 1., 1., 1.)
-            glBegin(GL_QUADS)
-            glTexCoord2f(0., 0.) # lower left corner of image */
-            glVertex3f(-1, -1, 0.0)
-            glTexCoord2f(1., 0.) # lower right corner of image */
-            glVertex3f(1, -1, 0.0)
-            glTexCoord2f(1.0, 1.0) # upper right corner of image */
-            glVertex3f(1, 1, 0.0)
-            glTexCoord2f(0.0, 1.0) # upper left corner of image */
-            glVertex3f(-1, 1, 0.0)
-            glEnd()
+            GL.glColor4f(1., 1., 1., 1.)
+            GL.glBegin(GL.GL_QUADS)
+            GL.glTexCoord2f(0., 0.) # lower left corner of image */
+            GL.glVertex3f(-1, -1, 0.0)
+            GL.glTexCoord2f(1., 0.) # lower right corner of image */
+            GL.glVertex3f(1, -1, 0.0)
+            GL.glTexCoord2f(1.0, 1.0) # upper right corner of image */
+            GL.glVertex3f(1, 1, 0.0)
+            GL.glTexCoord2f(0.0, 1.0) # upper left corner of image */
+            GL.glVertex3f(-1, 1, 0.0)
+            GL.glEnd()
 
             #unbind our textures
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glDisable(GL_TEXTURE_2D)
+            GL.glActiveTexture(GL.GL_TEXTURE0)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            GL.glDisable(GL.GL_TEXTURE_2D)
 
-            glActiveTexture(GL_TEXTURE1)
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glDisable(GL_TEXTURE_2D)
+            GL.glActiveTexture(GL.GL_TEXTURE1)
+            GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
+            GL.glDisable(GL.GL_TEXTURE_2D)
                 
     @property
     def composite_shader(self):
@@ -609,31 +609,31 @@ class LMGLShaderCanvas(GLCanvas):
             return numpy.eye(4)
 
     def InitGL(self):
-        print('OpenGL - Version: {}'.format(glGetString(GL_VERSION)))
-        print('Shader - Version: {}'.format(glGetString(GL_SHADING_LANGUAGE_VERSION)))
+        print('OpenGL - Version: {}'.format(GL.glGetString(GL.GL_VERSION)))
+        print('Shader - Version: {}'.format(GL.glGetString(GL.GL_SHADING_LANGUAGE_VERSION)))
         
-        max_samples = glGetInteger(GL_MAX_SAMPLES)
-        n_samples = glGetInteger(GL_SAMPLES)
-        print('GL_MAX_SAMPLES: %d, GL_SAMPLES: %d' % (max_samples, n_samples))
+        max_samples = GL.glGetInteger(GL.GL_MAX_SAMPLES)
+        n_samples = GL.glGetInteger(GL.GL_SAMPLES)
+        print('GL.GL_MAX_SAMPLES: %d, GL.GL_SAMPLES: %d' % (max_samples, n_samples))
         
         if (max_samples >= 4) and (n_samples < 4):
             logger.info('Your machine supports OpenGL antialiasing, but antialiasing disabled - enable by setting the "VisGUI-antialias_samples" PYME config setting to 4 or higher')
             
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_NORMALIZE)
-        glEnable(GL_MULTISAMPLE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glEnable(GL.GL_NORMALIZE)
+        GL.glEnable(GL.GL_MULTISAMPLE)
 
-        glLoadIdentity()
-        glOrtho(self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax)
-        glClearColor(0.0, 0.0, 0.0, 1.0)
-        glClearDepth(1.0)
+        GL.glLoadIdentity()
+        GL.glOrtho(self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax)
+        GL.glClearColor(0.0, 0.0, 0.0, 1.0)
+        GL.glClearDepth(1.0)
 
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glEnableClientState(GL_COLOR_ARRAY)
-        glEnableClientState(GL_NORMAL_ARRAY)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glEnable(GL_POINT_SMOOTH)
+        GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
+        GL.glEnableClientState(GL.GL_COLOR_ARRAY)
+        GL.glEnableClientState(GL.GL_NORMAL_ARRAY)
+        GL.glEnable(GL.GL_BLEND)
+        GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
+        GL.glEnable(GL.GL_POINT_SMOOTH)
 
         self.ResetView()
 
@@ -891,16 +891,16 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             event.Skip()
 
-    def getSnapshot(self, mode=GL_RGB):
-        # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+    def getSnapshot(self, mode=GL.GL_RGB):
+        # GL.glBindFramebuffer(GL.GL_READ_FRAMEBUFFER, 0)
         # width, height = self.view_port_size[0], self.view_port_size[1]
-        # snap = glReadPixelsf(0, 0, width, height, mode)
+        # snap = GL.glReadPixelsf(0, 0, width, height, mode)
         # snap = snap.ravel().reshape(width, height, -1, order='F')
         #
-        # if mode == GL_LUMINANCE:
+        # if mode == GL.GL_LUMINANCE:
         #     # snap.strides = (4, 4 * snap.shape[0])
         #     pass
-        # elif mode == GL_RGB:
+        # elif mode == GL.GL_RGB:
         #     snap.strides = (12, 12 * snap.shape[0], 4)
         # else:
         #     raise RuntimeError('{} is not a supported format.'.format(mode))
@@ -913,7 +913,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.on_screen = True
         return  (255*np.asarray(snap)).astype('uint8')
 
-    def getIm(self, pixel_size=None, mode=GL_RGB, image_bounds=None):
+    def getIm(self, pixel_size=None, mode=GL.GL_RGB, image_bounds=None):
         if ((pixel_size is None) or (abs(1 - pixel_size) < 0.001) and image_bounds is None):  # use current pixel size
             return self.getSnapshot(mode=mode)
         else:
