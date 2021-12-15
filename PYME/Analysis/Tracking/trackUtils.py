@@ -386,13 +386,18 @@ def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, min
     
     numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
     
+    v, edges = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
     trackVelocities = 0 * x
-    trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
+    trackVelocities[I] = v
+
+    clumpEdges = 0 * x # or should we inforce int?
+    clumpEdges[I] = edges
     #print b
     
     with_clumps.addColumn('clumpIndex', clumpIndices)
     with_clumps.addColumn('clumpSize', numPerClump[clumpIndices - 1])
     with_clumps.addColumn('trackVelocity', trackVelocities)
+    with_clumps.addColumn('clumpEdge', clumpEdges)
     
     if minClumpSize > 0:
         filt = tabular.ResultsFilter(with_clumps, clumpSize=[minClumpSize, 1e6])
@@ -427,7 +432,8 @@ def calcTrackVelocity(x, y, ci, t):
 
     v = np.zeros(x.shape) #velocities
     w = np.zeros(x.shape) #weights
-
+    edges = np.zeros(x.shape) # edge mask
+    
     x = x[I]
     y = y[I]
     ci = ci[I]
@@ -452,7 +458,16 @@ def calcTrackVelocity(x, y, ci, t):
     #reorder
     v[I] = (1.0*v.copy())
 
-    return v
+    #edges
+    edges[1:] += (1.0-mask) # here we are looking for positive steps (i.e. np.diff(ci) >= .5)
+    edges[:-1] += (1.0-mask)
+    edges[0] = 1.0 # manually add very first and very last as obvious edges
+    edges[-1] = 1.0
+
+    #reorder
+    edges[I] = (1.0*(edges > 0.5)) # clumps of size 1 will have 'edgeness' values of 2 from the procedure above
+    
+    return (v, edges)
 
 def jumpDistProb(r, D, t):
     return (1./(4*np.pi*D*t))*np.exp(-r**2/(4*D*t))*2*np.pi*r
