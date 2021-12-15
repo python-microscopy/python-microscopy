@@ -91,7 +91,7 @@ class UEyeCamera(Camera):
         sensor_info = ueye.SENSORINFO()
         self.check_success(ueye.is_GetSensorInfo(self.h, sensor_info))
         
-        self._chip_size = (sensor_info.nMaxWidth, sensor_info.nMaxHeight)
+        self._chip_size = (int(sensor_info.nMaxWidth), int(sensor_info.nMaxHeight)) # convert from c_uint, otherwise trips up JSON dumps
         self.sensor_type = sensor_info.strSensorName.decode().split('x')[0] + 'x'
 
         # work out the camera base parameters for this sensortype
