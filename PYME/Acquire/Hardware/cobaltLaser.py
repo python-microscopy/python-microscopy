@@ -44,21 +44,21 @@ class CobaltLaser(Laser):
         
     def _TurnOn(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write('@cobas 0\r\n')
-            ser.write('l1\r\n')
+            ser.write(b'@cobas 0\r\n')
+            ser.write(b'l1\r\n')
             ser.flush()
             self.isOn = True
 
     def TurnOn(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write('p %3.2f\r\n' % (self.power*self.maxpower))
+            ser.write(b'p %3.2f\r\n' % (self.power*self.maxpower))
             ser.flush()
             self.isOn = True
 
     def TurnOff(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write('l0\r\n')
-            ser.write('p 0\r\n')
+            ser.write(b'l0\r\n')
+            ser.write(b'p 0\r\n')
             ser.flush()
             self.isOn = False
 
@@ -72,7 +72,7 @@ class CobaltLaser(Laser):
 
     def _getOutputPower(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write('p?\r')
+            ser.write(b'p?\r')
             ser.flush()
     
             res = float(ser.readline())
@@ -84,7 +84,7 @@ class CobaltLaser(Laser):
 
     def checkfault(self):
         with serial.Serial(**self.ser_args) as ser:
-           ser.write('f?\r\n')
+           ser.write(b'f?\r\n')
            ser.flush()
            #print('fault code: 0-no errors; 1-temperature error; 3-interlock error; 4-constant power time out')
            ret = ser.read(50)
@@ -99,10 +99,10 @@ class CobaltLaserE(CobaltLaser):
 
     def TurnOn(self):
         with serial.Serial(**self.ser_args) as ser:
-            ser.write('@cobas 0\r\n')
-            ser.write('cf\r\n')
-            ser.write('l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
-            ser.write('p %3.2f\r\n' % (self.power*self.maxpower))
+            ser.write(b'@cobas 0\r\n')
+            ser.write(b'cf\r\n')
+            ser.write(b'l1\r\n') # the Cobolt 405nm laser needs to be restarted if it is powered on before the interlock is closed.
+            ser.write(b'p %3.2f\r\n' % (self.power*self.maxpower))
             ser.flush()
             self.isOn = True
 
