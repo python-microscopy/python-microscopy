@@ -629,6 +629,13 @@ class eventLogTPanel(wx.Panel):
             cmapping = c[1]
             sourceEv = c[2]
 
+            # this was done above in another chart loop but omitted here
+            # QUESTION: isn't there a better solution to the byte/string handling of event logs
+            # that is more transparent and less error prone than this encode/decode hacking?
+            # we also have the byte literal quotes in the event log viewer this way (which is not necessarily pretty)
+            if not isinstance(sourceEv, bytes):
+                sourceEv = sourceEv.encode()
+
             dc.SetTextForeground(self.lineColours[sourceEv])
 
             dc.DrawText(cname, x4 + chartWidth/2 - dc.GetTextExtent(cname)[0]/2, 0)
