@@ -492,6 +492,19 @@ cdef class TriangleMesh(TrianglesBase):
 
         return self._manifold
 
+    @property
+    def bbox(self):
+        """
+        Mesh bounding box. xl, yl, zl, xu, yu, zu
+        """
+        cdef float xl, xu, yl, yu, zl, zu
+        v = self._vertices['position'][self._vertices['halfedge'] != -1]
+        xl, xu = np.min(v[:,0]), np.max(v[:,0])
+        yl, yu = np.min(v[:,1]), np.max(v[:,1])
+        zl, zu = np.min(v[:,2]), np.max(v[:,2])
+
+        return xl, yl, zl, xu, yu, zu
+
     def keys(self):
         return list(self.vertex_properties) + list(self.extra_vertex_data.keys())
 
@@ -1035,15 +1048,16 @@ cdef class TriangleMesh(TrianglesBase):
             #dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
         else:
             # grab the set of halfedges pointing to dead_vertices
+            
             dead_count = 0
             for i in range(self._halfedges.shape[0]):
                 if self._chalfedges[i].vertex == _dead_vertex:
                     dead_vertices[dead_count] = i
                     dead_count += 1
                     if dead_count > 5*NEIGHBORSIZE:
-                        print('WARNING: Way too many dead vertices!')
-                        break
-            
+                        print(f'WARNING: Way too many dead vertices: {dead_count}! Politely declining to collapse.')
+                        return 0
+
             # loop over all live vertices and check for twins in dead_vertices,
             # as we do in fast_collapse
             twin_count = 0
@@ -1062,7 +1076,7 @@ cdef class TriangleMesh(TrianglesBase):
                                 twin_count += 1
                     if twin_count > 2:
                         break
-            
+
             # no more than two vertices shared by the neighbors of dead and live vertex
             if twin_count != 2:
                 return 0
@@ -1495,7 +1509,7 @@ cdef class TriangleMesh(TrianglesBase):
         # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
         # n0 = self._vertices['normal'][curr_edge.vertex, :]
         # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
-        
+
         _vertex[0] = 0.5*(x0x + x1x)
         _vertex[1] = 0.5*(x0y + x1y)
         _vertex[2] = 0.5*(x0z + x1z)
