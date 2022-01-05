@@ -2547,8 +2547,21 @@ cdef class TriangleMesh(TrianglesBase):
             # iteration's search will be part of another component.
             component += 1
 
-    def volume(self, faces):
+    def area(self, component=-1):
         """
+        Return surface area of the mesh (component) in nm^2.
+        """
+        if component == -1:
+            faces = np.flatnonzero(self._faces['halfedge']!=-1)
+        else:
+            faces = np.flatnonzero(self._faces['component']==component)
+
+        return np.sum(self._faces['area'][faces])
+
+    def volume(self, component=-1):
+        """
+        Return volume of the mesh (component) in nm^3.
+
         Sum the signed volumes of tetrahedrons formed by the faces and the origin.
 
         Cha Zhang and Tsuhan Chen. "Efficient Feature Extraction for 2D/3D Objects in Mesh Representation." 
@@ -2556,8 +2569,11 @@ cdef class TriangleMesh(TrianglesBase):
         Thessaloniki, Greece: IEEE, 2001. https://doi.org/10.1109/ICIP.2001.958278.
         """
         
-        # TODO?? - refactor to take a component # rather than face list?
         # TODO?? - more component refactoring - e.g. a component object / class / iterator?
+        if component == -1:
+            faces = np.flatnonzero(self._faces['halfedge']!=-1)
+        else:
+            faces = np.flatnonzero(self._faces['component']==component)
 
         faces = self._faces['halfedge'][faces]
         v0 = self._halfedges['vertex'][self._halfedges['prev'][faces]]
@@ -2587,7 +2603,7 @@ cdef class TriangleMesh(TrianglesBase):
         coms = np.unique(self._faces['component'][self._faces['component']!=-1])
 
         # Get volumes in nanometers^3
-        sizes = np.array([self.volume(np.flatnonzero(self._faces['component']==c)) for c in coms])
+        sizes = np.array([self.volume(c) for c in coms])
 
         # keep components within size range
         kept_coms = coms[(sizes > min_size) & (sizes < max_size)]
