@@ -446,7 +446,7 @@ class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
 
 class MultiviewFusion(MultiviewCameraMixin, Fusion):
     def __init__(self, camNum, multiview_info):
-        HamamatsuORCA.__init__(self, camNum)
+        Fusion.__init__(self, camNum)
         # default to the whole chip
         default_roi = dict(xi=0, xf=2304, yi=0, yf=2304)
-        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, HamamatsuORCA)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, Fusion)
