@@ -333,11 +333,13 @@ class DSViewFrame(AUIFrame):
         by = min(self.do.selection_begin_y, self.do.selection_end_y)
         ey = max(self.do.selection_begin_y, self.do.selection_end_y)
         
-        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        roi = [[bx, ex + 1],[by, ey + 1],
+               [0, self.image.data_xyztc.shape[2]],
+               [0, self.image.data_xyztc.shape[3]]]
         
         dlg = crop_dialog.ExportDialog(self, roi)
         try:
-            succ = dlg.ShowModel()
+            succ = dlg.ShowModal()
             if (succ == wx.ID_OK):
                 img = crop_image(self.image, xrange=dlg.GetXSlice(), yrange=dlg.GetYSlice(), zrange=dlg.GetZSlice(), trange=dlg.GetTSlice())
                 img.Save()
