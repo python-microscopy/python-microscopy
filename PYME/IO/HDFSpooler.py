@@ -81,7 +81,9 @@ class Spooler(sp.Spooler):
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
         from PYME.IO.acquisition_backends import HDFBackend
 
-        self._backend = HDFBackend(filename, complevel=complevel, complib=complib)
+        self._backend = HDFBackend(filename, complevel=complevel, complib=complib,
+                        shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
+                        )
         self.evtLogger = HDFEventLogger(self, self._backend.h5File, time_fcn=self._time_fcn)
 
         self.md = self._backend.mdh        
