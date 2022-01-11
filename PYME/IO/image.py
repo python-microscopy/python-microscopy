@@ -497,11 +497,11 @@ class ImageStack(object):
         #background subtraction in the GUI the same way as in the analysis
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
-        if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
-            self.mdh = MetaData.TIRFDefault
-            self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
+        self.mdh = MetaData.TIRFDefault
+
+        if self.dataSource.mdh is not None: #should be true the whole time    
+            self.mdh.copyEntriesFrom(self.dataSource.mdh)
         else:
-            self.mdh = MetaData.TIRFDefault
             import wx
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
