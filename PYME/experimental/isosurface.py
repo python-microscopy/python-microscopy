@@ -91,11 +91,13 @@ def sdf_min(sdf, smooth=True, k=0.1):
     if smooth:
         # Exponentially smoothed minimum
         # https://iquilezles.org/www/articles/smin/smin.htm
-        return -np.log2(np.exp2(-k*sdf).sum(1))/k
+        val = -np.log2(np.nansum(np.exp2(-k*sdf), axis=1))/k
+        val[np.isnan(val)] = 0  # log2 of 0 or a negative number, shouldn't happen
+        return val
     else:
         return np.min(sdf, axis=1)
 
-def distance_to_mesh(points, surf):
+def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1):
     """
     Calculate the distance to a mesh from points in a tabular dataset 
 
@@ -105,6 +107,10 @@ def distance_to_mesh(points, surf):
             3D point cloud to fit (nm).
         surf : PYME.experimental._triangle_mesh
             Isosurface
+        smooth : bool
+            Smooth distance to mesh?
+        smooth_k : float
+            Smoothing constant, by default 0.1 = smoothed by 1/10 nm
     """
 
     import scipy.spatial
@@ -125,4 +131,4 @@ def distance_to_mesh(points, surf):
 
     # the negative reverses the norpa sign flip
     # trick 2 from https://iquilezles.org/www/articles/interiordistance/interiordistance.htm
-    return -sdf_min(triangle_sdf(points, v), smooth=True)
+    return -sdf_min(triangle_sdf(points, v), smooth=smooth, k=smooth_k)
