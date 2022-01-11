@@ -36,7 +36,7 @@ class Recipe(HasTraits):
         self.namespace.clear()
     
     def new_output_name(self, stub):
-        count = len([k.startswith(stub) for k in self.namespace.keys()])
+        count = len([k for k in self.namespace.keys() if k.startswith(stub)])
         
         if count == 0:
             return stub
