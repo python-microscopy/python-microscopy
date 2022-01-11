@@ -24,6 +24,7 @@
 import wx
 import numpy as np
 import time
+import six
 # import pylab
 from matplotlib import cm
 from PYME.Analysis.piecewiseMapping import times_to_frames, frames_to_times
@@ -174,9 +175,11 @@ class eventLogPanel(wx.Panel):
             t = e['Time'] - startT
             if t > minT and t < maxT:
                 y = (t -minT)*pixPerS + 2*textHeight
+
+                event_name = six.ensure_str(e['EventName'])
                 
-                dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
-                dc.SetTextForeground(self.lineColours[e['EventName']])
+                dc.SetPen(wx.Pen(self.lineColours[event_name]))
+                dc.SetTextForeground(self.lineColours[event_name])
                 
                 if y < (lastEvY + 2) or (numSkipped > 0 and y < (lastEvY + 1.2*textHeight)): #no room - skip
                     if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
@@ -228,10 +231,7 @@ class eventLogPanel(wx.Panel):
         for c in self.charts:
             cname = c[0]
             cmapping = c[1]
-            sourceEv = c[2]
-            
-            if not isinstance(sourceEv, bytes):
-                sourceEv = sourceEv.encode()
+            sourceEv = six.ensure_str(c[2]) # sourceEv may sometimes be `bytes`
 
             dc.SetTextForeground(self.lineColours[sourceEv])
 
@@ -366,7 +366,7 @@ class eventLogPanel(wx.Panel):
         self.eventSource = eventSource
         self.evKeyNames = set()
         for e in self.eventSource:
-            self.evKeyNames.add(bytes(e['EventName']))
+            self.evKeyNames.add(six.ensure_str(e['EventName']))
 
         colours = 0.9*cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
@@ -578,8 +578,11 @@ class eventLogTPanel(wx.Panel):
             y = eys[i]
             t = ets[i]
             #print y
-            dc.SetPen(wx.Pen(self.lineColours[e['EventName']]))
-            dc.SetTextForeground(self.lineColours[e['EventName']])
+            event_name = six.ensure_str(e['EventName'])
+                
+            dc.SetPen(wx.Pen(self.lineColours[event_name]))
+            dc.SetTextForeground(self.lineColours[event_name])
+        
             if (y < (lastLineY + 2)  or (numSkipped > 0 and y < (lastLineY + 1.2*textHeight))) and dys[i] < (1.2*textHeight + 2*numSkipped): #no room - skip
                 if ((tTickPositions - y)**2).min() < (0.3*textHeight)**2:
                     dc.DrawLine(x0, y, x0 + barWidth, y)
@@ -627,9 +630,9 @@ class eventLogTPanel(wx.Panel):
         for c in self.charts:
             cname = c[0]
             cmapping = c[1]
-            sourceEv = c[2]
+            sourceEv = six.ensure_str(c[2])
 
-            dc.SetTextForeground(self.lineColours[sourceEv])
+            dc.SetTextForeground(self.lineColours[six.ensure_str(sourceEv)])
 
             dc.DrawText(cname, x4 + chartWidth/2 - dc.GetTextExtent(cname)[0]/2, 0)
 
@@ -775,7 +778,7 @@ class eventLogTPanel(wx.Panel):
         self.eventSource = eventSource
         self.evKeyNames = set()
         for e in self.eventSource:
-            self.evKeyNames.add(e['EventName'])
+            self.evKeyNames.add(six.ensure_str(e['EventName']))
 
         colours = 0.9*cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
