@@ -630,7 +630,7 @@ class eventLogTPanel(wx.Panel):
         for c in self.charts:
             cname = c[0]
             cmapping = c[1]
-            sourceEv = c[2]
+            sourceEv = six.ensure_str(c[2])
 
             dc.SetTextForeground(self.lineColours[six.ensure_str(sourceEv)])
 
