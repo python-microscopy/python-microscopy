@@ -190,7 +190,7 @@ class PYMEMainFrame(AUIFrame):
             if 'vp' in dir(self):
                     self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
             else:
-                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame)
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame, initial_overlays=[])
                 self.vp.crosshairs = False
                 self.vp.showScaleBar = False
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
