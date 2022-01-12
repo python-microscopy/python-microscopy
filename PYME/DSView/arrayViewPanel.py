@@ -48,10 +48,30 @@ def getLUT(cmap):
     return LUTCache[cmap.name]
 
 
-
-            
+default_overlays = [(overlays.ScaleBarOverlay, 'Scale Bar'), 
+                    (overlays.CrosshairsOverlay, 'Crosshairs')]          
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
-    def __init__(self, parent, dstack = None, aspect=1, do = None, voxelsize=[1,1,1]):
+    def __init__(self, parent, dstack = None, aspect=1, do = None, voxelsize=None, initial_overlays=default_overlays):
+        """
+        Parameters
+        ----------
+
+        parent : wx.window
+            The windows parent
+        dstack : np.ndarray like object (usually and XYZTCDataSource or subclass), optional
+            The data to display, ignored if do is specified
+        do : displayOptions.DisplayOpts instance, optional
+            The display settings (gain, scale, colour LUTs etc ...). If provided, the dstack parameter is ignored and the
+            data associated with the display settings is used. If not provided a new DisplayOpts instance is created for
+            the passed dstack.
+        voxelsize :  PYME.IO.MetaDataHandler.VoxelSize instance, or callable
+            voxel size in nm.  (x, y, z). Specififying a callable here which retuns the image voxelsize rather than the
+            current value at initialisation allows changes to the voxelsize to propagate here if metadata voxelsize is changed.
+        initial_overlays : list
+            A list of tuples, [(OverlayClass, display_name)] for overlays to add at initialisation. Overlays can also be added
+            later using the `add_overlay()` method.
+
+        """
         
         if (dstack is None and do is None):
             dstack = scipy.zeros((10,10))
@@ -61,8 +81,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self.do.Optimise()
         else:
             self.do = do
+        
+        if voxelsize is None:
+            voxelsize=[1,1,1] #compatibility fallback
             
-        self.voxelsize = voxelsize
+        self._voxelsize = voxelsize
 
         scrolledImagePanel.ScrolledImagePanel.__init__(self, parent, self._do_paint, style=wx.SUNKEN_BORDER|wx.TAB_TRAVERSAL)
 
@@ -90,12 +113,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self._slice = None
         self._sc = None
         
-        self.overlays = [
-            # TODO - do these belong here, or with the display opts?
-            overlays.ScaleBarOverlay(display_name='Scale bar'),
-            overlays.CrosshairsOverlay(display_name='Crosshairs'),
-        ]
-
+        # TODO - do these belong here, or with the display opts?
+        self.overlays = [kls(display_name=name) for kls, name in initial_overlays]
         
         self._oldIm = None
         self._oldImSig = None
@@ -128,6 +147,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #
         self.imagepanel.Bind(wx.EVT_ERASE_BACKGROUND, self._do_nothing)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self._do_nothing)
+
+    @property
+    def voxelsize(self):
+        if callable(self._voxelsize):
+            return self._voxelsize()
+        else:
+            return self._voxelsize
         
     def SetDataStack(self, ds):
         """
