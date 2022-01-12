@@ -52,6 +52,12 @@ def getLUT(cmap):
             
 class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     def __init__(self, parent, dstack = None, aspect=1, do = None, voxelsize=[1,1,1]):
+        """
+        Parameters
+        ----------
+        voxelsize : tuple-like, PYME.IO.MetaDataHandler.VoxelSize
+            x, y, z voxelsize in units of nanometers
+        """
         
         if (dstack is None and do is None):
             dstack = scipy.zeros((10,10))

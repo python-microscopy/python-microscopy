@@ -190,9 +190,10 @@ class PYMEMainFrame(AUIFrame):
             if 'vp' in dir(self):
                     self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
             else:
-                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame)
-                self.vp.crosshairs = False
-                self.vp.showScaleBar = False
+                vs_x_um, vs_y_um = self.scope.GetPixelSize()
+                vs = MetaDataHandler.VoxelSize(1000 * vs_x_um, 1000* vs_y_um, z=1)
+                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame,
+                                                        voxelsize=vs)
                 self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
                 self.vp.do.showSelection = True
                 self.vp.CenteringHandlers.append(self.scope.PanCamera)
