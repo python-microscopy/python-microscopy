@@ -61,7 +61,7 @@ class DisplayPane(afp.foldingPane):
         self._pc_clim_change = False
 
         #Colourmap
-        self.cmapnames = list(colormaps.cm.cmapnames)
+        self._cmapnames = list(colormaps.cm.cmapnames)
         
         #print((cmapnames, self.glCanvas.cmap.name))
 
@@ -74,7 +74,7 @@ class DisplayPane(afp.foldingPane):
             #cmapReversed = True
             curCMapName = curCMapName[:-2]
 
-        cmInd = self.cmapnames.index(curCMapName)
+        cmInd = self._cmapnames.index(curCMapName)
 
 
         ##
@@ -102,7 +102,7 @@ class DisplayPane(afp.foldingPane):
         
         hsizer.Add(wx.StaticText(pan, wx.ID_ANY, 'LUT:'), 0, wx.ALL, 2)
 
-        self.cColourmap = wx.Choice(pan, -1, choices=self.cmapnames)
+        self.cColourmap = wx.Choice(pan, -1, choices=self._cmapnames)
         self.cColourmap.SetSelection(cmInd)
 
         hsizer.Add(self.cColourmap, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -221,7 +221,7 @@ class DisplayPane(afp.foldingPane):
 
 
     def OnCMapChange(self, event):
-        cmapname = self.cmapnames[self.cColourmap.GetSelection()]
+        cmapname = self._cmapnames[self.cColourmap.GetSelection()]
         #if self.cbCmapReverse.GetValue():
         #    cmapname += '_r'
 
