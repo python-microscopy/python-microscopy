@@ -29,6 +29,13 @@ from .base_piezo import PiezoBase
 import logging
 logger = logging.getLogger(__name__)
 
+try:
+    import pipython.pidevice.gcserror as gcserr
+except ImportError:
+    _has_gcserr = False
+else:
+    _has_gcserr = True
+
 #C867 controller for PiLine piezo linear motor stages
 #NB units are mm not um as for piezos
 
@@ -237,7 +244,10 @@ class piezo_c867T(PiezoBase):
                 
                 if not self.errCode == 0:
                     #print(('Stage Error: %d' %self.errCode))
-                    logger.error('Stage Error: %d' %self.errCode)
+                    if _has_gcserr:
+                        logger.error('Stage Error: %s' % gcserr.GCSError.translate_error(self.errCode))
+                    else:
+                        logger.error('Stage Error: %d' % self.errCode)
                 
                 #print self.targetPosition, self.stopMove
                 
