@@ -261,6 +261,47 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
+{
+    PyObject *halfedges=0, *vertices=0, *faces=0;
+    int j, n_idxs;
+    halfedge_t *p_halfedges;
+    vertex_t *p_vertices;
+    face_t *p_faces;
+
+    n_idxs = 0;
+
+    if (!PyArg_ParseTuple(args, "iOOO", &n_idxs, &halfedges, &vertices, &faces)) return NULL;
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
+        return NULL;
+    }
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
+        return NULL;
+    }
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
+        return NULL;
+    } 
+
+    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+
+    for (j = 0; j < n_idxs; ++j)
+    {
+        if (p_vertices[j].halfedge == -1) continue;
+        update_single_vertex_neighbours(j, p_halfedges, p_vertices, p_faces);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 
 static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
@@ -325,6 +366,7 @@ static void _update_face_normals(int32_t *f_idxs, halfedge_t *halfedges, vertex_
         update_face_normal(f_idx, halfedges, vertices, faces);
     }
 }
+
 static PyObject *update_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
@@ -374,9 +416,52 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
+{
+    PyObject *halfedges=0, *vertices=0, *faces=0;
+    int j, n_idxs;
+    halfedge_t *p_halfedges;
+    face_t *p_faces;
+    vertex_t *p_vertices;
+
+    n_idxs = 0;
+
+    if (!PyArg_ParseTuple(args, "iOOO", &n_idxs, &halfedges, &vertices, &faces)) return NULL;
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
+        return NULL;
+    }
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
+        return NULL;
+    }
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
+        return NULL;
+    } 
+
+    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+
+    for (j = 0; j < n_idxs; ++j)
+    {
+        if (p_faces[j].halfedge == -1) continue;
+        update_face_normal(j, p_halfedges, p_vertices, p_faces);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyMethodDef triangle_mesh_utils_methods[] = {
     {"c_update_vertex_neighbors", update_vertex_neighbors, METH_VARARGS},
     {"c_update_face_normals", update_face_normals, METH_VARARGS},
+    {"c_update_all_vertex_neighbors", update_all_vertex_neighbors, METH_VARARGS},
+    {"c_update_all_face_normals", update_all_face_normals, METH_VARARGS},
     {NULL, NULL, 0}  /* Sentinel */
 };
 

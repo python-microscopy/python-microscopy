@@ -431,8 +431,8 @@ class BlobObject(object):
                 x0, y0, z0 = mc.centroid - l*mc.principalAxis
                 x1, y1, z1 = mc.centroid + l*mc.principalAxis
                 
-                x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
-                x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
+                x0_, y0_ = view.pixel_to_screen_coordinates(x0, y0)
+                x1_, y1_ = view.pixel_to_screen_coordinates(x1, y1)
                 
                 dc.DrawLine(x0_, y0_, x1_, y1_)
                 
@@ -440,8 +440,8 @@ class BlobObject(object):
                 x0, y0, z0 = mc.centroid
                 x1, y1, z1 = mc.centroid + l*mc.secondaryAxis
                 
-                x0_, y0_ = view._PixelToScreenCoordinates(x0, y0)
-                x1_, y1_ = view._PixelToScreenCoordinates(x1, y1)
+                x0_, y0_ = view.pixel_to_screen_coordinates(x0, y0)
+                x1_, y1_ = view.pixel_to_screen_coordinates(x1, y1)
                 
                 dc.DrawLine(x0_, y0_, x1_, y1_)
             except ValueError:
@@ -788,7 +788,7 @@ class Measurements(wx.Panel, Plugin):
         wx.Panel.__init__(self, dsviewer)
         Plugin.__init__(self, dsviewer)
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Blob measurements')
         
         vsizer=wx.BoxSizer(wx.VERTICAL)
         

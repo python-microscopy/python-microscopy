@@ -24,7 +24,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import fourierHNA
+from PYME.Analysis.PSFGen import fourierHNA
 from PYME.Analysis import cramerRao
 
 

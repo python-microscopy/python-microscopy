@@ -23,7 +23,7 @@
 #!/usr/bin/python
 from PYME.Acquire.Hardware.DigiData.DigiDataClient import getDDClient
 import time
-import tempDB
+from PYME.misc import tempDB
 import subprocess
 
 if __name__ == '__main__':

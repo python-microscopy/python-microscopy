@@ -157,7 +157,7 @@ class ICTMDeconvolution(object):
         nsrch = 2
         self.loopcount = 0
 
-        while self.loopcount  < num_iters:
+        while (self.loopcount  < num_iters) and (not self._stop_cond()):
             self.loopcount += 1
             #the direction our prior/ Likelihood function wants us to go
             pref = self.Lfunc(self.f - fdef)
@@ -206,6 +206,10 @@ class ICTMDeconvolution(object):
             self.f[:] = fnew
 
         return np.real(self.fs)
+
+    def _stop_cond(self):
+        """Optional stopping condition to end deconvolution early."""
+        return False
         
     def sim_pic(self,data,alpha):
         """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""

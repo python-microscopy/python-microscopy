@@ -8,7 +8,8 @@ Created on Sat May 28 20:42:16 2016
 
 #import datetime
 #from PYME.Acquire import HDFSpooler, QueueSpooler
-from PYME.Acquire import HTTPSpooler
+#from PYME.IO import HTTPSpooler
+from PYME.IO import acquisition_backends
 # TODO: change to use a metadata handler / provideStartMetadata hook
 #   MetaDataHandler.provideStartMetadata from the init file when
 #   loading the sampleinfo interface, see Acquire/Scripts/init.py
@@ -42,7 +43,7 @@ try:
     import queue
 except ImportError:
     # py2, remove this when we can
-    import Queue as queue
+    import Queue as queue # type: ignore
 
 from PYME.contrib import dispatch
 
@@ -104,7 +105,7 @@ class SpoolController(object):
         self.z_stepped = False  # z-step during acquisition
         self.z_dwell = 100 # time to spend at each z level (if z_stepped == True)
         self.cluster_h5 = False # spool to h5 on cluster (cluster of one)
-        self.pzf_compression_settings=HTTPSpooler.defaultCompSettings # only for cluster spooling
+        self.pzf_compression_settings=acquisition_backends.ClusterBackend.default_compression_settings # only for cluster spooling
 
         #check to see if we have a cluster
         self._N_data_servers = len(hybrid_ns.getNS('_pyme-http').get_advertised_services())
@@ -168,12 +169,14 @@ class SpoolController(object):
                     preferred for PYMEClusterOfOne.
                 pzf_compression_settings : dict
                     Compression settings relevant for 'Cluster' `method` if 
-                    `cluster_h5` is False. See HTTPSpooler.defaultCompSettings.
+                    `cluster_h5` is False. See acquisition_backends.ClusterBackend.default_compression_settings.
                 protocol_name : str
                     Note that passing the protocol name will force a (re)load of
                     the protocol file (even if it is already selected).
             Notable keys which are not supported through this method include 
             'series_name', 'seriesName' and 'dirname'.
+        
+        
         """
         method = settings.pop('method', None)
         if method and method != self.spoolType:
@@ -262,7 +265,7 @@ class SpoolController(object):
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
-            from PYME.Acquire import HTTPSpooler
+            from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
             logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
@@ -370,7 +373,7 @@ class SpoolController(object):
                     preferred for PYMEClusterOfOne.
                 pzf_compression_settings : dict
                     Compression settings relevant for 'Cluster' `method` if
-                    `cluster_h5` is False. See HTTPSpooler.defaultCompSettings.
+                    `cluster_h5` is False. See acquisition_backends.ClusterBackend.defaultCompSettings.
                 protocol_name : str
                     Note that passing the protocol name will force a (re)load of
                     the protocol file (even if it is already selected).
@@ -388,6 +391,7 @@ class SpoolController(object):
             display a dialog and prompt the user, log a warning and continue, and log an error and abort, or skip completely.
             The former is suitable for interactive acquisition, whereas one of the latter modes is likely better for automated spooling
             via the action manager.
+
         """
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
@@ -470,14 +474,14 @@ class SpoolController(object):
         frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Queue':
-            from PYME.Acquire import QueueSpooler
+            from PYME.IO import QueueSpooler
             self.queueName = getRelFilename(self._get_queue_name(fn, subdirectory=subdirectory))
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
         elif self.spoolType == 'Cluster':
-            from PYME.Acquire import HTTPSpooler
+            from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
                                                   subdirectory=subdirectory)
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
@@ -487,7 +491,7 @@ class SpoolController(object):
                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, stack_settings=stack_settings)
            
         else:
-            from PYME.Acquire import HDFSpooler
+            from PYME.IO import HDFSpooler
             self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn, subdirectory=subdirectory),
                                               self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
@@ -566,7 +570,8 @@ class SpoolController(object):
     def LaunchAnalysis(self):
         """Launch analysis
         """
-        from PYME.Acquire import QueueSpooler, HTTPSpooler
+        from PYME.IO import QueueSpooler
+        from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':
@@ -710,8 +715,8 @@ class SpoolControllerWrapper(object):
             sys.maxsize
         pzf_compression_settings : dict, optional
             Compression settings relevant for 'Cluster' `method` if `cluster_h5`
-            is False. See HTTPSpooler.defaultCompSettings. By default None, 
-            which differs to current `SpoolController` state.
+            is False. See acquisition_backends.ClusterBackend.defaultCompSettings. By default None, 
+            which defers to current `SpoolController` state.
         cluster_h5 : bool, optional
             Toggle spooling to single h5 file on cluster rather than pzf file 
             per frame. Only applicable to 'Cluster' `method` and preferred for 

@@ -87,7 +87,9 @@ void cross(const float *a, const float *b, float *n);
 void difference(const float *a, const float *b, float *d);
 
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args);
+static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args);
 static PyObject *update_face_normals(PyObject *self, PyObject *args);
+static PyObject *update_all_face_normals(PyObject *self, PyObject *args);
 
 #ifdef __cplusplus
 }

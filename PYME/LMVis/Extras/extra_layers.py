@@ -1,5 +1,6 @@
 import numpy as np
 import wx
+import os
 
 
 
@@ -76,6 +77,7 @@ def gen_octree_from_points(visFr):
 def gen_isosurface(visFr):
     from PYME.LMVis.layers.mesh import TriangleRenderLayer
     from PYME.recipes.surface_fitting import DualMarchingCubes
+    from PYME.misc.colormaps import cm
     
     oc_name = gen_octree_from_points(visFr)
     surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
@@ -87,7 +89,7 @@ def gen_isosurface(visFr):
         recipe.add_modules_and_execute([dmc,])
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
         print('Isosurface layer added')
@@ -103,13 +105,14 @@ def open_surface(visFr):
                                    wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
     #print filename
     if not filename == '':
-        surf_count = 0
-        surf_name = 'surf%d' % surf_count
+        tail = os.path.split(filename)[-1]
+        base_name = tail.split('.')[0]
+        surf_name, surf_count = base_name, 0
         while surf_name in visFr.pipeline.dataSources.keys():
             surf_count += 1
-            surf_name = 'surf%d' % surf_count
+            surf_name = '%s%d' % (base_name, surf_count)
 
-        ext = filename.split('.')[-1]
+        ext = tail.split('.')[-1]
         if ext == 'stl':
             visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
         elif ext == 'ply':
@@ -284,6 +287,7 @@ def add_tesselation_layer(visFr):
 def gen_isosurface_from_tesselation(visFr):
     from PYME.LMVis.layers.mesh import TriangleRenderLayer
     from PYME.recipes.surface_fitting import DelaunayMarchingTetrahedra
+    from PYME.misc.colormaps import cm
 
     if 'delaunay0' not in visFr.pipeline.dataSources.keys():
         del_name = add_tesselation(visFr)
@@ -304,7 +308,7 @@ def gen_isosurface_from_tesselation(visFr):
         recipe.add_modules_and_execute([mt,])
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
         visFr.add_layer(layer)
         mt._invalidate_parent = True
         print('Isosurface layer added')

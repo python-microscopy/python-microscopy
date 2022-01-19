@@ -31,8 +31,8 @@
 # o ColumnSorterMixin: Added GetSortState()
 #
 
-import  locale
-import  wx
+import locale
+import wx
 from six.moves import xrange
 
 #python 3 compatibility
@@ -40,7 +40,7 @@ cmp = lambda x, y: (x > y) - (x < y)
 
 #----------------------------------------------------------------------------
 
-class ColumnSorterMixin:
+class ColumnSorterMixin(object):
     """
     A mixin class that handles sorting of a wx.ListCtrl in REPORT mode when
     the column header is clicked on.
@@ -186,7 +186,7 @@ class ColumnSorterMixin:
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
 
-class ListCtrlAutoWidthMixin:
+class ListCtrlAutoWidthMixin(object):
     """ A mix-in class that automatically resizes the last column to take up
         the remaining width of the wx.ListCtrl.
 
@@ -359,7 +359,7 @@ wxEVT_DOPOPUPMENU = wx.NewEventType()
 EVT_DOPOPUPMENU = wx.PyEventBinder(wxEVT_DOPOPUPMENU, 0)
 
 
-class ListCtrlSelectionManagerMix:
+class ListCtrlSelectionManagerMix(object):
     """Mixin that defines a platform independent selection policy
 
     As selection single and multi-select list return the item index or a
@@ -421,7 +421,7 @@ class ListCtrlSelectionManagerMix:
 from bisect import bisect
 
 
-class TextEditMixin:
+class TextEditMixin(object):
     """    
     A mixin class that enables any text in any column of a
     multi-column listctrl to be edited by clicking on the given row
@@ -702,7 +702,7 @@ HISTORY:
 1.1     - Initial version
 """
 
-class CheckListCtrlMixin:
+class CheckListCtrlMixin(object):
     """
     This is a mixin for ListCtrl which add a checkbox in the first
     column of each row. It is inspired by limodou's CheckList.py(which
@@ -820,7 +820,7 @@ class CheckListCtrlMixin:
 HIGHLIGHT_ODD = 1   # Highlight the Odd rows
 HIGHLIGHT_EVEN = 2  # Highlight the Even rows
 
-class ListRowHighlighter:
+class ListRowHighlighter(object):
     """Editra Control Library: ListRowHighlighter
     Mixin class that handles automatic background highlighting of alternate
     rows in the a ListCtrl. The background of the rows are highlighted

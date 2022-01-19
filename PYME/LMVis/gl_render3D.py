@@ -24,7 +24,8 @@
 import numpy
 import numpy as np
 # import pylab
-import matplotlib.cm
+#import matplotlib.cm
+from PYME.misc.colormaps import cm
 import wx
 import wx.glcanvas
 from OpenGL import GLUT
@@ -268,7 +269,7 @@ class LMGLCanvas(GLCanvas):
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
-        self.cmap = matplotlib.cm.hsv
+        self.cmap = cm.hsv
         self.clim = [0,1]
         self.alim = [0,1]
 
@@ -351,7 +352,7 @@ class LMGLCanvas(GLCanvas):
         if not self.IsShown():
             print('ns')
             return
-        wx.PaintDC(self)
+        #wx.PaintDC(self)
         # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent(self.gl_context)

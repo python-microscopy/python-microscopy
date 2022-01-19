@@ -21,14 +21,14 @@
 import logging
 logger = logging.getLogger(__name__)
 
-class ShaderProgramFactory:
+class ShaderProgramFactory(object):
     def __init__(self):
         pass
 
     _programs = {}
 
     @staticmethod
-    def get_program(class_name, context=None):
+    def get_program(class_name, context=None, window=None):
         """
 
         Parameters
@@ -44,6 +44,8 @@ class ShaderProgramFactory:
             return existing_program
         else:
             new_program = class_name()
+            if context and window:
+                context.SetCurrent(window)
             ShaderProgramFactory._programs[(class_name, context)] = new_program
             logger.debug("New shader program created: {}".format(class_name))
             return new_program

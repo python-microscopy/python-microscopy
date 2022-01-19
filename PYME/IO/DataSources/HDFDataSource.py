@@ -41,7 +41,6 @@ class DataSource(XYZTCDataSource):
         self.h5File = tables.open_file(self.h5Filename)
         
         self._pzf_index = None
-
         
         if getattr(self.h5File.root, 'PZFImageIndex', False):
             self.usePZFFormat = True
@@ -64,12 +63,24 @@ class DataSource(XYZTCDataSource):
             size_t = int(self._img_data.attrs.SizeT)
             
         except:
-            logger.exception('Error reading dim info (can be safely ignored for old files)')
-            
-            dimorder = 'XYZTC'
-            size_z = self.getNumSlices()
-            size_t = 1
-            size_c = 1
+            try:
+                logger.exception('dim info not found as table attribute, trying metadata')
+                dimorder = self.mdh['DimOrder']
+                if isinstance(dimorder, bytes):
+                    dimorder = dimorder.decode()
+                    
+                assert (dimorder[:2] == 'XY')
+                
+                size_c = int(self.mdh['SizeC'])
+                size_z = int(self.mdh['SizeZ'])
+                size_t = int(self.mdh['SizeT'])
+            except KeyError:
+                logger.exception('Error reading dim info from both table attrs and metadata, assuming xyz (can be safely ignored for old files)')
+                
+                dimorder = 'XYZTC'
+                size_z = self.getNumSlices()
+                size_t = 1
+                size_c = 1
             
         XYZTCDataSource.__init__(self, dimorder, size_z=size_z, size_t=size_t, size_c=size_c)
 
@@ -82,6 +93,18 @@ class DataSource(XYZTCDataSource):
             return self.h5File.root.PZFImageData
         else:
             return self.h5File.root.ImageData
+
+    @property
+    def mdh(self):
+        # move metadata access here (from image.py) so that metadata can be used for xyztc info
+        if not hasattr(self, '_mdh'):
+            if 'MetaData' in self.h5File.root:
+                from PYME.IO import MetaDataHandler
+                self._mdh = MetaDataHandler.HDFMDHandler(self.h5File)
+            else:
+                self._mdh = None
+
+        return self._mdh
 
     def getSlice(self, ind):
         if self.usePZFFormat:

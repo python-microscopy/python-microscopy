@@ -537,6 +537,67 @@ def reset_settings_to_default(handle):
         Unique pco. camera handle (pointer).
     """
     check_status(sc2_cam.PCO_ResetSettingsToDefault(handle))
+
+
+# ---------------------------------------------------------------------
+# 2.4.10 PCO_GetFanControlParameters
+# ---------------------------------------------------------------------
+sc2_cam.PCO_GetFanControlParameters.argtypes = [ctypes.wintypes.HANDLE, 
+                                           ctypes.wintypes.PWORD,
+                                           ctypes.wintypes.PWORD,
+                                           ctypes.wintypes.PWORD,
+                                           ctypes.wintypes.WORD]
+PCO_FAN_CONTROL_MODE_AUTO = 0x0000
+PCO_FAN_CONTROL_MODE_USER = 0x0001
+def get_fan_control_parameters(handle):
+    """
+    Get fan speed
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+
+    Returns
+    -------
+    mode : int
+        FAN_CONTROL_MODE_AUTO or FAN_CONTROL_MODE_USER
+    speed : int
+        Fan speed in range (slowest) 0..100 (fastest)
+    """
+    mode = ctypes.wintypes.WORD()
+    speed = ctypes.wintypes.WORD()
+    reserved = ctypes.wintypes.WORD()
+    num_reserved = ctypes.wintypes.WORD(0)
+    check_status(sc2_cam.PCO_GetFanControlParameters(handle, mode, speed, 
+                                                     reserved, num_reserved))
+    return mode.value, speed.value
+
+# ---------------------------------------------------------------------
+# 2.4.11 PCO_SetFanControlParameters
+# ---------------------------------------------------------------------
+sc2_cam.PCO_SetFanControlParameters.argtypes = [ctypes.wintypes.HANDLE, 
+                                           ctypes.wintypes.WORD,
+                                           ctypes.wintypes.WORD,
+                                           ctypes.wintypes.WORD]
+def set_fan_control_parameters(handle, mode, speed):
+    """
+    Set image parameters for internal allocated resources before image transfer.
+
+    Parameters
+    ----------
+    handle : ctypes.wintypes.HANDLE
+        Unique pco. camera handle (pointer).
+    mode : int
+        FAN_CONTROL_MODE_AUTO or FAN_CONTROL_MODE_USER
+    speed : int
+        Fan speed in range (slowest) 0..100 (fastest)
+    """
+    reserved = ctypes.wintypes.WORD()
+    check_status(sc2_cam.PCO_SetFanControlParameters(handle, ctypes.wintypes.WORD(mode), 
+                                                     ctypes.wintypes.WORD(speed), 
+                                                     reserved))
+
 # ---------------------------------------------------------------------
 # 2.5.3 PCO_GetSizes
 # ---------------------------------------------------------------------

@@ -85,9 +85,9 @@ class VideoPanel(DockedPanel):
         hsizer.Add(self.file_type, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        # self.pixel_size = wx.TextCtrl(pan, -1, size=(60, -1), value='5.0')
-        # hsizer.Add(wx.StaticText(pan, -1, 'Pixel size:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-        # hsizer.Add(self.pixel_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(wx.StaticText(pan, -1, 'Export Width [pixels]\n(-1 = current)'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tWidthPixels = wx.TextCtrl(pan, -1, size=(300, -1), value='-1')
+        hsizer.Add(self.tWidthPixels, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
         pan.SetSizerAndFit(vsizer)
         return pan
@@ -193,39 +193,27 @@ class VideoPanel(DockedPanel):
         # height = self.get_canvas().Size[1]
         self.get_canvas().displayMode = '3D'
         fps = 30.0
-        # file_name = None
-        
-        # if save:
-        #     try:
-        #         import cv2
-        #     except ImportError:
-        #         msg_text = 'OpenCV 2 is needed to save videos. Please install: \"conda install -c menpo opencv\"'
-        #         msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
-        #         msg.ShowModal()
-        #         msg.Destroy()
-        #         #return
-        #         save=False
 
-        #dir_name = None
-        if save:
-            #file_name = wx.FileSelector('Save video as avi named... ', flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-            #if file_name and not file_name.endswith('.avi'):
-            #    file_name = '{}.avi'.format(file_name)
-            dir_name = wx.DirSelector()
-            if dir_name == '':
-                return
-            
-            
-        # video = None
-        if True:
-            # if save:
-            #     pass
-            #     #video = cv2.VideoWriter(file_name, -1, fps, (width, height))
-            
+        old_size = self.get_canvas().view_port_size
+        
+        try:
+            #dir_name = None
+            if save:
+                dir_name = wx.DirSelector()
+                if dir_name == '':
+                    return
+
+                target_width = int(self.tWidthPixels.GetValue())
+                if target_width > 0:
+                    # target_width == -1 means use current size,
+                    # otherwise set our viewport to the desired width (preserving aspect)
+                    self.get_canvas().view_port_size = (target_width, int(old_size[1]*(target_width/float(old_size[0]))))
+                
             f_no = 0
                 
             if not self.snapshots:
                 self.add_snapshot_to_list(self.get_canvas())
+            
             current_view = None
             for view in self.snapshots:
                 if not current_view:
@@ -237,43 +225,24 @@ class VideoPanel(DockedPanel):
                         new_view = current_view + difference_view * step
                         self.get_canvas().set_view(new_view.normalize_view())
                         if save:
-                            snap = self.get_canvas().getIm() #pixel_size=float(self.pixel_size.GetValue()))#.astype('uint8')
-                            #print snap.shape, snap.dtype, snap.min(), snap.max()
-                            if snap.dtype == 'uint8':
-                                # PYME.LMVis.gl_render3D_shaders already returns 
-                                # a snapshot as an 8-bit array
-                                snap = snap.transpose(1,0,2)
-                            else:
-                                snap = (255*snap).astype('uint8').transpose(1, 0, 2)
-                            
-                            #if snap.ndim == 3:
-                            #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
-                            #else:
-                            #    video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
-                            im = Image.fromarray(snap).transpose(Image.FLIP_TOP_BOTTOM).save(os.path.join(dir_name, 
+                            snap = self.get_canvas().getSnapshot().transpose(1,0,2)
+                            Image.fromarray(snap).transpose(Image.FLIP_TOP_BOTTOM).save(os.path.join(dir_name, 
                                                             'frame{:04d}.{}'.format(f_no,self.file_type.GetValue().lower())))
                             f_no += 1
                         else:
-                            # sleep(2.0/steps)
                             sleep(view.duration/steps)
                             self.get_canvas().OnDraw()
                     current_view = view
             if save:
-                #video.release()
                 msg_text = 'Video generation finished'
                 msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
                 msg.ShowModal()
                 msg.Destroy()
+        finally:
+            self.get_canvas().view_port_size = old_size
+            self.get_canvas().Refresh()
 
-    # @staticmethod
-    # def ask(parent=None, message='', default_value=''):
-    #     dlg = wx.TextEntryDialog(parent, message, default_value)
-    #     dlg.ShowModal()
-    #     result = dlg.GetValue()
-    #     dlg.Destroy()
-    #     return result
 
-    # noinspection PyTypeChecker
     def on_edit(self, event):
         snapshot = self.snapshots[self.view_table.GetFirstSelected()]
 

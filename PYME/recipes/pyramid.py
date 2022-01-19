@@ -164,8 +164,7 @@ class TilePyramid(OutputModule):
     Requires events to determine frame x/y positions, so should be directly connected to input (events generally don't
     propagate within recipes). Most likely to be used in a simple, one-module, conversion recipe.
 
-    pyme-cluster awareness
-    ----------------------
+    **pyme-cluster awareness**
 
     Pyramid output is semi cluster-aware. Selecting a scheme of `pyme-cluster://` will save within the cluster root on the
     current machine, so that the results are accessible through the cluster. **NOTE:** this will **ONLY** work if the processing

@@ -14,14 +14,7 @@ import wx.lib.agw.aui as aui
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
 
-from PYME.LMVis import gl_render3D as gl_render
 #from PYME.LMVis import workspaceTree
-#import sys
-
-# import pylab
-
-from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
@@ -47,7 +40,7 @@ HAVE_DRIFT_CORRECTION = False
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis import displayPane
-from PYME.LMVis.filterPane import CreateFilterPane
+from PYME.ui.filterPane import CreateFilterPane
 
 from PYME.LMVis import pointSettingsPanel
 from PYME.LMVis import quadTreeSettings
@@ -91,7 +84,8 @@ class VisGUICore(object):
 
         
         if not use_shaders:
-            self.glCanvas = gl_render.LMGLCanvas(gl_pan)
+            from PYME.LMVis import gl_render3D
+            self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
             from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
             if self._new_layers:
@@ -659,19 +653,22 @@ class VisGUICore(object):
         self.dsviewer.AddMenuItem('Points>' + menuName, *args, **kwargs)
         
     def _create_base_layer(self):
-        if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
+        from PYME.misc.colormaps import cm
+        from PYME.LMVis.layers import layer_defaults
+        if self._new_layers and len(self.layers) == 0:
             #add a new layer
-            l = self.add_pointcloud_layer(method='points')
-            if 't' in self.pipeline.keys():
-                l.set(vertexColour='t')
-            elif 'z' in self.pipeline.keys():
-                l.set(vertexColour='z')
+            l = self.add_pointcloud_layer(**layer_defaults.new_layer_settings('points', ds_keys=list(self.pipeline.keys())))
+            # if 't' in self.pipeline.keys():
+            #     l.set(vertexColour='t')
+            # elif 'z' in self.pipeline.keys():
+            #     l.set(vertexColour='z')
                 
         colour_chans = self.pipeline.colourFilter.getColourChans()
         if len(colour_chans) > 1:
             #add a layer for each colour channel
             for i, c in enumerate(sorted(colour_chans)):
-                self.add_pointcloud_layer(ds_name=('output.' + c), cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i%6], visible=False)
+                #self.add_pointcloud_layer(ds_name=('output.' + c), cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)], visible=False)
+                self.add_pointcloud_layer(ds_name=('output.' + c), **layer_defaults.new_layer_settings('points_channel', i, overrides=dict(visible=False)))
                 
     def _populate_open_args(self, filename):
         args = {}
@@ -720,9 +717,10 @@ class VisGUICore(object):
                     args['Multichannel'] = dlg.GetMultichannel()
                 
                     dlg.Destroy()
-    
+
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
+            from PYME.IO import csv_flavours
         
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()
@@ -730,11 +728,18 @@ class VisGUICore(object):
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
+            
+            text_options = {'columnnames': dlg.GetFieldNames(),
+                            'skiprows' : dlg.GetNumberComments(),
+                            'delimiter' : dlg.GetDelim(),
+                            'invalid_raise' : not csv_flavours.csv_flavours[dlg.GetFlavour()].get('ignore_errors', False),
+                            }
         
-            args['FieldNames'] = dlg.GetFieldNames()
+            #args['FieldNames'] = dlg.GetFieldNames()
             # remove trailing whitespace/line brake on last field name
-            args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
-            args['SkipRows'] = dlg.GetNumberComments()
+            #args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
+            #args['SkipRows'] = dlg.GetNumberComments()
+            args['text_options'] = text_options
             args['PixelSize'] = dlg.GetPixelSize()
         
             #print 'Skipping %d rows' %args['SkipRows']

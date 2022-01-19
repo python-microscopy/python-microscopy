@@ -27,7 +27,7 @@ from PYME.misc import cython_numpy_monkey
 import yaml
 import os
 with open(os.path.join(os.path.dirname(__file__), 'conda-recipes', 'python-microscopy', 'entry_points.yaml')) as f:
-    ep = yaml.load(f)['entry_points']
+    ep = yaml.safe_load(f)['entry_points']
 
 entry_points={'console_scripts':ep}
 

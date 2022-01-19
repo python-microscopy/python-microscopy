@@ -331,21 +331,27 @@ class ModuleSelectionDialog(wx.Dialog):
         filter = self.tFilter.GetValue()
         
         for k, item in self.rootNodes.items():
-            self.tree_list.HideItem(item)
+            item.Hide(True)
+            #self.tree_list.HideItem(item)
         
         for base, modname, item in self.items:
             show = (filter.upper() in modname.upper())
-            self.tree_list.HideItem(item, not show)
+            item.Hide(not show)
+            #self.tree_list.HideItem(item, not show)
             
             if show:
-                self.tree_list.HideItem(self.rootNodes[base], False)
+                self.rootNodes[base].Hide(False)
+                #self.tree_list.HideItem(self.rootNodes[base], False)
+        
+        # force size recalculation by calling HideItem on the last item.
+        self.tree_list.HideItem(item, not show)
 
 
 class RecipeView(wx.Panel):
     def __init__(self, parent, recipes):
         wx.Panel.__init__(self, parent, size=(400, 100))
         
-        self.recipes = recipes
+        self.recipes = recipes # type: RecipeManager
         recipes.recipeView = self
         
         self._editing = False #are we currently editing a recipe module? used for a hack / workaround for a a traits/matplotlib bug to disable click-throughs
@@ -592,7 +598,7 @@ class RecipeView(wx.Panel):
         if dlg.ShowModal() == wx.ID_OK:
             modName = dlg.GetSelectedModule()
             
-            c = mods[modName](self.recipes.activeRecipe)
+            c = mods[modName](self.recipes.activeRecipe) # type: modules.base.ModuleBase
             
             if c.configure_traits(kind='modal'):
                 self.recipes.activeRecipe.add_module(c)
@@ -644,7 +650,7 @@ class RecipeView(wx.Panel):
         
 class RecipeManager(object):
     def __init__(self):
-        self.activeRecipe = None
+        self.activeRecipe = None # type: Recipe
         self.LoadRecipeText('')
         
     def OnLoadRecipe(self, event):

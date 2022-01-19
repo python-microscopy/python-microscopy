@@ -123,17 +123,7 @@ class DSViewFrame(AUIFrame):
             if len(chan_names) == self.image.data_xyztc.shape[4]:
                 self.do.names = chan_names
 
-        #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
-        #self.view = ArrayViewPanel(self, do=self.do)
-        #self.AddPage(self.view, True, 'Data')
-        #self._mgr.AddPane(self.vp, aui.AuiPaneInfo().
-        #                  Name("Data").Caption("Data").Centre().CloseButton(False).CaptionVisible(False))
-
-        
-
         self.mainFrame = weakref.ref(self)
-        #self.do = self.vp.do
-        
         
         if not hasattr(self, "ID_OPEN_SEQ"):
             self.ID_OPEN_SEQ = wx.NewId()
@@ -142,22 +132,6 @@ class DSViewFrame(AUIFrame):
         self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
         self.AddMenuItem('File', 'Open Image Se&quence', self.OnOpenSequence, id=self.ID_OPEN_SEQ)
         #self.AddMenuItem('File>Save','Save &Results', )
-        
-        #tmp_menu = wx.Menu()
-        #tmp_menu.Append(wx.ID_OPEN, '&Open', "", wx.ITEM_NORMAL)
-        #tmp_menu.Append(wx.ID_SAVE, "&Save As", "", wx.ITEM_NORMAL)
-        #tmp_menu.Append(wx.ID_SAVEAS, "&Export Cropped", "", wx.ITEM_NORMAL)
-        
-
-        #a submenu for modules to hook and install saving functions into
-        #self.save_menu = wx.Menu()
-        #self._menus['Save'] = self.save_menu
-        #tmp_menu.Append(-1, 'Save &Results', self.save_menu)
-        
-        #tmp_menu.AppendSeparator()
-        #tmp_menu.Append(wx.ID_CLOSE, "Close", "", wx.ITEM_NORMAL)
-        #self.menubar.Append(tmp_menu, "File")
-        #self._menus['File'] = tmp_menu
 
         self.view_menu = wx.Menu()
         self.menubar.Append(self.view_menu, "&View")
@@ -169,10 +143,6 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        #self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
-        #self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
-        #self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
-        #self.Bind(wx.EVT_MENU, lambda e: self.Close(), id=wx.ID_CLOSE)
         
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 		
@@ -184,6 +154,7 @@ class DSViewFrame(AUIFrame):
         self.CreateModuleMenu()
 
         self.add_common_menu_items()
+        self.create_overlay_panel()
 
         self.optionspanel = OptionsPanel(self, self.do, thresholdControls=True)
         self.optionspanel.SetSize(self.optionspanel.GetBestSize())
@@ -204,16 +175,10 @@ class DSViewFrame(AUIFrame):
             self._mgr.AddPane(self.playbackpanel, pinfo1)
             self.do.WantChangeNotification.append(self.playbackpanel.update)
 
-        #self.mWindows =  wx.Menu()
-        #self.menubar.append(self.mWindows, '&Composite With')
         self.do.WantChangeNotification.append(self.update)
 
         self.CreateFoldPanel()
-       
-
-        for pn in self.panesToMinimise:
-            self._mgr.MinimizePane(pn)
-        #self._mgr.MinimizePane(pinfo2)
+        
         self.Layout()
 
         if 'view' in dir(self):
@@ -230,7 +195,15 @@ class DSViewFrame(AUIFrame):
         
         
         openViewers[self.image.filename] = self
-        
+
+        wx.CallAfter(self._minimise_panes)
+
+
+    def _minimise_panes(self):
+        for pn in self.panesToMinimise:
+            self._mgr.MinimizePane(pn)
+
+        self.Layout()
    
 
     def CreateModuleMenu(self):
@@ -285,12 +258,12 @@ class DSViewFrame(AUIFrame):
     
     def create_overlay_panel(self):
         from PYME.DSView.OverlaysPanel import OverlayPanel
-        if not 'overlaypanel' in dir(self):
+        if hasattr(self, 'view') and not hasattr(self, 'overlaypanel'):
             self.overlaypanel = OverlayPanel(self, self.view, self.image.mdh)
             self.overlaypanel.SetSize(self.overlaypanel.GetBestSize())
             pinfo2 = aui.AuiPaneInfo().Name("overlayPanel").Right().Caption('Overlays').CloseButton(
                 False).MinimizeButton(True).MinimizeMode(
-                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+                aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT).BestSize(self.overlaypanel.GetBestSize())#.CaptionVisible(False)
             self._mgr.AddPane(self.overlaypanel, pinfo2)
         
             self.panesToMinimise.append(pinfo2)
@@ -353,14 +326,26 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
+        from PYME.ui import crop_dialog
+        from PYME.IO.DataSources.CropDataSource import crop_image
         bx = min(self.do.selection_begin_x, self.do.selection_end_x)
         ex = max(self.do.selection_begin_x, self.do.selection_end_x)
         by = min(self.do.selection_begin_y, self.do.selection_end_y)
         ey = max(self.do.selection_begin_y, self.do.selection_end_y)
         
-        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        roi = [[bx, ex + 1],[by, ey + 1],
+               [0, self.image.data_xyztc.shape[2]],
+               [0, self.image.data_xyztc.shape[3]]]
         
-        self.image.Save(crop = True, roi=roi)
+        dlg = crop_dialog.ExportDialog(self, roi)
+        try:
+            succ = dlg.ShowModal()
+            if (succ == wx.ID_OK):
+                img = crop_image(self.image, xrange=dlg.GetXSlice(), yrange=dlg.GetYSlice(), zrange=dlg.GetZSlice(), trange=dlg.GetTSlice())
+                img.Save()
+
+        finally:
+            dlg.Destroy()
 
     def OnCrop(self):
         pass

@@ -29,7 +29,10 @@ import numpy as np
 from PYME.contrib import dispatch
 
 from PYME.ui import histLimits
-from PYME.LMVis import editFilterDialog
+from PYME.ui import editFilterDialog
+
+import logging
+logger = logging.getLogger(__name__)
 
 def CreateFilterPane(panel, mapping, pipeline, visFr):
     pane = FilterPane(panel, mapping, pipeline, visFr)
@@ -160,6 +163,7 @@ class FilterPanel(wx.Panel):
         try:
             possibleKeys = list(self.dataSource.keys())
         except:
+            logger.exception('Error getting datasource keys')
             possibleKeys = []
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)

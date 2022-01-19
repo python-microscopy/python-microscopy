@@ -68,13 +68,13 @@ class FlowView(HasTraits):
         self.CreatePens()
 
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Optic flow')
 
         dsviewer.paneHooks.append(self.GenFlowPanel)
         
-    def Unplug(self):
-        self._dsviewer.do.overlays.remove(self.DrawOverlays)
-        self._dsviewer.paneHooks.remove(self.GenFlowPanel)
+    #def Unplug(self):
+    #    self._dsviewer.do.overlays.remove(self.DrawOverlays)
+    #    self._dsviewer.paneHooks.remove(self.GenFlowPanel)
     
     @on_trait_change('flowVectWidth')    
     def CreatePens(self):
@@ -107,7 +107,7 @@ class FlowView(HasTraits):
         if (not self.showFlow) or flow is None:
             return
         
-        xb, yb, zb = view._calcVisibleBounds()
+        xb, yb, zb = view.visible_bounds
         x0, x1 = xb
         y0, y1 = yb 
                 
@@ -131,8 +131,8 @@ class FlowView(HasTraits):
 
                     x_1, y_1 = x + scale*fx, y + scale*fy
 
-                    xs, ys = view._PixelToScreenCoordinates(x, y)
-                    xs1, ys1 = view._PixelToScreenCoordinates(x_1, y_1)
+                    xs, ys = view.pixel_to_screen_coordinates(x, y)
+                    xs1, ys1 = view.pixel_to_screen_coordinates(x_1, y_1)
 
                     dc.DrawLine(xs, ys, xs1, ys1)
 
@@ -147,8 +147,8 @@ class FlowView(HasTraits):
                     t1 = h + arrowSize*(.5*fhh - fh)
                     t2 = h + arrowSize*(-.5*fhh - fh)
 
-                    xt1, yt1 = view._PixelToScreenCoordinates(*t1)
-                    xt2, yt2 = view._PixelToScreenCoordinates(*t2)
+                    xt1, yt1 = view.pixel_to_screen_coordinates(*t1)
+                    xt2, yt2 = view.pixel_to_screen_coordinates(*t2)
 
                     dc.DrawLine(xs1, ys1, xt1, yt1)
                     dc.DrawLine(xs1, ys1, xt2, yt2)
@@ -161,9 +161,9 @@ class FlowView(HasTraits):
                     x_1, y_1 = x + 0.5*scale * fx, y + 0.5*scale * fy
                     x_2, y_2 = x + scale * fx, y + scale * fy
 
-                    xs, ys = view._PixelToScreenCoordinates(x, y)
-                    xs1, ys1 = view._PixelToScreenCoordinates(x_1, y_1)
-                    xs2, ys2 = view._PixelToScreenCoordinates(x_2, y_2)
+                    xs, ys = view.pixel_to_screen_coordinates(x, y)
+                    xs1, ys1 = view.pixel_to_screen_coordinates(x_1, y_1)
+                    xs2, ys2 = view.pixel_to_screen_coordinates(x_2, y_2)
 
                     dc.SetPen(self._vecPens[1])
                     dc.DrawLine(xs, ys, xs1, ys1)
@@ -178,7 +178,7 @@ class FlowView(HasTraits):
         if (not self.showFlow) or flow is None:
             return
         
-        xb, yb, zb = view._calcVisibleBounds()
+        xb, yb, zb = view.visible_bounds
         x0, x1 = xb
         y0, y1 = yb 
                 
@@ -220,9 +220,9 @@ class FlowView(HasTraits):
         x_1, y_1 = x + scale*fx, y + scale*fy
         x_0, y_0 = x + 0.5*scale * fx, y + 0.5*scale * fy
                 
-        xs, ys = view._PixelToScreenCoordinates(x, y)
-        xs0, ys0 = view._PixelToScreenCoordinates(x_0, y_0)
-        xs1, ys1 = view._PixelToScreenCoordinates(x_1, y_1)
+        xs, ys = view.pixel_to_screen_coordinates(x, y)
+        xs0, ys0 = view.pixel_to_screen_coordinates(x_0, y_0)
+        xs1, ys1 = view.pixel_to_screen_coordinates(x_1, y_1)
 
         if self.flowVectType == 'Arrows':
             dc.DrawLineList(np.array([xs, ys, xs1, ys1]).T)
@@ -238,8 +238,8 @@ class FlowView(HasTraits):
             t1 = h + arrowSize*(.5*fhh - fh)
             t2 = h + arrowSize*(-.5*fhh - fh)
 
-            xt1, yt1 = view._PixelToScreenCoordinates(*t1)
-            xt2, yt2 = view._PixelToScreenCoordinates(*t2)
+            xt1, yt1 = view.pixel_to_screen_coordinates(*t1)
+            xt2, yt2 = view.pixel_to_screen_coordinates(*t2)
 
             dc.DrawLineList(np.array([xs1, ys1, xt1, yt1]).T)
             dc.DrawLineList(np.array([xs1, ys1, xt2, yt2]).T)

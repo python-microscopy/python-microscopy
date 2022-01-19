@@ -60,8 +60,8 @@ class ScaleBarOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping()
-        with self.shader_program:
+        self._clear_shader_clipping(gl_canvas)
+        with self.get_shader_program(gl_canvas):
             if self._scale_bar_length:
                 view_size_x = gl_canvas.xmax - gl_canvas.xmin
                 view_size_y = gl_canvas.ymax - gl_canvas.ymin

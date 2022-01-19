@@ -4,9 +4,9 @@ from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderPro
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
+from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int, observe
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 from PYME.contrib import dispatch
 
@@ -15,8 +15,8 @@ from OpenGL.GL import *
 
 class ImageEngine(BaseEngine):
     _outlines = True
-    def __init__(self, context=None):
-        BaseEngine.__init__(self, context=context)
+    def __init__(self):
+        BaseEngine.__init__(self)
         self.set_shader_program(ImageShaderProgram)
         
         self._texture_id = None
@@ -79,19 +79,19 @@ class ImageEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
-        with self.shader_program:
+        with self.get_shader_program(gl_canvas) as sp:
             self.set_lut(layer.colour_map)
             glActiveTexture(GL_TEXTURE1)
             glBindTexture(GL_TEXTURE_1D, self._lut_id) # bind to our texture, has id of 1 */
-            glUniform1i(self.shader_program.get_uniform_location("lut"), 1)
+            glUniform1i(sp.get_uniform_location("lut"), 1)
             
             self.set_texture(layer._im)
-            glUniform2f(self.shader_program.get_uniform_location("clim"), *layer.get_color_limit())
+            glUniform2f(sp.get_uniform_location("clim"), *layer.get_color_limit())
             
             glEnable(GL_TEXTURE_2D) # enable texture mapping */
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id) # bind to our texture, has id of 1 */
-            glUniform1i(self.shader_program.get_uniform_location("im_sampler"), 0)
+            glUniform1i(sp.get_uniform_location("im_sampler"), 0)
             
             x0, y0, x1, y1 = layer._bounds
 
@@ -132,13 +132,14 @@ class ImageRenderLayer(EngineLayer):
     method = Enum(*ENGINES.keys(), desc='Method used to display image')
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as an image')
     channel = Int(0)
-    slice = Int(0)
-    z_pos = Float(0)
+    #slice = Int(0)
+    z_pos = Int(0)
+    t_pos = Int(0)
     _datasource_choices = List()
     _datasource_keys = List()
 
-    def __init__(self, pipeline, method='image', dsname='', display_opts=None, context=None, **kwargs):
-        EngineLayer.__init__(self, context=context, **kwargs)
+    def __init__(self, pipeline, method='image', dsname='', display_opts=None, **kwargs):
+        EngineLayer.__init__(self, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gray'
@@ -193,7 +194,7 @@ class ImageRenderLayer(EngineLayer):
         return image.ImageStack
 
     def _set_method(self):
-        self.engine = ENGINES[self.method](self._context)
+        self.engine = ENGINES[self.method]()
         self.update()
 
 
@@ -203,6 +204,7 @@ class ImageRenderLayer(EngineLayer):
     #     self.clim = [float(cdata.min()), float(cdata.max())]
     #     self.update(*args, **kwargs)
 
+    @observe('z_pos, t_pos')
     def update(self, *args, **kwargs):
         try:
             self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
@@ -233,7 +235,7 @@ class ImageRenderLayer(EngineLayer):
         cmap = do.cmaps[self.channel].name
         visible = do.show[self.channel]
         
-        self.set(clim=clim, cmap=cmap, visible=visible)
+        self.set(clim=clim, cmap=cmap, visible=visible, z_pos=do.zp, t_pos=do.tp)
         
 
     def update_from_datasource(self, ds):
@@ -262,17 +264,17 @@ class ImageRenderLayer(EngineLayer):
         #else:
         
         clim = self.clim
-        cmap = getattr(cm, self.cmap)
+        cmap = cm[self.cmap]
             
         alpha = float(self.alpha)
         
         c0, c1 = clim
         
-        im_key = (self.dsname, self.slice, self.channel)
+        im_key = (self.dsname, self.z_pos, self.t_pos, self.channel)
         
         if not self._im_key == im_key:
             self._im_key = im_key
-            self._im = ds.data[:,:,self.slice,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
+            self._im = ds.data_xyztc[:,:,self.z_pos, self.t_pos,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
         
             x0, y0, x1, y1, _, _ = ds.imgBounds.bounds
 

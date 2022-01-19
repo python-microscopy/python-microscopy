@@ -712,9 +712,10 @@ class FindCaWaves(ModuleBase):
             if len(wv_idx) >= self.minWaveFrames:
                 
                 trange = (wv_idx[0], wv_idx[-1])
-                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts.data, trange=trange),
+                # TODO - Fix to use new and improved XYZTC CropDataSource.DataSource
+                cropped_wavefronts = ImageStack(CropDataSource._DataSource(wavefronts.data, trange=trange),
                                                 mdh=getattr(wavefronts, 'mdh', None))
-                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
+                cropped_intensity = ImageStack(CropDataSource._DataSource(intensity.data, trange=trange),
                                                 mdh=getattr(intensity, 'mdh', None))
                 waves.append(CaWave(cropped_wavefronts, cropped_intensity, trange))
                 
@@ -919,6 +920,7 @@ class VectorfieldCurl(ModuleBase):
     .. math::
 
         (\frac{\del F_z}{\del y} - \frac{\del F_y}{\del z}, \frac{\del F_x}{\del z} - \frac{\del F_z}{\del x}, \frac{\del F_y}{\del x} - \frac{\del F_x}{\del y})$$
+    
     """
     inputX = Input('inp_x')
     inputY = Input('inp_y')

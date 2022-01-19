@@ -64,13 +64,13 @@ class OffScreenHandler(object):
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
     def __del__(self):
-        glDeleteFramebuffers(1, self._frame_buffer_object)
-        glDeleteRenderbuffers(1, self._render_buffer)
-        glDeleteRenderbuffers(1, self._depth_buffer)
+        #print(repr(self._frame_buffer_object), self._render_buffer, self._depth_buffer, self._ss_framebuffer)
+        glDeleteFramebuffers(1, [self._frame_buffer_object,])
+        glDeleteRenderbuffers(2, [self._render_buffer, self._depth_buffer])
         
         if not self._ss_framebuffer is None:
-            glDeleteFramebuffers(1, self._ss_framebuffer)
-            glDeleteRenderbuffers(1, self._ss_renderbuffer)
+            glDeleteFramebuffers(1, [self._ss_framebuffer,])
+            glDeleteRenderbuffers(1, [self._ss_renderbuffer, ])
 
     def get_viewport_size(self):
         return self.get_viewport_size()

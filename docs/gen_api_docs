@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #everything after the ../PYME source directory argument are exclusions
-python apidoc.py -e -M -d 1 -o ./api ../PYME ../PYME/experimental ../PYME/contrib/cpmath ../PYME/SampleDB2 ../PYME/Acquire/Protocols ../PYME/Acquire/Hardware ../PYME/Analysis/Auto ../PYME/simulation/ChemDE
+#python apidoc.py -e -M -d 1 -o ./api ../PYME ../PYME/experimental ../PYME/contrib/cpmath ../PYME/SampleDB2 ../PYME/Acquire/Protocols ../PYME/Acquire/Hardware ../PYME/Analysis/Auto ../PYME/simulation/ChemDE
+sphinx-apidoc -e -M -d 1 -o ./api ../PYME ../PYME/experimental ../PYME/contrib/cpmath ../PYME/SampleDB2 ../PYME/Acquire/Protocols ../PYME/Acquire/Hardware ../PYME/Analysis/Auto ../PYME/simulation/ChemDE ../PYME/ParallelTasks ../PYME/Deconv/experimental ../PYME/LMVis/gl_render3D.py ../PYME/LMVis/gl_render.py
 
 #find ./api -name *.setup.rst -delete

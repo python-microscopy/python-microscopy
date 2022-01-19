@@ -360,6 +360,14 @@ class PcoSdkCam(Camera):
         self._ccd_temp_set_point = temp
         self._get_temps()
 
+    def _get_fan_mode_speed(self):
+        mode, speed = pco_sdk.get_fan_control_parameters(self._handle)
+        return mode, speed
+
+    def _set_fan_mode_speed(self, mode, speed):
+        # TODO - unified fan control interface for all cameras (see also AndorIxon `SetFan()` and comments on PR1135)
+        pco_sdk.set_fan_control_parameters(self._handle, mode, speed)
+
     def _get_temps(self):
         # NOTE: temperature only gets probed when acquisition starts/stops (which can be fairly
         # irregularly - to the point of not being useful).

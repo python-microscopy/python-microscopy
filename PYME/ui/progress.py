@@ -22,7 +22,7 @@ def get_package_versions():
     
     # TODO - get other package versions?
     
-    return _package_info.format(pyme_version=PYME.version.version,
+    return _package_info.format(pyme_version=PYME.version.detailed_version(),
                                 python_version='.'.join([str(n) for n in sys.version_info[:3]]), platform=sys.platform,
                                 numpy_version=np.version.version, wx_version=wx.version())
 

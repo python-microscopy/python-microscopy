@@ -36,7 +36,7 @@ class Recipe(HasTraits):
         self.namespace.clear()
     
     def new_output_name(self, stub):
-        count = len([k.startswith(stub) for k in self.namespace.keys()])
+        count = len([k for k in self.namespace.keys() if k.startswith(stub)])
         
         if count == 0:
             return stub
@@ -725,6 +725,9 @@ class Recipe(HasTraits):
         #print (ret)
         return ret
     
-    def _repr_svg_(self):
+    def _repr_mimebundle_(self):
         """ Make us look pretty in Jupyter"""
-        return self.to_svg()
+        try:
+            return {'text/svg+xml' : self.to_svg()}
+        except ModuleNotFoundError:
+            return {'text/plain' : repr(self) + '\nTo enable pretty formatting of recipes in jupyter, install the `svgwrite` module'}

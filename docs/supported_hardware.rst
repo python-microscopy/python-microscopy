@@ -3,7 +3,7 @@ Cameras / Detectors
 ===================
 * Andor IXon
 * Andor SDK3 Cameras (tested on Zyla and Neo)
-* Hamamatsu DCAM cameras (tested on Orca Flash)
+* Hamamatsu DCAM cameras (tested on Orca Flash and Fusion BT)
 * PCO Cameras (tested on pco.edge 4.2 LT)
 * Thorlabs DCC1240 (maybe also DCC3240)
 * IDS uEye industrial cameras (UI306x, UI327x, UI324x, probably others. Thorlabs-branded IDS)

@@ -1,5 +1,5 @@
 def show_about_dlg(component_name='python-microscopy', desc_addendum=''):
-    from PYME.version import version
+    from PYME.version import detailed_version
     from PYME.resources import getIconPath
     import wx.adv
     # msg = "PYME Visualise\n\n Visualisation of localisation microscopy data\nDavid Baddeley 2009"
@@ -17,7 +17,7 @@ def show_about_dlg(component_name='python-microscopy', desc_addendum=''):
     
     dlg = wx.adv.AboutDialogInfo()
     dlg.SetName(component_name)
-    dlg.SetVersion(version)
+    dlg.SetVersion(detailed_version())
     dlg.SetDescription(desc)
     dlg.SetCopyright("(C)2009-2021")
     dlg.SetIcon(wx.Icon(getIconPath('pymeLogo.png')))

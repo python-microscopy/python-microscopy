@@ -20,7 +20,8 @@
 #
 import os
 
-from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
+from PYME.LMVis.shader_programs.GLProgram import GLProgram
+from OpenGL.GL import GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
     GL_FRONT_AND_BACK, GL_LINE, GL_FILL, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, \
     GL_DEPTH_TEST, glBlendFunc, GL_SRC_ALPHA, GL_ONE, glGetInteger, GL_CURRENT_PROGRAM
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
@@ -42,6 +43,8 @@ class TesselShaderProgram(GLProgram):
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self
 
     def __init__(self):
         GLProgram.__init__(self)

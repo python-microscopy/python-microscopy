@@ -29,7 +29,6 @@ import numpy as np
 import wx
 import wx.lib.agw.aui as aui
 from PYME.DSView import fitInfo
-#from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO import MetaDataHandler
 from PYME.IO import tabular
 from PYME.IO.FileUtils import fileID
@@ -302,6 +301,7 @@ class AnalysisSettingsView(object):
 class AnalysisController(object):
     def __init__(self, imageMdh=None, tq = None):
         self.analysisMDH = MetaDataHandler.CopyOnWriteMDHandler(imageMdh) #MetaDataHandler.NestedClassMDHandler(imageMdh)
+        self.analysisMDH.record_pyme_version() # update version to version we are running for the analysis - TODO - record worker versions as well
         self.onImagesPushed = dispatch.Signal()
         self.onMetaDataChange = dispatch.Signal()
 
@@ -588,18 +588,20 @@ class LMAnalyser2(Plugin):
         self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
     def SetFitInfo(self):
-        self.view.pointMode = 'lm'
-        mdh = self.analysisController.analysisMDH
-        voxx, voxy, _ = mdh.voxelsize_nm
-        
-        self.view.points = np.vstack((self.fitResults['fitResults']['x0']/voxx, self.fitResults['fitResults']['y0']/voxy, self.fitResults['tIndex'])).T
+        # TODO - use filter / raw fit results rather than creating a points array.
+        # TODO - de-duplicate with method of same name in  LMDisplay
 
-        if 'Splitter' in mdh.getEntry('Analysis.FitModule'):
-            self.view.pointMode = 'splitter'
-            if 'BNR' in mdh['Analysis.FitModule']:
-                self.view.pointColours = self.fitResults['ratio'] > 0.5
-            else:
-                self.view.pointColours = self.fitResults['fitResults']['Ag'] > self.fitResults['fitResults']['Ar']
+        mdh = self.analysisController.analysisMDH
+
+        if not hasattr(self, '_ovl'):
+            from PYME.DSView import overlays
+            from PYME.IO import tabular
+            filt = tabular.FitResultsSource(self.fitResults)
+            self._ovl = overlays.PointDisplayOverlay(filter=filt, md=mdh, display_name='Detections')
+            self._ovl.pointMode = 'lm'
+            self.view.add_overlay(self._ovl)
+        else:
+            self._ovl.filter.setResults(self.fitResults)
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -607,16 +609,6 @@ class LMAnalyser2(Plugin):
         else:
             self.fitInf.SetResults(self.fitResults, self.resultsMdh)
             
-        
-    def OnPointSelect(self, xp, yp):
-        dist = np.sqrt((xp - self.fitResults['fitResults']['x0'])**2 + (yp - self.fitResults['fitResults']['y0'])**2)
-        
-        cand = dist.argmin()
-
-        vs = self.image.voxelsize_nm
-        self.dsviewer.do.xp = xp/(vs.x)
-        self.dsviewer.do.yp = yp/(vs.y)
-        self.dsviewer.do.zp = self.fitResults['tIndex'][cand]
         
 
     def OnToggleBackground(self, event):
@@ -743,8 +735,9 @@ class LMAnalyser2(Plugin):
                 self.dsviewer.pipeline.recipe.invalidate_data()
         
             self.progPan.fitResults = self.fitResults
-            self.view.points = np.vstack(
-                (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            # self._ovl.points = np.vstack(
+            #    (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
+            self._ovl.filter.setResults(self.fitResults)
             self.numEvents = len(self.fitResults)
         
             try:
@@ -820,9 +813,9 @@ class LMAnalyser2(Plugin):
 
 
     def update(self, dsviewer):
-        if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.tPlay.playback_running:
+        if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
             try:
-                self.fitInf.UpdateDisp(self.view.PointsHitTest())
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp, voxelsize=self.view.voxelsize))
             except:
                 import traceback
                 print((traceback.format_exc()))

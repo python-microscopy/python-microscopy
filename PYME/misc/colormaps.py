@@ -21,29 +21,64 @@
 #
 ################
 import matplotlib.colors as colors
-from matplotlib import cm
+from matplotlib import cm as mp_cm
+from collections import OrderedDict
+
 #import matplotlib as mpl
 # import pylab
 import numpy as np
 
-def regCmap(cmap):
-    cm.__dict__[cmap.name] = cmap
-    cm.cmapnames.append(cmap.name)
-    
-#define a decorator
-def register_cmap(name):
-    def _reg_cmap(func):
-        func.name = name
-        regCmap(func)
-        return func
-    
-    return _reg_cmap
+class CMapDict(OrderedDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-if not 'cmapnames' in dir(cm):
-    if 'cmap_d' in dir(cm):
-        cm.cmapnames = list(cm.cmap_d.keys())
+        self.solid_cmaps = []
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            raise AttributeError('No attribute %s' % key)
+
+    def register_cmap(self, name, solid=False):
+        """A decorator"""
+
+        def _reg_cmap(func):
+            func.name = name
+            self[name] = func
+
+            if solid:
+                self.solid_cmaps.append(name)
+
+            return func
+    
+        return _reg_cmap
+
+    @property
+    def cmapnames(self):
+        return self.keys()
+
+    @property
+    def graded_cmaps(self):
+        return [k for k in self.keys() if not k in self.solid_cmaps]
+
+    
+
+try:
+    # try version 3.5 way first ....
+    from matplotlib import colormaps
+    _cmd = dict(colormaps)
+except ImportError:
+    # older matplotlib - note this generates a deprecation warning on 3.4.2 as it does not appear to have matplotlib.colormaps
+    # but still does not want you to access the colourmap dictionary (cmap_d) directly.
+    if 'cmap_d' in dir(mp_cm):
+        _cmd = mp_cm.cmap_d
+    elif 'cmapnames' in dir(mp_cm):
+        _cmd = {k: mp_cm.__dict__[k] for k in mp_cm.cmapnames}
     else:
-        cm.cmapnames = cm._cmapnames
+        _cmd = {k: mp_cm.__dict__[k] for k in mp_cm._cmapnames}
+
+cm = CMapDict(_cmd)
 
 _r = {'red':((0.,0.,0.), (1.,1.,1.)), 'green':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
 _g = {'green':((0.,0.,0.), (1.,1.,1.)), 'red':((0.,0,0), (1.,0.,0.)), 'blue':((0.,0.,0.), (1.,0.,0.))}
@@ -65,55 +100,53 @@ _hsv_part = {'red':   ((0., 1., 1.),(0.25, 1.000000, 1.000000),
 
 ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 
-ncmapnames = list(ndat.keys())
-cm.cmapnames += ncmapnames
-for cmapname in ncmapnames:
-    ncm = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], cm.LUTSIZE)
-    cm.__dict__[cmapname] = ncm
-    cm.__dict__[cmapname+'_r']=ncm.reversed()
+cm.update({cmapname: colors.LinearSegmentedColormap(cmapname, ndat[cmapname], mp_cm.LUTSIZE) for cmapname in ndat.keys()})
 
 #solid colour colormaps for VisGUI multichannel and isosurface display
-@register_cmap('R')
+@cm.register_cmap('SoildRed', solid=True)
 def Red(data):
     z = np.ones_like(data)
     return np.stack([z, 0*z, 0*z, z], -1)
 
-@register_cmap('G')
+@cm.register_cmap('SolidGreen', solid=True)
 def Green(data):
     z = np.ones_like(data)
     return np.stack([0*z, z, 0*z, z], -1)
 
-@register_cmap('B')
+@cm.register_cmap('SolidBlue', solid=True)
 def Blue(data):
     z = np.ones_like(data)
     return np.stack([0*z, 0*z, z, z], -1)
 
-@register_cmap('C')
+@cm.register_cmap('SolidCyan', solid=True)
 def Cyan(data):
     z = np.ones_like(data)
     return np.stack([0*z, z, z, z], -1)
 
-@register_cmap('M')
+@cm.register_cmap('SolidMagenta', solid=True)
 def Magenta(data):
     z = np.ones_like(data)
     return np.stack([z, 0*z, z, z], -1)
 
-@register_cmap('Y')
+@cm.register_cmap('SolidYellow', solid=True)
 def Yellow(data):
     z = np.ones_like(data)
     return np.stack([z, z, 0*z, z], -1)
 
-@register_cmap('labeled')
+@cm.register_cmap('labeled')
 def labeled(data):
     return (data > 0).reshape(list(data.shape) +  [1])*cm.gist_rainbow(data % 1)
 
-@register_cmap('flow_gray')
-def flow_gray(data):
-    v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*cm.gray(data)
-    v += (data == 0).reshape(list(data.shape) + [1]) * np.array([0, 1., 0, 0]).reshape(list(np.ones(data.ndim) + [3]))
-    v += (data == 1).reshape(list(data.shape) + [1]) * np.array([1., 0, 1., 0]).reshape(list(np.ones(data.ndim) + [3]))
-    return v
+# @cm.register_cmap('flow_gray')
+# def flow_gray(data):
+#     v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*cm.gray(data)
+#     v += (data == 0).reshape(list(data.shape) + [1]) * np.array([0, 1., 0, 0]).reshape(list(np.ones(data.ndim) + [3]))
+#     v += (data == 1).reshape(list(data.shape) + [1]) * np.array([1., 0, 1., 0]).reshape(list(np.ones(data.ndim) + [3]))
+#     return v
 
+# @cm.register_cmap('fast_grey')
+# def fast_grey(data):
+#     return data[:,:,None]*np.ones((1,1,4))
 
 def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, greystart=0.1):
     if percentage < 1:
@@ -150,12 +183,6 @@ def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, 
     cm_grey2 = colors.LinearSegmentedColormap('grey_overflow', grey_data)
     return cm_grey2
 
-regCmap(grey_overflow(percentage=2.5,greystart=0.125))
+cm['grey_overflow'] = grey_overflow(percentage=2.5,greystart=0.125)
 
-try:
-    import PYMEcs.experimental.ExtraCmaps as ec
-    regCmap(ec.hot_overflow(overflowcol='cyan',percentage=2.5))
-except:
-    pass
-
-cm.cmapnames.sort()
+#cm.cmapnames.sort()

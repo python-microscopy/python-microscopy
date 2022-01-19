@@ -207,7 +207,7 @@ class ParticleTrackingView(HasTraits, Plugin):
         self.trackview = wx.html2.WebView.New(dsviewer)
         dsviewer.AddPage(self.trackview, True, 'Track Info')  
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'Tracks')
 
         dsviewer.paneHooks.append(self.GenTrackingPanel)
     
@@ -278,10 +278,10 @@ class ParticleTrackingView(HasTraits, Plugin):
             else:
                 return template.render(clump=self.clumps[int(trackNum)], img=self.dsviewer.image)
         
-    def OnViewSelect(self, view):
+    def OnViewSelect(self, pos):
         #select a track by clicking on it
         
-        pos = (view.do.xp, view.do.yp, view.do.zp)
+        #pos = (view.do.xp, view.do.yp, view.do.zp)
         
         candidates = [i for i, c in enumerate(self.clumps) if self._hittest(c, pos)]
         
@@ -292,7 +292,7 @@ class ParticleTrackingView(HasTraits, Plugin):
         
     def DrawOverlays(self, view, dc):    
         if self.showTracks and (len(self.clumps) > 0):
-            bounds = view._calcVisibleBounds()
+            bounds = view.visible_bounds
             vx, vy, vz = self.image.voxelsize
             visibleClumps = [c for c in self.clumps if self._visibletest(c, bounds)]
             
@@ -302,7 +302,7 @@ class ParticleTrackingView(HasTraits, Plugin):
                 x = c['x']/vx
                 y = c['y']/vy
                 t = c['t']
-                pFoc = np.vstack(view._PixelToScreenCoordinates3D(x, y, t)).T
+                pFoc = np.vstack(view.pixel_to_screen_coordinates3D(x, y, t)).T
                 
                 #print pFoc.shape
                 if c == self.selectedTrack:
@@ -326,7 +326,7 @@ class ParticleTrackingView(HasTraits, Plugin):
             
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             
-            pFoc = np.vstack(view._PixelToScreenCoordinates3D(x, y, t)).T
+            pFoc = np.vstack(view.pixel_to_screen_coordinates3D(x, y, t)).T
             
             dc.SetPen(self.selectedPens[c.clumpID%16])
             
@@ -352,7 +352,7 @@ class ParticleTrackingView(HasTraits, Plugin):
                     x1 = self.dsviewer.pipeline['x'][i]/self.image.voxelsize[0] 
                     y1 = self.dsviewer.pipeline['y'][i]/self.image.voxelsize[1]
                     
-                    x1s, y1s = view._PixelToScreenCoordinates(x1, y1)
+                    x1s, y1s = view.pixel_to_screen_coordinates(x1, y1)
                     
                     linkSrcs, linkPs = linkInfo
                     n = 0
@@ -371,7 +371,7 @@ class ParticleTrackingView(HasTraits, Plugin):
                             x0 = self.dsviewer.pipeline['x'][ls]/self.image.voxelsize[0]
                             y0 = self.dsviewer.pipeline['y'][ls]/self.image.voxelsize[1]
                         
-                        x0s, y0s = view._PixelToScreenCoordinates(x0, y0)
+                        x0s, y0s = view.pixel_to_screen_coordinates(x0, y0)
                         dc.DrawLine(x0s, y0s, x1s, y1s)
                         
                         if ls == -1:

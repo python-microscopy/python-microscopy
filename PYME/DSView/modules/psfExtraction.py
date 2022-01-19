@@ -26,6 +26,9 @@ import numpy
 
 from ._base import Plugin
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PsfExtractor(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
@@ -39,7 +42,7 @@ class PsfExtractor(Plugin):
         self.PSFLocs = []
         self.psfROISize = [30,30,30]
         
-        dsviewer.do.overlays.append(self.DrawOverlays)
+        dsviewer.view.add_overlay(self.DrawOverlays, 'PSF ROIs')
 
         dsviewer.paneHooks.append(self.GenPSFPanel)
 
@@ -199,7 +202,12 @@ class PsfExtractor(Plugin):
         from PYME.Analysis.PSFEst import extractImages
         chnum = self.chChannel.GetSelection()
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
-        for xp, yp, zp in self.view.points:
+        try:
+            pts = self.dsviewer.blobFinding.points
+        except AttributeError:
+            raise AttributeError('Could not find blobFinding.points, make sure the `blobFinding` module is loaded and you have clicked `Find`')
+
+        for xp, yp, zp in pts:
             if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
                 (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
                     
@@ -240,8 +248,8 @@ class PsfExtractor(Plugin):
                 
             for p in self.PSFLocs:
                 #dc.DrawRectangle(sc*p[0]-self.psfROISize[0]*sc - x0,sc*p[1] - self.psfROISize[1]*sc - y0, 2*self.psfROISize[0]*sc,2*self.psfROISize[1]*sc)
-                xp0, yp0 = view._PixelToScreenCoordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
-                xp1, yp1 = view._PixelToScreenCoordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
+                xp0, yp0 = view.pixel_to_screen_coordinates(p[a_x]-self.psfROISize[a_x],p[a_y] - self.psfROISize[a_y])
+                xp1, yp1 = view.pixel_to_screen_coordinates(p[a_x]+self.psfROISize[a_x],p[a_y] + self.psfROISize[a_y])
                 dc.DrawRectangle(xp0, yp0, xp1-xp0,yp1-yp0)
 
         

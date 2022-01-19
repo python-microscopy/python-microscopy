@@ -146,6 +146,8 @@ class PointSpriteShaderProgram(GLProgram):
         self._texture.enable_texture_2d()
         self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
 
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(self._old_prog)
         glDisable(GL_BLEND)

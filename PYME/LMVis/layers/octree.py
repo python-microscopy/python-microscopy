@@ -5,7 +5,7 @@ from PYME.experimental._octree import Octree
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
 # from pylab import cm
-from matplotlib import cm
+from PYME.misc.colormaps import cm
 import numpy as np
 
 
@@ -29,8 +29,8 @@ class OctreeRenderLayer(TriangleRenderLayer):
     density = Float(0.0, desc='Minimum density of octree node to display.')
     min_points = Int(10, desc='Number of points/node to truncate octree at')
 
-    def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
-        TriangleRenderLayer.__init__(self, pipeline, method, dsname, context, **kwargs)
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+        TriangleRenderLayer.__init__(self, pipeline, method, dsname, **kwargs)
 
         self.on_trait_change(self.update, 'depth')
         self.on_trait_change(self.update, 'density')
@@ -135,7 +135,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             alpha = np.repeat(alpha.ravel(), 3)
             print('Octree scaled alpha range: %g, %g' % (alpha.min(), alpha.max()))
 
-            cmap = getattr(cm, self.cmap)
+            cmap = cm[self.cmap]
 
             # Do we have coordinates? Concatenate into vertices.
             if x is not None and y is not None and z is not None:

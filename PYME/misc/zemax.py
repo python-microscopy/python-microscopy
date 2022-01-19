@@ -7,7 +7,7 @@ Created on Fri Apr 05 11:57:53 2013
 from PYME.contrib import lzw
 import numpy as np
 
-import read_agf
+from PYME.misc import read_agf
 
 def decompZar(filename):
     """zemax .zar files are a series of concatenated, LZW compressed text-format

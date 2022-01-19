@@ -74,6 +74,8 @@ class GouraudShaderProgram(GLProgram):
         #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         #glEnable(GL_BLEND)
 
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(self._old_prog)
         glDisable(GL_DEPTH_TEST)
@@ -92,6 +94,8 @@ class GouraudSphereShaderProgram(GouraudShaderProgram):
         glEnable(GL_POINT_SPRITE)
         glEnable(GL_PROGRAM_POINT_SIZE)
 
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
         glDisable(GL_POINT_SPRITE)
@@ -109,6 +113,8 @@ class OITGouraudShaderProgram(GouraudShaderProgram):
         glDepthMask(GL_FALSE)
         glEnable(GL_BLEND)
         glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA)
+
+        return self
         
     
     def __exit__(self, exc_type, exc_val, exc_tb):

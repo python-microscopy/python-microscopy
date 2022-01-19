@@ -28,18 +28,20 @@ import wx.lib.scrolledpanel as scrolled
 import PYME.ui.manualFoldPanel as afp
 import PYME.ui.layerFoldPanel as lfp
 
-from matplotlib import cm
+#from matplotlib import cm
+from PYME.misc.colormaps import cm
 
 from PYME import resources
 
-try:
-    from PYME.misc import extraCMaps
-except:
-    pass
+# try:
+#     from PYME.misc import extraCMaps
+# except:
+#     pass
+
 import numpy as np
 #from matplotlib import cm
 from PYME.ui import histLimits
-from .displayOptions import DisplayOpts, fast_grey, labeled
+from .displayOptions import DisplayOpts #, fast_grey, labeled
 
 import os
 dirname = os.path.dirname(__file__)
@@ -49,6 +51,7 @@ bmCrosshairs = None #wx.Bitmap(os.path.join(dirname, 'icons/crosshairs.png'))
 bmRectSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/rect_select.png'))
 bmLineSelect = None #wx.Bitmap(os.path.join(dirname, 'icons/line_select.png'))
 bmSquiggleSelect = None
+bmObjectSelect = None
 
 class OptionsPanel(wx.Panel):
     def __init__(self, parent, displayOpts, horizOrientation=False, thresholdControls=True, **kwargs):
@@ -67,8 +70,8 @@ class OptionsPanel(wx.Panel):
         self.hcs = []
         self.shIds = []
 
-        cmapnames = list(cm.cmapnames) + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
-        cmapnames.sort()
+        cmapnames = list(cm.graded_cmaps)  #+ ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
+        #cmapnames.sort()
         ##do = parent.do
 
         dispSize = (120, 80)
@@ -285,13 +288,7 @@ class OptionsPanel(wx.Panel):
         ind = self.cIds.index(event.GetId())
 
         cmn = event.GetString()
-        if cmn == 'fastGrey':
-            self.do.SetCMap(ind, fast_grey)
-
-        elif cmn == 'labeled':
-            self.do.SetCMap(ind, labeled)
-        else:
-            self.do.SetCMap(ind, cm.__getattribute__(cmn))
+        self.do.SetCMap(ind, cm[cmn])
             
     def OnComplexChanged(self, event):
         #print event.GetId()
@@ -367,24 +364,26 @@ class OptionsPanel(wx.Panel):
             self.hcs[i].SetData(d[i], self.do.Offs[i], self.do.Offs[i] + 1./self.do.Gains[i])
 
     def CreateToolBar(self, wind):
-        global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect
+        global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect, bmObjectSelect
 
         if bmCrosshairs is None: #load bitmaps on first use
             bmCrosshairs = wx.Bitmap(resources.getIconPath('crosshairs.png'))
             bmRectSelect = wx.Bitmap(resources.getIconPath('rect_select.png'))
             bmLineSelect = wx.Bitmap(resources.getIconPath('line_select.png'))
             bmSquiggleSelect = wx.Bitmap(resources.getIconPath('squiggle_select.png'))
+            bmObjectSelect = wx.Bitmap(resources.getIconPath('arrow.png'))
 
         self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
         self.toolB.SetToolBitmapSize(wx.Size(16, 16))
 
-        #ID_POINTER = wx.NewId()
+        ID_SELECT_OBJECT = wx.NewId()
         ID_CROSSHAIRS = wx.NewId()
         ID_RECTSELECT = wx.NewId()
         ID_LINESELECT = wx.NewId()
         ID_SQUIGGLESELECT = wx.NewId()
 
-        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Point selection", bmCrosshairs, bmCrosshairs)
+        self.toolB.AddRadioTool(ID_CROSSHAIRS, "Set position", bmCrosshairs, bmCrosshairs)
+        self.toolB.AddRadioTool(ID_SELECT_OBJECT, "Object selection", bmObjectSelect, bmObjectSelect)
         self.toolB.AddRadioTool(ID_RECTSELECT, "Rectangle selection", bmRectSelect, bmRectSelect)
         self.toolB.AddRadioTool(ID_LINESELECT, "Line selection", bmLineSelect, bmLineSelect)
         self.toolB.AddRadioTool(ID_SQUIGGLESELECT, "Freeform selection", bmSquiggleSelect, bmSquiggleSelect)
@@ -401,9 +400,18 @@ class OptionsPanel(wx.Panel):
         wind.Bind(wx.EVT_TOOL, self.OnSelectLine, id=ID_LINESELECT)
         wind.Bind(aui.EVT_AUITOOLBAR_RIGHT_CLICK, self.OnLineThickness, id=ID_LINESELECT)
         wind.Bind(wx.EVT_TOOL, self.OnSelectSquiggle, id=ID_SQUIGGLESELECT)
+        wind.Bind(wx.EVT_TOOL, self.OnSelectObject, id=ID_SELECT_OBJECT)
 
         return self.toolB
 
+    def OnSelectObject(self, event):
+        self.do.leftButtonAction = DisplayOpts.ACTION_SELECT_OBJECT
+        self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE
+        self.do.showSelection = False
+
+        #self.Refresh()
+        self.do.OnChange()
+    
     def OnSelectCrosshairs(self, event):
         self.do.leftButtonAction = DisplayOpts.ACTION_POSITION
         self.do.selectionMode = DisplayOpts.SELECTION_RECTANGLE

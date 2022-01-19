@@ -261,10 +261,15 @@ class ActionManagerWebWrapper(object):
         -------
         
         
-        Example body
-        ------------
+        Examples
+        --------
         
-        `[{'UpdateState':{'foo':'bar', 'then': {'SpoolSeries' : {...}}}]`
+        Body json
+        ^^^^^^^^^
+        
+        .. code-block:: json
+
+            [{'UpdateState':{'foo':'bar', 'then': {'SpoolSeries' : {...}}}]
 
         """
         import json
