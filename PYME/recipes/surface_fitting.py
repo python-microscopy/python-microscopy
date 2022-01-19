@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
+from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat, Enum
 import numpy as np
 from PYME.IO import tabular
 import logging
@@ -417,9 +417,10 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     input_shell = Input('harmonic_shell')
 
     r_bin_spacing = Float(0.05)
-    sampling_nm = ListFloat([75, 75, 75])
+    sampling_nm = ListFloat([75, 75, 75]) # TODO - convert this to a single float - we only use the first entry
     jitter_iterations = Int(3)
-    n_choose_stddev = Int(1000)
+    batch_size = Int(100000)
+    sampling_method = Enum(['grid', 'uniform random'])
 
     output = Output('r_uniform_kde')
 
@@ -431,6 +432,36 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         shell = namespace[self.input_shell]
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
+
+        if self.sampling_method == 'uniform random':
+            # uniform random sampling with Monte-Carlo rejection.
+            bin_edges, counts = shell.uniform_random_radial_density(n_radial_bins=int(1./self.r_bin_spacing), batch_size=self.batch_size, target_sampling_nm=self.sampling_nm[0])
+            bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+            # estimate the volume, convert from nm^3 to um^3
+            # note, volume estimate will have an error of around +- sqrt(N_counts)
+            volume = counts.sum() * (np.prod(self.sampling_nm) / (1e9))
+
+            res = tabular.DictSource({
+                'bin_centers': bin_centers,
+                'counts': counts
+            })
+            
+            res.mdh = MetaDataHandler.DictMDHandler(getattr(shell, 'mdh', None))
+
+            # FIXME - this is really gross - we must not pass data / results in metadata
+            # Leaving here for now, for backwards compatibility, but needs to be fixed / removed somewhat urgently
+            # if we record sampling in the metadata, as we should, the volume calculation could easily be done in the consuming module)      
+            res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
+
+            # record module parameters  - FIXME this should be under the 'Analysis' top-level metadata key.
+            res.mdh['SHShellRadiusDensityEstimate.sampling_nm'] = self.sampling_nm[0] 
+
+            namespace[self.output] = res
+        
+            return
+
+        ## old code  (sampling on a regular grid)           
         
         bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing, 
                               dtype=np.float32)
@@ -473,9 +504,9 @@ class SHShellRadiusDensityEstimate(ModuleBase):
             v_estimates.append(N)
             # estimate spread along principle axes of the shell
             X = np.vstack([xr[inside], yr[inside], zr[inside]])
-            if N > self.n_choose_stddev:
+            if N > self.batch_size:
                 # downsample to avoid memory error
-                X = X[:, np.random.choice(N, self.n_choose_stddev, replace=False)]
+                X = X[:, np.random.choice(N, self.batch_size, replace=False)]
             # TODO - do we need to be mean-centered?
             X = X - X.mean(axis=1)[:, None]
             _, s, _ = np.linalg.svd(X.T)
@@ -501,6 +532,8 @@ class SHShellRadiusDensityEstimate(ModuleBase):
             res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
         except AttributeError:
             res.mdh = MetaDataHandler.DictMDHandler()
+        
+        #FIXME - these really don't belong in the metadata as they are results.
         
         res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
         res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.astype(float).tolist()
