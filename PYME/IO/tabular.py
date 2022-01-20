@@ -735,6 +735,13 @@ class DictSource(TabularBase):
             
             if not len(v) == L:
                 raise ValueError('Columns are different lengths')
+
+    def addColumn(self, name, values):
+        if not isinstance(values, np.ndarray):
+            raise TypeError('New column "%s" is not a numpy array' % name)
+
+        if not len(values) == len(self):
+            raise ValueError('Columns are different lengths')
         
     def keys(self):
         return list(self._source.keys())
@@ -754,6 +761,20 @@ class ColumnSource(DictSource):
         kwargs
         """
         DictSource.__init__(self, dict(kwargs))
+
+def scalar_dict_source(d):
+    """
+    Creates a tabular data source of length 1 from a scalar data
+    """
+    
+    return DictSource({k : np.asarray([v]) for k, v in d.items()})
+
+def scalar_column_source(**kwargs):
+    """
+    Creates a tabular data source of length 1 from a scalar data
+    """
+    
+    return ColumnSource(**{k : np.asarray([v]) for k, v in kwargs.items()})
 
 # Filters (which remap existing data sources)
 #############################################

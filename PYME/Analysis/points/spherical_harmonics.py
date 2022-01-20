@@ -294,9 +294,6 @@ class ScaledShell(object):
     ]
 
     def __init__(self, sampling_fraction=1.):
-        from PYME.IO import MetaDataHandler
-        self.mdh = MetaDataHandler.NestedClassMDHandler()
-
         self.sampling_fraction = sampling_fraction
         self.modes = None
         self.coefficients = None
@@ -309,7 +306,31 @@ class ScaledShell(object):
 
         self.standard_deviations, self.principal_axes = None, None
         self.scaling_factors = None
+        self._table_repr = None
 
+    @property
+    def table_representation(self):
+        if self._table_repr is None:
+            self._update_table_repr()
+
+        return self._table_repr
+
+    def _update_table_repr(self):
+        from PYME.IO import tabular
+        self._table_repr = tabular.scalar_column_source(
+            standard_deviations=self.standard_deviations,
+            scaling_factors = self.scaling_factors,
+            principal_axes = self.principal_axes,
+            summed_residuals = self._summed_residuals,
+            n_points_fitted = len(self.x),
+            x0 = self.x0,
+            y0 = self.y0,
+            z0 = self.z0,
+            sampling_fraction = self.sampling_fraction,
+            modes = self.modes.astype('i4'), 
+            coefficients=self.coefficients.astype('f4)'),
+        ) 
+    
     def to_recarray(self, keys=None):
         """
 
@@ -325,48 +346,50 @@ class ScaledShell(object):
         numpy recarray version of self
 
         """
-        record = np.recarray(len(self.coefficients), dtype=self.data_type)
-        record['modes'] = self.modes
-        record['coefficients'] = self.coefficients
-        return record
 
-    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
-        from PYME.IO import h5rFile
-        with h5rFile.H5RFile(filename, 'a') as f:
-            f.appendToTable(tablename, self.to_recarray(keys))
-            # NOTE that we ignore metadata input
-            f.updateMetadata(self.mdh)
-    
-    def _fill_metadata(self):
-        # FIXME - This is not metadata!!!
-        self.mdh['spherical_harmonic_shell.standard_deviations'] = self.standard_deviations.tolist()
-        self.mdh['spherical_harmonic_shell.scaling_factors'] = self.scaling_factors.tolist()
-        self.mdh['spherical_harmonic_shell.principal_axes'] = self.principal_axes.tolist()
-        self.mdh['spherical_harmonic_shell.summed_residuals'] = self._summed_residuals
-        self.mdh['spherical_harmonic_shell.n_points_used_in_fitting'] = len(self.x)
-        self.mdh['spherical_harmonic_shell.x0'] = self.x0
-        self.mdh['spherical_harmonic_shell.y0'] = self.y0
-        self.mdh['spherical_harmonic_shell.z0'] = self.z0
-        self.mdh['spherical_harmonic_shell.sampling_fraction'] = self.sampling_fraction
+        return self.table_representation.to_recarray(self, keys=keys)
+
+    def to_hdf(self, *args, **kwargs):
+        return self.table_representation.to_hdf(*args, **kwargs)
+
 
     @staticmethod
-    def from_tabular(shell_table):
+    def from_tabular(shell_table, index=0):
         shell = ScaledShell()
-        
-        shell.standard_deviations = np.asarray(shell_table.mdh['spherical_harmonic_shell.standard_deviations'])
-        shell.scaling_factors = np.asarray(shell_table.mdh['spherical_harmonic_shell.scaling_factors'])
-        shell.principal_axes = np.asarray(shell_table.mdh['spherical_harmonic_shell.principal_axes'])
 
-        shell.x0 = shell_table.mdh['spherical_harmonic_shell.x0']
-        shell.y0 = shell_table.mdh['spherical_harmonic_shell.y0']
-        shell.z0 = shell_table.mdh['spherical_harmonic_shell.z0']
-
-        shell._summed_residuals = shell_table.mdh['spherical_harmonic_shell.summed_residuals']
-        shell.sampling_fraction = shell_table.mdh['spherical_harmonic_shell.sampling_fraction']
+        if len(shell_table.keys() == 2):
+            # old legacy format which stores data in metadata
         
-        shell._set_coefficients(shell_table['modes'], shell_table['coefficients'])
+            shell.standard_deviations = np.asarray(shell_table.mdh['spherical_harmonic_shell.standard_deviations'])
+            shell.scaling_factors = np.asarray(shell_table.mdh['spherical_harmonic_shell.scaling_factors'])
+            shell.principal_axes = np.asarray(shell_table.mdh['spherical_harmonic_shell.principal_axes'])
+
+            shell.x0 = shell_table.mdh['spherical_harmonic_shell.x0']
+            shell.y0 = shell_table.mdh['spherical_harmonic_shell.y0']
+            shell.z0 = shell_table.mdh['spherical_harmonic_shell.z0']
+
+            shell._summed_residuals = shell_table.mdh['spherical_harmonic_shell.summed_residuals']
+            shell.sampling_fraction = shell_table.mdh['spherical_harmonic_shell.sampling_fraction']
+            
+            shell._set_coefficients(shell_table['modes'], shell_table['coefficients'])
+
+        else:
+            #new format which stores everything in one table
+            shell.standard_deviations = shell_table['standard_deviations'][index]
+            shell.scaling_factors = shell_table['scaling_factors'][index]
+            shell.principal_axes = shell_table['principal_axes'][index]
+
+            shell.x0 = shell_table['x0'][index]
+            shell.y0 = shell_table['y0'][index]
+            shell.z0 = shell_table['z0'][index]
+
+            shell._summed_residuals = shell_table['summed_residuals'][index]
+            shell.sampling_fraction = shell_table['sampling_fraction'][index]
+            
+            shell._set_coefficients(shell_table['modes'][index], shell_table['coefficients'][index])
 
         return shell
+
 
     def _set_coefficients(self, modes, coefficients):
         assert len(modes) == len(coefficients)
@@ -378,6 +401,8 @@ class ScaledShell(object):
 
         assert (x.shape == y.shape) and (y.shape == z.shape)
         self.x, self.y, self.z = x.astype(np.float32, copy=True), y.astype(np.float32, copy=True), z.astype(np.float32, copy=True)
+        
+        #does it really make sense to use ImageBounds here??
         self._fitting_point_bounds = ImageBounds(self.x.min(), self.y.min(),
                                                  self.x.max(), self.y.max(),
                                                  self.z.min(), self.z.max())
@@ -440,7 +465,6 @@ class ScaledShell(object):
                                                                        max_iterations, tol_init)
         self._set_coefficients(modes, coefficients)
         self._summed_residuals = summed_residuals
-        self._fill_metadata()
 
     def check_inside(self, x=None, y=None, z=None):
         if x is None:
@@ -746,17 +770,16 @@ class ScaledShell(object):
     
     def approximate_image_bounds(self, d_zenith=0.1, d_azimuth=0.1):
         from PYME.IO.image import ImageBounds
+        #does it really make sense to use ImageBounds here??
         
         zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith,
                                    0:(2 * np.pi + d_azimuth):d_azimuth]
 
         x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
 
-        imb = ImageBounds(x_shell.min(), y_shell.min(), 
+        return ImageBounds(x_shell.min(), y_shell.min(), 
                           x_shell.max(), y_shell.max(),
                           z_shell.min(), z_shell.max())
-        imb.write_to_metadata(self.mdh)
-        return imb
 
     def uniform_random_radial_density(self, n_radial_bins=20, batch_size=100000, target_sampling_nm=75.):
         """

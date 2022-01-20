@@ -345,8 +345,9 @@ class SphericalHarmonicShell(ModuleBase):
             
         points.addColumn(self.name_distance_to_shell, separations)
         points.addColumn(self.name_inside_shell, shell.check_inside())
+
         # add median distance to shell as a goodness of fit parameter
-        shell.mdh['spherical_harmonic_shell.median_residual'] = np.median(separations)
+        shell.table_representation.addColumn('median_residual', np.array([np.median(separations),]))
         namespace[self.output_name] = shell
         namespace[self.output_name_mapped] = points
 
@@ -423,11 +424,12 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     sampling_method = Enum(['grid', 'uniform random'])
 
     output = Output('r_uniform_kde')
+    shell_properties_output = Output('')
 
 
     def execute(self, namespace):
         from PYME.Analysis.points import spherical_harmonics
-        from PYME.IO import MetaDataHandler
+        from PYME.IO import MetaDataHandler, tabular
 
         shell = namespace[self.input_shell]
         if isinstance(shell, tabular.TabularBase):
@@ -449,19 +451,27 @@ class SHShellRadiusDensityEstimate(ModuleBase):
             
             res.mdh = MetaDataHandler.DictMDHandler(getattr(shell, 'mdh', None))
 
+            
+
             # FIXME - this is really gross - we must not pass data / results in metadata
             # Leaving here for now, for backwards compatibility, but needs to be fixed / removed somewhat urgently
             # if we record sampling in the metadata, as we should, the volume calculation could easily be done in the consuming module)      
             res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
 
+
             # record module parameters  - FIXME this should be under the 'Analysis' top-level metadata key.
             res.mdh['SHShellRadiusDensityEstimate.sampling_nm'] = self.sampling_nm[0] 
 
             namespace[self.output] = res
+
+            if self.shell_properties_output != '':
+                props = tabular.tabular.MappingFilter(shell.table_representation)
+                props.addColumn('radial_dens_volume', np.array([float(volume)]))
+                namespace[self.shell_properties_output] 
         
             return
 
-        ## old code  (sampling on a regular grid)           
+        ## old code  (sampling on a regular grid) TODO - refactor out of this module          
         
         bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing, 
                               dtype=np.float32)
@@ -531,13 +541,15 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         try:
             res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
         except AttributeError:
-            res.mdh = MetaDataHandler.DictMDHandler()
+            pass
         
-        #FIXME - these really don't belong in the metadata as they are results.
-        
-        res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
-        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.astype(float).tolist()
-        res.mdh['SHShellRadiusDensityEstimate.Anisotropy'] = float(anisotropy)
+
+        if self.shell_properties_output != '':
+            props = tabular.tabular.MappingFilter(shell.table_representation)
+            props.addColumn('radial_dens_volume', np.array([float(volume)]))
+            props.addColumn('radial_dens_std_dev', np.array([standard_deviations.astype('f4')]))
+            props.addColumn('radial_dens_anisotropy', np.array([float(anisotropy)]))
+            namespace[self.shell_properties_output] 
 
         namespace[self.output] = res
 
