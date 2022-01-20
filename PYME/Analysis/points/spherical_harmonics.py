@@ -2,6 +2,7 @@
 Estimate spherical harmonics from a point data set
 Initial fitting/conversions ripped 100% from David Baddeley / scipy
 """
+from PYME.IO.image import ImageBounds
 import numpy as np
 from scipy.special import sph_harm
 from scipy import linalg
@@ -151,7 +152,7 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
     for (m, n), c in zip(modes, coeffs):
-        r += c * (r_sph_harm(m, n, azimuth, zenith))
+        r += (c * (r_sph_harm(m, n, azimuth, zenith))).astype(azimuth.dtype)
 
     return r
 
@@ -294,7 +295,6 @@ class ScaledShell(object):
 
     def __init__(self, sampling_fraction=1.):
         self.sampling_fraction = sampling_fraction
-
         self.modes = None
         self.coefficients = None
 
@@ -306,7 +306,31 @@ class ScaledShell(object):
 
         self.standard_deviations, self.principal_axes = None, None
         self.scaling_factors = None
+        self._table_repr = None
 
+    @property
+    def table_representation(self):
+        if self._table_repr is None:
+            self._update_table_repr()
+
+        return self._table_repr
+
+    def _update_table_repr(self):
+        from PYME.IO import tabular
+        self._table_repr = tabular.scalar_column_source(
+            standard_deviations=self.standard_deviations,
+            scaling_factors = self.scaling_factors,
+            principal_axes = self.principal_axes,
+            summed_residuals = self._summed_residuals,
+            n_points_fitted = len(self.x),
+            x0 = self.x0,
+            y0 = self.y0,
+            z0 = self.z0,
+            sampling_fraction = self.sampling_fraction,
+            modes = self.modes.astype('i4'), 
+            coefficients=self.coefficients.astype('f4)'),
+        ) 
+    
     def to_recarray(self, keys=None):
         """
 
@@ -322,47 +346,50 @@ class ScaledShell(object):
         numpy recarray version of self
 
         """
-        record = np.recarray(len(self.coefficients), dtype=self.data_type)
-        record['modes'] = self.modes
-        record['coefficients'] = self.coefficients
-        return record
 
-    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
-        from PYME.IO import h5rFile, MetaDataHandler
-        # NOTE that we ignore metadata input
-        metadata = MetaDataHandler.NestedClassMDHandler()
-        metadata['spherical_harmonic_shell.standard_deviations'] = self.standard_deviations.tolist()
-        metadata['spherical_harmonic_shell.scaling_factors'] = self.scaling_factors.tolist()
-        metadata['spherical_harmonic_shell.principal_axes'] = self.principal_axes.tolist()
-        metadata['spherical_harmonic_shell.summed_residuals'] = self._summed_residuals
-        metadata['spherical_harmonic_shell.n_points_used_in_fitting'] = len(self.x)
-        metadata['spherical_harmonic_shell.x0'] = self.x0
-        metadata['spherical_harmonic_shell.y0'] = self.y0
-        metadata['spherical_harmonic_shell.z0'] = self.z0
-        metadata['spherical_harmonic_shell.sampling_fraction'] = self.sampling_fraction
+        return self.table_representation.to_recarray(self, keys=keys)
 
-        with h5rFile.H5RFile(filename, 'a') as f:
-            f.appendToTable(tablename, self.to_recarray(keys))
-            f.updateMetadata(metadata)
+    def to_hdf(self, *args, **kwargs):
+        return self.table_representation.to_hdf(*args, **kwargs)
+
 
     @staticmethod
-    def from_tabular(shell_table):
+    def from_tabular(shell_table, index=0):
         shell = ScaledShell()
-        
-        shell.standard_deviations = np.asarray(shell_table.mdh['spherical_harmonic_shell.standard_deviations'])
-        shell.scaling_factors = np.asarray(shell_table.mdh['spherical_harmonic_shell.scaling_factors'])
-        shell.principal_axes = np.asarray(shell_table.mdh['spherical_harmonic_shell.principal_axes'])
 
-        shell.x0 = shell_table.mdh['spherical_harmonic_shell.x0']
-        shell.y0 = shell_table.mdh['spherical_harmonic_shell.y0']
-        shell.z0 = shell_table.mdh['spherical_harmonic_shell.z0']
-
-        shell._summed_residuals = shell_table.mdh['spherical_harmonic_shell.summed_residuals']
-        shell.sampling_fraction = shell_table.mdh['spherical_harmonic_shell.sampling_fraction']
+        if len(shell_table.keys() == 2):
+            # old legacy format which stores data in metadata
         
-        shell._set_coefficients(shell_table['modes'], shell_table['coefficients'])
+            shell.standard_deviations = np.asarray(shell_table.mdh['spherical_harmonic_shell.standard_deviations'])
+            shell.scaling_factors = np.asarray(shell_table.mdh['spherical_harmonic_shell.scaling_factors'])
+            shell.principal_axes = np.asarray(shell_table.mdh['spherical_harmonic_shell.principal_axes'])
+
+            shell.x0 = shell_table.mdh['spherical_harmonic_shell.x0']
+            shell.y0 = shell_table.mdh['spherical_harmonic_shell.y0']
+            shell.z0 = shell_table.mdh['spherical_harmonic_shell.z0']
+
+            shell._summed_residuals = shell_table.mdh['spherical_harmonic_shell.summed_residuals']
+            shell.sampling_fraction = shell_table.mdh['spherical_harmonic_shell.sampling_fraction']
+            
+            shell._set_coefficients(shell_table['modes'], shell_table['coefficients'])
+
+        else:
+            #new format which stores everything in one table
+            shell.standard_deviations = shell_table['standard_deviations'][index]
+            shell.scaling_factors = shell_table['scaling_factors'][index]
+            shell.principal_axes = shell_table['principal_axes'][index]
+
+            shell.x0 = shell_table['x0'][index]
+            shell.y0 = shell_table['y0'][index]
+            shell.z0 = shell_table['z0'][index]
+
+            shell._summed_residuals = shell_table['summed_residuals'][index]
+            shell.sampling_fraction = shell_table['sampling_fraction'][index]
+            
+            shell._set_coefficients(shell_table['modes'][index], shell_table['coefficients'][index])
 
         return shell
+
 
     def _set_coefficients(self, modes, coefficients):
         assert len(modes) == len(coefficients)
@@ -370,8 +397,15 @@ class ScaledShell(object):
         self.coefficients = coefficients
 
     def set_fitting_points(self, x, y, z):
+        from PYME.IO.image import ImageBounds
+
         assert (x.shape == y.shape) and (y.shape == z.shape)
-        self.x, self.y, self.z = np.copy(x), np.copy(y), np.copy(z)
+        self.x, self.y, self.z = x.astype(np.float32, copy=True), y.astype(np.float32, copy=True), z.astype(np.float32, copy=True)
+        
+        #does it really make sense to use ImageBounds here??
+        self._fitting_point_bounds = ImageBounds(self.x.min(), self.y.min(),
+                                                 self.x.max(), self.y.max(),
+                                                 self.z.min(), self.z.max())
         self.x0, self.y0, self.z0 = self.x.mean(), self.y.mean(), self.z.mean()
 
         self.x_c, self.y_c, self.z_c = self.x - self.x0, self.y - self.y0, self.z - self.z0
@@ -415,7 +449,7 @@ class ScaledShell(object):
         # need to scale things "down" since they were scaled "up" in the fit
         # scaling_factors = 1. / self.scaling_factors
 
-        scaled_axes = self.principal_axes / self.scaling_factors[:, None]
+        scaled_axes = (self.principal_axes / self.scaling_factors[:, None]).astype(azimuth.dtype, copy=False)
 
         coords = x_scaled.ravel()[:, None] * scaled_axes[0, :] + y_scaled.ravel()[:, None] * scaled_axes[1,
                                                                                              :] + z_scaled.ravel()[:,
@@ -523,7 +557,8 @@ class ScaledShell(object):
         n_points = len(x)
         zenith, azimuth = np.mgrid[0:(np.pi + d_angles):d_angles, 0:(2 * np.pi + d_angles):d_angles]
 
-        x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
+        x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth.astype(np.float32, copy=False),
+                                                          zenith.astype(np.float32, copy=False))
         # calculate the distance between all our points and the shell
         dist = np.sqrt(
             (x - x_shell[:, :, None]) ** 2 + (y - y_shell[:, :, None]) ** 2 + ((z - z_shell[:, :, None]) ** 2))
@@ -735,6 +770,7 @@ class ScaledShell(object):
     
     def approximate_image_bounds(self, d_zenith=0.1, d_azimuth=0.1):
         from PYME.IO.image import ImageBounds
+        #does it really make sense to use ImageBounds here??
         
         zenith, azimuth = np.mgrid[0:(np.pi + d_zenith):d_zenith,
                                    0:(2 * np.pi + d_azimuth):d_azimuth]
@@ -742,8 +778,69 @@ class ScaledShell(object):
         x_shell, y_shell, z_shell = self.get_fitted_shell(azimuth, zenith)
 
         return ImageBounds(x_shell.min(), y_shell.min(), 
-                           x_shell.max(), y_shell.max(),
-                           z_shell.min(), z_shell.max())
+                          x_shell.max(), y_shell.max(),
+                          z_shell.min(), z_shell.max())
+
+    def uniform_random_radial_density(self, n_radial_bins=20, batch_size=100000, target_sampling_nm=75.):
+        """
+        Estimate a radial density histogram for uniform spatial sampling within the shell. Performs calculation in batches to give bounded memory usage.
+
+        Parameters
+        ----------
+
+        n_radial_bins : int
+            Number of radial bins to divide the radius into
+        batch_size : int
+            number of test points to generate in one batch. Note that the default (100000) might be a bit conservative
+        target_sampling_nm: float
+            desired sampling density of combined batches. Used in conjuction with batch_size to determine the number of batches required.
+        """
+
+        bounds = self.approximate_image_bounds()
+
+        w = bounds.x1 - bounds.x0 #+ 2*target_sampling_nm
+        h = bounds.y1 - bounds.y0 #+ 2*target_sampling_nm
+        d = bounds.z1 - bounds.z0 #+ 2*target_sampling_nm
+
+        # to ensure spatial uniformity, simulate in a cube with an edge length equal to the longest bound.
+        # this means we chuck away quite a few points at the rejection step, but is logically simple
+        cube_size =max([w, h, d])
+
+        # calculate number of batches to give uniform random sampling with a desired spacing,
+        # whilst not exceeding the memory requirements dictated by a single batch 
+        n_batches = int(((cube_size/target_sampling_nm)**3)/batch_size)
+        logger.debug('Using %d batches for density estimation' % n_batches)
+
+        # calculate where to put our edges
+        bin_edges = np.linspace(0, 1, n_radial_bins)
+
+        #pre-allocate and output array
+        counts = np.zeros(len(bin_edges)-1, 'i4')
+
+        for i in range(n_batches):
+            # simulate batch_size uniformly distributed points within a bounding cube
+            x = np.random.uniform(bounds.x0, bounds.x0 + cube_size, batch_size)
+            y = np.random.uniform(bounds.y0, bounds.y0 + cube_size, batch_size)
+            z = np.random.uniform(bounds.z0, bounds.z0 + cube_size, batch_size)
+
+            # if shell_coordinates and/or reconstruct_shell prove expensive, we could clip to the rectangular (non-cube) bounding box here
+            # before calculating shell coordinates. Omitting for now as this is likely to be premature optimisation (and the additionaly indexing
+            # might well prove more expensive than just calculating the shell co-ordinates)
+
+            # convert these to polar, shell referenced coordinates
+            azi, zen, r = self.shell_coordinates((x, y, z))
+            r_shell = reconstruct_shell(self.modes,self.coefficients,azi, zen)
+
+            # find which points are inside the shell
+            inside = r < r_shell
+            # reject all points outside the shell
+            r_norm = r[inside]/r_shell[inside]
+
+            counts += np.histogram(r_norm, bin_edges)[0]
+
+        return bin_edges, counts
+
+
 
 class SHShell(ScaledShell):
     '''

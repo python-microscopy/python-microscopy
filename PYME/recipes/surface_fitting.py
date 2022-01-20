@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat
+from .traits import Input, Output, Float, Int, Bool, CStr, ListFloat, Enum
 import numpy as np
 from PYME.IO import tabular
 import logging
@@ -286,6 +286,11 @@ class SphericalHarmonicShell(ModuleBase):
     d_angles: Float
         Sets the step size in radians of zenith and azimuth arrays used in reconstructing the spherical harmonic shell.
         Only relevant for distance_to_shell column of mapped output.
+    bound_tolerance: Float
+        Factor of fitting point spatial extent to allow in each dimension. The
+        default of 0 means this tolerance is not checked, otherwise if the
+        spatial extent of shell is a factor of `bound_tolerance` larger than 
+        extent of the fitting points, the fit is failed.
 
 
     Returns
@@ -312,6 +317,7 @@ class SphericalHarmonicShell(ModuleBase):
     name_inside_shell = CStr('inside_shell')
     name_distance_to_shell = CStr('distance_to_shell')
     d_angles = Float(0.1)
+    bound_tolerance = Float(0.0, desc='Factor of fitting point image bounds to allow.')
 
     output_name = Output('harmonic_shell')
     output_name_mapped = Output('shell_mapped')
@@ -323,15 +329,25 @@ class SphericalHarmonicShell(ModuleBase):
         points = tabular.MappingFilter(namespace[self.input_name])
 
         shell = spherical_harmonics.ScaledShell()
-        shell.set_fitting_points(points['x'], points['y'], points['z'])
+        x = points['x'].astype(np.float32, copy=False)
+        y = points['y'].astype(np.float32, copy=False)
+        z = points['z'].astype(np.float32, copy=False)
+        shell.set_fitting_points(x, y, z)
         shell.fit_shell(max_iterations=self.max_iterations, tol_init=self.init_tolerance)
 
-        separations, closest_points = shell.distance_to_shell((points['x'], points['y'], points['z']),
+        separations, closest_points = shell.distance_to_shell((x, y, z),
                                                               d_angles=self.d_angles)
-
+        if self.bound_tolerance != 0:
+            shell_bounds = shell.approximate_image_bounds()
+            max_extent = np.asarray(shell._fitting_point_bounds.extent) * self.bound_tolerance
+            if np.any(shell_bounds.extent > max_extent):
+                raise AssertionError('Shell bounds exceed fit-point bound tolerance')
+            
         points.addColumn(self.name_distance_to_shell, separations)
         points.addColumn(self.name_inside_shell, shell.check_inside())
 
+        # add median distance to shell as a goodness of fit parameter
+        shell.table_representation.addColumn('median_residual', np.array([np.median(separations),]))
         namespace[self.output_name] = shell
         namespace[self.output_name_mapped] = points
 
@@ -366,8 +382,10 @@ class AddSphericalHarmonicShellMappedCoords(ModuleBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
         
         # map points to scaled spherical coordinates
-        azimuth, zenith, r = shell.shell_coordinates((points['x'], points['y'],
-                                                      points['z']))
+        azimuth, zenith, r = shell.shell_coordinates((points['x'].astype(np.float32, copy=False),
+                                                      points['y'].astype(np.float32, copy=False),
+                                                      points['z'].astype(np.float32, copy=False)))
+        
         # lookup shell radius at those angles
         r_shell = spherical_harmonics.reconstruct_shell(shell.modes,
                                                         shell.coefficients,
@@ -400,40 +418,84 @@ class SHShellRadiusDensityEstimate(ModuleBase):
     input_shell = Input('harmonic_shell')
 
     r_bin_spacing = Float(0.05)
-    sampling_nm = ListFloat([75, 75, 75])
+    sampling_nm = ListFloat([75, 75, 75]) # TODO - convert this to a single float - we only use the first entry
     jitter_iterations = Int(3)
+    batch_size = Int(100000)
+    sampling_method = Enum(['grid', 'uniform random'])
 
     output = Output('r_uniform_kde')
+    shell_properties_output = Output('')
 
 
     def execute(self, namespace):
         from PYME.Analysis.points import spherical_harmonics
-        from PYME.IO import MetaDataHandler
+        from PYME.IO import MetaDataHandler, tabular
 
         shell = namespace[self.input_shell]
         if isinstance(shell, tabular.TabularBase):
             shell = spherical_harmonics.ScaledShell.from_tabular(shell)
+
+        if self.sampling_method == 'uniform random':
+            # uniform random sampling with Monte-Carlo rejection.
+            bin_edges, counts = shell.uniform_random_radial_density(n_radial_bins=int(1./self.r_bin_spacing), batch_size=self.batch_size, target_sampling_nm=self.sampling_nm[0])
+            bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+            # estimate the volume, convert from nm^3 to um^3
+            # note, volume estimate will have an error of around +- sqrt(N_counts)
+            volume = counts.sum() * (np.prod(self.sampling_nm) / (1e9))
+
+            res = tabular.DictSource({
+                'bin_centers': bin_centers,
+                'counts': counts
+            })
+            
+            res.mdh = MetaDataHandler.DictMDHandler(getattr(shell, 'mdh', None))
+
+            
+
+            # FIXME - this is really gross - we must not pass data / results in metadata
+            # Leaving here for now, for backwards compatibility, but needs to be fixed / removed somewhat urgently
+            # if we record sampling in the metadata, as we should, the volume calculation could easily be done in the consuming module)      
+            res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
+
+
+            # record module parameters  - FIXME this should be under the 'Analysis' top-level metadata key.
+            res.mdh['SHShellRadiusDensityEstimate.sampling_nm'] = self.sampling_nm[0] 
+
+            namespace[self.output] = res
+
+            if self.shell_properties_output != '':
+                props = tabular.tabular.MappingFilter(shell.table_representation)
+                props.addColumn('radial_dens_volume', np.array([float(volume)]))
+                namespace[self.shell_properties_output] 
         
-        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing)
+            return
+
+        ## old code  (sampling on a regular grid) TODO - refactor out of this module          
+        
+        bin_edges = np.arange(0, 1.0 + self.r_bin_spacing, self.r_bin_spacing, 
+                              dtype=np.float32)
         bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
-        out_hist = np.zeros(len(bin_centers), float)
+        out_hist = np.zeros(len(bin_centers), dtype=np.float32)
 
         # get shell bounds, make grid within
         shell_bounds = shell.approximate_image_bounds()
         xv = np.arange(shell_bounds.x0, shell_bounds.x1 + self.sampling_nm[0],
-                       self.sampling_nm[0])
+                       self.sampling_nm[0], dtype=np.float32)
         yv = np.arange(shell_bounds.y0, shell_bounds.y1 + self.sampling_nm[1],
-                       self.sampling_nm[1])
+                       self.sampling_nm[1], dtype=np.float32)
         zv = np.arange(shell_bounds.z0, shell_bounds.z1 + self.sampling_nm[2],
-                       self.sampling_nm[2])
-        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij')
+                       self.sampling_nm[2], dtype=np.float32)
+        # meshgrid with copy false to use a view (don't write x,y,z after)
+        x, y, z = np.meshgrid(xv, yv, zv, indexing='ij', copy=False)
 
         v_estimates = []
         sdev_estimates = []
-        n_choose = 10000
         
         for _ in range(self.jitter_iterations):
-            xr, yr, zr = np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv)), np.random.rand(len(xv), len(yv), len(zv))
+            xr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
+            yr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
+            zr = np.random.rand(len(xv), len(yv), len(zv)).astype(np.float32, copy=False)
             xr = (xr - 0.5) * self.sampling_nm[0] + x
             yr = (yr - 0.5) * self.sampling_nm[1] + y
             zr = (zr - 0.5) * self.sampling_nm[2] + z
@@ -443,17 +505,18 @@ class SHShellRadiusDensityEstimate(ModuleBase):
                                                             azi, zen)
             inside = r < r_shell
             N = np.sum(inside)
-            r_norm = r[inside] / r_shell[inside]
+            # normalize r, and writeover to save memory
+            r = r[inside] / r_shell[inside]
             # sum-normalize this iteration and add to output
-            out_hist += np.histogram(r_norm, bins=bin_edges)[0] / N
+            out_hist += np.histogram(r, bins=bin_edges)[0] / N
 
             # record volume estimate
             v_estimates.append(N)
             # estimate spread along principle axes of the shell
             X = np.vstack([xr[inside], yr[inside], zr[inside]])
-            if N > n_choose:
+            if N > self.batch_size:
                 # downsample to avoid memory error
-                X = X[:, np.random.choice(N, n_choose, replace=False)]
+                X = X[:, np.random.choice(N, self.batch_size, replace=False)]
             # TODO - do we need to be mean-centered?
             X = X - X.mean(axis=1)[:, None]
             _, s, _ = np.linalg.svd(X.T)
@@ -478,11 +541,15 @@ class SHShellRadiusDensityEstimate(ModuleBase):
         try:
             res.mdh = MetaDataHandler.DictMDHandler(shell.mdh)
         except AttributeError:
-            res.mdh = MetaDataHandler.DictMDHandler()
+            pass
         
-        res.mdh['SHShellRadiusDensityEstimate.Volume'] = float(volume)
-        res.mdh['SHShellRadiusDensityEstimate.StdDeviations'] = standard_deviations.tolist()
-        res.mdh['SHShellRadiusDensityEstimate.Anisotropy'] = float(anisotropy)
+
+        if self.shell_properties_output != '':
+            props = tabular.tabular.MappingFilter(shell.table_representation)
+            props.addColumn('radial_dens_volume', np.array([float(volume)]))
+            props.addColumn('radial_dens_std_dev', np.array([standard_deviations.astype('f4')]))
+            props.addColumn('radial_dens_anisotropy', np.array([float(anisotropy)]))
+            namespace[self.shell_properties_output] 
 
         namespace[self.output] = res
 

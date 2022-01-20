@@ -121,8 +121,11 @@ def test_density_estimate():
     from PYME.recipes.surface_fitting import SHShellRadiusDensityEstimate
 
     hist_out = SHShellRadiusDensityEstimate(sampling_nm=[1, 1, 1],
-                                            jitter_iterations=10).apply_simple(FITTER)
+                                            jitter_iterations=5).apply_simple(FITTER)
     r2norm = hist_out['counts'] / (hist_out['bin_centers']**2)
     rel = r2norm / r2norm[-1]
     # drop the lowest bin and check that we're within 5% of the rest
     assert np.all(np.abs(rel[1:] - 1) < 0.05)
+    v_sphere = (4/3 * np.pi * R_SPHERE**3)  # [nm^3]
+    v_sphere_out_nm3 = hist_out.mdh['SHShellRadiusDensityEstimate.Volume'] * 1e9  # [nm^3]
+    assert abs(v_sphere - v_sphere_out_nm3) / v_sphere < 0.05

@@ -102,11 +102,16 @@ class ImageBounds(object):
                 y1 = y1 / 2
 
         return cls(x0, y0, x1, y1)
-
+    
+    
+    @property
+    def extent(self):
+        # TODO - is this really needed / something we should do here?
+        return self.x1 - self.x0, self.y1 - self.y0, self.z1 - self.z0
+      
     def __repr__(self):
         # FIXME - requires python >3.6
         return f'ImageBounds(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1}, z0={self.z0}, z1 = {self.z1}) instance at 0x{id(self):0X}'
-
 
 lastdir = ''
 
