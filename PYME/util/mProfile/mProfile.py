@@ -79,6 +79,7 @@ lStore = threading.local()
 #lStore.tPrev = {}
 #lStore.lPrev = mydictn()
 
+global filenames, files, linecounts
 filenames = []
 files = {}
 linecounts = {}
