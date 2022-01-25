@@ -30,7 +30,7 @@ def save_as_png(view):
         view.GrabPNG(filename)
 
 def Plug(dsviewer):
-    dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize)
+    dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=lambda : getattr(dsviewer.image, 'voxelsize_nm'))
     dsviewer.updateHooks.append(dsviewer.view.Redraw)
     dsviewer.AddPage(dsviewer.view, True, 'Data')
 

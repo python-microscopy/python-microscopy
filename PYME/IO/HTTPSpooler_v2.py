@@ -86,7 +86,9 @@ class Spooler(sp.Spooler):
                                                             distribution_fcn=dist_fcn, 
                                                             compression_settings=kwargs.get('compressionSettings', {}),
                                                             cluster_h5=self._aggregate_h5,
-                                                            serverfilter=self.clusterFilter)
+                                                            serverfilter=self.clusterFilter,
+                                                            shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
+                                                            )
         
         self.md = self._backend.mdh
         self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)

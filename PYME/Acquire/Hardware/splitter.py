@@ -473,7 +473,7 @@ class UnMixPanel(wx.Panel):
 #
 #        sizer.Add(pan, 0, 0, 0)
 
-        self.vp = ArrayViewPanel(self, self.ds)
+        self.vp = ArrayViewPanel(self, self.ds, initial_overlays=[])
         sizer.Add(self.vp, 1,wx.EXPAND,0)
         #self.SetAutoLayout(1)
         self.SetSizer(sizer)

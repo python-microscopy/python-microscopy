@@ -102,11 +102,16 @@ class ImageBounds(object):
                 y1 = y1 / 2
 
         return cls(x0, y0, x1, y1)
-
+    
+    
+    @property
+    def extent(self):
+        # TODO - is this really needed / something we should do here?
+        return self.x1 - self.x0, self.y1 - self.y0, self.z1 - self.z0
+      
     def __repr__(self):
         # FIXME - requires python >3.6
         return f'ImageBounds(x0={self.x0}, y0={self.y0}, x1={self.x1}, y1={self.y1}, z0={self.z0}, z1 = {self.z1}) instance at 0x{id(self):0X}'
-
 
 lastdir = ''
 
@@ -497,11 +502,11 @@ class ImageStack(object):
         #background subtraction in the GUI the same way as in the analysis
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
-        if 'MetaData' in self.dataSource.h5File.root: #should be true the whole time
-            self.mdh = MetaData.TIRFDefault
-            self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
+        self.mdh = MetaData.TIRFDefault
+
+        if self.dataSource.mdh is not None: #should be true the whole time    
+            self.mdh.copyEntriesFrom(self.dataSource.mdh)
         else:
-            self.mdh = MetaData.TIRFDefault
             import wx
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
