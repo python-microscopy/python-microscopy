@@ -98,8 +98,8 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
         if (curr_idx == -1)
             break;
 
-        // printf("Current index: %d\n", curr_idx);
-        // printf("orig_index: %d\n", orig_idx);
+        //printf("Current index: %d\n", curr_idx);
+        //printf("orig_index: %d\n", orig_idx);
 
         if (i < NEIGHBORSIZE)
         {
