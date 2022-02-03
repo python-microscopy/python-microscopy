@@ -116,7 +116,11 @@ cdef class TriangleMesh(TrianglesBase):
     cpdef int edge_split(self, np.int32_t, bint live_update=*, bint upsample=*)
     cpdef int relax(self, float l=*, int n=*)
     cpdef int regularize(self)
+
+    cdef int edge_split_2(self, np.int32_t _curr, np.int32_t* new_edges, np.int32_t* new_vertices, np.int32_t* new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
+                            bint live_update=*, bint upsample=*)
     
+    cdef _populate_edge(self, int idx, int vertex, int prev=*, int next=*, int face=*, int twin=*)
     #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
     
     cdef int _new_face(self, int)

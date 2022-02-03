@@ -40,7 +40,7 @@ def configuration(parent_package = '', top_path = None):
     ext = Extension(name='.'.join([parent_package, 'Simulator', 'illuminate']),
                     sources=[os.path.join(os.path.dirname(__file__),'illuminate.pyx')],
                     include_dirs=get_numpy_include_dirs(),
-                    extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
+                    extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math'], #'-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
 
     config = Configuration('Simulator', parent_package, top_path, ext_modules=cythonize([ext]))

@@ -33,6 +33,10 @@ import cgi, string, sys
 from io import StringIO
 import keyword, token, tokenize
 
+try:
+    from cgi import escape
+except ImportError:
+    from html import escape
 
 #############################################################################
 ### Python Source Parser (does Highlighting)
@@ -234,7 +238,7 @@ class Parser:
 
         # send text
         self.out.write('<span class="%s">' % (css_class,))
-        self.out.write(cgi.escape(toktext))
+        self.out.write(escape(toktext))
         self.out.write('</span>')
 
         if toktype == tokenize.COMMENT and toktext[-1] == '\n':

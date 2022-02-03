@@ -4,6 +4,8 @@ cimport numpy as np
 import numpy as np
 cimport cython
 
+from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+
 from PYME.experimental import triangle_mesh_utils
 
 DEF MAX_VERTEX_COUNT = 2**31
@@ -679,7 +681,7 @@ cdef class TriangleMesh(TrianglesBase):
             v_idxs = np.int32(v_idxs)
         triangle_mesh_utils.c_update_vertex_neighbors(v_idxs, self._halfedges, self._vertices, self._faces)
 
-    def _resize(self, vec, axis=0, return_orig=False, skip_entries=False, key=None):
+    def _resize(self, vec, axis=0, return_orig=False, skip_entries=False, key=None, new_items=1):
         """
         Increase the size of an input vector 1.5x, keeping all active data.
 
@@ -703,7 +705,7 @@ cdef class TriangleMesh(TrianglesBase):
         # Increase the size 1.5x along the axis.
         dt = vec.dtype
         new_size = np.array(vec.shape)
-        new_size[axis] = int(1.5*new_size[axis] + 0.5)
+        new_size[axis] = int(max(1.5*new_size[axis], new_size[axis]+ new_items + 1) + 0.5)
         new_size = tuple(new_size)
         
         # Allocate memory for new array
@@ -1259,17 +1261,18 @@ cdef class TriangleMesh(TrianglesBase):
         self._H = None
         self._K = None
 
-    def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
+    def _get_insertion_slots(self, int n_slots, el_arr, el_vacancies, key_idx, compact=False):
         """ get an empty slot to insert into, resizing if needed"""
-        cdef int idx
+        #cdef int idx
         
-        try:
-            idx = el_vacancies.pop(-1)
+        if len(el_vacancies) > n_slots:
+            idx = el_vacancies[-n_slots:]
+            el_vacancies = el_vacancies[:-n_slots]
             #idx = el_vacancies.pop(0)
-        except IndexError:
+        else:
             # no vacant slot, resize
             key = __insertion_keys[key_idx]
-            el_arr = self._resize(el_arr, skip_entries=compact, key=key)
+            el_arr = self._resize(el_arr, skip_entries=compact, key=key, new_items=n_slots)
             #TODO - invalidate neighbours, vertex_halfedges etc ???
             
             # NOTE: If we search by a different key next time, el_vacancies will
@@ -1283,13 +1286,21 @@ cdef class TriangleMesh(TrianglesBase):
                 # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
                 el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
-            idx = el_vacancies.pop(-1)
+            #idx = el_vacancies.pop(-1)
+            idx = el_vacancies[-n_slots:]
+            el_vacancies = el_vacancies[:-n_slots]
             #idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
         
         return idx, el_arr, el_vacancies
+
+    def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
+        #print('gis', el_arr)
+        idx, el_arr, el_vacancies = self._get_insertion_slots(1, el_arr, el_vacancies, key_idx, compact)
+        #print(idx, el_vacancies)
+        return idx[0], el_arr, el_vacancies
     
     def _insert(self, el, el_arr, el_vacancies, int key, bint compact=False, insert_key=None, **kwargs):
         """
@@ -1356,6 +1367,37 @@ cdef class TriangleMesh(TrianglesBase):
         self._chalfedges[idx].twin = twin
         
         return idx
+
+    cdef _populate_edge(self, int idx, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1):
+        # TODO - make a macro??
+        self._chalfedges[idx].vertex = vertex
+        self._chalfedges[idx].prev = prev
+        self._chalfedges[idx].next = next
+        self._chalfedges[idx].face = face
+        self._chalfedges[idx].twin = twin
+
+    def new_edges(self, int n_edges):
+        idx, self._halfedges, self._halfedge_vacancies = self._get_insertion_slots(n_edges, self._halfedges, self._halfedge_vacancies, key_idx=INSERTION_KEY_VERTEX)
+        self._set_chalfedges(self._halfedges)
+
+        return np.array(idx, np.int32)
+
+    def new_vertices(self, int n_vertices):
+        idx, self._vertices, self._vertex_vacancies = self._get_insertion_slots(n_vertices, self._vertices, self._vertex_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+        self._set_cvertices(self._vertices)
+
+        self._faces_by_vertex = None  # Reset
+        self._H = None
+        self._K = None
+
+        return np.array(idx, np.int32)
+
+    def new_faces(self, int n_faces):
+        idx, self._faces, self._face_vacancies = self._get_insertion_slots(n_faces, self._faces, self._face_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+        self._set_cfaces(self._faces)
+
+        return np.array(idx, np.int32)
+
  
     def _new_edge(self, int vertex, compact=False, **kwargs):
         """
@@ -1622,6 +1664,218 @@ cdef class TriangleMesh(TrianglesBase):
                 update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
                 update_single_vertex_neighbours(self._chalfedges[_he_2_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
                 update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            
+            else:
+                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
+                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+                
+                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                
+                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_prev].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+            
+            
+            self._faces_by_vertex = None
+            self._H = None
+            self._K = None
+        
+        return 1
+
+    cdef int edge_split_2(self, np.int32_t _curr, np.int32_t * new_edges, np.int32_t * new_vertices, np.int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
+                            bint live_update=1, bint upsample=0):
+        """
+        Split triangles evenly along an edge specified by halfedge index _curr.
+
+        Parameters
+        ----------
+            _curr : int
+                Pointer to halfedge defining edge to split.
+            live_update : bool
+                Update associated faces and vertices after split. Set to False
+                to handle this externally (useful if operating on multiple, 
+                disjoint edges).
+            upsample: bool
+                Are we doing loop subdivision? If so, keep track of all edges
+                incident on both a new vertex and an old verex that do not
+                split an existing edge.
+        """
+        cdef halfedge_t *curr_edge
+        cdef halfedge_t *twin_edge
+        cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, _face_1_idx, _face_2_idx, _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx, _vertex_idx
+        cdef bint interior
+        cdef np.int32_t v0, v1
+        cdef int i
+        cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot
+        cdef np.float32_t[VECTORSIZE] _vertex
+
+        if _curr == -1:
+            return 0
+        
+        curr_edge = &self._chalfedges[_curr]
+        _prev = curr_edge.prev
+        _next = curr_edge.next
+
+        # Grab the new vertex position
+        v0 = curr_edge.vertex
+        v1 = self._chalfedges[_prev].vertex
+        x0x = self._cvertices[v0].position0
+        x0y = self._cvertices[v0].position1
+        x0z = self._cvertices[v0].position2
+        x1x = self._cvertices[v1].position0
+        x1y = self._cvertices[v1].position1
+        x1z = self._cvertices[v1].position2
+
+        # _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
+        # x0 = self._vertices['position'][curr_edge.vertex, :]
+        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+        # n0 = self._vertices['normal'][curr_edge.vertex, :]
+        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+         
+        # x0 = self._cvertices['position'][curr_edge.vertex, :]
+        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+        # n0 = self._vertices['normal'][curr_edge.vertex, :]
+        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+
+        # new vertex
+        # ------------
+
+        _vertex_idx = new_vertices[n_vertex_idx]
+
+        
+        _vertex[0] = 0.5*(x0x + x1x)
+        _vertex[1] = 0.5*(x0y + x1y)
+        _vertex[2] = 0.5*(x0z + x1z)
+        if not upsample:
+            n0x = self._cvertices[v0].normal0
+            n0y = self._cvertices[v0].normal1
+            n0z = self._cvertices[v0].normal2
+            n1x = self._cvertices[v1].normal0
+            n1y = self._cvertices[v1].normal1
+            n1z = self._cvertices[v1].normal2
+
+            ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
+
+            _vertex[0] += 0.0625*ndot*(n0x + n1x)
+            _vertex[1] += 0.0625*ndot*(n0y + n1y)
+            _vertex[2] += 0.0625*ndot*(n0z + n1z)
+
+        self._cvertices[_vertex_idx].position0 = _vertex[0]
+        self._cvertices[_vertex_idx].position1 = _vertex[1]
+        self._cvertices[_vertex_idx].position2 = _vertex[2]
+        #_vertex_idx = self._new_vertex(_vertex)
+
+        _twin = curr_edge.twin
+        interior = (_twin != -1)  # Are we on a boundary?
+        
+        if interior:
+            twin_edge = &self._chalfedges[_twin]
+            _twin_prev = twin_edge.prev
+            _twin_next = twin_edge.next
+        
+        # Ensure the original faces have the correct pointers and add two new faces
+        self._cfaces[curr_edge.face].halfedge = _curr
+        if interior:
+            self._cfaces[twin_edge.face].halfedge = _twin
+            _face_1_idx = new_faces[n_face_idx] #self._new_face(_twin_prev)
+            n_face_idx += 1
+            self._cfaces[_face_1_idx].halfedge = _twin_prev
+            self._chalfedges[_twin_prev].face = _face_1_idx
+        
+        _face_2_idx = new_faces[n_face_idx]
+        n_face_idx += 1 #self._new_face(_next)
+        self._cfaces[_face_2_idx].halfedge = _next
+        self._chalfedges[_next].face = _face_2_idx
+
+        # Insert the new faces
+        _he_0_idx = new_edges[n_edge_idx]
+        n_edge_idx += 1
+        _he_4_idx = new_edges[n_edge_idx]
+        n_edge_idx += 1
+        _he_5_idx = new_edges[n_edge_idx]
+        n_edge_idx += 1
+        
+        if interior:
+            _he_1_idx = new_edges[n_edge_idx]
+            n_edge_idx += 1
+            _he_2_idx = new_edges[n_edge_idx]
+            n_edge_idx += 1
+            _he_3_idx = new_edges[n_edge_idx]
+            n_edge_idx += 1
+
+            self._populate_edge(_he_1_idx, _vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face, twin=_he_2_idx)
+            self._populate_edge(_he_2_idx, self._chalfedges[_twin_next].vertex, prev= _he_3_idx, next=_twin_prev, face=_face_1_idx, twin=_he_1_idx)
+            self._populate_edge(_he_3_idx,_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx, twin=_he_4_idx)
+        else:
+            _he_1_idx = -1
+            _he_2_idx = -1
+            _he_3_idx = -1
+        
+        self._populate_edge(_he_0_idx, self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face, twin=_he_5_idx)
+        self._populate_edge(_he_4_idx, self._chalfedges[_curr].vertex, prev=_he_5_idx, next=_next, face=_face_2_idx, twin=_he_3_idx)
+        self._populate_edge(_he_5_idx, _vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx, twin=_he_0_idx)
+
+        # Update _prev, next
+        self._chalfedges[_prev].prev = _he_0_idx
+        self._chalfedges[_next].prev = _he_4_idx
+        self._chalfedges[_next].next = _he_5_idx
+
+        if interior:
+            # Update _twin_next, _twin_prev
+            self._chalfedges[_twin_next].next = _he_1_idx
+            self._chalfedges[_twin_prev].prev = _he_2_idx
+            self._chalfedges[_twin_prev].next = _he_3_idx
+
+            self._chalfedges[_twin].prev = _he_1_idx
+        # Update _curr and _twin
+        self._chalfedges[_curr].vertex = _vertex_idx
+        self._chalfedges[_curr].next = _he_0_idx
+
+        # Update halfedges
+        if interior:
+            self._cvertices[self._chalfedges[_he_2_idx].vertex].halfedge = _he_1_idx
+        
+        self._cvertices[self._chalfedges[_prev].vertex].halfedge = _curr
+        self._cvertices[self._chalfedges[_he_4_idx].vertex].halfedge = _next
+        self._cvertices[_vertex_idx].halfedge = _he_4_idx
+        self._cvertices[self._chalfedges[_he_0_idx].vertex].halfedge = _he_5_idx
+
+        if upsample:
+            # Make sure these edges emanate from the new vertex stored at _vertex_idx
+            if interior:
+                self._loop_subdivision_flip_edges.extend([_he_2_idx])
+            
+            self._loop_subdivision_flip_edges.extend([_he_0_idx])
+            self._loop_subdivision_new_vertices.extend([_vertex_idx])
+        
+        #print(_he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx)
+        #print(_vertex_idx)
+        #print(_face_1_idx, _face_2_idx)
+
+        #print('update')
+        if live_update:
+            if interior:
+                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_1_idx].face, self._chalfedges[_he_2_idx].face, self._chalfedges[_he_4_idx].face])
+                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_twin].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_2_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+            
+                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_1_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_2_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+                
+                #print('vertex_neighbours')
+                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                #print('n1')
+                update_single_vertex_neighbours(self._chalfedges[_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                #print('n2')
+                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                #print('n3')
+                update_single_vertex_neighbours(self._chalfedges[_he_2_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                #print('n')
+                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+                #print('vertex_neighbours done')
             
             else:
                 #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
@@ -2134,22 +2388,60 @@ cdef class TriangleMesh(TrianglesBase):
     def split_edges(self, float split_threshold):
         cdef int split_count = 0
         cdef int i
+        cdef int e
         cdef int n_halfedges = self._halfedges.shape[0]
         cdef float *n1
         cdef float *n2
         cdef float nd
+        cdef int n_edge_idx, n_face_idx, n_vertex_idx
         #self.face_normals
         #self.vertex_normals
+
+        cdef int* edges_to_split = <int*>PyMem_Malloc(n_halfedges*sizeof(int))
+        if not edges_to_split:
+            raise MemoryError()
+        cdef int* twin_split = <int*>PyMem_Malloc(n_halfedges*sizeof(int))
+        if not twin_split:
+            raise MemoryError()
+
+        for i in range(n_halfedges):
+            twin_split[i] = 0
         
         for i in range(n_halfedges):
-            if (self._chalfedges[i].vertex != -1): # and (self._chalfedges[i].length > split_threshold):
+            if (not twin_split[i]) and (self._chalfedges[i].vertex != -1): # and (self._chalfedges[i].length > split_threshold):
                 n1 = &self._cvertices[self._chalfedges[i].vertex].normal0
                 n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].twin].vertex].normal0
                 nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
                 nd = 1.0
-                if self._chalfedges[i].length > (nd*split_threshold):
-                    self.edge_split(i)
+                if (self._chalfedges[i].length > (nd*split_threshold)):
+                    twin_split[self._chalfedges[i].twin] = 1
+                    edges_to_split[split_count] = i
                     split_count += 1
+
+        n_edges = self.new_edges(int(split_count*6))
+        n_edge_idx = 0
+        n_faces = self.new_faces(int(split_count*2))
+        n_face_idx = 0
+        n_vertices = self.new_vertices(int(split_count))
+        n_vertex_idx = 0
+
+        #print(self._halfedges[n_edges])
+        
+        for i in range(split_count):
+            e = edges_to_split[i]
+            #print(i, e, n_edge_idx, n_edges)
+            self.edge_split_2(e, 
+                             <np.int32_t *> np.PyArray_DATA(n_edges), 
+                             <np.int32_t *> np.PyArray_DATA(n_vertices), 
+                             <np.int32_t *> np.PyArray_DATA(n_faces), 
+                             n_edge_idx, n_vertex_idx, n_face_idx)
+            #self.edge_split(e)
+            n_edge_idx += 6
+            n_face_idx += 2
+            n_vertex_idx += 1
+
+        PyMem_Free(edges_to_split)
+        PyMem_Free(twin_split)
                 
         print('Split count: %d' % (split_count))
         return split_count
