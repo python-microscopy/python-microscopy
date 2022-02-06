@@ -253,6 +253,7 @@ class piezo_c867T(PiezoBase):
                 
                 if self.stopMove: # SERVOCHECK: check if this is ok to process when servo is off!!!
                     # note that issueing the HLT command sets an error condition, from the manual: "Error code 10 is set."
+                    # question: should we check the error status to unset the error code from such a HLT command?
                     self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
                     self.ser_port.write(b'POS? 1 2\n')
@@ -289,22 +290,9 @@ class piezo_c867T(PiezoBase):
                 # check to see if we're on target - SERVOCHECK: CS: seems to me this only makes sense when servo is on - check manual
                 # from the manual on 'ONT?' command: "The detection of the on-target state is only possible in closed-loop operation (servo mode ON)"
                 if self.servo:
-                    self.ser_port.write(b'ONT?\n')
-                    self.ser_port.flushOutput()
-                    time.sleep(0.005)
-                    res1 = self.ser_port.readline()
-                    ont1 = int(res1.split(b'=')[1]) == 1
-                    res1 = self.ser_port.readline()
-                    ont2 = int(res1.split(b'=')[1]) == 1
-                
-                    onT = (ont1 and ont2)
+                    self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
                 else: # servo is off
-                    onT = False
-                    
-                # CS: I dont understand how self.onTargetLast should have worked - from the logic it has no function now
-                self.onTarget = onT and self.onTargetLast
-                self.onTargetLast = onT # note: with the statement below self.onTargetLast has absolutely no effect anymore - intended?
-                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
+                    self.onTarget = False                
                 
                 #time.sleep(.1)
                 
