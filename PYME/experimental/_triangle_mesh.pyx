@@ -355,7 +355,7 @@ cdef class TriangleMesh(TrianglesBase):
     @property
     def boundary(self):
         self._update_vertex_locally_manifold()
-        return np.flatnonzero(self._vertices['locally_manifold'] == 0)
+        return (self._vertices['locally_manifold'] == 0)
 
     @property
     def singular(self):
@@ -627,8 +627,8 @@ cdef class TriangleMesh(TrianglesBase):
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
                         # Don't assign a halfedge to multivalent edges
-                        self._halfedges['locally_manifold'][idx] = False
-                        self._halfedges['locally_manifold'][i] = False
+                        self._halfedges['locally_manifold'][idx] = 0
+                        self._halfedges['locally_manifold'][i] = 0
                         if self._halfedges['twin'][idx] != -1:
                             # If this check fails, we have to set this later...
                             self._halfedges['locally_manifold'][self._halfedges['twin'][idx]] = 0
@@ -638,7 +638,7 @@ cdef class TriangleMesh(TrianglesBase):
                     self._halfedges['twin'][i] = idx
 
                     # ... right here
-                    lm = self._halfedges['locally_manifold'][idx] and self._halfedges['locally_manifold'][i]
+                    lm = int(self._halfedges['locally_manifold'][idx] and self._halfedges['locally_manifold'][i])
                     self._halfedges['locally_manifold'][idx] = lm
                     self._halfedges['locally_manifold'][i] = lm
                 else:
@@ -2470,7 +2470,8 @@ cdef class TriangleMesh(TrianglesBase):
                 # nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
                 nd = 1.0
                 if (self._chalfedges[i].length > (nd*split_threshold)):
-                    twin_split[self._chalfedges[i].twin] = 1
+                    if self._chalfedges[i].twin != -1:
+                        twin_split[self._chalfedges[i].twin] = 1
                     edges_to_split[split_count] = i
                     split_count += 1
 
@@ -2480,9 +2481,8 @@ cdef class TriangleMesh(TrianglesBase):
         n_face_idx = 0
         n_vertices = self.new_vertices(int(split_count))
         n_vertex_idx = 0
-
         #print(self._halfedges[n_edges])
-        
+
         for i in range(split_count):
             e = edges_to_split[i]
             #print(i, e, n_edge_idx, n_edges)
@@ -3395,18 +3395,8 @@ cdef class TriangleMesh(TrianglesBase):
             to Manifold Surfaces, IEEE TRANSACTIONS ON VISUALIZATION AND 
             COMPUTER GRAPHICS, 2001.
         """
-        cdef int i, j, k, component, n_c
+        cdef int i, j, k, component, n_v
         cdef np.int32_t twin_idx
-        # Check the star of this vertex. That is, all of the vertices
-        # edges incident on this vertex. Partition the faces of the
-        # star s.t. two faces are connected if they share a non-
-        # singular edge. Denote the number of connected components
-        # under this relation as n_c.
-        # max_edges = 100  # maximum number of incident edges in a star
-        # stars = np.ones((self._singular_vertices.shape[0], max_edges),dtype=int)*-1
-        # success = self._build_vertex_stars(stars, max_edges)
-        # if success > 0:
-        #     raise ValueError("Too many edges in the stars. Aborting.")
 
         # Iterate over vertices that are endpoints of a singular edge or are
         # isolated singular vertices (number of incident edges =/= number of
@@ -3422,21 +3412,19 @@ cdef class TriangleMesh(TrianglesBase):
 
             # Partition the faces of the star s.t. two faces are connected if 
             # they share a non-singular edge. Denote the number of connected 
-            # components under this relation as n_c.
+            # components under this relation as component.
             for j in range(star.shape[0]):
                 self._chalfedges[star[j]].component = -1
             component = 0
             for j in range(star.shape[0]):
                 component = flood_fill_star_component(star[j], component,  self._chalfedges)
 
-            n_c = component-1
-
-            if n_c < 1:
+            # Construct n_v = component-1 additional compies of vertex i...
+            n_v = component-1
+            if n_v < 1:
                 continue
-
-            # Construct n_c additional compies of vertex i...
-            n_vertices = self.new_vertices(n_c)
-            for k in range(n_c):
+            n_vertices = self.new_vertices(n_v)
+            for k in range(n_v):
                 # ...with the same coordinates
                 self._cvertices[n_vertices[k]].position0 = copy.copy(self._cvertices[singular_vertices[i]].position0)
                 self._cvertices[n_vertices[k]].position1 = copy.copy(self._cvertices[singular_vertices[i]].position1)
@@ -3445,28 +3433,25 @@ cdef class TriangleMesh(TrianglesBase):
 
             for j in range(star.shape[0]):
                 k = self._chalfedges[star[j]].component
-                if k < n_c:
-                    # Assign halfedges associated with component k \in n_c a unique copy of this vertex
+                if k < n_v:
+                    # print(f"Component {k} gets a new vertex")
+                    # Assign halfedges associated with component k \in range(n_v) a unique copy of this vertex
                     self._chalfedges[star[j]].vertex = n_vertices[k]
 
                 # find an emanating halfedge in component k
                 self._cvertices[self._chalfedges[star[j]].vertex].halfedge = self._chalfedges[star[j]].next
 
-                twin_idx = self._chalfedges[star[j]].twin
-
                 # Mark singular edges in this component as non-singular, boundary
                 if self._chalfedges[star[j]].locally_manifold == 0:
                     self._chalfedges[star[j]].locally_manifold = 1
+                    twin_idx = self._chalfedges[star[j]].twin
                     if twin_idx != -1:
                         self._chalfedges[twin_idx].locally_manifold = 1
                         self._chalfedges[twin_idx].twin = -1
                         self._chalfedges[star[j]].twin = -1
-                        twin_idx = -1
 
                 update_face_normal(self._chalfedges[star[j]].face, self._chalfedges, self._cvertices, self._cfaces)
                 update_single_vertex_neighbours(self._chalfedges[star[j]].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[self._chalfedges[star[j]].prev].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[self._chalfedges[star[j]].next].vertex, self._chalfedges, self._cvertices, self._cfaces)
 
         # Make sure we're working with the latest singular edges/vertices
         # self._singular_edges = None
