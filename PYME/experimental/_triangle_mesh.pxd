@@ -12,6 +12,7 @@ cdef extern from 'triangle_mesh_utils.h':
         np.int32_t prev
         np.float32_t length
         np.int32_t component
+        np.int32_t locally_manifold
         
     cdef struct face_t:
         np.int32_t halfedge
@@ -87,8 +88,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _loop_subdivision_flip_edges
     cdef object _loop_subdivision_new_vertices
 
-    cdef object _singular_edges
-    cdef object _singular_vertices
+    # cdef object _singular_edges
+    # cdef object _singular_vertices
 
     cdef public object vertex_properties
     cdef public object extra_vertex_data
@@ -97,6 +98,8 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef bint _vertex_normals_valid
     cdef bint _face_normals_valid
+
+    cdef bint _components_valid
 
     cdef object _H
     cdef object _K
@@ -120,8 +123,10 @@ cdef class TriangleMesh(TrianglesBase):
     cdef int edge_split_2(self, np.int32_t _curr, np.int32_t* new_edges, np.int32_t* new_vertices, np.int32_t* new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
                             bint live_update=*, bint upsample=*)
     
-    cdef _populate_edge(self, int idx, int vertex, int prev=*, int next=*, int face=*, int twin=*)
+    cdef _populate_edge(self, int idx, int vertex, int prev=*, int next=*, int face=*, int twin=*, int locally_manifold=*)
     #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
     
     cdef int _new_face(self, int)
     #cdef int _new_vertex(self, np.ndarray, int)
+
+    cdef _compute_raw_vertex_valences(self, np.ndarray valence)

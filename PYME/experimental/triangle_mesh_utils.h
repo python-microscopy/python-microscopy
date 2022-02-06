@@ -21,6 +21,7 @@ typedef struct halfedge_t {
     int32_t prev;
     float length;
     int32_t component;
+    int32_t locally_manifold;
 } halfedge_t;
 
 typedef struct face_t {
