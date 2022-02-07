@@ -254,6 +254,7 @@ class piezo_c867T(PiezoBase):
                 if self.stopMove: # SERVOCHECK: check if this is ok to process when servo is off!!!
                     # note that issueing the HLT command sets an error condition, from the manual: "Error code 10 is set."
                     # question: should we check the error status to unset the error code from such a HLT command?
+                    logger.warn('piezo_c867T: stopMove issuing HLT command, expect error 10 to be set')
                     self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
                     self.ser_port.write(b'POS? 1 2\n')
