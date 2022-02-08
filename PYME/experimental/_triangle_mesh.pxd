@@ -130,3 +130,9 @@ cdef class TriangleMesh(TrianglesBase):
     #cdef int _new_vertex(self, np.ndarray, int)
 
     cdef _compute_raw_vertex_valences(self, np.ndarray valence)
+
+    cdef _find_boundary_polygons(self, np.ndarray boundary_polygons, np.ndarray boundary_edges)
+    cdef int _disconnect_pinched_polygons(self, np.ndarray boundary_polygons, int curr_poly, int n_poly, int n_edges)
+    cdef _pinch_boundaries(self, np.ndarray boundary_polygons, bint live_update=*)
+    cdef _color_boundaries(self, np.ndarray boundary_polygons)
+    cdef _delete_vertex(self, int v_idx)
