@@ -90,6 +90,8 @@ cdef class TriangleMesh(TrianglesBase):
 
     # cdef object _singular_edges
     # cdef object _singular_vertices
+    cdef bint _singular_edges_valid
+    cdef bint _singular_vertices_valid
 
     cdef public object vertex_properties
     cdef public object extra_vertex_data
@@ -111,8 +113,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef bint _check_neighbour_twins(self, int)
     cdef bint _check_collapse_fast(self, int, int)
     cdef bint _check_collapse_slow(self, int, int)
-    cdef _face_delete(self, np.int32_t)
-    cdef _edge_delete(self, np.int32_t)
+    cdef int _face_delete(self, np.int32_t)
+    cdef int _edge_delete(self, np.int32_t)
+    cdef int _vertex_delete(self, np.int32_t v_idx)
     cdef _zipper(self, np.int32_t, np.int32_t)
     cpdef int edge_flip(self, np.int32_t, bint live_update=*)
     cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
@@ -134,5 +137,4 @@ cdef class TriangleMesh(TrianglesBase):
     cdef _find_boundary_polygons(self, np.ndarray boundary_polygons, np.ndarray boundary_edges)
     cdef int _disconnect_pinched_polygons(self, np.ndarray boundary_polygons, int curr_poly, int n_poly, int n_edges)
     cdef _pinch_boundaries(self, np.ndarray boundary_polygons, bint live_update=*)
-    cdef _color_boundaries(self, np.ndarray boundary_polygons)
-    cdef _delete_vertex(self, int v_idx)
+    
