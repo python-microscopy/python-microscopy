@@ -867,7 +867,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             level = -self.do.scale
             
             #if (level > len(self.do.ds.levels)):
-            level = int(min(level, len(self.do.ds.levels)))
+            level = int(min(level, len(self.do.ds.levels)-1))
             step = int(2**(-numpy.ceil(numpy.log2(sc))-level))
             
             _s = 1.0/(2**level)
@@ -878,6 +878,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             # y0_ = int(y0_*_s)
             # sX_ = int(sX_*_s)
             # sY_ = int(sY_*_s)
+
+            print('level:', level)
             
             ds = self.do.ds.levels[level]
         else:

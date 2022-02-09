@@ -296,10 +296,13 @@ class LMGLShaderCanvas(GLCanvas):
         # TODO - should this check be on wx, or OpenGL (or potentially python)
         # TODO - do we need to do anything differnt on win?
         vmajor,vminor = wx.VERSION[:2]
-        if vmajor > 4 and vminor >=1: # 4.1 or later 
+
+        if (vmajor >= 4) and (vminor >=1): # 4.1 or later 
             sc = self.GetContentScaleFactor()
         else:
             sc = 1
+
+        #print('scale factor:', sc)
 
         # setting screen-corresponding geometry
         GL.glViewport(0, 0, int(sc*window_width), int(sc*window_height))
@@ -468,7 +471,7 @@ class LMGLShaderCanvas(GLCanvas):
         # TODO - should this check be on wx, or OpenGL (or potentially python)
         # TODO - do we need to do anything differnt on win?
         vmajor,vminor = wx.VERSION[:2]
-        if vmajor > 4 and vminor >=1: # 4.1 or later 
+        if vmajor >= 4 and vminor >=1: # 4.1 or later 
             sc = self.GetContentScaleFactor()
         else:
             sc = 1
