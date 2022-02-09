@@ -290,8 +290,19 @@ class LMGLShaderCanvas(GLCanvas):
     def interlace_stencil(self):
         window_width = self.view_port_size[0]
         window_height = self.view_port_size[1]
+
+        #high dpi screens
+        # fix scaling error
+        # TODO - should this check be on wx, or OpenGL (or potentially python)
+        # TODO - do we need to do anything differnt on win?
+        vmajor,vminor = wx.VERSION[:2]
+        if vmajor > 4 and vminor >=1: # 4.1 or later 
+            sc = self.GetContentScaleFactor()
+        else:
+            sc = 1
+
         # setting screen-corresponding geometry
-        GL.glViewport(0, 0, window_width, window_height)
+        GL.glViewport(0, 0, int(sc*window_width), int(sc*window_height))
         GL.glMatrixMode(GL.GL_MODELVIEW)
         GL.glLoadIdentity()
         GL.glMatrixMode(GL.GL_PROJECTION)
@@ -452,8 +463,17 @@ class LMGLShaderCanvas(GLCanvas):
         #print('resize_gl')
         self._oit_w = w
         self._oit_h = h
+
+        # fix scaling error
+        # TODO - should this check be on wx, or OpenGL (or potentially python)
+        # TODO - do we need to do anything differnt on win?
+        vmajor,vminor = wx.VERSION[:2]
+        if vmajor > 4 and vminor >=1: # 4.1 or later 
+            sc = self.GetContentScaleFactor()
+        else:
+            sc = 1
     
-        GL.glViewport(0, 0, w, h)
+        GL.glViewport(0, 0, int(sc*w), int(sc*h))
         #self._accumdata = np.zeros([4,w,h], 'f')
     
         #print('bind fb')
@@ -791,6 +811,7 @@ class LMGLShaderCanvas(GLCanvas):
 
     def _ScreenCoordinatesToNm(self, x, y):
         # FIXME!!!
+        sc = self.GetContentScaleFactor()
         x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.view.translation[0]
         y_ = self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
         # print x_, y_
