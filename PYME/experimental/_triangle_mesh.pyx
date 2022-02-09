@@ -1009,6 +1009,9 @@ cdef class TriangleMesh(TrianglesBase):
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr,
         and its associated triangles, while keeping mesh connectivity.
 
+        TODO: A known problem is, in the presence of boundaries, edge_collapse()
+        will eventually (after 3-5 remesh steps) produce a few singular edges.
+
         Parameters
         ----------
             _curr: int
