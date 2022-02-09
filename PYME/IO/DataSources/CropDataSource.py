@@ -155,6 +155,7 @@ class DataSource(XYZTCDataSource):
 
 def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
     from PYME.IO.image import ImageStack
+    from PYME.IO.DataSources import ArrayDataSource
 
     vx, vy, vz = image.voxelsize
     ox, oy, oz = image.origin
@@ -167,7 +168,15 @@ def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
         else:
             return r[0]
 
-    cropped = DataSource(image.data_xyztc, xrange=xrange, yrange=yrange, zrange=zrange, trange=trange)
+    if isinstance(image.data_xyztc, ArrayDataSource.XYZTCArrayDataSource):
+        # special case for array data source so that we can use views and get optimal chunk access (dask/zarr)
+        #  - use array slicing rather slice slicing
+        # TODO - change CropDataSource to be chunk aware
+        s = image.data_xyztc.shape
+        cp_a = image.data_xyztc[DataSource._sliceify(xrange, s[0]), DataSource._sliceify(yrange, s[1]), DataSource._sliceify(zrange, s[2]), DataSource._sliceify(trange, s[3]), :]
+        cropped = ArrayDataSource.XYZTCArrayDataSource(cp_a)
+    else:
+        cropped = DataSource(image.data_xyztc, xrange=xrange, yrange=yrange, zrange=zrange, trange=trange)
     
     im = ImageStack(cropped, titleStub='Cropped Image')
     im.mdh.copyEntriesFrom(image.mdh)
