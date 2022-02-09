@@ -4,12 +4,15 @@ Created on Fri Mar  6 15:28:03 2015
 
 @author: david
 """
+from asyncio.log import logger
 import wx
 import numpy as np
 from PYME.DSView.displayOptions import DisplayOpts
 from PYME.LMVis.layers.base import SimpleLayer
 from PYME.recipes.traits import CStr, Int
 import abc
+import logging
+logger = logging.getLogger(__name__)
 
 class Overlay(SimpleLayer):
     # make our overlays inherit from PYMEVis layers, even if we don't implement opengl display for now
@@ -80,7 +83,12 @@ class PointDisplayOverlay(Overlay):
             # stack is a time series
             pos = [vp.do.xp, vp.do.yp, vp.do.tp]
 
-        vx, vy = vp.voxelsize[:2]
+        try:
+            vx, vy = vp.voxelsize[:2]
+        except KeyError:
+            logger.exception('No voxelsize set, cannot display scale bar.')
+            print('No voxelsize set, cannot display scale bar.')
+            return
 
         if self.visible and ('filter' in dir(self) or len(self.points) > 0):
             #print('plotting points')
@@ -198,7 +206,14 @@ class ScaleBarOverlay(Overlay):
             dc.SetPen(pGreen)
             sX, sY = vp.imagepanel.Size
             
-            sbLen = int(self.length_nm*vp.scale/vp.voxelsize[0])
+            try:
+                vx, vy = vp.voxelsize[:2]
+            except KeyError:
+                logger.exception('No voxelsize set, cannot display scale bar.')
+                print('No voxelsize set, cannot display scale bar.')
+                return
+            
+            sbLen = int(self.length_nm*vp.scale/vx)
             
             y1 = 20
             x1 = 20 + sbLen
