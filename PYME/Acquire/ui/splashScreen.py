@@ -28,6 +28,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from PYME import resources
+from PYME.ui import wx_compat
 
 class SplashPanel(wx.Panel):
     def __init__(self, parent, scope, size=(-1,-1)):
@@ -121,7 +122,7 @@ class SplashPanel(wx.Panel):
         #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
