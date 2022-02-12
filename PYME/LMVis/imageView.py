@@ -32,6 +32,8 @@ import wx
 import scipy.misc
 #import subprocess
 
+from PYME.ui import wx_compat
+
 #from PYME.Analysis import thresholding
 
 #from PYME.DSView.myviewpanel_numarray import MyViewPanel
@@ -195,7 +197,7 @@ class ImageViewPanel(wx.Panel):
         #self.PrepareDC(DC)
         
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)

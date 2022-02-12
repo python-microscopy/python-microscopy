@@ -9,6 +9,7 @@ import wx.lib.newevent
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
 import numpy as np
+from PYME.ui import wx_compat
 
 LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
 
@@ -204,7 +205,7 @@ class ClippingPanel(wx.Panel):
         #self.PrepareDC(DC)
     
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)

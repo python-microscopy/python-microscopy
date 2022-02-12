@@ -454,7 +454,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             xs = min(s.GetWidth(), xs)
             ys = min(s.GetHeight(), ys)
 
-        MemBitmap = wx.EmptyBitmap(xs, ys)
+        MemBitmap = wx_compat.EmptyBitmap(xs, ys)
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
 

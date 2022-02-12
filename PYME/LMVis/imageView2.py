@@ -24,6 +24,8 @@
 import numpy
 
 import wx
+from PYME.ui import wx_compat
+
 # import scipy.misc
 import scipy.ndimage
 
@@ -127,7 +129,7 @@ class ImageViewPanel(wx.Panel):
         #self.PrepareDC(DC)
         
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
