@@ -120,14 +120,14 @@ class ImageViewPanel(wx.Panel):
 
         im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
             
-        imw =  wx.ImageFromData(im.shape[1], im.shape[0], im.ravel())
+        imw =  wx_compat.ImageFromData(im.shape[1], im.shape[0], im.ravel())
                                          
         imw.Rescale(imw.GetWidth()*sc,imw.GetHeight()*sc)
         self.curIm = imw
 
         dc.Clear()
         
-        dc.DrawBitmap(wx.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
+        dc.DrawBitmap(wx_compat.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
 
     def DrawOverlays(self,dc):
         sc = self.image.pixelSize/self.glCanvas.pixelsize
@@ -435,7 +435,7 @@ class ColourImageViewPanel(ImageViewPanel):
         im_ = numpy.minimum(im_, 255).astype('b')
         #print im_.shape
 
-        imw =  wx.ImageFromData(im_.shape[1], im_.shape[0], im_.ravel())
+        imw =  wx_compat.ImageFromData(im_.shape[1], im_.shape[0], im_.ravel())
         #print imw.GetWidth()
 
         #imw.Rescale(imw.GetWidth()*sc,imw.GetHeight()*sc)
@@ -444,8 +444,8 @@ class ColourImageViewPanel(ImageViewPanel):
 
         dc.Clear()
 
-        #dc.DrawBitmap(wx.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
-        dc.DrawBitmap(wx.BitmapFromImage(imw), 0,0)
+        #dc.DrawBitmap(wx_compat.BitmapFromImage(imw),(-self.centreX + x0 + width/2)/pixelsize,(self.centreY - y1 + height/2)/pixelsize)
+        dc.DrawBitmap(wx_compat.BitmapFromImage(imw), 0,0)
 
         #print self.glCanvas.centreCross
 

@@ -321,12 +321,12 @@ class ImageViewPanel(wx.Panel):
     
         im = self._map_image(im, self.chan)
     
-        imw = wx.ImageFromData(im.shape[1], im.shape[0], im.ravel())
+        imw = wx_compat.ImageFromData(im.shape[1], im.shape[0], im.ravel())
         imw.Rescale(imw.GetWidth() * sc, imw.GetHeight() * sc)
         self.curIm = imw
     
         dc.Clear()
-        dc.DrawBitmap(wx.BitmapFromImage(imw), (-self.centreX + x0 + width / 2) / pixelsize,
+        dc.DrawBitmap(wx_compat.BitmapFromImage(imw), (-self.centreX + x0 + width / 2) / pixelsize,
                       (-self.centreY + y0 + height / 2) / pixelsize)
 
 
@@ -361,11 +361,11 @@ class ColourImageViewPanel(ImageViewPanel):
 
         im_ = numpy.minimum(im_, 255).astype('b')
 
-        imw =  wx.ImageFromData(im_.shape[1], im_.shape[0], im_.ravel())
+        imw =  wx_compat.ImageFromData(im_.shape[1], im_.shape[0], im_.ravel())
         self.curIm = imw
 
         dc.Clear()
-        dc.DrawBitmap(wx.BitmapFromImage(imw), 0,0)
+        dc.DrawBitmap(wx_compat.BitmapFromImage(imw), 0,0)
         
         
         

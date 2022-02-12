@@ -25,6 +25,8 @@ __author__="david"
 __date__ ="$15/02/2009 00:02:07$"
 
 import wx
+from PYME.ui import wx_compat
+
 
 def GetCollapsedIconData():
     return \
@@ -48,7 +50,7 @@ zzW\xcff&\xb8,\x89\xa8@Q\xd6\xaaf\xdfRm,\xee\xb1BDxr#\xae\xf5|\xddo\xd6\xe2H\
 \x00\x00\x00IEND\xaeB`\x82'
 
 def GetCollapsedIconBitmap():
-    return wx.BitmapFromImage(GetCollapsedIconImage())
+    return wx_compat.BitmapFromImage(GetCollapsedIconImage())
 
 def GetCollapsedIconImage():
     from io import BytesIO
@@ -80,7 +82,7 @@ b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
 `\x82'
 
 def GetExpandedIconBitmap():
-    return wx.BitmapFromImage(GetExpandedIconImage())
+    return wx_compat.BitmapFromImage(GetExpandedIconImage())
 
 def GetExpandedIconImage():
     from io import BytesIO
