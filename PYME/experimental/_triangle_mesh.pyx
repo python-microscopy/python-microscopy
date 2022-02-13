@@ -4002,6 +4002,7 @@ cdef class TriangleMesh(TrianglesBase):
                         self._chalfedges[next_idx].twin = -1
 
                 # find an emanating halfedge in component k
+                self._cvertices[self._chalfedges[star[j]].vertex].halfedge = next_idx
 
             for j in range(star.shape[0]):
                 update_face_normal(int(self._chalfedges[star[j]].face), self._chalfedges, self._cvertices, self._cfaces)
