@@ -452,7 +452,7 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-static int flood_fill_star_component(int h_idx, int component, halfedge_t *halfedges)
+static int flood_fill_star_component(int32_t h_idx, int component, halfedge_t *halfedges)
 {
     int32_t curr_idx, twin_idx;
     halfedge_t *curr_edge, *twin_edge;
@@ -461,6 +461,7 @@ static int flood_fill_star_component(int h_idx, int component, halfedge_t *halfe
     // incident on the vertex of choice
     twin_edge = &(halfedges[h_idx]);
     if (twin_edge->component != -1) return component; // already visited
+    twin_edge->component = component;
     
     // traverse until we hit another singular edge, or return to the original edge
     while (1)
@@ -470,21 +471,35 @@ static int flood_fill_star_component(int h_idx, int component, halfedge_t *halfe
         curr_edge = &(halfedges[curr_idx]);
 
         // assign components
-        twin_edge->component = component;
+        if (curr_edge->component != -1)
+        {
+            printf("We are about to assign component %d to curr_edge with component %d\n", component, curr_edge->component);
+        }
         curr_edge->component = component;
+
+        // traverse here so twin_idx != h_idx if we terminate immediately
+        twin_idx = curr_edge->twin;
 
         // we hit another singular edge, so this component is done
         if (curr_edge->locally_manifold == 0) break;
 
-        // traverse
-        twin_idx = curr_edge->twin;
         // we hit another boundary or closed the loop, so we're also done
         if ((twin_idx == -1) || (twin_idx == h_idx)) break;
         twin_edge = &(halfedges[twin_idx]);
+        if (twin_edge->locally_manifold == 0) {
+            printf("Strange! Current index was locally manifold, but twin was not.\n");
+            break;
+        }
+        if (twin_edge->component != -1)
+        {
+            printf("We are about to assign component %d to twin_edge with component %d\n", component, twin_edge->component);
+        }
+        twin_edge->component = component;
     }
 
     if (twin_idx != h_idx) {
         // we didn't loop all the way around
+        
         twin_edge = &(halfedges[h_idx]);
         while (1) 
         {
@@ -494,12 +509,26 @@ static int flood_fill_star_component(int h_idx, int component, halfedge_t *halfe
             curr_idx = twin_edge->twin;
             if (curr_idx == -1) break; // a boundary
             curr_edge = &(halfedges[curr_idx]);
+            if (curr_edge->locally_manifold == 0) {
+                printf("2 Strange! Current index was locally manifold, but twin was not.\n");
+                break; // don't cross a singular edge
+            }
+            // assign component
+            if (curr_edge->component != -1)
+            {
+                printf("Going backwards, we are about to assign component %d to curr_edge with component %d\n", component, curr_edge->component);
+            }
+            curr_edge->component = component;
+            
             twin_idx = curr_edge->prev;
             twin_edge = &(halfedges[twin_idx]);
 
             // assign components
+            if (twin_edge->component != -1)
+            {
+                printf("Going backwards, we are about to assign component %d to twin_edge with component %d\n", component, twin_edge->component);
+            }
             twin_edge->component = component;
-            curr_edge->component = component;
         }
     }
 
