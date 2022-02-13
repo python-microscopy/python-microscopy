@@ -561,31 +561,18 @@ cdef class TriangleMesh(TrianglesBase):
                 # optional so this can be chained with _update_vertex_locally_manifold
                 self._halfedges['locally_manifold'] = 1
 
-            d = {}
-            for i in range(self._halfedges.shape[0]):
-                if self._chalfedges[i].vertex == -1:
-                    continue
-                e = tuple((self._chalfedges[self._chalfedges[i].prev].vertex, self._chalfedges[i].vertex))
-                if e in d:
-                    idx = d.pop(e)
-                    self._chalfedges[idx].locally_manifold = 0
-                    self._chalfedges[i].locally_manifold = 0
+            # grab all edges
+            edges = np.vstack([self._halfedges['vertex'][self._halfedges['prev']],
+                               self._halfedges['vertex']])
 
-                    d[e] = idx  # put it back
+            # Sort lo->hi
+            sorted_edges = np.sort(edges, axis=0)
 
-                    # add it's twins, in case of a flange
-                    _twin0 = self._chalfedges[idx].twin
-                    _twin1 = self._chalfedges[i].twin
-                    if _twin0 != -1:
-                        self._chalfedges[_twin0].locally_manifold = 0
-                        e = tuple((self._chalfedges[self._chalfedges[_twin0].prev].vertex, self._chalfedges[_twin0].vertex))
-                        d[e] = _twin0
-                    if _twin1 != -1:
-                        self._chalfedges[_twin1].locally_manifold = 0
-                        e = tuple((self._chalfedges[self._chalfedges[_twin1].prev].vertex, self._chalfedges[_twin1].vertex))
-                        d[e] = _twin1
-                else:
-                    d[e] = i
+            # find the number of unique elements
+            _, idxs, counts = np.unique(sorted_edges,axis=1,return_counts=True,return_inverse=True)
+            singular = np.sum(idxs[None,:] == np.flatnonzero(counts > 2)[:,None],axis=0).astype(bool)
+
+            self._halfedges['locally_manifold'][singular & (self._halfedges['vertex'] != -1)] = 0
 
             self._singular_edges_valid = 1
 
