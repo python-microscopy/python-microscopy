@@ -661,7 +661,9 @@ cdef class TriangleMesh(TrianglesBase):
                 if e in d:
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Don't assign a halfedge to multivalent edges
+                        # Don't assign a halfedge to multivalent edges. Note this doesn't 
+                        # account for all multivalent edges, but does prevent double-
+                        # assignment of twins.
                         continue
                         
                     self._halfedges['twin'][idx] = i
@@ -3416,17 +3418,18 @@ cdef class TriangleMesh(TrianglesBase):
                 n_pinch = (n_edges)//2
 
             # Now pinch elements together
+            #k = 2
             for k in range(n_pinch):
                 # Run around the closed boundary loop in opposite directions
                 _edge0 = boundary_polygons[j,k]
                 _edge1 = boundary_polygons[j,n_edges-k-1]
-                
+            
                 self._pinch_edges(_edge0, _edge1, live_update=live_update)
 
             if odd:
                 print("We went odd!")
                 # Make a triangle from the last three edges to seal the boundary
-                # self._fill_triangle(boundary_polygons[j,n_pinch], boundary_polygons[j,n_pinch+1], boundary_polygons[j,n_pinch+2], live_update=live_update)
+                self._fill_triangle(boundary_polygons[j,n_pinch], boundary_polygons[j,n_pinch+1], boundary_polygons[j,n_pinch+2], live_update=live_update)
 
             j += 1
         
@@ -3497,6 +3500,10 @@ cdef class TriangleMesh(TrianglesBase):
             self._singular_edges_valid = 0
             print(self.singular_edges)
 
+            for i in range(self.singular_edges.shape[0]):
+                edge0 = &self._chalfedges[self.singular_edges[i]]
+                print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+
     cdef _color_boundaries(self, np.ndarray boundary_polygons):
         """
         Color each boundary a single color.
@@ -3514,12 +3521,12 @@ cdef class TriangleMesh(TrianglesBase):
         while boundary_polygons[j,0] != -1:
             # Count the number of elements in this polygon
             n_edges = 0
-            if j != 1:
-                j+=1
-                continue
+            #if j != 1:
+            #    j+=1
+            #    continue
             while boundary_polygons[j,n_edges] != -1:
                 #self._cvertices[self._chalfedges[self._chalfedges[boundary_polygons[j,n_edges]].prev].vertex].component
-                self._cvertices[self._chalfedges[boundary_polygons[j,n_edges]].vertex].component = n_edges
+                self._cvertices[self._chalfedges[boundary_polygons[j,n_edges]].vertex].component = j # n_edges
                 #self._cvertices[self._chalfedges[boundary_polygons[j,n_edges]].vertex].component = n_edges
                 n_edges += 1
             j += 1
@@ -3774,7 +3781,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             if n_edges == 2:
                 self._pinch_edges(boundary_polygons[j,0], boundary_polygons[j,1], live_update=live_update)
-            elif n_edges <= 10:
+            else:
                 # Initialize new edges/faces
                 new_faces = self.new_faces(int(n_edges-2))
                 new_edges = self.new_edges(int(3*(n_edges-3)+3))
