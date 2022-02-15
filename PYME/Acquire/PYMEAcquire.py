@@ -66,6 +66,9 @@ def setup_logging(default_level=logging.DEBUG):
     else:
         logging.basicConfig(level=default_level)
 
+    # we want to somehow supress the level of matplotlib messages below debug level
+    logging.getLogger('matplotlib').setLevel(logging.WARN)
+
 
 class BoaApp(wx.App):
     def __init__(self, options, *args):
