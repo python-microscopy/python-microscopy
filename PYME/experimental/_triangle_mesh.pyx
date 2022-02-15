@@ -525,7 +525,7 @@ cdef class TriangleMesh(TrianglesBase):
     def _update_vertex_locally_manifold(self):
         # identify boundary vertices
         self._vertices['locally_manifold'] = 1
-        boundary_edges = (self._halfedges['twin'] == -1)
+        boundary_edges = (self._halfedges['twin'] == -1) & (self._halfedges['vertex'] != -1)
         self._vertices['locally_manifold'][self._halfedges['vertex'][boundary_edges]] = 0
         self._vertices['locally_manifold'][self._halfedges['vertex'][self._halfedges['prev'][boundary_edges]]] = 0
 
@@ -3670,9 +3670,13 @@ cdef class TriangleMesh(TrianglesBase):
         # Zig-zag with the new edges
         zig = 0
         for k in range(len_poly-2):
+            #print(k, _edge0, _edge1)
             # grab the two existing edges on the polygon
             edge0 = &self._chalfedges[_edge0]
             edge1 = &self._chalfedges[_edge1]
+
+            #print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+            #print(edge1.vertex, edge1.face, edge1.twin, edge1.next, edge1.prev, edge1.length, edge1.component, edge1.locally_manifold)
 
             # Populate the new triangle
             self._populate_edge(n_edges[3*k], self._chalfedges[edge0.prev].vertex, prev=n_edges[3*k+1], next=n_edges[3*k+2], face=n_faces[k], twin=_edge0)
@@ -3691,14 +3695,14 @@ cdef class TriangleMesh(TrianglesBase):
                 update_single_vertex_neighbours(int(edge0.vertex), self._chalfedges, self._cvertices, self._cfaces)
                 update_single_vertex_neighbours(int(edge1.vertex), self._chalfedges, self._cvertices, self._cfaces)
 
-            if k == (len_poly-3):
+            if k >= (len_poly-3):
                 # don't index beyond the length of new_edge
                 break
     
             # Choose the next two edges to stitch
             if zig:
                 _edge0 = n_edges[3*k+2]
-                _edge1 = boundary_polygons[row,k+1]
+                _edge1 = boundary_polygons[row,(k+1)//2+1]
             else:
                 _edge0 = boundary_polygons[row,len_poly-k//2-1]
                 _edge1 = n_edges[3*k+2]
@@ -3774,15 +3778,17 @@ cdef class TriangleMesh(TrianglesBase):
         Fill in the mesh holes: closed loops of boundary edges, one per row in boundary_polygons.
         """
         cdef int j, n_edges
+        cdef int n_poly = boundary_polygons.shape[0]
+        cdef int max_edges = boundary_polygons.shape[1]
 
         j = 0
-        while boundary_polygons[j,0] != -1:
+        while (j < n_poly) and (boundary_polygons[j,0] != -1):
             # Count the number of elements in this polygon
             n_edges = 0
-            while boundary_polygons[j,n_edges] != -1:
+            while (n_edges < max_edges) and (boundary_polygons[j,n_edges] != -1):
                 n_edges += 1
 
-            print(f"Polygon {j} of length {n_edges}")
+            #print(f"Polygon {j} of length {n_edges}")
 
             if n_edges == 2:
                 self._pinch_edges(boundary_polygons[j,0], boundary_polygons[j,1], live_update=live_update)
@@ -4111,32 +4117,32 @@ cdef class TriangleMesh(TrianglesBase):
 
         # 3. Patch mesh holes with new triangles
         self._find_boundary_polygons(boundary_polygons, boundary_edges)  # fill the boundary polygon array
-      #  print(np.sum(boundary_polygons != -1), boundary_edges.shape[0])
-      #  i = 0
-      #  while boundary_polygons[i,0] !=-1:
-      #      j = 0
-      #      print(f"Polygon {i}")
-      #      while boundary_polygons[i,j] !=-1:
-      #          print(self._chalfedges[self._chalfedges[boundary_polygons[i,j]].prev].vertex, self._chalfedges[boundary_polygons[i,j]].vertex)
-      #          j += 1
+        #print(np.sum(boundary_polygons != -1), boundary_edges.shape[0])
+        #i = 0
+        #while (i < max_poly_length//2) and (boundary_polygons[i,0] !=-1):
+        #    j = 0
+        #    print(f"Polygon {i}")
+        #    while (j< max_poly_length) and (boundary_polygons[i,j] !=-1):
+        #        print(self._chalfedges[self._chalfedges[boundary_polygons[i,j]].prev].vertex, self._chalfedges[boundary_polygons[i,j]].vertex)
+        #        j += 1
             # print(self._chalfedges[self._chalfedges[boundary_polygons[i,0]].prev].vertex, 
             #       self._chalfedges[boundary_polygons[i,0]].vertex, 
             #       self._chalfedges[self._chalfedges[boundary_polygons[i,j-1]].prev].vertex, 
             #       self._chalfedges[boundary_polygons[i,j-1]].vertex)
             # print([self._chalfedges[boundary_polygons[i,k]].vertex for k in range(j)])
-        #     print([boundary_polygons[i,k] for k in range(j)])
+        #    print([boundary_polygons[i,k] for k in range(j)])
         #    i += 1
         self._pinch_boundaries(boundary_polygons)                        # close the boundary polygons by pinching 
         # self._color_boundaries(boundary_polygons)
         # self._fill_holes(boundary_polygons)
 
         # Reset
-        self._manifold = None
+        #self._manifold = None
         # self._faces['normal'][:] = -1
         # self._vertices['normal'][:] = -1
-        self._face_normals_valid = 0
-        self._vertex_normals_valid = 0
-        # self._clear_flags()
+        #self._face_normals_valid = 0
+        #self._vertex_normals_valid = 0
+        self._clear_flags()
         self.face_normals
         self.vertex_normals
 
