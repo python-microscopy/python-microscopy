@@ -2050,6 +2050,9 @@ cdef class TriangleMesh(TrianglesBase):
         if (_curr == -1):
             return 0
 
+        if self._chalfedges[_curr].locally_manifold == 0:
+            return 0
+
         curr_edge = &self._chalfedges[_curr]
         _twin = curr_edge.twin
         if (_twin == -1):
