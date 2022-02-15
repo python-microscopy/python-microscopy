@@ -216,6 +216,9 @@ class piezo_c867T(PiezoBase):
         self.targetVelocity = self.velocity.copy()
         
         self.lastTargetPosition = self.position.copy()
+
+        self.disableServo = False
+        self.enableServo = False
         
         self.lock = threading.Lock()
         self.tloop = threading.Thread(target=self._Loop)
@@ -268,7 +271,20 @@ class piezo_c867T(PiezoBase):
                     self.targetPosition[:] = self.position[:]
                     self.stopMove = False
                     
-                
+                if self.servo and self.disableServo:
+                    self.disableServo = False
+                    self.ser_port.write(b'SVO 1 %d\n' % 0)
+                    self.ser_port.write(b'SVO 2 %d\n' % 0)
+                    self.servo = False
+
+                if not self.servo and self.enableServo:
+                    self.enableServo = False
+                    self.lastTargetPosition = self.position.copy()
+                    self.targetPosition = self.position.copy()
+                    self.ser_port.write(b'SVO 1 %d\n' % 1)
+                    self.ser_port.write(b'SVO 2 %d\n' % 1)
+                    self.servo = True
+
                 if self.servo:
                     if not np.all(self.velocity == self.targetVelocity):
                         for i, vel in enumerate(self.targetVelocity):
@@ -318,10 +334,10 @@ class piezo_c867T(PiezoBase):
                 
         
     def SetServo(self, state=1):
-        if self.servo and state==0: # we are switching from servo on to off - all moves should be stopped
+        #if self.servo and state==0: # we are switching from servo on to off - all moves should be stopped
             # make sure all moves are stopped
             # SERVOCHECK: should this be done under the lock or not?
-            self.stopMove()
+            # self.stopMove = True
         self.lock.acquire()
         if not self.servo and state==1: # we are switching from off to on
             # make sure no move commands are still in the queue
@@ -333,9 +349,19 @@ class piezo_c867T(PiezoBase):
             self.ser_port.write(b'SVO 1 %d\n' % state)
             self.ser_port.write(b'SVO 2 %d\n' % state)
             self.servo = state == 1
+            logger.info("servo state = %d" % self.servo)
         finally:
             self.lock.release()
             
+
+    def DisableServo(self):
+        if self.servo:
+            self.disableServo = True
+
+    def EnableServo(self):
+        if not self.servo:
+            self.enableServo = True
+
 #    def SetParameter(self, paramID, state):
 #        self.lock.acquire()
 #        try:
