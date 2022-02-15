@@ -3785,6 +3785,11 @@ cdef class TriangleMesh(TrianglesBase):
                 # Initialize new edges/faces
                 new_faces = self.new_faces(int(n_edges-2))
                 new_edges = self.new_edges(int(3*(n_edges-3)+3))
+
+                # Right now we use zig-zag, but we should use Liepa, Peter. "Filling Holes in Meshes." 
+                # In Proceedings of the 2003 Eurographics/ACM SIGGRAPH Symposium on Geometry Processing, 
+                # 200-205. SGP '03. Goslar, DEU: Eurographics Association, 2003.
+
                 self._zig_zag_triangulation(boundary_polygons, 
                                             <np.int32_t *> np.PyArray_DATA(new_edges), 
                                             <np.int32_t *> np.PyArray_DATA(new_faces), 
