@@ -3150,7 +3150,7 @@ cdef class TriangleMesh(TrianglesBase):
         We assume boundary_edges is the exhaustive list of halfedges on a boundary.
         """
         cdef int n_edges = boundary_edges.shape[0]
-        cdef int max_iters = 2*n_edges
+        cdef int max_iters = 6*n_edges  # FIXME: Not clear what this upper bound should be. Seems low.
         cdef int i, j, k, poly, safety, n_poly, new_poly, n_left
         cdef np.int32_t _orig, _curr, _twin
         cdef halfedge_t *curr_edge
@@ -3189,17 +3189,17 @@ cdef class TriangleMesh(TrianglesBase):
                 _twin = curr_edge.twin
 
                 if _twin == -1:
+                    if k >= n_edges:
+                        print("ERROR: Not enough space allocated for this polygon.")
+                        break
                     # we're on a boundary, mark it as part of the polygon...
                     boundary_polygons[poly,k] = _curr
                     curr_edge.component = 1
                     # ...also increment the number of incident boundary edges on its vertices
                     self._cvertices[curr_edge.vertex].component += 1
                     self._cvertices[self._chalfedges[curr_edge.prev].vertex].component += 1
-                    k += 1
 
-                    if k >= n_edges:
-                        print("ERROR: Not enough space allocated for this polygon.")
-                        break
+                    k += 1
 
                     # ...then traverse
                     _curr = curr_edge.next
@@ -3385,16 +3385,18 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int j, k, n_edges, n_pinch
         cdef bint odd
         cdef np.int32_t _edge0, _edge1
+        cdef int n_poly = boundary_polygons.shape[0]
+        cdef int max_edges = boundary_polygons.shape[1]
 
         # Move down the row of polygons
         j = 0
-        while boundary_polygons[j,0] != -1:
+        while (j < n_poly) and (boundary_polygons[j,0] != -1):
             #if j != 1:
             #    j += 1
             #    continue
             # Count the number of elements in this polygon
             n_edges = 0
-            while boundary_polygons[j,n_edges] != -1:
+            while (n_edges < max_edges) and (boundary_polygons[j,n_edges] != -1):
                 n_edges += 1
 
             if n_edges < 2:
@@ -4101,8 +4103,8 @@ cdef class TriangleMesh(TrianglesBase):
         # the shortest boundary "polygon" possible is of length 2
         # TODO: This could be quite large if we have a lot of boundary edges
         boundary_edges = np.flatnonzero((self._halfedges['vertex'] != -1) & (self._halfedges['twin'] == -1)).astype('i4')
-        max_poly_length = max(boundary_edges.shape[0],2)
-        boundary_polygons = -1*np.ones([max_poly_length, max_poly_length//2], dtype='i4')
+        max_poly_length = max(boundary_edges.shape[0],4)
+        boundary_polygons = -1*np.ones([max_poly_length//2, max_poly_length], dtype='i4')
 
         # 3. Patch mesh holes with new triangles
         self._find_boundary_polygons(boundary_polygons, boundary_edges)  # fill the boundary polygon array
