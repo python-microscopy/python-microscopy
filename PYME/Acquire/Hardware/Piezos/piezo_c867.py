@@ -332,7 +332,9 @@ class piezo_c867T(PiezoBase):
             #time.sleep(.01)
             #self.ser_port.close()            
                 
-        
+    # note that this method seems to hang (the whole app) when we call this with the thread loop running
+    # which is virtually always...
+    # see enable/disable methods below for a workaround
     def SetServo(self, state=1):
         #if self.servo and state==0: # we are switching from servo on to off - all moves should be stopped
             # make sure all moves are stopped
@@ -354,6 +356,10 @@ class piezo_c867T(PiezoBase):
             self.lock.release()
             
 
+    # it seems that directly enabling/disabling the servo outside the thread loop,
+    # as done in SetServo(), seems to hang the thread
+    # the methods below instead 'message' the thread loop by setting flags that get picked up in thread loop processing
+    # the two methods below could probably be rationalised into one
     def DisableServo(self):
         if self.servo:
             self.disableServo = True
@@ -482,16 +488,19 @@ class piezo_c867T(PiezoBase):
         verstring = self.ser_port.readline()
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 
-        
+
 class c867Joystick:
     def __init__(self, stepper):
         self.stepper = stepper
 
     def Enable(self, enabled = True):
-        if not self.IsEnabled() == enabled:
-            self.stepper.SetServo(enabled)
+        if not self.IsEnabled() == enabled: # we need to switch state
+            if enabled:
+                self.stepper.EnableServo()
+            else:
+                self.stepper.DisableServo()
 
     def IsEnabled(self):
         return self.stepper.servo
-     
+
         
