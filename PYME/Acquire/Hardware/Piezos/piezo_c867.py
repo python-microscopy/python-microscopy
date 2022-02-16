@@ -257,7 +257,7 @@ class piezo_c867T(PiezoBase):
                 if self.stopMove: # SERVOCHECK: check if this is ok to process when servo is off!!!
                     # note that issueing the HLT command sets an error condition, from the manual: "Error code 10 is set."
                     # question: should we check the error status to unset the error code from such a HLT command?
-                    logger.warn('piezo_c867T: stopMove issuing HLT command, expect error 10 to be set')
+                    logger.debug('piezo_c867T: stopMove issuing HLT command, expect error 10 to be set')
                     self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
                     self.ser_port.write(b'POS? 1 2\n')
@@ -332,41 +332,17 @@ class piezo_c867T(PiezoBase):
             #time.sleep(.01)
             #self.ser_port.close()            
                 
-    # note that this method seems to hang (the whole app) when we call this with the thread loop running
-    # which is virtually always...
-    # see enable/disable methods below for a workaround
-    def SetServo(self, state=1):
-        #if self.servo and state==0: # we are switching from servo on to off - all moves should be stopped
-            # make sure all moves are stopped
-            # SERVOCHECK: should this be done under the lock or not?
-            # self.stopMove = True
-        self.lock.acquire()
-        if not self.servo and state==1: # we are switching from off to on
-            # make sure no move commands are still in the queue
-            # when we switch back on
-            # this should be achievable by setting target position equal to current position
-            self.lastTargetPosition = self.position.copy()
-            self.targetPosition = self.position.copy()
-        try:
-            self.ser_port.write(b'SVO 1 %d\n' % state)
-            self.ser_port.write(b'SVO 2 %d\n' % state)
-            self.servo = state == 1
-            logger.info("servo state = %d" % self.servo)
-        finally:
-            self.lock.release()
-            
-
-    # it seems that directly enabling/disabling the servo outside the thread loop,
-    # as done in SetServo(), seems to hang the thread
-    # the methods below instead 'message' the thread loop by setting flags that get picked up in thread loop processing
-    # the two methods below could probably be rationalised into one
-    def DisableServo(self):
-        if self.servo:
+    # directly enabling/disabling the servo outside the thread loop
+    #      seems to hang PYME
+    # the implementation below instead 'messages' the thread loop by setting flags
+    #      that get picked up in thread loop processing
+    # I dislike state being an int and rather have opted treating as bool which reflects the on/off state better IMHO
+    def SetServo(self, state=True):
+        if self.servo and not state: # need to toggle servo off
             self.disableServo = True
-
-    def EnableServo(self):
-        if not self.servo:
+        if not self.servo and state: # need to toggle servo on
             self.enableServo = True
+
 
 #    def SetParameter(self, paramID, state):
 #        self.lock.acquire()
@@ -495,10 +471,7 @@ class c867Joystick:
 
     def Enable(self, enabled = True):
         if not self.IsEnabled() == enabled: # we need to switch state
-            if enabled:
-                self.stepper.EnableServo()
-            else:
-                self.stepper.DisableServo()
+            self.stepper.SetServo(enabled)
 
     def IsEnabled(self):
         return self.stepper.servo
