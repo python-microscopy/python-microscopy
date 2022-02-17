@@ -304,8 +304,10 @@ class piezo_c867T(PiezoBase):
                         logger.debug('Setting stage target pos: %s' % pos)
                         time.sleep(.01)
                     
-                # check to see if we're on target - SERVOCHECK: CS: seems to me this only makes sense when servo is on - check manual
-                # from the manual on 'ONT?' command: "The detection of the on-target state is only possible in closed-loop operation (servo mode ON)"
+                # check to see if we're on target
+                # from the manual on 'ONT?' command:
+                #   "The detection of the on-target state is only possible in closed-loop operation (servo mode ON)"
+                # note that the cleaned up on-target check does not use the 'ONT?' command any more
                 if self.servo:
                     self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
                 else: # servo is off
