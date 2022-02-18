@@ -3411,7 +3411,7 @@ cdef class TriangleMesh(TrianglesBase):
             #    j += 1
             #    continue
 
-            print(f"Polygon {j} of size {n_edges}")
+            #print(f"Polygon {j} of size {n_edges}")
             
             odd = ((n_edges % 2) != 0)
 
@@ -3432,7 +3432,7 @@ cdef class TriangleMesh(TrianglesBase):
                 self._pinch_edges(_edge0, _edge1, live_update=live_update)
 
             if odd:
-                print("We went odd!")
+                #print("We went odd!")
                 # Make a triangle from the last three edges to seal the boundary
                 self._fill_triangle(boundary_polygons[j,n_pinch], boundary_polygons[j,n_pinch+1], boundary_polygons[j,n_pinch+2], live_update=live_update)
 
@@ -3466,9 +3466,9 @@ cdef class TriangleMesh(TrianglesBase):
         _vertex1 = self._chalfedges[edge1.prev].vertex
 
         #print(f"Check vertices: {_vertex1} {edge1.vertex} {self._chalfedges[edge0.prev].vertex} {_vertex0}")
-        print("Pre-stitch")
-        print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
-        print(edge1.vertex, edge1.face, edge1.twin, edge1.next, edge1.prev, edge1.length, edge1.component, edge1.locally_manifold)
+        #print("Pre-stitch")
+        #print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+        #print(edge1.vertex, edge1.face, edge1.twin, edge1.next, edge1.prev, edge1.length, edge1.component, edge1.locally_manifold)
 
         if _vertex0 != _vertex1:
             vertex0 = &self._cvertices[_vertex0]
@@ -3499,11 +3499,11 @@ cdef class TriangleMesh(TrianglesBase):
             update_single_vertex_neighbours(int(edge0.vertex), self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(int(edge1.vertex), self._chalfedges, self._cvertices, self._cfaces)
 
-            print("Post-stitch")
-            print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
-            print(edge1.vertex, edge1.face, edge1.twin, edge1.next, edge1.prev, edge1.length, edge1.component, edge1.locally_manifold)
+            #print("Post-stitch")
+            #print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+            #print(edge1.vertex, edge1.face, edge1.twin, edge1.next, edge1.prev, edge1.length, edge1.component, edge1.locally_manifold)
             self._singular_edges_valid = 0
-            print(self.singular_edges)
+            #print(self.singular_edges)
 
             for i in range(self.singular_edges.shape[0]):
                 edge0 = &self._chalfedges[self.singular_edges[i]]
@@ -4088,7 +4088,7 @@ cdef class TriangleMesh(TrianglesBase):
         # self._singular_edges = None
         # self._singular_vertices = None
 
-    def repair(self, bint only_largest_component=0):
+    def repair(self, bint only_largest_component=0, bint pinch=0):
         """
         Repair the mesh so it's topologically manifold.
 
@@ -4132,9 +4132,11 @@ cdef class TriangleMesh(TrianglesBase):
             # print([self._chalfedges[boundary_polygons[i,k]].vertex for k in range(j)])
         #    print([boundary_polygons[i,k] for k in range(j)])
         #    i += 1
-        self._pinch_boundaries(boundary_polygons)                        # close the boundary polygons by pinching 
+        if pinch == 1:
+            self._pinch_boundaries(boundary_polygons)                        # close the boundary polygons by pinching 
+        else:
+            self._fill_holes(boundary_polygons)
         # self._color_boundaries(boundary_polygons)
-        # self._fill_holes(boundary_polygons)
 
         # Reset
         #self._manifold = None
