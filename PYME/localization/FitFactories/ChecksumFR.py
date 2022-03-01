@@ -54,9 +54,9 @@ class ChecksumFitFactory(FFBase.FitFactory):
         if not isinstance(background, np.ndarray):
             background = np.array(background)
 
-        ch_data = zlib.crc32(data.data)
-        ch_sigma = zlib.crc32(sigma.data)
-        ch_background = zlib.crc32(background.data)
+        ch_data = zlib.crc32(np.ascontiguousarray(data.data))
+        ch_sigma = zlib.crc32(np.ascontiguousarray(sigma.data))
+        ch_background = zlib.crc32(np.ascontiguousarray(background.data))
         
         
         #package results
