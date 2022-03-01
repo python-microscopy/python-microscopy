@@ -60,8 +60,8 @@ DB: Performance suggestions:
 
 static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
-    int32_t i, k, orig_idx, curr_idx, twin_idx, tmp;
-    halfedge_t *curr_edge, *twin_edge;
+    int32_t i, k, orig_idx, curr_idx, twin_idx, next_idx, tmp;
+    halfedge_t *curr_edge, *twin_edge, *next_edge;
     vertex_t *curr_vertex, *loop_vertex;
     face_t *curr_face;
 
@@ -80,9 +80,6 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
     if (curr_idx == -1) return;
 
     curr_edge = &(halfedges[curr_idx]);
-    twin_idx = curr_edge->twin;
-    if (twin_idx != -1)
-        twin_edge = &(halfedges[twin_idx]);
 
     i = 0;
 
@@ -93,106 +90,104 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
     for (k = 0; k < VECTORSIZE; ++k)
         normal[k] = 0;
 
+    // iterate twin->next, clockwise about the vertex
     while (1)
     {
-        if (curr_idx == -1)
-            break;
-
-        //printf("Current index: %d\n", curr_idx);
-        //printf("orig_index: %d\n", orig_idx);
-
         if (i < NEIGHBORSIZE)
         {
+            // assign this emanating halfedge as a neighbor
             (curr_vertex->neighbors)[i] = curr_idx;
+
+            // add the weighted normal of the face of this
+            // halfedge to the vertex normal
             curr_face = &(faces[(curr_edge->face)]);
             a = curr_face->area;
             for (k = 0; k < VECTORSIZE; ++k)
                 normal[k] += ((curr_face->normal)[k])*a;
         }
 
-        loop_vertex = &(vertices[(curr_edge->vertex)]);
-
-        difference((curr_vertex->position), (loop_vertex->position), position);
-
-        l = norm(position);
-        curr_edge->length = l;
-        if (twin_idx == -1)
-            break;
-        twin_edge->length = l;
-
-        curr_idx = twin_edge->next;
-        curr_edge = &(halfedges[curr_idx]);
-        twin_idx = curr_edge->twin;
-        twin_edge = &(halfedges[twin_idx]);
-
+        // we've dealt with this emanating halfedge, increase the valence
         ++i;
 
-        if (curr_idx == orig_idx)
+        // calculate the edge length of this halfedge
+        loop_vertex = &(vertices[(curr_edge->vertex)]);
+        difference((curr_vertex->position), (loop_vertex->position), position);
+        l = norm(position);
+        curr_edge->length = l;
+
+        // traverse to twin, if possible
+        twin_idx = curr_edge->twin;
+        if (twin_idx == -1)
             break;
+        twin_edge = &(halfedges[twin_idx]);
+        twin_edge->length = l; // the twin has the same edge length
+
+        // traverse to next, if possible and if it is not closing
+        // the one-right neighbour loop
+        curr_idx = twin_edge->next;
+        if ((curr_idx == -1) || (curr_idx == orig_idx))
+            break;
+        curr_edge = &(halfedges[curr_idx]);
     }
 
-    // If we hit a boundary, try the reverse direction,
-    // starting from orig_idx
-    // twin now becomes prev
-    if ((twin_idx == -1) && (curr_idx != -1) && (i < NEIGHBORSIZE))
+    // if we hit a boundary, try the reverse direction, starting from orig_idx
+    if ((twin_idx == -1) && (curr_idx != -1))
     {
         // Ideally we sweep through the neighbors in a continuous fashion,
         // so we'll reverse the order of all the edges so far.
-        for (k=i;k>1;k--)
+        for (k=(i-1);k>1;k--)
         {
             tmp = (curr_vertex->neighbors)[k];
             (curr_vertex->neighbors)[k] = (curr_vertex->neighbors)[k-1];
             (curr_vertex->neighbors)[k-1] = tmp;
         }
 
+        // reset to position 0 (now position i)
         curr_idx = orig_idx;
         curr_edge = &(halfedges[curr_idx]);
-        twin_idx = curr_edge->prev;
-        if (twin_idx == -1)
-            return;
-
-        twin_edge = &(halfedges[twin_idx]);
-        curr_idx = twin_edge->twin;
-        if (curr_idx == -1)
-            return;
-        curr_edge = &(halfedges[curr_idx]);
-
-        ++i;
 
         while (1)
         {
-            if (curr_idx == -1)
+            // traverse to twin, also grab next so we can calculate the edge
+            // length in the event the twin of twin is -1
+            twin_idx = curr_edge->prev;
+            next_idx = curr_edge->next;
+            if ((twin_idx == -1) || (next_idx == -1))
+                return;
+            twin_edge = &(halfedges[twin_idx]);
+            next_edge = &(halfedges[next_idx]);
+
+            // technically this should be where we increase the valence, because
+            // curr_edge->prev represents a new emanating halfedge, but because
+            // of how the previous loop is set up, we're already at this valence
+
+            // calculate the edge length
+            loop_vertex = &(vertices[(next_edge->vertex)]);
+            difference((curr_vertex->position), (loop_vertex->position), position);
+            l = norm(position);
+            twin_edge->length = l;
+
+            // traverse to twin (the next emanating halfedge)
+            curr_idx = twin_edge->twin;
+            if ((curr_idx == -1) || (curr_idx == orig_idx))
                 break;
+            curr_edge = &(halfedges[curr_idx]);
+            curr_edge->length = l; // the twin has the same edge length
 
             if (i < NEIGHBORSIZE)
             {
+                // assign this emanating halfedge as a neighbor
                 (curr_vertex->neighbors)[i] = curr_idx;
+
+                // add the weighted normal of the face of this
+                // halfedge to the vertex normal
                 curr_face = &(faces[(curr_edge->face)]);
                 a = curr_face->area;
                 for (k = 0; k < VECTORSIZE; ++k)
                     normal[k] += ((curr_face->normal)[k])*a;
             }
 
-            loop_vertex = &(vertices[(curr_edge->vertex)]);
-
-            difference((curr_vertex->position), (loop_vertex->position), position);
-
-            l = norm(position);
-            curr_edge->length = l;
-            twin_edge->length = l;
-
-            twin_idx = curr_edge->prev;
-            if (twin_idx == -1)
-                break;
-            twin_edge = &(halfedges[twin_idx]);
-            curr_idx = twin_edge->twin;
-            if (curr_idx == -1)
-                break;
-            curr_edge = &(halfedges[curr_idx]);
-
-            if (curr_idx == orig_idx)
-                break;
-
+            // we've dealt with this emanating halfedge, increase the valence
             ++i;
         }
     }
@@ -455,6 +450,90 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static int flood_fill_star_component(int32_t h_idx, int component, halfedge_t *halfedges)
+{
+    int32_t curr_idx, twin_idx;
+    halfedge_t *curr_edge, *twin_edge;
+
+    // slightly backward (from other functions in this file), we expect h_idx to be 
+    // incident on the vertex of choice
+    twin_edge = &(halfedges[h_idx]);
+    if (twin_edge->component != -1) return component; // already visited
+    twin_edge->component = component;
+    
+    // traverse until we hit another singular edge, or return to the original edge
+    while (1)
+    {
+        //traverse
+        curr_idx = twin_edge->next;
+        curr_edge = &(halfedges[curr_idx]);
+
+        // assign components
+        if (curr_edge->component != -1)
+        {
+            printf("We are about to assign component %d to curr_edge with component %d\n", component, curr_edge->component);
+        }
+        curr_edge->component = component;
+
+        // traverse here so twin_idx != h_idx if we terminate immediately
+        twin_idx = curr_edge->twin;
+
+        // we hit another singular edge, so this component is done
+        if (curr_edge->locally_manifold == 0) break;
+
+        // we hit another boundary or closed the loop, so we're also done
+        if ((twin_idx == -1) || (twin_idx == h_idx)) break;
+        twin_edge = &(halfedges[twin_idx]);
+        if (twin_edge->locally_manifold == 0) {
+            printf("Strange! Current index was locally manifold, but twin was not.\n");
+            break;
+        }
+        if (twin_edge->component != -1)
+        {
+            printf("We are about to assign component %d to twin_edge with component %d\n", component, twin_edge->component);
+        }
+        twin_edge->component = component;
+    }
+
+    if (twin_idx != h_idx) {
+        // we didn't loop all the way around
+        
+        twin_edge = &(halfedges[h_idx]);
+        while (1) 
+        {
+            if (twin_edge->locally_manifold == 0) break; // don't cross a singular edge
+
+            // traverse
+            curr_idx = twin_edge->twin;
+            if (curr_idx == -1) break; // a boundary
+            curr_edge = &(halfedges[curr_idx]);
+            if (curr_edge->locally_manifold == 0) {
+                printf("2 Strange! Current index was locally manifold, but twin was not.\n");
+                break; // don't cross a singular edge
+            }
+            // assign component
+            if (curr_edge->component != -1)
+            {
+                printf("Going backwards, we are about to assign component %d to curr_edge with component %d\n", component, curr_edge->component);
+            }
+            curr_edge->component = component;
+            
+            twin_idx = curr_edge->prev;
+            twin_edge = &(halfedges[twin_idx]);
+
+            // assign components
+            if (twin_edge->component != -1)
+            {
+                printf("Going backwards, we are about to assign component %d to twin_edge with component %d\n", component, twin_edge->component);
+            }
+            twin_edge->component = component;
+        }
+    }
+
+    return (component+1);
+
 }
 
 static PyMethodDef triangle_mesh_utils_methods[] = {
