@@ -25,6 +25,9 @@ import wx
 import numpy as np
 import time
 import six
+
+from PYME.ui import wx_compat
+
 # import pylab
 from matplotlib import cm
 from PYME.Analysis.piecewiseMapping import times_to_frames, frames_to_times
@@ -298,7 +301,7 @@ class eventLogPanel(wx.Panel):
         #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
@@ -709,7 +712,7 @@ class eventLogTPanel(wx.Panel):
         #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)

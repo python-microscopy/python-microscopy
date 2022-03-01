@@ -23,6 +23,8 @@
 
 import wx
 
+from PYME.ui import wx_compat
+
 class ImagePanel(wx.Panel):
     def __init__(self, parent, renderer, *args, **kwargs):
         wx.Panel.__init__(self, parent, *args, **kwargs)
@@ -49,7 +51,7 @@ class ImagePanel(wx.Panel):
         #self.PrepareDC(DC)
         
         s = self.GetClientSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:

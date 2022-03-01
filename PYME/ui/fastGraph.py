@@ -23,6 +23,7 @@
 
 import wx
 import wx.lib.newevent
+from PYME.ui import wx_compat
 
 import sys,math
 import numpy
@@ -205,7 +206,7 @@ class FastGraphPanel(wx.Panel):
         #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
-        MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
+        MemBitmap = wx_compat.EmptyBitmap(s.GetWidth(), s.GetHeight())
         #del DC
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)

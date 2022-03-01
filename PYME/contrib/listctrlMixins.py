@@ -34,6 +34,7 @@
 import locale
 import wx
 from six.moves import xrange
+from PYME.ui import wx_compat
 
 #python 3 compatibility
 cmp = lambda x, y: (x > y) - (x < y)
@@ -750,7 +751,7 @@ class CheckListCtrlMixin(object):
         is used to determine the checkboxes state (see wx.CONTROL_*)
 
         """
-        bmp = wx.EmptyBitmap(*size)
+        bmp = wx_compat.EmptyBitmap(*size)
         dc = wx.MemoryDC(bmp)
         dc.Clear()
         wx.RendererNative.Get().DrawCheckBox(self, dc,
