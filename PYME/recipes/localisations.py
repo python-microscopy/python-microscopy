@@ -439,11 +439,11 @@ class DBSCANClustering(ModuleBase):
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         if self.multithreaded:
             core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
-                                         self.searchRadius, self.minClumpSize, n_jobs=self.numberOfJobs)
+                                         eps=self.searchRadius, min_samples=self.minClumpSize, n_jobs=self.numberOfJobs)
         else:
             #NB try-catch from Christians multithreaded example removed as I think we should see failure here
             core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
-                                     self.searchRadius, self.minClumpSize)
+                                     eps=self.searchRadius, min_samples=self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
         mapped.addColumn(str(self.clumpColumnName), dbLabels + 1)
