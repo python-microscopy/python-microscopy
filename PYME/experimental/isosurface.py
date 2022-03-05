@@ -127,7 +127,7 @@ def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1, tree=None):
 
     # Get M closet face centroids for each point
     M = 5
-    _, _faces = tree.query(points, k=M)
+    _, _faces = tree.query(points, k=M, workers=-1)
     
     # Get position representation
     _v = surf.faces[_faces]
