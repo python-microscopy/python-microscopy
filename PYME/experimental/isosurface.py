@@ -97,7 +97,7 @@ def sdf_min(sdf, smooth=True, k=0.1):
     else:
         return np.min(sdf, axis=1)
 
-def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1):
+def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1, tree=None):
     """
     Calculate the distance to a mesh from points in a tabular dataset 
 
@@ -111,19 +111,23 @@ def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1):
             Smooth distance to mesh?
         smooth_k : float
             Smoothing constant, by default 0.1 = smoothed by 1/10 nm
+        tree : scipy.spatial.cKDTree
+            Optionally pass a tree of face centers to use if calling
+            this function multiple times.
     """
 
-    import scipy.spatial
+    if tree is None:
+        import scipy.spatial
 
-    # Create a list of face centroids for search
-    face_centers = surf._vertices['position'][surf.faces].mean(1)
+        # Create a list of face centroids for search
+        face_centers = surf._vertices['position'][surf.faces].mean(1)
 
-    # Construct a kdtree over the face centers
-    tree = scipy.spatial.cKDTree(face_centers)
+        # Construct a kdtree over the face centers
+        tree = scipy.spatial.cKDTree(face_centers)
 
     # Get M closet face centroids for each point
     M = 5
-    _, _faces = tree.query(points, k=M)
+    _, _faces = tree.query(points, k=M, workers=-1)
     
     # Get position representation
     _v = surf.faces[_faces]
