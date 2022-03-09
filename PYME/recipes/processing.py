@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI, CInt
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1942,7 +1942,7 @@ class BackgroundSubtractionMovingAverage(ModuleBase):
     """
 
     input_name = Input('input')
-    window = List([-32, 0, 1])
+    window = List(type=CInt, value=[-32, 0, 1])
     output_name = Output('background_subtracted')
 
     percentile = 0
