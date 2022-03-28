@@ -118,7 +118,7 @@ def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
     corners = [verts + dx * c_offs[i][:, None] for i in range(8)]
     corner_dists = [sdf(c) for c in corners]
     
-    contains_points = (np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 8) | (sdf(verts) < dx)
+    contains_points = (np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 8) & (sdf(verts) < dx)
     verts = verts[:, contains_points]
     
     #print(verts.shape)
