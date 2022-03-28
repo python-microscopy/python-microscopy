@@ -2178,4 +2178,40 @@ class Composite(ModuleBase):
                 (k.startswith('input') or isinstance(k, Input)) and not v == ''}
                     
                 
-            
+@register_module('RawADUToElectronsPerSecond')
+class RawADUToElectronsPerSecond(ModuleBase):
+    """
+    Converts and image series from raw analog-digital units [ADU] to
+    photoelectrons per second [e/s]
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack in units of ADU
+
+    Returns
+    -------
+    output_name : Output
+        PYME.IO.ImageStack in units of photoelectrons/second
+
+    """
+    input_name = Input('raw_adu')
+    output_name = Output('electrons_per_s')
+    
+    def execute(self, namespace):
+        from PYME.IO.image import ImageStack
+        from PYME.IO.MetaDataHandler import DictMDHandler
+        from PYME.IO.DataSources import ElectronsPerSecondDataSource
+        
+        series_adu = namespace[self.input_name]
+        epers_ds = ElectronsPerSecondDataSource.DataSource(series_adu.data, series_adu.mdh)
+        series_epers = ImageStack(data=epers_ds, events=series_adu.events, mdh=DictMDHandler(series_adu.mdh))
+        series_epers.mdh['Parent'] = series_adu.filename
+        series_epers.mdh['Units'] = 'e/s'
+        
+        # TODO - do we need to fudge/break the remaining metadata entries?
+        # im.mdh['Camera.ElectronsPerCount'] = 1.0
+        # im.mdh['Camera.TrueEMGain'] = 1.0
+        # im.mdh['Camera.ADOffset'] = 0
+
+        namespace[self.output_name] = series_epers
