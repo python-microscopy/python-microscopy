@@ -502,7 +502,7 @@ class ImageStack(object):
         #background subtraction in the GUI the same way as in the analysis
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
-        self.mdh = MetaData.TIRFDefault
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
 
         if self.dataSource.mdh is not None: #should be true the whole time    
             self.mdh.copyEntriesFrom(self.dataSource.mdh)
@@ -552,7 +552,7 @@ class ImageStack(object):
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
-        self.mdh = MetaData.TIRFDefault
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
         self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
         #except:
         #    self.mdh = MetaData.TIRFDefault
@@ -582,7 +582,7 @@ class ImageStack(object):
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
         #try: #should be true the whole time
-        self.mdh = MetaData.TIRFDefault
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
         self.mdh.copyEntriesFrom(self.dataSource.getMetadata())
 
         #attempt to estimate any missing parameters from the data itself        
