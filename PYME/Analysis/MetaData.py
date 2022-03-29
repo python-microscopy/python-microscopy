@@ -48,6 +48,8 @@ from PYME.IO.MetaDataHandler import NestedClassMDHandler, HDFMDHandler
 ##FIXME - THIS SHOULD ALL BE EXTRACTED FROM LOG FILES OR THE LIKE
 #TIRFDefault = MetaData(VoxelSize(0.07, 0.07, 0.2), CCDMetaDataIXonDefault())
 
+# NOTE - if using these metadatahandlers as defaults be sure to
+# copy into a new metadatahandler rather than using them directly
 TIRFDefault = NestedClassMDHandler()
 
 #voxelsize

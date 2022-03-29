@@ -502,7 +502,7 @@ class ImageStack(object):
         #background subtraction in the GUI the same way as in the analysis
         self.SetData(BGSDataSource.DataSource(self.dataSource)) #this will get replaced with a wrapped version
 
-        self.mdh = MetaData.TIRFDefault
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
 
         if self.dataSource.mdh is not None: #should be true the whole time    
             self.mdh.copyEntriesFrom(self.dataSource.mdh)
