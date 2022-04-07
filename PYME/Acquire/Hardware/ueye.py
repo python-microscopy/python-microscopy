@@ -8,7 +8,7 @@ for the same camera, this module might disappear once api compatibility issues i
 uc480 instead of this if at all possible).
 
 '''
-from PYME.Acquire.Hardware.Camera import Camera
+from PYME.Acquire.Hardware.Camera import Camera, MultiviewCameraMixin
 from pyueye import ueye
 import ctypes
 import threading
@@ -542,3 +542,11 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_DeviceInfo(self.h,ueye.IS_DEVICE_INFO_CMD_GET_DEVICE_INFO,
                                               dev_info,ueye.sizeof(dev_info)))
         return dev_info
+
+#TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
+class MultiviewUEye(MultiviewCameraMixin, UEyeCamera):
+    def __init__(self, camNum, multiview_info, nbits=8):
+        UEyeCamera.__init__(self, camNum, nbits)
+        # default to the whole chip        
+        default_roi = dict(xi=0, xf=int(self._chip_size[0]), yi=0, yf=int(self._chip_size[1]))
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, UEyeCamera)

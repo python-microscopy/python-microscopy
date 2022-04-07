@@ -442,3 +442,12 @@ class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
         # default to the whole chip
         default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
         MultiviewCameraMixin.__init__(self, multiview_info, default_roi, HamamatsuORCA)
+
+
+#TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
+class MultiviewFusion(MultiviewCameraMixin, Fusion):
+    def __init__(self, camNum, multiview_info):
+        Fusion.__init__(self, camNum)
+        # default to the whole chip
+        default_roi = dict(xi=0, xf=2304, yi=0, yf=2304)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, Fusion)
