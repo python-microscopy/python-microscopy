@@ -1002,11 +1002,12 @@ class microscope(object):
                                         offsets in um
 
         """
+        from PYME.Acquire.Hardware.multiview import MultiviewWrapper
         from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
         
         x0, y0, _, _ = self.state['Camera.ROI']
     
-        if isinstance(self.cam, MultiviewCameraMixin):
+        if isinstance(self.cam, (MultiviewWrapper, MultiviewCameraMixin)):
             # fix multiview crazyness
             if self.cam.multiview_enabled:
                 #always use the 0th ROI for determining relative position, regardless of which ROIs are active
