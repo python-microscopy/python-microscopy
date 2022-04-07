@@ -444,6 +444,7 @@ class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
         MultiviewCameraMixin.__init__(self, multiview_info, default_roi, HamamatsuORCA)
 
 
+#TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
 class MultiviewFusion(MultiviewCameraMixin, Fusion):
     def __init__(self, camNum, multiview_info):
         Fusion.__init__(self, camNum)

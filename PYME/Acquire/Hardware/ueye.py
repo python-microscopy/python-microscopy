@@ -535,6 +535,7 @@ class UEyeCamera(Camera):
                                               dev_info,ueye.sizeof(dev_info)))
         return dev_info
 
+#TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
 class MultiviewUEye(MultiviewCameraMixin, UEyeCamera):
     def __init__(self, camNum, multiview_info, nbits=8):
         UEyeCamera.__init__(self, camNum, nbits)
