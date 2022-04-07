@@ -96,11 +96,19 @@ class UEyeCamera(Camera):
 
         # work out the camera base parameters for this sensortype
         self.baseProps = BaseProps.get(self.sensor_type,BaseProps['default'])
-                
+        
+        # note that some uEye cameras have a sensor size which exceeds the 'usable' ROI
         self.SetROI(0, 0, self._chip_size[0], self._chip_size[1])
         
         self.check_success(ueye.is_SetColorMode(self.h, getattr(ueye, 
                                                                 'IS_CM_MONO%d' % self.nbits)))
+        
+        # turn off hardware gamma if supported.
+        hw_gamma = ueye.is_SetHardwareGamma(self.h, ueye.int(ueye.IS_GET_HW_SUPPORTED_GAMMA))
+        if hw_gamma == ueye.IS_SET_HW_GAMMA_ON:  # SetHardwareGamma returns IS_SET_HW_GAMMA_ON (1) if supported
+            logger.debug('model supports hardware gamma correction, turning it off')
+            self.check_success(ueye.is_SetHardwareGamma(self.h, ueye.IS_SET_HW_GAMMA_OFF))
+
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
         self._buffers = []
         self.full_buffers = queue.Queue()
