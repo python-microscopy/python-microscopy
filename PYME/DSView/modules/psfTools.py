@@ -27,7 +27,7 @@ import wx.grid
 from jinja2 import Environment, PackageLoader
 env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
 
-from PYME.recipes.traits import HasTraits, Float, Int, Bool
+from PYME.recipes.traits import HasTraits, Float, Int, Bool, Enum
 
 from .graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
@@ -224,6 +224,7 @@ class PSFTools(HasTraits):
     pupilSize = Float(0)
     iterations = Int(50)
     intermediateUpdates = Bool(False)
+    apodization = Enum(['sine', 'none', 'emperical'])
     
     def default_traits_view( self ):
         from traitsui.api import View, Item
@@ -233,6 +234,7 @@ class PSFTools(HasTraits):
                 Item('NA'),
                 Item('pupilSize'),
                 Item('iterations'), 
+                Item('apodization'),
                 Item('intermediateUpdates'),
                 buttons=[OKButton])
         
@@ -268,7 +270,7 @@ class PSFTools(HasTraits):
         
         #pupil = fourierHNA.ExtractPupil(np.maximum(self.image.data[:,:,:] - .001, 0), z_, self.image.mdh['voxelsize.x']*1e3, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize)
 
-        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, vs.x, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates)
+        pupil = fourierHNA.ExtractPupil(self.image.data[:,:,:], z_, vs.x, self.wavelength, self.NA, nIters=self.iterations, size=self.pupilSize, intermediateUpdates=self.intermediateUpdates, apodization=self.apodization)
                 
         
         plt.figure()

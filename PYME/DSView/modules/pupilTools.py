@@ -139,10 +139,10 @@ class PupilTools(HasTraits):
         z_ -= z_.mean()        
         
         if self.vectorial:
-            ps = fourierHNA.PsfFromPupilVect(self.image.data[:,:], z_, self.image.voxelsize_nm.x, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
+            ps = fourierHNA.PsfFromPupilVect(self.image.data[:,:], z_, self.image.voxelsize_nm.x, lamb=self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
             #ps = abs(ps*np.conj(ps))
         else:
-            ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.voxelsize_nm.x, self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
+            ps = fourierHNA.PsfFromPupil(self.image.data[:,:], z_, self.image.voxelsize_nm.x, lamb=self.wavelength, apodization=self.apodization, NA=self.NA)#, shape = [self.sizeX, self.sizeX])
         
         #ps = ps/ps[:,:,self.sizeZ/2].sum()
         
