@@ -47,10 +47,6 @@ jobs:
         -H "Accept: application/vnd.github.v3+json" \
         -u ${{ secrets.REC_REPO_TOKEN }}\
         -d '{"ref":"ref"}'
-    
-  docker-server:
-    runs-on: ubuntu-latest
-    steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up QEMU
@@ -67,4 +63,4 @@ jobs:
       with:
         context: .
         push: true
-        tags: user/app:latest
+        tags: python-microscopy/pyme-server:latest
