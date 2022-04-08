@@ -136,7 +136,7 @@ def main():
     op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', 
                   action='store_true', default=False)
     op.add_option('--main', dest='main_node', help='Launch this as the main node for a cluster.',
-                  default=False)
+                  default=False, action='store_true')
 
     options, args = op.parse_args()
 
