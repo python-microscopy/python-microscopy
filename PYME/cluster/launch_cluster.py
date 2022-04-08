@@ -108,9 +108,9 @@ class ClusterNode(object):
             
         
         
-    def run(self):
+    def run(self, **kwargs):
         # runs a busy loop monitoring status
-        self.launch()
+        self.launch(**kwargs)
         
         try:
             while True:
@@ -141,12 +141,8 @@ def main():
     options, args = op.parse_args()
 
     cluster = ClusterNode(root_dir=options.root)
-    
-    try:
-        cluster.launch(gui=options.ui, clusterUI=options.clusterui, main_node=options.main_node)
-    finally:
-        cluster.shutdown()
-    
+
+    cluster.run(gui=options.ui, clusterUI=options.clusterui, main_node=options.main_node)
     
 if __name__ == '__main__':
     main()
