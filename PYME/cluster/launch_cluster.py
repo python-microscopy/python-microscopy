@@ -132,7 +132,7 @@ def main():
     op.add_option('-r', '--root', dest='root',
                   help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % default_root,
                   default=default_root)
-    op.add_option('--ui', dest='ui', help='launch web based ui', default=True)
+    op.add_option('--ui', dest='ui', help='launch web based ui', default=False)
     op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', 
                   action='store_true', default=False)
     op.add_option('--main', dest='main_node', help='Launch this as the main node for a cluster.',
