@@ -218,7 +218,7 @@ def _apodization_function(R, NA, n, apodization='sine', ns=None):
     from PYME.misc import snells
     t_ = np.arcsin(np.minimum(R, 1))
     
-    if apodization is None:
+    if (apodization is None) or (apodization == 'none'):
         M = 1.0 * (R < (NA / n)) # NA/lambda
     elif apodization == 'sine':
         M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
@@ -338,7 +338,7 @@ def clipped_widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1
 ##############################
 # Gerchberg-Saxton pupil extraction
 
-def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, intermediateUpdates=False):
+def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, intermediateUpdates=False, apodization='sine'):
     dx = float(dx)
     
     if not size:
@@ -365,7 +365,8 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
     
     FP = FourierPropagator(u, v, lamb=lamb, n=n)
     
-    pupil = M * np.exp(1j * 0)
+    P = M*_apodization_function(R, NA, n, apodization)
+    pupil = P * np.exp(1j * 0)
     
     sps = np.sqrt(ps)
     
@@ -400,7 +401,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
             new_pupil += bp
             
             if intermediateUpdates:
-                pupil = M * np.exp(1j * M * np.angle(bp))
+                pupil = P* np.exp(1j * M * np.angle(bp))
         
         new_pupil /= ps.shape[2]
         
@@ -426,7 +427,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
         #pupil = new_pupil*M
         
         #only fit the phase
-        pupil = M * np.exp(1j * M * np.angle(new_pupil))
+        pupil = P * np.exp(1j * M * np.angle(new_pupil))
     
     return pupil
 
