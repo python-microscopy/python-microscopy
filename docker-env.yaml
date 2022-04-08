@@ -1,0 +1,45 @@
+name: pyme
+channels:
+  - david_baddeley
+  - anaconda
+dependencies:
+  - python=3.7 
+  # - pyme-depends
+  # - python-microscopy
+  - numpy>=1.14
+  - scipy>=1.7
+  - matplotlib<=3.2.2
+  # - wxpython<4.1
+  - pytables
+  # - pyopengl
+  # - traits
+  # - traitsui<=7.1.0
+  # - pyface<=7.1.0
+  - pillow
+
+  - toposort
+  - networkx
+
+  - pyfftw
+  - mpld3
+  - cherrypy
+  - scikit-image
+  - scikit-learn
+  - zeroconf<=0.26.3
+  - requests
+  - pandas
+  - pyyaml
+  - psutil
+  - docutils
+  - sphinx
+  - ujson
+  - jinja2
+  - pycairo
+  # - pymecompress>=0.2.0
+  - six
+  - future
+  - cython
+  - blosc<=1.19
+
+  - glib
+  - django=2.1
