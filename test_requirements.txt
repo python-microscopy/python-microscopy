@@ -4,10 +4,10 @@
 # out rapidly to users where completely installing from scratch is not an option.
 # TODO - also test against bleeding edge (but only after we have current tests working reliably)
 
-numpy==1.14.*
-numexpr<=2.7.1 #2.7.2 conflicts with numpy
+numpy==1.21.*
+#numexpr<=2.7.1 #2.7.2 conflicts with numpy
 scipy
-matplotlib<=3.2.* # matplotlib >=3.3.0 requires numpy >=1.15 (and pip isn't sensible enough to recognise this)
+matplotlib #<=3.2.* # matplotlib >=3.3.0 requires numpy >=1.15 (and pip isn't sensible enough to recognise this)
 #wxpython
 tables #<=3.4.2
 #pyopengl
