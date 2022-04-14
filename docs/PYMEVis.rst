@@ -12,7 +12,7 @@ A detailed list of features and how to use them can be found below.
 .. toctree::
    :maxdepth: 1
 
-   Data Exploration <pymevis/data_exploration>
+   Data exploration <pymevis/data_exploration>
    Data correction and quality control <pymevis/data_correction>
    Image reconstruction <pymevis/image_reconstruction>
    Surface extraction <pymevis/surface_extraction>
