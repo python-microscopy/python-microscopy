@@ -27,7 +27,7 @@ particular could use a lot of work. Hopefully it's enough to get you started.
 
    PYMEAcquire
    Analysis
-   VisGUI
+   PYMEVis
    component_programs
    LocalisationAnalysis
 
