@@ -3,7 +3,7 @@
 **PYMEVisualise (VisGUI)** - Visualising Localization Data Sets
 ***************************************************************
 
-PYMEVisualize is am tool for the interactive exploration and analysis of three-dimensional (3D), 
+PYMEVisualize is a tool for the interactive exploration and analysis of three-dimensional (3D), 
 multicolor, single-molecule localization data. It includes broad range of the most commonly used 
 postprocessing, density mapping and direct quantification tools.
 
