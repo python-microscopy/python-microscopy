@@ -599,16 +599,16 @@ class PAINTPresetDialog(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Unbinding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Unbinding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tOnDark = wx.TextCtrl(self, -1, '1.0')
-        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Binding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+        hsizer.Add(wx.StaticText(self, -1, 'Binding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL,
                    2)
         self.tDarkOn = wx.TextCtrl(self, -1, '0.001')
-        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         # hsizer = wx.BoxSizer(wx.HORIZONTAL)
