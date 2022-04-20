@@ -201,10 +201,10 @@ class SimController(object):
             spec_sig[:, 0] = self.spectralSignatures[c, 0]
             spec_sig[:, 1] = self.spectralSignatures[c, 1]
             
-            fluors = fluor.specFluors(x, y, z, self.transition_tensor, self.excitation_crossections,
+            fluors = fluor.SpectralFluorophores(x, y, z, self.transition_tensor, self.excitation_crossections,
                                       activeState=self.activeState, spectralSig=spec_sig)
         else:
-            fluors = fluor.fluors(x, y, z, self.transition_tensor, self.excitation_crossections,
+            fluors = fluor.Fluorophores(x, y, z, self.transition_tensor, self.excitation_crossections,
                                   activeState=self.activeState)
         
         self.scope.cam.setSplitterInfo(*self.splitter_info)

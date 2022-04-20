@@ -63,43 +63,49 @@ def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.
     M[states.caged, states.blinked, :] = pCagedBlinked
     return M
 
-class fluorophore:
-    def __init__(self, x, y, z, transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
-        """Create a new 'fluorophore' having one dark state where:
-        transitionProbablilities is a 4x4x[number of laser wavelengths + 1] tensor of transition probablilites (units = 1/mJ)
-        the diagonal elements (transition from one state to itself) should be zero as they'll be calculated later to make sum(P) =1
-        excitationCrossections is an array of length [number of laser wavelengths] giving the number of photons per mJ emmited when in the on state
-        thetas is an array of length [number of laser wavelengths] giving the angle (in rad.) between dipole moment of the fluoropore and the laser polarisations
-        initialState is the initial state of the fluorophore"""
+# class fluorophore:
+#     def __init__(self, x, y, z, transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
+#         """Create a new 'fluorophore' having one dark state where:
+#         transitionProbablilities is a 4x4x[number of laser wavelengths + 1] tensor of transition probablilites (units = 1/mJ)
+#         the diagonal elements (transition from one state to itself) should be zero as they'll be calculated later to make sum(P) =1
+#         excitationCrossections is an array of length [number of laser wavelengths] giving the number of photons per mJ emmited when in the on state
+#         thetas is an array of length [number of laser wavelengths] giving the angle (in rad.) between dipole moment of the fluoropore and the laser polarisations
+#         initialState is the initial state of the fluorophore"""
 
-        self.x = x;
-        self.y = y;
-        self.z = z;
+#         self.x = x
+#         self.y = y
+#         self.z = z
 
-        self.state = initialState
-        self.activeState = activeState
-        self.thetas = thetas
-        self.transitionProbabilities = transitionProbablilities * np.concatenate(([1], abs(np.cos(thetas))),0)
-        self.excitationCrossections = excitationCrossections *abs(np.cos(thetas))
+#         self.state = initialState
+#         self.activeState = activeState
+#         self.thetas = thetas
+#         self.transitionProbabilities = transitionProbablilities * np.concatenate(([1], abs(np.cos(thetas))),0)
+#         self.excitationCrossections = excitationCrossections *abs(np.cos(thetas))
 
-    def illuminate(self, laserPowers, expTime):
-        dose = np.concatenate(([1],laserPowers),0)*expTime
-        #grab transition matrix
-        transVec = (self.transitionProbabilities[self.state,:,:]*dose).sum(1)
-        transVec[self.state]= 1 - transVec.sum()
-        transCs = transVec.cumsum()
+#     def illuminate(self, laserPowers, expTime):
+#         dose = np.concatenate(([1],laserPowers),0)*expTime
+#         #grab transition matrix
+#         transVec = (self.transitionProbabilities[self.state,:,:]*dose).sum(1)
+#         transVec[self.state]= 1 - transVec.sum()
+#         transCs = transVec.cumsum()
         
-        r = np.random.RandomState().rand()  # replace with np.random.default_rng() on later numpy versions
+#         r = np.random.RandomState().rand()  # replace with np.random.default_rng() on later numpy versions
         
-        for i in range(len(transVec)):
-            if (r < transCs[i]):
-                self.state = i
-                if (i == self.activeState):
-                    return (laserPowers*self.excitationCrossections).sum()*expTime
-                else:
-                    return 0
+#         for i in range(len(transVec)):
+#             if (r < transCs[i]):
+#                 self.state = i
+#                 if (i == self.activeState):
+#                     return (laserPowers*self.excitationCrossections).sum()*expTime
+#                 else:
+#                     return 0
         
-class fluors:
+class Fluorophores(object):
+    '''
+    Base class representing a collection of fluorophores
+
+    key method is `illuminate()` which conducts the necessary state transisitions and returns the fluoresence intensity of each
+    fluorophore for a given illumination intensity.
+    '''
     def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], initialState=states.active, activeState=states.active):
         self.fl = np.zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i')])
         self.fl['x'] = x
@@ -155,7 +161,10 @@ class fluors:
             return (self.fl['state'] == self.activeState)*(self.fl['exc'][:,0]*c0 + self.fl['exc'][:,1]*c1)
 
 
-class specFluors(fluors):
+class SpectralFluorophores(Fluorophores):
+    '''
+    Extension of the base fluorophore class which also records a spectral signature for ratiometric imaging.
+    '''
     def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], spectralSig = [1,0], initialState=states.caged, activeState=states.active):
         self.fl = np.zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i'), ('spec', '2f')])
         self.fl['x'] = x
@@ -171,14 +180,14 @@ class specFluors(fluors):
         self.activeState = activeState
     
 
-class EmpiricalHistFluors(fluors):
+class EmpiricalHistFluors(Fluorophores):
     """
     Fluorophores with on/off times generated by empirical data.
 
     Notes
     -----
     This class relies on empirical data. For fluorophore simulation based on
-    first principles see fluors.
+    first principles see Fluorophores.
     
     """
 
