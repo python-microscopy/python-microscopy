@@ -333,10 +333,25 @@ def setIllumPattern(pattern, z0):
     illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
     
     illPCache = None
+
+illum_roi_size=256
+
+@fluor.registerIllumFcn
+def ROIIllumFunction(fluors, position):
+    '''
+    Very crude ROI-based illumination. Assumes hard edges, no diffraction.
+    '''
+    
+    xi = np.round_((fluors['x'] - position[0])/mdh.voxelsize_nm.x) 
+    yi = np.round_((fluors['y'] - position[1])/mdh.voxelsize_nm.y) 
+    #zi = np.round_((fluors['z'] - position[2])/dz)
+
+    return (xi>0)*(xi<illum_roi_size)*(yi>0)*(yi<illum_roi_size)
+
     
     
 @fluor.registerIllumFcn
-def patternIllumFcn(fluors, postion):
+def patternIllumFcn(fluors, position):
     global illPKey, illPCache
     key = hash((fluors[0]['x'], fluors[0]['y'], fluors[0]['z']))
     
@@ -522,7 +537,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     for n  in range(numSubSteps):
         A += fluors.illuminate(laserPowers,intTime/numSubSteps, position=position, illuminationFunction=illuminationFunction)
 
-    flOn = np.where(A > 0.1)[0]
+    #flOn = np.where(A > 0.1)[0]
     
     dx = X[1] - X[0]
     dy = Y[1] - Y[0]
@@ -543,7 +558,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     #roiS = np.minimum(8 + np.abs(z2)*(2.5/70), 140).astype('i')
 
     
-    nCPUs = int(min(multiprocessing.cpu_count(), len(flOn)))
+    nCPUs = int(min(multiprocessing.cpu_count(), len(A2)))
     
     if nCPUs > 0:
         threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z, dx, dy, dz, maxz, ChanXOffsets, ChanZOffsets, ChanSpecs)) for i in range(nCPUs)]
