@@ -366,6 +366,8 @@ class FakeCamera(Camera):
             
             self.pixel_size_nm = XVals[1] - XVals[0]
 
+        rend_im.set_pixelsize_nm(self.pixel_size_nm)
+
         self.zPiezo=zPiezo
         self.xPiezo = xpiezo
         self.yPiezo = ypiezo
