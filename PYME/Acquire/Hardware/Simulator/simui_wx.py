@@ -61,7 +61,7 @@ class dSimControl(afp.foldPanel):
         hsizer.Add(wx.StaticText(pane, -1, 'Number of detection channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
         self.cNumSplitterChans = wx.Choice(pane, -1,
                                            choices=['1 - Standard', '2 - Ratiometric/Biplane', '4 - HT / 4Pi-SMS'])
-        self.cNumSplitterChans.SetSelection(0)
+        self.cNumSplitterChans.SetSelection({1:0, 2:1, 4:2}[self.sim_controller.n_chans])
         self.cNumSplitterChans.Bind(wx.EVT_CHOICE, self.OnNumChannelsChanged)
         hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
         sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
@@ -649,30 +649,30 @@ class STORMPresetDialog(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'On-Dark rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'On-Dark rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tOnDark = wx.TextCtrl(self, -1, '0.1')
-        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Spontaneous Dark-On rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+        hsizer.Add(wx.StaticText(self, -1, 'Spontaneous Dark-On rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL,
                    2)
-        self.tDarkOn = wx.TextCtrl(self, -1, '0.001')
-        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tDarkOn = wx.TextCtrl(self, -1, '0.02')
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'UV induced Dark-On rate [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tDarkOnUV = wx.TextCtrl(self, -1, '0.001')
-        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Bleaching rate [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
-        self.tOnBleach = wx.TextCtrl(self, -1, '0.03')
-        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
+        self.tOnBleach = wx.TextCtrl(self, -1, '0.01')
+        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         btnsizer = self.CreateButtonSizer(wx.OK)#wx.StdDialogButtonSizer()
@@ -699,46 +699,46 @@ class PALMPresetDialog(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Photoactivation rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+        hsizer.Add(wx.StaticText(self, -1, 'Photoactivation rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL,
                    2)
         self.tPhotoactivation = wx.TextCtrl(self, -1, '0.001')
-        hsizer.Add(self.tPhotoactivation, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tPhotoactivation, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Photoactivation rate (readout laser) [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tPhotoactivationReadout = wx.TextCtrl(self, -1, '0')
-        hsizer.Add(self.tPhotoactivationReadout, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tPhotoactivationReadout, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Bleaching rate [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tOnBleach = wx.TextCtrl(self, -1, '0.03')
-        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'On-Dark rate (blinking) [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tOnDark = wx.TextCtrl(self, -1, '0')
-        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Spontaneous Dark-On rate (blinking) [per s]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL,
                    2)
         self.tDarkOn = wx.TextCtrl(self, -1, '0')
-        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'UV induced Dark-On rate (blinking) [per mWs]:'), 0,
-                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+                   wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         self.tDarkOnUV = wx.TextCtrl(self, -1, '0')
-        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_VERTICAL, 2)
         sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
         
         btnsizer = self.CreateButtonSizer(wx.OK)#wx.StdDialogButtonSizer()
