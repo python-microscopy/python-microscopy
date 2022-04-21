@@ -53,8 +53,10 @@ pz.join() #piezo must be there before we start camera
 def cm(scope):
     import numpy as np
     from PYME.Acquire.Hardware.Simulator import fakeCam
-    cam = fakeCam.FakeCamera(256, #70*np.arange(0.0, 4*256.0),
-                                             256, #70*np.arange(0.0, 256.0),
+    from PYME.Acquire.Hardware import multiview
+    size = 256
+    cam = fakeCam.FakeCamera(size, #70*np.arange(0.0, 4*256.0),
+                                             size, #70*np.arange(0.0, 256.0),
                                              fakeCam.NoiseMaker(),
                                              scope.fakePiezo, xpiezo = scope.fakeXPiezo,
                                              ypiezo = scope.fakeYPiezo,
@@ -62,7 +64,25 @@ def cm(scope):
                                              illumFcn = 'ROIIllumFunction'
                                              )
     cam.SetEMGain(150)
-    scope.register_camera(cam,'Fake Camera')
+    
+    mv_cam = multiview.MultiviewWrapper(cam, multiview_info = {
+                                                                'Multiview.NumROIs': 4,
+                                                                'Multiview.ChannelColor': [0, 1, 1, 0],
+                                                                'Multiview.DefaultROISize': (size, size),
+                                                                'Multiview.ROISizeOptions': [128, 240, 256],
+                                                                'Multiview.ROI0Origin': (0, 0),
+                                                                'Multiview.ROI1Origin': (size, 0),
+                                                                'Multiview.ROI2Origin': (2*size, 0),
+                                                                'Multiview.ROI3Origin': (3*size, 0),
+                                                            }, 
+                                            default_roi= {
+                                                            'xi' : 0,
+                                                            'yi' : 0,
+                                                            'xf' : size*4,
+                                                            'yf' : size
+                                                         })
+    scope.register_camera(mv_cam,'Fake Camera')
+    mv_cam.register_state_handlers(scope.state)
 
 #scope.EnableJoystick = 'foo'
 
@@ -109,8 +129,21 @@ def cam_controls(MainFrame, scope):
     scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
     MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties', False))
 
+    MainFrame.AddMenuItem('Camera', 'Set Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', [0, 1, 2, 3]))
+    MainFrame.AddMenuItem('Camera', 'Clear Multiview', 
+                          lambda e: scope.state.setItem('Multiview.ActiveViews', []))
+
 
 cm.join()
+
+@init_gui('Multiview Selection')
+def multiview_selection(MainFrame, scope):
+    from PYME.Acquire.ui import multiview_select
+
+    ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
+    MainFrame.time1.WantNotification.append(ms.update)
+    MainFrame.camPanels.append((ms, 'Multiview Selection'))
 
 @init_hardware('Lasers')
 def lasers(scope):
