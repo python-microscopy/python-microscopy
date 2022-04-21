@@ -118,8 +118,11 @@ def sim_controls(MainFrame, scope):
     scope.simcontrol = simcontrol.SimController(scope, transistion_tensor=transition_tensor)
     scope.simcontrol.change_num_channels(4)
     scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
-    dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol)
+    dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol, show_status=False)
     MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
+
+    msc = simui_wx.MiniSimPanel(MainFrame, scope.simcontrol)
+    MainFrame.camPanels.append((msc, 'Simulation'))
     
     scope.dsc = dsc
 

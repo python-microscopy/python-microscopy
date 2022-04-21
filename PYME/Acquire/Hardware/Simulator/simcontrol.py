@@ -77,7 +77,10 @@ class SimController(object):
         self.states = states
         self.stateTypes = stateTypes
         self.activeState = activeState
-        self.scope = scope
+        self.scope = scope # type: PYME.Acquire.microscope.microscope
+
+        if scope:
+            scope.StatusCallbacks.append(self.simulation_status)
         
         if (transistion_tensor is None): #use defaults
             transistion_tensor = fluor.createSimpleTransitionMatrix()
@@ -248,4 +251,19 @@ class SimController(object):
         except AttributeError:
             logger.exception('Error setting new camera dimensions')
             pass
+
+    def simulation_status(self):
+        if self.scope.cam.fluors is None:
+            return 'No fluorophores defined'
+
+        cts = np.zeros((len(self.states)))
+        for i in range(len(cts)):
+            cts[i] = int((self.scope.cam.fluors.fl['state'] == i).sum())
+        
+        status = '/'.join(self.states) + ' = ' + '/'.join(['%d' % c for c in cts])
+
+        return status
+
+
+        
         

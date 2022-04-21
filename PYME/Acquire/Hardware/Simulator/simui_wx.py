@@ -40,8 +40,9 @@ class dSimControl(afp.foldPanel):
     def _init_utils(self):
         #pass
         # generated method, don't edit
-        self.tRefresh = wx.Timer(id=wxID_DSIMCONTROLTREFRESH, owner=self)
-        self.Bind(wx.EVT_TIMER, self.OnTRefreshTimer,
+        if self._show_status:
+            self.tRefresh = wx.Timer(id=wxID_DSIMCONTROLTREFRESH, owner=self)
+            self.Bind(wx.EVT_TIMER, self.OnTRefreshTimer,
                   id=wxID_DSIMCONTROLTREFRESH)
     
     def _init_ctrls(self, prnt):
@@ -264,7 +265,7 @@ class dSimControl(afp.foldPanel):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.bGenFlours = wx.Button(pFirstPrinciples, -1, 'Go')
+        self.bGenFlours = wx.Button(pFirstPrinciples, -1, 'Set')
         self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton)
         hsizer.Add(self.bGenFlours, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
         
@@ -293,7 +294,7 @@ class dSimControl(afp.foldPanel):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        self.bGenEmpiricalHistFluors = wx.Button(pEmpiricalModel, -1, 'Go')
+        self.bGenEmpiricalHistFluors = wx.Button(pEmpiricalModel, -1, 'Set')
         self.bGenEmpiricalHistFluors.Bind(wx.EVT_BUTTON, self.OnBGenEmpiricalHistFluorsButton)
         hsizer.Add(self.bGenEmpiricalHistFluors, 1,
                    wx.ALIGN_CENTER_VERTICAL, 2)
@@ -318,26 +319,27 @@ class dSimControl(afp.foldPanel):
         item.AddNewElement(pane)
         self.AddPane(item)
         
-        ######## Status #########
-        
-        #sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Status'),
-        #                          wx.VERTICAL)
-        
-        item = afp.foldingPane(self, -1, caption='Status', pinned=True)
-        pane = wx.Panel(item, -1)
-        sbsizer = wx.BoxSizer(wx.VERTICAL)
-        
-        self.stStatus = wx.StaticText(pane, -1,
-                                      label='hello\nworld\n\n\nfoo')
-        sbsizer.Add(self.stStatus, 0, wx.ALL | wx.EXPAND, 2)
-        
-        self.bPause = wx.Button(pane, -1, 'Pause')
-        self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton)
-        sbsizer.Add(self.bPause, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
-        
-        pane.SetSizerAndFit(sbsizer)
-        item.AddNewElement(pane)
-        self.AddPane(item)
+        if self._show_status:
+            ######## Status #########
+            
+            #sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Status'),
+            #                          wx.VERTICAL)
+            
+            item = afp.foldingPane(self, -1, caption='Status', pinned=True)
+            pane = wx.Panel(item, -1)
+            sbsizer = wx.BoxSizer(wx.VERTICAL)
+            
+            self.stStatus = wx.StaticText(pane, -1,
+                                        label='hello\nworld\n\n\nfoo')
+            sbsizer.Add(self.stStatus, 0, wx.ALL | wx.EXPAND, 2)
+            
+            self.bPause = wx.Button(pane, -1, 'Pause')
+            self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton)
+            sbsizer.Add(self.bPause, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+            
+            pane.SetSizerAndFit(sbsizer)
+            item.AddNewElement(pane)
+            self.AddPane(item)
         
         #vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
         
@@ -421,15 +423,18 @@ class dSimControl(afp.foldPanel):
         self.sim_controller.n_chans = nChans
         
     
-    def __init__(self, parent, sim_controller):
+    def __init__(self, parent, sim_controller, show_status=True):
         afp.foldPanel.__init__(self, parent, -1)
         self.sim_controller = sim_controller # type: PYME.Acquire.Hardware.Simulator.simcontrol.SimController
         
+        self._show_status=show_status
+
         self._init_ctrls(parent)
         
         self.fillGrids(self.sim_controller.transition_tensor)
         
-        self.tRefresh.Start(200)
+        if self._show_status:
+            self.tRefresh.Start(200)
 
     
     def OnBGenWormlikeButton(self, event):
@@ -529,12 +534,13 @@ class dSimControl(afp.foldPanel):
             self.stStatus.SetLabel('No fluorophores defined')
             return
         
-        for i in range(len(cts)):
-            cts[i] = (self.sim_controller.scope.cam.fluors.fl['state'] == i).sum()
+        #for i in range(len(cts)):
+        #    cts[i] = (self.sim_controller.scope.cam.fluors.fl['state'] == i).sum()
         
         labStr = 'Total # of fluorophores = %d\n' % len(self.sim_controller.scope.cam.fluors.fl)
-        for i in range(len(cts)):
-            labStr += "Num '%s' = %d\n" % (self.sim_controller.states[i], cts[i])
+        #for i in range(len(cts)):
+        #    labStr += "Num '%s' = %d\n" % (self.sim_controller.states[i], cts[i])
+        labStr += self.sim_controller.simulation_status()
         self.stStatus.SetLabel(labStr)
         #event.Skip()
     
@@ -757,3 +763,32 @@ class PALMPresetDialog(wx.Dialog):
             pDarkOn=[float(self.tDarkOn.GetValue()),
                      float(self.tDarkOnUV.GetValue()), 0],
             pOnBleach=[0, 0, float(self.tOnBleach.GetValue())])
+
+class MiniSimPanel(wx.Panel):
+    def __init__(self, parent, sim_controler, **kw):
+        super().__init__(parent, **kw)
+
+        self._sim_control = sim_controler
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.bPause = wx.Button(self, -1, 'Pause')
+        self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton)
+        hsizer.AddStretchSpacer()
+        hsizer.Add(self.bPause, 0, wx.ALL, 2)
+
+        vsizer.Add(hsizer)
+
+        self.SetSizerAndFit(vsizer)
+
+    def OnBPauseButton(self, event):
+        if self._sim_control.scope.frameWrangler.isRunning():
+            self._sim_control.scope.frameWrangler.stop()
+            self.bPause.SetLabel('Resume')
+        else:
+            self._sim_control.scope.frameWrangler.start()
+            self.bPause.SetLabel('Pause')
+
+
+        
