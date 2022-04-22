@@ -495,7 +495,7 @@ class dSimControl(afp.foldPanel):
         ViewIm3D(self.sim_controller.get_psf(), mode='psf')
     
     def OnBGenFloursButton(self, event):
-        if (len(self.sim_controller.points) == 0):
+        if (len(self.sim_controller.points) == 0) and (not self.sim_controller.point_gen):
             wx.MessageBox('No fluorophore positions - either generate of load a set of positions', 'Error',
                           wx.OK | wx.ICON_HAND)
             return
@@ -504,7 +504,7 @@ class dSimControl(afp.foldPanel):
         self.sim_controller.excitation_crossections = [float(self.tExSwitch.GetValue()), float(self.tExProbe.GetValue())]
         self.getSplitterInfo()
         
-        self.sim_controller.generate_fluorophores_theoretical()
+        self.sim_controller.generate_fluorophores()
     
     def _generate_and_set_fluorophores(self):
         self.getSplitterInfo()
@@ -512,9 +512,9 @@ class dSimControl(afp.foldPanel):
             self.sim_controller.transition_tensor = self.getTensorFromGrids()
             self.sim_controller.excitation_crossections = [float(self.tExSwitch.GetValue()),
                                                            float(self.tExProbe.GetValue())]
-            self.sim_controller.generate_fluorophores_theoretical()
+            self.sim_controller.generate_fluorophores()
         else:
-            self.sim_controller.generate_fluorophores_empirical()
+            self.sim_controller.generate_fluorophores(mode='empirical')
         
     
     def OnBPauseButton(self, event):
@@ -595,7 +595,7 @@ class dSimControl(afp.foldPanel):
             self.stEmpiricalHist.SetLabel('File: %s' % fn)
     
     def OnBGenEmpiricalHistFluorsButton(self, event):
-        self.sim_controller.generate_fluorophores_empirical()
+        self.sim_controller.generate_fluorophores(mode='empirical')
 
 
 class PAINTPresetDialog(wx.Dialog):

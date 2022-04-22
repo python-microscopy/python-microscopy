@@ -115,7 +115,9 @@ def sim_controls(MainFrame, scope):
                         pOnDark=[0, 0, 0.1],
                         pDarkOn=[0.02,0.001, 0],
                         pOnBleach=[0, 0, 0.01])
-    scope.simcontrol = simcontrol.SimController(scope, transistion_tensor=transition_tensor)
+    scope.simcontrol = simcontrol.SimController(scope, 
+                                                transistion_tensor=transition_tensor,
+                                                spectral_signatures=[[1, 0.2], [0.2, 1]],)
     scope.simcontrol.change_num_channels(4)
     scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
     dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol, show_status=False)
@@ -123,6 +125,13 @@ def sim_controls(MainFrame, scope):
 
     msc = simui_wx.MiniSimPanel(MainFrame, scope.simcontrol)
     MainFrame.camPanels.append((msc, 'Simulation'))
+
+    from PYME.simulation import pointsets
+    scope.simcontrol.point_gen = simcontrol.RandomDistribution(n_instances=5,region_size=30e3, 
+                                                                generator=simcontrol.Group(generators=[pointsets.WiglyFibreSource(),
+                                                                    simcontrol.AssignChannel(channel=1, generator=pointsets.SHNucleusSource())
+                                                                    ]))
+    scope.simcontrol.generate_fluorophores()
     
     scope.dsc = dsc
 

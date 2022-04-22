@@ -1,4 +1,6 @@
+import imp
 from PYME.Acquire.Hardware import Camera
+from PYME.Acquire.Hardware.Simulator import fakeCam
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -73,6 +75,11 @@ class MultiviewWrapper(object):
         self.default_chip_roi = default_roi
         self._current_pic_width = self._default_chip_width
         self._current_pic_height = self._default_chip_height
+
+        #hack for simulator TODO - move this somewhere more sensible
+        if isinstance(self._camera, fakeCam.FakeCamera):
+            vx = self._camera.XVals[1] - self._camera.XVals[0]
+            self._camera._chan_x_offsets = [vx*x0 for x0, y0 in self.view_origins]
 
     def ChangeMultiviewROISize(self, x_size, y_size):
         """

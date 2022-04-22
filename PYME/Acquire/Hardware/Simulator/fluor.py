@@ -118,9 +118,26 @@ class Fluorophores(object):
 
         self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
+
+        self._bounds = (x.min()-100, y.min()-100,x.max()+100, y.max()+100)
         #self.TM = self.transitionTensor[self.fl['state'],:,:].copy()
         #self.illuminationFunction = illuminationFunction
 
+    def hit_test(self, box):
+        '''
+        return true if any of our points are within the given bounding box 
+
+        Parameters
+        ----------
+        box : 4-tuple of float
+            (x0, y0, x1, y1)
+        '''
+
+        x0, y0, x1, y1 = box
+        xb0, yb0, xb1, yb1 = self._bounds
+
+        return ((xb0 < x1)*(yb0 < y1)*(xb1 > x0)*(yb1>y0)) > 0
+    
     #return fl
     if HAVE_ILLUMINATE_MOD:
         #use faster cythoned version of function if available
@@ -178,6 +195,8 @@ class SpectralFluorophores(Fluorophores):
 
         self.transitionTensor = transitionProbablilities.astype('f')
         self.activeState = activeState
+
+        self._bounds = (x.min()-100, y.min()-100,x.max()+100, y.max()+100)
     
 
 class EmpiricalHistFluors(Fluorophores):
@@ -202,6 +221,8 @@ class EmpiricalHistFluors(Fluorophores):
         self.fl['z'] = z
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
+
+        self._bounds = (x.min()-100, y.min()-100,x.max()+100, y.max()+100)
 
         self.laserPowers = [1.0,1.0]
         self.expTime = 0.01
