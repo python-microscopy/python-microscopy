@@ -233,7 +233,13 @@ class ActionPanel(wx.Panel):
         # get queue parameters
         n_frames = int(self.tNumFrames.GetValue())
         nice = float(self.tNice.GetValue())
-        time_est =  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
+        try:
+            time_est =  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
+        except NotImplementedError:
+            # specifically the simulated camera here, which has a non-predictable frame rate
+            # use a conservative default of 10 s/frame (should not matter as simulation will generally not be doing 10s of thousands of series)
+            time_est = 10*n_frames
+
         logger.debug('Expecting series to complete in %.1f s each' % time_est)
         # allow enough time for what we queue
         timeout = max(float(self.tTimeout.GetValue()), 
