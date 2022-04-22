@@ -45,9 +45,9 @@ def convert_numarray(s):
         uz = zlib.decompress(s)
         #print(uz)
         if six.PY2:
-            return np.loads(uz)
+            return pickle.loads(uz)
         else:
-            return np.loads(uz, encoding='bytes')
+            return pickle.loads(uz, encoding='bytes')
     except:
         #fall back and just try unpickling
         return pickle.loads(s)
