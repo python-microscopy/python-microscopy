@@ -59,6 +59,11 @@ BaseProps = {
         'ReadNoise' : 6.0,
         'ADOffset' : 10
     },
+    'UI327x' : {  # calibrated by AESB 2022/04 on S/N 4103211322 running in 12 bit mode, 100 ms integration time.
+        'ElectronsPerCount': 2.706,  # fitted from Var [ADU^2] vs Mean [ADU] plot (1/slope)
+        'ReadNoise' : 8.96, # median of 100 ms varmap from gen_sCMOS_maps.py is 80.33986 e-^2. ReadNoise is sigma, i.e. sqrt(80.34)
+        'ADOffset' : 7.67,  # median of 100 ms dark map from gen_sCMOS_maps.py
+    },
     'default' : { # fairly arbitrary values
         'ElectronsPerCount'  : 10,
         'ReadNoise' : 20,
