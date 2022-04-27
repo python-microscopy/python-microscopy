@@ -469,10 +469,14 @@ class UEyeCamera(Camera):
     
     @property
     def noise_properties(self):
-        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
-                'ReadNoise': self.baseProps['ReadNoise'],
-                'ADOffset': self.baseProps['ADOffset'],
-                'SaturationThreshold': 2 ** self.nbits  - 1}
+        try:  # try and get noise properties following the current convention
+            return super().noise_properties
+        except RuntimeError:  # fall back loudly on "base properties"
+            logger.exception('Noise properties not set up for this camera, falling back on values which are likely wrong')
+            return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                    'ReadNoise': self.baseProps['ReadNoise'],
+                    'ADOffset': self.baseProps['ADOffset'],
+                    'SaturationThreshold': 2 ** self.nbits  - 1}
 
     
     # @property
