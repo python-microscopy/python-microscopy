@@ -25,7 +25,7 @@ init script structure
 ---------------------
 The easiest way to get your hardware up and running is to copy and modify one of the existing scripts. 
 There you will see functions with two decorators, ``init_hardware`` and ``init_gui``. 
-As their names suggest, these correspond to functions which either initialize a hardware component, or set up a GUI panel for hardware once it is initialized and the main PYME Acquire GUI has been created.
+As their names suggest, these correspond to functions which either initialize a hardware component, or set up a GUI panel. Each ``init_hardware`` function runs in it's own background thread, effectively parallelising the hardware initialisation phase and improving startup time. To wait for all the hardware initialisation tasks to complete, we add a ``joinBGInit()`` call at the end of the init script. ``init_gui`` functions, in contrast are defferred until all the hardware is initialised (the init script completes) **and** the main PYMEAcquire GUI has been created.
 
 For example, the blocks to initialize an AOTF-shuttered laser, and its GUI controls could look like:
 
@@ -66,7 +66,7 @@ The arguments for these functions, ``MainFrame`` and ``scope`` are the main PYME
 
 
 
-The scope Object
+The ``scope`` Object
 --------------------
 
 ``scope`` is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions.
