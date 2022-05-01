@@ -18,7 +18,7 @@ You can tell PYME Acquire which script to use with the ``--init-script`` (short 
 
   python PYMEAquire.py -i init_script.py
 
-PYME will look in ``PYME/Acquire/Scripts`` if you specify a reltaive path, however you may find it convenient to keep your init script elsewhere so you can easily back it up or keep it in version control separate of PYME.
+PYME will look in ``PYME/Acquire/Scripts`` if you specify a relative path, however you may find it convenient to keep your init script elsewhere so you can easily back it up or keep it in version control separate of PYME.
 If you don't specify a script, PYME will use ``init.py`` by default, which contains a setup for the simulator.
 
 init script structure
