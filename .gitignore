@@ -23,6 +23,7 @@ Deconv/fftw_wisdom
 *.egg-info*
 docs/api/*
 docs/html/*
+docs/warn.txt
 doc/api/*
 doc/html/*
 .idea
