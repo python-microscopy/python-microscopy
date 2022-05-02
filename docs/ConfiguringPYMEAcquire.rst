@@ -69,7 +69,7 @@ The arguments for these functions, ``MainFrame`` and ``scope`` are the main PYME
 The ``scope`` Object
 --------------------
 
-``scope`` is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions.
+``scope`` is an object representing the microscope. It serves as a place to accumulate all the various hardware bits as well as being home to a few utility functions.
 The ``scope`` variable will be accesible from the PYME Acquire shell. The typical process is to initialize a component, such as your camera, and then call it's registration method if available.
 If there is no registration method, you can still add a component to the ``scope`` object as an attribute so you can access it later. 
 
@@ -139,7 +139,7 @@ Camera Noise Properties
 
 The analysis software wants to know about the camera noise properties, which can often be obtained from the performance sheet shipped with the camera. Noise characteristics
 are stored in a database, keyed by camera serial number. To add the noise characteristics for you camera(s), add a .yaml file to the ``~/.PYME/cameras/`` directory (or
-te corresponding install or site-directory for multi-user installs - see :py:mod:`PYME.config`). The exact name of the file is your choice - all .yaml files in the ``.PYME/cameras``
+the corresponding install or site-directory for multi-user installs - see :py:mod:`PYME.config`). The exact name of the file is your choice - all .yaml files in the ``.PYME/cameras``
 directory will be read and ammalgamated. The exact format of an entry differs slightly between cameras (see examples below), but follows the basic pattern of a top-level dictionary
 keyed on serial number, with each entry having a ``noise_properties`` entry which is in turn a dictionary keyed by gain mode. See also :py:mod:`PYME.Acquire.Hardware.camera_noise`
 
