@@ -3,74 +3,127 @@
 Configuring PYME Acquire
 ************************
 
+Configuring PYME Acquire for your microscope is relatively straightforward and involves minimal programming (1 file!) if we already support your hardware components.
+No PYME code needs to be altered to run your microscope, however you will likely find it helpful to use a development installation of PYME (see :ref:`installation`),
+in order to find the hardware classes you need to specify.
+
+
 Specifying your Hardware
 ========================
 
-The hardware in PYME is configured and initialised in a customised initialisation script. These typically start with ``init`` and live in ``PYME/Acquire/Scripts``. You can tell PYME Acquire which script to use with the ``--init-script`` (short form ``-i``) command line option eg:
+The hardware in PYME is configured and initialised in a customised initialisation script, or `init script` for short. These typically start with ``init`` and several examples can be found in ``PYME/Acquire/Scripts``. 
+You can tell PYME Acquire which script to use with the ``--init-script`` (short form ``-i``) command line option eg:
 
 .. code-block:: bash
 
   python PYMEAquire.py -i init_script.py
 
-If you don't specify a script, it'll use ``init.py`` by default, which contains a setup for the simulator.
+PYME will look in ``PYME/Acquire/Scripts`` if you specify a relative path, however you may find it convenient to keep your init script elsewhere so you can easily back it up or keep it in version control separate of PYME.
+If you don't specify a script, PYME will use ``init.py`` by default, which contains a setup for the simulator.
 
-The easiest way to get your hardware up and running is to copy and modify one of the existing scripts. There is a little bit of magic going on in places, so I'll attempt to explain the relevant bits.
+init script structure
+---------------------
+The easiest way to get your hardware up and running is to copy and modify one of the existing scripts. 
+There you will see functions with two decorators, ``init_hardware`` and ``init_gui``. 
+As their names suggest, these correspond to functions which either initialize a hardware component, or set up a GUI panel. Each ``init_hardware`` function runs in it's own background thread, effectively parallelising the hardware initialisation phase and improving startup time. To wait for all the hardware initialisation tasks to complete, we add a ``joinBGInit()`` call at the end of the init script. ``init_gui`` functions, in contrast are defferred until all the hardware is initialised (the init script completes) **and** the main PYMEAcquire GUI has been created.
+
+For example, the blocks to initialize an AOTF-shuttered laser, and its GUI controls could look like:
+
+.. code-block:: python
+
+    @init_hardware('Lasers & Shutters')
+    def lasers(scope):
+        from PYME.Acquire.Hardware.Coherent import OBIS
+        from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
+        from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
+        from PYME.config import config
+        import json
+
+        calib_file = config['aotf-calibration-file']
+        with open(calib_file, 'r') as f:
+            aotf_calibration = json.load(f)
+
+        scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
+        scope.CleanupFunctions.append(scope.aotf.Close)
+
+        l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
+        scope.CleanupFunctions.append(l405.Close)
+        scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0)
+        scope.l405.register(scope)
+    
+    @init_gui('Laser controls')
+    def laser_controls(MainFrame, scope):
+        from PYME.Acquire.ui import lasersliders
+
+        lsf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+        MainFrame.time1.WantNotification.append(lsf.update)
+        MainFrame.camPanels.append((lsf, 'Laser Powers'))
+    
+
+Note that any code can be imported during these functions, which makes it easy to add your own hardware or GUI panels.
+
+The arguments for these functions, ``MainFrame`` and ``scope`` are the main PYME GUI and the microscope instance it interfaces with, respectively.
+
+
 
 The ``scope`` Object
 --------------------
 
-``scope`` is an object representing the microscope. It serves a a place to accumulate all the various hardware bits as well as being home to a few utility functions. By the end of the script, scope must have the following properties defined:
+``scope`` is an object representing the microscope. It serves as a place to accumulate all the various hardware bits as well as being home to a few utility functions.
+The ``scope`` variable will be accesible from the PYME Acquire shell. The typical process is to initialize a component, such as your camera, and then call it's registration method if available.
+If there is no registration method, you can still add a component to the ``scope`` object as an attribute so you can access it later. 
+
+Important registration methods include:
+
+.. tabularcolumns:: |p{4.5cm}|p{11cm}|
+
+===========================         ============================================================================================================
+``scope.register_camera``           see PYME.Acquire.microscope.register_camera for details. 
+                                    This method allows configuration of camera orientation with respect to stages such that mouse center-click and drag moves the field of view in the correct direction.
+``scope.register_piezo``            see PYME.Acquire.microscope.register_piezo for details. 
+                                    This method configures each stage axis, base unit, and postive/negative directions
+``Laser.register``                  Lasers, and other hardware, can implement their own registration methods. 
+                                    These can be used to set up state handlers such that e.g. laser powers and shutters can be easily changed.
+                                    See PYME.Acquire.Hardware.lasers.Laser.register for an example.
+===========================         ============================================================================================================
+
+These registration methods make it possible to query or set the microscope state very conveniently. 
+The ``scope.state`` property will return a dictionary describing the state of the microscope (stage positions, camera frame rate, laser powers, etc.).
+What makes this powerful for hardware control is the state can also be set. 
+For example ``scope.state.update({'Lasers.l640.On': True, 'Positioning.x': 30, 'Positioning.y': 30})``
+would reposition the scope and make sure the laser named `l640` is turned on/unshuttered. 
+
+
+Key attributes which which will be set up include:
 
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
 ==================   ============================================================================================================
-``scope.cam``        The camera object. (``scope.cameras`` is a dictionary of cameras used for multiple camera support, but can
+``scope.cam``        The active camera object. ``scope.cameras`` is a dictionary of cameras used for multiple camera support, but can
                      safely be ignored unless you really need to drive two cameras on one rig)
-``scope.chaninfo``   Information about colour channels. This is mostly left over cruft from previous versions of the software
-                     and specifies how to deal with colour (bayer mask) cameras, and the sequential acquisition of different
-                     colour channels when using shuttered laser excitation sources, a multiband dichroic/blocking filter, and a
-                     black & white camera. Just copy across from one of the existing scripts.
-``scope.shutters``   Cruft again, associated with chaninfo above
+``scope.lasers``     A list of laser objects, which is also where most of the shuttering is now controlled
+``scope.piezos``     A list of positioning devices (piezos, stepper stages, etc.) which use the piezo interface (see ``PYME\Acquire\Hardware\Piezos``).
+                     The entries in this list are tuples of the form ``(positioningObject, channelNum, displayName)``.
 ==================   ============================================================================================================
 
-In addition to the mandatory items above, there are a couple of optional items that will be recognised and used if present:
 
-==================   ============================================================================================================
-``scope.lasers``     This should be a list of laser objects, and is where most of the shuttering is now controlled
-``scope.joystick``   A joystick object.
-==================   ============================================================================================================
+Settings and Camera Calibrations 
+================================
 
-Positioning - ``scope.piezos``
-------------------------------
+PYME Acquire stores a lot of it's settings in ``PYME/Acquire/PYMESettings.db``. This is an sqllite database and will be created the first time PYME Acquire is run.
+It should then have it's permissions changed so that all users who are going to be using the software can write to it.
 
-``scope.piezos`` is a list to which positioning devices which export the piezo interface (see the scripts in ``PYME\Acquire\Hardware\Piezos``) should be added. Note that the piezo bit is historic, and this should probably be called ``scope.positioning`` (or similar) - there's nothing to say that they can't actually be stepper motors. The entries in this list should be tuples of the form ``(positioningObject, channelNum, displayName)``.
+Several calibrations are either strongly encouraged or effectively required.
 
-``InitBG`` and ``InitGUI``
---------------------------
-
-This is where things start to get a bit complicated. To improve startup times, PYME Acquire supports a threaded initialisation, such that different hardware components can be initialised in parallel. This is what all the ``InitBG`` blocks are.
-
-The ``InitBG`` function takes a name (to display on the splash screen) and a string containing the code to execute, and fires off a new thread to execute the code. It returns the thread created, so, if you have one bit of hardware which requires another to be initialised first, you can use the join function to force a wait. This is purely a performance tweak, so you can quite happily just put the code in without the ``InitBG`` wrappers.
-
-The ``InitGUI`` blocks serve a different function - the main PYME Acquire GUI is not properly created when the init script is run, and any GUI operations associated with the various bits of hardware need to be deferred to such time as the main window is there. ``InitGUI`` blocks add the code contained to a list of things to be executed when the main window is ready.
-
-PYMESettings.db
-===============
-
-PYME Acquire stores a lot of it's settings in ``PYME/Acquire/PYMESettings.db``. This is an sqllite database and will be created the first time PYME Acquire is run. It should then have it's permissions changed so that all users who are going to be using the software can write to it.
-
-Calibration
-===========
-
-CCD Pixel Size
+Pixel Size
 --------------
 
 PYME stores it's pixel sizes in a two step process - first there is a named list of
 pixel size settings, and then an index to the setting that is currently active.
 This is to facilitate the easy changing of cameras / objectives etc. To set the
-pixel size you thus have to create a new setting, and then make that active.
+pixel size you have to create a new setting, and then make that active.
 
-This can be done by selecting **Controls > Camera > Set Pixel Size** from the menu.
+This can be done by selecting **Controls > Camera > Set Pixel Size** from the PYME Acquire menu.
 
 Alternatively one can execute the following commands in the console:
 
@@ -84,10 +137,10 @@ where ``x_size`` and ``y_size`` are the x and y pixel sizes **in the sample** in
 Camera Noise Properties
 -----------------------
 
-The analysis software wants to know about the camera noise properties, which can be obtained from the performance sheet shipped with the camera. Noise characteristics
+The analysis software wants to know about the camera noise properties, which can often be obtained from the performance sheet shipped with the camera. Noise characteristics
 are stored in a database, keyed by camera serial number. To add the noise characteristics for you camera(s), add a .yaml file to the ``~/.PYME/cameras/`` directory (or
-te corresponding install or site-directory for multi-user installs - see :py:mod:`PYME.config`). The exact name of the file is your choice - all .yaml files in the ``.PYME/cameras``
-directory will be read and ammalgamated. The exact format of an entry differs slightly between camerase (see examples below), but follows the basic pattern of a top-level dictionary
+the corresponding install or site-directory for multi-user installs - see :py:mod:`PYME.config`). The exact name of the file is your choice - all .yaml files in the ``.PYME/cameras``
+directory will be read and ammalgamated. The exact format of an entry differs slightly between cameras (see examples below), but follows the basic pattern of a top-level dictionary
 keyed on serial number, with each entry having a ``noise_properties`` entry which is in turn a dictionary keyed by gain mode. See also :py:mod:`PYME.Acquire.Hardware.camera_noise`
 
 
@@ -135,6 +188,18 @@ keyed on serial number, with each entry having a ``noise_properties`` entry whic
                 ReadNoise: 1.65
                 SaturationThreshold: 65535
 
+These entries will propagate into the metadata of acquired images (see :ref:`metadata`). Some values can be summaries of per-pixel quantities if using camera maps
+as described in the following table:
+
+.. tabularcolumns:: |p{4.5cm}|p{11cm}|
+
+==================   ============================================================================================================
+ADOffset             Analog-digital offset, in analog-digital units (ADU). May be specified by the camera data sheet. 
+                     Can be calibrated using ``PYME\Analysis\gen_sCMOS_maps.py``, and then taking the median dark-map value to be the ADOffset.
+ReadNoise            Gaussian amplifier noise, as a standard deviation in units of photoelectrons. May be specified by the camera data sheet. 
+                     Can be calibrated using ``PYME\Analysis\gen_sCMOS_maps.py``, and then taking the square-root of the median variance-map value.
+ElectronsPerCount    Conversion between ADU and photoelectrons (units of [e-/ADU]). May be specified by the camera data sheet.
+==================   ============================================================================================================
 
 
 EMCCD Gain

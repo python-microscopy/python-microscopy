@@ -193,7 +193,7 @@ class CameraInfoManager(object):
 
     def getVarianceMap(self, md):
         """Returns the pixel variance map specified in the supplied metadata, from cache if possible.
-        The variance map should be in units of *photoelectrons*."""
+        The variance map should be in units of *photoelectrons^2*."""
         varMapName = md.getOrDefault('Camera.VarianceMapID', None)
 
         mp = self._getMap(md, varMapName)

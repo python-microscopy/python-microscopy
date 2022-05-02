@@ -7,16 +7,26 @@ The best PYME installation method will depend on your background and whether you
 
 If you have an existing PYME installation, we recommend :ref:`removing it <removing>` before installing a new one.
 
-Executable installers (Windows and OSX)
+Executable installers (Windows and Mac)
 =======================================
 
-Recommended if you don't already have python on your computer and/or are unfamiliar with python. Download the latest
+Recommended if you don't already have Python on your computer and/or are unfamiliar with Python. Download the latest
 installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions.
+
+Updating
+---------
+
+Open the *Anaconda prompt* [#anacondaprompt]_ and enter:
+
+.. code-block:: bash
+
+    conda update python-microscopy
 
 
 Installing using conda
 ======================
 
+Recommended if you already use Python. Note that while we recommend conda over pip, we do additionally offer :ref:`instructions for pip <pip>`.
 Download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_.
 Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 
@@ -44,19 +54,19 @@ To run programs from the command prompt, you will need to run `conda activate py
     with and explicit python=3.x argument to conda create is required.
 
 Updating
-========
+---------
 
-Assuming that you've installed using either the executable or conda routes, you can update PYME by dropping into the *Anaconda prompt* [#anacondaprompt]_ and entering:
+Open the *Anaconda prompt* [#anacondaprompt]_ and enter:
 
 .. code-block:: bash
 
     conda update python-microscopy
 
 
-Development installs
-====================
+Development & instrument computer installs
+===========================================
 
-This assumes a basic familiarity with python and conda. We maintain a conda metapackage, ``pyme-depends`` for PYMEs dependencies, and reccomend a separate conda environment for development installs. Entering the following at the command prompt should get you a functional system, alter to suit your needs:
+This assumes a basic familiarity with python and conda. We maintain a conda metapackage, ``pyme-depends`` for PYME's dependencies, and reccomend a separate conda environment for development installs. Entering the following at the command prompt should get you a functional system, alter to suit your needs:
 
 .. code-block:: bash
     
@@ -69,6 +79,35 @@ This assumes a basic familiarity with python and conda. We maintain a conda meta
     python setup.py develop
 
 On OSX, use ``/path/to/conda/environment/python.app/Contents/MacOS/python setup.py develop`` instead  of ``python setup.py develop`` so that the PYME programs can access the screen. 
+
+Windows users who do not already have MSVC build tools need to install them. On some verisons of Python this can be done using conda, however a more general approach is to download Visual Studio (the free, community version - the installer is also used for downloading build tools). 
+Customize as needed, but for a 64 bit Windows 10 computer you will likely need the following individual components:
+
+* Windows 10 SDK
+* MSVC v142 - VS 2019 C++ x64/x86 build tools (latest)
+* C++/CLI support for v142 build tools (latest)
+* Windows Universal C runtime
+* C++ Universal Windows Platform runtime
+* C++ Build Tools core Features
+* C++ core features
+* .NET Framework 4.8 SDK
+* .NET Framework 4.6.1 targeting pack 
+
+Building/Editing documentation
+---------------------------------
+
+Building PYME documentation (thank you for helping!) requires additional packages which can be installed via conda:
+
+.. code-block:: bash
+
+    conda install mock numpydoc sphinx_rtd_theme
+
+The documentation htmls can then be built by running 
+
+.. code-block:: bash
+
+    sphinx-build <path/to/python-microscopy/docs> <destination-directory>
+
 
 
 Enable bioformats data importers
@@ -133,9 +172,11 @@ This can be solved by the following.
 Additional resources
 ********************
 
-- Detailed developer installation docs are located at :ref:`installationFromSource`
+- Legacy developer installation docs are located at :ref:`installationFromSource`
 - A step by step walkthough of installation using anaconda along with some troubleshooting tips can be found at :ref:`installationanaconda`
 
+
+.. _pip:
 
 pip installation [EXPERIMENTAL]
 ===============================
