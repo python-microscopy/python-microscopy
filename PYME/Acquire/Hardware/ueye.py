@@ -59,6 +59,11 @@ BaseProps = {
         'ReadNoise' : 6.0,
         'ADOffset' : 10
     },
+    'UI327x' : {  # calibrated by AESB 2022/04 on S/N 4103211322 running in 12 bit mode, 100 ms integration time.
+        'ElectronsPerCount': 2.706,  # fitted from Var [ADU^2] vs Mean [ADU] plot (1/slope)
+        'ReadNoise' : 2.425, # median of 100 ms varmap from gen_sCMOS_maps.py is 5.883 e-^2. ReadNoise is sigma, i.e. sqrt of that
+        'ADOffset' : 7.67,  # median of 100 ms dark map from gen_sCMOS_maps.py
+    },
     'default' : { # fairly arbitrary values
         'ElectronsPerCount'  : 10,
         'ReadNoise' : 20,
@@ -464,10 +469,14 @@ class UEyeCamera(Camera):
     
     @property
     def noise_properties(self):
-        return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
-                'ReadNoise': self.baseProps['ReadNoise'],
-                'ADOffset': self.baseProps['ADOffset'],
-                'SaturationThreshold': 2 ** self.nbits  - 1}
+        try:  # try and get noise properties following the current convention
+            return super().noise_properties
+        except RuntimeError:  # fall back loudly on "base properties"
+            logger.exception('Noise properties not set up for this camera, falling back on values which are likely wrong')
+            return {'ElectronsPerCount': self.baseProps['ElectronsPerCount']/self.GetGainFactor(),
+                    'ReadNoise': self.baseProps['ReadNoise'],
+                    'ADOffset': self.baseProps['ADOffset'],
+                    'SaturationThreshold': 2 ** self.nbits  - 1}
 
     
     # @property
