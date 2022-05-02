@@ -117,7 +117,7 @@ def sim_controls(MainFrame, scope):
                         pOnBleach=[0, 0, 0.01])
     scope.simcontrol = simcontrol.SimController(scope, 
                                                 transistion_tensor=transition_tensor,
-                                                spectral_signatures=[[1, 0.2], [0.2, 1]],)
+                                                spectral_signatures=[[1, 0.05], [0.05, 1]],)
     scope.simcontrol.change_num_channels(4)
     scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
     dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol, show_status=False)
