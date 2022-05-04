@@ -64,7 +64,7 @@ from PYME.IO import acquisition_backends
 class Spooler(sp.Spooler):
     def __init__(self, filename, frameSource, frameShape, **kwargs):
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
- 
+        
         self.seriesName = getReducedFilename(filename)        
         self._aggregate_h5 = kwargs.get('aggregate_h5', False)
         
@@ -92,6 +92,7 @@ class Spooler(sp.Spooler):
         
         self.md = self._backend.mdh
         self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)
+        self._stopping = False
                 
     def finished(self):
         # FIXME - this probably needs a bit more work.
