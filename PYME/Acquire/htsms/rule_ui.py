@@ -800,36 +800,36 @@ class ChainedAnalysisPanel(wx.Panel):
 
 
 from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettingsPanel, AnalysisDetailsPanel, manualFoldPanel
-class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
+class LocalizationSettingsPanel(wx.Panel):
     def __init__(self, wx_parent, localization_settings, mdh_changed_signal=None,
                  chained_analysis_page=None):
-        from PYME.ui.autoFoldPanel import collapsingPane
-        manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
-        
+        #from PYME.ui.autoFoldPanel import collapsingPane
+        #manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
+        wx.Panel.__init__(self, wx_parent)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
         self.localization_settings = localization_settings
         self.localization_mdh = localization_settings.analysisMDH
         self.mdh_changed_signal = mdh_changed_signal
         self.chained_analysis_page = chained_analysis_page
         
-        clp = collapsingPane(self, caption='settings ...')
-        clp.AddNewElement(AnalysisSettingsPanel(clp,
-                                                self.localization_settings,
-                                                self.mdh_changed_signal))
-        clp.AddNewElement(AnalysisDetailsPanel(clp, self.localization_settings,
-                                               self.mdh_changed_signal))
-        self.AddNewElement(clp)
+        #clp = collapsingPane(self, caption='settings ...')
+
+        asp = AnalysisSettingsPanel(self,self.localization_settings,self.mdh_changed_signal)
+        vsizer.Add(asp, 0, wx.EXPAND|wx.ALL, 5)
+        adp = AnalysisDetailsPanel(self, self.localization_settings,self.mdh_changed_signal)
+        vsizer.Add(adp, 0, wx.EXPAND|wx.ALL, 5)
+        
         
         # add box to propagate rule to rule chain
-        add_rule_panel = wx.Panel(self, -1)
-        v_sizer = wx.BoxSizer(wx.VERTICAL)
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.b_add_rule = wx.Button(add_rule_panel, -1,
+        self.b_add_rule = wx.Button(self, -1,
                                     'Add Localization to Chained Analysis')
         self.b_add_rule.Bind(wx.EVT_BUTTON, self.OnAddLocalizationRule)
-        h_sizer.Add(self.b_add_rule)
-        v_sizer.Add(h_sizer, 0, wx.EXPAND | wx.TOP, 0)
-        add_rule_panel.SetSizerAndFit(v_sizer)
-        self.AddNewElement(add_rule_panel)
+        vsizer.Add(self.b_add_rule, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+       
+        self.SetSizerAndFit(vsizer)
+        
     
     def OnAddLocalizationRule(self, wx_event=None):
         from PYME.cluster.rules import SpoolLocalLocalizationRuleFactory
