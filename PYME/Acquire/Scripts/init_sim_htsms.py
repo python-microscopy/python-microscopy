@@ -215,6 +215,14 @@ def action_manager(MainFrame, scope):
     #ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
     #MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
 
+@init_gui('Chained Analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel, get_rule_tile, RuleChain
+    from PYME.cluster.rules import RecipeRuleFactory, SpoolLocalLocalizationRuleFactory
+    from PYME.IO.MetaDataHandler import DictMDHandler
+    
+    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

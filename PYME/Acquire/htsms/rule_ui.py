@@ -115,6 +115,11 @@ class ProtocolRules(OrderedDict):
             logger.info('inactive, check "active" to turn on auto analysis')
             return
         spooler = self._spool_controller.spooler
+        try:
+            spooler.getURL
+        except AtrributeError:
+            logger.exception('Rule-based analysis chaining currently requires spooling to cluster, not to file')
+            raise 
         prot_filename = spooler.protocol.filename
         prot_filename = '' if prot_filename is None else prot_filename
         protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
