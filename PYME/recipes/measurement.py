@@ -185,21 +185,15 @@ class FitPoints(ModuleBase):
     Parameters
     ----------
     inputImage: PYME.IO.image.ImageStack
-        FitPoints does not do unit conversions normally done during localization
-        analysis in PYME (where we convert from raw analog-digital units [ADU]
-        to photoelectrons [e-]). Intensity units output in fit results from this
-        module will therefore be different unless you take care to convert the
-        units of inputImage first.
+        FitPoints does not do the camera correction normally done during 
+        localization analysis in PYME. To accomplish this using recipe modules,
+        run your ImageStack through `processing.FlatfieldAndDarkCorrect` first.
     inputPositions: PYME.IO.tabular
         positions to fit in units of nanometers, if inputImage has voxelsize
         metadata, otherwise units of pixels. Note these units will propogate
         into position related fit result parameters
     outputName: PYME.IO.tabular
         see selected fit module datatype for fit result and fit error parameters
-    
-    Notes
-    -----
-    Pay attention to units when using this module! 
 
     """
     inputImage = Input('input')
