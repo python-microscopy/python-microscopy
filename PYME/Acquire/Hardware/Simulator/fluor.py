@@ -182,7 +182,7 @@ class SpectralFluorophores(Fluorophores):
     '''
     Extension of the base fluorophore class which also records a spectral signature for ratiometric imaging.
     '''
-    def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], spectralSig = [1,0], initialState=states.caged, activeState=states.active):
+    def __init__(self,x, y, z,  transitionProbablilities, excitationCrossections, thetas = [0,0], spectralSig = [1,0], initialState=states.active, activeState=states.active):
         self.fl = np.zeros(len(x), [('x', 'f'),('y', 'f'),('z', 'f'),('exc', '2f'), ('abcosthetas', '2f'),('state', 'i'), ('spec', '2f')])
         self.fl['x'] = x
         self.fl['y'] = y
@@ -197,6 +197,16 @@ class SpectralFluorophores(Fluorophores):
         self.activeState = activeState
 
         self._bounds = (x.min()-100, y.min()-100,x.max()+100, y.max()+100)
+
+    def status(self):
+        cts = np.zeros(4)
+        for i in range(len(cts)):
+            cts[i] = int((self.fl['state'] == i).sum())
+
+        return cts
+    
+    def __repr__(self):
+        return 'SpectralFluorophores object: %s' % self.status()
     
 
 class EmpiricalHistFluors(Fluorophores):

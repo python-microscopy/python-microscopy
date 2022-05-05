@@ -99,7 +99,7 @@ class TilePanel(wx.Panel):
                 #just in case there is no spool controller
                 pass
         
-        self.scope.tiler = tiler.Tiler(self.scope, tile_dir = self.tDestination.GetValue(),
+        self.scope.tiler = tiler.Tiler(self.scope, tile_dir = tile_dir,
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
                                        trigger=trigger, backend=backend)
         
