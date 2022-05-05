@@ -9,7 +9,8 @@ from . import rend_im
 import logging
 logger = logging.getLogger(__name__)
 
-from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List
+from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List, Tuple, Int, Instance
+from PYME.simulation import pointsets
 
 
 class PSFSettings(HasTraits):
@@ -35,6 +36,65 @@ class PSFSettings(HasTraits):
                     resizable=True,
                     buttons=['OK'])
 
+
+class Group(HasTraits):
+    generators = List(Instance(HasTraits))
+
+    def points(self):
+        for g in self.generators:
+            for pts in g.points():
+                yield pts
+
+class AssignChannel(HasTraits):
+    channel = Int(0)
+    generator = Instance(HasTraits)
+
+    def points(self):
+        for pts in self.generator.points():
+            pts[:,3] = self.channel
+            yield pts
+class Shift(HasTraits):
+    dx = Float(0)
+    dy = Float(0)
+
+    generator = Instance(HasTraits)
+
+    def points(self):
+        for pts in self.generator.points():
+            pts[:,0] += self.dx
+            pts[:,1] += self.dy
+            yield pts
+
+class RandomShift(HasTraits):
+    magnitude = Float(1000)
+
+    generator = Instance(HasTraits)
+
+    def points(self):
+        dx, dy = np.random.uniform(-self.magnitude, self.magnitude, 2)
+        for pts in self.generator.points():
+            pts[:,0] += dx
+            pts[:,1] += dy
+            yield pts
+class RandomDistribution(HasTraits):
+    n_instances = Int(1)
+    region_size = Float(5000)
+    generator = Instance(HasTraits)
+
+    def points(self):
+        xp = self.region_size*np.random.uniform(-1, 1, self.n_instances)
+        yp = self.region_size*np.random.uniform(-1, 1, self.n_instances)
+
+        for xi, yi in zip(xp, yp):
+            for p in self.generator.points():
+                p1 = np.copy(p)
+                p1[:,0] += xi
+                p1[:,1] += yi
+
+                yield p1
+
+
+
 class SimController(object):
     """ Non-GUI part of simulation control"""
     
@@ -42,7 +102,8 @@ class SimController(object):
                  stateTypes=[fluor.FROM_ONLY, fluor.ALL_TRANS, fluor.ALL_TRANS, fluor.TO_ONLY], transistion_tensor=None,
                  excitation_crossections=(1., 100.),
                  activeState=fluor.states.active, n_chans=1, splitter_info=([0, -200, 300., 500.], [0, 1, 1, 0]),
-                 spectral_signatures=[[1, 0.3], [.7, .7], [0.2, 1]]):
+                 spectral_signatures=[[1, 0.3], [.7, .7], [0.2, 1]],
+                 point_gen=None):
         """
 
         Parameters
@@ -77,7 +138,10 @@ class SimController(object):
         self.states = states
         self.stateTypes = stateTypes
         self.activeState = activeState
-        self.scope = scope
+        self.scope = scope # type: PYME.Acquire.microscope.microscope
+
+        if scope:
+            scope.StatusCallbacks.append(self.simulation_status)
         
         if (transistion_tensor is None): #use defaults
             transistion_tensor = fluor.createSimpleTransitionMatrix()
@@ -91,50 +155,41 @@ class SimController(object):
         
         self.points = []
         self._empirical_hist = None
+
+        self.point_gen = point_gen
         
     @property
     def splitter_info(self):
         return self.z_offsets[:self.n_chans], self.spec_chans[:self.n_chans]
+
     
     def gen_fluors_wormlike(self, kbp=50e3, persistLength=1500, numFluors=1000, flatten=False, z_scale=1.0, num_colours=1, wrap=True):
         import numpy as np
         
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
-        wc = wormlike2.wiglyFibre(kbp, persistLength, kbp / numFluors)
+        #wc = wormlike2.wiglyFibre(kbp, persistLength, kbp / numFluors)
+        xp, yp, zp = pointsets.WiglyFibreSource(length=kbp, persistLength=persistLength, numFluors=numFluors, flatten=flatten, zScale=z_scale).getPoints()
         
         XVals = self.scope.cam.XVals
         YVals = self.scope.cam.YVals
         
         x_pixels = len(XVals)
-        y_pixels = len(YVals)
-        
         x_chan_pixels = int(x_pixels / self.n_chans)
         x_chan_size = XVals[x_chan_pixels - 1] - XVals[0]
-        
         y_chan_size = YVals[-1] - YVals[0]
         
-        wc.xp = wc.xp - wc.xp.mean() + x_chan_size / 2
-        wc.yp = wc.yp - wc.yp.mean() + y_chan_size / 2
+        #shift to centre of ROI
+        xp += x_chan_size / 2
+        yp += y_chan_size / 2
         
         if wrap:
-            wc.xp = np.mod(wc.xp, x_chan_size) + XVals[0]
-            wc.yp = np.mod(wc.yp, y_chan_size) + YVals[0]
-        
-        if flatten:
-            wc.zp *= 0
-        else:
-            wc.zp -= wc.zp.mean()
-            wc.zp *= z_scale
-        
-        self.points = []
+            xp = np.mod(xp, x_chan_size) + XVals[0]
+            yp = np.mod(yp, y_chan_size) + YVals[0]
         
         num_colours = min(num_colours, len(self.spectralSignatures))
-        
-        for i in range(len(wc.xp)):
-            if num_colours > 1:
-                self.points.append((wc.xp[i], wc.yp[i], wc.zp[i], float(i / ((len(wc.xp) + 1) / num_colours))))
-            else:
-                self.points.append((wc.xp[i], wc.yp[i], wc.zp[i], 0))
+        c = np.linspace(0, num_colours, len(xp)).astype('i')
+
+        self.points = np.array([xp,yp,zp,c], 'f').T
         
         self.scope.cam.setFluors(None)
         self.generate_fluorophores()
@@ -185,30 +240,25 @@ class SimController(object):
     
     def save_psf(self, filename):
         self.get_psf().Save(filename)
-    
-    def generate_fluorophores_theoretical(self):
-        if (len(self.points) == 0):
-            raise RuntimeError('No points defined')
+
+    def fluorophores_from_points_theoretical(self, points):
+        x = points[:, 0]
+        y = points[:, 1]
+        z = points[:, 2]
         
-        points_a = scipy.array(self.points).astype('f')
-        x = points_a[:, 0]
-        y = points_a[:, 1]
-        z = points_a[:, 2]
-        
-        if points_a.shape[1] == 4: #4th entry is index into spectrum table
-            c = points_a[:, 3].astype('i')
-            spec_sig = scipy.ones((len(x), 2))
+        if points.shape[1] == 4: #4th entry is index into spectrum table
+            c = points[:, 3].astype('i')
+            spec_sig = np.ones((len(x), 2))
             spec_sig[:, 0] = self.spectralSignatures[c, 0]
             spec_sig[:, 1] = self.spectralSignatures[c, 1]
             
-            fluors = fluor.specFluors(x, y, z, self.transition_tensor, self.excitation_crossections,
+            fluors = fluor.SpectralFluorophores(x, y, z, self.transition_tensor, self.excitation_crossections,
                                       activeState=self.activeState, spectralSig=spec_sig)
         else:
-            fluors = fluor.fluors(x, y, z, self.transition_tensor, self.excitation_crossections,
+            fluors = fluor.Fluorophores(x, y, z, self.transition_tensor, self.excitation_crossections,
                                   activeState=self.activeState)
         
-        self.scope.cam.setSplitterInfo(*self.splitter_info)
-        self.scope.cam.setFluors(fluors)
+        return fluors
     
     def load_empirical_histogram(self, filename):
         from . import EmpiricalHist
@@ -217,24 +267,42 @@ class SimController(object):
             data = json.load(f)
         self._empirical_hist = EmpiricalHist(**data[data.keys().pop()])
     
-    def generate_fluorophores_empirical(self):
-        points_a = scipy.array(self.points).astype('f')
-        x = points_a[:, 0]
-        y = points_a[:, 1]
-        z = points_a[:, 2]
+    def fluorophores_from_points_emperical(self, points):
+        x = points[:, 0]
+        y = points[:, 1]
+        z = points[:, 2]
         
-        fluors = fluor.EmpiricalHistFluors(x, y, z,
+        if points.shape[1] == 4: #4th entry is index into spectrum table
+            c = points[:, 3].astype('i')
+            spec_sig = np.ones((len(x), 2))
+            spec_sig[:, 0] = self.spectralSignatures[c, 0]
+            spec_sig[:, 1] = self.spectralSignatures[c, 1]
+            
+            fluors = fluor.EmpiricalHistFluors(x, y, z,
+                                           histogram=self._empirical_hist,
+                                           activeState=self.activeState, spectralSig=spec_sig)
+        else:
+            fluors = fluor.EmpiricalHistFluors(x, y, z,
                                            histogram=self._empirical_hist,
                                            activeState=self.activeState)
         
-        self.scope.cam.setSplitterInfo(*self.splitter_info)
-        self.scope.cam.setFluors(fluors)
+        return fluors
     
     def generate_fluorophores(self, mode='theoretical'):
         if mode == 'emperical':
-            self.generate_fluorophores_empirical()
+            gen_fcn = self.fluorophores_from_points_emperical
         else:
-            self.generate_fluorophores_theoretical()
+            gen_fcn = self.fluorophores_from_points_theoretical
+            
+        if self.point_gen:
+            objs = [gen_fcn(pts) for pts in self.point_gen.points()]
+        else:
+            if (len(self.points) == 0):
+                raise RuntimeError('No points defined')
+            objs = [gen_fcn(np.array(self.points).astype('f')),]
+        
+        self.scope.cam.setSplitterInfo(*self.splitter_info)
+        self.scope.cam.set_objects(objs)
             
     
     def change_num_channels(self, n_chans):
@@ -248,4 +316,26 @@ class SimController(object):
         except AttributeError:
             logger.exception('Error setting new camera dimensions')
             pass
+
+    def simulation_status(self):
+        if self.scope.cam._objects:
+            if len(self.scope.cam._objects) > 1:
+                #fixme for multiple objects
+                return 'Multiple objects defined'
+            fl = self.scope.cam._objects[0] 
+        elif self.scope.cam.fluors is None:
+            return 'No fluorophores defined'
+        else:
+            fl = self.scope.cam.fluors
+
+        cts = np.zeros((len(self.states)))
+        for i in range(len(cts)):
+            cts[i] = int((fl.fl['state'] == i).sum())
+        
+        status = '/'.join(self.states) + ' = ' + '/'.join(['%d' % c for c in cts])
+
+        return status
+
+
+        
         

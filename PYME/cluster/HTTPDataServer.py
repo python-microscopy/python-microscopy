@@ -341,7 +341,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 try:
                     #pickle is much faster than numpy array format (despite the array format being simpler)
                     #reluctanltly use pickles
-                    data = np.loads(data)
+                    data = cPickle.loads(data)
                 except cPickle.UnpicklingError:
                     try:
                         #try to read data as if it was numpy binary formatted

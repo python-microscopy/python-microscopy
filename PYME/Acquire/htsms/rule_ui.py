@@ -115,6 +115,11 @@ class ProtocolRules(OrderedDict):
             logger.info('inactive, check "active" to turn on auto analysis')
             return
         spooler = self._spool_controller.spooler
+        try:
+            spooler.getURL
+        except AtrributeError:
+            logger.exception('Rule-based analysis chaining currently requires spooling to cluster, not to file')
+            raise 
         prot_filename = spooler.protocol.filename
         prot_filename = '' if prot_filename is None else prot_filename
         protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
@@ -328,6 +333,8 @@ class ChainedAnalysisPage(wx.Panel):
         self._selected_protocol = list(protocol_rules.keys())[0]
         self._recipe_manager = recipe_manager
 
+        self._editor_panels = []
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -373,7 +380,9 @@ class ChainedAnalysisPage(wx.Panel):
         self._protocol_rules._updated.send(self)
 
     def OnAddRecipe(self, wx_event=None):
-        self._recipe_manager.OnAddRecipeRule()
+        self._rpan.Show()
+        self.Layout()
+        #self._recipe_manager.OnAddRecipeRule()
 
     def OnProtocolChoice(self, wx_event=None):
         self.select_rule_chain(self.c_protocol.GetStringSelection())
@@ -526,10 +535,14 @@ class ChainedAnalysisPage(wx.Panel):
         self.rule_chain.rule_factories.append(rule_tile)
         self._protocol_rules._updated.send(self)
 
+        for e in self._editor_panels:
+            e.Hide()
+        self.Layout()
+
 
 class SMLMChainedAnalysisPage(ChainedAnalysisPage):
     def __init__(self, parent, protocol_rules, recipe_manager, 
-                 localization_panel, default_pairings=None):
+                 localization_panel=None, default_pairings=None, localization_settings=None):
         """
 
         Parameters
@@ -549,8 +562,11 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         self._recipe_manager = recipe_manager
         self._localization_panel = localization_panel
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self._editor_panels = []
+
+        v_sizer = wx.BoxSizer(wx.VERTICAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # associated protocol choicebox (default / others on top, then rest)
         hsizer.Add(wx.StaticText(self, -1, 'Associated Protocol:'), 0, 
@@ -572,7 +588,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
 
         # rule plot
         self.rule_plot = RulePlotPanel(self, self._protocol_rules, 
-                                       size=(-1, 400))
+                                       size=(-1, 200))
         vsizer.Add(self.rule_plot, 1, wx.ALL|wx.EXPAND, 5)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -590,11 +606,36 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         self.b_add_localization.Bind(wx.EVT_BUTTON, self.OnAddLocalization)
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        self.SetSizerAndFit(vsizer)
+        v_sizer.Add(vsizer, 0, wx.EXPAND, 0)
+
+        if self._localization_panel is None and not localization_settings is None:
+            self._lpan = wx.Panel(self, -1)
+            self._localization_panel = LocalizationSettingsPanel(self._lpan,localization_settings, localization_settings.onMetadataChanged)
+            self._localization_panel.chained_analysis_page = self
+            sbsizer = wx.StaticBoxSizer(wx.StaticBox(self._lpan, -1, 'Localisation settings'), wx.HORIZONTAL)
+            sbsizer.Add(self._localization_panel, 1, wx.EXPAND, 0)
+            self._lpan.SetSizerAndFit(sbsizer)
+            v_sizer.Add(self._lpan, 0, wx.EXPAND|wx.ALL, 5)
+            self._lpan.Hide()
+            self._editor_panels.append(self._lpan)
+
+        self._rpan = wx.Panel(self, -1)
+        self._recipe_view = RuleRecipeView(self._rpan, self._recipe_manager)
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self._rpan, -1, 'Recipe Editor'), wx.HORIZONTAL)
+        sbsizer.Add(self._recipe_view, 1, wx.EXPAND, 0)
+        self._rpan.SetSizerAndFit(sbsizer)
+        v_sizer.Add(self._rpan, 0, wx.EXPAND|wx.ALL, 5)
+        self._rpan.Hide()
+        self._editor_panels.append(self._rpan)
+
+
+        self.SetSizerAndFit(v_sizer)
         self._protocol_rules._updated.connect(self.update)
     
     def OnAddLocalization(self, wx_event=None):
-        self._localization_panel.OnAddLocalizationRule()
+        self._lpan.Show()
+        self.Layout()
+        #self._localization_panel.OnAddLocalizationRule()
 
 from PYME.recipes.recipeGui import RecipeView, RecipeManager, RecipePlotPanel
 class RuleRecipeView(RecipeView):
@@ -633,8 +674,7 @@ class RuleRecipeView(RecipeView):
         
         self.b_add_recipe_rule = wx.Button(self, -1,
                                            'Add Recipe to Chained Analysis')
-        hsizer.Add(self.b_add_recipe_rule, 0,
-                   wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+       
         self.b_add_recipe_rule.Bind(wx.EVT_BUTTON,
                                     self.recipes.OnAddRecipeRule)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
@@ -651,9 +691,15 @@ class RuleRecipeView(RecipeView):
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
         
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bApply = wx.Button(self, -1, 'Apply Text Changes')
-        vsizer.Add(self.bApply, 0, wx.ALL, 2)
         self.bApply.Bind(wx.EVT_BUTTON, self.OnApplyText)
+        hsizer.Add(self.bApply, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        hsizer.Add(self.b_add_recipe_rule, 0,
+                   wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        vsizer.Add(hsizer, 0, wx.ALL, 2)
         
         self.bApply.Disable()
         self.tRecipeText.Bind(wx.stc.EVT_STC_MODIFIED, lambda e : self.bApply.Enable())
@@ -795,36 +841,36 @@ class ChainedAnalysisPanel(wx.Panel):
 
 
 from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettingsPanel, AnalysisDetailsPanel, manualFoldPanel
-class LocalizationSettingsPanel(manualFoldPanel.foldingPane):
+class LocalizationSettingsPanel(wx.Panel):
     def __init__(self, wx_parent, localization_settings, mdh_changed_signal=None,
                  chained_analysis_page=None):
-        from PYME.ui.autoFoldPanel import collapsingPane
-        manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
-        
+        #from PYME.ui.autoFoldPanel import collapsingPane
+        #manualFoldPanel.foldingPane.__init__(self, wx_parent, caption='Localization Analysis')
+        wx.Panel.__init__(self, wx_parent)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
         self.localization_settings = localization_settings
         self.localization_mdh = localization_settings.analysisMDH
         self.mdh_changed_signal = mdh_changed_signal
         self.chained_analysis_page = chained_analysis_page
         
-        clp = collapsingPane(self, caption='settings ...')
-        clp.AddNewElement(AnalysisSettingsPanel(clp,
-                                                self.localization_settings,
-                                                self.mdh_changed_signal))
-        clp.AddNewElement(AnalysisDetailsPanel(clp, self.localization_settings,
-                                               self.mdh_changed_signal))
-        self.AddNewElement(clp)
+        #clp = collapsingPane(self, caption='settings ...')
+
+        asp = AnalysisSettingsPanel(self,self.localization_settings,self.mdh_changed_signal)
+        vsizer.Add(asp, 0, wx.EXPAND|wx.ALL, 5)
+        adp = AnalysisDetailsPanel(self, self.localization_settings,self.mdh_changed_signal)
+        vsizer.Add(adp, 0, wx.EXPAND|wx.ALL, 5)
+        
         
         # add box to propagate rule to rule chain
-        add_rule_panel = wx.Panel(self, -1)
-        v_sizer = wx.BoxSizer(wx.VERTICAL)
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.b_add_rule = wx.Button(add_rule_panel, -1,
+        self.b_add_rule = wx.Button(self, -1,
                                     'Add Localization to Chained Analysis')
         self.b_add_rule.Bind(wx.EVT_BUTTON, self.OnAddLocalizationRule)
-        h_sizer.Add(self.b_add_rule)
-        v_sizer.Add(h_sizer, 0, wx.EXPAND | wx.TOP, 0)
-        add_rule_panel.SetSizerAndFit(v_sizer)
-        self.AddNewElement(add_rule_panel)
+        vsizer.Add(self.b_add_rule, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+       
+        self.SetSizerAndFit(vsizer)
+        
     
     def OnAddLocalizationRule(self, wx_event=None):
         from PYME.cluster.rules import SpoolLocalLocalizationRuleFactory
@@ -890,23 +936,23 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
 
         scope.protocol_rules = ProtocolRules(scope.spoolController)
         scope._recipe_manager = RuleRecipeManager()
-        scope._localization_settings = AnalysisSettings()
+        scope._localization_settings = AnalysisSettings() #TODO - we should not need this to be global.
 
-        main_frame.localization_settings = LocalizationSettingsPanel(main_frame,
-                                                                     scope._localization_settings,
-                                                                     scope._localization_settings.onMetadataChanged)
+        # localization_settings_pan = LocalizationSettingsPanel(main_frame,
+        #                                                              scope._localization_settings,
+        #                                                              scope._localization_settings.onMetadataChanged)
 
         main_frame.chained_analysis_page = SMLMChainedAnalysisPage(main_frame, 
                                                                    scope.protocol_rules,
                                                                    scope._recipe_manager,
-                                                                   main_frame.localization_settings,
-                                                                   default_pairings)
+                                                                   None,
+                                                                   default_pairings, localization_settings=scope._localization_settings)
         
         scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
-        main_frame.recipe_view = RuleRecipeView(main_frame, scope._recipe_manager)
-        main_frame.localization_settings.chained_analysis_page = main_frame.chained_analysis_page
-        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
-        main_frame.AddPage(page=main_frame.localization_settings, select=False, caption='Localization')
+        #main_frame.recipe_view = RuleRecipeView(main_frame, scope._recipe_manager)
+        #main_frame.localization_settings.chained_analysis_page = main_frame.chained_analysis_page
+        #main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
+        #main_frame.AddPage(page=main_frame.localization_settings, select=False, caption='Localization')
         main_frame.AddPage(page=main_frame.chained_analysis_page, select=False,
                            caption='Chained Analysis')
         

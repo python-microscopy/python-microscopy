@@ -31,6 +31,7 @@ from threading import Lock
 from PYME.IO import MetaDataHandler
 from PYME import config
 from . import camera_noise
+import warnings
 
 import numpy as np
 import logging
@@ -866,7 +867,7 @@ class Camera(object):
         raise DeprecationWarning("Deprecated.")
 
 
-# FIXME - move out of this file
+# DEPRECATED, TODO - schedule for removal
 class MultiviewCameraMixin(object):
         def __init__(self, multiview_info, default_roi, camera_class):
             """
@@ -905,6 +906,8 @@ class MultiviewCameraMixin(object):
             For now, the 0th multiview ROI should be the upper-left most multiview ROI, in order to properly spoof the
             position to match up with the stage. See PYME.IO.MetaDataHandler.get_camera_roi_origin.
             """
+            warnings.warn(DeprecationWarning('Use PYME.Acquire.Hardware.multiview.MultiviewWrapper instead'))
+            logger.warn('MultiviewMixin is deprecated - use PYME.Acquire.Hardware.multiview.MultiviewWrapper instead')
             self.camera_class = camera_class
             self.multiview_info = multiview_info
             self._channel_color = multiview_info['Multiview.ChannelColor']

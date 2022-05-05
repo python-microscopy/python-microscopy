@@ -1,11 +1,17 @@
-from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
+from PYME.recipes.traits import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str, Int, Bool
 from PYME.misc.exceptions import UserError
 from PYME.IO import image
+import numpy as np
 
 
 class PointSource(HasTraits):
     def refresh_choices(self):
         pass
+
+    def points(self):
+        x, y, z = self.getPoints()
+        c = np.zeros_like(x)
+        yield np.array([x,y,z,c], 'f').T
 
 
 class WormlikeSource(PointSource):
@@ -28,6 +34,91 @@ class WormlikeSource(PointSource):
         mdh['GeneratedPoints.Source.StepLength'] = self.steplength
         mdh['GeneratedPoints.Source.LengthPerKbp'] = self.lengthPerKbp
         mdh['GeneratedPoints.Source.PersistLength'] = self.persistLength
+
+class WiglyFibreSource(PointSource):
+    length = Float(50e3)
+    persistLength=Float(1500)
+    numFluors= Int(1000)
+    centre = Bool(True)
+    flatten = Bool(False)
+
+    zScale = Float(1.0)
+
+    def getPoints(self):
+        from PYME.simulation import wormlike2
+        wc = wormlike2.wiglyFibre(self.length, self.persistLength, self.length/self.numFluors)
+
+        if self.centre:
+            wc.xp -= wc.xp.mean()
+            wc.yp -= wc.yp.mean()
+            wc.zp -= wc.zp.mean()
+
+
+        if self.flatten:
+            wc.zp *= 0
+        else:
+            wc.zp *= self.zScale
+        
+        return wc.xp, wc.yp, wc.zp
+
+class SHNucleusSource(PointSource):
+    axis_scaling = List(Float, [6000., 4000., 2000.])
+    axis_sigmas = List(Float, [1000, 1000, 1000])
+    #fixme - modes
+    point_spacing = Float(500.)
+
+    def getPoints(self):
+        from PYME.simulation import locify
+        from PYME.Analysis.points.spherical_harmonics import SHShell
+        
+        axis_scales = np.array(self.axis_scaling) + np.array(self.axis_sigmas)*np.random.normal(size=3)
+
+        
+        #axis_scales = np.array([1,1,1])
+        sf = 0.5*np.sqrt(1./np.pi) # scipy sph harmonic normalisation
+
+        #a_s = axis_scales/axis_scales.max()
+
+        modes = [(0,0)]
+        amplitudes = [1]
+
+        for n in range(1,5):
+            for m in range(-n, n+1):
+                modes.append((m, n))
+                amplitudes.append(np.random.randn(1)*(0.1*n**-1.5))
+
+        #TODO - tip - we currently do rotation only
+        theta = np.random.uniform(0, 2*np.pi)
+        prin_axes = ((np.sin(theta), np.cos(theta), 0), (np.cos(theta), -np.sin(theta), 0), (0,0,1))
+
+        shell = SHShell(principle_axes=prin_axes, axis_scaling=sf/axis_scales, modes=modes, coefficients=amplitudes)
+
+        print('axis_scales:', axis_scales)
+        r_max = 1.5*np.max(axis_scales)
+
+        #pts = locify.points_from_sdf(shell.radial_distance_to_shell, r_max=r_max, dx_min=0.1*self.point_spacing)
+
+        #print('pts.shape:', pts.shape)
+        #return pts
+
+        
+        zenith = []
+        azimuth = []
+        for z in np.linspace(-np.pi/2, np.pi/2, 100):
+            az = np.linspace(0, 2*np.pi, int(np.abs(np.cos(z))*100))
+            azimuth.append(az)
+            zenith.append(z*np.ones_like(az))
+
+        azimuth = np.hstack(azimuth)
+        zenith = np.hstack(zenith)
+
+        x, y, z = shell.get_fitted_shell(azimuth, zenith)
+
+        print(x.min(), x.max())
+        
+        return x.ravel(), y.ravel(), z.ravel()
+
+
         
 class FileSource(PointSource):
     file = File(filter=['*.npy', '*.csv'],exists=True)

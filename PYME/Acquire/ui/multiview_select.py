@@ -10,7 +10,7 @@ class MultiviewSelect(wx.Panel):
 
         sizer_1= wx.BoxSizer(wx.VERTICAL)
         l = wx.StaticText(self, -1, 'Select channels:')
-        sizer_1.Add(l, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        sizer_1.Add(l, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 2)
         sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
         self.buttons = []
         for view in self.views:

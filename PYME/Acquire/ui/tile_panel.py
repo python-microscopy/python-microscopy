@@ -1,7 +1,7 @@
 import wx
 from PYME.Acquire.Utils import tiler
 import logging
-
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +89,17 @@ class TilePanel(wx.Panel):
         backend = 'file'
         if self.rbSpoolCluster.GetValue():
             backend = 'cluster'
+
+        tile_dir = self.tDestination.GetValue()
+        if not os.path.isabs(tile_dir):
+            #make relative to the current spooler directory
+            try:
+                tile_dir = os.path.join(self.scope.spoolController.get_dirname(spoolType=backend), tile_dir)
+            except AttributeError:
+                #just in case there is no spool controller
+                pass
         
-        self.scope.tiler = tiler.Tiler(self.scope, tile_dir = self.tDestination.GetValue(),
+        self.scope.tiler = tiler.Tiler(self.scope, tile_dir = tile_dir,
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
                                        trigger=trigger, backend=backend)
         

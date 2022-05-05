@@ -209,7 +209,7 @@ class SpoolController(object):
     def dirname(self):
         return self.get_dirname()
     
-    def get_dirname(self, subdirectory=None):
+    def get_dirname(self, subdirectory=None, spoolType=None):
         """ Get the current directory name, including any subdirectories from
         chunking or additional spec.
 
@@ -219,12 +219,19 @@ class SpoolController(object):
             Directory within current set directory to spool this series. The
             directory will be created if it doesn't already exist.
 
+        spoolType : str, optional
+            Used  when using get_dirname externally (e.g. in tiling) to over-ride the spool type.
+
         Returns
         -------
         str
             spool directory name
         """
-        dir = self._dirname if self.spoolType != 'Cluster' else self._cluster_dirname
+        
+        if spoolType is None:
+            spoolType = self.spoolType
+
+        dir = self._dirname if spoolType.lower() != 'cluster' else self._cluster_dirname
 
         if subdirectory != None:
             dir = dir + self._sep + subdirectory.replace(os.sep, self._sep)

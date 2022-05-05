@@ -671,9 +671,9 @@ class dSimControl(afp.foldPanel):
             spec_sig[:,0] = self.spectralSignatures[c, 0]
             spec_sig[:,1] = self.spectralSignatures[c, 1]            
         
-            fluors = fluor.specFluors(x, y, z, transTens, exCrosses, activeState=self.activeState, spectralSig=spec_sig)
+            fluors = fluor.SpectralFluorophores(x, y, z, transTens, exCrosses, activeState=self.activeState, spectralSig=spec_sig)
         else:
-            fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
+            fluors = fluor.Fluorophores(x, y, z, transTens, exCrosses, activeState=self.activeState)
 
         chan_z_offsets, chan_specs = self.getSplitterInfo()
         self.scope.cam.setSplitterInfo(chan_z_offsets, chan_specs)

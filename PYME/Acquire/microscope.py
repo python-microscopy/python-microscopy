@@ -454,7 +454,7 @@ class microscope(object):
                 voxx, voxy = conn.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
                 
                 return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
-            elif self.cam.__class__.__name__ == 'FakeCamera':
+            elif hasattr(self.cam, 'XVals'): # change to looking for attribute so that wrapped (e.g. multiview) cameras still work
                 # read voxel size from directly from our simulated camera
                 logger.info('Reading voxel size directly from simulated camera')
                 vx_um = float(self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
@@ -1002,11 +1002,12 @@ class microscope(object):
                                         offsets in um
 
         """
+        from PYME.Acquire.Hardware.multiview import MultiviewWrapper
         from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
         
         x0, y0, _, _ = self.state['Camera.ROI']
     
-        if isinstance(self.cam, MultiviewCameraMixin):
+        if isinstance(self.cam, (MultiviewWrapper, MultiviewCameraMixin)):
             # fix multiview crazyness
             if self.cam.multiview_enabled:
                 #always use the 0th ROI for determining relative position, regardless of which ROIs are active
