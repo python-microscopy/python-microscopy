@@ -160,7 +160,7 @@ def multiview_selection(MainFrame, scope):
 @init_hardware('Lasers')
 def lasers(scope):
     from PYME.Acquire.Hardware import lasers
-    scope.l642 = lasers.FakeLaser('l642',scope.cam,1, initPower=10)
+    scope.l642 = lasers.FakeLaser('l642',scope.cam,1, initPower=1)
     scope.l642.register(scope)
     #scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10)
     #scope.l405.register(scope)
