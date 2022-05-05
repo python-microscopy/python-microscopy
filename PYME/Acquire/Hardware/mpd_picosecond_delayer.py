@@ -2,9 +2,10 @@
 ## Microphoton devices picosecond delay module
 
 import serial
-import time
 import threading
+import logging
 
+logger = logging.getLogger(__name__)
 
 mpd_psd_errors = {
     1 : 'Command not recognized',
@@ -20,13 +21,12 @@ mpd_psd_errors = {
 }
 
 def check_success(resp):
-    if b'ERR' in resp:
-        err_no = int((resp.split(b'ERR')[-1]).decode())
-        try:
-            raise RuntimeError(mpd_psd_errors[err_no])
-        except KeyError:
-            raise RuntimeError('Unknown error code; %d' % err_no)
-    return resp
+        if b'ERR' in resp:
+            err_no = int((resp.split(b'ERR')[-1]).decode())
+            try:
+                raise RuntimeError(mpd_psd_errors[err_no])
+            except KeyError:
+                raise RuntimeError('Unknown error code; %d' % err_no)
 
 
 class PicosecondDelayer(object):
@@ -55,23 +55,41 @@ class PicosecondDelayer(object):
         self.lock = threading.Lock()
         self.ser = serial.Serial(port=port, baudrate=115200, 
                                  bytesize=serial.EIGHTBITS,
-                                 parity=PARITY_NONE, stopbits=STOPBITS_ONE,
+                                 parity=serial.PARITY_NONE,
+                                 stopbits=serial.STOPBITS_ONE,
                                  rtscts=False, timeout=.1, writeTimeout=2)
         
+        self._echo_mode = True  # unit starts up in echo mode
         self._delay = self.GetDelay()
         self._pulse_width = self.GetPulseWidth()
         self._trigger_level = self.GetTriggerLevel()
         self._divide_by = self.GetFrequencyDivider()
         self._edge = self.GetEdge()
         self._enabled = self.GetIO()
-        self._echo_mode = self.GetEchoMode()
         self._temperature = self.GetTemperature()
         self._max_delay = self.GetMaxDelay()
 
         # there is no way to query high-speed mode without setting it.
         self._high_speed_mode = False  # start us off in normal mode
-        
     
+    def __del__(self):
+        # make sure display on box is useful
+        self.high_speed_mode = False
+        # close out serial connection
+        with self.lock:
+            self.ser.close()
+    
+    def send_command(self, cmd):
+        base_cmd = cmd.split(b'#')[0] + b'#'
+        with self.lock:
+            self.ser.write(cmd + b'\n')
+            resp = self.ser.readline()
+        check_success(resp)
+        if self.echo_mode:
+            return ((resp.split(base_cmd)[-1]).rstrip(b'#')).decode()
+        else:
+            return (resp.rstrip(b'#')).decode()
+
     @property
     def temperature(self):
         """
@@ -96,9 +114,7 @@ class PicosecondDelayer(object):
             steps from 0 to MAX-DELAY. MAX-DELAY is slightly nuanced, but
             something like 50 nanoseconds.
         """
-        with self.lock:
-            self.ser.write(b'SD%d\n' % delay)
-            self._delay = int(str(self.ser.readline()))
+        self._delay = int(self.send_command(b'SD%d#' % delay))
     
     @property
     def pulse_width(self):
@@ -114,15 +130,13 @@ class PicosecondDelayer(object):
             non-linearly distributed from 1 ns to 250 ns, and will be rounded to
             on the unit.
         """
-        with self.lock:
-            self.ser.write(b'SP%d\n' % pulse_width)
-            self._pulse_width = int(str(self.ser.readline()))
+        self._pulse_width = int(self.send_command(b'SP%d#' % pulse_width))
     
     @property
     def trigger_level(self):
         return self._trigger_level
     
-    @property.setter
+    @trigger_level.setter
     def trigger_level(self, trigger_level):
         """
         Parameters
@@ -132,9 +146,7 @@ class PicosecondDelayer(object):
             10 mV steps from -2 V to + 2 V. Level is rounded to the nearest
             10 mV on unit.
         """
-        with self.lock:
-            self.ser.write(b'SH%d\n' % trigger_level)
-            self._trigger_level = int(str(self.ser.readline()))
+        self._trigger_level = int(self.send_command(b'SH%d#' % trigger_level))
     
     @property
     def frequency_divider(self):
@@ -149,9 +161,7 @@ class PicosecondDelayer(object):
             frequency divider factor. Possible values are integers from 1 to
             999.
         """
-        with self.lock:
-            self.ser.write(b'SV%d\n' % divide_by)
-            self._divide_by = int(str(self.ser.readline()))
+        self._divide_by = int(self.send_command(b'SV%d#' % divide_by))
     
     @property
     def edge(self):
@@ -166,9 +176,7 @@ class PicosecondDelayer(object):
             significant edge for trigger input. False: falling edge, True:
             rising edge.
         """
-        with self.lock:
-            self.ser.write(b'SE%d\n' % rising)
-            self._divide_by = bool(str(self.ser.readline()))
+        self._divide_by = bool(self.send_command(b'SE%d#' % rising))
 
     @property
     def io(self, io):
@@ -182,9 +190,7 @@ class PicosecondDelayer(object):
         io: bool
             enable (True) or disable (False) output signal
         """
-        with self.lock:
-            self.ser.write(b'EO%d\n' % io)
-            self._enabled = bool(str(self.ser.readline()))
+        self._enabled = bool(self.send_command(b'EO%d#' % io))
     
     def Enable(self):
         self.io(True)
@@ -205,10 +211,8 @@ class PicosecondDelayer(object):
             enable (True) or disable (False) echo mode
         """
         if not echo_mode:
-            raise RuntimeError('Echo mode should never be turned off over serial')
-        with self.lock:
-            self.ser.write(b'EM%d\n' % io)
-            self._echo_mode = bool(str(self.ser.readline()))
+            logger.warn('toggling echo-mode during serial operation may interrupt communication')
+        self._echo_mode = bool(self.send_command(b'EM%d#' % echo_mode))
     
     @property
     def high_speed_mode(self):
@@ -225,54 +229,36 @@ class PicosecondDelayer(object):
         high_speed: bool
             enable (True) or disable (False) high-speed mode, 
         """
-        with self.lock:
-            self.ser.write(b'HS%d\n' % io)
-            self._high_speed_mode = bool(str(self.ser.readline()))
+        self._high_speed_mode = bool(self.send_command(b'HS%d#' % high_speed))
     
     def GetTemperature(self):
-        with self.lock:
-            self.ser.write(b'RT#\n' % io)
-            self._temperature = float(str(self.ser.readline()))
+        self._temperature = float(self.send_command(b'RT#'))
         return self._temperature
     
     def GetDelay(self):
-        with self.lock:
-            self.ser.write(b'RD#\n' % io)
-            self._delay = int(str(self.ser.readline()))
+        self._delay = int(self.send_command(b'RD#'))
         return self._delay
     
     def GetPulseWidth(self):
-        with self.lock:
-            self.ser.write(b'RP#\n')
-            self._pulse_width = int(str(self.ser.readline()))
+        self._pulse_width = int(self.send_command(b'RP#'))
         return self._pulse_width
     
     def GetTriggerLevel(self):
-        with self.lock:
-            self.ser.write(b'RH#\n')
-            self._trigger_level = int(str(self.ser.readline()))
+        self._trigger_level = int(self.send_command(b'RH#'))
         return self._trigger_level
     
     def GetEdge(self):
-        with self.lock:
-            self.ser.write(b'RE#\n')
-            self._edge = bool(str(self.ser.readline()))
+        self._edge = bool(self.send_command(b'RE#'))
         return self._edge
     
     def GetIO(self):
-        with self.lock:
-            self.ser.write(b'RO#\n')
-            self._io = bool(str(self.ser.readline()))
+        self._io = bool(self.send_command(b'RO#'))
         return self._io
     
     def GetFrequencyDivider(self):
-        with self.lock:
-            self.ser.write(b'RO#\n')
-            self._divide_by = int(str(self.ser.readline()))
+        self._divide_by = int(self.send_command(b'RO#'))
         return self._divide_by
     
     def GetMaxDelay(self):
-        with self.lock:
-            self.ser.write(b'RMD#\n')
-            self._max_delay = int(str(self.ser.readline()))
+        self._max_delay = int(self.send_command(b'RMD#'))
         return self._max_delay
