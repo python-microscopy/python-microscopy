@@ -43,9 +43,9 @@ class PicosecondDelayer(object):
     cached values, while GetXXXX calls will query the board over serial.
 
     Echo mode means the board replies back the command it received, the string
-    terminator '#' and then its response. Turning off echo mode while their
-    labview software communicates with the board is problematic because it can
-    interupt communication.
+    terminator '#' and then its response (and anoher #). Somewhat nebulous 
+    message in manual that turning off echo mode can interupt communication 
+    with he board.
 
     Local mode means most settings (delay, pulse width, trigger level, divider,
     edge, or I/O) cannot be set over serial and must be set using the front
