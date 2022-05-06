@@ -72,6 +72,30 @@ class PicosecondDelayer(object):
         # there is no way to query high-speed mode without setting it.
         self._high_speed_mode = False  # start us off in normal mode
     
+    def GenStartMetadata(self, mdh):
+        """
+        Most of these settings are reasonable to use cached values.
+        Temperature we'll grab live, and delay we'll leave out as it
+        will propagate through its state handler.
+        """
+        mdh['PicosecondDelayer.PulseWidth_ns'] = self.pulse_width
+        mdh['PicosecondDelayer.TriggerLevel_mV'] = self.trigger_level
+        mdh['PicosecondDelayer.Edge'] = self.edge
+        mdh['PicosecondDelayer.FrequencyDivider'] = self.frequency_divider
+        mdh['PicosecondDelayer.Temperature_C'] = self.GetTemperature()
+        mdh['PicosecondDelayer.HighSpeedMode'] = self.high_speed_mode
+
+    def register(self, scope):
+        """
+        Add start metadata (anything interesting) and add a state handler for the delay itself
+        so we can change it with scope state updates.
+        """
+        from PYME.IO import MetaDataHandler
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+
+        scope.state.registerHandler('PicosecondDelayer.Delay_ps', getFcn=lambda : self.delay, 
+                                    setFcn=lambda y: self.__class__.delay.__set__(self, y))
+    
     def __del__(self):
         # make sure display on box is useful
         self.high_speed_mode = False
@@ -193,10 +217,10 @@ class PicosecondDelayer(object):
         self._enabled = bool(self.send_command(b'EO%d#' % io))
     
     def Enable(self):
-        self.io(True)
+        self.io = True
     
     def Disable(self):
-        self.io(False)
+        self.io = False
     
     @property
     def echo_mode(self):
