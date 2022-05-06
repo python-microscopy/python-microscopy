@@ -104,6 +104,16 @@ class PicosecondDelayer(object):
             self.ser.close()
     
     def send_command(self, cmd):
+        """Forward command to the unit, check for errors, parse return
+
+        Args:
+            cmd (bytes): command to send to the unit, complete with b'#'
+                terminator.
+
+        Returns:
+            bytes: reply from the unit, with b'#' and original command
+                (if unit is in echo mode) removed.
+        """
         base_cmd = cmd.split(b'#')[0] + b'#'
         with self.lock:
             self.ser.write(cmd + b'\n')
@@ -126,6 +136,11 @@ class PicosecondDelayer(object):
     
     @property
     def delay(self):
+        """
+
+        Returns:
+            int: delay setting in units of picoseconds
+        """
         return self._delay
     
     @delay.setter
@@ -142,6 +157,11 @@ class PicosecondDelayer(object):
     
     @property
     def pulse_width(self):
+        """
+
+        Returns:
+            int: output pulse-width duration in units of nanoseconds
+        """
         return self._pulse_width
     
     @pulse_width.setter
@@ -158,6 +178,11 @@ class PicosecondDelayer(object):
     
     @property
     def trigger_level(self):
+        """
+
+        Returns:
+            int: trigger level in units of millivolts
+        """
         return self._trigger_level
     
     @trigger_level.setter
@@ -174,6 +199,11 @@ class PicosecondDelayer(object):
     
     @property
     def frequency_divider(self):
+        """
+
+        Returns:
+            int: divide_by value (to allow skipping input triggers)
+        """
         return self._divide_by
     
     @frequency_divider.setter
@@ -189,6 +219,11 @@ class PicosecondDelayer(object):
     
     @property
     def edge(self):
+        """
+
+        Returns:
+            bool: whether significant edge is rising (True) or falling (False)
+        """
         return self._edge
     
     @edge.setter
@@ -203,7 +238,12 @@ class PicosecondDelayer(object):
         self._divide_by = bool(self.send_command(b'SE%d#' % rising))
 
     @property
-    def io(self, io):
+    def io(self):
+        """
+
+        Returns:
+            bool: whether output signal is enable (True) or disabled (False)
+        """
         return self._enabled
 
     @io.setter
@@ -217,13 +257,24 @@ class PicosecondDelayer(object):
         self._enabled = bool(self.send_command(b'EO%d#' % io))
     
     def Enable(self):
+        """
+        Turn on output
+        """
         self.io = True
     
     def Disable(self):
+        """
+        Turn off output, ignoring triggers
+        """
         self.io = False
     
     @property
     def echo_mode(self):
+        """
+        Returns:
+            bool: whether unit is in echo mode (True), where it
+                replies to any commmand first with the command it received
+        """
         return self._echo_mode
     
     @echo_mode.setter
@@ -240,13 +291,20 @@ class PicosecondDelayer(object):
     
     @property
     def high_speed_mode(self):
+        """
+
+        Returns
+        -------
+        bool: whether unit is in high-speed mode (True) where the unit display does
+            not update in order to achieve the fastest set-delay update rate
+        """
         return self._high_speed_mode
     
     @high_speed_mode.setter
     def high_speed_mode(self, high_speed):
         """
-        high-speed mode stops refreshing the display on the unit in order to the
-        achieve fastest set-delay update rate.
+        high-speed mode stops refreshing the display on the unit in order to
+        achieve the fastest set-delay update rate.
 
         Parameters
         ----------
@@ -256,10 +314,22 @@ class PicosecondDelayer(object):
         self._high_speed_mode = bool(self.send_command(b'HS%d#' % high_speed))
     
     def GetTemperature(self):
+        """ Query device and return current temperature
+        Returns
+        -------
+        float: Temperature in units of Celsius. Should stabilize to about 55 C
+        """
         self._temperature = float(self.send_command(b'RT#'))
         return self._temperature
     
     def GetDelay(self):
+        """ Query device and return current delay setpoint
+        Returns
+        ----------
+        int: delay setpoint in units of picoseconds. Delay can be varied in 10 ps
+            steps from 0 to MAX-DELAY. MAX-DELAY is slightly nuanced, but
+            something like 50 nanoseconds.
+        """
         self._delay = int(self.send_command(b'RD#'))
         return self._delay
     
@@ -268,21 +338,58 @@ class PicosecondDelayer(object):
         return self._pulse_width
     
     def GetTriggerLevel(self):
+        """ Query device for trigger level setpoint
+
+        Returns:
+        int: threshold voltage in mV to trigger an output pulse. Can be set in
+            10 mV steps from -2 V to + 2 V. Level is rounded to the nearest
+            10 mV on unit.
+        """
         self._trigger_level = int(self.send_command(b'RH#'))
         return self._trigger_level
     
     def GetEdge(self):
+        """ Query device for significant edge setting
+
+        Returns
+        -------
+        bool
+            significant edge for trigger input. False: falling edge, True:
+            rising edge.
+        """
         self._edge = bool(self.send_command(b'RE#'))
         return self._edge
     
     def GetIO(self):
+        """Query device for whether output is enabled/disabled
+
+        Returns
+        -------
+        bool
+            enabled (True) or disabled (False)
+        """
         self._io = bool(self.send_command(b'RO#'))
         return self._io
     
     def GetFrequencyDivider(self):
+        """Query device for divide-by setting
+
+        Returns
+        -------
+        int
+            frequency divider factor. Possible values are integers from 1 to
+            999.
+        """
         self._divide_by = int(self.send_command(b'RO#'))
         return self._divide_by
     
     def GetMaxDelay(self):
+        """Query device for maximum possible delay setpoint
+
+        Returns
+        -------
+        int
+            maximum delay in units of picoseconds
+        """
         self._max_delay = int(self.send_command(b'RMD#'))
         return self._max_delay
