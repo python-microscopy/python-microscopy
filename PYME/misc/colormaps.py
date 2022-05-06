@@ -103,7 +103,7 @@ ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 cm.update({cmapname: colors.LinearSegmentedColormap(cmapname, ndat[cmapname], mp_cm.LUTSIZE) for cmapname in ndat.keys()})
 
 #solid colour colormaps for VisGUI multichannel and isosurface display
-@cm.register_cmap('SoildRed', solid=True)
+@cm.register_cmap('SolidRed', solid=True)
 def Red(data):
     z = np.ones_like(data)
     return np.stack([z, 0*z, 0*z, z], -1)
