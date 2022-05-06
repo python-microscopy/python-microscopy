@@ -42,6 +42,7 @@ Miscellaneous
 * Nikon TE2000 stand
 * Nikon Ti stand
 * 3D Connexion "Space Navigator" 3D mouse
+* Micro Photon Devices Picosecond Delayer
 
 .. note::
 
