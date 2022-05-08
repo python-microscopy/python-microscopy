@@ -76,7 +76,7 @@ DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
 DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
-
+#DCAMCAP_START_SNAP = ctypes.c_int32(int("0",0))
 
 class DCAMZeroBufferedException(Exception):
     pass
@@ -122,6 +122,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
             self.setDefectCorrectMode(False)
             self.enable_cooling(True)
             self._mode = self.MODE_CONTINUOUS
+            #self._mode = self.MODE_SINGLE_SHOT
             self.initialized = True
             logger.debug('Hamamatsu Orca initialized')
 
@@ -161,12 +162,12 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
         
     def GetAcquisitionMode(self):
-        #FIXME - actually support both continuous and single shot modes
+        # Support both continuous and single shot modes
         #return self.MODE_CONTINUOUS
         return self._mode
 
     def SetAcquisitionMode(self, mode):
-        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, self.MODE_SINGLE_SHOT]:
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
@@ -192,20 +193,30 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
         if self._mode == self.MODE_SOFTWARE_TRIGGER:
             self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
-        else:
-            #continuous mode, internal trigger
-            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_INTERNAL)
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                            DCAMCAP_START_SEQUENCE),
+                         "dcamcap_start")
 
+        elif self._mode == self.MODE_CONTINUOUS:
+            # Continuous mode, internal trigger
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_INTERNAL)
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                            DCAMCAP_START_SEQUENCE),
+                         "dcamcap_start")
+
+        elif self._mode == self.MODE_SINGLE_SHOT:
+            # Spoofed single shot mode, using the software trigger
+            # NOTE: this should no longer be needed when we add software trigger support to z-stepping etc ...
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                            DCAMCAP_START_SEQUENCE),
+                         "dcamcap_start")
+            self.FireSoftwareTrigger()
 
         eventLog.logEvent('StartAq', '')
 
         # Start the capture
         #print str(self.getCamPropValue('SENSOR MODE'))
-        #TODO - this is probably where we would need to deal with continuous vs single shot modes.
-        self.checkStatus(dcam.dcamcap_start(self.handle,
-                                            DCAMCAP_START_SEQUENCE),
-                         "dcamcap_start")
-
         self._aq_active = True
         return 0
 
