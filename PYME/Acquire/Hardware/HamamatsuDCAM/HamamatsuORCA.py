@@ -205,7 +205,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                          "dcamcap_start")
 
         elif self._mode == self.MODE_SINGLE_SHOT:
-            # Single shot mode, software trigger with firetrigger
+            # Spoofed single shot mode, using the software trigger
+            # NOTE: this should no longer be needed when we add software trigger support to z-stepping etc ...
             self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
             self.checkStatus(dcam.dcamcap_start(self.handle,
                                             DCAMCAP_START_SEQUENCE),
