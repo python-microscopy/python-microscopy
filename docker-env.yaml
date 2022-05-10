@@ -2,13 +2,14 @@ name: pyme
 channels:
   - david_baddeley
   - anaconda
+  # - conda-forge
 dependencies:
-  - python=3.7 
+  - python=3.7
   # - pyme-depends
   # - python-microscopy
-  - numpy>=1.21.2
+  - numpy>=1.21
   - scipy>=1.7
-  - matplotlib<=3.2.2
+  - matplotlib # <=3.2.2
   # - wxpython<4.1
   - pytables
   # - pyopengl
@@ -32,7 +33,7 @@ dependencies:
   - psutil
   - docutils
   - sphinx
-  - ujson
+  - ujson>=3.0.0
   - jinja2
   - pycairo
   # - pymecompress>=0.2.0
@@ -43,3 +44,4 @@ dependencies:
 
   - glib
   - django=2.1
+  # - pycuda
