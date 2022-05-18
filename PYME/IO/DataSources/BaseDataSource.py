@@ -370,6 +370,15 @@ class XYZTCWrapper(XYZTCDataSource):
         series with <= 100 frames are s-stacks
         """
 
+        if isinstance(data, XYZTCDataSource):
+            # safety check - if we already have an XYZTCDataSource, simply return it
+            return data
+        
+        if data.ndim==5:
+            # array or list datasources, assume already XYZTC
+            _, _, sz, st, sc = data.shape[:5]
+            return cls(data, input_order='XYZTC', size_z=sz, size_t=st, size_c=sc)
+        
         if getattr(data, 'additionalDims', 'TC') == 'CT':
             dim_order = 'XYZCT'
             size_z = 1

@@ -21,7 +21,7 @@
 ##################
 import numpy as np
 from scipy import ndimage
-from .BaseDataSource import XYTCDataSource, XYZTCDataSource, BaseDataSource
+from .BaseDataSource import XYTCDataSource, XYTCWrapper, XYZTCDataSource, BaseDataSource, XYZTCWrapper
 
 class _DataSource(XYTCDataSource):
     moduleName = 'CropDataSource'
@@ -88,6 +88,11 @@ class DataSource(XYZTCDataSource):
         # check than input datasource is xyztc (duck-typed by checking dimension number so that 5D ListWraps are also OK) 
         assert(isinstance(dataSource, BaseDataSource))
         assert(dataSource.ndim == 5)
+
+        if not isinstance(dataSource, XYZTCDataSource):
+            # if not an XYZTCDataSource, wrap as such (needed to get stride info etc ...)
+            # this should trigger on 5D ListWraps and ArrayDataSources
+            self.dataSource = XYZTCWrapper.auto_promote(dataSource)
 
         self.xslice = self._sliceify(xrange, self.dataSource.shape[0])
         self.yslice = self._sliceify(yrange, self.dataSource.shape[1])
