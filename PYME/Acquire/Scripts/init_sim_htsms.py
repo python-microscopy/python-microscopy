@@ -208,8 +208,8 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.TilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Tiling'))
 
-    ap = tile_panel.CircularTilePanel(MainFrame, scope)
-    MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
+    # ap = tile_panel.CircularTilePanel(MainFrame, scope)
+    # MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
 
     # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
     #ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
@@ -225,10 +225,7 @@ def chained_analysis(main_frame, scope):
 
 
 #must be here!!!
-joinBGInit() #wait for anyhting which was being done in a separate thread
+joinBGInit() #wait for anything which was being done in a separate thread
 
 
-#time.sleep(.5)
 scope.initDone = True
-
-
