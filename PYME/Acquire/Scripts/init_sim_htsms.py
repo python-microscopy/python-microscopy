@@ -117,7 +117,8 @@ def sim_controls(MainFrame, scope):
                         pOnBleach=[0, 0, 0.01])
     scope.simcontrol = simcontrol.SimController(scope, 
                                                 transistion_tensor=transition_tensor,
-                                                spectral_signatures=[[1, 0.05], [0.05, 1]],)
+                                                spectral_signatures=[[1, 0.05], [0.05, 1]],
+                                                splitter_info=([0, 0, 500., 500.], [0, 1, 1, 0]))
     scope.simcontrol.change_num_channels(4)
     scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
     dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol, show_status=False)
@@ -188,10 +189,9 @@ def sample_metadata(main_frame, scope):
     from PYME.Acquire.sampleInformation import SimpleSampleInfoPanel
     sampanel = SimpleSampleInfoPanel(main_frame)
     main_frame.camPanels.append((sampanel, 'Sample Metadata'))
-#InitGUI("""
-#from PYME.Acquire.Hardware import splitter
-#splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
-#""")
+    # Prefill the data for our simulated structure
+    sampanel.slide.SetValue('HTSMS_Sim01')
+    sampanel.notes.SetValue('Chan0: WiglyFibre, Chan1: SHNucleus')
 
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
@@ -208,13 +208,6 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.TilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Tiling'))
 
-    ap = tile_panel.CircularTilePanel(MainFrame, scope)
-    MainFrame.aqPanels.append((ap, 'Circular Tile Acquisition'))
-
-    # ap = tile_panel.MultiwellTilePanel(MainFrame, scope)
-    #ap = tile_panel.MultiwellProtocolQueuePanel(MainFrame, scope)
-    #MainFrame.aqPanels.append((ap, 'Multiwell Tile Acquisition'))
-
 @init_gui('Chained Analysis')
 def chained_analysis(main_frame, scope):
     from PYME.Acquire.htsms.rule_ui import SMLMChainedAnalysisPanel, get_rule_tile, RuleChain
@@ -225,10 +218,7 @@ def chained_analysis(main_frame, scope):
 
 
 #must be here!!!
-joinBGInit() #wait for anyhting which was being done in a separate thread
+joinBGInit() #wait for anything which was being done in a separate thread
 
 
-#time.sleep(.5)
 scope.initDone = True
-
-

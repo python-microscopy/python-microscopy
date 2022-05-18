@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
 ##################
-# standard488.py
+# simul642.py
+#
+# This protocol is intended for use with the `init_sim_htsms.py` init script
+# for a simulated high-throughput SMLM acquisition with cluster-based analysis.
 #
 # Copyright David Baddeley, 2009
 # d.baddeley@auckland.ac.nz
@@ -30,12 +33,13 @@ import numpy
 #additional arguments
 taskList = [
 T(-1, scope.turnAllLasersOff),
-#T(20, scope.l488.SetPower, 1000),
-#T(20, scope.l405.SetPower, 50),
-#T(20, scope.l488.TurnOn),
-#T(20, scope.l405.TurnOn),
+T(-1, scope.state.update, {
+        'Multiview.ActiveViews': [0, 1, 2, 3],
+        'Multiview.ROISize': [256, 256],
+        'Camera.IntegrationTime': 0.01,
+    }),
 T(20, scope.state.update, {'Lasers.l642.Power' : 1000, 'Lasers.l642.On' : True, }),
-T(30, MainFrame.pan_spool.OnBAnalyse, None),
+# T(30, MainFrame.pan_spool.OnBAnalyse, None),
 T(maxint, scope.turnAllLasersOff)
 ]
 
