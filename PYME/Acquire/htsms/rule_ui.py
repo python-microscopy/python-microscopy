@@ -615,7 +615,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
             sbsizer = wx.StaticBoxSizer(wx.StaticBox(self._lpan, -1, 'Localisation settings'), wx.HORIZONTAL)
             sbsizer.Add(self._localization_panel, 1, wx.EXPAND, 0)
             self._lpan.SetSizerAndFit(sbsizer)
-            v_sizer.Add(self._lpan, 0, wx.EXPAND|wx.ALL, 5)
+            v_sizer.Add(self._lpan, 1, wx.EXPAND|wx.ALL, 5)
             self._lpan.Hide()
             self._editor_panels.append(self._lpan)
 
@@ -624,7 +624,7 @@ class SMLMChainedAnalysisPage(ChainedAnalysisPage):
         sbsizer = wx.StaticBoxSizer(wx.StaticBox(self._rpan, -1, 'Recipe Editor'), wx.HORIZONTAL)
         sbsizer.Add(self._recipe_view, 1, wx.EXPAND, 0)
         self._rpan.SetSizerAndFit(sbsizer)
-        v_sizer.Add(self._rpan, 0, wx.EXPAND|wx.ALL, 5)
+        v_sizer.Add(self._rpan, 1, wx.EXPAND|wx.ALL, 5)
         self._rpan.Hide()
         self._editor_panels.append(self._rpan)
 
@@ -860,7 +860,7 @@ class LocalizationSettingsPanel(wx.Panel):
         asp = AnalysisSettingsPanel(self,self.localization_settings,self.mdh_changed_signal)
         vsizer.Add(asp, 0, wx.EXPAND|wx.ALL, 5)
         adp = AnalysisDetailsPanel(self, self.localization_settings,self.mdh_changed_signal)
-        vsizer.Add(adp, 0, wx.EXPAND|wx.ALL, 5)
+        vsizer.Add(adp, 1, wx.EXPAND|wx.ALL, 5)
         
         
         # add box to propagate rule to rule chain
