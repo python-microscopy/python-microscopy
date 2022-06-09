@@ -141,7 +141,7 @@ class CSInterpolator(__interpolator):
     
             safeRegion = ((X[int(xm-dx)], X[int(xm+dx)]), (Y[int(ym-dy)], Y[int(ym+dy)]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
 
-        print('safe region: %s' % repr(safeRegion))
+        #print('safe region: %s' % repr(safeRegion))
         return X, Y, Z, safeRegion
 
 interpolator = CSInterpolator()

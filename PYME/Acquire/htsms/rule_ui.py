@@ -962,4 +962,4 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
                                                     main_frame.chained_analysis_page,
                                                     default_pairings)
         main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
-                                    True))
+                                    False))
