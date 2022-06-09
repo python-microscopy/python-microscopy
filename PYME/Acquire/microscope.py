@@ -268,7 +268,7 @@ class StateManager(object):
         
         key : string
             The hardware key - e.g. "Positioning.x", or "Lasers.405.Power". This
-            will also be how the hardware state is recorder in the metadata.
+            will also be how the hardware state is recorded in the metadata.
         getFcn : function
             The function to call to get the value of the parameter. Should take
             one parameter which is the value to get
