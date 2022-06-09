@@ -86,7 +86,7 @@ for filtName in skFilterNames:
             
             #work backwards through supplied defaults
             if not argspec.defaults is None:
-                for j in (1 + np.arange(len(argspec.defaults))):
+                for j in (1 + np.arange(min(len(argspec.defaults),len(args)))):
                     a = args[-j]
                     ad = argspec.defaults[-j]
                     argDefaults[a] = ad
