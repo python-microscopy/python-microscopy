@@ -84,6 +84,7 @@ dy = None
 dz = None
 
 mdh = MetaData.NestedClassMDHandler(MetaData.TIRFDefault)
+mdh['voxelsize.z'] = 0.05 # set 50nm z spacing so we are not relying quite as much on interpolation for the z shape
 
 
 def set_pixelsize_nm(pixelsize):

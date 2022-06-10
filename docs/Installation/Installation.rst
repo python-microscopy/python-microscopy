@@ -34,24 +34,15 @@ Then, open the *Anaconda prompt* [#anacondaprompt]_ and enter
 	
     conda config --append channels anaconda
     conda config --add channels david_baddeley
-    conda create -n pyme python=3.6 pyme-depends-strict python-microscopy
+    conda create -n pyme python=3.7 pyme-depends python-microscopy
 
 To run programs from the command prompt, you will need to run `conda activate pyme` before running the program.
 
 .. note::
 
-   The inclusion of `pyme-depends-strict` above pins all the PYME dependencies as well as their dependencies to fixed,
-   known good versions. This blunt way of avoiding dependency conflicts was introduced after having been burnt once too
-   often by packaging issues in our dependencies. It is particularly useful if you are also using uncurated channels such
-   as `conda-forge`. In general omitting `pyme-depends-strict`, and simply running
-   `conda create -n pyme python=3.6 python-microscopy` should be enough to give a functioning install, but there is a
-   small chance that you will need to fix dependency conflicts.
-
-.. note::
-
-    **Which Python version?** As of 2020/12/07, we recommend python 3.6 or 3.7 for new installs. We plan to add support for
-    python=3.8 in the near future, but until such time downgrading to either 3.6 or 3.7
-    with and explicit python=3.x argument to conda create is required.
+    **Which Python version?** As of 2022/6/01, we recommend python 3.7 for new installs. Python 3.8 is also now well tested, but may need a little manual intervention and/or the use of conda-forge to 
+    satisfy all dependencies. For a native install on apple-silicon (M1 etc ...) you need to do a development install using python 3.8 (see :ref:`apple_silicon`), although the standard mac packages should still work
+    through rosetta.
 
 Updating
 ---------
@@ -92,6 +83,8 @@ Customize as needed, but for a 64 bit Windows 10 computer you will likely need t
 * C++ core features
 * .NET Framework 4.8 SDK
 * .NET Framework 4.6.1 targeting pack 
+
+
 
 Building/Editing documentation
 ---------------------------------
@@ -222,3 +215,81 @@ For conda installations on Windows, Mac and Linux, removing the conda envrionmen
 (i.e. ``conda remove --name pyme --all``, see the `conda documentation <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#removing-an-environment>`__
 for additional help) is the preferred method to delete PYME. If you want to completely remove
 any trace, you may also need to modify or remove `.condarc` and `.bash_profile`.
+
+
+.. _apple_silicon:
+
+Apple Silicon (M1) native
+=========================
+
+PYME will now build and run natively on apple silicon, and is significantly faster than a rosetta based installation. The installation process is, however, not particularly smooth
+and should probably only be attempted by someone who is familiar with python. M1 installs require python >=3.8 and the use of conda-forge to find native versions of many
+or our dependencies. 
+
+These instructions are starting from an i386 (Rosetta) miniconda install. If starting from scratch it might be simpler to use
+a miniforge install (https://github.com/conda-forge/miniforge)
+
+#. Create a new, **empty**, conda environment:
+    
+    .. code-block:: bash
+        
+        conda create -n pyme_aarm64
+
+#. Activate the new environment:
+
+    .. code-block:: bash
+
+        conda activate pyme_aarm64
+
+#. Setup so that this environment pulls arm64 packages:
+
+    .. code-block:: bash
+
+        conda env config vars set CONDA_SUBDIR=osx-arm64
+        conda deactivate pyme_aarm64
+        conda activate pyme_aarm64
+
+#. Install (base) dependencies. Note, this list is incomplete and additional dependencies will likely need to be installed to resolve ``ImportErrors`` in some functionality:
+
+    .. code-block:: bash
+
+        conda install -c conda-forge python=3.8 numpy scipy matplotlib pytables pyopengl jinja2 cython pip requests pyyaml psutil pandas scikit-image scikit-learn sphinx
+        conda install -c conda-forge traits traitsui==7.1.0 pyface==7.1.0
+
+#. build wxpython from source (the wxpython package on conda-forge is broken):
+
+    **NOTE 1:** This has to be done in a native (not rosetta) terminal for the wx configuration to detect the architecture correctly. 
+    
+    
+    **NOTE 2:** This may be machine specific, but autoconf doesn't distinguish between native and x64 libraries, and was trying to link to an x64 (rather than arm64) 
+    copy of libtiff. I fixed this by hacking ``wxPython-4.1.1/buildtools/build_wxwidgets.py`` to add ``"--with-libtiff=builtin"`` to the ``configure_options``.
+
+    .. code-block:: bash
+
+        pip download wxpython
+        tar -xzf wxPython-4.1.1.tar.gz
+        cd wxPython-4.1.1
+        conda install -c conda-forge graphviz
+        python build.py dox
+        python build.py etg
+        python build.py sip
+        python build.py build
+        python setup.py install
+
+
+#. change to base python-microscopy directory, find relevant python.app executable, and do a development install
+
+    .. code-block:: bash
+
+        cd python-microscopy
+        which python
+        /Users/david/opt/miniconda3/envs/pyme_as/python.app/Contents/MacOS/python setup.py develop
+    
+    (modifying as appropriate)
+
+#. Try running ``dh5view -t``, ``PYMEVis`` etc ... 
+
+#. chase down any additional dependencies (e.g. toposort, pyfftw, zeroconf)
+
+**Extra - optimised numpy**
+Build numpy from source, linking against Accelerate, vecLib (https://stackoverflow.com/questions/69848969/how-to-build-numpy-from-source-linked-to-apple-accelerate-framework)
