@@ -502,7 +502,7 @@ class Annotater(Plugin):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         # import pylab
-        import matplotlib.cm
+        from PYME.misc.colormaps import cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
         lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
@@ -526,7 +526,7 @@ class Annotater(Plugin):
         #set scaling to (0,10)
         for i in range(im.data.shape[3]):
             self.dv.do.Gains[i] = .1
-            self.dv.do.cmaps[i] = matplotlib.cm.labeled
+            self.dv.do.cmaps[i] = cm.labeled
     
         self.dv.Refresh()
         self.dv.Update()

@@ -61,6 +61,15 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
                           ('component', 'i4'),
                           ('locally_manifold', 'i4')], align=True)
 
+
+# MESH CONVENTIONS
+##################
+#
+# halfedge.vertex = vertex the halfedge is pointing TO
+#
+# vertex.halfedge = a halfedge that eminates FROM the vertex.
+#
+
 # cdef packed struct halfedge_d:
 #     np.int32_t vertex
 #     np.int32_t face
@@ -635,7 +644,7 @@ cdef class TriangleMesh(TrianglesBase):
             n_edges = len(edges)
             j = np.arange(n_faces)
             
-            self._halfedges = np.zeros(n_edges, dtype=HALFEDGE_DTYPE)
+            self._halfedges = np.zeros(n_edges, dtype=HALFEDGE_DTYPE)# .view(np.recarray)
             self._set_chalfedges(self._halfedges)
 
             self._halfedges[:] = -1  # initialize everything to -1 to start with
@@ -4147,6 +4156,69 @@ cdef class TriangleMesh(TrianglesBase):
         self._clear_flags()
         self.face_normals
         self.vertex_normals
+
+    def unsafe_remove_vertex(self, id):
+        """
+        Remove a vertex and incident halfedges/faces.
+
+        NOTE: this will leave a non-manifold mesh! We then rely on repair to tidy it up.
+        """
+
+        ids_to_remove = [id,]
+
+        h0 = np.argwhere(self._halfedges['vertex']==id).squeeze()
+        h1 = self._halfedges['twin'][h0]
+
+        h_to_remove = np.concatenate((h0, h1))
+
+        #print([self._halfedges['face'][h] for h in h_to_remove])
+
+        f_to_remove = np.unique([f for f in [self._halfedges['face'][h] for h in h_to_remove] if f >=0])
+
+        h_to_remove = [h for h in np.unique(np.concatenate([np.argwhere(self._halfedges['face'] == f).squeeze() for f in f_to_remove])) if h >=0]
+
+        # make sure that none of the halfedges that we remove is referenced from a vertex
+        # that should remain
+        for h in h_to_remove:
+            try:
+                hvx = np.flatnonzero(self._vertices['halfedge'] == h)[0]
+            except IndexError:
+                # no vertices point to this halfedge - we don't need to do anything
+                continue
+
+            if hvx in ids_to_remove:
+                # we are going to remove the vertex, ignore
+                continue
+            
+            
+            #reassign vertex halfedge to one that will remain
+            prev_twin = self._halfedges[self._halfedges[h]['prev']]['twin']
+            if (prev_twin != -1) and (prev_twin not in h_to_remove):
+                self._vertices['halfedge'][hvx] = prev_twin
+            else:
+                twin_next = self._halfedges[self._halfedges[h]['twin']]['next']
+                if (twin_next == -1) or (twin_next in h_to_remove):
+                    print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
+                else:
+                    self._vertices['halfedge'][hvx] = twin_next
+            
+        
+        # remove twin references
+        for h in h_to_remove:
+            ht = self._halfedges['twin'][h]
+            if ht >=0:
+                self._halfedges['twin'][ht] = -1
+
+        self._halfedges[h_to_remove] = -1
+        self._halfedge_vacancies.extend(h_to_remove)
+
+        self._vertices[ids_to_remove] = -1
+        self._vertex_vacancies.extend(ids_to_remove)
+
+        self._faces[f_to_remove] = -1
+        self._face_vacancies.extend(f_to_remove)
+
+
 
     def to_stl(self, filename):
         """
