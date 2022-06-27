@@ -4189,18 +4189,22 @@ cdef class TriangleMesh(TrianglesBase):
             if hvx in ids_to_remove:
                 # we are going to remove the vertex, ignore
                 continue
-            
-            
-            #reassign vertex halfedge to one that will remain
-            prev_twin = self._halfedges[self._halfedges[h]['prev']]['twin']
-            if (prev_twin != -1) and (prev_twin not in h_to_remove):
-                self._vertices['halfedge'][hvx] = prev_twin
+
+            #iterate around the vertex trying to find a halfedge that will remain
+            cand = self._halfedges[self._halfedges[h]['twin']]['next']
+            while (cand != h) and (cand != -1) and (cand in h_to_remove):
+                 cand = self._halfedges[self._halfedges[cand]['twin']]['next']
+
+            # didn't find a candidate, iterate in other direction
+            if (cand != h) or (cand != -1) or (cand in h_to_remove):
+                cand = self._halfedges[self._halfedges[h]['prev']]['twin']
+                while (cand != h) and (cand != -1) and (cand in h_to_remove):
+                    cand = self._halfedges[self._halfedges[cand]['prev']]['twin']
+
+            if (cand != h) or (cand != -1) or (cand in h_to_remove):
+                print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
             else:
-                twin_next = self._halfedges[self._halfedges[h]['twin']]['next']
-                if (twin_next == -1) or (twin_next in h_to_remove):
-                    print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
-                else:
-                    self._vertices['halfedge'][hvx] = twin_next
+                self._vertices['halfedge'][hvx] = cand      
             
         
         # remove twin references
