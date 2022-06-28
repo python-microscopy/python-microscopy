@@ -17,8 +17,8 @@ class PiezoBase(object):
     -----
     While optional, it can be useful for a stage to track when it is on-target 
     vs. moving. Stages which are aware of this can log a 'PiezoOnTarget' event
-    using PYME.Acquire.eventLog.logEvent with the actual settling position as 
-    the event description.
+    using PYME.Acquire.eventLog.logEvent with the actual settling position (in
+    micrometers) as the event description.
 
     """
     gui_description = '%s-piezo'
