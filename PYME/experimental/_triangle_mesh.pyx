@@ -4157,16 +4157,28 @@ cdef class TriangleMesh(TrianglesBase):
         self.face_normals
         self.vertex_normals
 
-    def unsafe_remove_vertex(self, id):
+    def deneck(self, e_threshold=30.0):
+        """
+        Remove topological necks by deleting high energy vertices and patching the holes
+        this creates.
+
+        TODO - threshold is very emperical.
+        TODO - is E actually defined here, or only in subclasses?
+        """
+        verts = np.flatnonzero(self.E > e_threshold)
+        self.unsafe_remove_vertices(verts)
+        self.repair()
+    
+    def unsafe_remove_vertices(self, ids_to_remove):
         """
         Remove a vertex and incident halfedges/faces.
 
         NOTE: this will leave a non-manifold mesh! We then rely on repair to tidy it up.
         """
 
-        ids_to_remove = [id,]
+        #ids_to_remove = [id,]
 
-        h0 = np.argwhere(self._halfedges['vertex']==id).squeeze()
+        h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
 
         h_to_remove = np.concatenate((h0, h1))
@@ -4201,7 +4213,7 @@ cdef class TriangleMesh(TrianglesBase):
                 while (cand != h) and (cand != -1) and (cand in h_to_remove):
                     cand = self._halfedges[self._halfedges[cand]['prev']]['twin']
 
-            if (cand != h) or (cand != -1) or (cand in h_to_remove):
+            if (cand == h) or (cand == -1) or (cand in h_to_remove):
                 print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
             else:
                 self._vertices['halfedge'][hvx] = cand      
