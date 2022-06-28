@@ -12,6 +12,13 @@ class PiezoBase(object):
         Template for a display name. Used together with the `axis` argument to PYME.Acquire.microscope.register_piezo to 
         generate a suitable display name for the stage. Can be over-ridden for asthetic purposes in e.g. stepper motors which
         use PiezoBase as a base, so their controls do not say piezo.
+    
+    Notes
+    -----
+    While optional, it can be useful for a stage to track when it is on-target 
+    vs. moving. Stages which are aware of this can log a 'PiezoOnTarget' event
+    using PYME.Acquire.eventLog.logEvent with the actual settling position as 
+    the event description.
 
     """
     gui_description = '%s-piezo'
