@@ -416,6 +416,16 @@ class VisGUICore(object):
         logger.debug('Added layer, datasouce=%s' % l.dsname)
         return l
 
+    def add_mesh_layer(self, method='shaded', ds_name='mesh0', **kwargs):
+        from PYME.LMVis.layers.mesh import TriangleRenderLayer
+        from PYME.misc.colormaps import cm
+        surf_count=0 #FIXME
+        l = TriangleRenderLayer(self.pipeline, dsname=ds_name, method=method, cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
+        self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
+        return l
+
     def add_layer(self, layer):
         self.glCanvas.layers.append(layer)
         self.glCanvas.recenter_bbox()

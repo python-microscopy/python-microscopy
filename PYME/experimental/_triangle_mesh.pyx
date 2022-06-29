@@ -4157,16 +4157,28 @@ cdef class TriangleMesh(TrianglesBase):
         self.face_normals
         self.vertex_normals
 
-    def unsafe_remove_vertex(self, id):
+    def deneck(self, e_threshold=30.0):
+        """
+        Remove topological necks by deleting high energy vertices and patching the holes
+        this creates.
+
+        TODO - threshold is very emperical.
+        TODO - is E actually defined here, or only in subclasses?
+        """
+        verts = np.flatnonzero(self.E > e_threshold)
+        self.unsafe_remove_vertices(verts)
+        self.repair()
+    
+    def unsafe_remove_vertices(self, ids_to_remove):
         """
         Remove a vertex and incident halfedges/faces.
 
         NOTE: this will leave a non-manifold mesh! We then rely on repair to tidy it up.
         """
 
-        ids_to_remove = [id,]
+        #ids_to_remove = [id,]
 
-        h0 = np.argwhere(self._halfedges['vertex']==id).squeeze()
+        h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
 
         h_to_remove = np.concatenate((h0, h1))
@@ -4189,18 +4201,22 @@ cdef class TriangleMesh(TrianglesBase):
             if hvx in ids_to_remove:
                 # we are going to remove the vertex, ignore
                 continue
-            
-            
-            #reassign vertex halfedge to one that will remain
-            prev_twin = self._halfedges[self._halfedges[h]['prev']]['twin']
-            if (prev_twin != -1) and (prev_twin not in h_to_remove):
-                self._vertices['halfedge'][hvx] = prev_twin
+
+            #iterate around the vertex trying to find a halfedge that will remain
+            cand = self._halfedges[self._halfedges[h]['twin']]['next']
+            while (cand != h) and (cand != -1) and (cand in h_to_remove):
+                 cand = self._halfedges[self._halfedges[cand]['twin']]['next']
+
+            # didn't find a candidate, iterate in other direction
+            if (cand != h) or (cand != -1) or (cand in h_to_remove):
+                cand = self._halfedges[self._halfedges[h]['prev']]['twin']
+                while (cand != h) and (cand != -1) and (cand in h_to_remove):
+                    cand = self._halfedges[self._halfedges[cand]['prev']]['twin']
+
+            if (cand == h) or (cand == -1) or (cand in h_to_remove):
+                print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
             else:
-                twin_next = self._halfedges[self._halfedges[h]['twin']]['next']
-                if (twin_next == -1) or (twin_next in h_to_remove):
-                    print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
-                else:
-                    self._vertices['halfedge'][hvx] = twin_next
+                self._vertices['halfedge'][hvx] = cand      
             
         
         # remove twin references
