@@ -3583,7 +3583,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             for i in range(self.singular_edges.shape[0]):
                 edge0 = &self._chalfedges[self.singular_edges[i]]
-                print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+                #print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
 
     cdef _color_boundaries(self, np.ndarray boundary_polygons):
         """
@@ -4236,6 +4236,9 @@ cdef class TriangleMesh(TrianglesBase):
         self.unsafe_remove_vertices(verts)
         self.repair()
     
+    @cython.boundscheck(False)
+    @cython.initializedcheck(False)
+    @cython.wraparound(False)
     def unsafe_remove_vertices(self, ids_to_remove):
         """
         Remove a vertex and incident halfedges/faces.
@@ -4245,8 +4248,11 @@ cdef class TriangleMesh(TrianglesBase):
 
         #ids_to_remove = [id,]
 
-        cdef int id, h, f, i, hvx, cand, ht
+        cdef int id, h, f, i, hvx, cand, ht, j
         cdef int n_vertices = self._vertices.shape[0]
+
+        cdef int [::1]  _h_to_remove
+        cdef int _n_h_to_remove, c_in_h_to_remove
 
         h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
@@ -4257,11 +4263,15 @@ cdef class TriangleMesh(TrianglesBase):
 
         f_to_remove = np.unique([f for f in [self._halfedges['face'][h] for h in h_to_remove] if f >=0])
 
-        h_to_remove = [h for h in np.unique(np.concatenate([np.argwhere(self._halfedges['face'] == f).squeeze() for f in f_to_remove])) if h >=0]
+        h_to_remove = np.array([h for h in np.unique(np.concatenate([np.argwhere(self._halfedges['face'] == f).squeeze() for f in f_to_remove])) if h >=0], 'i')
 
+        _h_to_remove = h_to_remove
+        _n_h_to_remove = len(h_to_remove)
+        
         # make sure that none of the halfedges that we remove is referenced from a vertex
         # that should remain
-        for h in h_to_remove:
+        for j in range(_n_h_to_remove):
+            h = _h_to_remove[j]
             #try:
             #    hvx = np.flatnonzero(self._vertices['halfedge'] == h)[0]
             #except IndexError:
@@ -4285,16 +4295,38 @@ cdef class TriangleMesh(TrianglesBase):
 
             #iterate around the vertex trying to find a halfedge that will remain
             cand = self._chalfedges[self._chalfedges[h].twin].next
-            while (cand != h) and (cand != -1) and (cand in h_to_remove):
+            
+            # cand in h_to_remove
+            c_in_h_to_remove = 0
+            for i in range(_n_h_to_remove):
+                c_in_h_to_remove |= (cand == _h_to_remove[i])
+
+            while (cand != h) and (cand != -1) and c_in_h_to_remove:
                 cand = self._chalfedges[self._chalfedges[cand].twin].next
 
+                # cand in h_to_remove
+                c_in_h_to_remove = 0
+                for i in range(_n_h_to_remove):
+                    c_in_h_to_remove |= (cand == _h_to_remove[i])
+
             # didn't find a candidate, iterate in other direction
-            if (cand != h) or (cand != -1) or (cand in h_to_remove):
+            if (cand != h) or (cand != -1) or (c_in_h_to_remove):
                 cand = self._chalfedges[self._chalfedges[h].prev].twin
-                while (cand != h) and (cand != -1) and (cand in h_to_remove):
+
+                # cand in h_to_remove
+                c_in_h_to_remove = 0
+                for i in range(_n_h_to_remove):
+                    c_in_h_to_remove |= (cand == _h_to_remove[i])
+
+                while (cand != h) and (cand != -1) and (c_in_h_to_remove):
                     cand = self._chalfedges[self._chalfedges[cand].prev].twin
+
+                    # cand in h_to_remove
+                    c_in_h_to_remove = 0
+                    for i in range(_n_h_to_remove):
+                        c_in_h_to_remove |= (cand == _h_to_remove[i])
         
-            if (cand == h) or (cand == -1) or (cand in h_to_remove):
+            if (cand == h) or (cand == -1) or (c_in_h_to_remove):
                 
                 #print(f'h: {h}, {self._halfedges[h]}')
                 # Check if this is a single vertex on it's own
