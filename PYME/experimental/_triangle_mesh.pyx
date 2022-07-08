@@ -564,7 +564,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_vertices_valid = 1
 
-    def _update_singular_edge_locally_manifold(self, clear=True):
+    def __update_singular_edge_locally_manifold(self, clear=True):
         if not self._singular_edges_valid:
             if clear:
                 # optional so this can be chained with _update_vertex_locally_manifold
@@ -582,6 +582,73 @@ cdef class TriangleMesh(TrianglesBase):
             singular = np.sum(idxs[None,:] == np.flatnonzero(counts > 2)[:,None],axis=0).astype(bool)
 
             self._halfedges['locally_manifold'][singular & (self._halfedges['vertex'] != -1)] = 0
+
+            self._singular_edges_valid = 1
+
+    def _update_singular_edge_locally_manifold(self, clear=True):
+        cdef int i
+        cdef int v1, v2, _v1, _v2
+        cdef int l_v, n_e
+
+        cdef int n_halfedges = self._halfedges.shape[0]
+        cdef int n_vertices = self._vertices.shape[0]
+        cdef int n_slots = n_vertices*n_vertices
+
+        #cdef int * d
+
+        if not self._singular_edges_valid:
+            #d = <int *> PyMem_Malloc(n_slots*sizeof(int))
+
+            #if not d:
+            #    raise MemoryError()
+
+            # write zeros to clear memory (is this needed?)
+            #for i in range(n_slots):
+            #    d[i] = 0
+
+            d = {}
+
+            if clear:
+                # optional so this can be chained with _update_vertex_locally_manifold
+                self._halfedges['locally_manifold'] = 1
+            
+            print('iterating edges')
+            # Use a dictionary to keep track of which edges are already assigned twins
+
+            for i in range(n_halfedges):
+                _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
+                _v2 = self._chalfedges[i].vertex
+
+                if (_v1 == -1) or (_v2 == -1):
+                    pass
+                else:
+                    v1 = min(_v1, _v2)
+                    v2 = max(_v1, _v2)
+
+                    slot_idx = v1*n_vertices + v2
+
+                    n_e = d.get(slot_idx, 0)
+
+                    d[slot_idx] = n_e + 1
+
+            for i in range(n_halfedges):
+                _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
+                _v2 = self._chalfedges[i].vertex
+
+                if (_v1 == -1) or (_v2 == -1):
+                    self._chalfedges[i].locally_manifold = 0
+                else:
+                    v1 = min(_v1, _v2)
+                    v2 = max(_v1, _v2)
+
+                    slot_idx = v1*n_vertices + v2
+
+                    if d[slot_idx] <=2:    
+                        self._chalfedges[i].locally_manifold = 1
+                    else:
+                        self._chalfedges[i].locally_manifold = 0
+
+            #PyMem_Free(d)
 
             self._singular_edges_valid = 1
 
@@ -4178,6 +4245,9 @@ cdef class TriangleMesh(TrianglesBase):
 
         #ids_to_remove = [id,]
 
+        cdef int id, h, f, i, hvx, cand, ht
+        cdef int n_vertices = self._vertices.shape[0]
+
         h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
 
@@ -4192,38 +4262,57 @@ cdef class TriangleMesh(TrianglesBase):
         # make sure that none of the halfedges that we remove is referenced from a vertex
         # that should remain
         for h in h_to_remove:
-            try:
-                hvx = np.flatnonzero(self._vertices['halfedge'] == h)[0]
-            except IndexError:
-                # no vertices point to this halfedge - we don't need to do anything
-                continue
+            #try:
+            #    hvx = np.flatnonzero(self._vertices['halfedge'] == h)[0]
+            #except IndexError:
+            #    # no vertices point to this halfedge - we don't need to do anything
+            #    continue
+
+            hvx = -1
+            for i in range(n_vertices):
+                if self._cvertices[i].halfedge == h:
+                    hvx = i
+                    break
+
+            if hvx == -1:
+                # we did not find any vertex which points to this half edge
+                continue 
+
 
             if hvx in ids_to_remove:
                 # we are going to remove the vertex, ignore
                 continue
 
             #iterate around the vertex trying to find a halfedge that will remain
-            cand = self._halfedges[self._halfedges[h]['twin']]['next']
+            cand = self._chalfedges[self._chalfedges[h].twin].next
             while (cand != h) and (cand != -1) and (cand in h_to_remove):
-                 cand = self._halfedges[self._halfedges[cand]['twin']]['next']
+                cand = self._chalfedges[self._chalfedges[cand].twin].next
 
             # didn't find a candidate, iterate in other direction
             if (cand != h) or (cand != -1) or (cand in h_to_remove):
-                cand = self._halfedges[self._halfedges[h]['prev']]['twin']
+                cand = self._chalfedges[self._chalfedges[h].prev].twin
                 while (cand != h) and (cand != -1) and (cand in h_to_remove):
-                    cand = self._halfedges[self._halfedges[cand]['prev']]['twin']
-
+                    cand = self._chalfedges[self._chalfedges[cand].prev].twin
+        
             if (cand == h) or (cand == -1) or (cand in h_to_remove):
-                print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
+                
+                #print(f'h: {h}, {self._halfedges[h]}')
+                # Check if this is a single vertex on it's own
+                vtx_halfedges = np.argwhere(self._halfedges['vertex']==hvx).squeeze()
+                if np.all([vtx_h in h_to_remove for vtx_h in vtx_halfedges]):
+                    print('All incident halfedges are being removed, remove vertex too')
+                    ids_to_remove = np.concatenate([ids_to_remove, [hvx, ]])
+                else:
+                    print('ERROR: could not find a suitable replacement vertex halfedge, mesh will be singular')
             else:
-                self._vertices['halfedge'][hvx] = cand      
+                self._cvertices[hvx].halfedge = cand      
             
         
         # remove twin references
         for h in h_to_remove:
-            ht = self._halfedges['twin'][h]
+            ht = self._chalfedges[h].twin
             if ht >=0:
-                self._halfedges['twin'][ht] = -1
+                self._chalfedges[ht].twin = -1
 
         self._halfedges[h_to_remove] = -1
         self._halfedge_vacancies.extend(h_to_remove)
