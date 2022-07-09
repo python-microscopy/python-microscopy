@@ -422,7 +422,7 @@ class VisGUICore(object):
         if ds_name is None:
             from PYME.experimental._triangle_mesh import TriangleMesh
             mesh_ds = [k for k, d in self.pipeline.dataSources.items() if isinstance(d, TriangleMesh)]
-            ds_name = mesh_ds[0]
+            ds_name = mesh_ds[-1]
         ds_stub = ds_name.rstrip('0123456789')
         _, surf_count = self.pipeline.new_ds_name(ds_stub, return_count=True)
         surf_count -= 1  # To match current count
