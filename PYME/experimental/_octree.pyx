@@ -164,6 +164,25 @@ cdef class Octree:
     @property
     def nodes(self):
         return self._nodes[:self._next_node]
+
+    
+    cpdef search_pts(self, np.float32_t [:, :] pts):
+        """
+        return (approximate) nearest vertex indices for a specific set of test points
+        """
+
+        cdef int i
+        cdef int [:] _idxs
+
+        idxs = np.zeros(pts.shape[0], 'i')
+        _idxs = idxs
+
+        for i in range(pts.shape[0]):
+            node_idx, _, _ = self.search(pts[i, 0], pts[i, 1], pts[i,2])
+
+            idxs[i] = self._cnodes[node_idx].point_idx
+
+        return idxs
     
     
     @cython.boundscheck(False)  # Deactivate bounds checking
