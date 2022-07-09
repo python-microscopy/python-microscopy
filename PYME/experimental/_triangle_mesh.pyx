@@ -3527,6 +3527,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef float pos0, pos1, pos2
         cdef halfedge_t *edge0
         cdef halfedge_t *edge1
+
+        cdef int n_halfedges = self._halfedges.shape[0]
         
         edge0 = &self._chalfedges[_edge0]
         edge1 = &self._chalfedges[_edge1]
@@ -3557,7 +3559,7 @@ cdef class TriangleMesh(TrianglesBase):
             vertex0.position2 = pos2
 
             # set all vertex0 points to vertex1
-            for i in range(self._halfedges.shape[0]):
+            for i in range(n_halfedges):
                 if self._chalfedges[i].vertex == _vertex1:
                     self._chalfedges[i].vertex = _vertex0
 
@@ -3581,9 +3583,9 @@ cdef class TriangleMesh(TrianglesBase):
             self._singular_edges_valid = 0
             #print(self.singular_edges)
 
-            for i in range(self.singular_edges.shape[0]):
-                edge0 = &self._chalfedges[self.singular_edges[i]]
-                #print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
+            #for i in range(self.singular_edges.shape[0]):
+            #    edge0 = &self._chalfedges[self.singular_edges[i]]
+            #    print(edge0.vertex, edge0.face, edge0.twin, edge0.next, edge0.prev, edge0.length, edge0.component, edge0.locally_manifold)
 
     cdef _color_boundaries(self, np.ndarray boundary_polygons):
         """
