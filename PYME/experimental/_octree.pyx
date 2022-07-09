@@ -4,7 +4,7 @@ cimport cython
 
 #size to initialize the storage to
 INITIAL_NODES = 1000
-NODE_DTYPE = [('depth', 'i4'), ('n_children', 'i4'), ('children', '8i4'),('parent', 'i4'), ('nPoints', 'i4'), ('centre', '3f4'), ('centroid', '3f4')]
+NODE_DTYPE = [('depth', 'i4'), ('n_children', 'i4'), ('children', '8i4'),('parent', 'i4'), ('nPoints', 'i4'), ('centre', '3f4'), ('centroid', '3f4'),('point_idx', 'i4')]
 
 #flat dtype to work around a cython memory view bug with array dtypes
 NODE_DTYPE2 = [('depth', 'i4'),
@@ -24,7 +24,8 @@ NODE_DTYPE2 = [('depth', 'i4'),
                ('centre_z', 'f4'),
                ('centroid_x', 'f4'),
                ('centroid_y', 'f4'),
-               ('centroid_z', 'f4')]
+               ('centroid_z', 'f4'),
+               ('point_idx', 'i4')]
 
 #the struct that the above dtype maps to in c
 cdef packed struct node_d:
@@ -46,6 +47,7 @@ cdef packed struct node_d:
     np.float32_t centroid_x
     np.float32_t centroid_y
     np.float32_t centroid_z
+    np.int32_t point_idx
     
     
 cdef float[8] _octant_sign_x
@@ -156,17 +158,36 @@ cdef class Octree:
         self._cnodes = &nodes[0]
         
     def _search(self, pos):
-        node_idx, child_idx, subdivide =  self.__search(pos)
+        node_idx, child_idx, subdivide =  self.search(pos[0], pos[1], pos[2])
         return node_idx, self._nodes[node_idx], child_idx, subdivide
     
     @property
     def nodes(self):
         return self._nodes[:self._next_node]
+
+    
+    cpdef search_pts(self, np.float32_t [:, :] pts):
+        """
+        return (approximate) nearest vertex indices for a specific set of test points
+        """
+
+        cdef int i
+        cdef int [:] _idxs
+
+        idxs = np.zeros(pts.shape[0], 'i')
+        _idxs = idxs
+
+        for i in range(pts.shape[0]):
+            node_idx, _, _ = self.search(pts[i, 0], pts[i, 1], pts[i,2])
+
+            idxs[i] = self._cnodes[node_idx].point_idx
+
+        return idxs
     
     
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
-    def __search(self, np.float32_t x, np.float32_t y, np.float32_t z):
+    cpdef search(self, np.float32_t x, np.float32_t y, np.float32_t z):
         cdef int node_idx, child_idx
         #cdef node_d * p_nodes
         cdef node_d node
@@ -232,7 +253,7 @@ cdef class Octree:
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
     def __add_node(self, np.float32_t x, np.float32_t y, np.float32_t z, int parent_idx,
-                  int child_idx):
+                  int child_idx, int point_idx):
         cdef int new_idx
         cdef float scale
         cdef np.int32_t *children
@@ -267,13 +288,15 @@ cdef class Octree:
         
         new_node.depth = parent.depth + 1
         new_node.parent = parent_idx
+
+        new_node.point_idx = point_idx
         
         children = &parent.child0
         children[child_idx] = new_idx
         
         return new_idx
 
-    def add_point(self, np.float32_t[:] pos):
+    cpdef add_point(self, np.float32_t[:] pos, int pt_idx=0):
         cdef float x,y,z
         cdef int node_idx, child_idx
         cdef bint subdivide
@@ -283,7 +306,7 @@ cdef class Octree:
         z = pos[2]
         
         #find the node we need to subdivide
-        node_idx, child_idx, subdivide = self.__search(x, y, z)
+        node_idx, child_idx, subdivide = self.search(x, y, z)
         
         c_node = self._cnodes[node_idx]
         
@@ -292,7 +315,7 @@ cdef class Octree:
                 #add a new node
                 #print 'adding without subdivision'
                 
-                self.__add_node(x, y, z, node_idx, child_idx)
+                self.__add_node(x, y, z, node_idx, child_idx, pt_idx)
             else:
                 #print 'adding with subdivision: ',  node_idx, child_idx
                 #we need to move the current node data into a child
@@ -300,7 +323,7 @@ cdef class Octree:
                 #child to put the data currently held by the node into
                 node_child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
                 #make a new node with the current nodes data
-                new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
+                new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx, c_node.point_idx)
                 
                 #continue subdividing until original and new data do not want to go in the same child
                 while (node_child_idx == child_idx) and (c_node.depth < (self._maxdepth - 1)):
@@ -314,10 +337,10 @@ cdef class Octree:
                     node_child_idx = ((c_node.centroid_x > c_node.centre_x) +  2*(c_node.centroid_y > c_node.centre_y) +
                                       4*(c_node.centroid_z > c_node.centre_z))
                     
-                    new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
+                    new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx, c_node.point_idx)
                 
                 if (c_node.depth < self._maxdepth):
-                    self.__add_node(x, y, z, node_idx, child_idx)
+                    self.__add_node(x, y, z, node_idx, child_idx, pt_idx)
 
         self._cnodes[node_idx].nPoints += 1
         while node_idx > 0:
@@ -328,13 +351,14 @@ cdef class Octree:
             #TODO - update centroids
             
     def add_points(self, np.float32_t[:,:] pts):
+        cdef int i
 
         # Double check for oversmoothing
         if len(pts) < self._samples_per_node:
             self._samples_per_node = len(pts)
 
-        for pt in pts:
-            self.add_point(pt)
+        for i in range(len(pts)):
+            self.add_point(pts[i], i)
             
     def update_n_children(self):
         self._nodes['n_children'] = np.sum(self._nodes['children'], axis=1)
