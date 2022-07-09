@@ -346,11 +346,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             try:
                 # try unfiltered localisations
                 et = max(et, 1.1*self.pipeline.dataSources['Localisations']['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime'])
-            except KeyError, ValueError:
+            except (KeyError, ValueError):
                 try:
                     #fallback if input data != 'Localisations'
                     et = max(et, 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime'])
-                except KeyError,ValueError:
+                except (KeyError, ValueError):
                     pass
 
             print(st, et)
