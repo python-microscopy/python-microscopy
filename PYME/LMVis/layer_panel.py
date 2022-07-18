@@ -62,7 +62,7 @@ class LayerPane(afp.foldingPane):
         #print('Creating layer panel')
         
         self.visFr.layer_added.connect(self.update)
-        #self.fp.fold_signal.connect(self._layout)
+        self.fp.fold_signal.connect(panel._layout)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
@@ -112,7 +112,7 @@ class LayerPane(afp.foldingPane):
             h += (n_layers -1)*(item.stCaption.GetBestSize().height+5)
         
         print('height: ', h)
-        self.fp.SetMinSize((200, h))
+        #self.fp.SetMinSize((200, h))
         
         #self.vsizer.Fit(self.pan)
         #self.pan.SetMinSize(self.pan.GetSize())

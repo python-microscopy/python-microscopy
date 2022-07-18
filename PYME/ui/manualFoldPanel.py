@@ -697,7 +697,7 @@ class foldPanel(wx.Panel):
                 p.Fold()
         
         self.sizer.Layout()
-        self.SetMinSize((-1, self.sizer.GetMinSize()[1]))
+        #self.SetMinSize((-1, self.sizer.GetMinSize()[1]))
 
         #expand all panes
         #for p in self.panes:
@@ -761,6 +761,9 @@ class foldPanel(wx.Panel):
     def OnResize(self, event):
         if (not self._in_fold1) and self.IsShownOnScreen():
             self.fold1()
+
+    def _layout(self, *args, **kwargs):
+        self.Layout()
 
     
 

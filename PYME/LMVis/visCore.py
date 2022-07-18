@@ -155,7 +155,7 @@ class VisGUICore(object):
         
         
             from .layer_panel import CreateLayerPane, CreateLayerPanel
-            CreateLayerPane(sidePanel, self)
+            self._layer_pane = CreateLayerPane(sidePanel, self)
             #CreateLayerPanel(self)
             
             if self.use_shaders:
@@ -790,14 +790,16 @@ class VisGUICore(object):
             #self.CreateFoldPanel()
             print('Gui stuff done')
         
-        if recipe_callback:
-            recipe_callback()
+        try:
+            if recipe_callback:
+                recipe_callback()
             
-        self.SetFit()
+        finally:
+            self.SetFit()
         
         
-        wx.CallLater(100, self._create_base_layer)
-        #wx.CallAfter(self.RefreshView)
+            wx.CallLater(100, self._create_base_layer)
+            #wx.CallAfter(self.RefreshView)
 
     def OpenChannel(self, filename, recipe_callback=None, channel_name=''):
         args = self._populate_open_args(filename)
