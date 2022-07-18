@@ -58,8 +58,8 @@ def main():
         externalAddr = '127.0.0.1' #bind to localhost
     
     #TODO - move this into the nodeserver proper so that the ruleserver doesn't need to be up before we start
-    print(distribution.getDistributorInfo(ns).values())
-    distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo(ns).values()]
+    #print(distribution.getDistributorInfo(ns).values())
+    #distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo(ns).values()]
     
     #set up nodeserver logging
     cluster_root = conf.get('dataserver-root')
@@ -97,7 +97,7 @@ def main():
         nodeserverLog = logger
 
 
-    proc = rulenodeserver.ServerThread(distributors[0], serverPort, externalAddr=externalAddr, profile=False)
+    proc = rulenodeserver.ServerThread(ns, serverPort, externalAddr=externalAddr, profile=False)
     proc.start()
         
     # TODO - do we need this advertisement
