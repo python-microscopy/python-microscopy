@@ -245,7 +245,7 @@ class TriangleRenderLayer(EngineLayer):
         Parameters
         ----------
         ds :
-            PYME.experimental.triangular_mesh.TriangularMesh object
+            PYME.experimental._triangle_mesh.TriangularMesh object
 
         Returns
         -------

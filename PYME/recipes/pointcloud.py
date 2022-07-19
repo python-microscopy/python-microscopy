@@ -103,7 +103,7 @@ class LocalPointDensity(ModuleBase):
         namespace[self.output] = t
         
         
-from PYME.experimental.triangle_mesh import TrianglesBase
+from PYME.experimental._triangle_mesh import TrianglesBase
 class Tesselation(tabular.TabularBase, TrianglesBase):
     """
     A wrapper class which encapsulates both a tesselation and the underlying
