@@ -139,7 +139,7 @@ class LayerPane(afp.foldingPane):
             if type == 'points':        
                 self.visFr.add_pointcloud_layer()
             elif type == 'mesh':
-                self.visFr.add_mesh_layer(ds_name='mesh0')
+                self.visFr.add_mesh_layer()
             else:
                 raise NotImplementedError('Layer type "%s" not supported yet' % type)
         

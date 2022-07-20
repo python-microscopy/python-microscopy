@@ -342,7 +342,17 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             #                                            [0, self.pipeline.selectedDataSource['tIndex'].max()])
 
             st = min(self.pipeline.events['Time'].min() - self.pipeline.mdh['StartTime'], 0)
-            et = 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime']
+            et = min(self.pipeline.events['Time'].max() - self.pipeline.mdh.get('EndTime', 0), 0)
+            try:
+                # try unfiltered localisations
+                et = max(et, 1.1*self.pipeline.dataSources['Localisations']['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime'])
+            except (KeyError, ValueError):
+                try:
+                    #fallback if input data != 'Localisations'
+                    et = max(et, 1.1*self.pipeline.selectedDataSource['tIndex'].max()*self.pipeline.mdh['Camera.CycleTime'])
+                except (KeyError, ValueError):
+                    pass
+
             print(st, et)
             
             self.elv = eventLogViewer.eventLogTPanel(self, self.pipeline.events,self.pipeline.mdh,[st, et])

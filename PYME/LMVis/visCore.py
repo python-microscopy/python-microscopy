@@ -416,10 +416,16 @@ class VisGUICore(object):
         logger.debug('Added layer, datasouce=%s' % l.dsname)
         return l
 
-    def add_mesh_layer(self, method='shaded', ds_name='mesh0', **kwargs):
+    def add_mesh_layer(self, method='shaded', ds_name=None, **kwargs):
         from PYME.LMVis.layers.mesh import TriangleRenderLayer
         from PYME.misc.colormaps import cm
-        surf_count=0 #FIXME
+        if ds_name is None:
+            from PYME.experimental._triangle_mesh import TriangleMesh
+            mesh_ds = [k for k, d in self.pipeline.dataSources.items() if isinstance(d, TriangleMesh)]
+            ds_name = mesh_ds[-1]
+        ds_stub = ds_name.rstrip('0123456789')
+        _, surf_count = self.pipeline.new_ds_name(ds_stub, return_count=True)
+        surf_count -= 1  # To match current count
         l = TriangleRenderLayer(self.pipeline, dsname=ds_name, method=method, cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
         self.add_layer(l)
 
