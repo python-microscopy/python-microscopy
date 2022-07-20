@@ -636,7 +636,7 @@ cdef class TriangleMesh(TrianglesBase):
                 _v2 = self._chalfedges[i].vertex
 
                 if (_v1 == -1) or (_v2 == -1):
-                    self._chalfedges[i].locally_manifold = 0
+                    self._chalfedges[i].locally_manifold = -1  # leave unassigned so it does not get included in _update_singular_vertex_locally_manifold()
                 else:
                     v1 = min(_v1, _v2)
                     v2 = max(_v1, _v2)
