@@ -41,10 +41,7 @@ if __name__ == '__main__':
    #acquisition such as changes to laser power or focus stepping. I have a feeeling
    #that VisGUI complains if this isn't there, but you can safely leave the table
    #empty.
-   class SpoolEvent(tables.IsDescription):
-      EventName = tables.StringCol(32)
-      Time = tables.Time64Col()
-      EventDescr = tables.StringCol(256)
+   from PYME.IO.events import SpoolEvent
       
    resultsEvents = h5ResultsFile.create_table(h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
