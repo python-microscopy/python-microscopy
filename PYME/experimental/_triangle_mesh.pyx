@@ -300,13 +300,15 @@ cdef class TriangleMesh(TrianglesBase):
         return cls(vertices, faces, **kwargs)
 
     @classmethod
-    def from_np_stl(cls, triangles_stl, **kwargs):
+    def from_np_stl(cls, triangles_stl, origin=[0,0,0], **kwargs):
         """
         Read from an already-loaded STL stream.
         """
         vertices_raw = np.vstack((triangles_stl['vertex0'], 
                                   triangles_stl['vertex1'], 
                                   triangles_stl['vertex2']))
+
+        vertices_raw = vertices_raw + np.array(origin)[None,:]
         vertices, faces_raw = np.unique(vertices_raw, 
                                         return_inverse=True, 
                                         axis=0)
@@ -2781,9 +2783,12 @@ cdef class TriangleMesh(TrianglesBase):
             self._update_vertex_locally_manifold()
             
             ct = self.regularize()
-            while (ct > 0):
+            _n_flip = 0
+            while (ct > 0) and (_n_flip < 20):
                  # Keep flipping until we can't do any more splits (note - may be more effective to just run everything a couple more times)
                  ct = self.regularize()
+                 _n_flip += 1
+
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
