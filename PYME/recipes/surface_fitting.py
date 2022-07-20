@@ -170,6 +170,21 @@ class DualMarchingCubes(ModuleBase):
 
         namespace[self.output] = surf
 
+@register_module('Isosurface')
+class Isosurface(ModuleBase):
+    input = Input('input')
+    output = Output('mesh')
+
+    threshold = Float(0.5)
+    remesh = Bool(True)
+    
+    def execute(self, namespace):
+        from PYME.experimental import isosurface
+
+        im = namespace[self.input]
+        T = isosurface.isosurface(im.data_xyztc[:,:,:,0,0].astype('f'), isolevel=self.threshold, voxel_size=im.voxelsize, origin=im.origin, remesh=self.remesh)
+
+        namespace[self.output] = T
 
 @register_module('DelaunayMarchingTetrahedra')
 class DelaunayMarchingTetrahedra(ModuleBase):

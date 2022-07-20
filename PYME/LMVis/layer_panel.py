@@ -57,12 +57,13 @@ class LayerPane(afp.foldingPane):
             self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
 
         self.pan.SetSizerAndFit(self.vsizer)
-        self.AddNewElement(self.pan)
+        self.AddNewElement(self.pan, priority=1)
         
         #print('Creating layer panel')
         
         self.visFr.layer_added.connect(self.update)
-        self.fp.fold_signal.connect(panel._layout)
+        if hasattr(panel, '_layout'):
+            self.fp.fold_signal.connect(panel._layout)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 

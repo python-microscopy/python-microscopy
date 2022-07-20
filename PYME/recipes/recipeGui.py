@@ -611,6 +611,7 @@ class RecipeView(wx.Panel):
     def OnPick(self, event):
         from PYME.IO import tabular
         from PYME.recipes import graphing
+        from PYME.experimental._triangle_mesh import TrianglesBase
         k = event.artist._data
         if not (isinstance(k, six.string_types)):
             if not self._editing:
@@ -636,6 +637,26 @@ class RecipeView(wx.Panel):
                 f.Show()
             elif isinstance(outp, graphing.Plot):
                 outp.plot()
+            elif isinstance(outp, TrianglesBase):
+                from PYME.DSView.modules.vis3D import new_mesh_viewer
+                from PYME.LMVis.layers.mesh import TriangleRenderLayer
+                from PYME.misc.colormaps import cm
+
+                i = 0
+
+                glcanvas = new_mesh_viewer()#glrender.showGLFrame()
+                layer = TriangleRenderLayer(self.recipes.activeRecipe.namespace, dsname=k, method='shaded', context=glcanvas.gl_context, window = glcanvas,
+                                            cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)],
+                                            #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                            )
+                glcanvas.add_layer(layer)
+                layer.show_lut=False
+
+                
+                glcanvas.displayMode = '3D'
+                glcanvas.fit_bbox()
+                glcanvas.Refresh()
+
     
     
     def configureModule(self, k):
