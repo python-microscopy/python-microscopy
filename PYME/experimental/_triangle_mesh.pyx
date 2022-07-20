@@ -303,6 +303,16 @@ cdef class TriangleMesh(TrianglesBase):
     def from_np_stl(cls, triangles_stl, origin=[0,0,0], **kwargs):
         """
         Read from an already-loaded STL stream.
+
+
+        Parameters
+        ----------
+
+        triangles_stl : np.ndarray
+            the triangles as a numpy array
+        origin: 3-tuple (or array)
+            coordinates of the mesh origin (nm). Used to ensure that meshes generated from image isosurfaces line up with those generated from different ROIs / points.
+            
         """
         vertices_raw = np.vstack((triangles_stl['vertex0'], 
                                   triangles_stl['vertex1'], 
