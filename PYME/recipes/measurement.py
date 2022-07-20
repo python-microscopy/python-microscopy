@@ -223,7 +223,7 @@ class FitPoints(ModuleBase):
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'].astype(int), range(len(inp['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(img.data[:, :, t, self.channel], md)
+                ff = fitMod.FitFactory(np.atleast_3d(img.data[:, :, t, self.channel)], md)
                 ff_t = t
 
             #print x/ps, y/ps
@@ -471,7 +471,7 @@ class PairwiseDistanceHistogram(ModuleBase):
         from PYME.Analysis.points import DistHist
         
         pos0 = namespace[self.inputPositions]
-        pos1 = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
+        pos1 = namespace[self.inputPositions2 if self.inputPositions2 != '' else self.inputPositions]
         if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
             if self.threaded:
                 res = DistHist.distanceHistogramThreaded(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
