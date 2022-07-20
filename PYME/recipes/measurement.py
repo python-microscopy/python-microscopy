@@ -223,7 +223,7 @@ class FitPoints(ModuleBase):
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'].astype(int), range(len(inp['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(img.data[:, :, t, self.channel], md)
+                ff = fitMod.FitFactory(np.atleast_3d(img.data[:, :, t, self.channel]), md)
                 ff_t = t
 
             #print x/ps, y/ps
