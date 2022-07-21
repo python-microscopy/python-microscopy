@@ -2202,17 +2202,9 @@ class RawADUToElectronsPerSecond(ModuleBase):
     complex workflows will require building enhanced unit awareness into other parts of PYME which is not currently present.
 
     At this point there is not much certainty about how unit awareness should be done, and it is likely to change signficantly from
-    the first attempt here:
-
-    - Should units be a property of the metadata, or of the datasource itself?
-    - If in the metadata, an acquisition have multiple different units (intensity, position, time) 
-    - This means that the `Units` metadata key is probably not appropriate and we should use something more specific
-
-    In practice this means:
+    the first attempt here. In practice this means:
 
     - this should be viewed as experimental
-    - there is no garuantee that the Units metadata entry will be the same in future versions of PYME
-    - in this case, I (DB) am not prepared to maintain backwards compatibility, as I think it would make things un-neccesarily messy
     - before building extensive pipelines that depend on Units metadata, or saving large numbers of files calibrated in e/s please
       force the issue (through, e.g an issue on github and a discussion) so we can finalise what unit support is going to look like
       and what metadata should be used).
@@ -2231,14 +2223,14 @@ class RawADUToElectronsPerSecond(ModuleBase):
         series_epers = ImageStack(data=epers_ds, events=series_adu.events, mdh=DictMDHandler(series_adu.mdh))
         series_epers.mdh['Parent'] = series_adu.filename
         
-        # TODO - potentially change the name of this metadata key as we also have spatial and temporal units and 
-        # we share the metadata definition across image and point datatypes
-        # `Units.Intensity` might be a better option here. 
-        series_epers.mdh['Units'] = 'e/s'
+        series_epers.mdh['Units.Intensity'] = 'e/s'
         
-        # TODO - do we need to fudge/break the remaining metadata entries?
-        # im.mdh['Camera.ElectronsPerCount'] = 1.0
-        # im.mdh['Camera.TrueEMGain'] = 1.0
-        # im.mdh['Camera.ADOffset'] = 0
+        # Fudge metadata 
+        # This should make metadata calibration more or less work where needed (at least until we have more comprehensive units support)
+        # note that in order for us to be able to get to electrons (not e/s) for noise models, we need to fudge either the gain or electrons
+        # per count with the integration time.
+        im.mdh['Camera.ElectronsPerCount'] = 1.0*series_adu.mdh['Camera.IntegrationTime']
+        im.mdh['Camera.TrueEMGain'] = 1.0
+        im.mdh['Camera.ADOffset'] = 0
 
         namespace[self.output_name] = series_epers

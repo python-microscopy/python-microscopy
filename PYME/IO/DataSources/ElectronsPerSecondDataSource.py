@@ -43,7 +43,7 @@ class DataSource(FlatFieldDataSource):
         PYME.recipes.processing.RawADUToElectronsPerCount
         
         """
-        if mdh.getOrDefault('Units', 'ADU') == 'e/s':
+        if mdh.getOrDefault('Units.Intensity', 'ADU') == 'e/s':
             # FIXME - the name of this key might change (maybe Units.Intensity or similar)  
             # TODO - rather than hard throw just don't further correct the parentSource
             raise RuntimeError('units are already e/s')
@@ -51,6 +51,10 @@ class DataSource(FlatFieldDataSource):
         FlatFieldDataSource.__init__(self, parentSource, mdh, flatfield, dark)
         
         self._adu_to_epers = self.mdh['Camera.ElectronsPerCount'] / self.mdh['Camera.TrueEMGain'] / self.mdh['Camera.IntegrationTime']
+
+        # set a units property on the datasource
+        # this might not end up getting used, but is a nice failsafe for situations where we don't propagate metadata
+        self.units='e/s'
 
     def getSlice(self, ind):
         # flatfield getSlice will subtract the dark map and flatfield. 
