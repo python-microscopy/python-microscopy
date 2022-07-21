@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
 ##################
-# HDFDataSource.py
+# ElectronsPerSecondDataSource.py
 #
-# Copyright David Baddeley, 2009
+# Copyright Andrew Barentine, David Baddeley, 2022
 # d.baddeley@auckland.ac.nz
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,9 +31,21 @@ class DataSource(FlatFieldDataSource):
         Create a datasource which wraps a series in units of ADU and returns frames in units of
         photoelectrons per second (e/s). parentSource should not be camera map corrected (dark-
         or flatfield-corrected).
+
+        WARNING
+        #######
+
+        A lot of PYME assumes that image units are in ADUs. This means that it would be easy to end up doing this correction
+        in downstream modules as well as here and ending up with erroneous data as a result. Safe usage of this module in
+        complex workflows will require building enhanced unit awareness into other parts of PYME. 
+        
+        This is discussed in more detail in 
+        PYME.recipes.processing.RawADUToElectronsPerCount
         
         """
-        if mdh.getOrDefault('Units', 'ADU') == 'e/s':  # TODO - rather than hard throw just don't further correct the parentSource
+        if mdh.getOrDefault('Units', 'ADU') == 'e/s':
+            # FIXME - the name of this key might change (maybe Units.Intensity or similar)  
+            # TODO - rather than hard throw just don't further correct the parentSource
             raise RuntimeError('units are already e/s')
         
         FlatFieldDataSource.__init__(self, parentSource, mdh, flatfield, dark)

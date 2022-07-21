@@ -2194,6 +2194,29 @@ class RawADUToElectronsPerSecond(ModuleBase):
     output_name : Output
         PYME.IO.ImageStack in units of photoelectrons/second
 
+    Warnings
+    --------
+
+    A lot of PYME assumes that image units are in ADUs. This means that it would be easy to end up doing this correction
+    in downstream modules as well as here and ending up with erroneous data as a result. Safe usage of this module in
+    complex workflows will require building enhanced unit awareness into other parts of PYME which is not currently present.
+
+    At this point there is not much certainty about how unit awareness should be done, and it is likely to change signficantly from
+    the first attempt here:
+
+    - Should units be a property of the metadata, or of the datasource itself?
+    - If in the metadata, an acquisition have multiple different units (intensity, position, time) 
+    - This means that the `Units` metadata key is probably not appropriate and we should use something more specific
+
+    In practice this means:
+
+    - this should be viewed as experimental
+    - there is no garuantee that the Units metadata entry will be the same in future versions of PYME
+    - in this case, I (DB) am not prepared to maintain backwards compatibility, as I think it would make things un-neccesarily messy
+    - before building extensive pipelines that depend on Units metadata, or saving large numbers of files calibrated in e/s please
+      force the issue (through, e.g an issue on github and a discussion) so we can finalise what unit support is going to look like
+      and what metadata should be used).
+
     """
     input_name = Input('raw_adu')
     output_name = Output('electrons_per_s')
@@ -2207,6 +2230,10 @@ class RawADUToElectronsPerSecond(ModuleBase):
         epers_ds = ElectronsPerSecondDataSource.DataSource(series_adu.data, series_adu.mdh)
         series_epers = ImageStack(data=epers_ds, events=series_adu.events, mdh=DictMDHandler(series_adu.mdh))
         series_epers.mdh['Parent'] = series_adu.filename
+        
+        # TODO - potentially change the name of this metadata key as we also have spatial and temporal units and 
+        # we share the metadata definition across image and point datatypes
+        # `Units.Intensity` might be a better option here. 
         series_epers.mdh['Units'] = 'e/s'
         
         # TODO - do we need to fudge/break the remaining metadata entries?
