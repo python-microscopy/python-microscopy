@@ -616,6 +616,8 @@ cdef class TriangleMesh(TrianglesBase):
             # Use a dictionary to keep track of which edges are already assigned twins
 
             for i in range(n_halfedges):
+                if self._chalfedges[i].prev == -1:
+                    continue
                 _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
                 _v2 = self._chalfedges[i].vertex
 
@@ -632,6 +634,8 @@ cdef class TriangleMesh(TrianglesBase):
                     d[slot_idx] = n_e + 1
 
             for i in range(n_halfedges):
+                if self._chalfedges[i].prev == -1:
+                    continue
                 _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
                 _v2 = self._chalfedges[i].vertex
 
