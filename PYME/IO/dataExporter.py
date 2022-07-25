@@ -35,11 +35,7 @@ except ImportError:
 import os
 from PYME.IO.FileUtils import saveTiffStack
 from PYME.IO import MetaDataHandler
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
+from PYME.IO.events import SpoolEvent
 
 #formats = ['PYME HDF - .h5',
 #            'TIFF (stack if 3D) - .tif',

@@ -29,13 +29,8 @@ import os
 import sys
 
 from PIL import Image
-
+from PYME.IO.events import SpoolEvent
 from numpy import array
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
 
 
 

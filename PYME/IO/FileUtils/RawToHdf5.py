@@ -28,13 +28,8 @@ import tables
 import os
 import sys
 import numpy
-
+from PYME.IO.events import SpoolEvent
 from PYME.Analysis import MetaData
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
 
 
 def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, complib='zlib', complevel=9):
