@@ -176,6 +176,14 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     return Py_None;
 }
 
+
+/*
+minmax_uint16(np.ndarray[:,:])
+
+Compute both the minumum and maximum of a uint16 array in one pass. Used to allow real-time scaling
+on a full camera frame in acquisition.
+Between 2 and 10 times faster than calling ndarray.min(), ndarray.max().
+*/
 static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds)
 {
     unsigned short *data = 0;
