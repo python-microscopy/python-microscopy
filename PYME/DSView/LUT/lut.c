@@ -176,6 +176,72 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     return Py_None;
 }
 
+static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    unsigned short *data = 0;
+    unsigned char *out = 0;
+    unsigned short _max = 0;
+    unsigned short _min = 2^16;
+    //float d = 0;
+
+    int tmp = 0;
+
+    PyArrayObject *odata =0;
+    PyArrayObject *adata =0;
+    PyArrayObject *oout =0;
+
+    int sizeX;
+    int sizeY;
+    int N, N1;
+    int i,j;
+
+    static char *kwlist[] = {"data", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O", kwlist,
+         &odata))
+        return NULL;
+
+    /* Do the calculations */
+
+    adata = PyArray_GETCONTIGUOUS(odata);
+
+
+    if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
+    {
+        PyErr_Format(PyExc_RuntimeError, "data - Expecting a contiguous numpy array");
+        Py_DECREF(adata);
+        return NULL;
+    }
+
+    if (PyArray_NDIM(adata) != 2)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
+        return NULL;
+    }
+
+    sizeX = PyArray_DIM(adata, 0);
+    sizeY = PyArray_DIM(adata, 1);
+
+    data = (unsigned short*) PyArray_DATA(adata);
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    for (i=0;i < sizeX*sizeY; i++)
+    {
+        _min = MIN(_min, *data);
+        _max = MAX(_max, *data);
+        data ++;
+    }
+
+    Py_END_ALLOW_THREADS;
+
+    Py_DECREF(adata);
+
+    //Py_INCREF(Py_None);
+    return Py_BuildValue("H,H", _min, _max);
+}
+
 static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds)
 {
     unsigned char *data = 0;
@@ -458,6 +524,8 @@ static PyMethodDef lutMethods[] = {
     {"applyLUTu8",  (PyCFunction)applyLUTuint8, METH_VARARGS | METH_KEYWORDS,
     ""},
     {"applyLUTf",  (PyCFunction)applyLUTfloat, METH_VARARGS | METH_KEYWORDS,
+    ""},
+    {"minmax_u16",  (PyCFunction)minmax_uint16, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
