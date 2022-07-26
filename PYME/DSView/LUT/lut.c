@@ -179,21 +179,15 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds)
 {
     unsigned short *data = 0;
-    unsigned char *out = 0;
     unsigned short _max = 0;
     unsigned short _min = 2^16;
-    //float d = 0;
-
-    int tmp = 0;
 
     PyArrayObject *odata =0;
     PyArrayObject *adata =0;
-    PyArrayObject *oout =0;
 
     int sizeX;
     int sizeY;
-    int N, N1;
-    int i,j;
+    int i;
 
     static char *kwlist[] = {"data", NULL};
 
