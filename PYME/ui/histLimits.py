@@ -51,6 +51,8 @@ class HistLimitPanel(wx.Panel):
         self.limit_lower = float(limit_lower)
         self.limit_upper = float(limit_upper)
 
+        self.SetBackgroundColour(wx.WHITE)
+
         self.textSize = 10
         self.log = log
 
@@ -227,6 +229,9 @@ class HistLimitPanel(wx.Panel):
         pointlist = [(i,h_i) for i, h_i in zip(range(len(h)), h)]
         pointlist = [(0,maxy)] + pointlist + [(self.Size[0], maxy)]
 
+        #self.SetBackgroundMode(wx.SOLID)
+        #dc.SetBackgroundMode(wx.BRUSHSTYLE_SOLID)
+        dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
 
         #when being used to determine histogram bins

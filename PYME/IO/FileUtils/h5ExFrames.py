@@ -29,11 +29,7 @@ import sys
 
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import HDFDataSource
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
+from PYME.IO.events import SpoolEvent
 
 def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1, complib='zlib', complevel=5):
     

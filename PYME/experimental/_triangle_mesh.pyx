@@ -628,6 +628,8 @@ cdef class TriangleMesh(TrianglesBase):
             # Use a dictionary to keep track of which edges are already assigned twins
 
             for i in range(n_halfedges):
+                if self._chalfedges[i].prev == -1:
+                    continue
                 _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
                 _v2 = self._chalfedges[i].vertex
 
@@ -644,11 +646,13 @@ cdef class TriangleMesh(TrianglesBase):
                     d[slot_idx] = n_e + 1
 
             for i in range(n_halfedges):
+                if self._chalfedges[i].prev == -1:
+                    continue
                 _v1 = self._chalfedges[self._chalfedges[i].prev].vertex
                 _v2 = self._chalfedges[i].vertex
 
                 if (_v1 == -1) or (_v2 == -1):
-                    self._chalfedges[i].locally_manifold = 0
+                    self._chalfedges[i].locally_manifold = -1  # leave unassigned so it does not get included in _update_singular_vertex_locally_manifold()
                 else:
                     v1 = min(_v1, _v2)
                     v2 = max(_v1, _v2)

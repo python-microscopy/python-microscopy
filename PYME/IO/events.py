@@ -9,7 +9,7 @@ EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', 
 class SpoolEvent(tables.IsDescription):
     """Pytables description for Events table in spooled dataset"""
     EventName = tables.StringCol(32)
-    Time = tables.Time64Col()
+    Time = tables.Float64Col()
     EventDescr = tables.StringCol(256)
 
 

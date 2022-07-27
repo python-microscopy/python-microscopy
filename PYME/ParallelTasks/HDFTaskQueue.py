@@ -24,7 +24,7 @@
 import tables
 from taskQueue import *
 from PYME.localization.remFitBuf import fitTask
-
+from PYME.IO.events import SpoolEvent
 from PYME.Analysis import MetaData
 from PYME.IO import MetaDataHandler
 
@@ -225,12 +225,6 @@ class rwlock2(object):
         self.wlock = self.rlock
 
 tablesLock = rwlock2()
-
-
-class SpoolEvent(tables.IsDescription):
-   EventName = tables.StringCol(32)
-   Time = tables.Time64Col()
-   EventDescr = tables.StringCol(256)
 
 
 # class HDFResultsTaskQueue_(TaskQueue):
