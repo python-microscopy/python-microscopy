@@ -197,7 +197,7 @@ class PYMEMainFrame(AUIFrame):
                 self.vp.do.showSelection = True
                 self.vp.CenteringHandlers.append(self.scope.PanCamera)
 
-                self.vsp = disppanel.dispSettingsPanel2(self, self.vp)
+                self.vsp = disppanel.dispSettingsPanel2(self, self.vp, self.scope)
 
 
                 self.time1.WantNotification.append(self.vsp.RefrData)

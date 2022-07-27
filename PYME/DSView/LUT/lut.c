@@ -176,6 +176,76 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
     return Py_None;
 }
 
+
+/*
+minmax_uint16(np.ndarray[:,:])
+
+Compute both the minumum and maximum of a uint16 array in one pass. Used to allow real-time scaling
+on a full camera frame in acquisition.
+Between 2 and 10 times faster than calling ndarray.min(), ndarray.max().
+*/
+static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    unsigned short *data = 0;
+    unsigned short _max = 0;
+    unsigned short _min = (2<<15) - 1;
+
+    PyArrayObject *odata =0;
+    PyArrayObject *adata =0;
+
+    //int sizeX;
+    //int sizeY;
+    int size;
+    int i;
+
+    static char *kwlist[] = {"data", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O", kwlist,
+         &odata))
+        return NULL;
+
+    /* Do the calculations */
+
+    adata = PyArray_GETCONTIGUOUS(odata);
+
+
+    if (!PyArray_Check(adata)  || !PyArray_ISCONTIGUOUS(adata))
+    {
+        PyErr_Format(PyExc_RuntimeError, "data - Expecting a contiguous numpy array");
+        Py_DECREF(adata);
+        return NULL;
+    }
+
+    /*if (PyArray_NDIM(adata) != 2)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        Py_DECREF(adata);
+        return NULL;
+    }
+    */
+    //sizeX = PyArray_DIM(adata, 0);
+    //sizeY = PyArray_DIM(adata, 1);
+    size = PyArray_SIZE(adata);
+
+    data = (unsigned short*) PyArray_DATA(adata);
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    for (i=0;i < size; i++)
+    {
+        _min = MIN(_min, *data);
+        _max = MAX(_max, *data);
+        data ++;
+    }
+
+    Py_END_ALLOW_THREADS;
+
+    Py_DECREF(adata);
+
+    //Py_INCREF(Py_None);
+    return Py_BuildValue("H,H", _min, _max);
+}
+
 static PyObject * applyLUTuint8(PyObject *self, PyObject *args, PyObject *keywds)
 {
     unsigned char *data = 0;
@@ -458,6 +528,8 @@ static PyMethodDef lutMethods[] = {
     {"applyLUTu8",  (PyCFunction)applyLUTuint8, METH_VARARGS | METH_KEYWORDS,
     ""},
     {"applyLUTf",  (PyCFunction)applyLUTfloat, METH_VARARGS | METH_KEYWORDS,
+    ""},
+    {"minmax_u16",  (PyCFunction)minmax_uint16, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
