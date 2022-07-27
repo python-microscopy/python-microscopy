@@ -56,7 +56,6 @@ The yaml files should encode a dictionary in the following form:
     '4103211322':
         noise_properties:
             12-bit:
-                ADOffset: 100
                 ElectronsPerCount: 2.706
                 ReadNoise: 2.425
                 ADOffset: 7.67
