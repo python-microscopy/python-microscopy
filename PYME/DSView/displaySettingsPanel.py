@@ -154,7 +154,7 @@ class dispSettingsPanel(wx.Panel):
         else:  raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
 
 class dispSettingsPanel2(wx.Panel):
-    def __init__(self, parent, vp):
+    def __init__(self, parent, vp, scope):
         wx.Panel.__init__(self, parent)
 
 
@@ -163,6 +163,7 @@ class dispSettingsPanel2(wx.Panel):
         self.dsa = self.do.ds
         self.do.Optimise()
         
+        self.scope = scope
 
 
         self.scale = 2
@@ -229,19 +230,40 @@ class dispSettingsPanel2(wx.Panel):
     #def OnCBAutoOpt(self, event):
 
     def RefrData(self, caller=None):
+        """
+        Called in acquisition program to refresh histogram and display scaling
+        """
+        from PYME.DSView.LUT import minmax_u16
         #if self.hlDispMapping.dragging == None:
-        self.dsa = self.do.ds[:,:,0].ravel('F')
+        dsa = self.do.ds[:,:,0].ravel('F')
+
+        _min, _max = minmax_u16(dsa)
 
         #only perform histogramming on a subset of data points to improve performance
         ##note that this may result in strange behaviour of auto-optimise
-        if self.dsa.size > 1000:
-            self.dsa = self.dsa[::(int(self.dsa.size/1000))]
+        if dsa.size > 1000:
+            self.dsa = dsa[::(int(dsa.size/1000))]
+        else:
+            self.dsa = dsa
 
         self.hlDispMapping.SetData(self.dsa, self.hlDispMapping.limit_lower, self.hlDispMapping.limit_upper)
 
+        # if we are saturating, change the background
+        try:
+            if _max >= self.scope.cam.SaturationThreshold:
+                self.hlDispMapping.SetBackgroundColour(wx.Colour(0xFF, 0x8F, 0x8F))
+            elif _max >= self.scope.cam.SaturationThreshold/2:
+                self.hlDispMapping.SetBackgroundColour(wx.YELLOW)
+            else:
+                self.hlDispMapping.SetBackgroundColour(wx.WHITE)
+        
+        except AttributeError:
+            # no scope, or no sat threshold
+            raise
+
         if self.cbAutoOptimise.GetValue():
             #self.OnBOptimise(None)
-            self.hlDispMapping.SetValueAndFire((self.dsa.min(), self.dsa.max()))
+            self.hlDispMapping.SetValueAndFire((_min, _max))
 
     def __getattr__(self, name):
         if name in dir(self.hlDispMapping):

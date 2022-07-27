@@ -188,13 +188,14 @@ static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds
 {
     unsigned short *data = 0;
     unsigned short _max = 0;
-    unsigned short _min = 2^16;
+    unsigned short _min = (2<<15) - 1;
 
     PyArrayObject *odata =0;
     PyArrayObject *adata =0;
 
-    int sizeX;
-    int sizeY;
+    //int sizeX;
+    //int sizeY;
+    int size;
     int i;
 
     static char *kwlist[] = {"data", NULL};
@@ -215,21 +216,22 @@ static PyObject * minmax_uint16(PyObject *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-    if (PyArray_NDIM(adata) != 2)
+    /*if (PyArray_NDIM(adata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
         Py_DECREF(adata);
         return NULL;
     }
-
-    sizeX = PyArray_DIM(adata, 0);
-    sizeY = PyArray_DIM(adata, 1);
+    */
+    //sizeX = PyArray_DIM(adata, 0);
+    //sizeY = PyArray_DIM(adata, 1);
+    size = PyArray_SIZE(adata);
 
     data = (unsigned short*) PyArray_DATA(adata);
 
     Py_BEGIN_ALLOW_THREADS;
 
-    for (i=0;i < sizeX*sizeY; i++)
+    for (i=0;i < size; i++)
     {
         _min = MIN(_min, *data);
         _max = MAX(_max, *data);

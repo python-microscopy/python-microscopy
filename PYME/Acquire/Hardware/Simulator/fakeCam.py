@@ -162,7 +162,7 @@ class NoiseMaker:
         return self.ADOffset + M*(int(self.shutterOpen)*(0 + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) 
 
 
-
+WELL_DEPTH= (2 << 15) -1
 
 
 #calculate image in a separate thread to maintain GUI reponsiveness
@@ -296,7 +296,7 @@ class compThread(threading.Thread):
             
             r_i = r_i[:,:]
             _im = self.noiseMaker.noisify(r_i)
-            self.im = _im.astype('uint16')
+            self.im = np.clip(_im, 0, WELL_DEPTH).astype('uint16')
 
             self.buffer[self.bufferWritePos,:,:] = self.im
             self.bufferWritePos +=1
