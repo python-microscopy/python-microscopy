@@ -51,6 +51,15 @@ The yaml files should encode a dictionary in the following form:
                 NGainStages: 0
                 ReadNoise: 1.65
                 SaturationThreshold: 65535
+    
+    # A UEye entry:
+    '4103211322':
+        noise_properties:
+            12-bit:
+                ElectronsPerCount: 2.706
+                ReadNoise: 2.425
+                ADOffset: 7.67
+                SaturationThreshold: 4095
 
 This dictionary is indexed by camera serial number. Each camera entry is itself a dictionary, and must have a dictionary called `noise_properties` as one entry.
 The `noise_properties` dictionary contains a set of dictionaries of readout characteristics for each gain mode of the camera (the keys here will typically vary between
