@@ -103,13 +103,13 @@ class ImageEngine(BaseEngine):
             glColor4f(1., 1., 1., 1.)
             glBegin(GL_QUADS)
             glTexCoord2f(0., 0.) # lower left corner of image */
-            glVertex3f(x0, y0, 0.0)
+            glVertex3f(x0, y0, layer.z_nm)
             glTexCoord2f(1., 0.) # lower right corner of image */
-            glVertex3f(x1, y0, 0.0)
+            glVertex3f(x1, y0, layer.z_nm)
             glTexCoord2f(1.0, 1.0) # upper right corner of image */
-            glVertex3f(x1, y1, 0.0)
+            glVertex3f(x1, y1, layer.z_nm)
             glTexCoord2f(0.0, 1.0) # upper left corner of image */
-            glVertex3f(x0, y1, 0.0)
+            glVertex3f(x0, y1, layer.z_nm)
             glEnd()
     
             glDisable(GL_TEXTURE_2D)
@@ -148,6 +148,7 @@ class ImageRenderLayer(EngineLayer):
         self._do = display_opts #a dh5view display_options instance - if provided, this over-rides the the clim, cmap properties
         
         self._im_key = None
+        self._zn_nm = 0
 
         # define a signal so that people can be notified when we are updated (currently used to force a redraw when
         # parameters change)
@@ -174,6 +175,10 @@ class ImageRenderLayer(EngineLayer):
         # ourselves
         if (not self._pipeline is None) and hasattr(pipeline, 'onRebuild'):
             self._pipeline.onRebuild.connect(self.update)
+
+        if self._do:
+            self.sync_to_display_opts()
+            self._do.WantChangeNotification.append(self.sync_to_display_opts)
 
     @property
     def datasource(self):
@@ -216,6 +221,10 @@ class ImageRenderLayer(EngineLayer):
             print('lw update')
             self.update_from_datasource(self.datasource)
             self.on_update.send(self)
+
+    @property
+    def z_nm(self):
+        return self._z_nm
 
     @property
     def bbox(self):
@@ -276,15 +285,19 @@ class ImageRenderLayer(EngineLayer):
             self._im_key = im_key
             self._im = ds.data_xyztc[:,:,self.z_pos, self.t_pos,self.channel].astype('f4').squeeze()# - c0)/(c1-c0)
         
-            x0, y0, x1, y1, _, _ = ds.imgBounds.bounds
+            x0, y0, x1, y1, z0, z1 = ds.imgBounds.bounds
 
-            self._bbox = np.array([x0, y0, 0, x1, y1, 0])
+            self._z_nm = z0 + self.z_pos*ds.voxelsize_nm.z 
+
+            self._bbox = np.array([x0, y0, z0, x1, y1, z1])
         
             self._bounds = [x0, y0, x1, y1]
             
         self._alpha = alpha
         self._color_map = cmap
         self._color_limit = clim
+
+        
 
     def get_color_map(self):
         return self._color_map

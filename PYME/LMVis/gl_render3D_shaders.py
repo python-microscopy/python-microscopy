@@ -388,7 +388,8 @@ class LMGLShaderCanvas(GLCanvas):
             GL.glTranslatef(eye, 0.0, 0.0)
 
             # move our object to be centred at -10
-            GL.glTranslatef(0, 0, -10)
+            if self.displayMode == '3DPersp':
+                GL.glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)

@@ -239,6 +239,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         # Properties we can visualize
         self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'curvature_mean', 'curvature_gaussian']
+        self.vertex_vector_properties = ['vertex_normals']
         
         self.extra_vertex_data = {}
 

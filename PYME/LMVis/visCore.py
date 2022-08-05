@@ -60,7 +60,7 @@ from PYME.LMVis import statusLog
 
 class VisGUICore(object):
     def __init__(self, use_shaders=False):
-        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
+        self._new_layers = PYME.config.get('VisGUI-new_layers', True)
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         #self.colData = 't'
         self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
@@ -427,6 +427,20 @@ class VisGUICore(object):
         _, surf_count = self.pipeline.new_ds_name(ds_stub, return_count=True)
         surf_count -= 1  # To match current count
         l = TriangleRenderLayer(self.pipeline, dsname=ds_name, method=method, cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
+        self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
+        return l
+
+    def add_quiver_layer(self, ds_name=None, **kwargs):
+        from PYME.LMVis.layers.quiver import QuiverRenderLayer
+        from PYME.misc.colormaps import cm
+        if ds_name is None:
+            from PYME.experimental._triangle_mesh import TriangleMesh
+            mesh_ds = [k for k, d in self.pipeline.dataSources.items() if isinstance(d, TriangleMesh)]
+            ds_name = mesh_ds[-1]
+        
+        l = QuiverRenderLayer(self.pipeline, dsname=ds_name)
         self.add_layer(l)
 
         logger.debug('Added layer, datasouce=%s' % l.dsname)
