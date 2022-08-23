@@ -13,6 +13,7 @@ import numpy as np
 import six
 import skimage.filters as skf
 import inspect
+import sys
 
 """Automagically generate filter objects for all skimage filters"""
 
@@ -100,6 +101,9 @@ for filtName in skFilterNames:
                         argTypes[a] = 'bool'
                     elif isinstance(ad, int) and (ad != 0):
                         argTypes[a] = 'int'
+                    # below is a hack for gabor filter dtype argument - new option in skimage 0.19.x
+                    elif ad is np.complex128 or ad is np.complex64:
+                        argTypes[a] = 'dtype'
             
             #disregard parameters which need another image for now        
             args = [a for a in args if not argTypes[a] in ['image', 'dict']]
@@ -120,13 +124,21 @@ for filtName in skFilterNames:
                 paramString += '%s = Int(%s)\n    ' % (a, argDefaults[a])
             elif argTypes[a] == 'int_float':
                 paramString += '%s = _IntFloat(%s)\n    ' % (a, argDefaults[a])
+            elif argTypes[a] == 'dtype': # hack for gabor filter dtype argument
+                paramString += '%s = np.%s\n    ' % (a, argDefaults[a].__name__) # we have numpy available as np
 
         doc = filt.__doc__
                 
         cd = ctemplate % locals()
-        #print cd
-        exec(cd)
-
+        # print(cd)
+        try:
+                exec(cd)
+        except:
+                print("error in the following define - SKIPPING:")
+                print("Unexpected error:", sys.exc_info()[0])
+                print("--------BEGIN SKIPPED DEFINITION------")
+                print(cd)
+                print("--------END SKIPPED DEFINITION------")
 
 
 
