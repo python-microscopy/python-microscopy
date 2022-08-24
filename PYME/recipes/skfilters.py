@@ -106,7 +106,7 @@ for filtName in skFilterNames:
                         argTypes[a] = 'dtype'
             
             #disregard parameters which need another image for now        
-            args = [a for a in args if not argTypes[a] in ['image', 'dict']]
+            args = [a for a in args if not argTypes[a] in ['image', 'dict', 'dtype']]
             
             _argnames = args
         
@@ -124,8 +124,6 @@ for filtName in skFilterNames:
                 paramString += '%s = Int(%s)\n    ' % (a, argDefaults[a])
             elif argTypes[a] == 'int_float':
                 paramString += '%s = _IntFloat(%s)\n    ' % (a, argDefaults[a])
-            elif argTypes[a] == 'dtype': # hack for gabor filter dtype argument
-                paramString += '%s = np.%s\n    ' % (a, argDefaults[a].__name__) # we have numpy available as np
 
         doc = filt.__doc__
                 
