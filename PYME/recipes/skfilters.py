@@ -14,6 +14,8 @@ import six
 import skimage.filters as skf
 import inspect
 import sys
+import logging
+logger = logging.getLogger(__name__)
 
 """Automagically generate filter objects for all skimage filters"""
 
@@ -132,15 +134,8 @@ for filtName in skFilterNames:
         try:
                 exec(cd)
         except:
-                print("error in the following define - SKIPPING:")
-                print("Unexpected error:", sys.exc_info()[0])
-                print("--------BEGIN SKIPPED DEFINITION------")
-                print(cd)
-                print("--------END SKIPPED DEFINITION------")
-
-
-
-
+                logger.exception("error generating a module for skimage.filters.%s,  skipping" % filtName)
+                logger.debug('Skipped module definition: %s' % cd)
 
  
 #d = {}
