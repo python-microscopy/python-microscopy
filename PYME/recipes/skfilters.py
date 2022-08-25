@@ -107,7 +107,7 @@ for filtName in skFilterNames:
             
             #disregard parameters which need another image for now        
             args = [a for a in args if not argTypes[a] in ['image', 'dict', 'dtype']]
-            
+            #TODO - log/warn when we ignore parameters
             _argnames = args
         
         
