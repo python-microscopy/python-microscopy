@@ -94,8 +94,12 @@ class Rater(object):
                         cost = .01
         
             elif task['type'] == 'recipe':
-                for URL in task['inputs'].values():
-                    if os.path.exists(URL):
+                for key, URL in task['inputs'].items():
+                    if key == '__sim':
+                        #special case for no-input simulation tasks
+                        # NB - only needed to suppress error, simulation tasks just get cost=1 otherwise.
+                        cost *= 0.2
+                    elif os.path.exists(URL):
                         #cluster of one special case
                         cost *= .2
                     elif clusterIO.is_local(*clusterIO.parseURL(URL)):

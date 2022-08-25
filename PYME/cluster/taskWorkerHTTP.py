@@ -332,18 +332,24 @@ class taskWorker(object):
 
                     recipe = Recipe.fromYAML(recipe_yaml)
 
+                    #initial context
+                    context = {'data_root' : clusterIO.local_dataroot,
+                               'task_id' : taskDescr['id'].split('~')[0]}
+                    
                     #load recipe inputs
                     logging.debug(taskDescr)
                     for key, url in taskDescr['inputs'].items():
-                        logging.debug('RECIPE: loading %s as %s' % (url, key))
-                        recipe.loadInput(url, key)
+                        if key == '__sim':
+                            # special case for no-input simulation recipes
+                            # for now, essentially ignore `__sim` inputs, but propagate into context just in case
+                            # TODO?? find a way of encoding simulation parameters?
+                            context['sim_tag'] = url
+                        else:    
+                            logging.debug('RECIPE: loading %s as %s' % (url, key))
+                            recipe.loadInput(url, key)
 
                     #print recipe.namespace
                     recipe.execute()
-
-                    #save results
-                    context = {'data_root' : clusterIO.local_dataroot,
-                               'task_id' : taskDescr['id'].split('~')[0]}
 
                     #update context with file stub and input directory
                     try:
