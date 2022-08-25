@@ -356,7 +356,10 @@ class Recipe(HasTraits):
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
+                try:
+                    mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
+                except KeyError:
+                    raise KeyError('No recipe module found with name "%s"' % mn)
             
             mc.append(mod)
         

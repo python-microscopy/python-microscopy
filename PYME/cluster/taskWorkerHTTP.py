@@ -69,6 +69,14 @@ else:
 import requests
 import sys
 import signal
+import yaml
+
+def str_presenter(dumper, data):
+  if len(data.splitlines()) > 1:  # check for multiline string
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+  return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+yaml.add_representer(str, str_presenter)
 #import socket
 
 from PYME.localization import remFitBuf
@@ -110,8 +118,9 @@ Traceback:
         
     def to_string(self):
         rule_id, task_id = self.taskDescr['id'].split('~')
+
         return self.template.format(rule_id = rule_id, task_id = task_id, comp_name = compName, pid=os.getpid(),
-                                    taskDescr= str(self.taskDescr), traceback = self.traceback)
+                                    taskDescr= yaml.dump(self.taskDescr), traceback = self.traceback)
         
 
 class taskWorker(object):
