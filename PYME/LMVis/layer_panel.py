@@ -57,12 +57,13 @@ class LayerPane(afp.foldingPane):
             self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
 
         self.pan.SetSizerAndFit(self.vsizer)
-        self.AddNewElement(self.pan)
+        self.AddNewElement(self.pan, priority=1)
         
         #print('Creating layer panel')
         
         self.visFr.layer_added.connect(self.update)
-        self.fp.fold_signal.connect(panel._layout)
+        if hasattr(panel, '_layout'):
+            self.fp.fold_signal.connect(panel._layout)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
@@ -132,13 +133,15 @@ class LayerPane(afp.foldingPane):
             item.Unfold()
 
     def add_layer(self, evt):
-        dlg = wx.SingleChoiceDialog(self.visFr, 'Choose type of layer to add:', 'Add Layer', ['points', 'mesh', 'image', 'tracks'])
+        dlg = wx.SingleChoiceDialog(self, 'Choose type of layer to add:', 'Add Layer', ['points', 'mesh', 'image', 'tracks', 'quiver'])
         if dlg.ShowModal() == wx.ID_OK:
             type = dlg.GetStringSelection()
             if type == 'points':        
                 self.visFr.add_pointcloud_layer()
             elif type == 'mesh':
                 self.visFr.add_mesh_layer()
+            elif type == 'quiver':
+                self.visFr.add_quiver_layer()
             else:
                 raise NotImplementedError('Layer type "%s" not supported yet' % type)
         

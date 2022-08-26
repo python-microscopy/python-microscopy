@@ -22,6 +22,8 @@ from . import surface_fitting
 from . import acquisition
 from . import pyramid
 from . import pointcloud
+from . import simulation
+
 try:
     from . import skfilters
 except:

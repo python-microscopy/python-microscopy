@@ -42,7 +42,7 @@ from PYME.LMVis import visCore
 from ._base import Plugin
 
 class LMDisplay(visCore.VisGUICore, Plugin):
-    def __init__(self, dsviewer):
+    def __init__(self, dsviewer, use_shaders=True):
         Plugin.__init__(self, dsviewer)
 
         if 'fitResults' in dir(self.image):
@@ -72,9 +72,9 @@ class LMDisplay(visCore.VisGUICore, Plugin):
         self.view.add_overlay(self._ovl)
 
         # initialize the common parts
-        visCore.VisGUICore.__init__(self)
+        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
 
-        self.CreateMenuBar(subMenu=True)
+        self.CreateMenuBar(subMenu=True, use_shaders=use_shaders)
 
         #self.Bind(wx.EVT_IDLE, self.OnIdle)
 

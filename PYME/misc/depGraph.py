@@ -64,12 +64,17 @@ def arrangeNodes(dg):
             #see what the dependancies of this item are
             if si in dg.keys():
                 ri = list(dg[si])
-                
-                #assign a y position as the mean of the dependancies y positions
-                #yp = np.mean([ips[rr][1] for rr in ri])
-                w = np.array([1.0/(1 + (xc - ips[rr][0])) for rr in ri])
-                yp = np.sum(np.array([ips[rr][1] for rr in ri])*w)/w.sum()
-                ypw.append(1.)
+
+                if len(ri) > 0:
+                    #assign a y position as the mean of the dependancies y positions
+                    #yp = np.mean([ips[rr][1] for rr in ri])
+                    w = np.array([1.0/(1 + (xc - ips[rr][0])) for rr in ri])
+                    yp = np.sum(np.array([ips[rr][1] for rr in ri])*w)/w.sum()
+                    ypw.append(1.)
+                else:
+                    # module has no inputs (i.e. a simulation module)
+                    yp = 0
+                    ypw.append(1.)
             else:
                 #else assign a position of 0
                 yp = 0

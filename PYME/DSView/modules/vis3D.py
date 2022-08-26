@@ -68,6 +68,9 @@ class MeshViewFrame(AUIFrame):
         
         self.Layout()
 
+    def _layout(self, *args, **kwargs):
+        self.Layout()
+
     def save_surface(self):
         #from PYME.experimental import _triangle_mesh as triangle_mesh
         

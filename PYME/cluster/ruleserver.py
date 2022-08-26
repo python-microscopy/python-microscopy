@@ -197,6 +197,7 @@ class IntegerIDRule(Rule):
         self._rule_timeout = rule_timeout
         self._cached_advert = None
         self._active = True # making this rule inactive will cause it not to generate adverts (this is the closest we  get to aborting)
+        self._seen_as_finished = False # flag to make sure completion logic only gets triggered once.
         
         self.nTotal = 0
         self.nAssigned = 0
@@ -569,6 +570,8 @@ class RuleServer(object):
         self._cached_info = None
         self._cached_info_expiry = 0
         self._cached_info_timeout = 5
+        self._finished_rule_timeout = 60 # keep finished rules around for a minute (so we can see them in the GUI)
+        self._failed_finished_rule_timeout = 5*60 # keep rules with failures around for 5 mins to give us a chance to look at errors
         
         self._rule_n = 0
         
@@ -592,30 +595,42 @@ class RuleServer(object):
                 
                 # look for rules that have processed all tasks
                 if self._rules[qn].finished:
-                    with self._rule_lock:
-                        r = self._rules.pop(qn)
+                    #with self._rule_lock:
+                    #    r = self._rules.pop(qn)
+                    
+                    r = self._rules[qn]
+                    if not r._seen_as_finished:
+                        r._seen_as_finished = True # prevent following logic from executing twice
+
+                        # shorten rule expiry (no need to keep lots of finished rules in memory)
+                        if r.nFailed > 0:
+                            # Allow a little more time if we have errors so we can click through to the diagnostics (TODO)
+                            r.expiry = time.time() + self._failed_finished_rule_timeout
+                        else:
+                            # Allow some time so that rules can be seen as complete in the GUI
+                            r.expiry = time.time() + self._finished_rule_timeout
                         
-                    follow_on = r.on_completion
-                    if follow_on is not None:
-                        # if a follow on rule is defined, add it
-                        template = follow_on['template']
-                        n_tasks = follow_on.get('max_tasks', 1)
-                        timeout = follow_on.get('rule_timeout', 3600.)
-                        ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
-    
-                        rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
-                                             rule_timeout=float(timeout), on_completion=follow_on.get('on_completion', None))
-    
-                        rule.make_range_available(0, int(n_tasks))
-    
-                        with self._rule_lock:
-                            self._rules[ruleID] = rule
-    
-                        self._rule_n += 1
+                        follow_on = r.on_completion
+                        if follow_on is not None:
+                            # if a follow on rule is defined, add it
+                            template = follow_on['template']
+                            n_tasks = follow_on.get('max_tasks', 1)
+                            timeout = follow_on.get('rule_timeout', 3600.)
+                            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+        
+                            rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
+                                                rule_timeout=float(timeout), on_completion=follow_on.get('on_completion', None))
+        
+                            rule.make_range_available(0, int(n_tasks))
+        
+                            with self._rule_lock:
+                                self._rules[ruleID] = rule
+        
+                            self._rule_n += 1
                     
                 
                 #remore queue if expired (no activity for an hour) to free up memory
-                elif self._rules[qn].expired:
+                if self._rules[qn].expired:
                     logger.debug('removing expired rule: %s' % self._rules[qn].ruleID)
                     with self._rule_lock:
                         r = self._rules.pop(qn)

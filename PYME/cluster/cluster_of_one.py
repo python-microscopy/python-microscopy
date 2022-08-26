@@ -6,7 +6,6 @@ import os
 import webbrowser
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class ClusterOfOne(object):
@@ -121,6 +120,7 @@ class ClusterOfOne(object):
             
             
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     import wx
     import PYME.resources
     from PYME import config

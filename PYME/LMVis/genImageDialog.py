@@ -88,7 +88,7 @@ class GenImageDialog(wx.Dialog):
             self.cJitterVariableZ.SetSelection(jitterVarDefaultZ)
             sizer2.Add(self.cJitterVariableZ, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
         #MC subsampling parameter for triangles
         if mode in ['triangles', 'trianglesw', '3Dtriangles']:
@@ -121,7 +121,7 @@ class GenImageDialog(wx.Dialog):
             self.tNumSamps = wx.TextCtrl(self, -1, '25', size=(60, -1))
             sizer2.Add(self.tNumSamps, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
     
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
             
             
         if mode in ['quadtree']:
@@ -131,7 +131,7 @@ class GenImageDialog(wx.Dialog):
             self.tMaxLeafSize = wx.TextCtrl(self, -1, '10', size=(60, -1))
             sizer2.Add(self.tMaxLeafSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
     
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
             
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -154,7 +154,7 @@ class GenImageDialog(wx.Dialog):
 
             self.tZThickness = wx.TextCtrl(self, -1, '%d' % zThick, size=(60, -1))
             sizer2.Add(self.tZThickness, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
             sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Z range:'), wx.VERTICAL)
 
@@ -163,9 +163,9 @@ class GenImageDialog(wx.Dialog):
 
             self.tZThickness.Bind(wx.EVT_TEXT, self.OnZBinChange)
 
-            sizer2.Add(self.hZRange, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL|wx.EXPAND, 5)
+            sizer2.Add(self.hZRange, 0, wx.ALL|wx.EXPAND, 5)
 
-            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+            sizer1.Add(sizer2, 0, wx.ALL, 5)
 
         #multiple colour channels
         if len(colours) > 0:

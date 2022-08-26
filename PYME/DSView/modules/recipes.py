@@ -39,9 +39,14 @@ import os
 from ._base import Plugin
         
 
-class RecipePlugin(recipeGui.RecipeManager, Plugin):
+class RecipePlugin(recipeGui.PipelineRecipeManager, Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
+
+        if not 'pipeline' in dir(dsviewer):
+            dsviewer.pipeline = pipeline.Pipeline()
+        
+        recipeGui.PipelineRecipeManager.__init__(self, dsviewer.pipeline)
         
         self.cannedIDs = {}
 
@@ -148,19 +153,18 @@ class RecipePlugin(recipeGui.RecipeManager, Plugin):
             #assume we made measurements - put in pipeline
             #TODO - put an explict check in here
 
-            if not 'pipeline' in dir(self.dsviewer):
-                self.dsviewer.pipeline = pipeline.Pipeline()
+            
 
             if isinstance(self.outp, ImageStack):
                 _display_output_image(self.outp)
             elif not self.outp is None:
-                from PYME.IO import tabular
+                #from PYME.IO import tabular
                 
                 
-                cache = tabular.CachingResultsFilter(self.outp)
-                self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)
-                self.dsviewer.pipeline.filterKeys = {}
-                self.dsviewer.pipeline.Rebuild()
+                #cache = tabular.CachingResultsFilter(self.outp)
+                #self.dsviewer.pipeline.OpenFile(ds = cache, clobber_recipe=False)
+                #self.dsviewer.pipeline.filterKeys = {}
+                #self.dsviewer.pipeline.Rebuild()
 
                 if not hasattr(self, '_ovl'):
                     self._ovl = overlays.PointDisplayOverlay(filter=self.dsviewer.pipeline, display_name='Recipe output')

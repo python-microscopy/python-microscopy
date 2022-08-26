@@ -7,6 +7,10 @@ from PYME.IO.image import ImageStack
 import logging
 logger = logging.getLogger(__name__)
 
+#custom error for typos in recipe module names
+class RecipeModuleNotFound(Exception):
+    pass
+
 class Recipe(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
@@ -356,7 +360,10 @@ class Recipe(HasTraits):
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
+                try:
+                    mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
+                except KeyError:
+                    raise RecipeModuleNotFound('No recipe module found with name "%s"\nThis could either be caused by a typo in the module name or a missing 3rd party plugin.' % mn) from None # Full traceback is probably unhelpful for people using modules 
             
             mc.append(mod)
         
