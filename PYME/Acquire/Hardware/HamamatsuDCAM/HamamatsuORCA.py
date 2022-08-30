@@ -75,6 +75,25 @@ DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
 DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
 DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
+DCAMPROP_OUTPUTTRIGGER_SOURCE__EXPOSURE = 1
+DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND = 2
+DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC = 3
+DCAMPROP_OUTPUTTRIGGER_SOURCE__HSYNC = 4
+DCAMPROP_OUTPUTTRIGGER_SOURCE__TRIGGER = 6
+
+DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE = 1
+DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE = 2
+
+DCAMPROP_OUTPUTTRIGGER_ACTIVE__EDGE = 1
+DCAMPROP_OUTPUTTRIGGER_ACTIVE__LEVEL = 2
+
+DCAMPROP_OUTPUTTRIGGER_KIND__LOW = 1
+DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE = 2
+DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE = 3
+DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGER_READY = 4
+DCAMPROP_OUTPUTTRIGGER_KIND__HIGH = 5
+DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE	= 6
+
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 #DCAMCAP_START_SNAP = ctypes.c_int32(int("0",0))
 
@@ -423,6 +442,55 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         """
         if self.external_shutter is not None:
             self.external_shutter.SetShutter(mode)
+    
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001):
+        """
+        Set output trigger of the camera. For now, only sets output trigger 0, 
+        even if the camera supports multiple output triggers.
+
+        Parameters
+        ----------
+        mode : str
+            Currently supported modes include:
+                low: sets output trigger to Low, i.e. TTL zero. Can be useful 
+                    for synchronization if one wants to change output trigger 
+                    during an acquisition protocol. Ignores pulse delay and 
+                    width parameters
+                readout start: sets output trigger to 'Vsync', which gives the 
+                    TTL of the specified pulse width output after the specified
+                    delay from the start of the sensor readout
+                readout end: sets output trigger to readout end, which gives
+                    the TTL of the specified pulse width output after the
+                    specified delay from the end of the sensor readout
+        delay : float, optional
+            delay after trigger event, in seconds, to emit TTL high, by default
+            0 s.
+        width : float, optional
+            TTL high pulse width, in seconds, by default 0.0001 s, or 0.1 ms
+        
+        """
+        if mode == 'low':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]', 
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__LOW)
+            return  # return early, no need to set delay and width
+        
+        # in case the camera is running, set the pulse parameters before 
+        # changing the trigger source
+        # self.setCamPropValue('OUTPUT TRIGGER ACTIVE[0]', DCAMPROP_OUTPUTTRIGGER_ACTIVE__EDGE)  # not writable
+        self.setCamPropValue('OUTPUT TRIGGER DELAY[0]', delay)  # [s], only relevant with 'EDGE'
+        self.setCamPropValue('OUTPUT TRIGGER PERIOD[0]', width)  # [s], width of pulse, only relevant with 'EDGE'
+        if mode == 'readout start':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC)
+        elif mode == 'readout end':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND)
+        else:
+            raise RuntimeError('Unsupported output trigger mode: %s' % mode)
 
     def Shutdown(self):
         # if self.initialized:
