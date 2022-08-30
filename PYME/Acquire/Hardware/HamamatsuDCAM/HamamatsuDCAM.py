@@ -502,12 +502,13 @@ class HamamatsuDCAM(Camera):
         return fn_return
 
     def getCamPropValueText(self, prop_name):
-        """returns text associated with current property setting
+        """returns text associated with current property setting. Assumes
+        prop_name is a text/mode setting, not just a float.
 
         Parameters
         ----------
         prop_name : str
-             DCAM property string (e.g. 'EXPOSURE TIME')
+             DCAM property string (e.g. 'OUTPUT TRIGGER SOURCE[0]')
         
         Returns
         -------
@@ -539,7 +540,8 @@ class HamamatsuDCAM(Camera):
     
     def getCamPropValueTextOptions(self, prop_name):
         """enumerate available options for this camera property, with 
-        associated text name. Helpful for development - see note
+        associated text name. Assumes prop_name is a text/mode setting. Helpful 
+        for development - see Notes.
 
         Parameters
         ----------
