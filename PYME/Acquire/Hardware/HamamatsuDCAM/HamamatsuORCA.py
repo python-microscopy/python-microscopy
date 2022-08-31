@@ -443,10 +443,10 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         if self.external_shutter is not None:
             self.external_shutter.SetShutter(mode)
     
-    def SetOutputTrigger(self, mode, delay=0, width=0.0001):
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
         """
-        Set output trigger of the camera. For now, only sets output trigger 0, 
-        even if the camera supports multiple output triggers.
+        Set output trigger of the camera. For now, only sets output trigger 0, even if
+        the camera supports multiple output triggers.
 
         Parameters
         ----------
@@ -463,12 +463,22 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                     the TTL of the specified pulse width output after the
                     specified delay from the end of the sensor readout
         delay : float, optional
-            delay after trigger event, in seconds, to emit TTL high, by default
-            0 s.
+            delay after trigger event, in seconds, to emit TTL high (assuming 
+            posiive polarity), by default 0 s.
         width : float, optional
             TTL high pulse width, in seconds, by default 0.0001 s, or 0.1 ms
+        positive : bool, optional
+            Sets polarity of the output trigger to positive (True) or negative
+            (False). True, by default.
         
         """
+        if positive:
+            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
+                                DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE)
+        else:
+            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
+                                DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE)
+        
         if mode == 'low':
             self.setCamPropValue('OUTPUT TRIGGER KIND[0]', 
                                  DCAMPROP_OUTPUTTRIGGER_KIND__LOW)
