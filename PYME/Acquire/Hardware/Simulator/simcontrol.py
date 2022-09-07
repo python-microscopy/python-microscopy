@@ -80,10 +80,17 @@ class RandomDistribution(HasTraits):
     n_instances = Int(1)
     region_size = Float(5000)
     generator = Instance(HasTraits)
+    # force one of the points to be at the origin (dirty hack to make sure there is a structure present in the simulator at startup)
+    force_at_origin = Bool(False) 
 
     def points(self):
         xp = self.region_size*np.random.uniform(-1, 1, self.n_instances)
         yp = self.region_size*np.random.uniform(-1, 1, self.n_instances)
+
+        if self.force_at_origin:
+            xp[0] = 0.0
+            yp[0] = 0.0
+
 
         for xi, yi in zip(xp, yp):
             for p in self.generator.points():

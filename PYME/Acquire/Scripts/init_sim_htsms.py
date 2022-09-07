@@ -128,7 +128,7 @@ def sim_controls(MainFrame, scope):
     MainFrame.camPanels.append((msc, 'Simulation'))
 
     from PYME.simulation import pointsets
-    scope.simcontrol.point_gen = simcontrol.RandomDistribution(n_instances=25,region_size=70e3, 
+    scope.simcontrol.point_gen = simcontrol.RandomDistribution(n_instances=25,region_size=70e3, force_at_origin=True,
                                                                 generator=simcontrol.Group(generators=[pointsets.WiglyFibreSource(),
                                                                     simcontrol.AssignChannel(channel=1, generator=pointsets.SHNucleusSource())
                                                                     ]))
