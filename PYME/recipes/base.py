@@ -42,6 +42,7 @@ def register_module(moduleName):
         _legacy_modules[moduleName] = cls #allow acces by non-hierarchical names for backwards compatibility
 
         module_names[cls] = full_module_name
+        cls._module_name = full_module_name
         return cls
         
     return c_decorate
@@ -59,6 +60,8 @@ def register_legacy_module(moduleName, py_module=None):
 
         _legacy_modules[full_module_name] = cls
         _legacy_modules[moduleName] = cls #allow access by non-hierarchical names for backwards compatibility
+
+        cls._module_name = full_module_name
 
         #module_names[cls] = full_module_name
         return cls
