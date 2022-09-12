@@ -477,6 +477,10 @@ class UEyeCamera(Camera):
                     'ReadNoise': self.baseProps['ReadNoise'],
                     'ADOffset': self.baseProps['ADOffset'],
                     'SaturationThreshold': 2 ** self.nbits  - 1}
+    
+    @property
+    def _gain_mode(self):
+        return '%d-bit' % self.nbits
 
     
     # @property

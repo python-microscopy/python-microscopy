@@ -442,6 +442,7 @@ class MyApp(wx.App):
             if options.test:
                 # import pylab
                 im = ImageStack(np.random.randn(100,100))
+                im.pixelSize = 100
             elif options.test3d:
                 # import numpy as np
                 from scipy import ndimage
