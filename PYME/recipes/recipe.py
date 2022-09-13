@@ -375,7 +375,7 @@ class Recipe(HasTraits):
                 try:
                     mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
                 except KeyError:
-                    raise RecipeModuleNotFound('No recipe module found with name "%s"\nThis could either be caused by a typo in the module name or a missing 3rd party plugin.' % mn) from None # Full traceback is probably unhelpful for people using modules 
+                    raise RecipeModuleNotFoundError('No recipe module found with name "%s"\nThis could either be caused by a typo in the module name or a missing 3rd party plugin.' % mn) from None # Full traceback is probably unhelpful for people using modules 
             
             mc.append(mod)
         
