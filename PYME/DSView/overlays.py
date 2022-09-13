@@ -98,7 +98,12 @@ class PointDisplayOverlay(Overlay):
                 x = self.filter['x']/vx
                 y = self.filter['y']/vy
                 
+                # note: the proper fix for 5D compliant behaviour probably involves fixing up visible_bounds (see comments therein)
                 xb, yb, zb = vp.visible_bounds
+                # the below is currently a hack and almost certainly needs to be replaced by a proper fix!!!!
+                if vp.do.ds.shape[2] <= 1:
+                    # time series
+                    zb = [-0.5,vp.do.ds.shape[3]] # here we assume XYZTC data source # not sure how to test for it
                 
                 IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
                     

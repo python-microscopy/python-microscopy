@@ -814,8 +814,14 @@ class LMAnalyser2(Plugin):
 
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
+            if self.do.ds.shape[2] > 1:
+                # stack has z
+                zp = self.do.zp
+            else:
+                # stack is a time series
+                zp = self.do.tp
             try:
-                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, self.do.zp, voxelsize=self.view.voxelsize))
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, zp, voxelsize=self.view.voxelsize))
             except:
                 import traceback
                 print((traceback.format_exc()))
@@ -910,7 +916,12 @@ class LMAnalyser2(Plugin):
             matplotlib.interactive(False)
             plt.figure()
         
-        zp = self.do.zp
+        if self.do.ds.shape[2] > 1:
+            # stack has z
+            zp = self.do.zp
+        else:
+            # stack is a time series
+            zp = self.do.tp
 
         analysisMDH = self.analysisController.analysisMDH
         
