@@ -161,8 +161,7 @@ class UEyeCamera(Camera):
             
             self._buffers.append((buffer_id, data))
 
-        # IDS currently only supports nMode = 0
-        self.check_success(ueye.is_InitImageQueue(self.h, 0))
+        self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_INIT, None, ctypes.c_int(0)))
         
         self.transfer_buffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
         
@@ -178,7 +177,7 @@ class UEyeCamera(Camera):
         
     def DestroyBuffers(self):
         self._poll = False
-        self.check_success(ueye.is_ExitImageQueue(self.h))
+        self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_EXIT, None, ctypes.c_int(0)))
         self.check_success(ueye.is_ClearSequence(self.h))
         
         while len(self._buffers) > 0:
@@ -232,15 +231,17 @@ class UEyeCamera(Camera):
         self.DestroyBuffers()
     
     def _poll_buffer(self):
-        data = ueye.c_mem_p()
-        buffer_id = ueye.int()
+        waitbuffer = ueye.IMAGEQUEUEWAITBUFFER(timeout=ueye.uint(1000))
         
         try:
-            self.check_success(ueye.is_WaitForNextImage(self.h, 1000, data,
-                                                        buffer_id))
+            self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_WAIT, waitbuffer, ctypes.sizeof(waitbuffer)))
+            # IMAGE_QUEUE_CMD_WAIT should have filled nMemId and pcMem, if not this will throw null pointer ValueError
+            data = waitbuffer.ppcMem.contents
+            buffer_id = waitbuffer.pnMemId.contents
             self.check_success(ueye.is_CopyImageMem(self.h, data, buffer_id, 
                                                     self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))))
-        except RuntimeError:
+        except RuntimeError as e:
+            logger.error(e)
             try:
                 self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, data))
             except:
