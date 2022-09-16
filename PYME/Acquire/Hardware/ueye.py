@@ -163,7 +163,22 @@ class UEyeCamera(Camera):
 
         self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_INIT, None, ctypes.c_int(0)))
         
-        self.transfer_buffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
+        # NOTE - pyueye typing is gross. Need to use their pointer cast method, 
+        # and their 'extra functionality' ctypes
+        
+        # self.transfer_buffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
+        self.transfer_buffer_size = self.GetPicHeight() * self.GetPicWidth() * bufferdtype().itemsize
+        # print(s)
+        self.transfer_buffer_dtype = bufferdtype
+        self.transfer_buffer = ctypes.create_string_buffer(self.transfer_buffer_size)
+        self.transfer_buffer_memory_v = ueye.char()
+        self.transfer_buffer_memory = ueye._pointer_cast(self.transfer_buffer_memory_v, ueye.char_p)
+        self.transfer_buffer_id = ueye.int()
+        self.wait_buffer = ueye.IMAGEQUEUEWAITBUFFER()
+        self.wait_buffer.timeout = ueye.uint(1000)
+        
+        self.wait_buffer.pnMemId = ueye._pointer_cast(self.transfer_buffer_id, ctypes.POINTER(ueye.int))
+        self.wait_buffer.ppcMem = ueye._pointer_cast(self.transfer_buffer_memory, ctypes.POINTER(ueye.char_p))
         
         self.free_buffers = queue.Queue()
         # CS: we leave this as uint16 regardless of 8 or 12 bits for now as accumulation
@@ -231,31 +246,36 @@ class UEyeCamera(Camera):
         self.DestroyBuffers()
     
     def _poll_buffer(self):
-        waitbuffer = ueye.IMAGEQUEUEWAITBUFFER(timeout=ueye.uint(1000))
-        
         try:
-            self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_WAIT, waitbuffer, ctypes.sizeof(waitbuffer)))
-            # IMAGE_QUEUE_CMD_WAIT should have filled nMemId and pcMem, if not this will throw null pointer ValueError
-            data = waitbuffer.ppcMem.contents
-            buffer_id = waitbuffer.pnMemId.contents
-            self.check_success(ueye.is_CopyImageMem(self.h, data, buffer_id, 
-                                                    self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))))
+            self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_WAIT, 
+                                                  self.wait_buffer, ueye.sizeof(self.wait_buffer)))
+            # IMAGE_QUEUE_CMD_WAIT should have filled nMemId and pcMem
+
+            # self.check_success(ueye.is_CopyImageMem(self.h, self.wait_buffer.ppcMem, self.transfer_buffer_id, 
+            #                                         self.transfer_buffer))#.ctypes.data_as(ctypes.POINTER(ueye.char_p))))
+                                                    # self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))))
+            ctypes.memmove(self.transfer_buffer, self.wait_buffer.ppcMem.contents, self.transfer_buffer_size)
+            arr = np.frombuffer(self.transfer_buffer, dtype=self.transfer_buffer_dtype)
+            arr = arr.reshape((self.GetPicHeight(), self.GetPicWidth()))
+            # self.check_success(ueye.is_CopyImageMem(self.h, self.wait_buffer.ppcMem, self.wait_buffer.pnMemId.contents, 
+            #                                         self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))))
         except RuntimeError as e:
             logger.error(e)
             try:
-                self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, data))
+                # self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, self.transfer_buffer_memory))
+                self.check_success(ueye.is_UnlockSeqBuf(self.h, self.transfer_buffer_id, None))
             except:
                 pass
             finally:
                 return
         
         if self.n_accum_current == 0:
-            self.accum_buffer[:] = self.transfer_buffer
+            self.accum_buffer[:] = arr
         else:
-            self.accum_buffer[:] = self.accum_buffer + self.transfer_buffer
+            self.accum_buffer[:] = self.accum_buffer + arr
         self.n_accum_current += 1
         
-        self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, data))
+        self.check_success(ueye.is_UnlockSeqBuf(self.h, self.transfer_buffer_id, None))
         
         if self.n_accum_current >= self.n_accum:    
             self.full_buffers.put(self.accum_buffer)
