@@ -43,8 +43,8 @@ Startup / installation
 ======================
 
 - install PYME as a python package
-- run :py:mod:`PYMEDataServer <PYME.cluster.HTTPDataServer>` (either using `PYMEClusterOfOne`, or launching individually on each
-  cluster node after following the `configuration instructions <clusterinstall_>`_ :ref:`clusterinstall_` )
+- run :py:mod:`PYMEDataServer <PYME.cluster.HTTPDataServer>` (either using :program:`PYMEClusterOfOne`, or launching individually on each
+  cluster node after following the `configuration instructions <_clusterinstall>`_ :ref:`clusterinstall_` )
 
 Data streaming
 ==============
