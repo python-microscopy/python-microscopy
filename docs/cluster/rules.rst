@@ -82,7 +82,7 @@ following.
 
     rule.push()
 
-Note that in this case, only a single file is passed as the input shape. 
-However, the server expects a list and therefore treats the input name 
-``shape`` as a stub. In the event only a single input is in the list,
-the input is named ``shape_shape`` (stub followed by stub).
+Note that in this case, an HDF file is passed as input. This is opened in the
+pipeline as a data source with name ``<input_name>_<table_name>``. In this 
+case, the table name is also named ``shape`` and so ``input_localizations`` in 
+the recipe is named ``shape_shape``.
