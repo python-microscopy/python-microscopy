@@ -1,7 +1,7 @@
-.. _cluster_install:
-
 Setting up PYME cluster hardware and software
 *********************************************
+
+.. _clusterinstall:
 
 This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
 analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
