@@ -71,8 +71,8 @@ the cluster or if you want to use a custom data format. Useful for, e.g. large v
     streamer.put(filename : str, data : bytes)
 
 
-An more complete example of the low-level streaming interface, including the uses of a custom distribution function to
-enure data-locality when creating an image pyramid be found in :py:mod:`PYME.Analysis.distributed_pyramid`
+A more complete example of the low-level streaming interface, including the uses of a custom distribution function to
+enure data-locality when creating an image pyramid can be found in :py:mod:`PYME.Analysis.distributed_pyramid`
 
 
 Accessing data on the cluster
@@ -113,15 +113,37 @@ line tools (note - you'll need to use an mDNS library and programatic HTTP fetch
     # find the servers which make up the cluster 
     # [linux]
     >> avahi-browse _pyme-http._tcp --resolve -t
-    # [mac]
+    # [mac] find servers
     >> dns-sd -B _pyme-http._tcp. .
+    Browsing for _pyme-http._tcp.
+    DATE: ---Wed 14 Sep 2022---
+     8:35:43.013  ...STARTING...
+    Timestamp     A/R    Flags  if Domain               Service Type         Instance Name
+    8:35:43.015  Add        3  14 local.               _pyme-http._tcp.     PYMEDataServer [DB3]:DB3 - PID:61575
+    8:35:43.015  Add        2   1 local.               _pyme-http._tcp.     PYMEDataServer [DB3]:DB3 - PID:61575
+    ^C
+    # [mac] - get port number(s) for services advertised above
+    >> dns-sd -L "PYMEDataServer [DB3]:DB3 - PID:61575" _pyme-http._tcp. .
+    Lookup PYMEDataServer [DB3]:DB3 - PID:61575._pyme-http._tcp..local
+    DATE: ---Wed 14 Sep 2022---
+    8:38:40.137  ...STARTING...
+    8:38:40.208  PYMEDataServer\032[DB3]:DB3\032-\032PID:61575._pyme-http._tcp.local. can be reached at PYMEDataServer\032[DB3]:DB3\032-\032PID:61575._pyme-http._tcp.local.:55003 (interface 14) Flags: 1
+    8:38:40.208  PYMEDataServer\032[DB3]:DB3\032-\032PID:61575._pyme-http._tcp.local. can be reached at PYMEDataServer\032[DB3]:DB3\032-\032PID:61575._pyme-http._tcp.local.:55003 (interface 1)
+    # [mac] - get ip addresses for advertised services
+    >> dns-sd -G v4 "PYMEDataServer [DB3]:DB3 - PID:61575" 
+    DATE: ---Wed 14 Sep 2022---
+    9:00:42.860  ...STARTING...
+    Timestamp     A/R    Flags if Hostname                               Address                                      TTL
+    9:00:42.862  Add 40000002  0 PYMEDataServer\032[DB3]:DB3\032-\032PID:61575. 0.0.0.0                                      108002   No Such Record
+    ^C
+
 
     # get a directory listing
     # an HTTP GET on a directory returns a JSON dictionary of
     # {filename:[flags, size], ...} for each of the files in the directory.
     # where flags is a bitfield containing 2 possible flags - 0x01 : this is a directory, and 0x02 : this is a dataset (a special type of directory which is expected to contain image frames and metadata)
     # if the file is a directory, the size is the number of files in that directory, otherwise the number of bytes.
-    >> curl http://127.0.0.1:52254/
+    >> curl http://0.0.0.0:55003/
     {".DS_Store":[0,14340],"0\/":[1,16],"1\/":[1,9],"2\/":[1,6],"3\/":[1,4],"72\/":[3,9],"73\/":[3,9],
     "75\/":[3,9],"76\/":[3,9],"david\/":[1,34],"LOGS\/":[1,8],"metadata.json":[0,0],"p2.pyr\/":[3,8],
     "RECIPES\/":[1,3],"t28\/":[1,7],"t29\/":[1,6],"t3.pyr\/":[3,8],"t30\/":[1,6],"t31\/":[1,6],
@@ -136,12 +158,12 @@ line tools (note - you'll need to use an mDNS library and programatic HTTP fetch
     # and combine the entries
 
     # to download a file, find which node it is on and use a simple http GET:
-    >> curl http://127.0.0.1:52254/Untitled.png -o output.png
+    >> curl http://0.0.0.0:55003/Untitled.png -o output.png
 
     # to upload a file, decide which node to save to and use an HTTP PUT.
     # NB: when using low-level access the onus is on the users software to
     # ensure that data is approximately evenly distributed across nodes 
-    >> curl -T /path/to/file.png http://127.0.0.1:52254/somefolder/newfile.png
+    >> curl -T /path/to/file.png http://0.0.0.0:55003/somefolder/newfile.png
 
 The above is mainly shown to reinforce the fact that the protocol is just HTTP.
 In practice, you would probably want to reimplement clusterIO in your language of
