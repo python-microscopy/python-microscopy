@@ -183,6 +183,14 @@ line tools (note - you'll need to use an mDNS library and programatic HTTP fetch
     # find the servers which make up the cluster 
     # [linux]
     >> avahi-browse _pyme-http._tcp --resolve -t
+    + wlxd03745363e91 IPv4 PYMEDataServer [DB3]:DB3 - PID:48168          _pyme-http._tcp      local
+    = wlxd03745363e91 IPv4 PYMEDataServer [DB3]:DB3 - PID:48168          _pyme-http._tcp      local
+    hostname = [PYMEDataServer\032\091DB3\093\058DB3\032-\032PID\05848168._pyme-http._tcp.local]
+    address = [127.0.0.1]
+    port = [52688]
+    txt = []
+
+    # [mac] This unfortunately requires 3 commands vs 1 on linux
     # [mac] find servers
     >> dns-sd -B _pyme-http._tcp. .
     Browsing for _pyme-http._tcp.
