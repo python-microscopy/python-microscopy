@@ -369,7 +369,7 @@ class UEyeCamera(Camera):
         -------
         float
             The exposure time in s
-        
+
         See Also
         --------
         SetIntegTime
@@ -430,7 +430,7 @@ class UEyeCamera(Camera):
             Right x-coordinate, (excluded from ROI)
         y2 : int
             Bottom y-coordinate, (excluded from ROI)
-        
+
         Returns
         -------
         None
@@ -469,7 +469,7 @@ class UEyeCamera(Camera):
         -------
         
             The ROI, [x1, y1, x2, y2] in the numpy convention used by SetROI
-        
+
         """
         aoi = ueye.IS_RECT()
         self.check_success(ueye.is_AOI(self.h, ueye.IS_AOI_IMAGE_GET_AOI, aoi,
@@ -499,7 +499,7 @@ class UEyeCamera(Camera):
             Number of images that can be stored in the buffer.
         """
         if self._poll:
-        return len(self._buffers)
+            return len(self._buffers)
         else:
             # if we aren't polling, spoof infinitely large buffer so we don't
             # flag a buffer overflow while we e.g. rebuild the buffers. This
