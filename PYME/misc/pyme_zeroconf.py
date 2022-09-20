@@ -21,72 +21,89 @@ import socket
 import time
 #import Pyro.core
 import threading
+import logging
+logger = logging.getLogger(__name__)
 
-class PatchedServiceInfo(zeroconf.ServiceInfo):
-    """
-    A patched version of the zero-conf ServiceInfo object which ensures that we get the port number as well as the address and name
-    """
-    
-    def request(self, zc, timeout):
-        """Returns true if the service could be discovered on the
-        network, and updates this object with details discovered.
+if zeroconf.__version__ >= '0.35':
+    # new ServiceInfo class
+
+    class PatchedServiceInfo(zeroconf.ServiceInfo):
         """
-        now = zeroconf.current_time_millis()
-        delay = zeroconf._LISTENER_TIME
-        next_ = now + delay
-        last = now + timeout
+        A patched version of the zero-conf ServiceInfo object which ensures that we get the port number as well as the address and name
+        """
+        @property
+        def _is_complete(self) -> bool:
+            """The ServiceInfo has all expected properties."""
+            return bool(self.text is not None and self.port is not None and (self._ipv4_addresses or self._ipv6_addresses))
 
-        record_types_for_check_cache = [
-            (zeroconf._TYPE_SRV, zeroconf._CLASS_IN),
-            (zeroconf._TYPE_TXT, zeroconf._CLASS_IN),
-        ]
-        if self.server is not None:
-            record_types_for_check_cache.append((zeroconf._TYPE_A, zeroconf._CLASS_IN))
-        for record_type in record_types_for_check_cache:
-            cached = zc.cache.get_by_details(self.name, *record_type)
-            if cached:
-                self.update_record(zc, now, cached)
+else:
 
-        if None not in (self.server, self.address, self.text, self.port):
-            return True
-
-        try:
-            zc.add_listener(self, zeroconf.DNSQuestion(self.name, zeroconf._TYPE_ANY, zeroconf._CLASS_IN))
-            while None in (self.server, self.address, self.text, self.port):
-                if last <= now:
-                    return False
-                if next_ <= now:
-                    out = zeroconf.DNSOutgoing(zeroconf._FLAGS_QR_QUERY)
-                    out.add_question(
-                        zeroconf.DNSQuestion(self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN))
-                    
-                    if self.port is not None:
-                        out.add_answer_at_time(
-                            zc.cache.get_by_details(
-                                self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN), now)
-            
-                    out.add_question(
-                        zeroconf.DNSQuestion(self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN))
-                    out.add_answer_at_time(
-                        zc.cache.get_by_details(
-                            self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN), now)
-            
-                    if self.server is not None:
-                        out.add_question(
-                            zeroconf.DNSQuestion(self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN))
-                        out.add_answer_at_time(
-                            zc.cache.get_by_details(
-                                self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN), now)
-                    zc.send(out)
-                    next_ = now + delay
-                    delay *= 2
+    logger.warning(f'using an old version of zeroconf ({zeroconf.__version__}), consider upgrading')
+    class PatchedServiceInfo(zeroconf.ServiceInfo):
+        """
+        A patched version of the zero-conf ServiceInfo object which ensures that we get the port number as well as the address and name
+        """
         
-                zc.wait(min(next_, last) - now)
-                now = zeroconf.current_time_millis()
-        finally:
-            zc.remove_listener(self)
+        def request(self, zc, timeout):
+            """Returns true if the service could be discovered on the
+            network, and updates this object with details discovered.
+            """
+            now = zeroconf.current_time_millis()
+            delay = zeroconf._LISTENER_TIME
+            next_ = now + delay
+            last = now + timeout
 
-        return True
+            record_types_for_check_cache = [
+                (zeroconf._TYPE_SRV, zeroconf._CLASS_IN),
+                (zeroconf._TYPE_TXT, zeroconf._CLASS_IN),
+            ]
+            if self.server is not None:
+                record_types_for_check_cache.append((zeroconf._TYPE_A, zeroconf._CLASS_IN))
+            for record_type in record_types_for_check_cache:
+                cached = zc.cache.get_by_details(self.name, *record_type)
+                if cached:
+                    self.update_record(zc, now, cached)
+
+            if None not in (self.server, self.address, self.text, self.port):
+                return True
+
+            try:
+                zc.add_listener(self, zeroconf.DNSQuestion(self.name, zeroconf._TYPE_ANY, zeroconf._CLASS_IN))
+                while None in (self.server, self.address, self.text, self.port):
+                    if last <= now:
+                        return False
+                    if next_ <= now:
+                        out = zeroconf.DNSOutgoing(zeroconf._FLAGS_QR_QUERY)
+                        out.add_question(
+                            zeroconf.DNSQuestion(self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN))
+                        
+                        if self.port is not None:
+                            out.add_answer_at_time(
+                                zc.cache.get_by_details(
+                                    self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN), now)
+                
+                        out.add_question(
+                            zeroconf.DNSQuestion(self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN))
+                        out.add_answer_at_time(
+                            zc.cache.get_by_details(
+                                self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN), now)
+                
+                        if self.server is not None:
+                            out.add_question(
+                                zeroconf.DNSQuestion(self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN))
+                            out.add_answer_at_time(
+                                zc.cache.get_by_details(
+                                    self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN), now)
+                        zc.send(out)
+                        next_ = now + delay
+                        delay *= 2
+            
+                    zc.wait(min(next_, last) - now)
+                    now = zeroconf.current_time_millis()
+            finally:
+                zc.remove_listener(self)
+
+            return True
 
 class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
@@ -115,7 +132,7 @@ class ZCListener(object):
 
         info = PatchedServiceInfo(_type, name)
         if info.request(zc, 5000):
-            if is_port_open(socket.inet_ntoa(info.address), info.port):
+            if is_port_open(socket.inet_ntoa(info.addresses[0]), info.port):
                 with self._lock:
                     #info = zc.get_service_info(_type, name)
                     self.advertised_services[nm] = info
@@ -142,7 +159,7 @@ class ZCListener(object):
             # check to see if the services are up (without lock)
             dead_svcs = []
             for name, info in svcs:
-                if not is_port_open(socket.inet_ntoa(info.address), info.port):
+                if not is_port_open(socket.inet_ntoa(info.addresses[0]), info.port):
                     dead_svcs.append((name, info))
                     
             # delete any dead services
@@ -202,9 +219,9 @@ class ZeroConfNS(object):
             raise RuntimeError('Name "%s" already exists' %name)
         
         info = PatchedServiceInfo("%s._tcp.local." % self._protocol,
-                           "%s.%s._tcp.local." % (name, self._protocol),
-                           socket.inet_aton(address), port, 0, 0,
-                           desc)
+                           name="%s.%s._tcp.local." % (name, self._protocol),
+                           addresses=[socket.inet_aton(address),], port=port, weight=0, priority=0,
+                           properties=desc)
                            
         self._services[name] = info
         self.zc.register_service(info)

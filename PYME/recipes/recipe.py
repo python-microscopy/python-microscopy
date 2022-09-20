@@ -7,9 +7,18 @@ from PYME.IO.image import ImageStack
 import logging
 logger = logging.getLogger(__name__)
 
-#custom error for typos in recipe module names
-class RecipeModuleNotFound(Exception):
+#custom error types
+
+class RecipeError(Exception):
     pass
+class RecipeModuleNotFoundError(RecipeError):
+    pass
+
+class RecipeExecutionError(RecipeError):
+    def __init__(self, msg, recipe=None):
+        Exception.__init__(self, msg)
+
+        self.recipe = recipe # keep a reference to the recipe so that handlers can get fancy with formatting if they want to
 
 class Recipe(HasTraits):
     modules = List()
@@ -176,74 +185,77 @@ class Recipe(HasTraits):
         """
         #remove anything which is downstream from changed inputs
         
-        print('recipe.execute()')
-        #print self.namespace.keys()
-        for k, v in kwargs.items():
-            #print k, v
-            try:
-                if not (self.namespace[k] == v):
-                    #input has changed
-                    print('pruning: ', k)
-                    self.prune_dependencies_from_namespace([k])
-            except KeyError:
-                #key wasn't in namespace previously
-                print('KeyError')
-                pass
-        
-        self.namespace.update(kwargs)
-        
-        exec_order = self.resolveDependencies()
-        
-        #mark all modules which should execute as not having executed
-        for m in exec_order:
-            if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
-                m._success = False
-        
-        for m in exec_order:
-            if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
+        try:
+            print('recipe.execute()')
+            #print self.namespace.keys()
+            for k, v in kwargs.items():
+                #print k, v
                 try:
-                    print('Executing %s' % m)
-                    m.check_inputs(self.namespace)
-                    m.execute(self.namespace)
-                    m._last_error = None
-                    m._success = True
-                    if progress_callback:
-                        progress_callback(self, m)
-                except:
-                    import traceback
-                    logger.exception("Error in recipe module: %s" % m)
-                    
-                    #record our error so that we can associate it with a module
-                    m._last_error = traceback.format_exc()
-                    self.failed = True
-                    self._failing_module = m
-                    
-                    # make sure we didn't leave any partial results
-                    logger.debug('removing failed module dependencies')
-                    self.prune_dependencies_from_namespace(m.outputs)
-                    logger.debug('notifying failure')
-                    self.recipe_failed.send_robust(self)
-                    raise
-        
-        if self.failed:
-            # make sure we update the GUI if we've fixed a broken recipe
-            # TODO - make make this a bit lighter weight - we shouldn't need to redraw the whole recipe just to change
-            # the shading of the module caption
-            self.recipe_changed.send_robust(self)
-        
-        self.failed = False
-        self.recipe_executed.send_robust(self)
-        
-        # detect changes in recipe wiring
-        dg_sig = str(self.dependancyGraph())
-        if not self._dg_sig == dg_sig:
-            #print(dg_sig)
-            #print(self._dg_sig)
-            self._dg_sig = dg_sig
-            self.recipe_changed.send_robust(self)
-        
-        if 'output' in self.namespace.keys():
-            return self.namespace['output']
+                    if not (self.namespace[k] == v):
+                        #input has changed
+                        print('pruning: ', k)
+                        self.prune_dependencies_from_namespace([k])
+                except KeyError:
+                    #key wasn't in namespace previously
+                    print('KeyError')
+                    pass
+            
+            self.namespace.update(kwargs)
+            
+            exec_order = self.resolveDependencies()
+            
+            #mark all modules which should execute as not having executed
+            for m in exec_order:
+                if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
+                    m._success = False
+            
+            for m in exec_order:
+                if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
+                    try:
+                        print('Executing %s' % m)
+                        m.check_inputs(self.namespace)
+                        m.execute(self.namespace)
+                        m._last_error = None
+                        m._success = True
+                        if progress_callback:
+                            progress_callback(self, m)
+                    except:
+                        import traceback
+                        logger.exception("Error in recipe module: %s" % m)
+                        
+                        #record our error so that we can associate it with a module
+                        m._last_error = traceback.format_exc()
+                        self.failed = True
+                        self._failing_module = m
+                        
+                        # make sure we didn't leave any partial results
+                        logger.debug('removing failed module dependencies')
+                        self.prune_dependencies_from_namespace(m.outputs)
+                        logger.debug('notifying failure')
+                        self.recipe_failed.send_robust(self)
+                        raise
+            
+            if self.failed:
+                # make sure we update the GUI if we've fixed a broken recipe
+                # TODO - make make this a bit lighter weight - we shouldn't need to redraw the whole recipe just to change
+                # the shading of the module caption
+                self.recipe_changed.send_robust(self)
+            
+            self.failed = False
+            self.recipe_executed.send_robust(self)
+            
+            # detect changes in recipe wiring
+            dg_sig = str(self.dependancyGraph())
+            if not self._dg_sig == dg_sig:
+                #print(dg_sig)
+                #print(self._dg_sig)
+                self._dg_sig = dg_sig
+                self.recipe_changed.send_robust(self)
+            
+            if 'output' in self.namespace.keys():
+                return self.namespace['output']
+        except Exception as e:
+            raise RecipeExecutionError('Recipe execution failed in module %s' % self._failing_module._module_name, self ) from e
     
     @classmethod
     def fromMD(cls, md):
@@ -363,7 +375,7 @@ class Recipe(HasTraits):
                 try:
                     mod = base._legacy_modules[mn.split('.')[-1]](self, **md)
                 except KeyError:
-                    raise RecipeModuleNotFound('No recipe module found with name "%s"\nThis could either be caused by a typo in the module name or a missing 3rd party plugin.' % mn) from None # Full traceback is probably unhelpful for people using modules 
+                    raise RecipeModuleNotFoundError('No recipe module found with name "%s"\nThis could either be caused by a typo in the module name or a missing 3rd party plugin.' % mn) from None # Full traceback is probably unhelpful for people using modules 
             
             mc.append(mod)
         
