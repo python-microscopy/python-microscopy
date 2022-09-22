@@ -168,6 +168,12 @@ class DualMarchingCubes(ModuleBase):
         if self.cull_inner_surfaces:
             surf.remove_inner_surfaces()
 
+        surf.mdh['DualMarchingCubes.ThresholdDensity'] = self.threshold_density
+        surf.mdh['DualMarchingCubes.NPointsMin'] = self.n_points_min
+        surf.mdh['DualMarchingCubes.Repair'] = self.repair
+        surf.mdh['DualMarchingCubes.Remesh'] = self.remesh
+        surf.mdh['DualMarchingCubes.CullInnerSurfaces'] = self.cull_inner_surfaces
+
         namespace[self.output] = surf
 
 @register_module('Isosurface')

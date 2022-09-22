@@ -27,6 +27,8 @@ class Octree(ModuleBase):
 
         ot = gen_octree_from_points(inp, min_pixel_size=self.minimum_pixel_size, max_depth=self.max_depth, samples_per_node=self.samples_per_node)
         
+        ot.mdh['Octree.MinimumPixelSize'] = self.minimum_pixel_size
+
         namespace[self.output_octree] = ot
         
         

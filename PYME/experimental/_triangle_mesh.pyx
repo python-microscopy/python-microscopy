@@ -9,6 +9,7 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 import copy
 
 from PYME.experimental import triangle_mesh_utils
+from PYME.IO.MetaDataHandler import DictMDHandler
 
 DEF MAX_VERTEX_COUNT = 2**31
 
@@ -255,6 +256,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._components_valid = 0
 
+        self._mdh = None
+
         # Set fix_boundary, etc.
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -327,6 +330,15 @@ cdef class TriangleMesh(TrianglesBase):
 
         print('Data munged to vertices, faces')
         return cls(vertices, faces, **kwargs)
+
+    @property
+    def mdh(self):
+        self._mdh = DictMDHandler()
+        self._mdh['TriangleMesh.Manifold'] = self.manifold
+        self._mdh['TriangleMesh.BoundingBox'] = self.bbox
+        self._mdh['TriangleMesh.SmoothCurvature'] = self.smooth_curvature
+
+        return self._mdh
 
     @property
     def x(self):

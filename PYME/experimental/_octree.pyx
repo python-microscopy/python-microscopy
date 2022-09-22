@@ -2,6 +2,8 @@ cimport numpy as np
 import numpy as np
 cimport cython
 
+from PYME.IO.MetaDataHandler import DictMDHandler
+
 #size to initialize the storage to
 INITIAL_NODES = 1000
 NODE_DTYPE = [('depth', 'i4'), ('n_children', 'i4'), ('children', '8i4'),('parent', 'i4'), ('nPoints', 'i4'), ('centre', '3f4'), ('centroid', '3f4'),('point_idx', 'i4')]
@@ -132,11 +134,20 @@ cdef class Octree:
         
         self._octant_sign = np.array([[2*(n&1) - 1, (n&2) -1, (n&4)/2 -1] for n in range(8)])
         
+        self._mdh = None
         
         #precalculate scaling factors for locating the centre of the next box down.
         for n in range(50):
             self._scale[n] = 1.0/(2.0**(n + 1))
             
+    @property
+    def mdh(self):
+        self._mdh = DictMDHandler()
+        self._mdh['Octree.BoundingBox'] = self._bounds
+        self._mdh['Octree.MaxDepth'] = self._maxdepth
+        self._mdh['Octree.SamplesPerNode'] = self._samples_per_node
+
+        return self._mdh
         
     def truncate_at_n_points(self, n_points=5):
         out = Octree(self._bounds, self._maxdepth, samples_per_node=n_points)
