@@ -602,6 +602,64 @@ class UEyeCamera(Camera):
         gain = self.GetGain()
         ret = ueye.is_SetHWGainFactor(self.h, ueye.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
         return 0.01*ret
+    
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
+        """
+        Set output trigger of the camera. Currently hard-coded to use GPIO1
+
+        Parameters
+        ----------
+        mode : str
+            Currently supported modes include:
+                low: constant TTL low
+                high: constant TTL high
+                flash: goes TTL high during exposure. If 0 is passed, the flash
+                    output will be active until the end of the exposure time.
+                    With global start shutter this is the time until the end of
+                    exposure for the first row.
+        delay : float, optional
+            delay after trigger event, in seconds, to emit TTL high (assuming 
+            posiive polarity), by default 0 s.
+        width : float, optional
+            TTL high pulse width, in seconds, by default 0.0001 s, or 0.1 ms
+        positive : bool, optional
+            CURRENTLY IGNORED Sets polarity of the output trigger to positive 
+            (True) or negative (False). True, by default.
+        
+        """
+        # set GPIO1 to be output flash
+        m = ueye.int(ueye.IO_FLASH_MODE_GPIO_1)
+        self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          m, ueye.sizeof(m)))
+        
+        if mode == 'high':
+            mode = ueye.int(ueye.IO_FLASH_MODE_CONSTANT_HIGH)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+            return
+        elif mode == 'low':
+            mode = ueye.int(ueye.IO_FLASH_MODE_CONSTANT_LOW)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+            return
+
+        if mode =='flash':
+            mode = ueye.int(ueye.IO_FLASH_MODE_FREERUN_HI_ACTIVE)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+        else:
+            raise RuntimeError('Unsupported output trigger mode: %s' % mode)
+        
+        fp = ueye.IO_FLASH_PARAMS()
+        fp.s32Delay = ueye.c_int(int(delay * 1e6))  # [s] -> [us]
+        fp.u32Duration = ueye.c_uint(int(width * 1e6))  # [s] -> [us]
+        self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_PARAMS,
+                                          fp, ueye.sizeof(fp)))
 
     #### Some extra functions for this camera
 
@@ -610,6 +668,24 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_DeviceInfo(self.h,ueye.IS_DEVICE_INFO_CMD_GET_DEVICE_INFO,
                                               dev_info,ueye.sizeof(dev_info)))
         return dev_info
+    
+    def GetGlobalFlashSettings(self):
+        """Query current global 'flash', i.e. output trigger settings
+
+        Returns
+        -------
+        delay: float
+            [s]
+        width: float
+            duration of TTL in [s]
+        
+        """
+        fp = ueye.IO_FLASH_PARAMS()
+        self.check_success(ueye.is_IO(self.h, 
+                                      ueye.IS_IO_CMD_FLASH_GET_GLOBAL_PARAMS,
+                                      fp, ueye.sizeof(fp)))
+        return fp.s32Delay.value / 1e6, fp.u32Duration.value / 1e6
+
 
 #TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
 class MultiviewUEye(MultiviewCameraMixin, UEyeCamera):
