@@ -186,7 +186,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         return self._mode
 
     def SetAcquisitionMode(self, mode):
-        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, self.MODE_SINGLE_SHOT]:
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, 
+                    self.MODE_SINGLE_SHOT, self.MODE_HARDWARE_START_TRIGGER]:
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
@@ -231,6 +232,12 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                                             DCAMCAP_START_SEQUENCE),
                          "dcamcap_start")
             self.FireSoftwareTrigger()
+        
+        elif self._mode == self.MODE_HARDWARE_START_TRIGGER:
+            self._set_trigger_start_mode()
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                                DCAMCAP_START_SEQUENCE),
+                                                "dcamcap_start")
 
         eventLog.logEvent('StartAq', '')
 
@@ -501,6 +508,38 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                                  DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND)
         else:
             raise RuntimeError('Unsupported output trigger mode: %s' % mode)
+    
+    def _set_trigger_start_mode(self):
+        """Use to start internally-timed acquisition starting on an external
+        hardware trigger (currently hardcoded to edge)
+
+        Notes
+        -----
+        set DCAMPROP_TRIGGERSOURCE__EXTERNAL as DCAM_IDPROP_TRIGGERSOUCE 
+        and DCAMPROP_TRIGGER_MODE__START as DCAM_IDPROP_TRIGGER_MODE. The
+        camera changes to internal mode when the camera receives the trigger. 
+        The DCAM_IDPROP_TRIGGERSOURCE property will be 
+        DCAMPROP_TRIGGERSOURCE__INTERNAL automatically.
+        """
+        try:
+            self.setCamPropValue('TRIGGER ACTIVE', DCAMPROP_TRIGGERACTIVE__EDGE)
+        except:
+            # Sometimes TRIGGER ACTIVE is not writable
+            pass
+        self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_EXTERNAL)
+        self.setCamPropValue('TRIGGER MODE', DCAMPROP_TRIGGER_MODE__START)
+    
+    def _get_global_exposure_delay(self):
+        """How long from the beginning of exposure does it take before
+        all lines in active ROI are being exposed (global exposure)
+
+        Returns
+        -------
+        delay: float
+            Global exposure delay, in [s]
+
+        """
+        return self.getCamPropValue('TIMING GLOBAL EXPOSURE DELAY')
 
     def Shutdown(self):
         # if self.initialized:

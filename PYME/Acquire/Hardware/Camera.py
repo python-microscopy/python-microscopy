@@ -115,6 +115,7 @@ class Camera(object):
     MODE_CONTINUOUS = 1
     MODE_SOFTWARE_TRIGGER = 2
     MODE_HARDWARE_TRIGGER = 3
+    MODE_HARDWARE_START_TRIGGER = 4
 
 
     def __init__(self, *args, **kwargs):
@@ -599,7 +600,20 @@ class Camera(object):
         Returns
         -------
         int
-            One of self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT
+            One of: (int code: mode name)
+                1: CONTINUOUS
+                    camera is free-running using internal timing
+                0: SINGLE_SHOT
+                    captures single frame on acquisition start
+                2: SOFTWARE_TRIGGER
+                    captures a single frame every time a software trigger is
+                    sent. See `FireSoftwareTrigger`
+                3: HARDWARE_TRIGGER
+                    captures a single frame every time an external hardware
+                    trigger is received by the camera
+                4: HARDWARE_START_TRIGGER
+                    camera waits for an external hardware trigger and enters 
+                    free-running internal timing mode once received
 
         See Also
         --------
@@ -609,15 +623,29 @@ class Camera(object):
 
     def SetAcquisitionMode(self, mode):
         """
-        Set the readout mode of the Camera object. PYME currently supports two
-        modes: single shot, where the camera takes one image, and then a new
+        Set the readout mode of the Camera object. PYME currently supports
+        several modes; different options can be useful for timing. The primary
+        modes are single shot, where the camera takes one image, and then a new
         exposure has to be manually triggered, or continuous / free running,
         where the camera runs as fast as it can until we tell it to stop.
 
         Parameters
         ----------
         mode : int
-            One of self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT
+            One of: (int code: mode name)
+                1: CONTINUOUS
+                    camera is free-running using internal timing
+                0: SINGLE_SHOT
+                    captures single frame on acquisition start
+                2: SOFTWARE_TRIGGER
+                    captures a single frame every time a software trigger is
+                    sent. See `FireSoftwareTrigger`
+                3: HARDWARE_TRIGGER
+                    captures a single frame every time an external hardware
+                    trigger is received by the camera
+                4: HARDWARE_START_TRIGGER
+                    camera waits for an external hardware trigger and enters 
+                    free-running internal timing mode once received
 
         Returns
         -------
