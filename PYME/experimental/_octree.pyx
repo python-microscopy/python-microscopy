@@ -103,6 +103,7 @@ cdef class Octree:
     cdef node_d * _cnodes
     cdef object _octant_offsets
     cdef object _octant_sign
+    cdef public object mdh
     
     cdef np.float32_t[50] _scale
     
@@ -134,20 +135,14 @@ cdef class Octree:
         
         self._octant_sign = np.array([[2*(n&1) - 1, (n&2) -1, (n&4)/2 -1] for n in range(8)])
         
-        self._mdh = None
+        self.mdh = DictMDHandler()
+        self.mdh['Octree.BoundingBox'] = self._bounds
+        self.mdh['Octree.MaxDepth'] = self._maxdepth
+        self.mdh['Octree.SamplesPerNode'] = self._samples_per_node
         
         #precalculate scaling factors for locating the centre of the next box down.
         for n in range(50):
             self._scale[n] = 1.0/(2.0**(n + 1))
-            
-    @property
-    def mdh(self):
-        self._mdh = DictMDHandler()
-        self._mdh['Octree.BoundingBox'] = self._bounds
-        self._mdh['Octree.MaxDepth'] = self._maxdepth
-        self._mdh['Octree.SamplesPerNode'] = self._samples_per_node
-
-        return self._mdh
         
     def truncate_at_n_points(self, n_points=5):
         out = Octree(self._bounds, self._maxdepth, samples_per_node=n_points)
