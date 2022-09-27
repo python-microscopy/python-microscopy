@@ -30,6 +30,7 @@ particular could use a lot of work. Hopefully it's enough to get you started.
    PYMEVis
    component_programs
    LocalisationAnalysis
+   cluster/PYMECluster
 
 
 
