@@ -73,7 +73,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         by calling setChoices.
         """
 
-        if therest.has_key('style'):
+        if 'style' in therest:
             therest['style']=wx.TE_PROCESS_ENTER | therest['style']
         else:
             therest['style']=wx.TE_PROCESS_ENTER

@@ -35,7 +35,7 @@ class mydictn(dict):
         dict.__init__(self, *args)
 
     def __getitem__(self,key):
-        if self.has_key(key):
+        if key in self:
             return dict.__getitem__(self, key)
         else:
             return None
@@ -52,7 +52,7 @@ class mydict(dict):
         dict.__init__(self, *args)
 
     def __getitem__(self,key):
-        if self.has_key(key):
+        if key in self:
             return dict.__getitem__(self, key)
         else:
             return 0
