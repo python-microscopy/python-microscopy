@@ -1,15 +1,32 @@
 Distributed computation on the PYME Cluster
 *******************************************
 
+The PYME cluster architecture contains tools for distributed analysis of 
+imaging data in a "data-local" manner where computation is performed on
+the nodes housing the data, avoiding IO overhead which would otherwise limit
+performance.
+
 Compute tasks
 =============
+
+We currently support two types of computational tasks (below), although the
+framework is designed to allow additional task types to easily be added in 
+the future. 
 
 Localisation tasks
 ------------------
 
+These are a localisation-microscopy specific task type optimised for
+performing single-molecule localisation on a single frame of an image series.
+A wide range of different localisation algorithms are supported (for more details see :ref:`localisationanalysis`)
 
 "Recipe" tasks
 --------------
+
+These are a more generic task type which supports a range of different image
+and data-processing functions specified by combining analysis building blocks
+into :ref:`recipes <recipes>`. Recipes are specified using a .yaml text format,
+and can either be created manually or using the recipe editor.
 
 
 Rule-based task scheduler
@@ -32,16 +49,16 @@ a very large number (thousands per second) of small tasks. It has 3 main
 advantages: 
 
 - It dramatically reduces the network traffic required for task distribution, 
-with only the rule and integer task IDs transmitted between nodes.
+  with only the rule and integer task IDs transmitted between nodes.
 - It distributes the work of assigning the tasks across the entire cluster. 
-Most notably, it allows data locality checking to be performed locally. 
-*"Do I have this file?"* turns out out to be a **much, much** cheaper question than 
-*"Which node has this file?"*. 
+  Most notably, it allows data locality checking to be performed locally. 
+  *"Do I have this file?"* turns out out to be a **much, much** cheaper question than 
+  *"Which node has this file?"*. 
 - It reduces memory usage in storing task descriptions, with task-descriptions
-only generated for enough tasks to full each nodes input queue. This is 
-critically important when, e.g. re-analysing streamed data, where a 
-conventional task allocation strategy would lead to the generation of 200,000,000 
-tasks for a day's worth of streamed image frames. 
+  only generated for enough tasks to full each nodes input queue. This is 
+  critically important when, e.g. re-analysing streamed data, where a 
+  conventional task allocation strategy would lead to the generation of 200,000,000 
+  tasks for a day's worth of streamed image frames. 
 
 
 High-level rule API
@@ -59,7 +76,8 @@ points to recipe text.
 For example, we can create a recipe that will simulate random points and save
 them in an output directory of our choice.
 
-::
+.. code-block:: python
+
     recipe_text= '''
     - simulation.RandomPoints:
         output: points
@@ -86,7 +104,8 @@ the ``__sim`` proxy input. For ``__sim`` "inputs" the filename can be an
 arbitrary string, and is propagated to the ``sim_tag`` context variable which 
 can be used in the output `filePattern`.
 
-::
+.. code-block:: python
+
     from PYME.cluster import rules
 
     r = rules.RecipeRule(recipe=recipe_text, output_dir='test', inputs={'__sim':['1']})
@@ -99,7 +118,8 @@ the recipe. If, instead, we wanted to create a recipe that read in a data set,
 created a surface, and then saved this surface to file, we would execute the 
 following.
 
-::
+.. code-block:: python
+
     recipe_text = '''
     - pointcloud.Octree:
         input_localizations: shape_shape
