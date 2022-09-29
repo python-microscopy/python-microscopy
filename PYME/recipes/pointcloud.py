@@ -23,10 +23,16 @@ class Octree(ModuleBase):
     
     def execute(self, namespace):
         from PYME.experimental.octree import gen_octree_from_points
+        from PYME.IO import MetaDataHandler
+
         inp = namespace[self.input_localizations]
+        md = MetaDataHandler.DictMDHandler(getattr(inp, 'mdh', None)) # get metadata from the input dataset if present
 
         ot = gen_octree_from_points(inp, min_pixel_size=self.minimum_pixel_size, max_depth=self.max_depth, samples_per_node=self.samples_per_node)
         
+        self._params_to_metadata(md)
+        ot.mdh = md # just add/inject as an attribute
+
         namespace[self.output_octree] = ot
         
         
