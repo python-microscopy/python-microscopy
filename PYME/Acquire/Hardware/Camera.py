@@ -138,6 +138,8 @@ class Camera(object):
 
         self.active = True  # Should the camera write its metadata?
 
+        self._saturation_threshold = (2**16) - 1 # default saturation threshold, if not provided in noise_properties
+
         # Register as a provider of metadata (record camera settings)
         # this is important so that the camera settings get recorded
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
@@ -827,7 +829,10 @@ class Camera(object):
         int
             the full well capacity (in ADU), typically 2^bitdepth - 1
         """
-        return self.noise_properties['SaturationThreshold']
+        try: 
+            return self.noise_properties['SaturationThreshold']
+        except (KeyError, RuntimeError):
+            return self._saturation_threshold
             
 
     def Shutdown(self):
