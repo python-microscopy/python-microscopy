@@ -108,6 +108,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _K
     cdef public object smooth_curvature
 
+    cdef public object mdh # placeholder to allow metadata injection
+
     cdef _set_chalfedges(self, np.ndarray)#halfedge_t[:])
     cdef _set_cfaces(self, np.ndarray)#face_d[:])
     cdef _set_cvertices(self, np.ndarray)#vertex_d[:])
