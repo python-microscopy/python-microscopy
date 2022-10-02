@@ -255,6 +255,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._components_valid = 0
 
+        self.mdh = None
+
         # Set fix_boundary, etc.
         for key, value in kwargs.items():
             setattr(self, key, value)

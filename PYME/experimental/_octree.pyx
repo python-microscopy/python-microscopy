@@ -103,6 +103,8 @@ cdef class Octree:
     cdef object _octant_sign
     
     cdef np.float32_t[50] _scale
+
+    cdef public object mdh # placeholder to allow metadata injection
     
     def __init__(self, bounds, maxdepth=12, samples_per_node=1):
         cdef int n
@@ -131,8 +133,9 @@ cdef class Octree:
         self._octant_offsets = np.array([1, 2, 4])
         
         self._octant_sign = np.array([[2*(n&1) - 1, (n&2) -1, (n&4)/2 -1] for n in range(8)])
-        
-        
+
+        self.mdh = None
+          
         #precalculate scaling factors for locating the centre of the next box down.
         for n in range(50):
             self._scale[n] = 1.0/(2.0**(n + 1))

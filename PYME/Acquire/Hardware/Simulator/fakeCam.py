@@ -383,7 +383,7 @@ class FakeCamera(Camera):
         self._objects=None
         self.noiseMaker=noiseMaker
 
-        self.SaturationThreshold = (2**16) - 1
+        self._saturation_threshold = (2**16) - 1
         self.DefaultEMGain = 150
         self.preampGain = 1
         
