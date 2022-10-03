@@ -3,8 +3,34 @@ Setting up PYME cluster hardware and software
 
 .. _clusterinstall:
 
-This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
-analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
+Single Computer (PYMEClusterOfOne)
+==================================
+
+The PYME cluster architecture is included in all PYME installations, and can be
+run on a single computer for local, parallel analysis by opening the 
+`PYMEClusterOfOne` shortcut or start menu item, or by typing
+.. code-block:: bash
+
+   PYMEClusterOfOne
+
+in a terminal window (OSX, Linux) or *"Anaconda prompt"* (Windows) [#anacondaprompt]_ . 
+On Windows you may be prompted to allow python through the firewall, which you
+should accept. 
+
+A browser page for monitoring active analysis tasks will be 
+opened. Note that a more complete browser-based user interface for the cluster
+can be opened by modifying the same terminal command with the flag `--clusterUI`. 
+This improved interface allows initiation of analysis rather than just monitoring,
+however it requires the installation of the python package Django, version 2.1, 
+which is not included with PYME by default. Django can be installed via conda by
+executing `conda install django=2.1` in a terminal window.
+
+Multi-Computer Cluster
+======================
+
+The remainder of this document details the steps to set up a linux cluster for
+data analysis. We will focus on high-thoughput analysis of full data rate 
+(800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
 experiments, see :ref:`localization analysis<_localization_analysis>` docs for key differences.
 
 Recommended Hardware configuration
