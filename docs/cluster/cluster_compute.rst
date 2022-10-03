@@ -146,4 +146,6 @@ the recipe is named ``shape_shape``.
 
 
 
+Low level API
+-------------
 
