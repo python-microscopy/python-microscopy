@@ -54,3 +54,6 @@ fftw_wisdom.pkl
 *.css.map
 .vscode/
 pyme-bootstrap/package-lock.json
+PYME/experimental/_octree.html
+PYME/experimental/_treap.html
+PYME/experimental/_triangle_mesh.html

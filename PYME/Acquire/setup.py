@@ -33,6 +33,7 @@ def configuration(parent_package = '', top_path = None):
     config.add_subpackage('ui')
     config.add_subpackage('Utils')
     config.add_subpackage('webui')
+    config.add_subpackage('htsms')
     #config.add_data_files('logo.png')
 
     return config
