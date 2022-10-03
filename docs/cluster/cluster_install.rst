@@ -20,10 +20,7 @@ should accept.
 A browser page for monitoring active analysis tasks will be 
 opened. Note that a more complete browser-based user interface for the cluster
 can be opened by modifying the same terminal command with the flag `--clusterUI`. 
-This improved interface allows initiation of analysis rather than just monitoring,
-however it requires the installation of the python package Django, version 2.1, 
-which is not included with PYME by default. Django can be installed via conda by
-executing `conda install django=2.1` in a terminal window.
+This improved interface allows initiation of analysis rather than just monitoring.
 
 Multi-Computer Cluster
 ======================
