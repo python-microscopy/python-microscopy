@@ -149,3 +149,148 @@ the recipe is named ``shape_shape``.
 Low level API
 -------------
 
+If interfacing the task-distribution architecture from another language, the low level API must be
+used. 
+
+Ruleserver REST API
+''''''''''''''''''''
+
+This is a HTTP REST interface on the ruleserver. Similarly to the
+cluster filesystem servers, this is discoverable using mDNS protocol. using the ``_pyme-taskdist.tcp``
+service type.
+
+The following HTTP endpoints are available for submiting rules and checking rule status:
+
+============================================================================================== ================
+Endpoint                                                                                       Description
+============================================================================================== ================
+:py:meth:`/add_integer_id_rule <PYME.cluster.ruleserver.RuleServer.add_integer_id_rule>`       Submit a new rule (takes a task template in the request body)
+:py:meth:`/release_rule_tasks <PYME.cluster.ruleserver.RuleServer.release_rule_tasks>`         Extend the range of frames for a rule (used when streaming)
+:py:meth:`/mark_release_complete <PYME.cluster.ruleserver.RuleServer.mark_release_complete>`   Indicate that there are no more frames coming (used when streaming)
+:py:meth:`/queue_info_longpoll <PYME.cluster.ruleserver.RuleServer.queue_info_longpoll>`       JSON formatted information on the progress of current rules
+:py:meth:`/inactivate_rule <PYME.cluster.ruleserver.RuleServer.inactivate_rule>`               Inactivate (cancel) a rule.
+============================================================================================== ================
+
+There are also a number of endpoints used internally within the cluster during scheduling and 
+task execution. These are detailed in the docs for :py:class:`PYME.cluster.ruleserver.RuleServer`
+
+
+Task templates
+''''''''''''''
+
+At the heart of each rule is a JSON-formatted *task template*. This template is used on worker nodes
+to generate individual tasks. The *task template* differs slightly between rule types, but always
+has ``id`` and ``type`` keys. The template formats for localisation and recipe tasks are detailed
+below. In all cases, ``{{ruleID}}``, ``{{taskID}}`` and any other escaped parameters (e.g. ``{{taskInputs}}``)
+are replaced using string substitution on the worker nodes prior to parsing the json. ``{{taskID}}``
+is the magic parameter which permits multiple tasks to be generated from a single rule. It will 
+always be an integer, within a range which has been released. 
+
+**Localisation:**
+
+.. code-block:: text
+
+    {
+      "id": "{{ruleID}}~{{taskID}}",
+      "type": "localization",
+      "taskdef": {"frameIndex": "{{taskID}}", "metadata": "PYME-CLUSTER:///path/to/series/analysis/metadata.json"},
+      "inputs": {"frames": "PYME-CLUSTER:///path/to/series.pcs"},
+      "outputs": {"fitResults": "HTTP://a.cluster.ip.address:port/__aggregate_h5r/path/to/analysis/results.h5r/FitResults",
+                  "driftResults": "HTTP://a.cluster.ip.address:port/__aggregate_h5r/path/to/analysis/results.h5r/DriftResults"}
+    }
+
+where localisation fit type and settings are specified in the analysis metadata. For localisation tasks,
+``{{taskID}}`` maps to the index of a frame within the image series (one rule generates tasks for every
+frame). In this example we have short-circuited the cluster load distribution for the output files to 
+specify a specific data server (this can be useful when using the `__aggregate` endpoints to avoid race conditions when different nodes try to create the 
+file at the same time).
+
+**Recipe:**
+
+.. code-block:: text
+
+    {
+      "id": "{{ruleID}}~{{taskID}}",
+      "type": "recipe",
+      "taskdef": {"recipe": "<RECIPE_TEXT>"},
+      "inputs": {{taskInputs}},
+      "output_dir": "PYME-CLUSTER:///path/to/output/directory",
+      "optimal-chunk-size": 1
+    }
+
+For recipe tasks, ``{{taskID}}`` maps to an index into a dictionary of inputs provided to 
+``/add_integer_id_rule``.
+
+
+Or alternatively, where the recipe is specified as a path to a recipe file on the cluster, and the
+input is directly specified (only suitable when generating a single task from this rule).
+
+.. code-block:: text
+
+    {
+      "id": "{{ruleID}}~{{taskID}}",
+      "type": "recipe",
+      "taskdefRef": "PYME-CLUSTER:///path/to/recipe.yaml",
+      "inputs": {"input": "PYME-CLUSTER:///path/to/somefile.tif"},
+      "output_dir": "PYME-CLUSTER:///path/to/output/directory",
+      "optimal-chunk-size": 1
+    }
+
+
+
+Example
+'''''''
+
+This creates a recipe rule which performs a Gaussian filter on a set of files. 
+
+**Recipe (filter.yaml):**
+
+.. code-block:: yaml
+
+    - filters.GaussianFilter:
+        inputName: input
+        outputName: filtered
+        sigmaX: 5.0
+        sigmaY: 5.0
+    - output.ImageOutput:
+        filePattern: '{output_dir}/{file_stub}.tif'
+        inputName: filtered
+        scheme: pyme-cluster://
+
+**REST request**
+
+.. code-block:: python
+
+    import requests
+
+    payload = '''
+
+    {
+      "template":  {
+        "id": "{{ruleID}}~{{taskID}}",
+        "type": "recipe",
+        "taskdefRef": "PYME-CLUSTER:///path/to/filter.yaml",
+        "inputs": {{taskInputs}},
+        "output_dir": "PYME-CLUSTER:///path/to/output/directory",
+        "optimal-chunk-size": 1
+      },
+      "inputsByTask": {
+        0: {"input": "PYME-CLUSTER:///path/to/file0.tif"},
+        1: {"input": "PYME-CLUSTER:///path/to/file1.tif"},
+        2: {"input": "PYME-CLUSTER:///path/to/file2.tif"}
+        }
+    }
+    ''''
+
+    # NOTE - as we know the number of tasks in advance, we can provide the optional max_tasks, 
+    # release_start, and release_end parameters to the REST call and avoid the need to call 
+    # /release_rule_tasks and /mark_release_complete
+
+    requests.post('HTTP://ruleserver.ip:port/add_integer_id_rule?max_tasks=3&release_start=0&release_end=3', 
+                  data=payload, headers={'Content-Type': 'application/json'})
+
+
+
+
+
+
