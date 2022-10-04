@@ -64,85 +64,90 @@ advantages:
 High-level rule API
 -------------------
 
+Localisation Rules
+''''''''''''''''''
+
 Recipe Rules
 ''''''''''''
 
 Recipe rules can be used apply a single :ref:`recipe <recipes>` to multiple 
 files in parallel. A ``RecipeRule`` expects recipe text, an output directory
-path that is relative to the PYME cluster's root data directory and at least
+path relative to the PYME cluster's root data directory and at least
 one input. The recipe text can alternatively be passed via a cluster URI that
 points to recipe text.
 
-For example, we can create a recipe that will simulate random points and save
-them in an output directory of our choice.
-
-.. code-block:: python
-
-    recipe_text= '''
-    - simulation.RandomPoints:
-        output: points
-    - output.HDFOutput:
-        filePattern: '{output_dir}/test.hdf'
-        inputVariables:
-        points: points
-        scheme: pyme-cluster://
-    '''
-
-.. note::
-
-    ``scheme: pyme-cluster://`` puts the output into the cluster file system so 
-    that it is accessible to subsequent recipe runs etc ... This is typically 
-    ``~/PYMEData`` in a :ref:`cluster-of-one <localisationanalysis>` scenario 
-    unless otherwise specified through `PYME.config <api/PYME.config>` It also 
-    routes all IO through the dataserver, avoiding IO conflicts.
-
-    To concatenate the results from multiple operations into a single table, 
-    use ``scheme: pyme-cluster:// - aggregate``.
-
-Recipe tasks are generated for each input in the rule - for simulation we use 
-the ``__sim`` proxy input. For ``__sim`` "inputs" the filename can be an 
-arbitrary string, and is propagated to the ``sim_tag`` context variable which 
-can be used in the output `filePattern`.
-
-.. code-block:: python
-
-    from PYME.cluster import rules
-
-    r = rules.RecipeRule(recipe=recipe_text, output_dir='test', inputs={'__sim':['1']})
-    r.push()
-
-Inputs are specified as a dictionary, where the key is passed in as the name of 
-the input datasource, for direct use within the recipe, and the value must be a 
-*list* of data sources.  ``__sim`` is a special case where no input is used in 
-the recipe. If, instead, we wanted to create a recipe that read in a data set, 
-created a surface, and then saved this surface to file, we would execute the 
-following.
+For example, we can create a recipe that will take a number of localisation 
+data sets, filter them to exclude any localisations with an estimated 
+localisation error > 30 nm, generate Gaussian-based density estimates,
+and save the results to tif files.
+ 
 
 .. code-block:: python
 
     recipe_text = '''
-    - pointcloud.Octree:
-        input_localizations: shape_shape
-        output_octree: octree
-    - surface_fitting.DualMarchingCubes:
-        input: octree
-        output: mesh
-        remesh: true
-    - output.STLOutput:
-        filePattern: '{{output_dir}}/my_surface.stl'
-        inputName: membrane
-        scheme: pyme-cluster://
+        - localisations.AddPipelineDerivedVars:
+            inputEvents: ''
+            inputFitResults: FitResults
+            outputLocalizations: Localizations
+        - localisations.ProcessColour:
+            input: Localizations
+            output: colour_mapped
+        - tablefilters.FilterTable:
+            filters:
+            error_x:
+                - 0
+                - 30
+            inputName: colour_mapped
+            outputName: filtered_localizations
+        - localisations.DensityMapping:
+            inputLocalizations: filtered_localizations
+            jitterVariable: error_x
+            outputImage: image
+            renderingModule: Gaussian
+        - output.ImageOutput:
+            filePattern: '{output_dir}/{file_stub}.tif'
+            inputName: image
+            scheme: pyme-cluster://
     '''
 
     rule = RecipeRule(recipe=recipe_text, output_dir=output_dir, 
-                      inputs={'shape': [f'pyme-cluster:///{output_dir}/shape.hdf']})
+                      inputs={'input': ['pyme-cluster:///path/to/Series_0000.h5r',
+                                        'pyme-cluster:///path/to/Series_0001.h5r',
+                                        'pyme-cluster:///path/to/Series_0002.h5r',
+                                        'pyme-cluster:///path/to/Series_0003.h5r',
+                                        'pyme-cluster:///path/to/Series_0004.h5r']})
 
     rule.push()
 
-Note that in this case, an HDF file is passed as input. This is opened in the
-pipeline as a data source with name ``<input_name>_<table_name>``. In this 
-case, the table name is also named ``shape`` and so ``input_localizations`` in 
-the recipe is named ``shape_shape``.
+Inputs are specified as a dictionary, which maps recipe namespace keys to a list of filenames. 
+The rule will generate tasks for each filename in the list, and the file data will be accessible 
+to the recipe under the dictionary key. When a recipe only has one input it is (soft) convention to use 
+the ``'input'`` key name as this preserves compatibility with recipe usage within the ``PYMEImage``
+and ``Bakeshop`` utilities. Multiple inputs can be specified by adding additional keys - the length
+of the file lists must be the same for each key.
+
+.. note:: HDF input table name mangling
+
+    As HDF files (.h5r, .hdf) can contain multiple independant tables, they are mapped into the
+    recipe namespace differently to other data types (images, .csv, etc). Each table in the 
+    HDF file is mapped as a separate datasource with a mangled input name ``<input_key>_<table_name>``. 
+
+    There is a further special case if ``<input_key>`` is the default ``"input"``, in which case
+    HDF tables appear under ``<table_name>`` with no leading ``<input_key>_``.
+
+.. note:: Output schemes
+
+    ``scheme: pyme-cluster://`` puts the output into the cluster file system so 
+    that it is accessible to subsequent recipe runs etc ... This is typically 
+    ``~/PYMEData`` in a :ref:`cluster-of-one <localisationanalysis>` scenario 
+    unless otherwise specified through :py:mod:`PYME.config`. It also 
+    routes all IO through the dataserver, avoiding IO conflicts.
+
+    To concatenate the results from multiple tasks into a single table, 
+    use ``scheme: pyme-cluster:// - aggregate``. As the tasks run in parallel, 
+    the ``aggregate`` scheme makes no gaurantees about ordering - if ordering is important
+    recipes should add a column to the output table to allow ordering/reassignment in 
+    postprocessing.
 
 
 
@@ -294,3 +299,32 @@ This creates a recipe rule which performs a Gaussian filter on a set of files.
 
 
 
+Recipe rules for simulation
+===========================
+
+The cluster task distribution schema can also be used to distribute simulation
+tasks encoded by recipes. Because tasks are normally generated on a per input file basis 
+we need to *trick* the framework into running inputless simulation tasks. This is achieved 
+by using the ``__sim`` proxy input. For ``__sim`` *"inputs"* the filename can be an 
+arbitrary string, and is propagated to the ``sim_tag`` context variable which 
+can be used in the output ``filePattern``.
+
+For example, we can create a recipe that will simulate random points and save
+them in an output directory of our choice.
+
+.. code-block:: python
+
+    recipe_text= '''
+    - simulation.RandomPoints:
+        output: points
+    - output.HDFOutput:
+        filePattern: '{output_dir}/test.hdf'
+        inputVariables:
+            points: points
+        scheme: pyme-cluster://
+    '''
+
+    from PYME.cluster import rules
+
+    r = rules.RecipeRule(recipe=recipe_text, output_dir='test', inputs={'__sim':['1']})
+    r.push()
