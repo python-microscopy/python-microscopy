@@ -97,14 +97,20 @@ class DensityMapping(ModuleBase):
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
-        namespace[self.outputImage] = renderer.Generate(self.trait_get())
+        logger.debug('about to generate')
+
+        out = renderer.Generate(self.trait_get())
+
+        logger.debug(f'generated:{out.data_xyztc.shape}')
+
+        namespace[self.outputImage] = out
         
     def _view_items(self, params=None):
         from traitsui.api import Group, Item
         return [Item('renderingModule'),
                     Item('pixelSize'),
-                    Item('colours', style='text'),#editor=CSVListEditor()),
-                    Item('softRender'),
+                    #Item('colours', style='text'),#editor=CSVListEditor()),
+                    #Item('softRender'),
                     Group(
                         Item('jitterVariable'),
                         Item('jitterScale'),
@@ -116,11 +122,11 @@ class DensityMapping(ModuleBase):
                     Group(
                         Item('zSliceThickness'),
                         Item('zBoundsMode'),
-                        Item('zBounds', visible_when='zBoundsMode=="manual"'),
+                        #Item('zBounds', visible_when='zBoundsMode=="manual"'),
                         label='3D', visible_when='"3D" in renderingModule'),
                     Group(
                         Item('xyBoundsMode'),
-                        Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
+                        #Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
                         label='Output Image Size',
                     ),
                 ]
