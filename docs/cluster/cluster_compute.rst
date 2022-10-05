@@ -67,6 +67,68 @@ High-level rule API
 Localisation Rules
 ''''''''''''''''''
 
+Localisation rules which generate a task for each frame in an image series can be invoked 
+as follows ...
+
+.. code-block:: python
+
+    from PYME.IO import MetaDataHandler
+    from PYME.cluster import rules
+
+    # Specify analysis settings in metadata
+    analysis_metadata = MetaDataHandler.DictMDHandler({
+      'Analysis.FitModule':'LatGaussFitFR', # 2D Gaussian fit (CPU)
+      'Analysis.DetectionThreshold': 1.0, # SNR based candidate detection threshold
+      'Analysis.StartAt': 30, # start at frame 30
+      'Analysis.BGRange': [-30,0], # Use an average of the previous 30 frames for background correction
+      'Analysis.subtractBackground': True,
+    })
+
+    # create rule and push to the cluster
+    rules.LocalisationRule(seriesName='PYME-CLUSTER:///path/to/series.pcs', analysisMetadata=analysis_metadata).push()
+
+For more details on the different types of fits and their parameters see  :ref:`localisationanalysis`. 
+For data sets which do not already contain good metadata on image noise properties 
+(read noise, AD offset, AD conversion factors, etc ...) or pixel size, these can be provided as
+part of the analysis metadata above. An example is provided below.
+
+.. code-block:: python
+
+    from PYME.IO import MetaDataHandler
+    from PYME.cluster import rules
+
+    # Specify analysis settings in metadata
+    analysis_metadata = MetaDataHandler.DictMDHandler({
+      'Analysis.FitModule':'AstigGaussGPUFitFR', # Astigmatic Gaussian fit (GPU)
+      'Analysis.DetectionThreshold': 1.0, # SNR based candidate detection threshold
+      'Analysis.StartAt': 30, # start at frame 30
+      'Analysis.BGRange': [-30,0], # Use an average of the previous 30 frames for background correction
+      'Analysis.subtractBackground': True,
+      'Camera.ADOffset': 100,  # Camera properties (these approximate what you'd expect for an sCMOS camera) 
+      'Camera.ElectronsPerCount': 0.45,
+      'Camera.ReadNoise': 0.5,
+      'Camera.TrueEMGain': 1.0,
+      'Camera.VarianceMapID': 'PYME-CLUSTER:///path/to/variance.tif', # per-pixel maps of sCMOS noise properties, in units of ADUs
+      'Camera.DarkMapID': 'PYME-CLUSTER:///path/to/dark.tif',
+      'Camera.FlatfieldMapID': 'PYME-CLUSTER:///path/to/flatfield.tif',
+      'voxelsize.x': 0.105, # x pixel size in um
+      'voxelsize.y': 0.105, # y pixel size in um
+    })
+
+    # create rule and push to the cluster
+    rules.LocalisationRule(seriesName='PYME-CLUSTER:///path/to/series.tif', analysisMetadata=analysis_metadata).push()
+
+.. warning::
+
+    The used of a .tif formatted series in the above example is for illustration only. Starting 
+    cluster-based analysis on series stored as .tif
+    is likely to result in pathological performance as the whole .tif file will be copied to each of
+    the nodes. It is strongly reccomended to convert to the sharded .pcs format first. Even on a single
+    node cluster (``PYMEClusterOfOne``) a substantial performance boost will be obtained by converting 
+    the format.
+
+
+
 Recipe Rules
 ''''''''''''
 
