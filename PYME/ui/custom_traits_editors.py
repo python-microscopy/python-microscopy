@@ -1,5 +1,5 @@
 from traitsui.wx.editor import Editor
-from traitsui.wx.basic_editor_factory import BasicEditorFactory
+from traitsui.basic_editor_factory import BasicEditorFactory
 
 from PYME.recipes.traits import List, Instance
 
@@ -97,9 +97,13 @@ class _FilterEditor (Editor):
         return
     
     def dispose(self):
-        self.control = None
-
         print('Disposing of FilterEditor')
+        #self.control.unbind_events() # unbind all events
+        print(self.control, self.control.GetEventHandler())
+        self.control.lFiltKeys.SetEventHandler(self.control.lFiltKeys) 
+        print(self.control.lFiltKeys, self.control.lFiltKeys.GetEventHandler())
+        
+        self.control = None
 
         super(Editor, self).dispose()
 
