@@ -36,6 +36,10 @@ if zeroconf.__version__ >= '0.35':
             """The ServiceInfo has all expected properties."""
             return bool(self.text is not None and self.port is not None and (self._ipv4_addresses or self._ipv6_addresses))
 
+        @property
+        def address(self):
+            return self.addresses[0]
+
 else:
 
     logger.warning(f'using an old version of zeroconf ({zeroconf.__version__}), consider upgrading')
