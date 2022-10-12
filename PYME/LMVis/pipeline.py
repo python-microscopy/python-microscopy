@@ -294,13 +294,13 @@ def _processEvents(ds, events, mdh):
     return ev_mappings, eventCharts
 
 class Pipeline:
-    def __init__(self, filename=None, visFr=None):
+    def __init__(self, filename=None, visFr=None, execute_on_invalidation=True):
         self.filter = None
         self.mapping = None
         self.colourFilter = None
         self.events = None
         
-        self.recipe = Recipe(execute_on_invalidation=True)
+        self.recipe = Recipe(execute_on_invalidation=execute_on_invalidation)
         self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
