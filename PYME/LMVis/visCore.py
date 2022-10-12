@@ -451,8 +451,8 @@ class VisGUICore(object):
         self.glCanvas.recenter_bbox()
         layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
-    
-        self.layer_added.send(self)
+        
+        wx.CallAfter(self.layer_added.send, self)
 
     @property
     def layers(self):
@@ -792,7 +792,7 @@ class VisGUICore(object):
         
         #############################
         #now do all the gui stuff
-        self.recipeView._layout()
+        self.recipeView.invalidate_layout()
         self.update_datasource_panel()
         
         if isinstance(self, wx.Frame):

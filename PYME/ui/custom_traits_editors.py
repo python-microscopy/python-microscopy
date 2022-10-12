@@ -97,8 +97,11 @@ class _FilterEditor (Editor):
         return
     
     def dispose(self):
+        from PYME.recipes.vertical_recipe_display import _popEventHandlers
+        #TODO - move the above somewhere sensible - e.g. PYME.ui
         print('Disposing of FilterEditor')
         #self.control.unbind_events() # unbind all events
+        _popEventHandlers(self.control)
         print(self.control, self.control.GetEventHandler())
         self.control.lFiltKeys.SetEventHandler(self.control.lFiltKeys) 
         print(self.control.lFiltKeys, self.control.lFiltKeys.GetEventHandler())
