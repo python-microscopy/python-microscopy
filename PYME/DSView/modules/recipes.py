@@ -44,7 +44,7 @@ class RecipePlugin(recipeGui.PipelineRecipeManager, Plugin):
         Plugin.__init__(self, dsviewer)
 
         if not 'pipeline' in dir(dsviewer):
-            dsviewer.pipeline = pipeline.Pipeline()
+            dsviewer.pipeline = pipeline.Pipeline(execute_on_invalidation=False)
         
         recipeGui.PipelineRecipeManager.__init__(self, dsviewer.pipeline)
         
