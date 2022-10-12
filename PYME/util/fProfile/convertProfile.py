@@ -29,12 +29,19 @@ def build_call_tree_threads(df):
 
     tst.sort_values(inplace=True)
     threadNames = list(tst.keys())
+
+    n_threads = len(threadNames)
+
     tet = np.array(tet[threadNames])
     tst = np.array(tst)
 
-    thread_levels = np.zeros(len(tet), 'i')
+    print(tet.shape)
 
-    thread_levels[1] = np.logical_and(tet[0] >= tst[1], tst[0] <= tet[1])
+    thread_levels = np.zeros(n_threads, 'i')
+
+    if (n_threads > 1): 
+        thread_levels[1] = np.logical_and(tet[0] >= tst[1], tst[0] <= tet[1])
+        
     for i in xrange(2, len(tst)):
         lower_levels = thread_levels[:i][np.logical_and(tet[:i] >= tst[i], tst[:i] <= tet[i])]
         if len(lower_levels) == 0:

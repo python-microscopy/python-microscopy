@@ -5,7 +5,10 @@ Setting up PYME cluster hardware and software
 
 This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
 analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
-experiments, see :ref:`localization analysis<_localization_analysis>` docs for key differences.
+experiments, see :ref:`localization analysis<_localization_analysis>` docs for key differences. When the performance of a
+full, multi-node, cluster is not required (e.g. with slower acquisition) a single-machine "cluster" can be launched (Linux, Mac, or Windows)
+using the ``PYMEClusterOfOne`` command-line program (see also :ref:`localization analysis<_localization_analysis>`) without any 
+of the setup below.
 
 Recommended Hardware configuration
 ==================================
@@ -24,7 +27,7 @@ Instrument computer
 
 * running a 64 bit version of either linux or windows
 
-* it is recommended that this machine not be connected to the institutional network
+* it is recommended that this machine **not** be connected to the institutional network
 
 Network switch
 --------------
@@ -175,22 +178,24 @@ On the master node:
      The ``clusterUI`` app can be run from any computer with an interface on the cluster subnet, PYME installed (from
      source), and the same ``dataserver-filter`` entry in the ``config.yaml`` file (see above).
 
-5. *[optional]* Run ``PYMEWebDav`` for the WebDAV server to enable the cluster to be mapped as a network drive on windows
-   and mac. The webdav server will bind to port 9090, and has a default **username:password** combo of **test:test**.
+.. 
+  5. *[optional]* Run ``PYMEWebDav`` for the WebDAV server to enable the cluster to be mapped as a network drive on windows
+    and mac. The webdav server will bind to port 9090, and has a default **username:password** combo of **test:test**.
 
-   .. warning::
+    .. warning::
 
-     PYMEWebDav is really buggy, and just barely functional. In order to use it on modern versions of windows you will
-     need to set a registry key enabling support for the (insecure) authentication model it uses (googling windows and
-     WebDAV turns up the relevant instructions pretty quickly). Look at ``PYME/ParallelTasks/webdav.py`` for info on
-     setting custom passwords.
+      PYMEWebDav is really buggy, and just barely functional. In order to use it on modern versions of windows you will
+      need to set a registry key enabling support for the (insecure) authentication model it uses (googling windows and
+      WebDAV turns up the relevant instructions pretty quickly). Look at ``PYME/ParallelTasks/webdav.py`` for info on
+      setting custom passwords.
 
-#. *[optional]* Install the svgwrite package to display recipes graphically in the cluster user interface. We do not
+5. *[optional]* Install the svgwrite package to display recipes graphically in the cluster user interface. We do not
    currently maintain a conda package for svgwrite, but it can be found in, e.g., the conda-forge channel.
+
 
 On each node:
 -------------
-7. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
+6. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
 
    .. note::
 

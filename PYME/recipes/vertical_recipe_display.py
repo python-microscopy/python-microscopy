@@ -3,6 +3,9 @@ import wx
 import numpy as np
 from PYME.IO import tabular
 
+import logging
+logger = logging.getLogger(__name__)
+
 # class RecipeDisplayPanel(wx.ScrolledWindow):
 #     def __init__(self, *args, **kwargs):
 #         wx.ScrolledWindow.__init__(self, *args, **kwargs)
@@ -28,6 +31,10 @@ class RecipeDisplayPanel(wx.Panel):
         self._pens = {}
         
         self.fp = None
+
+        self._traits_views = []
+
+        self._layout_valid = False
         
         #self.SetMinSize((200, 500))
         
@@ -35,6 +42,7 @@ class RecipeDisplayPanel(wx.Panel):
         #self.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS)
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
 
     def _col(self,node):
         import matplotlib.pyplot as plt
@@ -52,9 +60,9 @@ class RecipeDisplayPanel(wx.Panel):
         
     def SetRecipe(self, recipe):
         self.recipe = recipe
-        self.recipe.recipe_changed.connect(self._layout)
-        self.recipe.recipe_failed.connect(self._layout)
-        self._layout()
+        self.recipe.recipe_changed.connect(self.invalidate_layout)
+        self.recipe.recipe_failed.connect(self.invalidate_layout)
+        self.invalidate_layout()
         self.recipe.recipe_executed.connect(self._update_n_events)
 
     def _refr(self, **kwargs):
@@ -81,15 +89,43 @@ class RecipeDisplayPanel(wx.Panel):
         for node, t in self.data_panes.items():
             self._set_n_events(node, t[1])
 
+    def OnIdle(self, evt=None):
+        if not self._layout_valid:
+            self._layout_valid = True
+            self._layout()
+
+    def invalidate_layout(self, *args, **kwargs):
+        # avoid re-doing the layout multiple times
+        # flag as invalid and let OnIdle do the layout
+        self._layout_valid = False
+
     def _layout(self, *args, **kwargs):
-        print('RecipeView._layout')
+        #print('RecipeView._layout')
+        #import traceback
+        #traceback.print_stack()
+
+        # dispose of any current traits views
+        for tv in self._traits_views:
+            tv.dispose()
+
+        self._traits_views.clear()
+
+        wx.CallAfter(self._layout2)
+        #self._layout2()
+        
+    def _layout2(self):
+        #print('RecipeView._layout2')
+        
         if self.fp:
+            _popEventHandlers(self.fp, handler_type=wx.EvtHandler)
             self.fp.elements = []
             # Wrap this in a try block to prevent an error when using OutputModules
             # TODO: Figure out why this is necessary.
+                       
             try:
                 self.fp.DestroyChildren()
             except:
+                logger.exception('error destroying fold panel children')
                 pass
         self.fp = None
         #print('destroyed fold panel children')
@@ -148,6 +184,7 @@ class RecipeDisplayPanel(wx.Panel):
                 else:
                     kind = 'subpanel'
                 pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
+                self._traits_views.append(pan)
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
                 if getattr(node, '_last_error', None):
@@ -306,3 +343,18 @@ class RecipeDisplayPanel(wx.Panel):
                 pass
         
         #dc.EndDrawing()
+
+def _popEventHandlers(ctrl, handler_type=wx.EvtHandler):
+    """Pop any event handlers that have been pushed on to a window and its
+    children.
+    """
+    # borrowed from traitsui.wx.toolkit
+
+    handler = ctrl.GetEventHandler()
+    while ctrl is not handler:
+        next_handler = handler.GetNextHandler()
+        if isinstance(handler, handler_type):
+            ctrl.PopEventHandler(True)
+        handler = next_handler
+    for child in ctrl.GetChildren():
+        _popEventHandlers(child, handler_type)

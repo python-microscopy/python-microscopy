@@ -230,7 +230,7 @@ class TriangleRenderLayer(EngineLayer):
             self._datasource_keys = dks
         
         if not (self.engine is None or self.datasource is None):
-            print('lw update')
+            print('mesh_layer update')
             self.update_from_datasource(self.datasource)
             self.on_update.send(self)
 

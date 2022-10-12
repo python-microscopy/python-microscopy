@@ -72,8 +72,12 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
         prefix = '__aggregate_txt'
     elif filename.startswith('__aggregate_h5r/'):
         fn = filename[len('__aggregate_h5r/'):]
-        fn, stub = fn.split('.h5r')
-        fn = fn  + '.h5r'
+        if '.h5r' in filename:
+            fn, stub = fn.split('.h5r')
+            fn = fn  + '.h5r'
+        else:
+            fn, stub = fn.split('.hdf')
+            fn = fn  + '.hdf'
         prefix = '__aggregate_h5r'
     else:
         fn = filename

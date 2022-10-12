@@ -355,7 +355,7 @@ class HDFOutput(OutputModule):
 
             for name, h5_name in self.inputVariables.items():
                 v = namespace[name]
-                URI = '/'.join(['pyme-cluster:///_aggregate_h5r', out_filename.lstrip('/'), h5_name])
+                URI = '/'.join(['pyme-cluster:///__aggregate_h5r', out_filename.lstrip('/'), h5_name])
                 clusterResults.fileResults(URI, v.to_recarray())
                 #NOTE - aggregation does not support metadata
         else:

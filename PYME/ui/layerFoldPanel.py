@@ -2,6 +2,9 @@ from . import manualFoldPanel
 import PYME.resources
 import wx
 
+import logging
+logger = logging.getLogger(__name__)
+
 LAYER_CAPTION_STYLE = {
 'HEIGHT'              : 20,
 'FONT_COLOUR'         : 'BLACK',
@@ -114,11 +117,15 @@ class LayerCaptionBar(manualFoldPanel.CaptionBar):
     #     else:
     #         super(LayerCaptionBar, self).OnLeftClick(event)
     
-    def _refresh(self):
-        self.Refresh()
+    def _refresh(self, event=None):
+        try:
+            self.Refresh()
+        except:
+            logger.exception('Error refreshing layer caption')
         
     def _on_close(self, event):
         self._layer.on_trait_change(self._refresh, remove=True)
+        #logger.debug('Removed layer handler')
         self.Destroy()
     
     def ToggleVis(self):

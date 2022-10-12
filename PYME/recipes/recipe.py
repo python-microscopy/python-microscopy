@@ -203,6 +203,9 @@ class Recipe(HasTraits):
             self.namespace.update(kwargs)
             
             exec_order = self.resolveDependencies()
+            #logger.debug('exec_order: %s' % exec_order)
+            #logger.debug('.modules: %s' % self.modules)
+            #logger.debug('recipe instance: %s' % self)
             
             #mark all modules which should execute as not having executed
             for m in exec_order:
@@ -210,9 +213,11 @@ class Recipe(HasTraits):
                     m._success = False
             
             for m in exec_order:
+                #if isinstance(m, ModuleBase):
+                #    logger.debug('Checking whether to execute: %s, %s, %s' % (m, m._success, m.outputs_in_namespace(self.namespace)))
                 if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                     try:
-                        print('Executing %s' % m)
+                        logger.debug('Executing %s' % m)
                         m.check_inputs(self.namespace)
                         m.execute(self.namespace)
                         m._last_error = None
