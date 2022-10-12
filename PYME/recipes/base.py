@@ -9,7 +9,7 @@ Created on Mon May 25 17:02:04 2015
 #import wx
 import six
 
-from PYME.recipes.traits import HasTraits, HasStrictTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output, Instance
+from PYME.recipes.traits import HasTraits, HasStrictTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output, Instance, WeakRef
     
 #for some reason traitsui raises SystemExit when called from sphinx on OSX
 #This is due to the framework build problem of anaconda on OSX, and also
@@ -116,7 +116,7 @@ class ModuleBase(HasStrictTraits):
     If you want side effects - e.g. saving something to disk, look at the OutputModule class.
     """
     _invalidate_parent = Bool(True)
-    _parent=Instance(object)
+    _parent=WeakRef(object, allow_none=True)
 
     _initial_set = Bool(False)
     _success = Bool(False)
@@ -168,7 +168,7 @@ class ModuleBase(HasStrictTraits):
             # don't trigger on private variables
             return
         
-        if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
+        if self._invalidate_parent and not self._parent is None:
             #print('invalidating')
             self._parent.prune_dependencies_from_namespace(self.outputs)
             
