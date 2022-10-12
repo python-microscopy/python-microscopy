@@ -351,6 +351,10 @@ class DisplayOpts(object):
         """ Estimate a suitable starting display range
         """
         
+        if d.dtype == 'bool':
+            # special case for boolean masks ...
+            return 0,1
+
         #discard NaNa
         d = d[np.isnan(d) == 0].ravel()
         
