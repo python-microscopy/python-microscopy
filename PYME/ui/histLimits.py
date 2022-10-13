@@ -100,6 +100,7 @@ class HistLimitPanel(wx.Panel):
             # this prevents histogram recalculation if we just, e.g., change the LUT
             return
 
+        self._data_id = id(data)
         self.data = np.array(data).ravel()
         self.data = self.data[np.isfinite(self.data)]
 
