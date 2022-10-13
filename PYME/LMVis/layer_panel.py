@@ -32,6 +32,8 @@ class LayerPane(afp.foldingPane):
         afp.foldingPane.__init__(self, panel, -1, caption=caption, pinned=True)
         self.visFr = visFr
         
+        self._needs_update = True
+
         self.il = wx.ImageList(16,16)
         self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_PLUS, wx.ART_TOOLBAR, (16,16)))
         
@@ -68,6 +70,7 @@ class LayerPane(afp.foldingPane):
         if hasattr(panel, '_layout'):
             self.fp.fold_signal.connect(panel._layout)
         
+        self.Bind(wx.EVT_IDLE, self.on_idle)
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
 
     def _layout(self, *args, **kwargs):
@@ -76,8 +79,12 @@ class LayerPane(afp.foldingPane):
         self.Layout()
         self.GetParent().Layout()
 
-    def update(self, *args, **kwargs):
+    def on_idle(self, evt=None):
+        if self._needs_update:
+            self._needs_update = False
+            self._update0()
 
+    def update(self, *args, **kwargs):
         #logger.debug('LayerPanel.update()')
     
         #self.nb.DeleteAllPages()
@@ -89,10 +96,11 @@ class LayerPane(afp.foldingPane):
         #while (self.nb.GetPageCount() > 0):
         #    pg = self.nb.RemovePage(0)
     
-        wx.CallAfter(self._update0)
+        #wx.CallAfter(self._update0)
+        self._needs_update = True
         
     def _update0(self):
-        
+        #logger.debug('LayerPanel._update0()')
         for p in self.pages:
             #p.control.Close()
             p.dispose()
@@ -102,6 +110,7 @@ class LayerPane(afp.foldingPane):
         wx.CallAfter(self._update1)
         
     def _update1(self):
+        #logger.debug('LayerPanel._update1()')
         self.fp.Clear()
         
         h = 0
