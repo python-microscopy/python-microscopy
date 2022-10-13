@@ -573,9 +573,27 @@ class TextfileSource(TabularBase):
         #self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
         #                                       'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
 
-        print('invalid_raise:', invalid_raise)
+        from PYME import config
+        
+        #print('invalid_raise:', invalid_raise)
 
-        self.res = np.genfromtxt(filename,
+        if config.get('TextFileSource-use_pandas',False):
+            print('Opening %s using pandas (set TextFileSource-use_pandas: False in config.yaml to use legacy np.genfromtxt instead)')
+            import pandas as pd
+            self.res = pd.read_csv(filename,
+                comment=comments,
+                delimiter=delimiter,
+                skiprows=skiprows,
+                skipfooter=skip_footer,
+                names=columnnames,
+                dtype='f4',
+                skipinitialspace=True,
+                on_bad_lines='error' if invalid_raise else 'warn,'
+                ).to_records(index=False)
+
+        else:
+            print('Opening %s using np.genfromtxt (set TextFileSource-use_pandas: True in config.yaml to use pandas instead)')
+            self.res = np.genfromtxt(filename,
                              comments=comments,
                              delimiter=delimiter,
                              skip_header=skiprows,

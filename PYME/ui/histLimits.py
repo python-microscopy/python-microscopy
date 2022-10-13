@@ -31,8 +31,10 @@ import os
 LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
 
 class HistLimitPanel(wx.Panel):
-    def __init__(self, parent, id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0), threshMode= False):
-        wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
+    def __init__(self, parent, wx_id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0), threshMode= False):
+        wx.Panel.__init__(self, parent, wx_id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
+
+        self._data_id = id(data)
 
         self.data = data.ravel()
         self.data = self.data[np.isfinite(self.data)]
@@ -93,6 +95,12 @@ class HistLimitPanel(wx.Panel):
         self.ProcessEvent(evt)
 
     def SetData(self, data, lower, upper):
+        if (id(data) == self._data_id) and (self.limit_lower == lower) and (self.limit_upper == upper):
+            # called with the data and limits we already have, no need to do anything
+            # this prevents histogram recalculation if we just, e.g., change the LUT
+            return
+
+        self._data_id = id(data)
         self.data = np.array(data).ravel()
         self.data = self.data[np.isfinite(self.data)]
 

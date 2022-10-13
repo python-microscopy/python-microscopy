@@ -134,6 +134,9 @@ class PointCloudRenderLayer(EngineLayer):
         # parameters change)
         self.on_update = dispatch.Signal()
 
+        # signal for when the data is updated (used to, e.g., refresh histograms)
+        self.data_updated = dispatch.Signal()
+
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
@@ -165,8 +168,13 @@ class PointCloudRenderLayer(EngineLayer):
 
     def _set_method(self):
         #logger.debug('Setting layer method to %s' % self.method)
+        old_engine = self.engine
         self.engine = ENGINES[self.method]()
-        self.update()
+        #self.update()
+        if old_engine is None:
+            self.update()
+        else:
+            self.on_update.send(self)
 
     def _get_cdata(self):
         try:
@@ -182,7 +190,7 @@ class PointCloudRenderLayer(EngineLayer):
         #self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        print('lw update')
+        #print('lw update')
         self._datasource_choices = self._pipeline.layer_data_source_names
         if not self.datasource is None:
             self._datasource_keys = sorted(self.datasource.keys())
@@ -199,6 +207,7 @@ class PointCloudRenderLayer(EngineLayer):
     
     
     def update_from_datasource(self, ds):
+        print('pointcloud.update_from_datasource() - dsname=%s' % self.dsname)
         x, y = ds[self.x_key], ds[self.y_key]
         
         if not self.z_key is None:
@@ -219,6 +228,8 @@ class PointCloudRenderLayer(EngineLayer):
             self.update_data(x, y, z, c, cmap=cm[self.cmap], clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
         else:
             self.update_data(x, y, z, c, cmap=cm[self.cmap], clim=self.clim, alpha=self.alpha)
+
+        self.data_updated.send(self)
     
     
     def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
@@ -301,7 +312,7 @@ class PointCloudRenderLayer(EngineLayer):
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour', visible_when=vis_when),
-                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when=vis_when),
+                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.data_updated), show_label=False), ], visible_when=vis_when),
                      Group(Item('cmap', label='LUT'),
                            Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']", editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)),
                            Item('point_size', label=u'Point\u00A0size', editor=TextEditor(auto_set=False, enter_set=True, evaluate=float)))])
