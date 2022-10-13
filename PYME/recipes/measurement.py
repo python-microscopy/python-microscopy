@@ -629,6 +629,18 @@ class BinnedHistogram(ModuleBase):
         namespace[self.outputName] = res
 
         
+# there are some measurements we don't want / are not particlarly useful (i.e. the ones which just return the image)
+# some of these changed in recent versions of skimage (2022), so try both new and old versions
+_MEASURE2D_KEYS_TO_IGNORE = ['convex_image',
+'filled_image',
+'image_convex',
+'image_filled',
+'image',
+'intensity_image',
+'image_intensity']
+
+# euler_number calculation can be buggy and cause crashes
+_MEASURE2D_KEYS_TO_IGNORE.append('euler_number')   
 
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
@@ -665,18 +677,10 @@ class Measure2D(ModuleBase):
             def addFrameMeasures(self, frameNo, measurements, contours = None):
                 if len(measurements) == 0:
                     return
+                
                 if len(self.measures) == 0:
                     #first time we've called this - determine our data type
-                    self._keys = ['t', 'x', 'y'] + [r for r in dir(measurements[0]) if not r.startswith('_')]
-                    
-                    self._keys.remove('euler_number') #buggy!
-                    
-                    # remove all the image measurements - as these will potentially generate export errors
-                    # and are not super-useful
-                    self._keys.remove('convex_image')
-                    self._keys.remove('filled_image')
-                    self._keys.remove('image')
-                    self._keys.remove('intensity_image')
+                    self._keys = ['t', 'x', 'y'] + [r for r in dir(measurements[0]) if not (r.startswith('_') or r in _MEASURE2D_KEYS_TO_IGNORE)]
                     
                     if not contours is None:
                         self._keys += ['contour']
