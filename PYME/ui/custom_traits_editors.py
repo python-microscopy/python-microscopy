@@ -479,7 +479,7 @@ class _HistLimitsEditor (Editor):
         """
         import traceback
         print('hl update')
-        #print traceback.print_stack()
+        #print(traceback.print_stack())
         if self.value:
             self.control.SetData(self.factory.data(), *self.value)
             self.control.SetValue(self.value)
