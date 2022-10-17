@@ -313,8 +313,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         # filename, tablename = path.split('.h5r')
         # filename += '.h5r'
 
-        filename, tablename = self.path.lstrip('/')[len('__aggregate_h5r'):].split('.h5r')
-        filename = self.translate_path(filename + '.h5r')
+        # filename, tablename = self.path.lstrip('/')[len('__aggregate_h5r'):].split('.h5r')
+        # filename = self.translate_path(filename + '.h5r')
+
+        filename = self.path.lstrip('/')[len('__aggregate_h5r'):]
+        if '.h5r' in filename:
+            filename, tablename = filename.split('.h5r')
+            filename = self.translate_path(filename  + '.h5r')
+        else:
+            filename, tablename = filename.split('.hdf')
+            filename = self.translate_path(filename  + '.hdf')
 
         data = self._get_data()
 
