@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Str, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
 
 import numpy as np
 from PYME.IO import tabular
@@ -59,13 +59,13 @@ class DensityMapping(ModuleBase):
     jitterScaleZ = Float(1.0)
     MCProbability = Float(1.0)
     numSamples = Int(10)
-    colours = ListStr(['none',])
+    colours = List(Str, ['all',])
     zBoundsMode = Enum(['manual', 'min-max'])
-    zBounds = ListFloat([-500, 500])
+    zBounds = List(Float, [-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
     xyBoundsMode = Enum(['estimate', 'inherit', 'metadata', 'manual'])
-    manualXYBounds = ListFloat([0,0,5e3, 5e3])
+    manualXYBounds = List(Float, [0,0,5e3, 5e3])
     
 
     def execute(self, namespace):
@@ -106,10 +106,10 @@ class DensityMapping(ModuleBase):
         namespace[self.outputImage] = out
         
     def _view_items(self, params=None):
-        from traitsui.api import Group, Item
+        from traitsui.api import Group, Item, CSVListEditor
         return [Item('renderingModule'),
                     Item('pixelSize'),
-                    #Item('colours', style='text'),#editor=CSVListEditor()),
+                    Item('colours', style='text',editor=CSVListEditor(auto_set=False, enter_set=True)),
                     #Item('softRender'),
                     Group(
                         Item('jitterVariable'),
@@ -122,11 +122,11 @@ class DensityMapping(ModuleBase):
                     Group(
                         Item('zSliceThickness'),
                         Item('zBoundsMode'),
-                        #Item('zBounds', visible_when='zBoundsMode=="manual"'),
+                        Item('zBounds', visible_when='zBoundsMode=="manual"',editor=CSVListEditor(auto_set=False, enter_set=True)),
                         label='3D', visible_when='"3D" in renderingModule'),
                     Group(
                         Item('xyBoundsMode'),
-                        #Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
+                        Item('manualXYBounds', visible_when='xyBoundsMode=="manual"',editor=CSVListEditor(auto_set=False, enter_set=True)),
                         label='Output Image Size',
                     ),
                 ]

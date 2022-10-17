@@ -268,6 +268,10 @@ class ColourRenderer(CurrentRenderer):
         mdh['Origin.z'] = oz + imb.z0
 
         colours = settings['colours']
+        if ((len(colours) == 1) and (colours[0] == 'all')):
+            # for recipe usage, if provided with 'all', replace colour list with a list of all available channels
+            colours = self.colourFilter.getColourChans()
+
         oldC = self.colourFilter.currentColour
 
         ims = []

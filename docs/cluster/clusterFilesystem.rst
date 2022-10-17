@@ -170,9 +170,9 @@ a given directory on their host, it is possible to access the cluster data from 
 programming languages using standard HTTP requests. When accessing the data in this way,
 determining what files are in a given directory (the union of the directory listings of
 all the individual servers), and conversely which server to query for a particular file
-must be performed by the end user, as is any caching of this directory information. Files 
-may be added to the cluster using an HTTP `PUT` to one of the servers (deciding which is 
-again on the implementer). The HTTP servers which make up the cluster can be discovered
+must be performed by the implementation. Files 
+may be added to the cluster using an HTTP `PUT` to one of the servers (load distribution - ie 
+deciding which server to put to - is left to the implementer). The HTTP servers which make up the cluster can be discovered
 using the mDNS protocol and querying/browsing for the `_pyme-http._tcp.local.` service type.
 
 The following is a brief outline of accessing the cluster using command
@@ -243,10 +243,12 @@ line tools (note - you'll need to use an mDNS library and programatic HTTP fetch
     # ensure that data is approximately evenly distributed across nodes 
     >> curl -T /path/to/file.png http://0.0.0.0:55003/somefolder/newfile.png
 
-The above is mainly shown to reinforce the fact that the protocol is just HTTP.
+The command line example above is certainly not the easiest way to implement a client. It is 
+mainly shown to reinforce the fact that the protocol is just HTTP and is language agnostic.
 In practice, you would probably want to reimplement clusterIO in your language of
-choice. If performance is important, this reimplementation should includes
-caching on directory lookups and local pass-though/bypass.
+choice. If performance is important, this reimplementation should include
+caching on directory lookups and a "bypass" mechanism to access data stored on the local node
+without making a HTTP request.
 
 
 Read-only access using UnionFS
