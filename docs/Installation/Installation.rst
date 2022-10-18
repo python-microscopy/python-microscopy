@@ -121,8 +121,9 @@ environment and enter
 Verify installation
 *******************
 
-Locate the **PYMEVisualize (VisGUI)** desktop shortcut. Double-click it and confirm the program launches. If you don't have a desktop shortcut, launch any of the following programs from an anaconda prompt, which should have been
-installed as part of PYME.
+Locate the **PYMEVisualize (VisGUI)** desktop shortcut. Double-click it and confirm the program launches. 
+If you don't have a desktop shortcut, launch any of the following programs from an anaconda prompt (Windows), which should have been
+installed as part of PYME, or terminal window (Mac / Linux).
 
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
@@ -134,6 +135,8 @@ installed as part of PYME.
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
 | ``PYMEVis``             | This is for viewing point data sets. It shows a blank canvas when launched without any parameters.                   |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``PYMEClusterOfOne``    | This is for parallelized analysis, e.g. localization. It will open a browser window to a simple task status monitor. |
++-------------------------+----------------------------------------------------------------------------------------------------------------------+
 
 Troubleshooting
 ***************
@@ -141,6 +144,10 @@ Troubleshooting
 Executable installers
 =====================
 If prompted with **Windows protected your PC**, click **More info** and then **Run anyway**. 
+
+If prompted with **"python-microscopy-XX.pkg" cannot be opened because it is from an unidentified developer**,
+click **OK** and open **System Preferences**.Under **Security & Privacy**, click **Open anyway** next to the message
+about python-microscopy.
 
 If prompted with **Installation error**, press **OK** and then **Ignore**.
 
