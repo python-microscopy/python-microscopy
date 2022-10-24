@@ -30,6 +30,9 @@ from PYME.IO import MetaDataHandler
 #import pylab
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 renderMetadataProviders = []
 
 SAMPLE_MD_KEYS = [
@@ -271,6 +274,12 @@ class ColourRenderer(CurrentRenderer):
         if ((len(colours) == 1) and (colours[0] == 'all')):
             # for recipe usage, if provided with 'all', replace colour list with a list of all available channels
             colours = self.colourFilter.getColourChans()
+
+            if len(colours) == 0:
+                # hack to make this do something sane / backwards compatible
+                # when colour info is missing (see comment on #1305)
+                logger.warning("Renderer called with colours=['all',] but datasource has no colour information. Most likely the result of a missing ProcessColour module.")
+                colours=[None,]
 
         oldC = self.colourFilter.currentColour
 
