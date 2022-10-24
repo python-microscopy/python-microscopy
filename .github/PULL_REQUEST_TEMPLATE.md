@@ -11,12 +11,14 @@ Addresses issue # .
 
 
 **Checklist:**
+The below is a list of things what will be considered when reviewing PRs. It is not prescriptive, and does not
+imply that PRs which touch any of these will be rejected but gives a rough indication of where there is a potential 
+for hangups (i.e. factors which could turn a 5 min review into a half hour or longer and shunt it to the bottom
+of the TODO list).
 
-- [ ] Tested with numpy=1.14
-- [ ] Tested on python 2.7 and 3.6
-- [ ] Tested with wx=3.x and wx=4.x [if UI code]
 - [ ] Does the PR avoid variable renaming in existing code, whitespace changes, and other forms of tidying? [There is a place for code tidying, but it makes reviewing 
-much simpler if this is kept separate from functional changes]
+much simpler if this is kept separate from functional changes. The auto-formatting performed by some editors is particulaly egregious and can lead to files with thousands
+of non-functional changes with a few functional changes scattered amoungst them]
 
 If an enhancement (or non-trivial bugfix):
 
