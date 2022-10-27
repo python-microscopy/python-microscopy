@@ -869,7 +869,9 @@ class AddMetadataToMeasurements(ModuleBase):
                 v = img.mdh[mdk]
 
             if isinstance(v, str):
-                res[k] = np.array([v]*nEntries, dtype='U%d'%self.string_length)
+                # use bytes/cstring dtype (rather than U) so that 
+                # pytables doesn't bork on us
+                res[k] = np.array([v]*nEntries, dtype='S%d'%self.string_length)
             else:
                 res[k] = np.array([v]*nEntries)
         
