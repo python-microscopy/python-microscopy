@@ -789,6 +789,8 @@ class LMGLShaderCanvas(GLCanvas):
 
             self.selectionSettings.start = (xp, yp, None)
             self.selectionSettings.finish = (xp, yp, None)
+            self.selectionSettings.trace.clear()
+            self.selectionSettings.trace.append((xp, yp))
 
         event.Skip()
 
@@ -799,6 +801,7 @@ class LMGLShaderCanvas(GLCanvas):
             xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
 
             self.selectionSettings.finish = (xp, yp, None)
+            self.selectionSettings.trace.append((xp, yp))
             self.selectionDragging = False
 
             self.Refresh()
@@ -832,6 +835,7 @@ class LMGLShaderCanvas(GLCanvas):
         if self.selectionDragging:
             sx, sy = self._ScreenCoordinatesToNm(x, y)
             self.selectionSettings.finish = (sx, sy, None)
+            self.selectionSettings.trace.append((sx, sy))
             self.Refresh()
             event.Skip()
 
