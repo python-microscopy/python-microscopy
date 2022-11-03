@@ -851,6 +851,7 @@ class AddMetadataToMeasurements(ModuleBase):
     keys = CStr('SampleNotes')
     metadataKeys = CStr('Sample.Notes')
     outputName = Output('annotatedMeasurements')
+    string_length = Int(128, desc='Ammount of storage (characters) to allocate for string values')
     
     def execute(self, namespace):
         res = {}
@@ -866,7 +867,13 @@ class AddMetadataToMeasurements(ModuleBase):
                 v = os.path.split(img.seriesName)[1]
             else:
                 v = img.mdh[mdk]
-            res[k] = np.array([v]*nEntries)
+
+            if isinstance(v, str):
+                # use bytes/cstring dtype (rather than U) so that 
+                # pytables doesn't bork on us
+                res[k] = np.array([v]*nEntries, dtype='S%d'%self.string_length)
+            else:
+                res[k] = np.array([v]*nEntries)
         
         #res = pd.DataFrame(res)
         res = tabular.MappingFilter(res)
