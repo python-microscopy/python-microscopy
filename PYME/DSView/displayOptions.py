@@ -60,7 +60,7 @@ class DisplayOpts(object):
     SLICE_XY, SLICE_XZ, SLICE_YZ = range(3)
 
     ACTION_POSITION, ACTION_SELECTION, ACTION_SELECT_OBJECT = range(3)
-    SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGGLE = range(3)
+    #SELECTION_RECTANGLE, SELECTION_LINE, SELECTION_SQUIGGLE = range(3)
 
     def __init__(self, datasource, xp=0, yp=0, zp=0, aspect=1):
         self.WantChangeNotification = []# MyWeakSet() #[]
@@ -99,9 +99,9 @@ class DisplayOpts(object):
         self.scale = 0
 
         self.leftButtonAction = self.ACTION_POSITION
-        self.selectionMode = self.SELECTION_RECTANGLE
+        self.selection.mode = selection.SELECTION_RECTANGLE
 
-        self.selectionWidth = 1
+        #self.selection.width = 1
 
         self.showSelection=False
 
@@ -186,56 +186,56 @@ class DisplayOpts(object):
         return [(self.Offs[chanNum] + 0.5/self.Gains[chanNum]) for chanNum in range(len(self.Offs))]
 
     def ResetSelection(self):
-        self.selection_begin_x = 0
-        self.selection_begin_y = 0
-        self.selection_begin_z = 0
+        self.selection.start = (0, 0, 0)
 
-        self.selection_end_x = self.ds.shape[0] - 1
-        self.selection_end_y = self.ds.shape[1] - 1
-        self.selection_end_z = self.ds.shape[2] - 1
+        self.selection.finish.x = self.ds.shape[0] - 1
+        self.selection.finish.y = self.ds.shape[1] - 1
+        self.selection.finish.z = self.ds.shape[2] - 1
         
-        self.selection_trace = []
+        self.selection.trace = []
 
     def SetSelection(self, begin, end):
-        (b_x, b_y, b_z) = begin
-        (e_x, e_y, e_z) = end
-        self.selection_begin_x = b_x
-        self.selection_begin_y = b_y
-        self.selection_begin_z = b_z
+        self.selection.start = begin
+        self.selection.finish = end
+        # (b_x, b_y, b_z) = begin
+        # (e_x, e_y, e_z) = end
+        # self.selection.start.x = b_x
+        # self.selection.start.y = b_y
+        # self.selection.start.z = b_z
 
-        self.selection_end_x = e_x
-        self.selection_end_y = e_y
-        self.selection_end_z = e_z
+        # self.selection.finish.x = e_x
+        # self.selection.finish.y = e_y
+        # self.selection.finish.z = e_z
         
-    @property
-    def selection(self):
-        return self.selection_begin_x, self.selection_end_x, self.selection_begin_y, self.selection_end_y, self.selection_begin_z, self.selection_end_z
+    #@property
+    #def selection(self):
+    #    return self.selection.start.x, self.selection.finish.x, self.selection.start.y, self.selection.finish.y, self.selection.start.z, self.selection.finish.z
     
     @property
     def sorted_selection(self):
-        return sorted([self.selection_begin_x, self.selection_end_x]) + \
-               sorted([self.selection_begin_y, self.selection_end_y]) + \
-               sorted([self.selection_begin_z, self.selection_end_z])
+        return sorted([self.selection.start.x, self.selection.finish.x]) + \
+               sorted([self.selection.start.y, self.selection.finish.y]) + \
+               sorted([self.selection.start.z, self.selection.finish.z])
         
     def EndSelection(self):
         self.on_selection_end.send(self)
 
     def GetSliceSelection(self):
         if(self.slice == self.SLICE_XY):
-            lx = self.selection_begin_x
-            ly = self.selection_begin_y
-            hx = self.selection_end_x
-            hy = self.selection_end_y
+            lx = self.selection.start.x
+            ly = self.selection.start.y
+            hx = self.selection.finish.x
+            hy = self.selection.finish.y
         elif(self.slice == self.SLICE_XZ):
-            lx = self.selection_begin_x
-            ly = self.selection_begin_z
-            hx = self.selection_end_x
-            hy = self.selection_end_z
+            lx = self.selection.start.x
+            ly = self.selection.start.z
+            hx = self.selection.finish.x
+            hy = self.selection.finish.z
         elif(self.slice == self.SLICE_YZ):
-            lx = self.selection_begin_y
-            ly = self.selection_begin_z
-            hx = self.selection_end_y
-            hy = self.selection_end_z
+            lx = self.selection.start.y
+            ly = self.selection.start.z
+            hx = self.selection.finish.y
+            hy = self.selection.finish.z
 
         return lx, ly, hx, hy
 

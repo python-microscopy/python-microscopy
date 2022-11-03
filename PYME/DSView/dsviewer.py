@@ -331,10 +331,10 @@ class DSViewFrame(AUIFrame):
     def OnExport(self, event=None):
         from PYME.ui import crop_dialog
         from PYME.IO.DataSources.CropDataSource import crop_image
-        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
-        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
-        by = min(self.do.selection_begin_y, self.do.selection_end_y)
-        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        bx = min(self.do.selection.start.x, self.do.selection.finish.x)
+        ex = max(self.do.selection.start.x, self.do.selection.finish.x)
+        by = min(self.do.selection.start.y, self.do.selection.finish.y)
+        ey = max(self.do.selection.start.y, self.do.selection.finish.y)
         
         roi = [[bx, ex + 1],[by, ey + 1],
                [0, self.image.data_xyztc.shape[2]],

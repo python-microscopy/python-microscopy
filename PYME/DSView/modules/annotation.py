@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import wx
 import wx.lib.agw.aui as aui
 
+from PYME.ui import selection
+
 from ._base import Plugin
 
 class _Snake_Settings(HasTraits):
@@ -163,8 +165,8 @@ class Annotater(Plugin):
         
     
     def add_curved_line(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
-            l = self.do.selection_trace
+        if self.do.selection.mode == selection.SELECTION_SQUIGGLE:
+            l = self.do.selection.trace
             if len(l) < 1:
                 print('Line must have at least 1 point')
                 return
@@ -174,9 +176,9 @@ class Annotater(Plugin):
             self._annotations.append({'type' : 'curve', 'points' : l,
                                       'labelID' : self.cur_label_index, 'z' : self.do.zp,
                                       'width' : self.line_width})
-            self.do.selection_trace = []
+            self.do.selection.trace = []
             
-        elif self.do.selectionMode == self.do.SELECTION_LINE:
+        elif self.do.selection.mode == selection.SELECTION_LINE:
             x0, y0, x1, y1 = self.do.GetSliceSelection()
             self._annotations.append({'type' : 'line', 'points' : [(x0, y0), (x1, y1)],
                                       'labelID' : self.cur_label_index, 'z':self.do.zp,
@@ -186,17 +188,17 @@ class Annotater(Plugin):
         self.dsviewer.Update()
 
     def add_filled_polygon(self, event=None):
-        if self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
-            l = self.do.selection_trace
+        if self.do.selection.mode == selection.SELECTION_SQUIGGLE:
+            l = self.do.selection.trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
             self._annotations.append({'type': 'polygon', 'points': l,
                                       'labelID': self.cur_label_index, 'z': self.do.zp,
                                       'width': 1
                                       })
-            self.do.selection_trace = []
+            self.do.selection.trace = []
     
-        elif self.do.selectionMode == self.do.SELECTION_RECTANGLE:
+        elif self.do.selection.mode == selection.SELECTION_RECTANGLE:
             x0, y0, x1, y1 = self.do.GetSliceSelection()
             # TODO - make this a polygon instead?
             self._annotations.append({'type': 'rectangle', 'points': [(x0, y0), (x1, y1)],
@@ -231,7 +233,7 @@ class Annotater(Plugin):
             
     def snake_refine_trace(self, event=None, sender=None, **kwargs):
         print('Refining selection')
-        if self.lock_mode == 'None' or not self.do.selectionMode == self.do.SELECTION_SQUIGGLE:
+        if self.lock_mode == 'None' or not self.do.selection.mode == selection.SELECTION_SQUIGGLE:
             return
         else:
             try:
@@ -240,9 +242,9 @@ class Annotater(Plugin):
                 
                 im = ndimage.gaussian_filter(self.do.ds[:,:,self.do.zp].squeeze(), float(self._snake_settings.prefilter_sigma)).T
                 
-                pts = np.array(self.do.selection_trace)
+                pts = np.array(self.do.selection.trace)
                 
-                self.do.selection_trace = active_contour(im, pts,
+                self.do.selection.trace = active_contour(im, pts,
                                                          alpha=self._snake_settings.length_weight,
                                                          beta=self._snake_settings.smoothness,
                                                          w_line=self._snake_settings.line_weight,
