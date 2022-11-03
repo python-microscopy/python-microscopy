@@ -114,13 +114,21 @@ class LabelPanel(wx.Panel):
     def get_labels(self):
         return {n : self.lLabels.GetItemText(n, 1) for n in range(10)}
 
-class Annotater(Plugin):
-    def __init__(self, dsviewer):
-        Plugin.__init__(self, dsviewer)
 
+class AnnotateBase(object):
+    def __init__(self, win, selector, minimize=False):
+        """
+        Parameters
+        ==========
+        win : PYME.ui.AUIFrame (or derived class) instance. 
+            Window to add annotation contols to. Must implement AddMenuItem()
+        selector : PYME.ui.selection.Selection instance
+            class holding info about the current selection.
+        """
         self.cur_label_index = 1
         self.line_width = 1
         self.lock_mode = 'None'
+        self.visible = True
     
         self._annotations = []
         self.show_annotations = True
@@ -128,45 +136,42 @@ class Annotater(Plugin):
         
         self.selected_annotations = []
 
+        self._selector = selector
+
         self.penColsA = [wx.Colour(*plt.cm.hsv(v, alpha=0.5, bytes=True)) for v in np.linspace(0, 1, 16)]
         self.brushColsA = [wx.Colour(*plt.cm.hsv(v, alpha=0.2, bytes=True)) for v in np.linspace(0, 1, 16)]
         #self.trackPens = [wx.Pen(c, 4) for c in self.penColsA]
 
-        dsviewer.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
-        dsviewer.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
-        dsviewer.AddMenuItem('Annotation', "Draw filled polygon\tCtrl-F", self.add_filled_polygon)
-        dsviewer.AddMenuItem('Annotation', 'Clear selected anotations\tCtrl-Back', self.clear_selected)
-        dsviewer.AddMenuItem('Annotation', itemType='separator')
-        dsviewer.AddMenuItem('Annotation', 'Generate label image', self.get_label_image)
-        dsviewer.AddMenuItem('Annotation', 'Generate mask', lambda e : self.get_label_image(mask=True))
-        dsviewer.AddMenuItem('Annotation', 'Apply mask to image', self.apply_mask)
-        dsviewer.AddMenuItem('Annotation', itemType='separator')
-        dsviewer.AddMenuItem('Annotation', "Train SVM Classifier", self.train_svm)
-        dsviewer.AddMenuItem('Annotation', "Train Naive Bayes Classifier", self.train_naive_bayes)
+        win.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
+        win.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
+        win.AddMenuItem('Annotation', "Draw filled polygon\tCtrl-F", self.add_filled_polygon)
+        win.AddMenuItem('Annotation', 'Clear selected anotations\tCtrl-Back', self.clear_selected)
         
-        self._mi_save = dsviewer.AddMenuItem('Segmentation', 'Save Classifier', self.OnSaveClassifier)
-        self._mi_save.Enable(False)
-        dsviewer.AddMenuItem('Segmentation', 'Load Classifier', self.OnLoadClassifier)
-        self._mi_run = dsviewer.AddMenuItem('Segmentation', "Run Classifier", self.svm_segment)
-        self._mi_run.Enable(False)
-        
-        self.do.on_selection_end.connect(self.snake_refine_trace)
-        self.view.add_overlay(self.DrawOverlays, 'Annotations')
 
-        self.view.selectHandlers.append(self.select_annotation)
-
-        self.labelPanel = LabelPanel(dsviewer, self)
+        self.labelPanel = LabelPanel(win, self)
         self.labelPanel.SetSize(self.labelPanel.GetBestSize())
 
         pinfo2 = aui.AuiPaneInfo().Name("labelPanel").Right().Caption('Annotation').CloseButton(False).MinimizeButton(
             True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
-        dsviewer._mgr.AddPane(self.labelPanel, pinfo2)
+        win._mgr.AddPane(self.labelPanel, pinfo2)
+        if minimize:
+            win._mgr.MinimizePane(pinfo2)
         
-        
+    def _update_view(self):
+        """ Over-ride in derived classes"""
+        pass
+
+    def _zp(self):
+        """
+        Return the current z-position
+
+        Override in derived classes
+        """
+        return None    
     
     def add_curved_line(self, event=None):
-        if self.do.selection.mode == selection.SELECTION_SQUIGGLE:
-            l = self.do.selection.trace
+        if self._selector.mode == selection.SELECTION_SQUIGGLE:
+            l = self._selector.trace
             if len(l) < 1:
                 print('Line must have at least 1 point')
                 return
@@ -174,40 +179,42 @@ class Annotater(Plugin):
             if isinstance(l, np.ndarray):
                 l = l.tolist()
             self._annotations.append({'type' : 'curve', 'points' : l,
-                                      'labelID' : self.cur_label_index, 'z' : self.do.zp,
+                                      'labelID' : self.cur_label_index, 'z' : self._zp(),
                                       'width' : self.line_width})
-            self.do.selection.trace = []
+            self._selector.trace = []
             
-        elif self.do.selection.mode == selection.SELECTION_LINE:
-            x0, y0, x1, y1 = self.do.GetSliceSelection()
+        elif self._selector.mode == selection.SELECTION_LINE:
+            #x0, y0, x1, y1 = self.do.GetSliceSelection()
+            x0, y0, _ = self._selector.start
+            x1, y1, _ = self._selector.finish
             self._annotations.append({'type' : 'line', 'points' : [(x0, y0), (x1, y1)],
-                                      'labelID' : self.cur_label_index, 'z':self.do.zp,
+                                      'labelID' : self.cur_label_index, 'z':self._zp(),
                                       'width' : self.line_width})
             
-        self.dsviewer.Refresh()
-        self.dsviewer.Update()
+        self._update_view()
 
     def add_filled_polygon(self, event=None):
-        if self.do.selection.mode == selection.SELECTION_SQUIGGLE:
-            l = self.do.selection.trace
+        if self._selector.mode == selection.SELECTION_SQUIGGLE:
+            l = self._selector.trace
             if isinstance(l, np.ndarray):
                 l = l.tolist()
             self._annotations.append({'type': 'polygon', 'points': l,
-                                      'labelID': self.cur_label_index, 'z': self.do.zp,
+                                      'labelID': self.cur_label_index, 'z': self._zp(),
                                       'width': 1
                                       })
-            self.do.selection.trace = []
+            self._selector.trace = []
     
-        elif self.do.selection.mode == selection.SELECTION_RECTANGLE:
-            x0, y0, x1, y1 = self.do.GetSliceSelection()
+        elif self._selector.mode == selection.SELECTION_RECTANGLE:
+            #x0, y0, x1, y1 = self.do.GetSliceSelection()
+            x0, y0, _ = self._selector.start
+            x1, y1, _ = self._selector.finish
             # TODO - make this a polygon instead?
             self._annotations.append({'type': 'rectangle', 'points': [(x0, y0), (x1, y1)],
-                                      'labelID': self.cur_label_index, 'z': self.do.zp,
+                                      'labelID': self.cur_label_index, 'z': self._zp(),
                                       'width':1
                                       })
     
-        self.dsviewer.Refresh()
-        self.dsviewer.Update()
+        self._update_view()
         
     def get_json_annotations(self):
         import ujson as json
@@ -233,26 +240,25 @@ class Annotater(Plugin):
             
     def snake_refine_trace(self, event=None, sender=None, **kwargs):
         print('Refining selection')
-        if self.lock_mode == 'None' or not self.do.selection.mode == selection.SELECTION_SQUIGGLE:
+        if self.lock_mode == 'None' or not self._selector.mode == selection.SELECTION_SQUIGGLE:
             return
         else:
             try:
                 from skimage.segmentation import active_contour
                 from scipy import ndimage
                 
-                im = ndimage.gaussian_filter(self.do.ds[:,:,self.do.zp].squeeze(), float(self._snake_settings.prefilter_sigma)).T
+                im = ndimage.gaussian_filter(self.do.ds[:,:,self._zp()].squeeze(), float(self._snake_settings.prefilter_sigma)).T
                 
-                pts = np.array(self.do.selection.trace)
+                pts = np.array(self._selector.trace)
                 
-                self.do.selection.trace = active_contour(im, pts,
+                self._selector.trace = active_contour(im, pts,
                                                          alpha=self._snake_settings.length_weight,
                                                          beta=self._snake_settings.smoothness,
                                                          w_line=self._snake_settings.line_weight,
                                                          w_edge=self._snake_settings.edge_weight,
                                                          bc=self._snake_settings.boundaries)
                 
-                self.dsviewer.Refresh()
-                self.dsviewer.Update()
+                self._update_view()
             except ImportError:
                 pass
 
@@ -286,34 +292,39 @@ class Annotater(Plugin):
 
     def render(self, gl_canvas):
         import  OpenGL.GL as gl
-        if self.visible:
-            with self.shader_program:
-                gl.glDisable(gl.GL_LIGHTING)
-                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-                gl.glDisable(gl.GL_DEPTH_TEST)
+        
+        gl.glDisable(gl.GL_LIGHTING)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glDisable(gl.GL_DEPTH_TEST)
 
-                for c in self._annotations:
-                    pts = np.array(c['points'])
-                    x, y = pts.T
-                    z = int(c['z'])
+        for c in self._annotations:
+            pts = np.array(c['points'])
+            x, y = pts.T
+            z = c['z']
+            if z:
+                z = int(c['z'])*np.ones_like(x)
+            else:
+                z = np.zeros_like(x)
 
-                    if c in self.selected_annotations:
-                        gl.glLineWidth(2.0)
-                    else:
-                        gl.glLineWidth(1.0)
-                    
-                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
-                    vertices = vertices.T.ravel().reshape(len(x), 3)
+            if c in self.selected_annotations:
+                gl.glLineWidth(8.0)
+            else:
+                gl.glLineWidth(4.0)
+            
+            vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+            vertices = vertices.T.ravel().reshape(len(x), 3)
 
-                    normals = -0.69 * np.ones(vertices.shape)
-                    cols = np.ones_like(x)[:,None]*self.penColsA[c['labelID'] % 16][None,:]
-                    #n_vertices = vertices.shape[0]
-                
-                    gl.glVertexPointerf(vertices)
-                    gl.glNormalPointerf(normals)
-                    gl.glColorPointerf(cols)
+            normals = -0.69 * np.ones(vertices.shape)
+            
+            cols = np.ones_like(x)[:,None]*np.array(self.penColsA[c['labelID'] % 16])[None,:]/255.
+            #n_vertices = vertices.shape[0]
+            #gl.glColor4fv(np.array(self.penColsA[c['labelID'] % 16]))
 
-                    gl.glDrawArrays(gl.GL_LINE_STRIP, 0, 3*len(x))
+            gl.glVertexPointerf(vertices)
+            gl.glNormalPointerf(normals)
+            gl.glColorPointerf(cols)
+
+            gl.glDrawArrays(gl.GL_LINE_LOOP, 0, len(x))
 
 
     def select_annotation(self, pos):
@@ -327,15 +338,13 @@ class Annotater(Plugin):
                     print('selecting annotation')
 
                 
-                self.dsviewer.Refresh()
-                self.dsviewer.Update()
+                self._update_view()
                 return True
 
         else:
             self.selected_annotations.clear()
             print('clearing selections')
-            self.dsviewer.Refresh()
-            self.dsviewer.Update()
+            self._update_view()
             return False
     
     def clear_selected(self, event=None):
@@ -343,8 +352,7 @@ class Annotater(Plugin):
             self._annotations.remove(c)
 
         self.selected_annotations.clear()
-        self.dsviewer.Refresh()
-        self.dsviewer.Update()
+        self._update_view()
 
     def _visibletest(self, clump, bounds):
     
@@ -433,6 +441,40 @@ class Annotater(Plugin):
                     
         return output
     
+    
+
+class Annotater(Plugin, AnnotateBase):
+    def __init__(self, dsviewer):
+        Plugin.__init__(self, dsviewer)
+        AnnotateBase.__init__(self, dsviewer, dsviewer.do.selection)
+
+        win = dsviewer
+
+        win.AddMenuItem('Annotation', itemType='separator')
+        win.AddMenuItem('Annotation', 'Generate label image', self.get_label_image)
+        win.AddMenuItem('Annotation', 'Generate mask', lambda e : self.get_label_image(mask=True))
+        win.AddMenuItem('Annotation', 'Apply mask to image', self.apply_mask)
+        win.AddMenuItem('Annotation', itemType='separator')
+        win.AddMenuItem('Annotation', "Train SVM Classifier", self.train_svm)
+        win.AddMenuItem('Annotation', "Train Naive Bayes Classifier", self.train_naive_bayes)
+        
+        self._mi_save = win.AddMenuItem('Segmentation', 'Save Classifier', self.OnSaveClassifier)
+        self._mi_save.Enable(False)
+        win.AddMenuItem('Segmentation', 'Load Classifier', self.OnLoadClassifier)
+        self._mi_run = win.AddMenuItem('Segmentation', "Run Classifier", self.svm_segment)
+        self._mi_run.Enable(False)
+        
+        self.do.on_selection_end.connect(self.snake_refine_trace)
+        self.view.add_overlay(self.DrawOverlays, 'Annotations')
+        self.view.selectHandlers.append(self.select_annotation)
+
+    def _update_view(self):
+        self.dsviewer.Refresh()
+        self.dsviewer.Update()
+
+    def _zp(self):
+        return self.do.zp
+
     def get_label_image(self, event=None, mask=False):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
@@ -476,7 +518,7 @@ class Annotater(Plugin):
     
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier()
-        self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self.rasterize(self._zp()))
 
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
@@ -495,7 +537,7 @@ class Annotater(Plugin):
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier(clf=clf)
     
-        self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self.rasterize(self._zp()))
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
         self.svm_segment()
@@ -507,7 +549,7 @@ class Annotater(Plugin):
         from PYME.misc.colormaps import cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
-        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
+        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze())#, self.image.labels[:,:,self.do.zp])
         #self.vmax = 0
         #self.image.labels = self.mask
     
@@ -544,6 +586,8 @@ class Annotater(Plugin):
         if not filename == '':
             self.cf = svmSegment.svmClassifier(filename=filename)
             self._mi_run.Enable(True)
+
+    
                     
 
 def Plug(dsviewer):

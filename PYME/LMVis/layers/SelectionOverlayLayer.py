@@ -80,6 +80,9 @@ class SelectionOverlayLayer(OverlayLayer):
                     glEnd()
 
                 elif self._selection_settings.mode == selection.SELECTION_SQUIGGLE:
+                    if len(self._selection_settings.trace) == 0:
+                        return
+                        
                     x, y = np.array(self._selection_settings.trace).T
                     z = np.ones_like(x)*gl_canvas.view.translation[2]
 

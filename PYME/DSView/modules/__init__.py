@@ -68,6 +68,7 @@ modeModules = {
 'bare' : [],
 }
 
+
 def loadModule(modName, dsviewer):
     """
     Loads a module my calling that modules `Plug()` function.
@@ -112,18 +113,25 @@ def loadModule(modName, dsviewer):
         pass
     
     reload(mod)
+
+    _load_mod(mod, modName, dsviewer)
     
+def _load_mod(mod, modName, parent):
+    """
+    Make this part a separate function so we can share it with PYMEVis
+    """
+
     # record dsviewer keyw so we can warn if we inject into dsviewer class
     # part of module injection deprecation
-    dsv_keys = list(dsviewer.__dict__.keys())
+    dsv_keys = list(parent.__dict__.keys())
     t1 = time.time()
-    ret = mod.Plug(dsviewer)
+    ret = mod.Plug(parent)
     dt = time.time() - t1
     
-    logger.debug('%s.Plug() took %3.2f s' % (modName, dt))
+    #logger.debug('%s.Plug() took %3.2f s' % (modName, dt))
     
-    if list(dsviewer.__dict__.keys()) != dsv_keys:
-        logger.warning('Plugin [%s] injects into dsviewer namespace, could result in circular references' % modName)
+    if list(parent.__dict__.keys()) != dsv_keys:
+        logger.warning('Plugin [%s] injects into parent namespace, could result in circular references' % modName)
 
     # new style module tracking
     # TODO - make this accessible via dsviewer.plugins.x rather than dsviewer.x
@@ -131,14 +139,15 @@ def loadModule(modName, dsviewer):
         if isinstance(ret, dict):
             # either track named outputs [legacy]
             for k, v in ret.items():
-                setattr(dsviewer, k, weakref.proxy(v))
+                setattr(parent, k, weakref.proxy(v))
         else:
             # or track module data under module name.
-            setattr(dsviewer, modName, weakref.proxy(ret))
+            setattr(parent, modName, weakref.proxy(ret))
             #dsviewer._module_injections[modName] = ret
 
 
-    dsviewer.installedModules.append(modName)
+    if hasattr(parent, 'installedModules'):
+        parent.installedModules.append(modName)
 
 
 def loadMode(mode, dsviewer):
