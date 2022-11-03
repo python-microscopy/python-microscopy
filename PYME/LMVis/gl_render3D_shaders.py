@@ -74,12 +74,11 @@ name = 'ball_glut'
 
 from . import views
 from PYME.contrib import dispatch
+from PYME.ui import selection
 
-
-class SelectionSettings(object):
+class SelectionSettings(selection.Selection):
     def __init__(self):
-        self.start = (0, 0)
-        self.finish = (0, 0)
+        selection.Selection.__init__(self)
         self.colour = [1, 1, 0]
         self.show = False
 
@@ -788,8 +787,8 @@ class LMGLShaderCanvas(GLCanvas):
             self.selectionDragging = True
             self.selectionSettings.show = True
 
-            self.selectionSettings.start = (xp, yp)
-            self.selectionSettings.finish = (xp, yp)
+            self.selectionSettings.start = (xp, yp, None)
+            self.selectionSettings.finish = (xp, yp, None)
 
         event.Skip()
 
@@ -799,7 +798,7 @@ class LMGLShaderCanvas(GLCanvas):
         if self.selectionDragging:
             xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
 
-            self.selectionSettings.finish = (xp, yp)
+            self.selectionSettings.finish = (xp, yp, None)
             self.selectionDragging = False
 
             self.Refresh()
@@ -831,7 +830,8 @@ class LMGLShaderCanvas(GLCanvas):
         y = event.GetY()
 
         if self.selectionDragging:
-            self.selectionSettings.finish = self._ScreenCoordinatesToNm(x, y)
+            sx, sy = self._ScreenCoordinatesToNm(x, y)
+            self.selectionSettings.finish = (sx, sy, None)
             self.Refresh()
             event.Skip()
 

@@ -50,8 +50,8 @@ class SelectionOverlayLayer(OverlayLayer):
         with self.get_shader_program(gl_canvas):
             if self._selection_settings.show:
                 glDisable(GL_LIGHTING)
-                x0, y0 = self._selection_settings.start
-                x1, y1 = self._selection_settings.finish
+                x0, y0, _ = self._selection_settings.start
+                x1, y1, _ = self._selection_settings.finish
 
                 zc = gl_canvas.view.translation[2]
 

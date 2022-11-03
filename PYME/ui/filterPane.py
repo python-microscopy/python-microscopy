@@ -319,8 +319,8 @@ class FilterPane(afp.foldingPane):
                 x1, y1 = self.visFr.glCanvas.selectionFinish
             except AttributeError:
                 #new glcanvas
-                x0, y0 = self.visFr.glCanvas.selectionSettings.start
-                x1, y1 = self.visFr.glCanvas.selectionSettings.finish
+                x0, y0, _ = self.visFr.glCanvas.selectionSettings.start
+                x1, y1, _ = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
                 indx = self.pFilter.lFiltKeys.InsertItem(UI_MAXSIZE, 'x')

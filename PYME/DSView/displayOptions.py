@@ -28,6 +28,7 @@ import numpy as np
 
 from PYME.contrib import dispatch
 from PYME.IO import dataWrap
+from PYME.ui import selection
 
 import logging
 logger = logging.getLogger(__name__)
@@ -86,6 +87,8 @@ class DisplayOpts(object):
         
         self.inOnChange = False
         self.syncedWith = []
+
+        self.selection = selection.Selection(units=selection.UNITS_PIXELS)
 
         self.SetDataStack(datasource)
         self.SetAspect(aspect)
