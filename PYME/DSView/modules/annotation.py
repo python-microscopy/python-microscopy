@@ -115,6 +115,190 @@ class LabelPanel(wx.Panel):
         return {n : self.lLabels.GetItemText(n, 1) for n in range(10)}
 
 
+def minimum_distance_to_poly(poly, points, closed=True):
+    """
+    calculate minimum distances between a set of 2D line segments and
+    a set of 2D points
+
+    Parameters
+    ##########
+
+    poly : Nx2 ndarray
+        line segment or polygon
+
+    points : Mx2 ndarray
+        points to test
+
+    Returns
+    #######
+
+    Mx1 array of (signed?) distances
+    """
+
+    if closed:
+        #closed polygon, connect first and last points
+        a = poly
+        b = np.roll(poly, 1, axis=0)
+    else:
+        #open line
+        a = poly[:-1, :]
+        b = poly[1:, :]
+
+    a_b = b - a
+    #length squared of line segments
+    l2 = (a_b*a_b).sum(1)
+    #print(l2)
+
+    #allocate arrays for squared distance and indices
+    #set squared distance to an unreasonably high initial value
+    d2 = 1e12*np.ones(points.shape[0])
+    distance_sign = np.zeros(points.shape[0]) #keep track of which segment was closest (so we can check sign)
+
+    # loop over polygon segments
+    # chosen this way as N is expected to be << M, but sufficiently large
+    # that we don't want to create a dense NxM matrix with broadcasting
+    for i in range(len(a)):
+        if l2[i] > 0: #skip over zero length sides 
+            #find vectors from start of segment to each point
+            ai_p = points - a[i, :][None,:]
+
+            #project on the line segment, and clamp to [0,1]
+            adp = (ai_p*a_b[i, :][None,:]).sum(1)
+            t = np.clip(adp/l2[i], 0, 1) 
+            proji = a[i,:][None,:] + t[:,None]*a_b[i, :][None,:]
+
+            #calc squared distance from projected point to point
+            vd = points - proji
+            d2i = (vd*vd).sum(1)
+
+            #compare to current value of d2
+            distance_sign[d2i < d2] = np.sign(ai_p[:, 0]*a_b[i, 1] - ai_p[:, 1]*a_b[i, 0])[d2i < d2]
+            d2 = np.minimum(d2, d2i)
+
+    #check winding of polygon
+    abb = (a_b[1:, :]*a_b[:-1, :]).sum(1)
+    poly_sign = np.sign(np.sign(abb).sum())
+
+    return np.sqrt(d2)*distance_sign*poly_sign
+
+class AnnotationList(list):
+    def __init__(self, iterable=None, json=None, filename=None):
+
+        if (json is not None) or (filename is not None):
+            raise NotImplementedError('serialisation is not implemented yet')
+
+        if iterable is None:
+            list.__init__(self)
+        else:
+            list.__init__(self, iterable)
+
+    def add(self, type, points, label, z=None, width=1):
+        assert type in ['curve', 'line', 'polygon', 'rectangle']
+        self.append({'type' : type, 'points' : points,
+                                      'labelID' : label, 'z':z,
+                                      'width' : width})
+
+    def add_curve(self, points, label, z=None, width=1):
+        if isinstance(points, np.ndarray):
+                points = points.tolist()
+        self.add('curve', points, label, z, width)
+
+    def add_line(self, start, finish, label, z=None, width=1):
+        points = [tuple(start[:2]), tuple(finish[:2])]
+        self.add('line', points, label, z, width)
+
+    def add_polygon(self, points, label, z=None, width=1):
+        if isinstance(points, np.ndarray):
+                points = points.tolist()
+        self.add('polygon', points, label, z, width)
+
+    def add_rectangle(self, start, finish, label, z=None, width=1):
+        points = [tuple(start[:2]), tuple(finish[:2])]
+        self.add('rectangle', points, label, z, width)
+
+    def _draw_line_segment(self, P0, P1, width, label, output, X, Y):
+        x1, y1 = P0
+        x2, y2 = P1
+        
+        hwidth = width/2.0
+        pad_width = int(np.ceil(hwidth + 1))
+        
+        xb_0 = int(max(min(x1, x2) - pad_width, 0))
+        xb_1 = int(min(max(x1, x2) + pad_width, output.shape[0]))
+        yb_0 = int(max(min(y1, y2) - pad_width, 0))
+        yb_1 = int(min(max(y1, y2) + pad_width, output.shape[1]))
+        
+        X_ = X[xb_0:xb_1, yb_0:yb_1]
+        Y_ = Y[xb_0:xb_1, yb_0:yb_1]
+        
+        #im = output[xb_0:xb_1, yb_0:yb_1]
+        
+        dx = x2 - x1
+        dy = y2 - y1
+        dist = np.abs(dy*X_ - dx*Y_ + (x2*y1 - y2*x1))/np.sqrt(dx*dx + dy*dy)
+        mask = dist <= hwidth
+        output[xb_0:xb_1, yb_0:yb_1][mask] = label
+        
+    
+    def rasterize(self, z, shape):
+        #output = np.zeros(self.do.ds.shape[:2], 'uint8')
+        output = np.zeros(shape, 'uint8')
+        X, Y = np.mgrid[:output.shape[0], :output.shape[1]]
+        
+        for a in self:
+            if a['z'] == z:
+                pts = a['points']
+                
+                label = int(a['labelID'])
+
+                if a['type'] in ['curve', 'line']:
+                    for i in range(1, len(pts)):
+                        sp = pts[i-1]
+                        ep = pts[i]
+                        
+                        self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
+                elif a['type'] == 'polygon':
+                    from skimage import draw
+                    rr, cc = draw.polygon(*np.array(pts).T, shape=output.shape)
+                    #rr = np.clip(rr, 0, output.shape[0] -1, output)
+                    output[rr, cc] = label
+                    
+        return output
+
+    def label_points(self, points):
+        """
+        Label points based on the current set of annotations
+
+        Parameters
+        ##########
+
+        points : Mx2 ndarray
+
+        Returns
+        #######
+
+        Mx1 array of labels
+        """
+
+        out = np.zeros(points.shape[0], 'i4')
+
+        for a in self:
+            pts = a['points']
+            
+            label = int(a['labelID'])
+
+            #calculate the minimum signed distance from each point to the contour
+            dist = minimum_distance_to_poly(np.array(pts), points, closed=a['type']=='polygon')
+
+            if a['type'] in ['curve', 'line']:
+                out[np.abs(dist) <= (a['width']/2)] = label
+            elif a['type'] == 'polygon':
+                out[dist <= 0] = label
+                    
+        return out
+
+    
+
 class AnnotateBase(object):
     def __init__(self, win, selector, minimize=False):
         """
@@ -130,7 +314,7 @@ class AnnotateBase(object):
         self.lock_mode = 'None'
         self.visible = True
     
-        self._annotations = []
+        self._annotations = AnnotationList()
         self.show_annotations = True
         self._snake_settings = _Snake_Settings()
         
@@ -145,6 +329,7 @@ class AnnotateBase(object):
         win.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
         win.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
         win.AddMenuItem('Annotation', "Draw filled polygon\tCtrl-F", self.add_filled_polygon)
+        win.AddMenuItem('Annotation', "Clear all annotations", self.clear_all)
         win.AddMenuItem('Annotation', 'Clear selected anotations\tCtrl-Back', self.clear_selected)
         
 
@@ -176,43 +361,21 @@ class AnnotateBase(object):
                 print('Line must have at least 1 point')
                 return
                 
-            if isinstance(l, np.ndarray):
-                l = l.tolist()
-            self._annotations.append({'type' : 'curve', 'points' : l,
-                                      'labelID' : self.cur_label_index, 'z' : self._zp(),
-                                      'width' : self.line_width})
+            self._annotations.add_curve(l, label=self.cur_label_index, z=self._zp(), width=self.line_width)
             self._selector.trace = []
             
         elif self._selector.mode == selection.SELECTION_LINE:
-            #x0, y0, x1, y1 = self.do.GetSliceSelection()
-            x0, y0, _ = self._selector.start
-            x1, y1, _ = self._selector.finish
-            self._annotations.append({'type' : 'line', 'points' : [(x0, y0), (x1, y1)],
-                                      'labelID' : self.cur_label_index, 'z':self._zp(),
-                                      'width' : self.line_width})
+            self._annotations.add_line(self._selector.start, self._selector.finish, label=self.cur_label_index, z=self._zp(), width=self.line_width)
             
         self._update_view()
 
     def add_filled_polygon(self, event=None):
         if self._selector.mode == selection.SELECTION_SQUIGGLE:
-            l = self._selector.trace
-            if isinstance(l, np.ndarray):
-                l = l.tolist()
-            self._annotations.append({'type': 'polygon', 'points': l,
-                                      'labelID': self.cur_label_index, 'z': self._zp(),
-                                      'width': 1
-                                      })
+            self._annotations.add_polygon(self._selector.trace, label=self.cur_label_index, z=self._zp(), width=self.line_width)
             self._selector.trace = []
     
         elif self._selector.mode == selection.SELECTION_RECTANGLE:
-            #x0, y0, x1, y1 = self.do.GetSliceSelection()
-            x0, y0, _ = self._selector.start
-            x1, y1, _ = self._selector.finish
-            # TODO - make this a polygon instead?
-            self._annotations.append({'type': 'rectangle', 'points': [(x0, y0), (x1, y1)],
-                                      'labelID': self.cur_label_index, 'z': self._zp(),
-                                      'width':1
-                                      })
+            self._annotations.add_rectangle(self._selector.start, self._selector.finish, label=self.cur_label_index, z=self._zp(), width=self.line_width)
     
         self._update_view()
         
@@ -324,7 +487,11 @@ class AnnotateBase(object):
             gl.glNormalPointerf(normals)
             gl.glColorPointerf(cols)
 
-            gl.glDrawArrays(gl.GL_LINE_LOOP, 0, len(x))
+            if c['type'] == 'polygon':
+                gl.glDrawArrays(gl.GL_LINE_LOOP, 0, len(x))
+            else:
+                # line, curve
+                gl.glDrawArrays(gl.GL_LINE_STRIP, 0, len(x))
 
 
     def select_annotation(self, pos):
@@ -352,6 +519,12 @@ class AnnotateBase(object):
             self._annotations.remove(c)
 
         self.selected_annotations.clear()
+        self._update_view()
+
+    def clear_all(self, event=None):
+        self._annotations.clear()
+        self.selected_annotations.clear()
+
         self._update_view()
 
     def _visibletest(self, clump, bounds):
@@ -391,55 +564,11 @@ class AnnotateBase(object):
         D = linalg.spsolve(A, b)
         
         return D
-        
-    
-    def _draw_line_segment(self, P0, P1, width, label, output, X, Y):
-        x1, y1 = P0
-        x2, y2 = P1
-        
-        hwidth = width/2.0
-        pad_width = int(np.ceil(hwidth + 1))
-        
-        xb_0 = int(max(min(x1, x2) - pad_width, 0))
-        xb_1 = int(min(max(x1, x2) + pad_width, output.shape[0]))
-        yb_0 = int(max(min(y1, y2) - pad_width, 0))
-        yb_1 = int(min(max(y1, y2) + pad_width, output.shape[1]))
-        
-        X_ = X[xb_0:xb_1, yb_0:yb_1]
-        Y_ = Y[xb_0:xb_1, yb_0:yb_1]
-        
-        #im = output[xb_0:xb_1, yb_0:yb_1]
-        
-        dx = x2 - x1
-        dy = y2 - y1
-        dist = np.abs(dy*X_ - dx*Y_ + (x2*y1 - y2*x1))/np.sqrt(dx*dx + dy*dy)
-        mask = dist <= hwidth
-        output[xb_0:xb_1, yb_0:yb_1][mask] = label
-        
-    
-    def rasterize(self, z):
-        output = np.zeros(self.do.ds.shape[:2], 'uint8')
-        X, Y = np.mgrid[:output.shape[0], :output.shape[1]]
-        
-        for a in self._annotations:
-            if a['z'] == z:
-                pts = a['points']
-                
-                label = int(a['labelID'])
 
-                if a['type'] in ['curve', 'line']:
-                    for i in range(1, len(pts)):
-                        sp = pts[i-1]
-                        ep = pts[i]
-                        
-                        self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
-                elif a['type'] == 'polygon':
-                    from skimage import draw
-                    rr, cc = draw.polygon(*np.array(pts).T, shape=output.shape)
-                    #rr = np.clip(rr, 0, output.shape[0] -1, output)
-                    output[rr, cc] = label
-                    
-        return output
+    
+        
+    
+
     
     
 
@@ -478,7 +607,7 @@ class Annotater(Plugin, AnnotateBase):
     def get_label_image(self, event=None, mask=False):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
-        lab = np.concatenate([np.atleast_3d(self.rasterize(z)) for z in range(self.do.ds.shape[2])], 2)
+        lab = np.concatenate([np.atleast_3d(self._annotations.rasterize(z, self.do.ds.shape[:2])) for z in range(self.do.ds.shape[2])], 2)
         if mask:
             im = ImageStack(lab > 0.5, titleStub='Mask')
         else:
@@ -497,7 +626,7 @@ class Annotater(Plugin, AnnotateBase):
         from PYME.IO.image import ImageStack
         from PYME.DSView import ViewIm3D
         
-        masked = np.concatenate([np.atleast_3d((self.rasterize(z)>0)*self.do.ds[:,:,z]) for z in range(self.do.ds.shape[2])], 2)
+        masked = np.concatenate([np.atleast_3d((self._annotations.rasterize(z, self.do.ds.shape[:2])>0)*self.do.ds[:,:,z]) for z in range(self.do.ds.shape[2])], 2)
         im = ImageStack(masked, titleStub='Masked')
 
         im.mdh.copyEntriesFrom(self.dsviewer.image.mdh)
@@ -518,7 +647,7 @@ class Annotater(Plugin, AnnotateBase):
     
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier()
-        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self.rasterize(self._zp()))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
 
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
@@ -537,7 +666,7 @@ class Annotater(Plugin, AnnotateBase):
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier(clf=clf)
     
-        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self.rasterize(self._zp()))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
         self.svm_segment()
