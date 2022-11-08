@@ -511,6 +511,8 @@ class IntegerIDRule(Rule):
                   'active' : self._active,
                   'tasksTimedOut' : self.n_timed_out,
                   'tasksCompleteAfterTimeout' : self.n_returned_after_timeout,
+                  'finished' : self.finished,
+                  'expired' : self.expired,
                 }
     
     def poll_timeouts(self):

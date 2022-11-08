@@ -3,6 +3,8 @@ import json
 import socket
 from PYME.misc import pyme_zeroconf
 from PYME.misc import hybrid_ns
+import time
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,9 @@ def getDistributorInfo(ns=None):
 
 
 def getQueueInfo(distributorURL):
+    if not distributorURL.endswith('/'):
+        distributorURL += '/'
+
     r = requests.get(distributorURL + 'distributor/queues')
     if r.status_code == 200:
         resp = r.json()
@@ -47,3 +52,18 @@ def getQueueInfo(distributorURL):
             raise RuntimeError('distributor/queues query did not return ok')
     else:
         raise RuntimeError('Unexpected status code: %d from distributor/queues query' % r.status_code)
+
+
+QUEUE_INFO_TIMEOUT = 1 # seconds to hold queue info
+_queue_info_cache = {}
+def get_cached_queue_info(distributorURL):
+    try:
+        expiry, info = _queue_info_cache[distributorURL]
+        if expiry < time.time():
+            raise TimeoutError('Cache timeout expired')
+    except (KeyError, TimeoutError):
+        info = getQueueInfo(distributorURL)
+        _queue_info_cache[distributorURL] = (time.time() + QUEUE_INFO_TIMEOUT, info)
+
+    return info
+

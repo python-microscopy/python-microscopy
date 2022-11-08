@@ -14,7 +14,7 @@ tablesLock = threading.Lock()
 
 file_cache = {}
 
-
+logger=logging.getLogger(__name__)
 openLock = threading.Lock()
 
 def openH5R(filename, mode='r', keep_alive_timeout=20.0):
@@ -63,10 +63,10 @@ class H5RFile(object):
         
         self.KEEP_ALIVE_TIMEOUT = keep_alive_timeout
 
-        logging.debug('pytables open call: %s' % filename)
+        logger.debug('pytables open call: %s' % filename)
         with tablesLock:
             self._h5file = tables.open_file(filename, mode)
-        logging.debug('pytables file open: %s' % filename)
+        logger.debug('pytables file open: %s' % filename)
 
         #metadata and events are created on demand
         self._mdh = None
@@ -262,9 +262,9 @@ class H5RFile(object):
 
         except:
             traceback.print_exc()
-            logging.error(traceback.format_exc())
+            logger.exception('Error in _poll_queues [%s]'% self.filename)
         finally:
-            logging.debug('H5RFile - closing: %s' % self.filename)
+            logger.debug('H5RFile - closing: %s' % self.filename)
             #remove ourselves from the cache
             with openLock:
                 try:
@@ -277,7 +277,7 @@ class H5RFile(object):
                 with tablesLock:
                     self._h5file.close()
 
-            logging.debug('H5RFile - closed: %s' % self.filename)
+            logger.debug('H5RFile - closed: %s' % self.filename)
 
 
 
