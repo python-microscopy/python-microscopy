@@ -120,7 +120,7 @@ def format_results(data_raw, URI=''):
     """
     output_format = None
     
-    if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
+    if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log') or URI.endswith('.html'):
         output_format = 'text/csv'
         
         if isinstance(data_raw, bytes):
@@ -131,7 +131,6 @@ def format_results(data_raw, URI=''):
             import pandas as pd
             df = pd.DataFrame(data_raw)
             data = df.to_csv()
-    
     elif URI.endswith('.json'):
         output_format = 'text/json'
         if isinstance(data_raw, bytes):

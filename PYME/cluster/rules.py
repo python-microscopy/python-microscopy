@@ -375,14 +375,23 @@ class Rule(object):
     def _repr_html_(self):
         info = self.status()
         if not 'tasksPosted' in info:
-            return f'<h4>{self.__class__.__name__} ID: {self._ruleID}</h4>'
+            return f'<h5>{self.__class__.__name__} ID: {self._ruleID}</h5>'
         else:
+            error_info =''
+            tr_class = ''
+            if info['finished']:
+                if info['tasksFailed'] > 0:
+                    tr_class = ' style="background-color:indianred;" '
+                    error_info = clusterIO.get_file(f'LOGS/rules/{self._ruleID}.html').decode()
+                else:
+                    tr_class = ' style="background-color:lightgreen;" '
+
             rep=f'''
-            <h4>{self.__class__.__name__} ID: {self._ruleID}</h4>
+            <h5>{self.__class__.__name__} ID: {self._ruleID}</h5>
             <table class="table table-striped">
             <tr><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Timed out</th><th>Returned after timeout</th><th>Avg Cost</th><th></th></tr>
 
-            <tr>
+            <tr {tr_class}>
                 <td>{ info['tasksPosted'] }</td>
                 <td>{ info['tasksRunning'] }</td>
                 <td>{ info['tasksCompleted'] }</td>
@@ -390,10 +399,11 @@ class Rule(object):
                 <td>{ info['tasksTimedOut'] }</td>
                 <td>{ info['tasksCompleteAfterTimeout'] }</td>
                 <td>{ info['averageExecutionCost'] }</td>
-                <td><button>Abort</button></td>
+                <!--<td><button>Abort</button></td>-->
             </tr>
 
-        </table>
+            </table>
+            {error_info}
             '''
 
             return rep
