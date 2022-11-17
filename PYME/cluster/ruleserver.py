@@ -402,7 +402,7 @@ class IntegerIDRule(Rule):
         status = np.array(info['status'], 'uint8')
         
         with self._info_lock:
-            old_status = self._task_info['status'][taskIDs]
+            old_status = np.copy(self._task_info['status'][taskIDs])
             self._task_info['status'][taskIDs] = status
             
             # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice

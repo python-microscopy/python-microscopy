@@ -3,6 +3,7 @@ from PYME.contrib import dispatch
 from .base import ModuleBase, OutputModule
 from PYME.recipes import base
 from PYME.IO.image import ImageStack
+import time
 
 import logging
 logger = logging.getLogger(__name__)
@@ -41,6 +42,8 @@ class Recipe(HasTraits):
         self.failed = False
         
         self._dg_sig = None
+
+        self._exec_times = {} #record module run times ...
     
     def invalidate_data(self):
         if self.execute_on_invalidation:
@@ -221,8 +224,10 @@ class Recipe(HasTraits):
                 if isinstance(m, ModuleBase) and not getattr(m, '_success', False):
                     try:
                         logger.debug('Executing %s' % m)
+                        ts = time.time()
                         m.check_inputs(self.namespace)
                         m.execute(self.namespace)
+                        self._exec_times[base.module_names[m.__class__]] = time.time() - ts
                         m._last_error = None
                         m._success = True
                         if progress_callback:
@@ -252,6 +257,8 @@ class Recipe(HasTraits):
             
             self.failed = False
             self.recipe_executed.send_robust(self)
+
+            logger.debug('Module timings: %s' % self._exec_times )
             
             # detect changes in recipe wiring
             dg_sig = str(self.dependancyGraph())
@@ -678,8 +685,8 @@ class Recipe(HasTraits):
             import tables
             from PYME.IO import h5rFile
             try:
-                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r')._h5file as h5f:
-                    self._inject_tables_from_hdf5(key, h5f, fn, extension)
+                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r') as h5f:
+                    self._inject_tables_from_hdf5(key, h5f._h5file, fn, extension)
             except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
                 if unifiedIO.is_cluster_uri(filename):
                     # try again, this time forcing access through the dataserver

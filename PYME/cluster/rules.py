@@ -76,6 +76,47 @@ def verify_cluster_results_filename(resultsFilename):
     return resultsFilename
 
 
+class RuleWatcher(object):
+    """ Single object / thread to watch multiple rules"""
+    def __init__(self):
+        self.active = True
+        self._rules_to_watch = []
+        self._cached_status = {}
+
+        self._t_watch = None
+
+    def _ipy_status_update(self):
+        from IPython.display import update_display
+        while self.active:
+            for r, disp_id in self._rules_to_watch:
+                try:
+                    s = r.status()
+                    if not (self._cached_status.get(disp_id, {}) == s):
+                        update_display(r, display_id=disp_id)
+                        self._cached_status[disp_id] = s
+                except:
+                    logger.exception('Error updating rule %s' % r)
+            
+            time.sleep(1)
+
+    def watch(self, rule):
+        import uuid
+        from IPython.display import display
+        
+        disp_id = str(uuid.uuid4())
+        display(rule, display_id=disp_id)
+        
+        self._rules_to_watch.append((rule, disp_id))
+        
+        if (self._t_watch is None) or not (self._t_watch.is_alive()):
+            self._t_watch = threading.Thread(target=self._ipy_status_update)
+            self._t_watch.daemon=False
+            self._t_watch.start()
+        
+rule_watcher = RuleWatcher()
+        
+
+
 class Rule(object):
     def __init__(self, on_completion=None, **kwargs):
         """
@@ -363,12 +404,16 @@ class Rule(object):
             time.sleep(1)
             update_display(self, display_id=self._disp_id)
 
-    def watch(self):
+    def _watch(self):
         import uuid
         from IPython.display import display
         self._disp_id = str(uuid.uuid4())
         display(self, display_id=self._disp_id)
         threading.Thread(target=self._ipy_status_update).start()
+        return self
+
+    def watch(self):
+        rule_watcher.watch(self)
         return self
 
     
