@@ -275,6 +275,10 @@ class DSViewFrame(AUIFrame):
             #if 'view' in dir(self):
             #    self.view.Refresh()
             statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
+            
+            #intensity at current cursor
+            statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.zp, self.do.xp, self.do.yp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
+            
             #grab status from modules which supply it
             for sCallback in self.statusHooks:
                 statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
@@ -327,10 +331,10 @@ class DSViewFrame(AUIFrame):
     def OnExport(self, event=None):
         from PYME.ui import crop_dialog
         from PYME.IO.DataSources.CropDataSource import crop_image
-        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
-        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
-        by = min(self.do.selection_begin_y, self.do.selection_end_y)
-        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        bx = min(self.do.selection.start.x, self.do.selection.finish.x)
+        ex = max(self.do.selection.start.x, self.do.selection.finish.x)
+        by = min(self.do.selection.start.y, self.do.selection.finish.y)
+        ey = max(self.do.selection.start.y, self.do.selection.finish.y)
         
         roi = [[bx, ex + 1],[by, ey + 1],
                [0, self.image.data_xyztc.shape[2]],

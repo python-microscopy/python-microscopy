@@ -21,6 +21,7 @@
 ##################
 import wx
 from ._base import Plugin
+from PYME.ui import selection
 
 class Cropper(Plugin):
     def __init__(self, dsviewer):
@@ -36,7 +37,7 @@ class Cropper(Plugin):
         
         from PYME.DSView import ViewIm3D
 
-        if not (self.do.selectionMode == self.do.SELECTION_RECTANGLE):
+        if not (self.do.selection.mode == selection.SELECTION_RECTANGLE):
             wx.MessageBox('Cropping only supported for rectangular selections\n For non-rectangular masking see the `annotation` module', 'Error', wx.OK|wx.ICON_ERROR)
             return
 
@@ -81,7 +82,7 @@ class Cropper(Plugin):
             #print sigmas
             #print self.images[0].img.shape
 
-        x0, x1, y0, y1 = [self.do.selection_begin_x, self.do.selection_end_x, self.do.selection_begin_y, self.do.selection_end_y]
+        x0, x1, y0, y1 = [self.do.selection.start.x, self.do.selection.finish.x, self.do.selection.start.y, self.do.selection.finish.y]
         
         dx = x1 - x0
         dy = y1 - y0

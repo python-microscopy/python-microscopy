@@ -20,7 +20,8 @@
 #
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
-
+from PYME.ui import selection
+import numpy as np
 
 class SelectionOverlayLayer(OverlayLayer):
 
@@ -50,15 +51,54 @@ class SelectionOverlayLayer(OverlayLayer):
         with self.get_shader_program(gl_canvas):
             if self._selection_settings.show:
                 glDisable(GL_LIGHTING)
-                x0, y0 = self._selection_settings.start
-                x1, y1 = self._selection_settings.finish
+                if self._selection_settings.mode == selection.SELECTION_RECTANGLE: 
+                    x0, y0, _ = self._selection_settings.start
+                    x1, y1, _ = self._selection_settings.finish
 
-                zc = gl_canvas.view.translation[2]
+                    zc = gl_canvas.view.translation[2]
 
-                glColor3fv(self._selection_settings.colour)
-                glBegin(GL_LINE_LOOP)
-                glVertex3f(x0, y0, zc)
-                glVertex3f(x1, y0, zc)
-                glVertex3f(x1, y1, zc)
-                glVertex3f(x0, y1, zc)
-                glEnd()
+                    glLineWidth(1)
+                    glColor3fv(self._selection_settings.colour)
+                    glBegin(GL_LINE_LOOP)
+                    glVertex3f(x0, y0, zc)
+                    glVertex3f(x1, y0, zc)
+                    glVertex3f(x1, y1, zc)
+                    glVertex3f(x0, y1, zc)
+                    glEnd()
+
+                elif self._selection_settings.mode == selection.SELECTION_LINE:
+                    x0, y0, _ = self._selection_settings.start
+                    x1, y1, _ = self._selection_settings.finish
+
+                    zc = gl_canvas.view.translation[2]
+
+                    glLineWidth(self._selection_settings.width)
+                    glColor3fv(self._selection_settings.colour)
+                    glBegin(GL_LINES)
+                    glVertex3f(x0, y0, zc)
+                    glVertex3f(x1, y1, zc)
+                    glEnd()
+
+                elif self._selection_settings.mode == selection.SELECTION_SQUIGGLE:
+                    if len(self._selection_settings.trace) == 0:
+                        return
+                        
+                    x, y = np.array(self._selection_settings.trace).T
+                    z = np.ones_like(x)*gl_canvas.view.translation[2]
+
+                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+                    vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
+                    normals = -0.69 * np.ones(vertices.shape)
+                    c = np.ones(len(x))[:,None]*np.hstack([self._selection_settings.colour, 1.0])[None,:]
+                    
+                    glDisable(GL_LIGHTING)
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                    glDisable(GL_DEPTH_TEST)
+                    glLineWidth(self._selection_settings.width)
+                    #glColor3fv(self._selection_settings.colour)
+
+                    glVertexPointerf(vertices)
+                    glNormalPointerf(normals)
+                    glColorPointerf(c)
+                    glDrawArrays(GL_LINE_STRIP, 0, len(x))
+

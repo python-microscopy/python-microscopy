@@ -186,7 +186,7 @@ class Filterer(Plugin):
             #print sigmas
             #print self.images[0].img.shape
 
-        #roi = [[self.do.selection_begin_x, self.do.selection_end_x + 1],[self.do.selection_begin_y, self.do.selection_end_y +1], [0, self.image.data.shape[2]]]
+        #roi = [[self.do.selection.start.x, self.do.selection.finish.x + 1],[self.do.selection.start.y, self.do.selection.finish.y +1], [0, self.image.data.shape[2]]]
 
         #filt_ims = [np.atleast_3d(self.image.data[:,:,:,chanNum].squeeze() > self.dsviewer.do.Offs[chanNum]) for chanNum in range(self.image.data.shape[3])]
 

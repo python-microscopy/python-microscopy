@@ -76,6 +76,47 @@ def verify_cluster_results_filename(resultsFilename):
     return resultsFilename
 
 
+class RuleWatcher(object):
+    """ Single object / thread to watch multiple rules"""
+    def __init__(self):
+        self.active = True
+        self._rules_to_watch = []
+        self._cached_status = {}
+
+        self._t_watch = None
+
+    def _ipy_status_update(self):
+        from IPython.display import update_display
+        while self.active:
+            for r, disp_id in self._rules_to_watch:
+                try:
+                    s = r.status()
+                    if not (self._cached_status.get(disp_id, {}) == s):
+                        update_display(r, display_id=disp_id)
+                        self._cached_status[disp_id] = s
+                except:
+                    logger.exception('Error updating rule %s' % r)
+            
+            time.sleep(1)
+
+    def watch(self, rule):
+        import uuid
+        from IPython.display import display
+        
+        disp_id = str(uuid.uuid4())
+        display(rule, display_id=disp_id)
+        
+        self._rules_to_watch.append((rule, disp_id))
+        
+        if (self._t_watch is None) or not (self._t_watch.is_alive()):
+            self._t_watch = threading.Thread(target=self._ipy_status_update)
+            self._t_watch.daemon=False
+            self._t_watch.start()
+        
+rule_watcher = RuleWatcher()
+        
+
+
 class Rule(object):
     def __init__(self, on_completion=None, **kwargs):
         """
@@ -219,7 +260,7 @@ class Rule(object):
         def _search():
             for name, info in ns.get_advertised_services():
                 if name.startswith('PYMERuleServer'):
-                    print(info, info.address)
+                    #print(info, info.address)
                     queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
     
         _search()
@@ -257,6 +298,8 @@ class Rule(object):
             self.pollT.start()
         else:
             self.on_data_complete()
+
+        return self #return a reference so we can chain methods - e.g. Rule.post().watch().join()
 
     def _post_rule(self, timeout=3600, max_tasks=1e6, release_start=None, release_end=None):
         """ wrapper around add_integer_rule api endpoint"""
@@ -339,6 +382,77 @@ class Rule(object):
 
     def cleanup(self):
         self.doPoll = False
+
+    def status(self):
+        from PYME.cluster.distribution import get_cached_queue_info
+        status = get_cached_queue_info(self.taskQueueURI).get(self._ruleID, None)
+        if status is None:
+            return {'finished':False}
+        else:
+            return status
+
+    def join(self):
+        while not self.status()['finished']:
+            time.sleep(1)
+        #raise NotImplementedError('Join is not implemented yet')
+
+    #def __repr__(self) -> str:
+
+    def _ipy_status_update(self):
+        from IPython.display import update_display
+        while not self.status()['finished']:
+            time.sleep(1)
+            update_display(self, display_id=self._disp_id)
+
+    def _watch(self):
+        import uuid
+        from IPython.display import display
+        self._disp_id = str(uuid.uuid4())
+        display(self, display_id=self._disp_id)
+        threading.Thread(target=self._ipy_status_update).start()
+        return self
+
+    def watch(self):
+        rule_watcher.watch(self)
+        return self
+
+    
+    def _repr_html_(self):
+        info = self.status()
+        if not 'tasksPosted' in info:
+            return f'<h5>{self.__class__.__name__} ID: {self._ruleID}</h5>'
+        else:
+            error_info =''
+            tr_class = ''
+            if info['finished']:
+                if info['tasksFailed'] > 0:
+                    tr_class = ' style="background-color:indianred;" '
+                    error_info = clusterIO.get_file(f'LOGS/rules/{self._ruleID}.html').decode()
+                else:
+                    tr_class = ' style="background-color:lightgreen;" '
+
+            rep=f'''
+            <h5>{self.__class__.__name__} ID: {self._ruleID}</h5>
+            <table class="table table-striped">
+            <tr><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Timed out</th><th>Returned after timeout</th><th>Avg Cost</th><th></th></tr>
+
+            <tr {tr_class}>
+                <td>{ info['tasksPosted'] }</td>
+                <td>{ info['tasksRunning'] }</td>
+                <td>{ info['tasksCompleted'] }</td>
+                <td>{ info['tasksFailed'] }</td>
+                <td>{ info['tasksTimedOut'] }</td>
+                <td>{ info['tasksCompleteAfterTimeout'] }</td>
+                <td>{ info['averageExecutionCost'] }</td>
+                <!--<td><button>Abort</button></td>-->
+            </tr>
+
+            </table>
+            {error_info}
+            '''
+
+            return rep
+        
 
 
 class RecipeRule(Rule):

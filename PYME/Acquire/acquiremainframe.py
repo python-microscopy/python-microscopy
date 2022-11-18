@@ -535,7 +535,7 @@ class PYMEMainFrame(AUIFrame):
         logging.debug('Stopping frame wrangler to set ROI')
         self.scope.frameWrangler.stop()
         
-        #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
+        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
 
         if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
@@ -608,7 +608,7 @@ class PYMEMainFrame(AUIFrame):
     def SetCentredRoi(self, event=None, halfwidth=5):
         self.scope.frameWrangler.stop()
 
-        #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
+        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
 
         w = self.scope.cam.GetCCDWidth()
         h = self.scope.cam.GetCCDHeight()

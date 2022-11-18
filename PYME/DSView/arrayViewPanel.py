@@ -35,6 +35,7 @@ import scipy
 import matplotlib.cm
 
 from PYME.ui import wx_compat
+from PYME.ui import selection
 
 LUTCache = {}
 
@@ -323,15 +324,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             lx, ly = self.pixel_to_screen_coordinates(lx, ly)
             hx, hy = self.pixel_to_screen_coordinates(hx, hy)
             
-            if self.do.selectionMode == DisplayOpts.SELECTION_RECTANGLE:
+            if self.do.selection.mode == selection.SELECTION_RECTANGLE:
                 dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
                 
-            elif self.do.selectionMode == DisplayOpts.SELECTION_SQUIGGLE:
-                if len(self.do.selection_trace) > 2:
-                    x, y = numpy.array(self.do.selection_trace).T
+            elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
+                if len(self.do.selection.trace) > 2:
+                    x, y = numpy.array(self.do.selection.trace).T
                     pts = numpy.vstack(self.pixel_to_screen_coordinates(x, y)).T
                     dc.DrawSpline(pts)
-            elif self.do.selectionWidth == 1:
+            elif self.do.selection.width == 1:
                 dc.DrawLine(lx,ly, hx,hy)
             else:
                 lx, ly, hx, hy = self.do.GetSliceSelection()
@@ -339,11 +340,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 dy = hy - ly
 
                 if dx == 0 and dy == 0: #special case - profile is orthogonal to current plane
-                    d_x = 0.5*self.do.selectionWidth
-                    d_y = 0.5*self.do.selectionWidth
+                    d_x = 0.5*self.do.selection.width
+                    d_y = 0.5*self.do.selection.width
                 else:
-                    d_x = 0.5*self.do.selectionWidth*dy/numpy.sqrt((dx**2 + dy**2))
-                    d_y = 0.5*self.do.selectionWidth*dx/numpy.sqrt((dx**2 + dy**2))
+                    d_x = 0.5*self.do.selection.width*dy/numpy.sqrt((dx**2 + dy**2))
+                    d_y = 0.5*self.do.selection.width*dx/numpy.sqrt((dx**2 + dy**2))
                     
                 x_0, y_0 = self.pixel_to_screen_coordinates(lx + d_x, ly - d_y)
                 x_1, y_1 = self.pixel_to_screen_coordinates(lx - d_x, ly + d_y)
@@ -734,14 +735,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = self._evt_pixel_coords(event)
         
         if (self.do.slice == self.do.SLICE_XY):
-            self.do.selection_begin_x, self.do.selection_begin_y = [int(p) for p in pos]
+            self.do.selection.start.x, self.do.selection.start.y = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.selection_begin_x, self.do.selection_begin_z = [int(p) for p in pos]
+            self.do.selection.start.x, self.do.selection.start.z = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.selection_begin_y, self.do.selection_begin_z = [int(p) for p in pos]
+            self.do.selection.start.y, self.do.selection.start.z = [int(p) for p in pos]
             
-        self.do.selection_trace = []
-        self.do.selection_trace.append(tuple(pos))
+        self.do.selection.trace = []
+        self.do.selection.trace.append(tuple(pos))
 
     def _on_right_up(self,event):
         self._progress_selection(event)
@@ -755,27 +756,27 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         pos = self._evt_pixel_coords(event)
         
         if (self.do.slice == self.do.SLICE_XY):
-            self.do.selection_end_x, self.do.selection_end_y = [int(p) for p in pos]
+            self.do.selection.finish.x, self.do.selection.finish.y = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_XZ):
-            self.do.selection_end_x, self.do.selection_end_z = [int(p) for p in pos]
+            self.do.selection.finish.x, self.do.selection.finish.z = [int(p) for p in pos]
         elif (self.do.slice == self.do.SLICE_YZ):
-            self.do.selection_end_y, self.do.selection_end_z = [int(p) for p in pos]
+            self.do.selection.finish.y, self.do.selection.finish.z = [int(p) for p in pos]
 
 
         if event.ShiftDown(): #lock
             if (self.do.slice == self.do.SLICE_XY):
 
-                dx = abs(self.do.selection_end_x - self.do.selection_begin_x)
-                dy = abs(self.do.selection_end_y - self.do.selection_begin_y)
+                dx = abs(self.do.selection.finish.x - self.do.selection.start.x)
+                dy = abs(self.do.selection.finish.y - self.do.selection.start.y)
 
                 if dx > 1.5*dy: #horizontal
-                    self.do.selection_end_y = self.do.selection_begin_y
+                    self.do.selection.finish.y = self.do.selection.start.y
                 elif dy > 1.5*dx: #vertical
-                    self.do.selection_end_x = self.do.selection_begin_x
+                    self.do.selection.finish.x = self.do.selection.start.x
                 else: #diagonal
-                    self.do.selection_end_y = self.do.selection_begin_y + dx*numpy.sign(self.do.selection_end_y - self.do.selection_begin_y)
+                    self.do.selection.finish.y = self.do.selection.start.y + dx*numpy.sign(self.do.selection.finish.y - self.do.selection.start.y)
                 
-        self.do.selection_trace.append(pos)
+        self.do.selection.trace.append(pos)
 
         self.Refresh()
         self.Update()

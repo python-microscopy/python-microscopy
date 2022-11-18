@@ -26,6 +26,7 @@ import glob
 import os
 
 from PYME import config
+from PYME.DSView.modules import _load_mod
 
 import logging
 
@@ -34,17 +35,20 @@ logger = logging.getLogger(__name__)
 mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py') + glob.glob(__path__[0] + '/[a-zA-Z]*.pyc')]))
 mods.sort()
 
+
 def InitPlugins(visFr):
     for mn in mods:
         #print mods
         logger.debug('Initializing %s plugin' % mn)
         m = __import__('PYME.LMVis.Extras.' + mn, fromlist=['PYME', 'LMVis', 'Extras'])
-        m.Plug(visFr)
+        #m.Plug(visFr)
+        _load_mod(m, mn, visFr)
 
     for mn in config.get_plugins('visgui'):
         try:
             m = __import__(mn, fromlist=mn.split('.')[:-1])
-            m.Plug(visFr)
+            #m.Plug(visFr)
+            _load_mod(m, mn, visFr)
         except Exception as e:
             #import traceback
             #traceback.print_exc()
