@@ -205,6 +205,7 @@ class IntegerIDRule(Rule):
         self.nCompleted = 0
         self.nFailed = 0
         self.n_returned_after_timeout = 0
+        self.n_repeats = 0
         self.n_timed_out = 0
         
         self._n_max = max_task_ID
@@ -405,16 +406,22 @@ class IntegerIDRule(Rule):
             old_status = np.copy(self._task_info['status'][taskIDs])
             self._task_info['status'][taskIDs] = status
             
+            # if tasks have timed out (or results have already been recieved), they will register as not assigned
+            n_not_assigned = int((old_status != STATUS_ASSIGNED).sum())
+            
             # if we re-queue tasks after timeout we might receive answers from the re-queued tasks twice
             n_already_complete = int((old_status == STATUS_COMPLETE).sum())
             n_already_failed = int((old_status == STATUS_FAILED).sum())
             
+            
             self.nCompleted += (int((status == STATUS_COMPLETE).sum()) - n_already_complete)
             self.nFailed += (int((status == STATUS_FAILED).sum()) - n_already_failed)
             
-            self.n_returned_after_timeout += (n_already_complete + n_already_failed)
+            self.n_repeats += (n_already_complete + n_already_failed)
+            self.n_returned_after_timeout += n_not_assigned
+            self.nAvailable -= (n_not_assigned - (n_already_complete + n_already_failed))
             
-            nTasks = len(taskIDs) - (n_already_complete + n_already_failed)
+            nTasks = len(taskIDs) - n_not_assigned#(n_already_complete + n_already_failed)
             self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
