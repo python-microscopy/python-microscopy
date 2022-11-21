@@ -144,6 +144,11 @@ class OptionsPanel(wx.Panel):
 
         self.bOptimise = wx.Button(pan_opt, -1, "Stretch", style=wx.BU_EXACTFIT)
 
+        self.cb_stretch_method = wx.Choice(pan_opt, -1, choices=["min-99th", "min-max"])
+        self._stretch_settings = ['percentile', 'min-max']  # translate to displayOptions terms
+        self.cb_stretch_method.SetSelection(0)
+        self.cb_stretch_method.Bind(wx.EVT_CHOICE, self.OnStretchMethodChanged)
+
         self.cbScale = wx.Choice(pan_opt, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1", "8:1", "16:1"])
         self.cbScale.SetSelection(4)
         self.scale_11 = 4
@@ -153,6 +158,7 @@ class OptionsPanel(wx.Panel):
             
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bOptimise, 0, wx.ALL|wx.ALIGN_CENTER, 5)
+            hsizer.Add(self.cb_stretch_method, 0, wx.ALL|wx.EXPAND, 5)
             hsizer.Add(self.cbScale, 0, wx.ALL|wx.ALIGN_CENTER, 5)
             
             pan_opt.SetSizerAndFit(hsizer)
@@ -161,7 +167,10 @@ class OptionsPanel(wx.Panel):
 
         else:
             pvsizer = wx.BoxSizer(wx.VERTICAL)
-            pvsizer.Add(self.bOptimise, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.EXPAND, 5)
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(self.cb_stretch_method, 0, wx.ALL|wx.EXPAND, 5)
+            hsizer.Add(self.bOptimise, 0, wx.ALL|wx.EXPAND, 5)
+            pvsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -259,9 +268,15 @@ class OptionsPanel(wx.Panel):
         #def OnSize(self, evt):
         #_w, _h = self.GetVirtualSize()
         #self.SetVirtualSize(-1, _h)
+    
+    def OnStretchMethodChanged(self, wx_event):
+        """
+        Call optimize with the new stretch setting
+        """
+        self.OnOptimise(wx_event)
 
     def OnOptimise(self, event):
-        self.do.Optimise()
+        self.do.Optimise(bounds_method=self._stretch_settings[self.cb_stretch_method.GetSelection()])
         self.RefreshHists()
 
     #constants for slice selection

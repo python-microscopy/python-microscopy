@@ -416,15 +416,12 @@ class DisplayOpts(object):
                 else:
                     c = np.abs(c)
                     
-            if c.size > 1e4:
-                c = c[::int(np.floor(c.size/1e4))]
-            
             chan_d.append(c)
             
         return chan_d
 
-    def Optimise(self):
-        bds = [self._optimal_display_range(c) for c in self.get_hist_data()]
+    def Optimise(self, bounds_method='percentile'):
+        bds = [self._optimal_display_range(c, bounds_method) for c in self.get_hist_data()]
         
         for i, bd in enumerate(bds):
             low, high = bd
