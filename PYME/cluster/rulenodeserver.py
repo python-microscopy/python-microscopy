@@ -169,6 +169,7 @@ class NodeServer(object):
 
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.handinSession = requests.Session()
+        self.handinSession.trust_env = False
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
 
@@ -330,6 +331,7 @@ class NodeServer(object):
 
         if self.handinSession is None:
             self.handinSession = requests.Session()
+            self.handinSession.trust_env = False
 
         try:
             while True:
