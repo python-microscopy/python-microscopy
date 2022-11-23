@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, OutputModule
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr, Dict, Str
 
 import numpy as np
 #import pandas as pd
@@ -187,10 +187,15 @@ class ImageOutput(OutputModule):
     """
     inputName = Input('output')
     filePattern = '{output_dir}/{file_stub}.tif'
+    extraMetadata = Dict(Str)
     
     def generate(self, namespace, recipe_context={}):
         im =  namespace[self.inputName]
         im.mdh.record_pyme_version()
+
+        for k, v in self.extraMetadata.items():
+            im.mdh[k] = v
+
         return im
 
     def save(self, namespace, context={}):
@@ -325,6 +330,7 @@ class HDFOutput(OutputModule):
     """
     inputVariables = DictStrStr()
     filePattern = '{output_dir}/{file_stub}.hdf'
+    extraMetadata = Dict(Str)
 
     @property
     def inputs(self):
@@ -347,7 +353,7 @@ class HDFOutput(OutputModule):
         -------
 
         """
-
+        from PYME.IO.MetaDataHandler import DictMDHandler
         out_filename = self.filePattern.format(**context)
 
         if self.scheme == 'pyme-cluster:// - aggregate':
@@ -364,7 +370,12 @@ class HDFOutput(OutputModule):
             
             for name, h5_name in self.inputVariables.items():
                 v = namespace[name]
-                v.to_hdf(out_filename, tablename=h5_name, metadata=getattr(v, 'mdh', None))
+
+                mdh = DictMDHandler(getattr(v, 'mdh', None))
+                for k, val in self.extraMetadata.items():
+                    mdh[k] = val
+
+                v.to_hdf(out_filename, tablename=h5_name, metadata=mdh)
 
     @property
     def default_view(self):
