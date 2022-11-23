@@ -117,6 +117,7 @@ class DirectoryInfoManager(object):
             session = self._sessions[servinfo]
         except KeyError:
             session = requests.Session()
+            session.trust_env = False
             self._sessions[servinfo] = session
 
         return session

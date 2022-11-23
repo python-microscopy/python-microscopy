@@ -126,6 +126,7 @@ class QueueAcquisitions(OutputModule):
         
         dest = self.action_server_url + '/queue_actions'
         session = requests.Session()
+        session.trust_env = False
         actions = list()
         for ri in range(positions.shape[0]):
             actions.append({

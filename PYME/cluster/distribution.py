@@ -43,7 +43,9 @@ def getQueueInfo(distributorURL):
     if not distributorURL.endswith('/'):
         distributorURL += '/'
 
-    r = requests.get(distributorURL + 'distributor/queues')
+    session = requests.Session()
+    session.trust_env = False
+    r = session.get(distributorURL + 'distributor/queues')
     if r.status_code == 200:
         resp = r.json()
         if resp['ok']:

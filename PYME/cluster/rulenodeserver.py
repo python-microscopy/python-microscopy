@@ -178,6 +178,7 @@ class NodeServer(object):
 
         logger.debug('Starting to poll for tasks')
         self.taskSession = requests.Session()
+        self.taskSession.trust_env = False
         self.taskThread = threading.Thread(target=self._poll_tasks)
         self.taskThread.start()
 
@@ -219,6 +220,7 @@ class NodeServer(object):
 
             if self.taskSession is None:
                 self.taskSession = requests.Session()
+                self.taskSession.trust_env = False
 
             
             try:
@@ -316,6 +318,10 @@ class NodeServer(object):
                     logger.error('Error getting tasks: Could not connect to distributor')
                     
                 return
+
+            except:
+                logger.exception('Error getting tasks')
+                print(url, r)
                 
 
     def _do_handins(self):
