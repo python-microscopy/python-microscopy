@@ -172,6 +172,7 @@ def _getSession(url):
         session = sessions[servinfo]
     except KeyError:
         session = requests.Session()
+        session.trust_env = False
         sessions[servinfo] = session
 
     return session

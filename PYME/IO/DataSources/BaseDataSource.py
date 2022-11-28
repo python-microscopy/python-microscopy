@@ -337,6 +337,7 @@ class XYZTCDataSource(BaseDataSource):
         #print(indices)
         #allocate output array
         out = np.zeros([_slice_len(slice(*indices[k])) for k in 'XYZTC'], dtype=self.dtype)
+        #print(indices, out.shape)
         
         for ci, c in enumerate(range(*indices['C'])):
             for ti, t in enumerate(range(*indices['T'])):

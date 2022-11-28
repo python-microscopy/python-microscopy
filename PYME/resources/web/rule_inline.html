@@ -1,0 +1,21 @@
+<table class="table table-striped">
+    <tr><th>Type</th><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Timed out</th><th>Returned after timeout</th><th>Avg Cost</th><th></th></tr>
+    
+    {% for ri in info %}
+        {% if ri.tasksPosted %}
+        <tr style="background-image: linear-gradient(to right, lightgreen, lightgreen {{ 100*ri.tasksCompleted/ri.tasksPosted }}%, indianred {{ 100*ri.tasksCompleted/ri.tasksPosted }}%, indianred {{ 100*(ri.tasksCompleted + ri.tasksFailed)/ri.tasksPosted }}%, lightgrey {{ 100*(ri.tasksCompleted + ri.tasksFailed)/ri.tasksPosted }}%,lightgrey);">
+        <td>RecipeRule</td>
+        <td>{{ ri['ID'] }}</td>
+        <td>{{ ri['tasksPosted'] }}</td>
+        <td>{{ ri['tasksRunning'] }}</td>
+        <td>{{ ri['tasksCompleted'] }}</td>
+        <td>{{ ri['tasksFailed'] }}{% if ri.errors %} - <a href={{ri.errors}}>Error log</a>{% endif %}</td>
+        <td>{{ ri['tasksTimedOut'] }}</td>
+        <td>{{ ri['tasksCompleteAfterTimeout'] }}</td>
+        <td>{{ ri['averageExecutionCost'] }}</td>
+        <!--<td><button>Abort</button></td>-->
+    </tr>
+    {% endif %}
+    {% endfor %}
+
+</table>

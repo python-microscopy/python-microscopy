@@ -113,7 +113,81 @@ class RuleWatcher(object):
             self._t_watch.daemon=False
             self._t_watch.start()
         
-rule_watcher = RuleWatcher()
+import jinja2
+jenv = jinja2.Environment(loader=jinja2.PackageLoader('PYME.resources', 'web'))
+rg_template = jenv.get_template('rule_inline.html')
+class RuleGroupWatcher(object):
+    """ Single object / thread to watch multiple rules
+    
+    Used when launching rules from jupyter notebooks, this will show an 
+    updating display of rule progress
+
+    """
+
+    def __init__(self):
+        self.active = True
+        #self._rules_to_watch = {}
+        self._rule_groups = {}
+        self._cached_status = {}
+
+        self._t_watch = None
+        self._curr_cell = None
+        self._ip = None
+
+    def _pre_run_cell(self, info):
+        #print(info)
+        import uuid
+        self._info = info
+        self._curr_cell = str(uuid.uuid4())#info.cell_id
+
+    def _update(self):
+        from IPython.display import update_display
+        from PYME.cluster.distribution import get_cached_queue_info
+        
+        while self.active:
+            try:
+                for rules, disp_id in self._rule_groups.values():
+                    status = get_cached_queue_info(rules[0].taskQueueURI)
+                    if status != self._cached_status.get(disp_id, None):
+                        self._cached_status[disp_id] = status
+                        
+                        ri = [rule._get_info(status) for rule in rules]
+                        html = rg_template.render(info=ri)
+                        update_display({'text/html': html}, raw=True, display_id=disp_id)
+            except:
+                logger.exception('Error polling rule')
+
+            time.sleep(1)
+
+    def register(self):
+        import IPython
+        self._ip = IPython.get_ipython()
+
+        if not self._ip is None:
+            self._ip.events.register('pre_run_cell', self._pre_run_cell)
+
+    def watch(self, rule):
+        import uuid
+        from IPython.display import display
+        
+        try:
+            rules, disp_id = self._rule_groups[self._curr_cell]
+
+            rules.append(rule)
+        except KeyError:
+            disp_id = str(uuid.uuid4())
+            display('', display_id=disp_id)
+
+            self._rule_groups[self._curr_cell] = ([rule, ], disp_id)
+        
+        
+        if (self._t_watch is None) or not (self._t_watch.is_alive()):
+            self._t_watch = threading.Thread(target=self._update)
+            self._t_watch.daemon=False
+            self._t_watch.start()
+
+
+rule_watcher = RuleGroupWatcher()
         
 
 
@@ -385,11 +459,7 @@ class Rule(object):
 
     def status(self):
         from PYME.cluster.distribution import get_cached_queue_info
-        status = get_cached_queue_info(self.taskQueueURI).get(self._ruleID, None)
-        if status is None:
-            return {'finished':False}
-        else:
-            return status
+        return self._get_info(get_cached_queue_info(self.taskQueueURI), errors=False)
 
     def join(self):
         while not self.status()['finished']:
@@ -416,6 +486,24 @@ class Rule(object):
         rule_watcher.watch(self)
         return self
 
+    def _get_info(self, queue_info, errors=True):
+        """
+        Extract the bit of info which is relevant to this rule 
+        from the complete queue info dictionary
+        """
+        info = {'finished': False}
+        info.update(queue_info.get(self._ruleID, {}))
+
+        if errors: 
+            if (info.get('tasksFailed', 0) > 0):
+                dm = clusterIO.get_dir_manager()
+                info['errors'] = dm.locate_file(f'LOGS/rules/{self._ruleID}.html', True)[0][0]
+            else:
+                info['errors'] = None
+
+        info['ID'] = self._ruleID
+
+        return info
     
     def _repr_html_(self):
         info = self.status()
