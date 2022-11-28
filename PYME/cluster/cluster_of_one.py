@@ -9,12 +9,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ClusterOfOne(object):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, num_workers):
         self._data_server = None
         self._rule_server = None
         self._node_server = None
         self._cluster_ui = None
         
+        self._num_workers = num_workers
         self._root_dir = root_dir
         
     def _kill_procs(self, procs):
@@ -54,7 +55,7 @@ class ClusterOfOne(object):
             self._kill_procs([self._node_server, ])
 
         logger.info('Launching node server')
-        self._node_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0' % sys.executable, shell=True)
+        self._node_server = subprocess.Popen('"%s" -m PYME.cluster.PYMERuleNodeServer -a local -p 0 --num-workers=%d' % (sys.executable, self._num_workers), shell=True)
         
     def _launch_cluster_ui(self, gui=False):
         try:
@@ -124,26 +125,31 @@ def main():
     import wx
     import PYME.resources
     from PYME import config
-    from optparse import OptionParser
+    #from optparse import OptionParser
+    from argparse import ArgumentParser
     from PYME.IO.FileUtils import nameUtils
+    from multiprocessing import cpu_count
 
-    op = OptionParser(usage='usage: %s [options]' % sys.argv[0])
+    op = ArgumentParser(description='Launch all aspects of the PYME cluster on a single node')
     default_root = config.get('dataserver-root')
-    op.add_option('-r', '--root', dest='root',
-                  help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % default_root,
-                  default=default_root)
-    op.add_option('--ui', dest='ui', help='launch web based ui', default=True)
-    op.add_option('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', 
+    #op.add_option('-r', '--root', dest='root',
+    #              help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % default_root,
+    #              default=default_root)
+    op.add_argument('--ui', dest='ui', help='launch web based ui', default=True)
+    op.add_argument('--clusterUI', dest='clusterui', help='launch the full django-based cluster UI', 
                   action='store_true', default=False)
+    op.add_argument('-n', '--num-workers', dest='num_workers', default=config.get('nodeserver-num_workers', cpu_count()), type=int,
+                    help="number of worker processes to run - default: num cpu cores")
 
-    options, args = op.parse_args()
+
+    args = op.parse_args()
     
     if wx.__version__ > '4':
         from wx.adv import TaskBarIcon, TBI_DOCK
     else:
         from wx import TaskBarIcon, TBI_DOCK
     
-    cluster = ClusterOfOne(root_dir=options.root)
+    cluster = ClusterOfOne(root_dir=default_root, num_workers=args.num_workers)
     
     app = wx.App()
 
@@ -182,7 +188,7 @@ def main():
     #frame.Show()
     
     try:
-        cluster.launch(gui=options.ui, clusterUI=options.clusterui)
+        cluster.launch(gui=args.ui, clusterUI=args.clusterui)
         app.MainLoop()
     finally:
         cluster.shutdown()
