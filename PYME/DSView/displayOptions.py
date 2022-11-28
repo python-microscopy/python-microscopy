@@ -365,6 +365,8 @@ class DisplayOpts(object):
             return d.min(), d.max()
         elif method == 'percentile':
             return d.min(), np.percentile(d, 99.)
+        else:
+            raise NotImplementedError('Scaling method "%s" not understood' % method)
         
     def get_hist_data(self, subsample_threshold=1e4):
         """
