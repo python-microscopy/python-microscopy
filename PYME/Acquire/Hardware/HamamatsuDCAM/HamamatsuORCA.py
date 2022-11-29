@@ -453,7 +453,9 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
     def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
         """
         Set output trigger of the camera. For now, only sets output trigger 0, even if
-        the camera supports multiple output triggers.
+        the camera supports multiple output triggers. 
+        
+        TODO: have a look at Andor and PCO SDKs to see if this is sufficiently similar in those, and potentially move/adapt to main camera spec.
 
         Parameters
         ----------
