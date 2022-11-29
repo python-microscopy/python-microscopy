@@ -600,24 +600,29 @@ class Camera(object):
         Returns
         -------
         int
-            One of: (int code: mode name)
-                1: CONTINUOUS
+            One of: 
+                MODE_CONTINUOUS
                     camera is free-running using internal timing
-                0: SINGLE_SHOT
+                MODE_SINGLE_SHOT
                     captures single frame on acquisition start
-                2: SOFTWARE_TRIGGER
+                MODE_SOFTWARE_TRIGGER
                     captures a single frame every time a software trigger is
                     sent. See `FireSoftwareTrigger`
-                3: HARDWARE_TRIGGER
+                MODE_HARDWARE_TRIGGER
                     captures a single frame every time an external hardware
                     trigger is received by the camera
-                4: HARDWARE_START_TRIGGER
+                MODE_HARDWARE_START_TRIGGER
                     camera waits for an external hardware trigger and enters 
                     free-running internal timing mode once received
 
         See Also
         --------
         SetAcquisitionMode
+        
+        Notes
+        -----
+        Calling code should compare against the constants defined on the Camera class, rather than their integer values
+        
         """
         raise NotImplementedError('Should be implemented in derived class.')
 
@@ -633,18 +638,18 @@ class Camera(object):
         Parameters
         ----------
         mode : int
-            One of: (int code: mode name)
-                1: CONTINUOUS
+            One of:
+                MODE_CONTINUOUS
                     camera is free-running using internal timing
-                0: SINGLE_SHOT
+                MODE_SINGLE_SHOT
                     captures single frame on acquisition start
-                2: SOFTWARE_TRIGGER
+                MODE_SOFTWARE_TRIGGER
                     captures a single frame every time a software trigger is
                     sent. See `FireSoftwareTrigger`
-                3: HARDWARE_TRIGGER
+                MODE_HARDWARE_TRIGGER
                     captures a single frame every time an external hardware
                     trigger is received by the camera
-                4: HARDWARE_START_TRIGGER
+                MODE_HARDWARE_START_TRIGGER
                     camera waits for an external hardware trigger and enters 
                     free-running internal timing mode once received
 
@@ -655,6 +660,10 @@ class Camera(object):
         See Also
         --------
         GetAcquisitionMode
+        
+        Notes
+        -----
+        Calling code should use the constants defined on the Camera class, rather than their integer values
         """
 
         raise NotImplementedError('Should be implemented in derived class.')
