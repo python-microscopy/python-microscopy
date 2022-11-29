@@ -627,7 +627,8 @@ class Camera(object):
         several modes; different options can be useful for timing. The primary
         modes are single shot, where the camera takes one image, and then a new
         exposure has to be manually triggered, or continuous / free running,
-        where the camera runs as fast as it can until we tell it to stop.
+        where the camera runs as fast as it can until we tell it to stop. Not all cameras support all modes. All cameras should support `MODE_CONTINUOUS` and `MODE_SINGLE_SHOT`, but care should be taken when using the other modes (i.e. usage probably need to be restricted to code which knows what type of camera it's dealing with). TODO - add a mechanism for cameras to report which modes they support.
+
 
         Parameters
         ----------
