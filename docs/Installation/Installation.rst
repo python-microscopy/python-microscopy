@@ -136,8 +136,7 @@ python-microscopy environment is active.
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
 | ``PYMEVis``             | This is for viewing point data sets. It shows a blank canvas when launched without any parameters.                   |
 +-------------------------+----------------------------------------------------------------------------------------------------------------------+
-| ``PYMEClusterOfOne``    | This is for parallelized analysis, e.g. localization. It will open a browser window to a simple task status monitor. |
-+-------------------------+----------------------------------------------------------------------------------------------------------------------+
+
 
 Troubleshooting
 ***************
