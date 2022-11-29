@@ -1,11 +1,25 @@
 '''
 Alternative bindings for IDS ueye cameras using the pyueye module.
 
-See also the uc480 module which talks directly to the ueye DLLs without an intermediate python shim. The uc480
-implementation has been more widely used and tested and might be more complete. At present, however, there might be issues using
-uc480 with the most recent versions of the ueye SDK, hence this module. As we don't want to maintain 2 drivers
-for the same camera, this module might disappear once api compatibility issues in uc480 are resolved (i.e. use
-uc480 instead of this if at all possible).
+See also the uc480 module which talks directly to the ueye DLLs without an
+intermediate python shim. The uc480 implementation has been widely used with
+previous ueye driver versions (e.g. <4.93). At present, there might be issues 
+using uc480 with the most recent versions of the ueye SDK, hence this module.
+This module works with ueye driver 4.96.1, and pyueye 4.96.952. Pyueye handles
+some boiler plate ctypes code for us, but in the future we may call the dll 
+directly as in uc480.
+
+# NOTE to developers: pyueye typing is somewhat obnoxious. Some oddities with
+# ctypes pointers (testing for equality of a factory-produced class) makes it
+# safer to use their pointer cast method, and their 'extra functionality' ctypes
+
+Application notes for specific cameras from the SDK:
+327x: 
+    Triggering: The internal sensor delay is about 2-3 lines when triggering. 
+        The line period depends on the selected pixel clock. The higher the 
+        pixel clock, the smaller the line period is. In overlapping trigger 
+        mode, the camera timestamp may be overwritten if the maximum exposure
+        time is used. In this case, reduce the exposure time by approx. 1%
 
 '''
 from PYME.Acquire.Hardware.Camera import Camera, MultiviewCameraMixin
@@ -128,7 +142,7 @@ class UEyeCamera(Camera):
         self.Init()
     
     def check_success(self, function_return):
-        if function_return == ueye.IS_NO_SUCCESS:
+        if function_return != ueye.IS_SUCCESS:
             error, message = GetError(self.h)
             raise RuntimeError('Error %d: %s' % (error, message))
         
@@ -161,10 +175,20 @@ class UEyeCamera(Camera):
             
             self._buffers.append((buffer_id, data))
 
-        # IDS currently only supports nMode = 0
-        self.check_success(ueye.is_InitImageQueue(self.h, 0))
+        self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_INIT, None, ctypes.c_int(0)))
         
-        self.transfer_buffer = np.zeros([self.GetPicHeight(), self.GetPicWidth()], bufferdtype)
+        self.curr_height, self.curr_width = self.GetPicHeight(), self.GetPicWidth()
+        self.transfer_buffer_size = self.curr_height * self.curr_width * bufferdtype().itemsize
+        self.transfer_buffer_dtype = bufferdtype
+        self.transfer_buffer = ctypes.create_string_buffer(self.transfer_buffer_size)
+        self.transfer_buffer_memory_v = ueye.char()
+        self.transfer_buffer_memory = ueye._pointer_cast(self.transfer_buffer_memory_v, ueye.char_p)
+        self.transfer_buffer_id = ueye.int()
+        self.wait_buffer = ueye.IMAGEQUEUEWAITBUFFER()
+        self.wait_buffer.timeout = ueye.uint(1000)
+        
+        self.wait_buffer.pnMemId = ueye._pointer_cast(self.transfer_buffer_id, ctypes.POINTER(ueye.int))
+        self.wait_buffer.ppcMem = ueye._pointer_cast(self.transfer_buffer_memory, ctypes.POINTER(ueye.char_p))
         
         self.free_buffers = queue.Queue()
         # CS: we leave this as uint16 regardless of 8 or 12 bits for now as accumulation
@@ -177,16 +201,26 @@ class UEyeCamera(Camera):
         self._poll = True
         
     def DestroyBuffers(self):
-        self._poll = False
-        self.check_success(ueye.is_ExitImageQueue(self.h))
+        self._poll = False  # already in StopAq, can probably remove
+        self.n_full = 0
+        # exit the image queue    
+        self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_EXIT, None, ueye.int(0)))
+        
+        # remove all image memories from the sequence list we created
         self.check_success(ueye.is_ClearSequence(self.h))
         
+        # free up each image memory we allocated on the device
         while len(self._buffers) > 0:
             buffer_id, data = self._buffers.pop()
             self.check_success(ueye.is_FreeImageMem(self.h, data, buffer_id))
             
+        # destroy free buffers and remove queue of full ones
         self.free_buffers = None
-        self.n_full = 0
+        while not self.full_buffers.empty():
+            try:
+                self.full_buffers.get_nowait()
+            except queue.Empty:
+                pass
 
     def StartExposure(self):
         logger.debug('StartAq')
@@ -217,10 +251,12 @@ class UEyeCamera(Camera):
             return self.MODE_SINGLE_SHOT
 
     def ExpReady(self):
-        return (self.full_buffers is not None) and (not self.full_buffers.empty())
+        return (self.full_buffers is not None) and (self.n_full > 0)
         
     def ExtractColor(self, ch_slice, mode):
-        buf = self.full_buffers.get()
+        # get nowait to hard-throw an Empty error if we've entered this method
+        # and we shouldn't have
+        buf = self.full_buffers.get_nowait()
         ch_slice[:] = buf.T
         if self.free_buffers is not None:
             # recycle buffer
@@ -228,33 +264,45 @@ class UEyeCamera(Camera):
         self.n_full -= 1
 
     def StopAq(self):
-        self.check_success(ueye.is_StopLiveVideo(self.h, ueye.IS_WAIT))
+        self._poll = False
+        # cancel any ongoing waits (e.g. shutdown)
+        self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_CANCEL_WAIT, None, ueye.int(0)))
+        self.check_success(ueye.is_StopLiveVideo(self.h, ueye.IS_WAIT))# ueye.IS_FORCE_VIDEO_STOP))
         self.DestroyBuffers()
     
     def _poll_buffer(self):
-        data = ueye.c_mem_p()
-        buffer_id = ueye.int()
-        
         try:
-            self.check_success(ueye.is_WaitForNextImage(self.h, 1000, data,
-                                                        buffer_id))
-            self.check_success(ueye.is_CopyImageMem(self.h, data, buffer_id, 
-                                                    self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))))
-        except RuntimeError:
+            # Query the ID/location of earlier frame in the ring buffer, or wait
+            # for the next one. Will fill wait_buffer.nMemId and pcMem
+            self.check_success(ueye.is_ImageQueue(self.h, ueye.IS_IMAGE_QUEUE_CMD_WAIT, 
+                                                  self.wait_buffer, ueye.sizeof(self.wait_buffer)))
+            # self.check_success(ueye.is_CopyImageMem(self.h, self.wait_buffer.ppcMem, self.transfer_buffer_id, 
+            #                                         self.transfer_buffer))#.ctypes.data_as(ctypes.POINTER(ueye.char_p))))
+                                                    # self.transfer_buffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint16))))
+            ctypes.memmove(self.transfer_buffer, self.wait_buffer.ppcMem.contents, self.transfer_buffer_size)
+            arr = np.frombuffer(self.transfer_buffer, dtype=self.transfer_buffer_dtype)
+            arr = arr.reshape((self.curr_height, self.curr_width))
+        except RuntimeError as e:
+            if 'Error %d' % ueye.IS_OPERATION_ABORTED in str(e):
+                # we are shutting down the camera, let the other thread handle
+                # clean-up
+                logger.debug('ImageQueue wait canceled, returning')
+                return
+            logger.error(e)
             try:
-                self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, data))
-            except:
-                pass
+                self.check_success(ueye.is_UnlockSeqBuf(self.h, self.transfer_buffer_id, None))
+            except Exception as e:
+                logger.error(e)
             finally:
                 return
         
         if self.n_accum_current == 0:
-            self.accum_buffer[:] = self.transfer_buffer
+            self.accum_buffer[:] = arr
         else:
-            self.accum_buffer[:] = self.accum_buffer + self.transfer_buffer
+            self.accum_buffer[:] = self.accum_buffer + arr
         self.n_accum_current += 1
         
-        self.check_success(ueye.is_UnlockSeqBuf(self.h, ueye.IS_IGNORE_PARAMETER, data))
+        self.check_success(ueye.is_UnlockSeqBuf(self.h, self.transfer_buffer_id, None))
         
         if self.n_accum_current >= self.n_accum:    
             self.full_buffers.put(self.accum_buffer)
@@ -450,7 +498,14 @@ class UEyeCamera(Camera):
         int
             Number of images that can be stored in the buffer.
         """
-        return len(self._buffers)
+        if self._poll:
+            return len(self._buffers)
+        else:
+            # if we aren't polling, spoof infinitely large buffer so we don't
+            # flag a buffer overflow while we e.g. rebuild the buffers. This
+            # makes no functional difference for us, but avoids a spurious
+            # warning from frameWrangler about the buffer overflowing.
+            return np.iinfo(np.int32).max
     
     def GetCCDTemp(self):
         di =  self._GetDeviceInfo()
@@ -547,6 +602,64 @@ class UEyeCamera(Camera):
         gain = self.GetGain()
         ret = ueye.is_SetHWGainFactor(self.h, ueye.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
         return 0.01*ret
+    
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
+        """
+        Set output trigger of the camera. Currently hard-coded to use GPIO1
+
+        Parameters
+        ----------
+        mode : str
+            Currently supported modes include:
+                low: constant TTL low
+                high: constant TTL high
+                flash: goes TTL high during exposure. If 0 is passed, the flash
+                    output will be active until the end of the exposure time.
+                    With global start shutter this is the time until the end of
+                    exposure for the first row.
+        delay : float, optional
+            delay after trigger event, in seconds, to emit TTL high (assuming 
+            posiive polarity), by default 0 s.
+        width : float, optional
+            TTL high pulse width, in seconds, by default 0.0001 s, or 0.1 ms
+        positive : bool, optional
+            CURRENTLY IGNORED Sets polarity of the output trigger to positive 
+            (True) or negative (False). True, by default.
+        
+        """
+        # set GPIO1 to be output flash
+        m = ueye.int(ueye.IO_FLASH_MODE_GPIO_1)
+        self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          m, ueye.sizeof(m)))
+        
+        if mode == 'high':
+            mode = ueye.int(ueye.IO_FLASH_MODE_CONSTANT_HIGH)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+            return
+        elif mode == 'low':
+            mode = ueye.int(ueye.IO_FLASH_MODE_CONSTANT_LOW)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+            return
+
+        if mode =='flash':
+            mode = ueye.int(ueye.IO_FLASH_MODE_FREERUN_HI_ACTIVE)
+            self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_MODE,
+                                          mode, ueye.sizeof(mode)))
+        else:
+            raise RuntimeError('Unsupported output trigger mode: %s' % mode)
+        
+        fp = ueye.IO_FLASH_PARAMS()
+        fp.s32Delay = ueye.c_int(int(delay * 1e6))  # [s] -> [us]
+        fp.u32Duration = ueye.c_uint(int(width * 1e6))  # [s] -> [us]
+        self.check_success(ueye.is_IO(self.h,
+                                          ueye.IS_IO_CMD_FLASH_SET_PARAMS,
+                                          fp, ueye.sizeof(fp)))
 
     #### Some extra functions for this camera
 
@@ -555,6 +668,24 @@ class UEyeCamera(Camera):
         self.check_success(ueye.is_DeviceInfo(self.h,ueye.IS_DEVICE_INFO_CMD_GET_DEVICE_INFO,
                                               dev_info,ueye.sizeof(dev_info)))
         return dev_info
+    
+    def GetGlobalFlashSettings(self):
+        """Query current global 'flash', i.e. output trigger settings
+
+        Returns
+        -------
+        delay: float
+            [s]
+        width: float
+            duration of TTL in [s]
+        
+        """
+        fp = ueye.IO_FLASH_PARAMS()
+        self.check_success(ueye.is_IO(self.h, 
+                                      ueye.IS_IO_CMD_FLASH_GET_GLOBAL_PARAMS,
+                                      fp, ueye.sizeof(fp)))
+        return fp.s32Delay.value / 1e6, fp.u32Duration.value / 1e6
+
 
 #TODO - replace MultiviewCameraMixin with a Multiview wrapper so that we don't need to have explicit multiview versions of all cameras.
 class MultiviewUEye(MultiviewCameraMixin, UEyeCamera):
