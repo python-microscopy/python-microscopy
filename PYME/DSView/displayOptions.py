@@ -428,8 +428,8 @@ class DisplayOpts(object):
                 else:
                     c = np.abs(c)
                     
-            if c.size > 1e4:
-                c = c[::int(np.floor(c.size/1e4))]
+            if c.size > subsample_threshold:
+                c = c[::int(np.floor(c.size/subsample_threshold))]
             
             chan_d.append(c)
             
