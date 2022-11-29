@@ -75,6 +75,25 @@ DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
 DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
 DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
+DCAMPROP_OUTPUTTRIGGER_SOURCE__EXPOSURE = 1
+DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND = 2
+DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC = 3
+DCAMPROP_OUTPUTTRIGGER_SOURCE__HSYNC = 4
+DCAMPROP_OUTPUTTRIGGER_SOURCE__TRIGGER = 6
+
+DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE = 1
+DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE = 2
+
+DCAMPROP_OUTPUTTRIGGER_ACTIVE__EDGE = 1
+DCAMPROP_OUTPUTTRIGGER_ACTIVE__LEVEL = 2
+
+DCAMPROP_OUTPUTTRIGGER_KIND__LOW = 1
+DCAMPROP_OUTPUTTRIGGER_KIND__EXPOSURE = 2
+DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE = 3
+DCAMPROP_OUTPUTTRIGGER_KIND__TRIGGER_READY = 4
+DCAMPROP_OUTPUTTRIGGER_KIND__HIGH = 5
+DCAMPROP_OUTPUTTRIGGER_KIND__ANYROWEXPOSURE = 6
+
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 #DCAMCAP_START_SNAP = ctypes.c_int32(int("0",0))
 
@@ -167,7 +186,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         return self._mode
 
     def SetAcquisitionMode(self, mode):
-        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, self.MODE_SINGLE_SHOT]:
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, 
+                    self.MODE_SINGLE_SHOT, self.MODE_HARDWARE_START_TRIGGER]:
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
@@ -212,6 +232,12 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                                             DCAMCAP_START_SEQUENCE),
                          "dcamcap_start")
             self.FireSoftwareTrigger()
+        
+        elif self._mode == self.MODE_HARDWARE_START_TRIGGER:
+            self._set_trigger_start_mode()
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                                DCAMCAP_START_SEQUENCE),
+                                                "dcamcap_start")
 
         eventLog.logEvent('StartAq', '')
 
@@ -423,6 +449,99 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         """
         if self.external_shutter is not None:
             self.external_shutter.SetShutter(mode)
+    
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
+        """
+        Set output trigger of the camera. For now, only sets output trigger 0, even if
+        the camera supports multiple output triggers. 
+        
+        TODO: have a look at Andor and PCO SDKs to see if this is sufficiently similar in those, and potentially move/adapt to main camera spec.
+
+        Parameters
+        ----------
+        mode : str
+            Currently supported modes include:
+                low: sets output trigger to Low, i.e. TTL zero. Can be useful 
+                    for synchronization if one wants to change output trigger 
+                    during an acquisition protocol. Ignores pulse delay and 
+                    width parameters
+                readout start: sets output trigger to 'Vsync', which gives the 
+                    TTL of the specified pulse width output after the specified
+                    delay from the start of the sensor readout
+                readout end: sets output trigger to readout end, which gives
+                    the TTL of the specified pulse width output after the
+                    specified delay from the end of the sensor readout
+        delay : float, optional
+            delay after trigger event, in seconds, to emit TTL high (assuming 
+            posiive polarity), by default 0 s.
+        width : float, optional
+            TTL high pulse width, in seconds, by default 0.0001 s, or 0.1 ms
+        positive : bool, optional
+            Sets polarity of the output trigger to positive (True) or negative
+            (False). True, by default.
+        
+        """
+        if positive:
+            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
+                                DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE)
+        else:
+            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
+                                DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE)
+        
+        if mode == 'low':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]', 
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__LOW)
+            return  # return early, no need to set delay and width
+        
+        # in case the camera is running, set the pulse parameters before 
+        # changing the trigger source
+        # self.setCamPropValue('OUTPUT TRIGGER ACTIVE[0]', DCAMPROP_OUTPUTTRIGGER_ACTIVE__EDGE)  # not writable
+        self.setCamPropValue('OUTPUT TRIGGER DELAY[0]', delay)  # [s], only relevant with 'EDGE'
+        self.setCamPropValue('OUTPUT TRIGGER PERIOD[0]', width)  # [s], width of pulse, only relevant with 'EDGE'
+        if mode == 'readout start':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC)
+        elif mode == 'readout end':
+            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
+                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND)
+        else:
+            raise RuntimeError('Unsupported output trigger mode: %s' % mode)
+    
+    def _set_trigger_start_mode(self):
+        """Use to start internally-timed acquisition starting on an external
+        hardware trigger (currently hardcoded to edge)
+
+        Notes
+        -----
+        set DCAMPROP_TRIGGERSOURCE__EXTERNAL as DCAM_IDPROP_TRIGGERSOUCE 
+        and DCAMPROP_TRIGGER_MODE__START as DCAM_IDPROP_TRIGGER_MODE. The
+        camera changes to internal mode when the camera receives the trigger. 
+        The DCAM_IDPROP_TRIGGERSOURCE property will be 
+        DCAMPROP_TRIGGERSOURCE__INTERNAL automatically.
+        """
+        try:
+            self.setCamPropValue('TRIGGER ACTIVE', DCAMPROP_TRIGGERACTIVE__EDGE)
+        except:
+            # Sometimes TRIGGER ACTIVE is not writable
+            pass
+        self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_EXTERNAL)
+        self.setCamPropValue('TRIGGER MODE', DCAMPROP_TRIGGER_MODE__START)
+    
+    def _get_global_exposure_delay(self):
+        """How long from the beginning of exposure does it take before
+        all lines in active ROI are being exposed (global exposure)
+
+        Returns
+        -------
+        delay: float
+            Global exposure delay, in [s]
+
+        """
+        return self.getCamPropValue('TIMING GLOBAL EXPOSURE DELAY')
 
     def Shutdown(self):
         # if self.initialized:

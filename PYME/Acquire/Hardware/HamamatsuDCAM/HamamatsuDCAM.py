@@ -197,6 +197,7 @@ dcam.dcamprop_getname.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_char_p, ctypes
 dcam.dcamprop_getattr.argtypes = [HDCAM, ctypes.c_void_p]
 dcam.dcamprop_getvalue.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_void_p]
 dcam.dcamprop_setvalue.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_double]
+dcam.dcamprop_getvaluetext.argtypes = [HDCAM, ctypes.c_void_p]
 dcam.dcamdev_close.argtypes = [HDCAM,]
 
 dcam.dcambuf_alloc.argtypes=[HDCAM,ctypes.c_int32]
@@ -499,6 +500,97 @@ class HamamatsuDCAM(Camera):
                                 "return value " + str(fn_return) + ": " +
                                 self.getCamInfo(fn_return))
         return fn_return
+
+    def getCamPropValueText(self, prop_name):
+        """returns text associated with current property setting. Assumes
+        prop_name is a text/mode setting, not just a float.
+
+        Parameters
+        ----------
+        prop_name : str
+             DCAM property string (e.g. 'OUTPUT TRIGGER SOURCE[0]')
+        
+        Returns
+        -------
+        value_text : str
+            name associated with current property value
+        """
+        # Get the property id (if the property exists)
+        iProp = self.checkProp(prop_name)
+
+        # Get the property value
+        val = ctypes.c_double(0)
+        self.checkStatus(dcam.dcamprop_getvalue(self.handle, iProp, 
+                                                ctypes.byref(val)),
+                         "dcamprop_getvalue")
+
+        # get the property value text
+        c_buf_len = 64
+        c_buf = ctypes.create_string_buffer(c_buf_len)
+        value_text = DCAMPROP_VALUETEXT()
+        value_text.iProp = iProp
+        value_text.value = val
+        value_text.size = ctypes.sizeof(value_text)
+        value_text.text = ctypes.addressof(c_buf)
+        value_text.textbytes = ctypes.c_int32(c_buf_len)
+        self.checkStatus(dcam.dcamprop_getvaluetext(self.handle, 
+                                                    ctypes.byref(value_text)),
+                         "dcamprop_getvaluetext")
+        return value_text.text.decode()
+    
+    def getCamPropValueTextOptions(self, prop_name):
+        """enumerate available options for this camera property, with 
+        associated text name. Assumes prop_name is a text/mode setting. Helpful 
+        for development - see Notes.
+
+        Parameters
+        ----------
+        prop_name : str
+             DCAM property string (e.g. 'OUTPUT TRIGGER KIND[0]')
+        
+        Returns
+        -------
+        options : dict
+            keys are floating point settings that would actually be passed to 
+            DCAM functions, and values are text name
+        
+        Notes
+        -----
+        DCAM API (SKD4_v21066291) appears to have a quirk or two, e.g. 
+        'OUTPUT TRIGGER SOURCE[0]' property has a property range of 2.0 to 5.0,
+        for 5 text-value options in the SDK, but returns 
+        {2.0: 'READOUT END', 3.0: 'VSYNC', 
+        4.0: 'DCAM error for dcamprop_getvaluetext with return value -2147481567: Invalid Value!', 
+        5.0: 'DCAM error for dcamprop_getvaluetext with return value -2147481567: Invalid Value!'}
+        yet dcamprop.h shows 5 options:
+        1: EXPOSURE, 2: READOUT_END, 3: VSYNC, 4: HSYNC, 6,: TRIGGER
+        A bit odd.
+        """
+        # Get the property id (if the property exists)
+        iProp = self.checkProp(prop_name)
+
+        # get the property range
+        lb, ub = self.getCamPropRange(prop_name)
+
+        options = {}
+        for v in np.arange(lb, ub):
+            try:
+                # get the property value text
+                c_buf_len = 64
+                c_buf = ctypes.create_string_buffer(c_buf_len)
+                value_text = DCAMPROP_VALUETEXT()
+                value_text.iProp = iProp
+                value_text.value = ctypes.c_double(v)
+                value_text.size = ctypes.sizeof(value_text)
+                value_text.text = ctypes.addressof(c_buf)
+                value_text.textbytes = ctypes.c_int32(c_buf_len)
+                self.checkStatus(dcam.dcamprop_getvaluetext(self.handle, ctypes.byref(value_text)), "dcamprop_getvaluetext")
+                options[v] = value_text.text.decode()
+            except DCAMException as e:
+                # DCAM is a special API - sometimes get invalid value errors for in-range values
+                options[v] = str(e)
+        
+        return options
 
     def Shutdown(self):
         self.checkStatus(dcam.dcamdev_close(self.handle), "dcamdev_close")
