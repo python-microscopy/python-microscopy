@@ -143,6 +143,7 @@ class OptionsPanel(wx.Panel):
             pan_opt = wx.Panel(fpan_opt, -1)
 
         self.bOptimise = wx.Button(pan_opt, -1, "Stretch", style=wx.BU_EXACTFIT)
+        self.bOptimise.SetToolTip('Rescale image (min->99th percentile). Shift-click for more options')
 
         self.cbScale = wx.Choice(pan_opt, -1, choices=["1:16", "1:8", "1:4", "1:2", "1:1", "2:1", "4:1", "8:1", "16:1"])
         self.cbScale.SetSelection(4)
@@ -261,7 +262,27 @@ class OptionsPanel(wx.Panel):
         #self.SetVirtualSize(-1, _h)
 
     def OnOptimise(self, event):
-        self.do.Optimise()
+        if wx.GetKeyState(wx.WXK_SHIFT):
+            if not hasattr(self, '_optim_minmax_id'):
+                #self._popupid = wx.NewId()
+                self._optim_percentile_id = wx.NewId()
+                self._optim_minmax_id = wx.NewId()
+
+                self.Bind(wx.EVT_MENU, lambda e: self._optimise('percentile'), id=self._optim_percentile_id)
+                self.Bind(wx.EVT_MENU, lambda e: self._optimise('min-max'), id=self._optim_minmax_id)
+
+            menu = wx.Menu()
+            menu.Append(self._optim_percentile_id, 'Percentile (0->99th)')
+            menu.Append(self._optim_minmax_id, 'Min->max')
+
+            self.PopupMenu(menu)
+            menu.Destroy()
+        else:
+            self._optimise()
+
+        
+    def _optimise(self, method='percentile'):
+        self.do.Optimise(method=method)
         self.RefreshHists()
 
     #constants for slice selection

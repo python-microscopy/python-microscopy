@@ -365,10 +365,22 @@ class DisplayOpts(object):
             return d.min(), d.max()
         elif method == 'percentile':
             return d.min(), np.percentile(d, 99.)
+        else:
+            raise NotImplementedError('Scaling method "%s" not understood' % method)
         
-    def get_hist_data(self):
+    def get_hist_data(self, subsample_threshold=1e4):
         """
         Get data to display in an image histogram. Only returns a subset of the data for large images
+
+        Parameters
+        ----------
+
+        subsample_threshold: int/float, default=10000
+            Number of pixels above which to subsample when calculating histogrammes. The default value of 10,000
+            is enough to give a visually accurate histogram representation whilst ensuring that the time to compute 
+            the histogram (and by extension display latency) remains reasonable. When using get_hist_data for other 
+            purposes (e.g. data scaling) it might be prudent to increase this, especially if wanting to capture minima
+            and maxima on signals which are very sparse.  
         
         Returns
         -------
@@ -416,15 +428,19 @@ class DisplayOpts(object):
                 else:
                     c = np.abs(c)
                     
-            if c.size > 1e4:
-                c = c[::int(np.floor(c.size/1e4))]
+            if c.size > subsample_threshold:
+                c = c[::int(np.floor(c.size/subsample_threshold))]
             
             chan_d.append(c)
             
         return chan_d
 
-    def Optimise(self):
-        bds = [self._optimal_display_range(c) for c in self.get_hist_data()]
+    def Optimise(self, method='percentile'):
+        # Increase the subsample_threshold in Optimise as this will usually be called in response to a mouse click
+        # and Latency can be 1-2s rather than < 100ms for histogram display.
+        #print('do.Optimise()')
+
+        bds = [self._optimal_display_range(c, method=method) for c in self.get_hist_data(subsample_threshold=5e8)]
         
         for i, bd in enumerate(bds):
             low, high = bd

@@ -562,7 +562,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 self.imagepanel.Refresh()
         elif event.GetKeyCode() == 77: #M
             #print 'o'
-            self.do.Optimise()
+            self.do.Optimise(method='min-max')
+        elif event.GetKeyCode() == ord('P'): #M
+            #print 'p'
+            self.do.Optimise(method='percentile')
         elif event.GetKeyCode() == ord('C'):
             if event.GetModifiers() == wx.MOD_CMD:
                 self.CopyImage()
