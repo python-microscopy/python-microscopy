@@ -217,12 +217,17 @@ class piezo_c867T(PiezoBase):
         
         self.lastTargetPosition = self.position.copy()
 
-        self.disableServo = False
-        self.enableServo = False
+        self._servo_target = True
         
         self.lock = threading.Lock()
         self.tloop = threading.Thread(target=self._Loop)
         self.tloop.start()
+
+    def _log_error(self, errCode):
+        if _has_gcserr:
+            logger.error('Stage Error: %s' % gcserr.GCSError.translate_error(self.errCode))
+        else:
+            logger.error('Stage Error: %d' % self.errCode)
         
     def _Loop(self):
         while self.loopActive:
@@ -246,20 +251,25 @@ class piezo_c867T(PiezoBase):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    #print(('Stage Error: %d' %self.errCode))
-                    if _has_gcserr:
-                        logger.error('Stage Error: %s' % gcserr.GCSError.translate_error(self.errCode))
-                    else:
-                        logger.error('Stage Error: %d' % self.errCode)
+                    self._log_error(self.errCode)
+                    
                 
                 #print self.targetPosition, self.stopMove
                 
                 if self.stopMove: # SERVOCHECK: check if this is ok to process when servo is off!!!
-                    # note that issueing the HLT command sets an error condition, from the manual: "Error code 10 is set."
-                    # question: should we check the error status to unset the error code from such a HLT command?
                     logger.debug('piezo_c867T: stopMove issuing HLT command, expect error 10 to be set')
                     self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
+                    
+                    # issuing the HLT command sets an error condition (Error code 10)
+                    # read and clear this
+                    self.ser_port.write(b'ERR?\n')
+                    self.ser_port.flushOutput()
+                    errCode = int(self.ser_port.readline())
+                    if not ((errCode == 10) or (errCode==0):
+                        self.errCode = errCode
+                        self._log_error(self.errCode) 
+
                     self.ser_port.write(b'POS? 1 2\n')
                     self.ser_port.flushOutput()
                     #time.sleep(0.005)
@@ -271,19 +281,11 @@ class piezo_c867T(PiezoBase):
                     self.targetPosition[:] = self.position[:]
                     self.stopMove = False
                     
-                if self.servo and self.disableServo:
-                    self.disableServo = False
-                    self.ser_port.write(b'SVO 1 %d\n' % 0)
-                    self.ser_port.write(b'SVO 2 %d\n' % 0)
-                    self.servo = False
+                if self.servo != self._servo_target:
+                    self.ser_port.write(b'SVO 1 %d\n' % int(self._servo_target))
+                    self.ser_port.write(b'SVO 2 %d\n' % int(self._servo_target))
+                    self.servo = self._servo_target
 
-                if not self.servo and self.enableServo:
-                    self.enableServo = False
-                    self.lastTargetPosition = self.position.copy()
-                    self.targetPosition = self.position.copy()
-                    self.ser_port.write(b'SVO 1 %d\n' % 1)
-                    self.ser_port.write(b'SVO 2 %d\n' % 1)
-                    self.servo = True
 
                 if self.servo:
                     if not np.all(self.velocity == self.targetVelocity):
@@ -305,13 +307,21 @@ class piezo_c867T(PiezoBase):
                         time.sleep(.01)
                     
                 # check to see if we're on target
-                # from the manual on 'ONT?' command:
-                #   "The detection of the on-target state is only possible in closed-loop operation (servo mode ON)"
-                # note that the cleaned up on-target check does not use the 'ONT?' command any more
-                if self.servo:
-                    self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
-                else: # servo is off
-                    self.onTarget = False                
+                # NB - ONT only works if servo mode is on
+                # self.ser_port.write(b'ONT?\n')
+                # self.ser_port.flushOutput()
+                # time.sleep(0.005)
+                # res1 = self.ser_port.readline()
+                # ont1 = int(res1.split(b'=')[1]) == 1
+                # res1 = self.ser_port.readline()
+                # ont2 = int(res1.split(b'=')[1]) == 1
+
+                # onT = (ont1 and ont2) or (self.servo == False)
+                # self.onTarget = onT and self.onTargetLast
+                # self.onTargetLast = onT
+
+                # just do a crude 'on-target' calculation for software servoing
+                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)               
                 
                 #time.sleep(.1)
                 
@@ -334,16 +344,11 @@ class piezo_c867T(PiezoBase):
             #time.sleep(.01)
             #self.ser_port.close()            
                 
-    # directly enabling/disabling the servo outside the thread loop
-    #      seems to hang PYME
-    # the implementation below instead 'messages' the thread loop by setting flags
-    #      that get picked up in thread loop processing
-    # I dislike state being an int and rather have opted treating as bool which reflects the on/off state better IMHO
-    def SetServo(self, state=True):
-        if self.servo and not state: # need to toggle servo off
-            self.disableServo = True
-        if not self.servo and state: # need to toggle servo on
-            self.enableServo = True
+    # directly enabling/disabling the servo outside the thread loop seems to hang PYME
+    # the implementation below sets a flag with the change being performed in the monitoring thread
+    # TODO - change SetServo signature to take bool?
+    def SetServo(self, state=1):
+        self._servo_target = state > 0
 
 
 #    def SetParameter(self, paramID, state):
