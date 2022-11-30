@@ -29,6 +29,13 @@ from .base_piezo import PiezoBase
 import logging
 logger = logging.getLogger(__name__)
 
+try:
+    import pipython.pidevice.gcserror as gcserr
+except ImportError:
+    _has_gcserr = False
+else:
+    _has_gcserr = True
+
 #C867 controller for PiLine piezo linear motor stages
 #NB units are mm not um as for piezos
 
@@ -209,10 +216,18 @@ class piezo_c867T(PiezoBase):
         self.targetVelocity = self.velocity.copy()
         
         self.lastTargetPosition = self.position.copy()
+
+        self._servo_target = True
         
         self.lock = threading.Lock()
         self.tloop = threading.Thread(target=self._Loop)
         self.tloop.start()
+
+    def _log_error(self, errCode):
+        if _has_gcserr:
+            logger.error('Stage Error: %s' % gcserr.GCSError.translate_error(self.errCode))
+        else:
+            logger.error('Stage Error: %d' % self.errCode)
         
     def _Loop(self):
         while self.loopActive:
@@ -236,14 +251,25 @@ class piezo_c867T(PiezoBase):
                 self.errCode = int(self.ser_port.readline())
                 
                 if not self.errCode == 0:
-                    #print(('Stage Error: %d' %self.errCode))
-                    logger.error('Stage Error: %d' %self.errCode)
+                    self._log_error(self.errCode)
+                    
                 
                 #print self.targetPosition, self.stopMove
                 
-                if self.stopMove:
+                if self.stopMove: # SERVOCHECK: check if this is ok to process when servo is off!!!
+                    logger.debug('piezo_c867T: stopMove issuing HLT command, expect error 10 to be set')
                     self.ser_port.write(b'HLT\n')
                     time.sleep(.1)
+                    
+                    # issuing the HLT command sets an error condition (Error code 10)
+                    # read and clear this
+                    self.ser_port.write(b'ERR?\n')
+                    self.ser_port.flushOutput()
+                    errCode = int(self.ser_port.readline())
+                    if not ((errCode == 10) or (errCode==0):
+                        self.errCode = errCode
+                        self._log_error(self.errCode) 
+
                     self.ser_port.write(b'POS? 1 2\n')
                     self.ser_port.flushOutput()
                     #time.sleep(0.005)
@@ -255,7 +281,12 @@ class piezo_c867T(PiezoBase):
                     self.targetPosition[:] = self.position[:]
                     self.stopMove = False
                     
-                
+                if self.servo != self._servo_target:
+                    self.ser_port.write(b'SVO 1 %d\n' % int(self._servo_target))
+                    self.ser_port.write(b'SVO 2 %d\n' % int(self._servo_target))
+                    self.servo = self._servo_target
+
+
                 if self.servo:
                     if not np.all(self.velocity == self.targetVelocity):
                         for i, vel in enumerate(self.targetVelocity):
@@ -275,20 +306,23 @@ class piezo_c867T(PiezoBase):
                         logger.debug('Setting stage target pos: %s' % pos)
                         time.sleep(.01)
                     
-                #check to see if we're on target
-                self.ser_port.write(b'ONT?\n')
-                self.ser_port.flushOutput()
-                time.sleep(0.005)
-                res1 = self.ser_port.readline()
-                ont1 = int(res1.split(b'=')[1]) == 1
-                res1 = self.ser_port.readline()
-                ont2 = int(res1.split(b'=')[1]) == 1
+                # check to see if we're on target
+                # NB - ONT only works if servo mode is on
+                # self.ser_port.write(b'ONT?\n')
+                # self.ser_port.flushOutput()
+                # time.sleep(0.005)
+                # res1 = self.ser_port.readline()
+                # ont1 = int(res1.split(b'=')[1]) == 1
+                # res1 = self.ser_port.readline()
+                # ont2 = int(res1.split(b'=')[1]) == 1
+
+                # onT = (ont1 and ont2) or (self.servo == False)
+                # self.onTarget = onT and self.onTargetLast
+                # self.onTargetLast = onT
+
+                # just do a crude 'on-target' calculation for software servoing
+                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)               
                 
-                onT = (ont1 and ont2) or (self.servo == False)
-                self.onTarget = onT and self.onTargetLast
-                self.onTargetLast = onT
-                self.onTarget = np.allclose(self.position, self.targetPosition, atol=self.ptol)
-                    
                 #time.sleep(.1)
                 
             except serial.SerialTimeoutException:
@@ -310,16 +344,13 @@ class piezo_c867T(PiezoBase):
             #time.sleep(.01)
             #self.ser_port.close()            
                 
-        
+    # directly enabling/disabling the servo outside the thread loop seems to hang PYME
+    # the implementation below sets a flag with the change being performed in the monitoring thread
+    # TODO - change SetServo signature to take bool?
     def SetServo(self, state=1):
-        self.lock.acquire()
-        try:
-            self.ser_port.write(b'SVO 1 %d\n' % state)
-            self.ser_port.write(b'SVO 2 %d\n' % state)
-            self.servo = state == 1
-        finally:
-            self.lock.release()
-            
+        self._servo_target = state > 0
+
+
 #    def SetParameter(self, paramID, state):
 #        self.lock.acquire()
 #        try:
@@ -440,16 +471,16 @@ class piezo_c867T(PiezoBase):
         verstring = self.ser_port.readline()
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 
-        
+
 class c867Joystick:
     def __init__(self, stepper):
         self.stepper = stepper
 
     def Enable(self, enabled = True):
-        if not self.IsEnabled() == enabled:
+        if not self.IsEnabled() == enabled: # we need to switch state
             self.stepper.SetServo(enabled)
 
     def IsEnabled(self):
         return self.stepper.servo
-     
+
         
