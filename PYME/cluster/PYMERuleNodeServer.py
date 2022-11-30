@@ -41,6 +41,9 @@ def main():
     op.add_argument('-p', '--port', dest='port', default=conf.get('nodeserver-port', 15347), type=int,
                     help="port number to serve on (default: 15347, see also 'nodeserver-port' config entry)")
 
+    op.add_argument('-n', '--num-workers', dest='num_workers', default=conf.get('nodeserver-num_workers', cpu_count()), type=int,
+                    help="number of worker processes to run - default: num cpu cores")
+    
     op.add_argument('-a', '--advertisements', dest='advertisements', choices=['zeroconf', 'local'], default='zeroconf',
                     help='Optionally restrict advertisements to local machine')
 
@@ -110,7 +113,8 @@ def main():
 
     time.sleep(2)
     nodeserverLog.debug('Launching worker processors')
-    numWorkers = conf.get('nodeserver-num_workers', cpu_count())
+    #numWorkers = conf.get('nodeserver-num_workers', cpu_count())
+    numWorkers = args.num_workers
 
     workerProcs = [subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
