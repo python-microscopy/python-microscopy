@@ -206,6 +206,7 @@ class TriangleRenderLayer(EngineLayer):
     def _get_cdata(self):
         try:
             cdata = self.datasource[self.vertexColour]
+            cdata = cdata[self.datasource._vertices['halfedge']!= -1]
         except (KeyError, TypeError):
             cdata = np.array([0, 1])
 
