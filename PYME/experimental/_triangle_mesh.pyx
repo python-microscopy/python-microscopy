@@ -1128,6 +1128,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef np.int32_t *neighbours_dead
         cdef np.int32_t shared_vertex
         cdef np.float32_t px, py, pz
+        cdef np.float32_t n0x, n0y, n0z, n1x, n1y, n1z, ndot
         cdef bint fast_collapse_bool, interior
         cdef int i, j, twin_count, dead_count
         cdef np.int32_t[5*NEIGHBORSIZE] dead_vertices
@@ -1303,6 +1304,23 @@ cdef class TriangleMesh(TrianglesBase):
         px = 0.5*(self._cvertices[_live_vertex].position0 + self._cvertices[_dead_vertex].position0)
         py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
         pz = 0.5*(self._cvertices[_live_vertex].position2 + self._cvertices[_dead_vertex].position2)
+        
+        # keep joined vertex on surface
+        n0x = self._cvertices[_live_vertex].normal0
+        n0y = self._cvertices[_live_vertex].normal1
+        n0z = self._cvertices[_live_vertex].normal2
+        n1x = self._cvertices[_dead_vertex].normal0
+        n1y = self._cvertices[_dead_vertex].normal1
+        n1z = self._cvertices[_dead_vertex].normal2
+
+        ndot = (n1x-n0x)*(self._cvertices[_dead_vertex].position0 - self._cvertices[_live_vertex].position0) + \
+                (n1y-n0y)*(self._cvertices[_dead_vertex].position1 - self._cvertices[_live_vertex].position1) + \
+                (n1z-n0z)*(self._cvertices[_dead_vertex].position2 - self._cvertices[_live_vertex].position2)
+
+        px +=  0.0625*ndot*(n0x + n1x)
+        py += 0.0625*ndot*(n0y + n1y)
+        pz += 0.0625*ndot*(n0z + n1z)
+        
         self._cvertices[_live_vertex].position0 = px
         self._cvertices[_live_vertex].position1 = py
         self._cvertices[_live_vertex].position2 = pz
@@ -1976,7 +1994,9 @@ cdef class TriangleMesh(TrianglesBase):
         _vertex[0] = 0.5*(x0x + x1x)
         _vertex[1] = 0.5*(x0y + x1y)
         _vertex[2] = 0.5*(x0z + x1z)
+        
         if not upsample:
+            # keep vertex on surface
             n0x = self._cvertices[v0].normal0
             n0y = self._cvertices[v0].normal1
             n0z = self._cvertices[v0].normal2
@@ -4277,6 +4297,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         cdef int [::1]  _h_to_remove
         cdef int _n_h_to_remove, c_in_h_to_remove
+
+        assert(len(ids_to_remove) > 0)
 
         h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
