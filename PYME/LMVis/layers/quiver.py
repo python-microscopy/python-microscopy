@@ -187,9 +187,10 @@ class QuiverRenderLayer(EngineLayer):
         #t = ds.vertices[ds.faces]
         #n = ds.vertex_normals[ds.faces]
         
-        x, y, z = ds.vertices.reshape(-1, 3).T
+        valid = ds._vertices['halfedge'] != -1
+        x, y, z = ds.vertices.reshape(-1, 3)[valid, :].T
 
-        vec_data = getattr(ds, self.vector_property).reshape(-1, 3).T
+        vec_data = getattr(ds, self.vector_property).reshape(-1, 3)[valid,:].T
         xv, yv, zv = vec_data
         
         #if self.normal_mode == 'Per vertex':
