@@ -140,8 +140,8 @@ class DualMarchingCubes(ModuleBase):
     
     smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
     repair = Bool(False)
-    remesh = Bool(False)
-    cull_inner_surfaces = Bool(False)
+    remesh = Bool(True)
+    cull_inner_surfaces = Bool(True)
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
