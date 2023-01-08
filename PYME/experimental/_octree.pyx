@@ -105,6 +105,7 @@ cdef class Octree:
     cdef np.float32_t[50] _scale
 
     cdef public object mdh # placeholder to allow metadata injection
+    cdef public object points # placeholder to allow points injection
     
     def __init__(self, bounds, maxdepth=12, samples_per_node=1):
         cdef int n
