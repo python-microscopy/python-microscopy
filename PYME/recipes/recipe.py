@@ -22,6 +22,14 @@ class RecipeExecutionError(RecipeError):
 
         self.recipe = recipe # keep a reference to the recipe so that handlers can get fancy with formatting if they want to
 
+    #def __getstate__(self):
+    #    
+    #    return {}
+
+    # make this pickle-able even when the recipe isn't (so you see the error when running from bakeshop)
+    def __reduce__(self):
+        return self.__class__, self.args
+
 class Recipe(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
