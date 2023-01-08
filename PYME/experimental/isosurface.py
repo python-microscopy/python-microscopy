@@ -100,7 +100,7 @@ def sdf_min(sdf, smooth=True, k=0.1):
     else:
         return np.min(sdf, axis=1)
 
-def distance_to_mesh(points, surf, smooth=True, smooth_k=0.1, tree=None):
+def distance_to_mesh(points, surf, smooth=False, smooth_k=0.1, tree=None):
     """
     Calculate the distance to a mesh from points in a tabular dataset 
 
