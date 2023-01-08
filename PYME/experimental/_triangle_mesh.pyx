@@ -1305,7 +1305,7 @@ cdef class TriangleMesh(TrianglesBase):
         py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
         pz = 0.5*(self._cvertices[_live_vertex].position2 + self._cvertices[_dead_vertex].position2)
         
-        # keep joined vertex on surface
+        # keep joined vertex on surface using cubic interpolation
         n0x = self._cvertices[_live_vertex].normal0
         n0y = self._cvertices[_live_vertex].normal1
         n0z = self._cvertices[_live_vertex].normal2
@@ -1317,9 +1317,15 @@ cdef class TriangleMesh(TrianglesBase):
                 (n1y-n0y)*(self._cvertices[_dead_vertex].position1 - self._cvertices[_live_vertex].position1) + \
                 (n1z-n0z)*(self._cvertices[_dead_vertex].position2 - self._cvertices[_live_vertex].position2)
 
-        px +=  0.0625*ndot*(n0x + n1x)
+        # correct constant for cubic interpolation would be 0.125, but this
+        # inflates the mesh - 0.0625 is emperical, and slightly deflationary
+        # TODO - try interpolation on a sphere instead.
+        px += 0.0625*ndot*(n0x + n1x)
         py += 0.0625*ndot*(n0y + n1y)
         pz += 0.0625*ndot*(n0z + n1z)
+        # px += 0.125*ndot*(n0x + n1x)
+        # py += 0.125*ndot*(n0y + n1y)
+        # pz += 0.125*ndot*(n0z + n1z)
         
         self._cvertices[_live_vertex].position0 = px
         self._cvertices[_live_vertex].position1 = py
@@ -1996,7 +2002,8 @@ cdef class TriangleMesh(TrianglesBase):
         _vertex[2] = 0.5*(x0z + x1z)
         
         if not upsample:
-            # keep vertex on surface
+            # keep vertex on surface by using cubic interpolation
+            # along the edge
             n0x = self._cvertices[v0].normal0
             n0y = self._cvertices[v0].normal1
             n0z = self._cvertices[v0].normal2
@@ -2006,9 +2013,16 @@ cdef class TriangleMesh(TrianglesBase):
 
             ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
 
+            # correct constant for cubic interpolation would be 0.125 (1/8), but this
+            # inflates the mesh - 0.0625 is emperical, and slightly deflationary
+            # TODO - try interpolation on a sphere instead.
             _vertex[0] += 0.0625*ndot*(n0x + n1x)
             _vertex[1] += 0.0625*ndot*(n0y + n1y)
             _vertex[2] += 0.0625*ndot*(n0z + n1z)
+             
+            # _vertex[0] += 0.125*ndot*(n0x + n1x)
+            # _vertex[1] += 0.125*ndot*(n0y + n1y)
+            # _vertex[2] += 0.125*ndot*(n0z + n1z)
 
         self._cvertices[_vertex_idx].position0 = _vertex[0]
         self._cvertices[_vertex_idx].position1 = _vertex[1]
