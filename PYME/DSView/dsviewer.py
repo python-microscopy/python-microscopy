@@ -115,7 +115,10 @@ class DSViewFrame(AUIFrame):
         self.do = DisplayOpts(self.image.data_xyztc)
         if self.image.data_xyztc.shape[1] == 1:
             self.do.slice = self.do.SLICE_XZ
+        
+        logger.debug('Optimising ...')
         self.do.Optimise()
+        logger.debug('Optimise done')
 
         if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
             chan_names = self.image.mdh.getEntry('ChannelNames')
@@ -442,7 +445,7 @@ class MyApp(wx.App):
             #md = None
             #if not options.metadata == '':
             #    md = options.metadata
-            print('Loading data')
+            logger.debug('Loading data')
             if options.test:
                 # import pylab
                 im = ImageStack(np.random.randn(100,100))
@@ -462,8 +465,9 @@ class MyApp(wx.App):
                 mode = im.mode
             else:
                 mode = options.mode
-                print('Mode: %s' % mode)
+                logger.debug('Mode: %s' % mode)
     
+            logger.debug('Data loaded, launching viewer')
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
             
             #this is a bit of a hack - requires explicit knowledge of the LMAnalysis module here
@@ -500,6 +504,7 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    logging.basicConfig(level=logging.DEBUG)
     from PYME.misc import check_for_updates
     #from PYME.util import mProfile
     #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
@@ -512,8 +517,7 @@ def main(argv=sys.argv[1:]):
     #mProfile.report()
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+if __name__ == "__main__":  
     main(sys.argv[1:])
 
 

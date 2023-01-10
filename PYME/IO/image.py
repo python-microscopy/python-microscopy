@@ -1124,6 +1124,7 @@ class ImageStack(object):
     def _load_zarr(self, filename):
         import zarr
         from PYME.IO.DataSources import ArrayDataSource
+        from PYME.IO.DataSources import BaseDataSource
         
         if '?' in filename:
             fn, arrayname = filename.split('?')
@@ -1135,27 +1136,49 @@ class ImageStack(object):
         
         # reopen using a caching store with 1GB cache size
         z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
+
+        # TODO - is this a standard OME-NGFF property?
+        dims = z.attrs.get('_ARRAY_DIMENSIONS', ['x', 'y', 'z'])            
+        dimOrder = ''.join(dims).upper()
+        print('dimOrder:', dimOrder)
+
+        # expand to full xyztc by apending missing dimensions
+        for d in 'XYZTC':
+            if (d not in dimOrder):
+                dimOrder += d
+
+        print('dimOrder:', dimOrder)
+        def array_ds(a):
+            if dimOrder[:a.ndim] == 'XYZTC'[:a.ndim]:
+                # array has the correct dimension ordering for the dimensions that count, we can use direct slicing
+                return ArrayDataSource.XYZTCArrayDataSource(a)
+            else:
+                logger.warning(f'Zarr dimenision order, {dims}, is not XYZTC, performance might not be optimal')
+                #TODO - better support for slicing on chunked data with non-standard order
+                return ArrayDataSource.XYZTCArrayDataSource(a, dimOrder=dimOrder)
+
         
         if isinstance(z, zarr.Group):
             array_names = sorted(list(z.array_keys()))
             print('Zarr file contains multiple datasets: %s' % (array_names,))
             
             if arrayname and (arrayname in array_names):
-                a = ArrayDataSource.XYZTCArrayDataSource(z[arrayname])
+                a = array_ds(z[arrayname])
             else:
-                a = ArrayDataSource.XYZTCArrayDataSource(z[array_names[0]])
+                a = array_ds(z[array_names[0]])
             
             if ('0' in array_names) and ('1' in array_names):
                 # hack to detect pyramid
                 print('Detected pyramidal .zarr')
                 self.is_pyramid = True
                 
-                self.levels = [ArrayDataSource.XYZTCArrayDataSource(z[n]) for n in array_names]
+                self.levels = [array_ds(z[n]) for n in array_names]
                 a.levels = self.levels
             
         else:
-            a = ArrayDataSource.XYZTCArrayDataSource(z)
+            a = array_ds(z)
 
+        logger.debug('Setting data')
         self.SetData(a)
         
         self.seriesName = getRelFilename(fn)
