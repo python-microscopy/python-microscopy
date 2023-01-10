@@ -56,8 +56,9 @@ inline float dot(const float *a, const float *b)
     return n;
 }
 
-inline float scalar_mult(float *a, const float b)
+inline void scalar_mult(float *a, const float b)
 {
+    int i=0;
     for (i = 0; i < VECTORSIZE; ++i)
         a[i] *= b;
 }
