@@ -20,6 +20,7 @@
 #
 ##################
 import numpy
+import numpy as np
 import wx
 # import pylab
 import matplotlib.cm
@@ -142,6 +143,7 @@ class Visualiser(Plugin):
         
         dsviewer.AddMenuItem('&3D', '3D Isosurface (mayavi)', self.On3DIsosurf)
         dsviewer.AddMenuItem('&3D', '3D Isosurface (builtin)', self.isosurf_builtin)
+        dsviewer.AddMenuItem('&3D', '3D Isosurface (coloured)', self.isosurf_coloured)
         dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface(s) as u3d', self.save_u3d)
@@ -184,6 +186,50 @@ class Visualiser(Plugin):
             
             layer.engine._outlines=False
             layer.show_lut=False
+            
+        
+        self.canvases.append(glcanvas)
+        
+        glcanvas.displayMode = '3D'
+        glcanvas.fit_bbox()
+        glcanvas.Refresh()
+
+    def isosurf_coloured(self, event=None):
+        from PYME.experimental import isosurface
+        from PYME.LMVis import gl_render3D_shaders as glrender
+        from PYME.LMVis.layers.mesh import TriangleRenderLayer
+        from PYME.misc.colormaps import cm
+
+        glcanvas = new_mesh_viewer()#glrender.showGLFrame()
+        glcanvas.layer_data={}
+
+        # assume first channel intensity, second colour
+        # TODO - make this more flexible
+        assert(self.image.data_xyztc.shape[4] ==2)
+        
+        i = 0 # use first channel for threshold
+        isolevel = self.do.Offs[i] + .5/self.do.Gains[i]
+        T = isosurface.isosurface(self.image.data_xyztc[:,:,:, 0, i].astype('f'), isolevel=isolevel, voxel_size=self.image.voxelsize, origin=self.image.origin)
+        
+        # get pixel locations of the vertices
+        xi, yi, zi = (T.vertices/np.array(self.image.voxelsize)).astype('i').T
+        
+        d = self.image.data_xyztc[:, :, :, 0, 1].squeeze()
+        xi = np.clip(xi, 0, d.shape[0]-1)
+        yi = np.clip(yi, 0, d.shape[1]-1)
+        zi = np.clip(zi, 0, d.shape[2]-1)
+        c = d[xi, yi, zi].squeeze()
+        T.extra_vertex_data['cval'] = c
+        
+        glcanvas.layer_data[self.image.names[i]] = T
+        layer = TriangleRenderLayer(glcanvas.layer_data, dsname=self.image.names[i], method='shaded', context=glcanvas.gl_context, window = glcanvas,
+                                    cmap='jet', vertexColor='cval',
+                                    #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                    )
+        glcanvas.add_layer(layer)
+        
+        layer.engine._outlines=False
+        layer.show_lut=False
             
         
         self.canvases.append(glcanvas)
