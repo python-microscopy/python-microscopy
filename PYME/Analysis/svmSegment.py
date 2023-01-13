@@ -204,11 +204,11 @@ class svmClassifier(object):
         return c.reshape(shape)
         
     def save(self, filename):
-        from sklearn.externals import joblib
+        import joblib
         joblib.dump((self.clf, self.normalization), filename, compress=9)
         
     
     def loadFile(self, filename):
-        from sklearn.externals import joblib
+        import joblib
         self.clf, self.normalization = joblib.load(filename)
         

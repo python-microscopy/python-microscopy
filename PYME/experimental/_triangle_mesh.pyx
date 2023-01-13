@@ -4,6 +4,11 @@ cimport numpy as np
 import numpy as np
 cimport cython
 
+#from libc.math cimport sqrtf
+
+cdef extern from "<math.h>" nogil:
+    float sqrtf(float)
+
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 import copy
@@ -23,6 +28,12 @@ cdef extern from "triangle_mesh_utils.c":
     void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
 
     int flood_fill_star_component(np.int32_t h_idx, int component, halfedge_t *halfedges)
+    float norm(const float *pos)
+    void cross(const float *a, const float *b, float *n)
+    void difference(const float *a, const float *b, float *out)
+    void vsum(const float *a, const float *b, float *out)
+    float dot(const float *a, const float *b)
+    void scalar_mult(float *a, const float b);
 
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4'), ('locally_manifold', 'i4')], align=True)
@@ -365,6 +376,14 @@ cdef class TriangleMesh(TrianglesBase):
     @property
     def vertices(self):
         return self._vertices['position']
+
+    @property
+    def vertex_mask(self):
+        """
+        Returns a mask indicating which vertices are valid
+        """
+
+        return self._vertices['halfedge'] != -1
 
     @property
     def faces(self):
@@ -1132,6 +1151,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef bint fast_collapse_bool, interior
         cdef int i, j, twin_count, dead_count
         cdef np.int32_t[5*NEIGHBORSIZE] dead_vertices
+        cdef np.float32_t[VECTORSIZE] _vn
+        cdef np.float32_t n_dot_n, c_dot_n, alpha
 
         if _curr == -1:
             return 0
@@ -1305,7 +1326,8 @@ cdef class TriangleMesh(TrianglesBase):
         py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
         pz = 0.5*(self._cvertices[_live_vertex].position2 + self._cvertices[_dead_vertex].position2)
         
-        # keep joined vertex on surface
+        ### cubic interpolation
+        # keep joined vertex on surface using cubic interpolation
         n0x = self._cvertices[_live_vertex].normal0
         n0y = self._cvertices[_live_vertex].normal1
         n0z = self._cvertices[_live_vertex].normal2
@@ -1317,9 +1339,34 @@ cdef class TriangleMesh(TrianglesBase):
                 (n1y-n0y)*(self._cvertices[_dead_vertex].position1 - self._cvertices[_live_vertex].position1) + \
                 (n1z-n0z)*(self._cvertices[_dead_vertex].position2 - self._cvertices[_live_vertex].position2)
 
-        px +=  0.0625*ndot*(n0x + n1x)
+        # correct constant for cubic interpolation would be 0.125, but this
+        # inflates the mesh - 0.0625 is emperical, and slightly deflationary
+        # TODO - try interpolation on a sphere instead.
+        px += 0.0625*ndot*(n0x + n1x)
         py += 0.0625*ndot*(n0y + n1y)
         pz += 0.0625*ndot*(n0z + n1z)
+        # px += 0.125*ndot*(n0x + n1x)
+        # py += 0.125*ndot*(n0y + n1y)
+        # pz += 0.125*ndot*(n0z + n1z)
+
+        # ## Sphere projection
+        # # calculate average normal
+        # vsum(&self._cvertices[_live_vertex].normal0, &self._cvertices[_dead_vertex].normal0, _vn) 
+        # scalar_mult(_vn, 1.0/norm(_vn))
+
+        # # dot left normal with new normal
+        # n_dot_n = dot(&self._cvertices[_live_vertex].normal0, _vn)
+        
+        # # dot normal with vector between the left vertex and new vertex
+        # c_dot_n = (px - self._cvertices[_live_vertex].position0)*_vn[0] + (py - self._cvertices[_live_vertex].position1)*_vn[1] + (pz - self._cvertices[_live_vertex].position2)*_vn[2]
+
+        # alpha = c_dot_n/sqrtf(2*(max(n_dot_n, 0) + 1))
+        # scalar_mult(_vn, alpha)
+        # px += _vn[0]
+        # py += _vn[1]
+        # pz += _vn[2]
+
+        # # end sphere proj
         
         self._cvertices[_live_vertex].position0 = px
         self._cvertices[_live_vertex].position1 = py
@@ -1953,6 +2000,8 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int i
         cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot
         cdef np.float32_t[VECTORSIZE] _vertex
+        cdef np.float32_t[VECTORSIZE] _vn
+        cdef np.float32_t n_dot_n, c_dot_n, alpha
 
         if _curr == -1:
             return 0
@@ -1996,7 +2045,8 @@ cdef class TriangleMesh(TrianglesBase):
         _vertex[2] = 0.5*(x0z + x1z)
         
         if not upsample:
-            # keep vertex on surface
+            # keep vertex on surface by using cubic interpolation
+            # along the edge
             n0x = self._cvertices[v0].normal0
             n0y = self._cvertices[v0].normal1
             n0z = self._cvertices[v0].normal2
@@ -2006,9 +2056,36 @@ cdef class TriangleMesh(TrianglesBase):
 
             ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
 
+            # correct constant for cubic interpolation would be 0.125 (1/8), but this
+            # inflates the mesh - 0.0625 is emperical, and slightly deflationary
+            # TODO - try interpolation on a sphere instead.
             _vertex[0] += 0.0625*ndot*(n0x + n1x)
             _vertex[1] += 0.0625*ndot*(n0y + n1y)
             _vertex[2] += 0.0625*ndot*(n0z + n1z)
+             
+            # _vertex[0] += 0.125*ndot*(n0x + n1x)
+            # _vertex[1] += 0.125*ndot*(n0y + n1y)
+            # _vertex[2] += 0.125*ndot*(n0z + n1z)
+
+            # ## Sphere projection
+            # # calculate average normal
+            # vsum(&self._cvertices[v0].normal0, &self._cvertices[v1].normal0, _vn) 
+            # scalar_mult(_vn, 1.0/norm(_vn))
+
+            # # dot left normal with new normal
+            # n_dot_n = dot(&self._cvertices[v0].normal0, _vn)
+            
+            # # dot normal with vector between the left vertex and new vertex
+            # c_dot_n = (_vertex[0] - x0x)*_vn[0] + (_vertex[1] - x0y)*_vn[1] + (_vertex[2] - x0z)*_vn[2]
+
+            # alpha = c_dot_n/sqrtf(2*(max(n_dot_n, 0) + 1))
+            # scalar_mult(_vn, alpha)
+            # _vertex[0] += _vn[0]
+            # _vertex[1] += _vn[1]
+            # _vertex[2] += _vn[2]
+
+
+            
 
         self._cvertices[_vertex_idx].position0 = _vertex[0]
         self._cvertices[_vertex_idx].position1 = _vertex[1]
@@ -2710,7 +2787,7 @@ cdef class TriangleMesh(TrianglesBase):
                 n2 = &self._cvertices[self._chalfedges[self._chalfedges[i].prev].vertex].normal0
                 # dot product of the normals
                 nd = n1[0]*n2[0] + n1[1]*n2[1] + n1[2]*n2[2]
-                if (self._chalfedges[i].length < nd*collapse_threshold):
+                if (self._chalfedges[i].length < nd*nd*collapse_threshold):
                     collapse_ret = self.edge_collapse(i)
                     collapse_count += collapse_ret
                     collapse_fails += (1-collapse_ret)

@@ -274,6 +274,41 @@ class Zoom(Filter):
         if not self.dimensionality == 'XY':
             im.mdh['voxelsize.z'] = im.mdh['voxelsize.z']/self.zoom
 
+@register_module('Subsample')         
+class Subsample(Filter):
+    """
+    Crude subsampling (as opposed to zoom, which does interpolation)
+
+    Parameters
+    ----------
+
+    step : interger step to take along each axis
+
+    Notes
+    -----
+    * zoom is isotropic in 3D if ``processFramesIndividually`` is ``False``
+    * zoom only zooms in x and y if ``processFramesIndividually`` is ``True``
+
+    """
+    dimensionality = Enum('XY', 'XYZ', desc='Which image dimensions should the filter be applied to?')
+    
+    step = Int(2)
+    
+    def apply_filter(self, data, voxelsize):
+        if data.ndim == 2:
+            return data[::self.step, ::self.step]
+        else:
+            return data[::self.step, ::self.step, ::self.step,]
+    
+    def completeMetadata(self, im):
+        im.mdh['Processing.SubsampleStep'] = self.step
+        im.mdh['voxelsize.x'] = im.mdh['voxelsize.x']*self.step
+        im.mdh['voxelsize.y'] = im.mdh['voxelsize.y']*self.step
+        
+        if not self.dimensionality == 'XY':
+            im.mdh['voxelsize.z'] = im.mdh['voxelsize.z']*self.step
+
+
 @register_module('MaskEdges')
 class MaskEdges(Filter):
     """

@@ -112,7 +112,7 @@ class DeconvSettingsDialog(wx.Dialog):
 #            
 #            pan2.SetSizerAndFit(s3)
             
-            sizer4.Add(self.nb2, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+            sizer4.Add(self.nb2, 1, wx.EXPAND | wx.ALL, 0)
             self.nb2.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPSFNotebookPageChanged)
             
             self.cbShowPSF = wx.CheckBox(pan1, -1, 'Show PSF')
@@ -125,7 +125,7 @@ class DeconvSettingsDialog(wx.Dialog):
             sizer3.Add(self.tBeadSize, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
             sizer4.Add(sizer3, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
 
-        sizer2.Add(sizer4, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer4, 0, wx.EXPAND | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Method:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -134,7 +134,7 @@ class DeconvSettingsDialog(wx.Dialog):
         self.cMethod.Bind(wx.EVT_CHOICE, self.OnMethodChanged)
 
         sizer3.Add(self.cMethod, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Number of iterations:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -142,7 +142,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tNumIters, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Offset:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -150,7 +150,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tOffset, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
         
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Background:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -158,7 +158,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tBackground, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, u'Regularisation \u03BB:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -167,7 +167,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tRegLambda, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
 
         pan1.SetSizerAndFit(sizer2)
         
@@ -180,7 +180,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer2 = wx.BoxSizer(wx.VERTICAL)
         self.cbBlocking = wx.CheckBox(pan1, -1, 'Do tiled/blocked deconvolution')
-        sizer2.Add(self.cbBlocking, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(self.cbBlocking, 0,  wx.ALL, 5)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(wx.StaticText(pan1, -1, 'Tile size:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -188,7 +188,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tTileSize, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.ALL, 0)
 
         pan1.SetSizerAndFit(sizer2)
 
@@ -198,10 +198,10 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer2 = wx.BoxSizer(wx.VERTICAL)
         self.cbPadding = wx.CheckBox(pan1, -1, 'Pad data')
-        sizer2.Add(self.cbPadding, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(self.cbPadding, 0, wx.ALL, 5)
 
         self.cbRemovePadding = wx.CheckBox(pan1, -1, 'Remove padding on completion')
-        sizer2.Add(self.cbRemovePadding, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer2.Add(self.cbRemovePadding, 0, wx.ALL, 5)
         self.cbRemovePadding.SetValue(True)
 
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
@@ -210,7 +210,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         sizer3.Add(self.tPadWidth, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer2.Add(sizer3, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+        sizer2.Add(sizer3, 0, wx.ALL, 0)
 
         pan1.SetSizerAndFit(sizer2)
 
@@ -234,7 +234,7 @@ class DeconvSettingsDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

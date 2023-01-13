@@ -1,5 +1,5 @@
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI, Instance, WeakRef
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -16,10 +16,13 @@ from PYME.IO.image import ImageStack
 @register_module('SVMSegment')
 class svmSegment(Filter):
     classifier = FileOrURI('')
+    _classifier = CStr('')
+    _cf = Instance(object, allow_none=True)
     
     def _loadClassifier(self):
         from PYME.Analysis import svmSegment
-        if not (('_cf' in dir(self)) and (self._classifier == self.classifier)):
+        if not (self._cf and (self._classifier == self.classifier)):
+            print('loading classifier')
             self._classifier = self.classifier
             with unifiedIO.local_or_temp_filename(self.classifier) as fn:
                 self._cf = svmSegment.svmClassifier(filename=fn)

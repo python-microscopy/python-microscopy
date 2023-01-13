@@ -33,6 +33,8 @@ class Octree(ModuleBase):
         self._params_to_metadata(md)
         ot.mdh = md # just add/inject as an attribute
 
+        ot.points = inp
+
         namespace[self.output_octree] = ot
         
         

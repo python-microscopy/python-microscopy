@@ -705,13 +705,13 @@ class Annotater(Plugin, AnnotateBase):
         self.dv.Update()
 
     def OnSaveClassifier(self, event=None):
-        filename = wx.FileSelector("Save classifier as:", wildcard="*.pkl", flags=wx.FD_SAVE)
+        filename = wx.FileSelector("Save classifier as:", wildcard="*.joblib", flags=wx.FD_SAVE)
         if not filename == '':
             self.cf.save(filename)
 
     def OnLoadClassifier(self, event=None):
         from PYME.Analysis import svmSegment
-        filename = wx.FileSelector("Load Classifier:", wildcard="*.pkl", flags=wx.FD_OPEN)
+        filename = wx.FileSelector("Load Classifier:", wildcard="*.joblib", flags=wx.FD_OPEN)
         if not filename == '':
             self.cf = svmSegment.svmClassifier(filename=filename)
             self._mi_run.Enable(True)
