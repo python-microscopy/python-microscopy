@@ -940,7 +940,13 @@ class LMGLShaderCanvas(GLCanvas):
         #     raise RuntimeError('{} is not a supported format.'.format(mode))
         # img.show()
         self.on_screen = False
-        off_screen_handler = OffScreenHandler(self.view_port_size, mode, self._num_antialias_samples)
+        vmajor, vminor = wx.VERSION[:2]
+        if (vmajor >= 4) and (vminor >= 1):
+            sc = self.GetContentScaleFactor()
+        else:
+            sc = 1
+        view_port_size = (int(self.view_port_size[0]*sc), int(self.view_port_size[1]*sc))
+        off_screen_handler = OffScreenHandler(view_port_size, mode, self._num_antialias_samples)
         with off_screen_handler:
             self.OnDraw()
         snap = off_screen_handler.get_snap()
