@@ -392,10 +392,10 @@ class ModuleBase(HasStrictTraits):
         return []
     
     def get_params(self):
-        t = self.trait_get()
+        t = self.traits()
         editable = self.class_editable_traits()
-        inputs = [tn for tn in editable if (tn.startswith('input') or isinstance(t[tn], Input))]
-        outputs = [tn for tn in editable if (tn.startswith('output') or isinstance(t[tn], Output))]
+        inputs = [tn for tn in editable if (tn.startswith('input') or isinstance(t[tn].trait_type, Input))]
+        outputs = [tn for tn in editable if (tn.startswith('output') or isinstance(t[tn].trait_type, Output))]
         params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
         
         return inputs, outputs, params
