@@ -117,7 +117,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
     for i in range(n):
         #global jParms
         #locals().update(jParms)
-        scipy.random.seed()
+        numpy.random.seed()
 
         Imc = scipy.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
