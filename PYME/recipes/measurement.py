@@ -99,6 +99,7 @@ class FitDumbells(ModuleBase):
 @register_module('DetectPoints2D')
 class DetectPoints2D(ModuleBase):
     """
+    Detect point-like objects using a sombrero (or Difference of Gaussians) filter
 
     Parameters
     ----------
@@ -108,9 +109,26 @@ class DetectPoints2D(ModuleBase):
         How should we interpret the threshold? If True, the signal-to-noise (SNR) is estimated at each pixel, and the threshold 
         applied at each pixel is this estimate multiplied by the 'threshold' parameter. If False, the threshold parameter is used
         directly.
+        NB - this cannot be set in conjunction with multithreshold.
+    multithreshold : Bool
+        If true, detect objects at multiple decreasing thresholds, removing detected objects before progressing to the next step.
+        This is similar to the CLEAN algorithm from astromy and useful for detecting weak point-like objects
+        in the immediate vicinity of strong ones. 
+        NB - this cannot be set together with snr_threshold. 
     threshold : Float
         The intensity threshold applied during detection if 'snr_threshold' is False, otherwise this scalar is first
-        multiplied by the SNR estimate at each pixel before the threshold is applied
+        multiplied by the SNR estimate at each pixel before the threshold is applied. When multithreshold is set, the
+        highest threshold is max_intensity/2, the lowest is threshold*max_intensity.
+    filter_radius_lowpass : Float
+        The std. deviation (in pixels) of the lowpass part of the sombrero. Should match the expected object size.
+    filter_radius_highpass : Float
+        The std deviation (in pixels) of the highpass part of the sombrero. Ideally > 2x the object size, but less than the
+        spacing between objects.
+    blur_radius : Float
+        Used with multithrehold. Std deviation in pixels of a Gaussian filter used to blur the segmented image with at each threshold step
+        prior to subtraction. Should be set so the Gaussian width approximates the PSF width. Most critical if you want to
+        reliably detect points on the slope of a brighter point, as making this too large will lead to a "halo of exclusion" around bright points.
+        Conversely, setting it to small will lead to spurious detections due to incomplete removal of the bright point.
     debounce_radius : Int
         Radius is pixels to check for other detected points. If multiple points are found within this radius the brightest 
         will be preserved and the other(s) will be removed
@@ -134,7 +152,11 @@ class DetectPoints2D(ModuleBase):
     threshold = Float(1.)
     debounce_radius = Int(4)
     snr_threshold = Bool(True)
+    muiltithreshold = Bool(False)
     edge_mask_width = Int(5)
+    filter_radius_lowpass = Float(1.0)
+    filter_radius_highpass = Float(3.0)
+    blur_radius = Float(1.5)
 
     output_name = Output('candidate_points')
 
@@ -142,13 +164,16 @@ class DetectPoints2D(ModuleBase):
         from PYME.localization.ofind import ObjectIdentifier
         from PYME.localization.remFitBuf import fitTask
 
+        if self.snr_threshold and self.muiltithreshold:
+            raise RuntimeError('Cannot specify both snr_threshold and multithreshold simultaeneously')
+
         im_stack = namespace[self.input_name]
 
         x, y, t = [], [], []
         # note that ObjectIdentifier is only 2D-aware
         for ti in range(im_stack.data.shape[2]):
             frame = im_stack.data.getSlice(ti)
-            finder = ObjectIdentifier(frame * (frame > 0))
+            finder = ObjectIdentifier(frame * (frame > 0), filterRadiusLowpass=self.filter_radius_lowpass, filterRadiusHighpass=self.filter_radius_highpass)
 
             if self.snr_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
                 sigma = fitTask.calcSigma(im_stack.mdh, frame).squeeze()
@@ -156,7 +181,12 @@ class DetectPoints2D(ModuleBase):
             else:
                 threshold = self.threshold
 
-            finder.FindObjects(threshold, 0, debounceRadius=self.debounce_radius, maskEdgeWidth=self.edge_mask_width)
+            if self.muiltithreshold:
+                thresholdSteps = "default"
+            else:
+                thresholdSteps = 0
+
+            finder.FindObjects(threshold, numThresholdSteps=thresholdSteps, debounceRadius=self.debounce_radius, maskEdgeWidth=self.edge_mask_width)
 
             x.append(finder.x[:])
             y.append(finder.y[:])
@@ -169,10 +199,7 @@ class DetectPoints2D(ModuleBase):
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         out.mdh.copyEntriesFrom(im_stack.mdh)
 
-        out.mdh['Processing.DetectPoints2D.SNRThreshold'] = self.snr_threshold
-        out.mdh['Processing.DetectPoints2D.DetectionThreshold'] = self.threshold
-        out.mdh['Processing.DetectPoints2D.DebounceRadius'] = self.debounce_radius
-        out.mdh['Processing.DetectPoints2D.MaskEdgeWidth'] = self.edge_mask_width
+        self._params_to_metadata(out.mdh)
 
         namespace[self.output_name] = out
 
