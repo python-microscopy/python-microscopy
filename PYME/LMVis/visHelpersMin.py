@@ -117,13 +117,13 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
     for i in range(n):
         #global jParms
         #locals().update(jParms)
-        scipy.random.seed()
+        numpy.random.seed()
 
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = numpy.random.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
-        T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig*numpy.random.randn(Imc.sum()), y[Imc] +  jsig*numpy.random.randn(Imc.sum()))
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)
@@ -167,11 +167,11 @@ else:
         im = numpy.zeros((sizeX, sizeY))
 
         for i in range(n):
-            Imc = scipy.rand(len(x)) < mcp
+            Imc = numpy.random.rand(len(x)) < mcp
             if type(jsig) == numpy.ndarray:
                 #print jsig.shape, Imc.shape
                 jsig = jsig[Imc]
-            T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+            T = delaunay.Triangulation(x[Imc] +  jsig*numpy.random.randn(Imc.sum()), y[Imc] +  jsig*numpy.random.randn(Imc.sum()))
             rendTri(T, imageBounds, pixelSize, im=im)
 
         return im/n
@@ -196,14 +196,14 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
     im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
 
     for i in range(n):
-        Imc = scipy.rand(len(x)) < mcp
+        Imc = numpy.random.rand(len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             print((jsig.shape, Imc.shape))
             jsig = jsig[Imc]
             jsigz = jsigz[Imc]
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
-        p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
+        p = numpy.hstack(((x[Imc]+ jsig*numpy.random.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*numpy.random.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*numpy.random.randn(Imc.sum()))[:, None]))
         #print p.shape
         RenderTetrahedra(p, im)
 

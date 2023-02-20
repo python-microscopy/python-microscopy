@@ -148,10 +148,10 @@ class NoiseMaker:
         if self.approximate_read_noise:
             o = self._read_approx(im.shape)
         else:
-            o = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount) * scipy.random.standard_normal(im.shape)
+            o = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount) * np.random.standard_normal(im.shape)
         
         if self.shutterOpen:
-            o = o +  (M/(self.ElectronsPerCount*F2))*scipy.random.poisson((self.QE*F2)*(im + self.background))
+            o = o +  (M/(self.ElectronsPerCount*F2))*np.random.poisson((self.QE*F2)*(im + self.background))
 
         return o
         
