@@ -88,7 +88,7 @@ void cross(const float *a, const float *b, float *n);
 void difference(const float *a, const float *b, float *d);
 void vsum(const float *a, const float *b, float *out);
 float dot(const float *a, const float *b);
-void scalar_mult(float *a, const float b);
+//void scalar_mult(float *a, const float b);
 
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args);
 static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args);
