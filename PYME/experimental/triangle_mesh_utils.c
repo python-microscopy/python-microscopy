@@ -56,12 +56,12 @@ inline float dot(const float *a, const float *b)
     return n;
 }
 
-inline void scalar_mult(float *a, const float b)
+/*inline void scalar_mult(float *a, const float b)
 {
     int i=0;
     for (i = 0; i < VECTORSIZE; ++i)
         a[i] *= b;
-}
+}*/
 
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
 
