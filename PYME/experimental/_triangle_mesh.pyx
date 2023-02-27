@@ -487,14 +487,22 @@ cdef class TriangleMesh(TrianglesBase):
     # 
     #     return self._singular_vertices
 
+    def _update_all_face_normals(self, recompute=True):
+        """
+        Update face normals
+
+        If called with recompute=False, only recomputes if face normals have been marked as invalid 
+        """
+        if recompute or (not self._face_normals_valid):
+            triangle_mesh_utils.c_update_all_face_normals(self._faces.shape[0], self._halfedges, self._vertices, self._faces)
+        self._face_normals_valid = 1
+    
     @property
     def face_normals(self):
         """
         Return the normal of each triangular face.
         """
-        if not self._face_normals_valid:
-            triangle_mesh_utils.c_update_all_face_normals(self._faces.shape[0], self._halfedges, self._vertices, self._faces)
-            self._face_normals_valid = 1
+        self._update_all_face_normals(recompute=False)
         return self._faces['normal'][self._faces['halfedge'] != -1]
 
     @property
@@ -502,18 +510,26 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the area of each triangular face.
         """
-        self.face_normals
+        self._update_all_face_normals(recompute=False)
         return self._faces['area']
     
+    def _update_all_vertex_neighbours(self, recompute=True):
+        """
+        Update the vertex neighbour information (neighbours, normals, edge lengths)
+
+        If called with recompute=False, only recomputes if vertex normals have been marked as invalid
+        """
+        if recompute or (not self._vertex_normals_valid):
+            triangle_mesh_utils.c_update_all_vertex_neighbors(self._vertices.shape[0], self._halfedges, self._vertices, self._faces)
+            self._vertex_normals_valid = 1
+
     @property
     def vertex_neighbors(self):
         """
         Return the up to NEIGHBORSIZE neighbors of each vertex.
         """
-        if not self._vertex_normals_valid:
-            triangle_mesh_utils.c_update_all_vertex_neighbors(self._vertices.shape[0], self._halfedges, self._vertices, self._faces)
-            self._vertex_normals_valid = 1
-
+        
+        self._update_all_vertex_neighbours(recompute=False)
         return self._vertices['neighbors']
 
     @property
@@ -521,7 +537,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the normal of each vertex.
         """
-        self.vertex_neighbors
+        self._update_all_vertex_neighbours(recompute=False)
         return self._vertices['normal']
 
     @property
@@ -529,8 +545,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         Return the valence of each vertex.
         """
-        if not self._vertex_normals_valid:
-            self.vertex_neighbors
+        self._update_all_vertex_neighbours(recompute=False)
         return self._vertices['valence']
 
     @property
@@ -827,8 +842,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         if clear:
             self._clear_flags()
-            self.face_normals
-            self.vertex_neighbors
+            self._update_all_face_normals()
+            self._update_all_vertex_neighbours()
 
     def _clear_flags(self):
         self._faces_by_vertex = None
@@ -2699,12 +2714,8 @@ cdef class TriangleMesh(TrianglesBase):
             #triangle_mesh_utils.c_update_vertex_neighbors(list(np.arange(len(self._vertices)).astype(np.int32)), self._halfedges, self._vertices, self._faces)
 
             # Now we gotta recalculate the normals
-            # self._faces['normal'][:] = -1
-            # self._vertices['normal'][:] = -1
-            self._face_normals_valid = 0
-            self._vertex_normals_valid = 0
-            self.face_normals
-            self.vertex_normals
+            self._update_all_face_normals(recompute=True)
+            self._update_all_vertex_neighbours(recompute=True) #note, also updates edge lengths
 
         return 1
         
@@ -4342,8 +4353,8 @@ cdef class TriangleMesh(TrianglesBase):
         #self._face_normals_valid = 0
         #self._vertex_normals_valid = 0
         self._clear_flags()
-        self.face_normals
-        self.vertex_normals
+        self._update_all_face_normals()
+        self._update_all_vertex_neighbours()
 
     def deneck(self, e_threshold=30.0):
         """
