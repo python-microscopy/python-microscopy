@@ -2862,7 +2862,7 @@ cdef class TriangleMesh(TrianglesBase):
             new_vertex_idxs = []
 
             # Mark the current edges as old
-            edges_to_split = np.where(self._halfedges['length'] != -1)[0]
+            edges_to_split = np.where(self._halfedges['vertex'] != -1)[0]
             split_halfedges = self._halfedges[edges_to_split]
 
             # Compute new vertex positions for old vertices
