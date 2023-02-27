@@ -132,7 +132,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef _populate_edge(self, int idx, int vertex, int prev=*, int next=*, int face=*, int twin=*, int locally_manifold=*)
     #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
     
-    cdef int _new_face(self, int)
+    #cdef int _new_face(self, int)
     #cdef int _new_vertex(self, np.ndarray, int)
 
     cdef _compute_raw_vertex_valences(self, np.ndarray valence)

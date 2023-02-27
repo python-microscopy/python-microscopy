@@ -1515,78 +1515,78 @@ cdef class TriangleMesh(TrianglesBase):
         
         return idx, el_arr, el_vacancies
 
-    def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
-        #print('gis', el_arr)
-        idx, el_arr, el_vacancies = self._get_insertion_slots(1, el_arr, el_vacancies, key_idx, compact)
-        #print(idx, el_vacancies)
-        return idx[0], el_arr, el_vacancies
+    # def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
+    #     #print('gis', el_arr)
+    #     idx, el_arr, el_vacancies = self._get_insertion_slots(1, el_arr, el_vacancies, key_idx, compact)
+    #     #print(idx, el_vacancies)
+    #     return idx[0], el_arr, el_vacancies
     
-    def _insert(self, el, el_arr, el_vacancies, int key, bint compact=False, insert_key=None, **kwargs):
-        """
-        Insert an element into an array at the position of the smallest empty 
-        entry when searching the array by key.
+    # def _insert(self, el, el_arr, el_vacancies, int key, bint compact=False, insert_key=None, **kwargs):
+    #     """
+    #     Insert an element into an array at the position of the smallest empty 
+    #     entry when searching the array by key.
 
-        Parameters
-        ----------
-            el 
-                Element to add to the array. Must be one of the dtypes in the 
-                structured dtype of el_arr.
-            el_arr : np.array
-                Array where we add the element
-            el_vacancies : list
-                External list where we keep empty positions of el_arr.
-            key : string
-                Key on which to search the array
-            insert_key : string
-                Key on which to insert element el. This is by default the 
-                search key.
-            compact : bool
-                Do we copy -1 values in the resize of el_arr?
-            kwargs 
-                List of dtype parameters to additionally define el.
+    #     Parameters
+    #     ----------
+    #         el 
+    #             Element to add to the array. Must be one of the dtypes in the 
+    #             structured dtype of el_arr.
+    #         el_arr : np.array
+    #             Array where we add the element
+    #         el_vacancies : list
+    #             External list where we keep empty positions of el_arr.
+    #         key : string
+    #             Key on which to search the array
+    #         insert_key : string
+    #             Key on which to insert element el. This is by default the 
+    #             search key.
+    #         compact : bool
+    #             Do we copy -1 values in the resize of el_arr?
+    #         kwargs 
+    #             List of dtype parameters to additionally define el.
 
-        Returns
-        -------
-            ed
-                Element added, includes el stored in full structured dtype of
-                el_arr.
-            idx : int
-                Index of el_arr where ed is stored.
-            el_arr : np.array
-                Modified array containing ed.
-            el_vacancies : list
-                Modified list of el_arr vacancies.
-        """
+    #     Returns
+    #     -------
+    #         ed
+    #             Element added, includes el stored in full structured dtype of
+    #             el_arr.
+    #         idx : int
+    #             Index of el_arr where ed is stored.
+    #         el_arr : np.array
+    #             Modified array containing ed.
+    #         el_vacancies : list
+    #             Modified list of el_arr vacancies.
+    #     """
         
-        idx, el_arr, el_vacancies = self._get_insertion_slot(el_arr, el_vacancies, key, compact)
+    #     idx, el_arr, el_vacancies = self._get_insertion_slot(el_arr, el_vacancies, key, compact)
 
-        if insert_key is None:
-            # Default to searching and inserting on the same key
-            insert_key = __insertion_keys[key]
+    #     if insert_key is None:
+    #         # Default to searching and inserting on the same key
+    #         insert_key = __insertion_keys[key]
 
-        # Put el in el_arr
-        ed = el_arr[idx]
-        ed[insert_key] = el
-        # Define additional structured dtype values for el
-        for k, v in kwargs.items():
-            ed[k] = v
+    #     # Put el in el_arr
+    #     ed = el_arr[idx]
+    #     ed[insert_key] = el
+    #     # Define additional structured dtype values for el
+    #     for k, v in kwargs.items():
+    #         ed[k] = v
             
-        return ed, idx, el_arr, el_vacancies
+    #     return ed, idx, el_arr, el_vacancies
     
      
-    def _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1, int locally_manifold=1):
-        cdef int idx
-        idx, self._halfedges, self._halfedge_vacancies = self._get_insertion_slot(self._halfedges, self._halfedge_vacancies, key_idx=INSERTION_KEY_VERTEX)
-        self._set_chalfedges(self._halfedges)
+    # def _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1, int locally_manifold=1):
+    #     cdef int idx
+    #     idx, self._halfedges, self._halfedge_vacancies = self._get_insertion_slot(self._halfedges, self._halfedge_vacancies, key_idx=INSERTION_KEY_VERTEX)
+    #     self._set_chalfedges(self._halfedges)
         
-        self._chalfedges[idx].vertex = vertex
-        self._chalfedges[idx].prev = prev
-        self._chalfedges[idx].next = next
-        self._chalfedges[idx].face = face
-        self._chalfedges[idx].twin = twin
-        self._chalfedges[idx].locally_manifold = locally_manifold
+    #     self._chalfedges[idx].vertex = vertex
+    #     self._chalfedges[idx].prev = prev
+    #     self._chalfedges[idx].next = next
+    #     self._chalfedges[idx].face = face
+    #     self._chalfedges[idx].twin = twin
+    #     self._chalfedges[idx].locally_manifold = locally_manifold
         
-        return idx
+    #     return idx
 
     cdef _populate_edge(self, int idx, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1, int locally_manifold=1):
         # TODO - make a macro??
@@ -1618,101 +1618,101 @@ cdef class TriangleMesh(TrianglesBase):
         return np.array(idx, np.int32)
 
  
-    def _new_edge(self, int vertex, compact=False, **kwargs):
-        """
-        Create a new edge.
+    # def _new_edge(self, int vertex, compact=False, **kwargs):
+    #     """
+    #     Create a new edge.
 
-        Parameters
-        ----------
-            vertex : idx
-                self._vertices index which this halfedge points to
-            compact : bool
-                Do we copy -1 values in the resize of _halfedges?
-            kwargs 
-                List of _halfedge dtype parameters (e.g. prev=10, next=2) to 
-                define halfedge via more than just its vertex.
+    #     Parameters
+    #     ----------
+    #         vertex : idx
+    #             self._vertices index which this halfedge points to
+    #         compact : bool
+    #             Do we copy -1 values in the resize of _halfedges?
+    #         kwargs 
+    #             List of _halfedge dtype parameters (e.g. prev=10, next=2) to 
+    #             define halfedge via more than just its vertex.
 
-        Returns
-        -------
-            ed : HALFEDGE_DTYPE
-                Halfedge created
-            idx : int
-                Index of the halfedge in self._halfedges.
-        """
+    #     Returns
+    #     -------
+    #         ed : HALFEDGE_DTYPE
+    #             Halfedge created
+    #         idx : int
+    #             Index of the halfedge in self._halfedges.
+    #     """
 
-        #ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, None, **kwargs)
-        #self._set_chalfedges(self._halfedges)
+    #     #ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, None, **kwargs)
+    #     #self._set_chalfedges(self._halfedges)
         
-        cdef int idx
+    #     cdef int idx
         
-        idx = self._insert_new_edge(vertex, compact, **kwargs)
+    #     idx = self._insert_new_edge(vertex, compact, **kwargs)
         
-        ed = self._halfedges[idx]
-        return ed, idx
+    #     ed = self._halfedges[idx]
+    #     return ed, idx
 
-    cdef  int _new_face(self, int _edge):
-        """
-        Create a new face based on edge _edge.
+    # cdef  int _new_face(self, int _edge):
+    #     """
+    #     Create a new face based on edge _edge.
 
-        Parameters
-        ----------
-            _edge : idx
-                self._halfedges index of a single halfedge on this face
-            compact : bool
-                Do we copy -1 values in the resize of _faces?
-            kwargs 
-                List of _faces dtype parameters (e.g. area=13.556) to define 
-                face via more than just one of its halfedges.
+    #     Parameters
+    #     ----------
+    #         _edge : idx
+    #             self._halfedges index of a single halfedge on this face
+    #         compact : bool
+    #             Do we copy -1 values in the resize of _faces?
+    #         kwargs 
+    #             List of _faces dtype parameters (e.g. area=13.556) to define 
+    #             face via more than just one of its halfedges.
 
-        Returns
-        -------
-            #fa : FACE_DTYPE
-            #    Face created
-            idx : int
-                Index of the face in self._faces.
-        """
-        cdef int idx
+    #     Returns
+    #     -------
+    #         #fa : FACE_DTYPE
+    #         #    Face created
+    #         idx : int
+    #             Index of the face in self._faces.
+    #     """
+    #     cdef int idx
         
-        #fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, **kwargs)
+    #     #fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, key=INSERTION_KEY_HALFEDGE, compact=compact, **kwargs)
         
-        idx, self._faces, self._face_vacancies = self._get_insertion_slot(self._faces, self._face_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
-        self._set_cfaces(self._faces)
-        self._cfaces[idx].halfedge=_edge
+    #     idx, self._faces, self._face_vacancies = self._get_insertion_slot(self._faces, self._face_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+    #     self._set_cfaces(self._faces)
+    #     self._cfaces[idx].halfedge=_edge
 
-        return idx
+    #     return idx
 
-    def _new_vertex(self, _vertex, int halfedge=-1):
-        """
-        Insert a new vertex into the mesh.
+    # def _new_vertex(self, _vertex, int halfedge=-1):
+    #     """
+    #     Insert a new vertex into the mesh.
 
-        Parameters
-        ----------
-            _vertex : np.array
-                1D array of x, y, z coordinates of the new vertex.
-            compact : bool
-                Do we copy -1 values in the resize of _vertices?
-            kwargs 
-                List of _vertices dtype parameters (e.g. valence=2) to define 
-                vertex via more than just its position.
+    #     Parameters
+    #     ----------
+    #         _vertex : np.array
+    #             1D array of x, y, z coordinates of the new vertex.
+    #         compact : bool
+    #             Do we copy -1 values in the resize of _vertices?
+    #         kwargs 
+    #             List of _vertices dtype parameters (e.g. valence=2) to define 
+    #             vertex via more than just its position.
 
-        Returns
-        -------
-            #vx : VERTEX_DTYPE
-            #    Vertex created
-            idx : int
-                Index of the vertex in self._vertices.
-        """
-        cdef int idx
+    #     Returns
+    #     -------
+    #         #vx : VERTEX_DTYPE
+    #         #    Vertex created
+    #         idx : int
+    #             Index of the vertex in self._vertices.
+    #     """
+    #     cdef int idx
         
-        idx, self._vertices, self._vertex_vacancies = self._get_insertion_slot(self._vertices, self._vertex_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
-        self._set_cvertices(self._vertices)
-        vx = self._vertices[idx]
-        vx['position'] = _vertex
-        vx['halfedge'] = halfedge
+    #     idx, self._vertices, self._vertex_vacancies = self._get_insertion_slot(self._vertices, self._vertex_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
+    #     self._set_cvertices(self._vertices)
+    #     vx = self._vertices[idx]
+    #     vx['position'] = _vertex
+    #     vx['halfedge'] = halfedge
         
-        self._clear_flags()
+    #     self._clear_flags()
 
-        return idx
+    #     return idx
 
     # cpdef int edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
     #     """
@@ -2838,7 +2838,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._manifold = None
         self.manifold
 
-    def upsample(self, n=1):
+    def upsample(self, int n=1):
         """
         Upsample the mesh by a factor of 4 (factor of 2 along each axis in the
         plane of the mesh) and smooth meshes by Loop's 5/8 and 3/8 rule.
@@ -2853,6 +2853,7 @@ cdef class TriangleMesh(TrianglesBase):
             n : int
                 Number of upsampling operations to perform.
         """
+        cdef int n_edge_idx, n_face_idx, n_vertex_idx, k
 
         for k in range(n):
             # Reset
@@ -2895,11 +2896,11 @@ cdef class TriangleMesh(TrianglesBase):
                 split_edges[self._halfedges['twin'][i]] = i
                 new_vertex_idxs.append(j)
                 #self.edge_split(i, upsample=True)
-                self.edge_split_2(e, 
+                self.edge_split_2(i, 
                              <np.int32_t *> np.PyArray_DATA(n_edges), 
                              <np.int32_t *> np.PyArray_DATA(n_vertices), 
                              <np.int32_t *> np.PyArray_DATA(n_faces), 
-                             n_edge_idx, n_vertex_idx, n_face_idx, upsample=True)
+                             n_edge_idx, n_vertex_idx, n_face_idx, 1,1)
     
                 n_edge_idx += 6
                 n_face_idx += 2
