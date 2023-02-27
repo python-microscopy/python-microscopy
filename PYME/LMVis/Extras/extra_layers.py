@@ -93,6 +93,32 @@ def gen_isosurface(visFr):
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
         print('Isosurface layer added')
+
+def gen_octree_isosurface(visFr):
+    """
+    Generate an isosurface and octree in the pipeline
+    """
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+    from PYME.recipes.surface_fitting import DualMarchingCubes
+    from PYME.recipes.pointcloud import Octree
+    from PYME.misc.colormaps import cm
+
+    oc_name = visFr.pipeline.new_ds_name('octree')
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
+    
+    recipe = visFr.pipeline.recipe
+     
+    otm = Octree(recipe,input_localizations=visFr.pipeline.selectedDataSourceKey,output_octree=oc_name)
+    dmc = DualMarchingCubes(recipe, invalidate_parent=False, input=oc_name,output=surf_name)
+    
+    if dmc.configure_traits(kind='modal'):
+        recipe.add_modules_and_execute([otm, dmc,])
+
+        print('Isosurface generated, adding layer')
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
+        visFr.add_layer(layer)
+        dmc._invalidate_parent = True
+        print('Isosurface layer added')
         
 def open_surface(visFr):
     import wx
@@ -321,6 +347,7 @@ def Plug(visFr):
     visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation_layer(visFr))
     visFr.AddMenuItem('View', 'Generate Isosurface from Delaunay Tesselation', lambda e: gen_isosurface_from_tesselation(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
+    visFr.AddMenuItem('Mesh', 'Generate Isosurface (linked)', lambda e: gen_octree_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
     visFr.AddMenuItem('Mesh>Analysis', 'Distance to mesh', lambda e: distance_to_surface(visFr))
