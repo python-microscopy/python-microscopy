@@ -50,7 +50,7 @@ class DeconvSettingsDialog(wx.Dialog):
             self.cChannel = wx.Choice(pan1, -1, choices=['Chan %d' % i for i in range(nChans)])
 
             sizer3.Add(self.cChannel, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            sizer2.Add(sizer3, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+            sizer2.Add(sizer3, 0, wx.EXPAND | wx.ALL, 0)
         
         sizer4 = wx.StaticBoxSizer(wx.StaticBox(pan1, -1, 'PSF:'),wx.VERTICAL)
        
@@ -123,7 +123,7 @@ class DeconvSettingsDialog(wx.Dialog):
             self.tBeadSize = wx.TextCtrl(pan1, -1, '200')
 
             sizer3.Add(self.tBeadSize, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            sizer4.Add(sizer3, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
+            sizer4.Add(sizer3, 1, wx.EXPAND | wx.ALL, 0)
 
         sizer2.Add(sizer4, 0, wx.EXPAND | wx.ALL, 0)
 
@@ -346,7 +346,7 @@ class DeconvProgressDialog(wx.Dialog):
 
         self.gProgress = wx.Gauge(self, -1, numIters)
 
-        sizer1.Add(self.gProgress, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+        sizer1.Add(self.gProgress, 0, wx.EXPAND | wx.ALL, 5)
 
         btSizer = wx.StdDialogButtonSizer()
 
@@ -357,7 +357,7 @@ class DeconvProgressDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

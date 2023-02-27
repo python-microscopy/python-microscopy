@@ -249,7 +249,7 @@ class Deconvolver(Plugin):
                     #rescale psf to match data voxel size
                     psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, 1])
 
-            data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
+            data = np.atleast_3d(self.image.data_xyztc[:,:,:, :, dlg.GetChannel()].astype('f').squeeze()) - dlg.GetOffset()
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
             
             bg = dlg.GetBackground()
