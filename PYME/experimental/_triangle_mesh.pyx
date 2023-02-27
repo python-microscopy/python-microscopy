@@ -1714,188 +1714,188 @@ cdef class TriangleMesh(TrianglesBase):
 
         return idx
 
-    cpdef int edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
-        """
-        Split triangles evenly along an edge specified by halfedge index _curr.
+    # cpdef int edge_split(self, np.int32_t _curr, bint live_update=1, bint upsample=0):
+    #     """
+    #     Split triangles evenly along an edge specified by halfedge index _curr.
 
-        Parameters
-        ----------
-            _curr : int
-                Pointer to halfedge defining edge to split.
-            live_update : bool
-                Update associated faces and vertices after split. Set to False
-                to handle this externally (useful if operating on multiple, 
-                disjoint edges).
-            upsample: bool
-                Are we doing loop subdivision? If so, keep track of all edges
-                incident on both a new vertex and an old verex that do not
-                split an existing edge.
-        """
-        cdef halfedge_t *curr_edge
-        cdef halfedge_t *twin_edge
-        cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, _face_1_idx, _face_2_idx, _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx, _vertex_idx
-        cdef bint interior
-        cdef np.int32_t v0, v1
-        cdef int i
-        cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot
-        cdef np.float32_t[VECTORSIZE] _vertex
+    #     Parameters
+    #     ----------
+    #         _curr : int
+    #             Pointer to halfedge defining edge to split.
+    #         live_update : bool
+    #             Update associated faces and vertices after split. Set to False
+    #             to handle this externally (useful if operating on multiple, 
+    #             disjoint edges).
+    #         upsample: bool
+    #             Are we doing loop subdivision? If so, keep track of all edges
+    #             incident on both a new vertex and an old verex that do not
+    #             split an existing edge.
+    #     """
+    #     cdef halfedge_t *curr_edge
+    #     cdef halfedge_t *twin_edge
+    #     cdef np.int32_t _prev, _twin, _next, _twin_prev, _twin_next, _face_1_idx, _face_2_idx, _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx, _vertex_idx
+    #     cdef bint interior
+    #     cdef np.int32_t v0, v1
+    #     cdef int i
+    #     cdef np.float32_t x0x, x0y, x0z, x1x, x1y, x1z, n0x, n0y, n0z, n1x, n1y, n1z, ndot
+    #     cdef np.float32_t[VECTORSIZE] _vertex
 
-        if _curr == -1:
-            return 0
+    #     if _curr == -1:
+    #         return 0
         
-        curr_edge = &self._chalfedges[_curr]
-        _prev = curr_edge.prev
-        _next = curr_edge.next
+    #     curr_edge = &self._chalfedges[_curr]
+    #     _prev = curr_edge.prev
+    #     _next = curr_edge.next
 
-        # Grab the new vertex position
-        v0 = curr_edge.vertex
-        v1 = self._chalfedges[_prev].vertex
-        x0x = self._cvertices[v0].position0
-        x0y = self._cvertices[v0].position1
-        x0z = self._cvertices[v0].position2
-        x1x = self._cvertices[v1].position0
-        x1y = self._cvertices[v1].position1
-        x1z = self._cvertices[v1].position2
+    #     # Grab the new vertex position
+    #     v0 = curr_edge.vertex
+    #     v1 = self._chalfedges[_prev].vertex
+    #     x0x = self._cvertices[v0].position0
+    #     x0y = self._cvertices[v0].position1
+    #     x0z = self._cvertices[v0].position2
+    #     x1x = self._cvertices[v1].position0
+    #     x1y = self._cvertices[v1].position1
+    #     x1z = self._cvertices[v1].position2
 
-        # _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
-        # x0 = self._vertices['position'][curr_edge.vertex, :]
-        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
-        # n0 = self._vertices['normal'][curr_edge.vertex, :]
-        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+    #     # _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
+    #     # x0 = self._vertices['position'][curr_edge.vertex, :]
+    #     # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+    #     # n0 = self._vertices['normal'][curr_edge.vertex, :]
+    #     # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
          
-        # x0 = self._cvertices['position'][curr_edge.vertex, :]
-        # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
-        # n0 = self._vertices['normal'][curr_edge.vertex, :]
-        # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+    #     # x0 = self._cvertices['position'][curr_edge.vertex, :]
+    #     # x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+    #     # n0 = self._vertices['normal'][curr_edge.vertex, :]
+    #     # n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
 
-        _vertex[0] = 0.5*(x0x + x1x)
-        _vertex[1] = 0.5*(x0y + x1y)
-        _vertex[2] = 0.5*(x0z + x1z)
-        if not upsample:
-            n0x = self._cvertices[v0].normal0
-            n0y = self._cvertices[v0].normal1
-            n0z = self._cvertices[v0].normal2
-            n1x = self._cvertices[v1].normal0
-            n1y = self._cvertices[v1].normal1
-            n1z = self._cvertices[v1].normal2
+    #     _vertex[0] = 0.5*(x0x + x1x)
+    #     _vertex[1] = 0.5*(x0y + x1y)
+    #     _vertex[2] = 0.5*(x0z + x1z)
+    #     if not upsample:
+    #         n0x = self._cvertices[v0].normal0
+    #         n0y = self._cvertices[v0].normal1
+    #         n0z = self._cvertices[v0].normal2
+    #         n1x = self._cvertices[v1].normal0
+    #         n1y = self._cvertices[v1].normal1
+    #         n1z = self._cvertices[v1].normal2
 
-            ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
+    #         ndot = (n1x-n0x)*(x1x-x0x)+(n1y-n0y)*(x1y-x0y)+(n1z-n0z)*(x1z-x0z)
 
-            _vertex[0] += 0.0625*ndot*(n0x + n1x)
-            _vertex[1] += 0.0625*ndot*(n0y + n1y)
-            _vertex[2] += 0.0625*ndot*(n0z + n1z)
+    #         _vertex[0] += 0.0625*ndot*(n0x + n1x)
+    #         _vertex[1] += 0.0625*ndot*(n0y + n1y)
+    #         _vertex[2] += 0.0625*ndot*(n0z + n1z)
 
-        #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
-        #if upsample:
-        #    _vertex = 0.5*(x0 + x1)
-        #else:
-        #    _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
-        _vertex_idx = self._new_vertex(_vertex)
-        #_vertex_idx = self._new_vertex(_vertex)
+    #     #_vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
+    #     #if upsample:
+    #     #    _vertex = 0.5*(x0 + x1)
+    #     #else:
+    #     #    _vertex = 0.5*(x0 + x1) + .125*((n1-n0)*(x1-x0)).sum()*0.5*(n0 + n1)
+    #     _vertex_idx = self._new_vertex(_vertex)
+    #     #_vertex_idx = self._new_vertex(_vertex)
 
-        _twin = curr_edge.twin
-        interior = (_twin != -1)  # Are we on a boundary?
+    #     _twin = curr_edge.twin
+    #     interior = (_twin != -1)  # Are we on a boundary?
         
-        if interior:
-            twin_edge = &self._chalfedges[_twin]
-            _twin_prev = twin_edge.prev
-            _twin_next = twin_edge.next
+    #     if interior:
+    #         twin_edge = &self._chalfedges[_twin]
+    #         _twin_prev = twin_edge.prev
+    #         _twin_next = twin_edge.next
         
-        # Ensure the original faces have the correct pointers and add two new faces
-        self._cfaces[curr_edge.face].halfedge = _curr
-        if interior:
-            self._cfaces[twin_edge.face].halfedge = _twin
-            _face_1_idx = self._new_face(_twin_prev)
-            self._chalfedges[_twin_prev].face = _face_1_idx
-        _face_2_idx = self._new_face(_next)
-        self._chalfedges[_next].face = _face_2_idx
+    #     # Ensure the original faces have the correct pointers and add two new faces
+    #     self._cfaces[curr_edge.face].halfedge = _curr
+    #     if interior:
+    #         self._cfaces[twin_edge.face].halfedge = _twin
+    #         _face_1_idx = self._new_face(_twin_prev)
+    #         self._chalfedges[_twin_prev].face = _face_1_idx
+    #     _face_2_idx = self._new_face(_next)
+    #     self._chalfedges[_next].face = _face_2_idx
 
-        # Insert the new faces
-        _he_0_idx = self._insert_new_edge(self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face)
-        if interior:
-            _he_1_idx = self._insert_new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face)
+    #     # Insert the new faces
+    #     _he_0_idx = self._insert_new_edge(self._chalfedges[_next].vertex, prev=_curr, next=_prev, face=self._chalfedges[_curr].face)
+    #     if interior:
+    #         _he_1_idx = self._insert_new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=self._chalfedges[_twin].face)
         
-            _he_2_idx = self._insert_new_edge(self._chalfedges[_twin_next].vertex, next=_twin_prev, face=_face_1_idx)
-            _he_3_idx = self._insert_new_edge(_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx)
-            self._chalfedges[_he_2_idx].prev = _he_3_idx
+    #         _he_2_idx = self._insert_new_edge(self._chalfedges[_twin_next].vertex, next=_twin_prev, face=_face_1_idx)
+    #         _he_3_idx = self._insert_new_edge(_vertex_idx, prev=_twin_prev, next=_he_2_idx, face=_face_1_idx)
+    #         self._chalfedges[_he_2_idx].prev = _he_3_idx
 
-        _he_4_idx = self._insert_new_edge(self._chalfedges[_curr].vertex, next=_next, face=_face_2_idx, twin=-1)
-        _he_5_idx = self._insert_new_edge(_vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx)
-        self._chalfedges[_he_4_idx].prev = _he_5_idx
+    #     _he_4_idx = self._insert_new_edge(self._chalfedges[_curr].vertex, next=_next, face=_face_2_idx, twin=-1)
+    #     _he_5_idx = self._insert_new_edge(_vertex_idx, prev=_next, next=_he_4_idx, face=_face_2_idx)
+    #     self._chalfedges[_he_4_idx].prev = _he_5_idx
 
-        self._chalfedges[_he_0_idx].twin = _he_5_idx
-        self._chalfedges[_he_5_idx].twin = _he_0_idx
+    #     self._chalfedges[_he_0_idx].twin = _he_5_idx
+    #     self._chalfedges[_he_5_idx].twin = _he_0_idx
 
-        if interior:
-            self._chalfedges[_he_1_idx].twin = _he_2_idx
-            self._chalfedges[_he_2_idx].twin = _he_1_idx
+    #     if interior:
+    #         self._chalfedges[_he_1_idx].twin = _he_2_idx
+    #         self._chalfedges[_he_2_idx].twin = _he_1_idx
 
-            self._chalfedges[_he_3_idx].twin = _he_4_idx
-            self._chalfedges[_he_4_idx].twin = _he_3_idx
+    #         self._chalfedges[_he_3_idx].twin = _he_4_idx
+    #         self._chalfedges[_he_4_idx].twin = _he_3_idx
 
-        # Update _prev, next
-        self._chalfedges[_prev].prev = _he_0_idx
-        self._chalfedges[_next].prev = _he_4_idx
-        self._chalfedges[_next].next = _he_5_idx
+    #     # Update _prev, next
+    #     self._chalfedges[_prev].prev = _he_0_idx
+    #     self._chalfedges[_next].prev = _he_4_idx
+    #     self._chalfedges[_next].next = _he_5_idx
 
-        if interior:
-            # Update _twin_next, _twin_prev
-            self._chalfedges[_twin_next].next = _he_1_idx
-            self._chalfedges[_twin_prev].prev = _he_2_idx
-            self._chalfedges[_twin_prev].next = _he_3_idx
+    #     if interior:
+    #         # Update _twin_next, _twin_prev
+    #         self._chalfedges[_twin_next].next = _he_1_idx
+    #         self._chalfedges[_twin_prev].prev = _he_2_idx
+    #         self._chalfedges[_twin_prev].next = _he_3_idx
 
-            self._chalfedges[_twin].prev = _he_1_idx
-        # Update _curr and _twin
-        self._chalfedges[_curr].vertex = _vertex_idx
-        self._chalfedges[_curr].next = _he_0_idx
+    #         self._chalfedges[_twin].prev = _he_1_idx
+    #     # Update _curr and _twin
+    #     self._chalfedges[_curr].vertex = _vertex_idx
+    #     self._chalfedges[_curr].next = _he_0_idx
 
-        # Update halfedges
-        if interior:
-            self._cvertices[self._chalfedges[_he_2_idx].vertex].halfedge = _he_1_idx
-        self._cvertices[self._chalfedges[_prev].vertex].halfedge = _curr
-        self._cvertices[self._chalfedges[_he_4_idx].vertex].halfedge = _next
-        self._cvertices[_vertex_idx].halfedge = _he_4_idx
-        self._cvertices[self._chalfedges[_he_0_idx].vertex].halfedge = _he_5_idx
+    #     # Update halfedges
+    #     if interior:
+    #         self._cvertices[self._chalfedges[_he_2_idx].vertex].halfedge = _he_1_idx
+    #     self._cvertices[self._chalfedges[_prev].vertex].halfedge = _curr
+    #     self._cvertices[self._chalfedges[_he_4_idx].vertex].halfedge = _next
+    #     self._cvertices[_vertex_idx].halfedge = _he_4_idx
+    #     self._cvertices[self._chalfedges[_he_0_idx].vertex].halfedge = _he_5_idx
 
-        if upsample:
-            # Make sure these edges emanate from the new vertex stored at _vertex_idx
-            if interior:
-                self._loop_subdivision_flip_edges.extend([_he_2_idx])
+    #     if upsample:
+    #         # Make sure these edges emanate from the new vertex stored at _vertex_idx
+    #         if interior:
+    #             self._loop_subdivision_flip_edges.extend([_he_2_idx])
             
-            self._loop_subdivision_flip_edges.extend([_he_0_idx])
-            self._loop_subdivision_new_vertices.extend([_vertex_idx])
+    #         self._loop_subdivision_flip_edges.extend([_he_0_idx])
+    #         self._loop_subdivision_new_vertices.extend([_vertex_idx])
 
-        if live_update:
-            if interior:
-                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_1_idx].face, self._chalfedges[_he_2_idx].face, self._chalfedges[_he_4_idx].face])
-                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_twin].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_2_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+    #     if live_update:
+    #         if interior:
+    #             #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_1_idx].face, self._chalfedges[_he_2_idx].face, self._chalfedges[_he_4_idx].face])
+    #             #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_twin].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_2_idx].vertex, self._chalfedges[_he_4_idx].vertex])
             
-                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
-                update_face_normal(self._chalfedges[_he_1_idx].face, self._chalfedges, self._cvertices, self._cfaces)
-                update_face_normal(self._chalfedges[_he_2_idx].face, self._chalfedges, self._cvertices, self._cfaces)
-                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_1_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_2_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
                 
-                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_he_2_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_he_2_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
             
-            else:
-                #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
-                #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+    #         else:
+    #             #self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
+    #             #self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
                 
-                update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
-                update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_0_idx].face, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_face_normal(self._chalfedges[_he_4_idx].face, self._chalfedges, self._cvertices, self._cfaces)
                 
-                update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_prev].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
-                update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_curr].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_prev].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
+    #             update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
             
-            self._clear_flags()
+    #         self._clear_flags()
         
-        return 1
+    #     return 1
 
     cdef int edge_split_2(self, np.int32_t _curr, np.int32_t * new_edges, np.int32_t * new_vertices, np.int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
                             bint live_update=1, bint upsample=0):
@@ -2880,13 +2880,30 @@ cdef class TriangleMesh(TrianglesBase):
             new_vertex_positions = p0 + p1
 
             # 1. Split every edge in the mesh
+            split_count = len(edges_to_split)
+            n_edges = self.new_edges(int(split_count*6))
+            n_edge_idx = 0
+            n_faces = self.new_faces(int(split_count*2))
+            n_face_idx = 0
+            n_vertices = self.new_vertices(int(split_count))
+            n_vertex_idx = 0
+
             for j, i in enumerate(edges_to_split):
                 if i in split_edges:
                     continue
                 
                 split_edges[self._halfedges['twin'][i]] = i
                 new_vertex_idxs.append(j)
-                self.edge_split(i, upsample=True)
+                #self.edge_split(i, upsample=True)
+                self.edge_split_2(e, 
+                             <np.int32_t *> np.PyArray_DATA(n_edges), 
+                             <np.int32_t *> np.PyArray_DATA(n_vertices), 
+                             <np.int32_t *> np.PyArray_DATA(n_faces), 
+                             n_edge_idx, n_vertex_idx, n_face_idx, upsample=True)
+    
+                n_edge_idx += 6
+                n_face_idx += 2
+                n_vertex_idx += 1
             
             # 2. Flip any new edge that touches an old vertex and a new vertex
             for e in self._loop_subdivision_flip_edges:
