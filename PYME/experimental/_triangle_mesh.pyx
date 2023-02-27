@@ -400,6 +400,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     @property
     def boundary(self):
+        #FIXME - is this simply a duplicate of the .singular property?
         self._update_vertex_locally_manifold()
         return (self._vertices['locally_manifold'] == 0)
 
@@ -408,12 +409,6 @@ cdef class TriangleMesh(TrianglesBase):
         self._update_singular_edge_locally_manifold()
         self._update_singular_vertex_locally_manifold()
         return (self._vertices['locally_manifold'] == 0)
-        # self._singular_edges = None
-        # self._singular_vertices = None
-        # singular_vertices = np.zeros_like(self._vertices['halfedge'])
-        # if len(self.singular_vertices) > 0:
-        #     singular_vertices[np.array(self.singular_vertices)] = 1
-        # return singular_vertices
 
     @property
     def singular_edges(self):
@@ -423,21 +418,6 @@ cdef class TriangleMesh(TrianglesBase):
         """
         self._update_singular_edge_locally_manifold()
         return np.flatnonzero(self._halfedges['locally_manifold'] == 0)
-        # if self._singular_edges is None:
-        #     edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
-        #     edges = edges[edges[:,0] != -1]  # Drop non-edges
-        #     # packed_edges = pack_edges(edges)
-        #     packed_edges = np.sort(edges, axis=1)
-        #     e, c = np.unique(packed_edges, return_counts=True, axis=0)
-        #     singular_packed_edges = e[c>2]
-        #     singular_edges = []
-        #     for singular_packed_edge in singular_packed_edges:
-        #         singular_edges.extend(list(np.where(packed_edges[:, None] == singular_packed_edge)[0]))
-        # 
-        #     singular_edges.extend(self._halfedges['twin'][singular_edges])
-        #     self._singular_edges = list(set(singular_edges) - set([-1]))
-        # 
-        # return self._singular_edges
 
     @property
     def singular_vertices(self):
@@ -449,43 +429,6 @@ cdef class TriangleMesh(TrianglesBase):
         self._update_singular_edge_locally_manifold()
         self._update_singular_vertex_locally_manifold()
         return np.flatnonzero(self._vertices['locally_manifold'] == 0)
-    #     cdef int _vertex, n_incident, n_neighbors, n_vertices, n_halfedges, j, v
-    #     cdef int [:] n_incident_v
-    #     
-    #     if self._singular_vertices is None:
-    #         # Mark vertices that are endpoints of these edges
-    #         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][self.singular_edges], self._halfedges['vertex'][self._halfedges['twin'][self.singular_edges]]]))))
-    #         
-    #         # Mark isolated singular vertices
-    #         
-    #         # run through all the halfedges and compute a vertex incidence table
-    #         n_halfedges = self._halfedges.shape[0]
-    #         n_vertices = self._vertices.shape[0]
-    #         n_incident_v = np.zeros(n_vertices, 'i')
-    #         
-    #         for j in range(n_halfedges):
-    #             v = self._chalfedges[j].vertex
-    #             if v != -1:
-    #                 n_incident_v[v] += 1
-    #         
-    #         for _vertex in range(n_vertices):
-    #             if self._cvertices[_vertex].halfedge == -1:
-    #                 continue
-    # 
-    #             # If the number of elements in the 1-neighbor ring does not match 
-    #             # the number of halfedges pointing to a vertex, we have an isolated
-    #             # singular vertex (note this requires the C code version of
-    #             # update_vertex_neighbors, which reverses direction upon hitting
-    #             # an edge to ensure a more accurate neighborhood)
-    #             n_incident = n_incident_v[_vertex]
-    #             n_neighbors = np.count_nonzero(self._vertices['neighbors'][_vertex] != -1)
-    #             if n_neighbors != n_incident:
-    #                 singular_vertices.append(_vertex)
-    # 
-    #         # Remove duplicates
-    #         self._singular_vertices = list(set(singular_vertices) - set([-1]))
-    # 
-    #     return self._singular_vertices
 
     def _update_all_face_normals(self, recompute=True):
         """
@@ -646,15 +589,6 @@ cdef class TriangleMesh(TrianglesBase):
         #cdef int * d
 
         if not self._singular_edges_valid:
-            #d = <int *> PyMem_Malloc(n_slots*sizeof(int))
-
-            #if not d:
-            #    raise MemoryError()
-
-            # write zeros to clear memory (is this needed?)
-            #for i in range(n_slots):
-            #    d[i] = 0
-
             d = {}
 
             if clear:
@@ -714,11 +648,6 @@ cdef class TriangleMesh(TrianglesBase):
             if self._chalfedges[i].vertex == -1:
                 continue
             valence[self._chalfedges[i].vertex] += 1
-    
-    #@cython.boundscheck(False)  # Deactivate bounds checking
-    #@cython.wraparound(False)
-    #cdef _set_chalfedges(self, halfedge_t[:] halfedges):
-    #    self._chalfedges = &halfedges[0]
         
     cdef _set_chalfedges(self, np.ndarray halfedges):
         self._chalfedges = <halfedge_t *> np.PyArray_DATA(halfedges)
@@ -728,18 +657,6 @@ cdef class TriangleMesh(TrianglesBase):
         
     cdef _set_cvertices(self, np.ndarray vertices):
         self._cvertices = <vertex_d *> np.PyArray_DATA(vertices)
-
-    # @cython.boundscheck(False)  # Deactivate bounds checking
-    # @cython.wraparound(False)
-    # cdef _set_cfaces(self, face_d[:] faces):
-    #     self._cfaces = &faces[0]
-    #
-    # @cython.boundscheck(False)  # Deactivate bounds checking
-    # @cython.wraparound(False)
-    # cdef _set_cvertices(self, vertex_d[:] vertices):
-    #     #print vertices.shape
-    #     self._cvertices = &vertices[0]
-    #
     
     def _initialize_halfedges(self, vertices, faces):
         """
@@ -969,6 +886,7 @@ cdef class TriangleMesh(TrianglesBase):
             return new_vec
 
     def calculate_curvatures(self):
+        # TODO - compare / consolidate with ch-shrinkwrap version
         dN = 0.1
         self._H = np.zeros(self._vertices.shape[0])
         self._K = np.zeros(self._vertices.shape[0])
@@ -1188,18 +1106,8 @@ cdef class TriangleMesh(TrianglesBase):
         interior = (_twin != -1)  # Are we on a boundary?
 
         if interior:
-            #nn = self._vertices['neighbors'][curr_halfedge.vertex]
-            #nn_mask = (nn != -1)
-            #if (-1 in self._halfedges['twin'][nn]*nn_mask):
-            #    return
-            
             if not self._check_neighbour_twins(curr_halfedge.vertex):
                 return 0
-
-            #nn = self._vertices['neighbors'][self._halfedges['vertex'][_twin]]
-            #nn_mask = (nn != -1)
-            #if (-1 in self._halfedges['twin'][nn]*nn_mask):
-            #    return
             
             if not self._check_neighbour_twins(self._chalfedges[_twin].vertex):
                 return 0
