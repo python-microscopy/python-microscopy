@@ -434,11 +434,10 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
     # # end sphere proj*/
     
     // update valence of vertex we keep
-    vertices[_live_vertex].valence = vl + vd - 3
+    vertices[_live_vertex].valence = vl + vd - 3;
     
     // delete dead vertex
-    self._vertices[_dead_vertex] = -1;
-    self._vertex_vacancies.append(_dead_vertex);
+    remesh_delete_vertex(vertices, _dead_vertex);
 
     // Zipper the remaining triangles
     remesh_edge_zipper(halfedges, _next, _prev);
@@ -476,9 +475,8 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
     }
 
     // Delete the inner triangles
-    self._face_delete(idx);
-    if (interior)
-        self._face_delete(_twin);
+    remesh_delete_face(halfedges, faces, idx);
+    if (interior) remesh_delete_face(halfedges, faces, _twin);
 
     if (live_update)
     {
@@ -505,10 +503,44 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
             update_single_vertex_neighbours(_prev_twin_vertex, halfedges, vertices, faces);
             update_single_vertex_neighbours(_next_prev_twin_vertex, halfedges, vertices, faces);
         }    
-        self._clear_flags();
+        //self._clear_flags(); //FIXME
     }
 
     
-    return 1
+    return 1;
 
 }
+
+int remesh_delete_vertex(vertex_t * vertices, int32_t v_idx){
+    if (v_idx == -1) return 0;
+
+    vertices[v_idx].halfedge = -1;
+
+    return 1;
+}
+
+int remesh_delete_edge(halfedge_t * halfedges, int32_t e_idx){
+    if (e_idx == -1) return 0;
+
+    halfedges[e_idx].vertex = -1;
+
+    return 1;
+}
+
+int remesh_delete_face(halfedge_t * halfedges, face_t * faces, int32_t e_idx){
+    halfedge_t * curr_edge;
+
+    if (e_idx == -1) return 0;
+    
+    curr_edge = &halfedges[e_idx];
+    if (curr_edge->vertex == -1) return 0;
+
+    faces[curr_edge->face].halfedge = -1;
+
+    remesh_delete_edge(halfedges, curr_edge->next);
+    remesh_delete_edge(halfedges, curr_edge->prev);
+    remesh_delete_edge(halfedges, e_idx);
+
+    return 1;
+}
+

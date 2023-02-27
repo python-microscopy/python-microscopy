@@ -4,6 +4,8 @@ cimport numpy as np
 import numpy as np
 cimport cython
 
+import warnings
+
 #from libc.math cimport sqrtf
 
 cdef extern from "<math.h>" nogil:
@@ -758,11 +760,14 @@ cdef class TriangleMesh(TrianglesBase):
         print('done initializing halfedges')
 
         if clear:
-            self._clear_flags()
+            self._invalidate_cached_properties()
             self._update_all_face_normals()
             self._update_all_vertex_neighbours()
 
-    def _clear_flags(self):
+    def _invalidate_cached_properties(self):
+        """
+        Invalidate properties which have been cached and will now need to be recomputed due to changes in mesh
+        """
         self._faces_by_vertex = None
         self._manifold = None
         # self._singular_edges = None
@@ -776,6 +781,11 @@ cdef class TriangleMesh(TrianglesBase):
         self._K = None
         #self._E = None
         #self._pE = None
+
+    def _clear_flags(self):
+        """ This has changed to _invalidate_cached_properties to be a bit more descripitve"""
+        warnings.warn('_clear_flags is deprecated, use _invalidate_cached_properties() instead')
+        self._invalidate_precomputed()
 
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
@@ -989,71 +999,71 @@ cdef class TriangleMesh(TrianglesBase):
             
         return 1
     
-    cdef bint _check_collapse_fast(self, int _live_vertex, int _dead_vertex):
-        cdef int i, j, ln, dn, lv
-        cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
-        cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
+    # cdef bint _check_collapse_fast(self, int _live_vertex, int _dead_vertex):
+    #     cdef int i, j, ln, dn, lv
+    #     cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
+    #     cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
         
-        cdef np.int32_t dead_vertex_neighbours[NEIGHBORSIZE]
-        cdef np.int32_t dead_halfedges[NEIGHBORSIZE]
+    #     cdef np.int32_t dead_vertex_neighbours[NEIGHBORSIZE]
+    #     cdef np.int32_t dead_halfedges[NEIGHBORSIZE]
         
-        for i in range(NEIGHBORSIZE):
-            dn = dead_neighbours[i]
+    #     for i in range(NEIGHBORSIZE):
+    #         dn = dead_neighbours[i]
                 
-            if (dn != -1):
-                dead_halfedges[i] = dn
-                dead_vertex_neighbours[i] = self._chalfedges[dn].vertex
+    #         if (dn != -1):
+    #             dead_halfedges[i] = dn
+    #             dead_vertex_neighbours[i] = self._chalfedges[dn].vertex
                 
-        cdef int shared_vertex_count = 0
+    #     cdef int shared_vertex_count = 0
         
-        for i in range(NEIGHBORSIZE):
-            ln = live_neighbours[i]
-            lv =  self._chalfedges[ln].vertex
-            for j in range(NEIGHBORSIZE):
-                if (lv == dead_vertex_neighbours[j]):
-                    shared_vertex_count +=1
+    #     for i in range(NEIGHBORSIZE):
+    #         ln = live_neighbours[i]
+    #         lv =  self._chalfedges[ln].vertex
+    #         for j in range(NEIGHBORSIZE):
+    #             if (lv == dead_vertex_neighbours[j]):
+    #                 shared_vertex_count +=1
                 
-        if shared_vertex_count !=2:
-            return 0
+    #     if shared_vertex_count !=2:
+    #         return 0
                 
-        for dn in dead_halfedges:
-            self._chalfedges[dn].vertex = _live_vertex
+    #     for dn in dead_halfedges:
+    #         self._chalfedges[dn].vertex = _live_vertex
         
-        return 1
+    #     return 1
     
-    cdef bint _check_collapse_slow(self, int _live_vertex, int _dead_vertex):
-        cdef int i, ln, dn, n_edges
-        #cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
-        #cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
+    # cdef bint _check_collapse_slow(self, int _live_vertex, int _dead_vertex):
+    #     cdef int i, ln, dn, n_edges
+    #     #cdef np.int32_t *live_neighbours = &(self._cvertices[_live_vertex].neighbor0)
+    #     #cdef np.int32_t *dead_neighbours = &(self._cvertices[_dead_vertex].neighbor0)
         
-        n_edges = self._halfedges.shape[0]
+    #     n_edges = self._halfedges.shape[0]
         
-        dead_vertex_neighbours = []
-        dead_halfedges = []
+    #     dead_vertex_neighbours = []
+    #     dead_halfedges = []
         
-        for i in range(n_edges):
-            if (self._chalfedges[i].vertex == _dead_vertex):
-                dead_halfedges.append(i)
-                if (self._chalfedges[i].twin != -1):
-                    dead_vertex_neighbours.append(self._chalfedges[i].twin)
+    #     for i in range(n_edges):
+    #         if (self._chalfedges[i].vertex == _dead_vertex):
+    #             dead_halfedges.append(i)
+    #             if (self._chalfedges[i].twin != -1):
+    #                 dead_vertex_neighbours.append(self._chalfedges[i].twin)
                 
-        cdef int shared_vertex_count = 0
+    #     cdef int shared_vertex_count = 0
         
-        for i in range(n_edges):
-            if (self._chalfedges[i].vertex == _live_vertex) and (self._chalfedges[i].twin != -1):
-                ln = self._chalfedges[self._chalfedges[i].twin].vertex
+    #     for i in range(n_edges):
+    #         if (self._chalfedges[i].vertex == _live_vertex) and (self._chalfedges[i].twin != -1):
+    #             ln = self._chalfedges[self._chalfedges[i].twin].vertex
                 
-                if ln in dead_vertex_neighbours:
-                    shared_vertex_count +=1
+    #             if ln in dead_vertex_neighbours:
+    #                 shared_vertex_count +=1
                 
                 
-        if shared_vertex_count !=2:
-            return 0
+    #     if shared_vertex_count !=2:
+    #         return 0
                 
-        for dn in dead_halfedges:
-            self._chalfedges[dn].vertex = _live_vertex
+    #     for dn in dead_halfedges:
+    #         self._chalfedges[dn].vertex = _live_vertex
         
-        return 1
+    #     return 1
     
     cpdef int edge_collapse(self, np.int32_t _curr, bint live_update=1):
         """
@@ -1364,7 +1374,7 @@ cdef class TriangleMesh(TrianglesBase):
                     update_single_vertex_neighbours(_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
                     update_single_vertex_neighbours(_next_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
                     
-                self._clear_flags()
+                self._invalidate_cached_properties()
         
         except RuntimeError as e:
             print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
@@ -1406,7 +1416,7 @@ cdef class TriangleMesh(TrianglesBase):
         self._edge_delete(curr_edge.prev)
         self._edge_delete(_edge)
 
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
         return 1
 
@@ -1435,7 +1445,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._halfedge_vacancies.append(_edge)
 
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
         return 1
 
@@ -1476,44 +1486,48 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._vertex_vacancies.append(v_idx)
 
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
         return 1
 
     def _get_insertion_slots(self, int n_slots, el_arr, el_vacancies, key_idx, compact=False):
         """ get an empty slot to insert into, resizing if needed"""
-        #cdef int idx
         
-        if len(el_vacancies) > n_slots:
-            idx = el_vacancies[-n_slots:]
-            el_vacancies = el_vacancies[:-n_slots]
-            #idx = el_vacancies.pop(0)
-        else:
-            # no vacant slot, resize
+        if len(el_vacancies) <= n_slots:
+            # not enough vacant slots, resize
             key = __insertion_keys[key_idx]
             el_arr = self._resize(el_arr, skip_entries=compact, key=key, new_items=n_slots)
             #TODO - invalidate neighbours, vertex_halfedges etc ???
             
             # NOTE: If we search by a different key next time, el_vacancies will
             # still contain the vacant positions when searching on the previous key.
-            if len(el_arr[key].shape) > 1:
-                # NOTE: If we search on self._vertices['position'] and one position is [-1,-1,-1],
-                # which is not unreasonable, this will replace that vertex. Hence we provide the
-                # option to search and insert on different keys.
-                el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
-            else:
-                # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
-                el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
-
-            #idx = el_vacancies.pop(-1)
-            idx = el_vacancies[-n_slots:]
-            el_vacancies = el_vacancies[:-n_slots]
-            #idx = el_vacancies.pop(0)
+            el_vacancies = self._update_vacancies(el_arr, key)
+            
+        idx = el_vacancies[-n_slots:]
+        el_vacancies = el_vacancies[:-n_slots]
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
         
         return idx, el_arr, el_vacancies
+
+    def _update_vacancies(self, el_arr, key):
+        if len(el_arr[key].shape) > 1:
+            # NOTE: If we search on self._vertices['position'] and one position is [-1,-1,-1],
+            # which is not unreasonable, this will replace that vertex. Hence we provide the
+            # option to search and insert on different keys.
+            el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
+        else:
+            # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+            el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
+
+        return el_vacancies
+
+    def _update_all_vacancies(self):
+        self._halfedge_vacancies = self._update_vacancies(self._halfedges, __insertion_keys[INSERTION_KEY_VERTEX])
+        self._vertex_vacancies = self._update_vacancies(self._vertices, __insertion_keys[INSERTION_KEY_HALFEDGE])
+        self._face_vacancies = self._update_vacancies(self._faces, __insertion_keys[INSERTION_KEY_HALFEDGE])
+
 
     # def _get_insertion_slot(self, el_arr, el_vacancies, key_idx, compact=False):
     #     #print('gis', el_arr)
@@ -1607,7 +1621,7 @@ cdef class TriangleMesh(TrianglesBase):
         idx, self._vertices, self._vertex_vacancies = self._get_insertion_slots(n_vertices, self._vertices, self._vertex_vacancies, key_idx=INSERTION_KEY_HALFEDGE)
         self._set_cvertices(self._vertices)
 
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
         return np.array(idx, np.int32)
 
@@ -1710,7 +1724,7 @@ cdef class TriangleMesh(TrianglesBase):
     #     vx['position'] = _vertex
     #     vx['halfedge'] = halfedge
         
-    #     self._clear_flags()
+    #     self._invalidate_cached_properties()
 
     #     return idx
 
@@ -1893,7 +1907,7 @@ cdef class TriangleMesh(TrianglesBase):
     #             update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
     #             update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
             
-    #         self._clear_flags()
+    #         self._invalidate_cached_properties()
         
     #     return 1
 
@@ -2137,7 +2151,7 @@ cdef class TriangleMesh(TrianglesBase):
                 update_single_vertex_neighbours(self._chalfedges[_he_0_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
                 update_single_vertex_neighbours(self._chalfedges[_he_4_idx].vertex, self._chalfedges, self._cvertices, self._cfaces)
             
-            self._clear_flags()
+            self._invalidate_cached_properties()
         
         return 1
     
@@ -2298,7 +2312,7 @@ cdef class TriangleMesh(TrianglesBase):
             update_single_vertex_neighbours(twin_edge.vertex, self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(self._chalfedges[_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(self._chalfedges[_twin_next].vertex, self._chalfedges, self._cvertices, self._cfaces)
-            self._clear_flags()
+            self._invalidate_cached_properties()
             
         return 1
 
@@ -3276,7 +3290,7 @@ cdef class TriangleMesh(TrianglesBase):
             self._update_face_normals(list(set(self._halfedges['face'][_kept_edges])))
             self._update_vertex_neighbors(list(set(self._halfedges['vertex'][_kept_edges])))
         
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
     cdef _find_boundary_polygons(self, np.ndarray boundary_polygons, np.ndarray boundary_edges):
         """
@@ -3570,7 +3584,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             j += 1
         
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
     cdef _pinch_edges(self, np.int32_t _edge0, np.int32_t _edge1, bint live_update=1):
         """
@@ -4155,7 +4169,7 @@ cdef class TriangleMesh(TrianglesBase):
                 update_single_vertex_neighbours(int(self._chalfedges[self._chalfedges[star[j]].next].vertex), self._chalfedges, self._cvertices, self._cfaces)
 
         # reset
-        self._clear_flags()
+        self._invalidate_cached_properties()
 
         # Make sure we're working with the latest singular edges/vertices
         # self._singular_edges = None
@@ -4278,7 +4292,7 @@ cdef class TriangleMesh(TrianglesBase):
         # self._vertices['normal'][:] = -1
         #self._face_normals_valid = 0
         #self._vertex_normals_valid = 0
-        self._clear_flags()
+        self._invalidate_cached_properties()
         self._update_all_face_normals()
         self._update_all_vertex_neighbours()
 
