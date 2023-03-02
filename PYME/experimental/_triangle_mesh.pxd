@@ -83,6 +83,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef halfedge_t * _chalfedges
     cdef face_d * _cfaces
     cdef vertex_d * _cvertices
+    cdef int _n_edges
+    cdef int _n_faces
+    cdef int _n_vertices
 
     cdef object _faces_by_vertex
     cdef object _loop_subdivision_flip_edges

@@ -1,5 +1,75 @@
 #include "triangle_mesh_utils.h"
 
+int remesh_delete_vertex(vertex_t * vertices, int32_t v_idx){
+    int i;
+
+    if (v_idx == -1) return 0;
+
+    vertices[v_idx].halfedge = -1;
+
+    vertices[v_idx].valence = -1;
+    vertices[v_idx].component = -1;
+    vertices[v_idx].locally_manifold = -1;
+
+    for (i =0; i< 3;i++)
+    {
+        vertices[v_idx].position[i] = -1;
+        vertices[v_idx].normal[i] = -1;
+    }
+
+    for (i =0; i< NEIGHBORSIZE;i++)
+    {
+        vertices[v_idx].neighbors[i] = -1;
+    }
+
+
+    return 1;
+}
+
+int remesh_delete_edge(halfedge_t * halfedges, int32_t e_idx){
+    if (e_idx == -1) return 0;
+
+    halfedges[e_idx].vertex = -1;
+
+    halfedges[e_idx].twin = -1;
+    halfedges[e_idx].face = -1;
+    halfedges[e_idx].next = -1;
+    halfedges[e_idx].prev = -1;
+    halfedges[e_idx].length = -1;
+    halfedges[e_idx].component = -1;
+    halfedges[e_idx].locally_manifold = -1;
+
+    return 1;
+}
+
+int remesh_delete_face(halfedge_t * halfedges, face_t * faces, int32_t e_idx){
+    halfedge_t * curr_edge;
+    int32_t face_idx, i;
+
+    if (e_idx == -1) return 0;
+    
+    curr_edge = &halfedges[e_idx];
+    if (curr_edge->vertex == -1) return 0;
+
+    face_idx = curr_edge->face;
+
+    faces[face_idx].halfedge = -1;
+
+    faces[face_idx].area = -1;
+    faces[face_idx].component = -1;
+
+    for (i =0; i< 3;i++)
+    {
+        faces[face_idx].normal[i] = -1;
+    }
+
+    remesh_delete_edge(halfedges, curr_edge->next);
+    remesh_delete_edge(halfedges, curr_edge->prev);
+    remesh_delete_edge(halfedges, e_idx);
+
+    return 1;
+}
+
 int remesh_edge_flip(halfedge_t * halfedges, vertex_t *vertices, face_t * faces, int idx, int n_halfedges, int live_update)
 {
     halfedge_t * curr_edge, * twin_edge;
@@ -126,7 +196,7 @@ int remesh_edge_flip(halfedge_t * halfedges, vertex_t *vertices, face_t * faces,
         update_single_vertex_neighbours(halfedges[_next].vertex, halfedges, vertices, faces);
         update_single_vertex_neighbours(halfedges[_twin_next].vertex, halfedges, vertices, faces);
 
-        self._clear_flags(); //FIXME - transfer to calling function once we have one.
+        //self._clear_flags(); //FIXME - transfer to calling function once we have one.
     }
 
     return 1;
@@ -189,7 +259,7 @@ int remesh_relax(halfedge_t *halfedges, vertex_t *vertices, int n_vertices, face
                 dx[i] = centroid[i] - vertex_v->position[i];
             }
 
-            normal = &vertex_v->normal;
+            normal = vertex_v->normal;
 
             // Update vertex positions
             shift[0] = l*( (1.0 - normal[0]*normal[0])*dx[0] - normal[0]*normal[1]*dx[1] - normal[0]*normal[2]*dx[2]);
@@ -204,9 +274,9 @@ int remesh_relax(halfedge_t *halfedges, vertex_t *vertices, int n_vertices, face
 
         // Now we gotta recalculate the normals
         //self._update_all_face_normals(recompute=True)
-        c_update_all_face_normals(n_faces, halfedges, vertices, faces);
+        _update_all_face_normals(n_faces, halfedges, vertices, faces);
         //self._update_all_vertex_neighbours(recompute=True) //note, also updates edge lengths
-        c_update_all_vertex_neighbors(n_vertices, halfedges, vertices, faces);
+        _update_all_vertex_neighbors(n_vertices, halfedges, vertices, faces);
 
     }
     return 1;
@@ -223,7 +293,7 @@ void remesh_edge_zipper(halfedge_t * halfedges, int32_t edge1, int32_t edge2)
     if (t2 != -1) halfedges[t2].twin = t1;
 }
 
-int remesh_check_neighour_twins(halfedge_t * halfedges, vertex_t * vertices, int32_t vertex_id)
+int remesh_check_neighbour_twins(halfedge_t * halfedges, vertex_t * vertices, int32_t vertex_id)
 {
     int i, nn;
     for (i = 0; i < NEIGHBORSIZE; i++)
@@ -261,8 +331,8 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
 
     if (interior)
     {
-        if (!remesh_check_neighbour_twins(curr_halfedge->vertex)) return 0;
-        if (!remesh_check_neighbour_twins(halfedges[_twin].vertex)) return 0;
+        if (!remesh_check_neighbour_twins(halfedges, vertices, curr_halfedge->vertex)) return 0;
+        if (!remesh_check_neighbour_twins(halfedges, vertices, halfedges[_twin].vertex)) return 0;
 
         //twin_halfedge = &self._chalfedges[_twin]
         _twin_prev = halfedges[_twin].prev;
@@ -437,7 +507,7 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
     vertices[_live_vertex].valence = vl + vd - 3;
     
     // delete dead vertex
-    remesh_delete_vertex(vertices, _dead_vertex);
+    remesh_delete_vertex(vertices, (int32_t) _dead_vertex);
 
     // Zipper the remaining triangles
     remesh_edge_zipper(halfedges, _next, _prev);
@@ -511,36 +581,5 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
 
 }
 
-int remesh_delete_vertex(vertex_t * vertices, int32_t v_idx){
-    if (v_idx == -1) return 0;
 
-    vertices[v_idx].halfedge = -1;
-
-    return 1;
-}
-
-int remesh_delete_edge(halfedge_t * halfedges, int32_t e_idx){
-    if (e_idx == -1) return 0;
-
-    halfedges[e_idx].vertex = -1;
-
-    return 1;
-}
-
-int remesh_delete_face(halfedge_t * halfedges, face_t * faces, int32_t e_idx){
-    halfedge_t * curr_edge;
-
-    if (e_idx == -1) return 0;
-    
-    curr_edge = &halfedges[e_idx];
-    if (curr_edge->vertex == -1) return 0;
-
-    faces[curr_edge->face].halfedge = -1;
-
-    remesh_delete_edge(halfedges, curr_edge->next);
-    remesh_delete_edge(halfedges, curr_edge->prev);
-    remesh_delete_edge(halfedges, e_idx);
-
-    return 1;
-}
 
