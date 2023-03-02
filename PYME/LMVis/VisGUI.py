@@ -336,7 +336,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.AddPage(self.colp, caption='Colour', select=False, update=False)
             
         #print 'ev'
-        if not self.pipeline.events is None:
+        if (not self.pipeline.events is None) and (len(self.pipeline.events) > 0):
             #self.elv = eventLogViewer.eventLogPanel(self, self.pipeline.events,
             #                                            self.pipeline.mdh,
             #                                            [0, self.pipeline.selectedDataSource['tIndex'].max()])
