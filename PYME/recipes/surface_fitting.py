@@ -142,6 +142,9 @@ class DualMarchingCubes(ModuleBase):
     repair = Bool(False)
     remesh = Bool(True)
     cull_inner_surfaces = Bool(True)
+
+    #auto_threshold = Bool(False)
+    #auto_threshold_signal_fraction = Float(0.4)
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
@@ -153,7 +156,21 @@ class DualMarchingCubes(ModuleBase):
         inp = namespace[self.input]
         md = MetaDataHandler.DictMDHandler(getattr(inp, 'mdh', None)) # get metadata from the input dataset if present
         
-        dmc = dual_marching_cubes.PiecewiseDualMarchingCubes(self.threshold_density)
+        #if self.auto_threshold:
+        #    self.threshold_density = self._calc_optimal_threshold(inp)
+        
+        surf = self._generate_surface(self.threshold_density, inp)
+
+        self._params_to_metadata(md)
+        surf.mdh = md #inject metadata
+        
+        namespace[self.output] = surf
+
+    def _generate_surface(self, threshold, inp):
+        from PYME.experimental import dual_marching_cubes
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+        
+        dmc = dual_marching_cubes.PiecewiseDualMarchingCubes(threshold)
         dmc.set_octree(inp.truncate_at_n_points(int(self.n_points_min)))
         tris = dmc.march(dual_march=False)
 
@@ -172,10 +189,31 @@ class DualMarchingCubes(ModuleBase):
         if self.cull_inner_surfaces:
             surf.remove_inner_surfaces()
 
-        self._params_to_metadata(md)
-        surf.mdh = md #inject metadata
+        return surf
+
+    
+    
+    def _calc_optimal_threshold(self, inp):
+        from scipy.optimize import fmin, root_scalar, brentq
+        from PYME.experimental import isosurface
+        pts = np.vstack([inp.points['x'], inp.points['y'], inp.points['z']]).T
+
+        def _surface_quality(threshold):
+            s = self._generate_surface(threshold, inp)
+            d = isosurface.distance_to_mesh(pts, s, smooth=False)
+
+            metric = (d < 0).sum()/len(d)
+
+            return (metric - self.auto_threshold_signal_fraction)
+
+        #t = fmin(_surface_quality, self.threshold_density, maxiter=10)
+        #t = root_scalar(_surface_quality, x0=self.threshold_density, maxiter=10)
         
-        namespace[self.output] = surf
+        return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
+
+        #return t[0]
+        #return t.root
+
 
 @register_module('Isosurface')
 class Isosurface(ModuleBase):
