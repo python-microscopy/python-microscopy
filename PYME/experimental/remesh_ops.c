@@ -581,5 +581,217 @@ int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t *
 
 }
 
+void remesh_populate_edge(halfedge_t *halfedges, int idx, int vertex, int prev, int next, int face, int twin, int locally_manifold)
+{
+    //# TODO - make a macro??
+    halfedges[idx].vertex = vertex;
+    halfedges[idx].prev = prev;
+    halfedges[idx].next = next;
+    halfedges[idx].face = face;
+    halfedges[idx].twin = twin;
+    halfedges[idx].locally_manifold = locally_manifold;
+}
+
+int remesh_split_edge(halfedge_t * halfedges, int32_t n_halfedges, vertex_t * vertices, face_t* faces, int32_t idx, int32_t * new_edges,
+                      int32_t *new_vertices, int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx, int live_update, int upsample)
+{
+    halfedge_t * curr_edge;
+    int _prev, _next, v0, v1, _vertex_idx, i, _twin, interior, _twin_prev, _twin_next, _face_1_idx, _face_2_idx;
+    int _he_0_idx, _he_1_idx, _he_2_idx, _he_3_idx, _he_4_idx, _he_5_idx;
+    float ndot;
+    
+    if (idx == -1) return 0;
+    if (halfedges[idx].locally_manifold == 0) return 0;
+    
+    curr_edge = &halfedges[idx];
+    _prev = curr_edge->prev;
+    _next = curr_edge->next;
+
+    // Grab the new vertex position
+    v0 = curr_edge->vertex;
+    v1 = halfedges[_prev].vertex;
+
+    
+    // new vertex
+    // ------------
+    _vertex_idx = new_vertices[n_vertex_idx];
+    
+    for (i=0;i<3;i++)
+    {
+       vertices[_vertex_idx].position[i] = 0.5*(vertices[v0].position[i] + vertices[v1].position[i]);
+    }
+    
+    
+    if (!upsample)
+    {
+        // keep vertex on surface by using cubic interpolation
+        // along the edge
+        ndot = 0;
+
+        for (i=0; i <3; i++)
+        {
+            ndot += (vertices[v1].normal[i] - vertices[v0].normal[i])*(vertices[v1].position[i] - vertices[v0].position[i]);
+        }
+
+        // correct constant for cubic interpolation would be 0.125 (1/8), but this
+        // inflates the mesh - 0.0625 is emperical, and slightly deflationary
+        // TODO - try interpolation on a sphere instead.
+        
+        for (i=0; i <3; i++)
+        {
+            vertices[_vertex_idx].position[i] += 0.0625*ndot*(vertices[v1].normal[i] + vertices[v0].normal[i]);
+        }
+
+            
+        /* _vertex[0] += 0.125*ndot*(n0x + n1x)
+        _vertex[1] += 0.125*ndot*(n0y + n1y)
+        _vertex[2] += 0.125*ndot*(n0z + n1z)*/
+
+        /*# ## Sphere projection
+        # # calculate average normal
+        # vsum(&self._cvertices[v0].normal0, &self._cvertices[v1].normal0, _vn) 
+        # scalar_mult(_vn, 1.0/norm(_vn))
+
+        # # dot left normal with new normal
+        # n_dot_n = dot(&self._cvertices[v0].normal0, _vn)
+        
+        # # dot normal with vector between the left vertex and new vertex
+        # c_dot_n = (_vertex[0] - x0x)*_vn[0] + (_vertex[1] - x0y)*_vn[1] + (_vertex[2] - x0z)*_vn[2]
+
+        # alpha = c_dot_n/sqrtf(2*(max(n_dot_n, 0) + 1))
+        # scalar_mult(_vn, alpha)
+        # _vertex[0] += _vn[0]
+        # _vertex[1] += _vn[1]
+        # _vertex[2] += _vn[2]*/
+    }
+
+    _twin = curr_edge->twin;
+    interior = (_twin != -1);  // Are we on a boundary?
+    
+    // Ensure the original faces have the correct pointers and add two new faces
+    faces[curr_edge->face].halfedge = idx;
+    
+    if (interior)
+    {
+        _twin_prev = halfedges[_twin].prev;
+        _twin_next = halfedges[_twin].next;
+
+        faces[halfedges[_twin].face].halfedge = _twin;
+        _face_1_idx = new_faces[n_face_idx++]; //self._new_face(_twin_prev)
+        faces[_face_1_idx].halfedge = _twin_prev;
+        halfedges[_twin_prev].face = _face_1_idx;
+    }
+    
+    _face_2_idx = new_faces[n_face_idx++];
+    //n_face_idx += 1; //self._new_face(_next)
+    faces[_face_2_idx].halfedge = _next;
+    halfedges[_next].face = _face_2_idx;
+
+    // Insert the new faces
+    _he_0_idx = new_edges[n_edge_idx++];
+    _he_4_idx = new_edges[n_edge_idx++];
+    _he_5_idx = new_edges[n_edge_idx++];
+    
+    if (interior)
+    {
+        _he_1_idx = new_edges[n_edge_idx++];
+        _he_2_idx = new_edges[n_edge_idx++];
+        _he_3_idx = new_edges[n_edge_idx++];
+
+        remesh_populate_edge(halfedges, _he_1_idx, _vertex_idx, _twin_next, _twin, halfedges[_twin].face, _he_2_idx, 1);
+        remesh_populate_edge(halfedges, _he_2_idx, halfedges[_twin_next].vertex, _he_3_idx, _twin_prev, _face_1_idx, _he_1_idx, 1);
+        remesh_populate_edge(halfedges, _he_3_idx,_vertex_idx, _twin_prev, _he_2_idx, _face_1_idx, _he_4_idx, 1);
+    } else
+    {
+        _he_1_idx = -1;
+        _he_2_idx = -1;
+        _he_3_idx = -1;
+    }
+    
+    remesh_populate_edge(halfedges, _he_0_idx, halfedges[_next].vertex, idx, _prev, halfedges[idx].face, _he_5_idx, 1);
+    remesh_populate_edge(halfedges, _he_4_idx, halfedges[idx].vertex, _he_5_idx, _next, _face_2_idx, _he_3_idx, 1);
+    remesh_populate_edge(halfedges, _he_5_idx, _vertex_idx, _next, _he_4_idx, _face_2_idx, _he_0_idx, 1);
+
+    // Update _prev, next
+    halfedges[_prev].prev = _he_0_idx;
+    halfedges[_next].prev = _he_4_idx;
+    halfedges[_next].next = _he_5_idx;
+
+    if (interior)
+    {
+        // Update _twin_next, _twin_prev
+        halfedges[_twin_next].next = _he_1_idx;
+        halfedges[_twin_prev].prev = _he_2_idx;
+        halfedges[_twin_prev].next = _he_3_idx;
+
+        halfedges[_twin].prev = _he_1_idx;
+    }
+    
+    // Update _curr and _twin
+    halfedges[idx].vertex = _vertex_idx;
+    halfedges[idx].next = _he_0_idx;
+
+    // Update halfedges 
+    if (interior)
+    {
+        vertices[halfedges[_he_2_idx].vertex].halfedge = _he_1_idx;
+    }
+    
+    vertices[halfedges[_prev].vertex].halfedge = idx;
+    vertices[halfedges[_he_4_idx].vertex].halfedge = _next;
+    vertices[_vertex_idx].halfedge = _he_4_idx;
+    vertices[halfedges[_he_0_idx].vertex].halfedge = _he_5_idx;
+
+    /*if (upsample) //FIXME
+    {
+        // Make sure these edges emanate from the new vertex stored at _vertex_idx
+        if (interior)
+            self._loop_subdivision_flip_edges.extend([_he_2_idx]);
+        
+        self._loop_subdivision_flip_edges.extend([_he_0_idx]);
+        self._loop_subdivision_new_vertices.extend([_vertex_idx]);
+    }*/
+    
+    
+    if (live_update)
+    {
+        if (interior)
+        {    
+            update_face_normal(halfedges[_he_0_idx].face, halfedges, vertices, faces);
+            update_face_normal(halfedges[_he_1_idx].face, halfedges, vertices, faces);
+            update_face_normal(halfedges[_he_2_idx].face, halfedges, vertices, faces);
+            update_face_normal(halfedges[_he_4_idx].face, halfedges, vertices, faces);
+            
+            //#print('vertex_neighbours')
+            update_single_vertex_neighbours(halfedges[idx].vertex, halfedges, vertices, faces);
+            //#print('n1')
+            update_single_vertex_neighbours(halfedges[_twin].vertex, halfedges, vertices, faces);
+            //#print('n2')
+            update_single_vertex_neighbours(halfedges[_he_0_idx].vertex, halfedges, vertices, faces);
+            //#print('n3')
+            update_single_vertex_neighbours(halfedges[_he_2_idx].vertex, halfedges, vertices, faces);
+            //#print('n')
+            update_single_vertex_neighbours(halfedges[_he_4_idx].vertex, halfedges, vertices, faces);
+            //#print('vertex_neighbours done')
+        }
+        else
+        {
+            //self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
+            //self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
+            
+            update_face_normal(halfedges[_he_0_idx].face, halfedges, vertices, faces);
+            update_face_normal(halfedges[_he_4_idx].face, halfedges, vertices, faces);
+            
+            update_single_vertex_neighbours(halfedges[idx].vertex, halfedges, vertices, faces);
+            update_single_vertex_neighbours(halfedges[_prev].vertex, halfedges, vertices, faces);
+            update_single_vertex_neighbours(halfedges[_he_0_idx].vertex, halfedges, vertices, faces);
+            update_single_vertex_neighbours(halfedges[_he_4_idx].vertex, halfedges, vertices, faces);
+        }
+        
+        //self._invalidate_cached_properties(); //FIXME
+    }
+    return 1;
+}
+
 
 

@@ -46,6 +46,8 @@ cdef extern from "remesh_ops.c":
     int remesh_delete_vertex(vertex_t * vertices, np.int32_t v_idx);
     int remesh_delete_edge(halfedge_t * halfedges, np.int32_t e_idx);
     int remesh_delete_face(halfedge_t * halfedges, face_t * faces, np.int32_t e_idx);
+    int remesh_split_edge(halfedge_t * halfedges, np.int32_t n_halfedges, vertex_t * vertices, face_t* faces, np.int32_t idx, np.int32_t * new_edges,
+                      np.int32_t *new_vertices, np.int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx, int live_update, int upsample)
 
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4'), ('locally_manifold', 'i4')], align=True)
@@ -1802,11 +1804,17 @@ cdef class TriangleMesh(TrianglesBase):
         for i in range(split_count):
             e = edges_to_split[i]
             #print(i, e, n_edge_idx, n_edges)
-            self.edge_split_2(e, 
-                             <np.int32_t *> np.PyArray_DATA(n_edges), 
+            # self.edge_split_2(e, 
+            #                  <np.int32_t *> np.PyArray_DATA(n_edges), 
+            #                  <np.int32_t *> np.PyArray_DATA(n_vertices), 
+            #                  <np.int32_t *> np.PyArray_DATA(n_faces), 
+            #                  n_edge_idx, n_vertex_idx, n_face_idx)
+
+            remesh_split_edge(self._chalfedges, n_halfedges, <vertex_t *> self._cvertices, <face_t *>self._cfaces, int(e),
+                              <np.int32_t *> np.PyArray_DATA(n_edges), 
                              <np.int32_t *> np.PyArray_DATA(n_vertices), 
                              <np.int32_t *> np.PyArray_DATA(n_faces), 
-                             n_edge_idx, n_vertex_idx, n_face_idx)
+                             n_edge_idx, n_vertex_idx, n_face_idx, 1, 0)
             #self.edge_split(e)
             n_edge_idx += 6
             n_face_idx += 2
@@ -1847,6 +1855,68 @@ cdef class TriangleMesh(TrianglesBase):
         print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
         
         return collapse_count
+
+    cpdef int regularize(self):
+        """
+        Adjust vertices so they tend toward valence VALENCE 
+        (or BOUNDARY_VALENCE for boundaries).
+        """
+
+        cdef int i, flip_count, target_valence, r, failed_flip_count
+        cdef halfedge_t *curr_edge
+        cdef halfedge_t *twin_edge
+        cdef np.int32_t _twin
+        cdef int v1, v2, v3, v4, score_post, score_pre
+
+        flip_count = 0
+        failed_flip_count = 0
+
+        # Do a single pass over all active edges and flip them if the flip minimizes the deviation of vertex valences
+        # for i in np.arange(len(self._halfedges['vertex'])):
+        #    if (self._halfedges['vertex'][i] < 0):
+        #        continue
+        for i in range(self._halfedges.shape[0]):# np.flatnonzero(self._halfedges['vertex'] != -1).astype(np.int32):
+            curr_edge = &self._chalfedges[i]
+            
+            if curr_edge.vertex == -1:
+                continue
+            
+            _twin = curr_edge.twin
+
+            v2, v4 = 0, 0
+            target_valence = VALENCE
+            if _twin == -1:
+                # boundary
+                target_valence = BOUNDARY_VALENCE
+            else:
+                twin_edge = &self._chalfedges[_twin]
+                v2 = self._cvertices[twin_edge.vertex].valence - target_valence  # pre-flip 
+                v4 = self._cvertices[self._chalfedges[twin_edge.next].vertex].valence - target_valence  # post-flip
+
+            v1 = self._cvertices[curr_edge.vertex].valence - target_valence  # pre-flip
+            v3 = self._cvertices[self._chalfedges[curr_edge.next].vertex].valence - target_valence  # post-flip
+
+            # Check valence deviation from VALENCE (or
+            # BOUNDARY_VALENCE for boundaries) pre- and post-flip
+            #score_pre = abs([v1,v2,v3,v4]).sum()
+            #score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
+            
+            score_pre = abs(v1) + abs(v2) + abs(v3) + abs(v4)
+            score_post = abs(v1-1) + abs(v2-1) + abs(v3+1) + abs(v4+1)
+
+            if score_post < score_pre:
+                # Flip minimizes deviation of vertex valences from VALENCE (or
+                # BOUNDARY_VALENCE for boundaries)
+                r = self.edge_flip(i)
+                flip_count += r
+                failed_flip_count += (1-r)
+                
+        print('Flip count: %d [%d failed]' % (flip_count, failed_flip_count))
+        return flip_count
+
+    cpdef int relax(self, float l=1, int n=1):
+        return remesh_relax(self._chalfedges, <vertex_t *> self._cvertices, self._n_vertices, <face_t *> self._cfaces, self._n_faces, l, n)
+
 
     def remesh(self, int n=5, float target_edge_length=-1, float l=0.5, int n_relax=10):
         """
