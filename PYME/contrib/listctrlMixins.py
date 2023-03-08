@@ -301,7 +301,10 @@ class ListCtrlAutoWidthMixin(object):
         listWidth = self.GetClientSize().width
         if wx.Platform != '__WXMSW__':
             if self.GetItemCount() > self.GetCountPerPage():
-                scrollWidth = wx.SystemSettings_GetMetric(wx.SYS_VSCROLL_X)
+                try:
+                    scrollWidth = wx.SystemSettings_GetMetric(wx.SYS_VSCROLL_X)
+                except AttributeError:
+                    scrollWidth = wx.SystemSettings.GetMetric(wx.SYS_VSCROLL_X)
                 listWidth = listWidth - scrollWidth
 
         totColWidth = 0 # Width of all columns except last one.
