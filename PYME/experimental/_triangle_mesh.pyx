@@ -570,26 +570,26 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_vertices_valid = 1
 
-    def __update_singular_edge_locally_manifold(self, clear=True):
-        if not self._singular_edges_valid:
-            if clear:
-                # optional so this can be chained with _update_vertex_locally_manifold
-                self._halfedges['locally_manifold'] = 1
+    # def __update_singular_edge_locally_manifold(self, clear=True):
+    #     if not self._singular_edges_valid:
+    #         if clear:
+    #             # optional so this can be chained with _update_vertex_locally_manifold
+    #             self._halfedges['locally_manifold'] = 1
 
-            # grab all edges
-            edges = np.vstack([self._halfedges['vertex'][self._halfedges['prev']],
-                               self._halfedges['vertex']])
+    #         # grab all edges
+    #         edges = np.vstack([self._halfedges['vertex'][self._halfedges['prev']],
+    #                            self._halfedges['vertex']])
 
-            # Sort lo->hi
-            sorted_edges = np.sort(edges, axis=0)
+    #         # Sort lo->hi
+    #         sorted_edges = np.sort(edges, axis=0)
 
-            # find the number of unique elements
-            _, idxs, counts = np.unique(sorted_edges,axis=1,return_counts=True,return_inverse=True)
-            singular = np.sum(idxs[None,:] == np.flatnonzero(counts > 2)[:,None],axis=0).astype(bool)
+    #         # find the number of unique elements
+    #         _, idxs, counts = np.unique(sorted_edges,axis=1,return_counts=True,return_inverse=True)
+    #         singular = np.sum(idxs[None,:] == np.flatnonzero(counts > 2)[:,None],axis=0).astype(bool)
 
-            self._halfedges['locally_manifold'][singular & (self._halfedges['vertex'] != -1)] = 0
+    #         self._halfedges['locally_manifold'][singular & (self._halfedges['vertex'] != -1)] = 0
 
-            self._singular_edges_valid = 1
+    #         self._singular_edges_valid = 1
 
     def _update_singular_edge_locally_manifold(self, clear=True):
         cdef int i
@@ -1012,325 +1012,6 @@ cdef class TriangleMesh(TrianglesBase):
             if (nn != -1) and (self._chalfedges[nn].twin == -1):
                 return 0
             
-        return 1
-    
-    
-    cpdef int edge_collapse(self, np.int32_t _curr, bint live_update=1):
-        """
-        A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr,
-        and its associated triangles, while keeping mesh connectivity.
-
-        TODO: A known problem is, in the presence of boundaries, edge_collapse()
-        will eventually (after 3-5 remesh steps) produce a few singular edges.
-
-        Parameters
-        ----------
-            _curr: int
-                Pointer to halfedge defining edge to collapse.
-            live_update : bool
-                Update associated faces and vertices after collapse. Set to 
-                False to handle this externally (useful if operating on 
-                multiple, disjoint edges).
-        """
-
-        cdef halfedge_t *curr_halfedge
-        cdef halfedge_t *twin_halfedge
-        cdef np.int32_t _prev, _twin, _next, _prev_twin, _prev_twin_vertex, _next_prev_twin, _next_prev_twin_vertex, _twin_next_vertex, _next_twin_twin_next, _next_twin_twin_next_vertex, vl, vd, _dead_vertex, _live_vertex, vn, vtn, face0, face1, face2, face3
-        cdef np.int32_t *neighbours_live
-        cdef np.int32_t *neighbours_dead
-        cdef np.int32_t shared_vertex
-        cdef np.float32_t px, py, pz
-        cdef np.float32_t n0x, n0y, n0z, n1x, n1y, n1z, ndot
-        cdef bint fast_collapse_bool, interior
-        cdef int i, j, twin_count, dead_count
-        cdef np.int32_t[5*NEIGHBORSIZE] dead_vertices
-        cdef np.float32_t[VECTORSIZE] _vn
-        cdef np.float32_t n_dot_n, c_dot_n, alpha
-
-        if _curr == -1:
-            return 0
-
-        if self._chalfedges[_curr].locally_manifold == 0:
-            return 0
-
-        # Create the pointers we need
-        curr_halfedge = &self._chalfedges[_curr]
-        _prev = curr_halfedge.prev
-        _next = curr_halfedge.next
-        _twin = curr_halfedge.twin
-
-        if (self._chalfedges[_next].twin == -1) or (self._chalfedges[_prev].twin == -1):
-            # Collapsing this edge will create another free edge
-            return 0
-
-        interior = (_twin != -1)  # Are we on a boundary?
-
-        if interior:
-            if not self._check_neighbour_twins(curr_halfedge.vertex):
-                return 0
-            
-            if not self._check_neighbour_twins(self._chalfedges[_twin].vertex):
-                return 0
-
-            twin_halfedge = &self._chalfedges[_twin]
-            _twin_prev = twin_halfedge.prev
-            _twin_next = twin_halfedge.next
-
-            if (self._chalfedges[_twin_prev].twin == -1) or (self._chalfedges[_twin_next].twin == -1):
-                # Collapsing this edge will create another free edge
-                return 0
-
-        _dead_vertex = self._chalfedges[_prev].vertex
-        _live_vertex = curr_halfedge.vertex
-
-        # Grab the valences of the 4 points near the edge
-        if interior:
-            vn, vtn = self._cvertices[self._chalfedges[_next].vertex].valence, self._cvertices[self._chalfedges[_twin_next].vertex].valence
-
-            # Make sure we create no vertices of valence <3 (manifoldness)
-            # ((vl + vd - 3) < 4) or 
-            if (vn < 4) or (vtn < 4):
-                return 0
-
-        vl, vd = self._cvertices[_live_vertex].valence, self._cvertices[_dead_vertex].valence
-        
-        if ((vl + vd - 4) < 4):
-            return 0
-        
-        cdef bint locally_manifold = self._cvertices[_live_vertex].locally_manifold and self._cvertices[_dead_vertex].locally_manifold
-
-        # Check for creation of multivalent edges and prevent this (manifoldness)
-        fast_collapse_bool = (locally_manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
-        if fast_collapse_bool:
-            # Do it the fast way if we can
-            neighbours_live = &self._cvertices[_live_vertex].neighbor0
-            neighbours_dead = &self._cvertices[_dead_vertex].neighbor0
-            twin_count = 0
-            shared_vertex = -1
-            for i in range(NEIGHBORSIZE):
-                if neighbours_live[i] == -1:
-                    break
-                for j in range(NEIGHBORSIZE):
-                    if neighbours_dead[j] == -1:
-                        break
-                    if self._chalfedges[neighbours_live[i]].vertex == self._chalfedges[neighbours_dead[j]].vertex:
-                        if twin_count > 2:
-                            break
-                        if (twin_count == 0) or ((twin_count > 0) and (self._chalfedges[neighbours_dead[j]].vertex != shared_vertex)):
-                            shared_vertex = self._chalfedges[neighbours_live[i]].vertex
-                            twin_count += 1
-                if twin_count > 2:
-                    break
-
-            # no more than two vertices shared by the neighbors of dead and live vertex
-            if twin_count != 2:
-                return 0
-
-            # assign
-            for i in range(NEIGHBORSIZE):
-                if (neighbours_dead[i] == -1):
-                    continue
-                self._chalfedges[self._chalfedges[neighbours_dead[i]].twin].vertex = _live_vertex
-                self._chalfedges[self._chalfedges[neighbours_dead[i]].prev].vertex = _live_vertex
-
-            #live_nn = self._vertices['neighbors'][_live_vertex]
-            #dead_nn =  self._vertices['neighbors'][_dead_vertex]
-            #live_mask = (live_nn != -1)
-            #dead_mask = (dead_nn != -1)
-            #live_list = self._halfedges['vertex'][live_nn[live_mask]]
-            #dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
-        else:
-            # grab the set of halfedges pointing to dead_vertices
-            
-            dead_count = 0
-            for i in range(self._halfedges.shape[0]):
-                if self._chalfedges[i].vertex == _dead_vertex:
-                    dead_vertices[dead_count] = i
-                    dead_count += 1
-                    if dead_count > 5*NEIGHBORSIZE:
-                        print(f'WARNING: Way too many dead vertices: {dead_count}! Politely declining to collapse.')
-                        return 0
-
-            # loop over all live vertices and check for twins in dead_vertices,
-            # as we do in fast_collapse
-            twin_count = 0
-            shared_vertex = -1
-            for i in range(self._halfedges.shape[0]):
-                if self._chalfedges[i].twin == -1:
-                    continue
-                if self._chalfedges[i].vertex == _live_vertex:
-                    for j in range(dead_count):
-                        if self._chalfedges[dead_vertices[j]].twin == -1:
-                            continue
-                        if self._chalfedges[self._chalfedges[i].twin].vertex == self._chalfedges[self._chalfedges[dead_vertices[j]].twin].vertex:
-                            if twin_count > 2:
-                                break
-                            if (twin_count == 0) or ((twin_count > 0) and (self._chalfedges[self._chalfedges[dead_vertices[j]].twin].vertex != shared_vertex)):
-                                shared_vertex = self._chalfedges[self._chalfedges[i].twin].vertex
-                                twin_count += 1
-                    if twin_count > 2:
-                        break
-
-            # no more than two vertices shared by the neighbors of dead and live vertex
-            if twin_count != 2:
-                return 0
-
-            # assign
-            for i in range(dead_count):
-                self._chalfedges[dead_vertices[i]].vertex = _live_vertex
-
-            #twin_mask = (self._halfedges['twin'] != -1)
-            #dead_mask = (self._halfedges['vertex'] == _dead_vertex)
-            #dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
-            #live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
-
-        # twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
-        # if len(twin_list) != 2:
-        #     return 0
-            
-        # Collapse to the midpoint of the original edge vertices
-        # if fast_collapse_bool:
-        #    self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
-        # else:
-        #     self._halfedges['vertex'][dead_mask] = _live_vertex
-        
-        # if fast_collapse_bool:
-        #     if not self._check_collapse_fast(_live_vertex, _dead_vertex):
-        #         return
-        # else:
-        #     if not self._check_collapse_slow(_live_vertex, _dead_vertex):
-        #         return
-        
-        # _live_pos = self._vertices['position'][_live_vertex]
-        # _dead_pos = self._vertices['position'][_dead_vertex]
-        # self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
-
-        px = 0.5*(self._cvertices[_live_vertex].position0 + self._cvertices[_dead_vertex].position0)
-        py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
-        pz = 0.5*(self._cvertices[_live_vertex].position2 + self._cvertices[_dead_vertex].position2)
-        
-        ### cubic interpolation
-        # keep joined vertex on surface using cubic interpolation
-        n0x = self._cvertices[_live_vertex].normal0
-        n0y = self._cvertices[_live_vertex].normal1
-        n0z = self._cvertices[_live_vertex].normal2
-        n1x = self._cvertices[_dead_vertex].normal0
-        n1y = self._cvertices[_dead_vertex].normal1
-        n1z = self._cvertices[_dead_vertex].normal2
-
-        ndot = (n1x-n0x)*(self._cvertices[_dead_vertex].position0 - self._cvertices[_live_vertex].position0) + \
-                (n1y-n0y)*(self._cvertices[_dead_vertex].position1 - self._cvertices[_live_vertex].position1) + \
-                (n1z-n0z)*(self._cvertices[_dead_vertex].position2 - self._cvertices[_live_vertex].position2)
-
-        # correct constant for cubic interpolation would be 0.125, but this
-        # inflates the mesh - 0.0625 is emperical, and slightly deflationary
-        # TODO - try interpolation on a sphere instead.
-        px += 0.0625*ndot*(n0x + n1x)
-        py += 0.0625*ndot*(n0y + n1y)
-        pz += 0.0625*ndot*(n0z + n1z)
-        # px += 0.125*ndot*(n0x + n1x)
-        # py += 0.125*ndot*(n0y + n1y)
-        # pz += 0.125*ndot*(n0z + n1z)
-
-        # ## Sphere projection
-        # # calculate average normal
-        # vsum(&self._cvertices[_live_vertex].normal0, &self._cvertices[_dead_vertex].normal0, _vn) 
-        # scalar_mult(_vn, 1.0/norm(_vn))
-
-        # # dot left normal with new normal
-        # n_dot_n = dot(&self._cvertices[_live_vertex].normal0, _vn)
-        
-        # # dot normal with vector between the left vertex and new vertex
-        # c_dot_n = (px - self._cvertices[_live_vertex].position0)*_vn[0] + (py - self._cvertices[_live_vertex].position1)*_vn[1] + (pz - self._cvertices[_live_vertex].position2)*_vn[2]
-
-        # alpha = c_dot_n/sqrtf(2*(max(n_dot_n, 0) + 1))
-        # scalar_mult(_vn, alpha)
-        # px += _vn[0]
-        # py += _vn[1]
-        # pz += _vn[2]
-
-        # # end sphere proj
-        
-        self._cvertices[_live_vertex].position0 = px
-        self._cvertices[_live_vertex].position1 = py
-        self._cvertices[_live_vertex].position2 = pz
-        
-        # update valence of vertex we keep
-        self._cvertices[_live_vertex].valence = vl + vd - 3
-        
-        # delete dead vertex
-        self._vertices[_dead_vertex] = -1
-        self._vertex_vacancies.append(_dead_vertex)
-
-        # Zipper the remaining triangles
-        self._zipper(_next, _prev)
-        if interior:
-            self._zipper(_twin_next, _twin_prev)
-        # We need some more pointers
-        # TODO: make these safer
-        _prev_twin = self._chalfedges[_prev].twin
-        _prev_twin_vertex = self._chalfedges[_prev_twin].vertex
-        _next_prev_twin = self._chalfedges[_prev_twin].next
-        _next_prev_twin_vertex = self._chalfedges[_next_prev_twin].vertex
-        if interior:
-            _twin_next_vertex = self._chalfedges[_twin_next].vertex
-            _next_twin_twin_next = self._chalfedges[self._chalfedges[_twin_next].twin].next
-            _next_twin_twin_next_vertex = self._chalfedges[_next_twin_twin_next].vertex
-            
-        # Make sure we have good _vertex_halfedges references
-        self._cvertices[_live_vertex].halfedge = _prev_twin
-        self._cvertices[_prev_twin_vertex].halfedge = _next_prev_twin
-        if interior:
-            self._cvertices[_twin_next_vertex].halfedge = self._chalfedges[_twin_next].twin
-            self._cvertices[_next_twin_twin_next_vertex].halfedge = self._chalfedges[_next_twin_twin_next].next
-
-        # Grab faces to update
-        face0 = self._chalfedges[self._chalfedges[_next].twin].face
-        face1 = self._chalfedges[self._chalfedges[_prev].twin].face
-        if interior:
-            face2 = self._chalfedges[self._chalfedges[_twin_next].twin].face
-            face3 = self._chalfedges[self._chalfedges[_twin_prev].twin].face
-
-        # Delete the inner triangles
-        self._face_delete(_curr)
-        if interior:
-            self._face_delete(_twin)
-
-        try:
-            if live_update:
-                if interior:
-                    # Update faces
-                    #self._update_face_normals([face0, face1, face2, face3])
-                    #self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
-                    
-                    update_face_normal(face0, self._chalfedges, self._cvertices, self._cfaces)
-                    update_face_normal(face1, self._chalfedges, self._cvertices, self._cfaces)
-                    update_face_normal(face2, self._chalfedges, self._cvertices, self._cfaces)
-                    update_face_normal(face3, self._chalfedges, self._cvertices, self._cfaces)
-                    
-                    update_single_vertex_neighbours(_live_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    update_single_vertex_neighbours(_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    update_single_vertex_neighbours(_next_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    update_single_vertex_neighbours(_twin_next_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    
-                else:
-                    #self._update_face_normals([face0, face1])
-                    #self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex])
-                    
-                    update_face_normal(face0, self._chalfedges, self._cvertices, self._cfaces)
-                    update_face_normal(face1, self._chalfedges, self._cvertices, self._cfaces)
-                    
-                    update_single_vertex_neighbours(_live_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    update_single_vertex_neighbours(_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    update_single_vertex_neighbours(_next_prev_twin_vertex, self._chalfedges, self._cvertices, self._cfaces)
-                    
-                self._invalidate_cached_properties()
-        
-        except RuntimeError as e:
-            print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
-            print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
-            raise e
-        
         return 1
 
     cdef int _face_delete(self, np.int32_t _edge):
@@ -2005,7 +1686,8 @@ cdef class TriangleMesh(TrianglesBase):
                 cost_heap.delete(np.int32(neighbor))
                             
             # Collapse the edge
-            self.edge_collapse(_edge)
+            #self.edge_collapse(_edge)
+            remesh_edge_collapse(self._chalfedges, self._n_edges, <vertex_t *> self._cvertices, <face_t*> self._cfaces, _edge, 1)
             
             # Decrement the estimate of the number of triangles in the 
             # mesh accordingly
@@ -2036,6 +1718,9 @@ cdef class TriangleMesh(TrianglesBase):
 
             for n in neighbors:
                 cost_heap.insert(np.float32(err[n]), np.int32(n))
+
+        self._update_all_vacancies()
+        self._invalidate_cached_properties()
 
         self._manifold = None
 

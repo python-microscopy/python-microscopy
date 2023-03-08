@@ -124,7 +124,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef int _vertex_delete(self, np.int32_t v_idx)
     #cdef _zipper(self, np.int32_t, np.int32_t)
     cpdef int edge_flip(self, np.int32_t, bint live_update=*)
-    cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
+    #cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
     #cpdef int edge_split(self, np.int32_t, bint live_update=*, bint upsample=*)
     cpdef int relax(self, float l=*, int n=*)
     cpdef int regularize(self)
