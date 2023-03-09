@@ -275,6 +275,7 @@ class ModuleBase(HasStrictTraits):
                 v.mdh = MetaDataHandler.DictMDHandler()
 
             v.mdh.mergeEntriesFrom(mdhin) #merge, to allow e.g. voxel size overrides due to downsampling
+            print(v.mdh, mdh)
             v.mdh.copyEntriesFrom(mdh) # copy / overwrite with module processing parameters
 
         namespace.update(out)
@@ -943,7 +944,7 @@ class JoinChannels(ModuleBase):
         chans = [] 
         channel_names = []      
 
-        for i, c in enumerate[inputChan0, inputChan1, inputChan2, inputChan3]:
+        for i, c in enumerate([inputChan0, inputChan1, inputChan2, inputChan3]):
             if c:
                 chans.append(np.atleast_3d(c.data_xyztc[:,:,:,:,0])) #FIXME .... so as not to drag everything into memory if not needed
                 channel_names.append(getattr(self, 'inputChan%d' %i))

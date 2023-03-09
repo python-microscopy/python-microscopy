@@ -44,7 +44,7 @@ class GaussianFilter(Filter):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
-        im.mdh['Processing.GaussianFilter'] = self.sigmas
+        im.mdh['Processing.GaussianFilter.Sigmas'] = self.sigmas
 
 @register_module('MedianFilter')         
 class MedianFilter(Filter):
@@ -80,7 +80,7 @@ class MedianFilter(Filter):
         return ndimage.median_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
-        im.mdh['Processing.MedianFilter'] = self.sigmas
+        im.mdh['Processing.MedianFilter.Sigmas'] = self.sigmas
 
 
 @register_module('MaxFilter')
@@ -117,7 +117,7 @@ class MaxFilter(Filter):
         return ndimage.maximum_filter(data, self.sigmas[:len(data.shape)])
 
     def completeMetadata(self, im):
-        im.mdh['Processing.MaxFilter'] = self.sigmas
+        im.mdh['Processing.MaxFilter.Sigmas'] = self.sigmas
 
 @register_module('MinFilter')
 class MinFilter(Filter):
@@ -153,7 +153,7 @@ class MinFilter(Filter):
         return ndimage.minimum_filter(data, self.sigmas[:len(data.shape)])
 
     def completeMetadata(self, im):
-        im.mdh['Processing.MinFilter'] = self.sigmas
+        im.mdh['Processing.MinFilter.Sigmas'] = self.sigmas
         
 @register_module('DespeckleFilter')         
 class DespeckleFilter(Filter):
@@ -205,7 +205,7 @@ class DespeckleFilter(Filter):
         return ndimage.generic_filter(data, self._filt, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
-        im.mdh['Processing.DespeckleFilter'] = self.sigmas
+        im.mdh['Processing.DespeckleFilter.Sigmas'] = self.sigmas
 
 @register_module('MeanFilter') 
 class MeanFilter(Filter):
@@ -241,7 +241,7 @@ class MeanFilter(Filter):
         return ndimage.uniform_filter(data, self.sigmas[:len(data.shape)])
     
     def completeMetadata(self, im):
-        im.mdh['Processing.MeanFilter'] = self.sigmas
+        im.mdh['Processing.MeanFilter.Sigmas'] = self.sigmas
 
 @register_module('Zoom')         
 class Zoom(Filter):
@@ -267,7 +267,7 @@ class Zoom(Filter):
         return ndimage.zoom(data, self.zoom)
     
     def completeMetadata(self, im):
-        im.mdh['Processing.Zoom'] = self.zoom
+        #im.mdh['Processing.Zoom'] = self.zoom
         im.mdh['voxelsize.x'] = im.mdh['voxelsize.x']/self.zoom
         im.mdh['voxelsize.y'] = im.mdh['voxelsize.y']/self.zoom
         
@@ -301,7 +301,7 @@ class Subsample(Filter):
             return data[::self.step, ::self.step, ::self.step,]
     
     def completeMetadata(self, im):
-        im.mdh['Processing.SubsampleStep'] = self.step
+        #im.mdh['Processing.SubsampleStep'] = self.step
         im.mdh['voxelsize.x'] = im.mdh['voxelsize.x']*self.step
         im.mdh['voxelsize.y'] = im.mdh['voxelsize.y']*self.step
         
@@ -380,7 +380,7 @@ class DoGFilter(Filter):
         return ndimage.gaussian_filter(data, self.sigmas[:len(data.shape)]) - ndimage.gaussian_filter(data, self.sigma2s[:len(data.shape)])
     
     def completeMetadata(self, im):
-        im.mdh['Processing.GaussianFilter'] = self.sigmas
+        im.mdh['Processing.GaussianFilter.Sigmas'] = self.sigmas
 
 
 

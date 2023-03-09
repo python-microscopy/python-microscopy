@@ -31,8 +31,8 @@ class SimpleThreshold(Filter):
         mask = data > self.threshold
         return mask
 
-    def completeMetadata(self, im):
-        im.mdh['Processing.SimpleThreshold'] = self.threshold
+    #def completeMetadata(self, im):
+    #    im.mdh['Processing.SimpleThreshold'] = self.threshold
         
 @register_module('FractionalThreshold') 
 class FractionalThreshold(Filter):
@@ -52,8 +52,8 @@ class FractionalThreshold(Filter):
         mask = data > threshold
         return mask
 
-    def completeMetadata(self, im):
-        im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
+    #def completeMetadata(self, im):
+    #    im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
         
 @register_module('Threshold')
 class Threshold(Filter):
@@ -115,8 +115,8 @@ class SelectLabel(Filter):
         mask = (data == self.label)
         return mask
 
-    def completeMetadata(self, im):
-        im.mdh['Processing.SelectedLabel'] = self.label
+    #def completeMetadata(self, im):
+    #    im.mdh['Processing.SelectedLabel'] = self.label
 
 @register_module('SelectLargestLabel') 
 class SelectLargestLabel(Filter):
@@ -132,8 +132,8 @@ class SelectLargestLabel(Filter):
         mask = (data == self.label)
         return mask
 
-    def completeMetadata(self, im):
-        im.mdh['Processing.SelectedLabel'] = self.label
+    #def completeMetadata(self, im):
+    #    im.mdh['Processing.SelectedLabel'] = self.label
 
 @register_module('LocalMaxima')         
 class LocalMaxima(Filter):
@@ -145,9 +145,9 @@ class LocalMaxima(Filter):
         im = data.astype('f')/data.max()
         return skimage.feature.peak_local_max(im, threshold_abs = self.threshold, min_distance = self.minDistance, indices=False)
 
-    def completeMetadata(self, im):
-        im.mdh['LocalMaxima.threshold'] = self.threshold
-        im.mdh['LocalMaxima.minDistance'] = self.minDistance
+    # def completeMetadata(self, im):
+    #     im.mdh['LocalMaxima.threshold'] = self.threshold
+    #     im.mdh['LocalMaxima.minDistance'] = self.minDistance
         
         
 # from PYME.IO.DataSources import BaseDataSource
@@ -303,9 +303,9 @@ class OpticalFlow(ModuleBase):
         self.completeMetadata(im)
         namespace[self.outputNameY] = im
         
-    def completeMetadata(self, im):
-        im.mdh['OpticalFlow.filterRadius'] = self.filterRadius
-        im.mdh['OpticalFlow.supportRadius'] = self.supportRadius
+    # def completeMetadata(self, im):
+    #     im.mdh['OpticalFlow.filterRadius'] = self.filterRadius
+    #     im.mdh['OpticalFlow.supportRadius'] = self.supportRadius
         
 @register_module('WavefrontDetection')
 class WavefrontDetection(ModuleBase):
