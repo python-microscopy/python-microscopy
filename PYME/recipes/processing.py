@@ -1321,17 +1321,17 @@ class Deconvolve(Filter):
         
         return res.squeeze()
 
-    def completeMetadata(self, im):
-        im.mdh['Deconvolution.Offset'] = self.offset
-        im.mdh['Deconvolution.Method'] = self.method
-        im.mdh['Deconvolution.Iterations'] = self.iterations
-        im.mdh['Deconvolution.PsfType'] = self.psfType
-        im.mdh['Deconvolution.PSFFilename'] = self.psfFilename
-        im.mdh['Deconvolution.LorentzianFWHM'] = self.lorentzianFWHM
-        im.mdh['Deconvolution.BeadDiameter'] = self.beadDiameter
-        im.mdh['Deconvolution.RegularisationLambda'] = self.regularisationLambda
-        im.mdh['Deconvolution.Padding'] = self.padding
-        im.mdh['Deconvolution.ZPadding'] = self.zPadding
+    # def completeMetadata(self, im):
+    #     im.mdh['Deconvolution.Offset'] = self.offset
+    #     im.mdh['Deconvolution.Method'] = self.method
+    #     im.mdh['Deconvolution.Iterations'] = self.iterations
+    #     im.mdh['Deconvolution.PsfType'] = self.psfType
+    #     im.mdh['Deconvolution.PSFFilename'] = self.psfFilename
+    #     im.mdh['Deconvolution.LorentzianFWHM'] = self.lorentzianFWHM
+    #     im.mdh['Deconvolution.BeadDiameter'] = self.beadDiameter
+    #     im.mdh['Deconvolution.RegularisationLambda'] = self.regularisationLambda
+    #     im.mdh['Deconvolution.Padding'] = self.padding
+    #     im.mdh['Deconvolution.ZPadding'] = self.zPadding
         
 
 @register_module('DeconvolveMotionCompensating')
