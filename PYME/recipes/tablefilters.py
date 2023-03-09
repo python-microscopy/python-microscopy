@@ -15,15 +15,18 @@ class Mapping(ModuleBase):
     mappings = DictStrStr()
     outputName = Output('mapped')
 
-    def execute(self, namespace):
-        inp = namespace[self.inputName]
+    # def execute(self, namespace):
+    #     inp = namespace[self.inputName]
 
-        mapped = tabular.MappingFilter(inp, **self.mappings)
+    #     mapped = tabular.MappingFilter(inp, **self.mappings)
 
-        if 'mdh' in dir(inp):
-            mapped.mdh = inp.mdh
+    #     if 'mdh' in dir(inp):
+    #         mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+    #     namespace[self.outputName] = mapped
+
+    def run(self, inputName):
+        return tabular.MappingFilter(inputName, **self.mappings)
 
 
 @register_module('FilterTable')
@@ -34,15 +37,19 @@ class FilterTable(ModuleBase):
     filters = DictStrList()
     outputName = Output('filtered')
 
-    def execute(self, namespace):
-        inp = namespace[self.inputName]
+    # def execute(self, namespace):
+    #     inp = namespace[self.inputName]
 
-        filtered = tabular.ResultsFilter(inp, **self.filters)
+    #     filtered = tabular.ResultsFilter(inp, **self.filters)
 
-        if 'mdh' in dir(inp):
-            filtered.mdh = inp.mdh
+    #     if 'mdh' in dir(inp):
+    #         filtered.mdh = inp.mdh
 
-        namespace[self.outputName] = filtered
+    #     namespace[self.outputName] = filtered
+
+    def run(self, inputName):
+        return tabular.ResultsFilter(inputName, **self.filters)
+
 
     @property
     def _ds(self):
@@ -69,15 +76,18 @@ class FilterTableByIDs(ModuleBase):
     ids = ListInt()
     outputName = Output('filtered')
 
-    def execute(self, namespace):
-        inp = namespace[self.inputName]
+    # def execute(self, namespace):
+    #     inp = namespace[self.inputName]
 
-        filtered = tabular.IdFilter(inp, id_column=self.idColumnName, valid_ids=self.ids)
+    #     filtered = tabular.IdFilter(inp, id_column=self.idColumnName, valid_ids=self.ids)
 
-        if 'mdh' in dir(inp):
-            filtered.mdh = inp.mdh
+    #     if 'mdh' in dir(inp):
+    #         filtered.mdh = inp.mdh
 
-        namespace[self.outputName] = filtered
+    #     namespace[self.outputName] = filtered
+
+    def run(self, inputName):
+        return tabular.IdFilter(inputName, id_column=self.idColumnName, valid_ids=self.ids)
 
     @property
     def _ds(self):
@@ -112,16 +122,19 @@ class ConcatenateTables(ModuleBase):
     inputName1 = Input('chan1')
     outputName = Output('output')
 
-    def execute(self, namespace):
-        inp0 = namespace[self.inputName0]
-        inp1 = namespace[self.inputName1]
+    # def execute(self, namespace):
+    #     inp0 = namespace[self.inputName0]
+    #     inp1 = namespace[self.inputName1]
 
-        concatenated = tabular.ConcatenateFilter(inp0, inp1)
+    #     concatenated = tabular.ConcatenateFilter(inp0, inp1)
 
-        if 'mdh' in dir(inp0):
-            concatenated.mdh = inp0.mdh
+    #     if 'mdh' in dir(inp0):
+    #         concatenated.mdh = inp0.mdh
 
-        namespace[self.outputName] = concatenated
+    #     namespace[self.outputName] = concatenated
+
+    def run(self, inputName0, inputName1):
+        return tabular.ConcatenateFilter(inputName0, inputName1)
 
 
 @register_legacy_module('AggregateMeasurements')
@@ -139,25 +152,38 @@ class AggregateMeasurements(ModuleBase):
     suffix4 = CStr('')
     outputName = Output('aggregatedMeasurements')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     import collections
+    #     res = collections.OrderedDict()
+    #     for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if
+    #                        n.startswith('inputMeas')]:
+    #         if not mk == '':
+    #             meas = namespace[mk]
+
+    #             #res.update(meas)
+    #             for k in meas.keys():
+    #                 res[k + suffix] = meas[k]
+
+    #     meas1 = namespace[self.inputMeasurements1]
+    #     #res = pd.DataFrame(res)
+    #     res = tabular.DictSource(res)
+    #     if 'mdh' in dir(meas1):
+    #         res.mdh = meas1.mdh
+
+    #     namespace[self.outputName] = res
+
+    def run(self, inputMeasurements1, inputMeasurements2,inputMeasurements3,inputMeasurements4):
         import collections
         res = collections.OrderedDict()
-        for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if
-                           n.startswith('inputMeas')]:
-            if not mk == '':
-                meas = namespace[mk]
+        for meas, suffix in [(inputMeasurements1, self.suffix1), (inputMeasurements2, self.suffix2),(inputMeasurements3, self.suffix3),(inputMeasurements4, self.suffix4)]:
+            if meas:
 
                 #res.update(meas)
                 for k in meas.keys():
                     res[k + suffix] = meas[k]
 
-        meas1 = namespace[self.inputMeasurements1]
-        #res = pd.DataFrame(res)
-        res = tabular.DictSource(res)
-        if 'mdh' in dir(meas1):
-            res.mdh = meas1.mdh
+        return tabular.DictSource(res)
 
-        namespace[self.outputName] = res
 
 
 @register_legacy_module('SelectMeasurementColumns') #deprecated - do not use
@@ -168,17 +194,20 @@ class SelectTableColumns(ModuleBase):
     keys = CStr('')
     outputName = Output('selectedMeasurements')
 
-    def execute(self, namespace):
-        meas = namespace[self.inputMeasurements]
+    # def execute(self, namespace):
+    #     meas = namespace[self.inputMeasurements]
 
-        out = tabular.CloneSource(meas, keys=self.keys.split())
-        # propagate metadata, if present
-        try:
-            out.mdh = meas.mdh
-        except AttributeError:
-            pass
+    #     out = tabular.CloneSource(meas, keys=self.keys.split())
+    #     # propagate metadata, if present
+    #     try:
+    #         out.mdh = meas.mdh
+    #     except AttributeError:
+    #         pass
 
-        namespace[self.outputName] = out
+    #     namespace[self.outputName] = out
+
+    def run(self, inputMeasurements):
+        return tabular.CloneSource(inputMeasurements, keys=self.keys.split())
 
 
 @register_module('RandomSubset')
@@ -206,10 +235,31 @@ class RandomSubset(ModuleBase):
     num_to_select = Int(100)
     strict = Bool(False)
     
-    def execute(self, namespace):
-        data = namespace[self.input]
+    # def execute(self, namespace):
+    #     data = namespace[self.input]
         
-        n_rows = len(data)
+    #     n_rows = len(data)
+        
+    #     if n_rows < self.num_to_select:
+    #         if self.strict:
+    #             raise IndexError('Trying to select %d from data with only %d rows. To allow truncation, use strict=False' % (self.num_to_select, n_rows))
+    #         else:
+    #             logger.info('RandomSubset: Truncating from %d to %d rows as data only has %d rows. To make this an error, use strict=True' % (self.num_to_select, n_rows, n_rows)) 
+        
+    #     if self.strict and (self.num_to_select > 0.5*n_rows):
+    #         logger.warning('RandomSubset: Selecting %d from %d rows will not be very random' % (self.num_to_select, n_rows))
+        
+    #     out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select))
+        
+    #     try:
+    #         out.mdh = MetaDataHandler.DictMDHandler(data.mdh)
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.output] = out
+
+    def run(self, input):
+        n_rows = len(input)
         
         if n_rows < self.num_to_select:
             if self.strict:
@@ -220,11 +270,6 @@ class RandomSubset(ModuleBase):
         if self.strict and (self.num_to_select > 0.5*n_rows):
             logger.warning('RandomSubset: Selecting %d from %d rows will not be very random' % (self.num_to_select, n_rows))
         
-        out = tabular.RandomSelectionFilter(data, num_Samples=min(n_rows, self.num_to_select))
+        return tabular.RandomSelectionFilter(input, num_Samples=min(n_rows, self.num_to_select))
         
-        try:
-            out.mdh = MetaDataHandler.DictMDHandler(data.mdh)
-        except AttributeError:
-            pass
-
-        namespace[self.output] = out
+        

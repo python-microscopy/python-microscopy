@@ -240,12 +240,53 @@ class ModuleBase(HasStrictTraits):
         return np.all([op in keys for op in self.outputs])
 
     def execute(self, namespace):
-        """prototype function - should be over-ridden in derived classes
-
+        """
         takes a namespace (a dictionary like object) from which it reads its inputs and
         into which it writes outputs
+
+        NOTE: This was previously the function to define / override to make a module work. To support automatic metadata propagation
+        and reduce the ammount of boiler plate, new modules should override the `run()` method instead.
         """
-        pass
+        from PYME.IO import MetaDataHandler
+        inputs = {k: namespace[v] for k, v in self._input_traits.items()}
+        
+        ret = self.run(**inputs)
+
+        # convert output to a dictionary if needed
+        if isinstance(ret, dict):
+            out = {v : ret[k] for v, k in self._output_traits.items()}
+        elif isinstance(ret, List):
+            out = {k : v  for k, v in zip(self.outputs, ret)} #TODO - is this safe (is ordering consistent)
+        else:
+            # single output
+            if len(self.outputs) > 1:
+                raise RuntimeError('Module has multiple outputs, but .run() returns a single value')
+
+            out = {list(self.outputs)[0] : ret}
+
+        # complete metadata (injecting as appropriate)
+        mdhin = MetaDataHandler.DictMDHandler(getattr(list(inputs.values())[0], 'mdh', None))
+        
+        mdh = MetaDataHandler.DictMDHandler()
+        self._params_to_metadata(mdh)
+
+        for v in out.values():
+            if not hasattr(v, 'mdh'):
+                v.mdh = MetaDataHandler.DictMDHandler()
+
+            v.mdh.mergeEntriesFrom(mdhin) #merge, to allow e.g. voxel size overrides due to downsampling
+            v.mdh.copyEntriesFrom(mdh) # copy / overwrite with module processing parameters
+
+        namespace.update(out)
+
+    def run(self, **kwargs):
+        """
+        OVERRIDE THIS in derived classes to implement module functionality. Parameters are passed in by keyword, and keyword names must
+        be a 1:1 match to the module input traits.
+        
+        The function should return either a dict (multiple outputs, keyed with output trait keys), or
+        """
+        raise NotImplementedError
     
     def apply(self, *args, **kwargs):
         """
@@ -313,6 +354,10 @@ class ModuleBase(HasStrictTraits):
         set of input names
         """
         return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+
+    @property
+    def _input_traits(self):
+        return {k:v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
 
     @property
     def _output_traits(self):
@@ -734,8 +779,11 @@ class Filter(ImageModuleBase):
     def apply_filter(self, data, voxelsize):
         raise NotImplementedError('Should be over-ridden in derived class')
         
-    def execute(self, namespace):
-        namespace[self.outputName] = self.filter(namespace[self.inputName])
+    # def execute(self, namespace):
+    #     namespace[self.outputName] = self.filter(namespace[self.inputName])
+    
+    def run(self, inputName):
+        return self.filter(inputName)
         
     def completeMetadata(self, im):
         pass
@@ -811,8 +859,11 @@ class ArithmaticFilter(ModuleBase):
         
         return im
         
-    def execute(self, namespace):
-        namespace[self.outputName] = self.filter(namespace[self.inputName0], namespace[self.inputName1])
+    #def execute(self, namespace):
+    #    namespace[self.outputName] = self.filter(namespace[self.inputName0], namespace[self.inputName1])
+
+    def run(self, inputName0, inputName1):
+        return self.filter(inputName0, inputName1)
         
     def completeMetadata(self, im):
         pass  
@@ -840,8 +891,11 @@ class ExtractChannel(ModuleBase):
         
         return im
     
-    def execute(self, namespace):
-        namespace[self.outputName] = self._pickChannel(namespace[self.inputName])
+    #def execute(self, namespace):
+    #    namespace[self.outputName] = self._pickChannel(namespace[self.inputName])
+
+    def run(self, inputName):
+        return self._pickChannel(inputName)
 
 
 @register_module('JoinChannels')    
@@ -855,34 +909,53 @@ class JoinChannels(ModuleBase):
     
     #channelToExtract = Int(0)
     
-    def _joinChannels(self, namespace):
-        chans = []
+    # def _joinChannels(self, namespace):
+    #     chans = []
 
-        image = namespace[self.inputChan0]        
+    #     image = namespace[self.inputChan0]        
         
-        chans.append(np.atleast_3d(image.data[:,:,:,0]))
+    #     chans.append(np.atleast_3d(image.data[:,:,:,0]))
         
-        channel_names = [self.inputChan0,]
+    #     channel_names = [self.inputChan0,]
         
-        if not self.inputChan1 == '':
-            chans.append(namespace[self.inputChan1].data[:,:,:,0])
-            channel_names.append(self.inputChan1)
-        if not self.inputChan2 == '':
-            chans.append(namespace[self.inputChan2].data[:,:,:,0])
-            channel_names.append(self.inputChan2)
-        if not self.inputChan3 == '':
-            chans.append(namespace[self.inputChan3].data[:,:,:,0])
-            channel_names.append(self.inputChan3)
+    #     if not self.inputChan1 == '':
+    #         chans.append(namespace[self.inputChan1].data[:,:,:,0])
+    #         channel_names.append(self.inputChan1)
+    #     if not self.inputChan2 == '':
+    #         chans.append(namespace[self.inputChan2].data[:,:,:,0])
+    #         channel_names.append(self.inputChan2)
+    #     if not self.inputChan3 == '':
+    #         chans.append(namespace[self.inputChan3].data[:,:,:,0])
+    #         channel_names.append(self.inputChan3)
         
-        im = ImageStack(chans, titleStub = 'Composite Image')
-        im.mdh.copyEntriesFrom(image.mdh)
-        im.names = channel_names
-        im.mdh['Parent'] = image.filename
+    #     im = ImageStack(chans, titleStub = 'Composite Image')
+    #     im.mdh.copyEntriesFrom(image.mdh)
+    #     im.names = channel_names
+    #     im.mdh['Parent'] = image.filename
         
-        return im
+    #     return im
     
-    def execute(self, namespace):
-        namespace[self.outputName] = self._joinChannels(namespace)
+    # def execute(self, namespace):
+    #     #TODO - make convert to .run() (and find a way of handling variable inputs)
+    #     namespace[self.outputName] = self._joinChannels(namespace)
+
+    def run(self, inputChan0, inputChan1, inputChan2=None, inputChan3=None):
+        chans = [] 
+        channel_names = []      
+
+        for i, c in enumerate[inputChan0, inputChan1, inputChan2, inputChan3]:
+            if c:
+                chans.append(np.atleast_3d(c.data_xyztc[:,:,:,:,0])) #FIXME .... so as not to drag everything into memory if not needed
+                channel_names.append(getattr(self, 'inputChan%d' %i))
+
+        im = ImageStack(chans, titleStub = 'Composite Image')
+        im.mdh.copyEntriesFrom(inputChan0.mdh)
+        im.names = channel_names
+        im.mdh['Parent'] = inputChan0.filename
+
+        return im
+
+
 
 
 @register_module('Add')    
@@ -1087,12 +1160,16 @@ class Crop(ModuleBase):
     t_range = List(Int)([0, -1])
     output = Output('cropped')
 
-    def execute(self, namespace):
-        from PYME.IO.DataSources.CropDataSource import crop_image
+    # def execute(self, namespace):
+    #     from PYME.IO.DataSources.CropDataSource import crop_image
 
-        im = namespace[self.input]
-        cropped = crop_image(im, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
-        namespace[self.output] = cropped
+    #     im = namespace[self.input]
+    #     cropped = crop_image(im, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
+    #     namespace[self.output] = cropped
+
+    def run(self, input):
+        from PYME.IO.DataSources.CropDataSource import crop_image
+        return crop_image(input, xrange=slice(*self.x_range), yrange=slice(*self.y_range), zrange=slice(*self.z_range), trange=slice(*self.t_range))
 
 
 @register_module('Redimension')
@@ -1130,16 +1207,25 @@ class Redimension(ModuleBase):
     size_t = Int(1)
     size_c = Int(1)
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO.image import ImageStack
+    #     from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
+
+    #     im = namespace[self.input]
+
+    #     d = XYZTCWrapper(im.data_xyztc)
+    #     d.set_dim_order_and_size(self.dim_order, size_z=self.size_z,size_t=self.size_t, size_c=self.size_c)
+    #     im = ImageStack(data=d, titleStub='Redimensioned')
+        
+    #     im.mdh.copyEntriesFrom(getattr(im, 'mdh', {})) 
+
+    #     namespace[self.output] = d
+
+    def run(self, input):
         from PYME.IO.image import ImageStack
         from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
 
-        im = namespace[self.input]
-
-        d = XYZTCWrapper(im.data_xyztc)
+        d = XYZTCWrapper(input.data_xyztc)
         d.set_dim_order_and_size(self.dim_order, size_z=self.size_z,size_t=self.size_t, size_c=self.size_c)
-        im = ImageStack(data=d, titleStub='Redimensioned')
-        
-        im.mdh.copyEntriesFrom(getattr(im, 'mdh', {})) 
-
-        namespace[self.output] = d
+        return ImageStack(data=d, titleStub='Redimensioned')
+    
