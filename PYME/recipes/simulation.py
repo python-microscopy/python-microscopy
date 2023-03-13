@@ -8,9 +8,9 @@ import numpy as np
 class RandomPoints(ModuleBase):
     output = Output('points')
 
-    def execute(self, namespace):
+    def run(self):
         from PYME.IO import tabular
-        namespace[self.output]= tabular.RandomSource(1000, 1000, 1000)
+        return tabular.RandomSource(1000, 1000, 1000)
 
 @register_module('TheoreticalPSF')
 class TheoreticalPSF(ModuleBase):
@@ -36,7 +36,7 @@ class TheoreticalPSF(ModuleBase):
     sted_wavelength = Float(775.)
     sted_saturation = Float(10., desc='I/I_sat')
 
-    def execute(self, namespace):
+    def run(self):
         from PYME.Analysis.PSFGen import fourierHNA
         from PYME.IO import image, MetaDataHandler
         from scipy import fftn, ifftn
@@ -88,4 +88,4 @@ class TheoreticalPSF(ModuleBase):
 
         self._params_to_metadata(psf_im.mdh)
 
-        namespace[self.output] = psf_im
+        return psf_im

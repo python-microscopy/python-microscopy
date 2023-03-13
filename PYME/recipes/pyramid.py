@@ -31,9 +31,10 @@ class SupertilePhysicalCoords(ModuleBase):
     measurement_units = CStr('nm')
     output_name = Output('meas_physical_coords')
     
-    def execute(self, namespace):
-        meas = namespace[self.input_measurements]
-        img = namespace[self.input_supertile]
+    def run(self, input_measurements, input_supertile):
+        from PYME.IO import MetaDataHandler
+        meas = input_measurements
+        img = input_supertile
         
         out = tabular.MappingFilter(meas)
         
@@ -57,9 +58,9 @@ class SupertilePhysicalCoords(ModuleBase):
         out.addColumn('x_px', x_frame_px + meas['x'] * x_to_pixels)
         out.addColumn('y_px', y_frame_px + meas['y'] * y_to_pixels)
         
-        out.mdh = meas.mdh
+        out.mdh = MetaDataHandler.DictMDHandler(meas.mdh)
         
-        namespace[self.output_name] = out
+        return out
 
 
 @register_legacy_module('Supertile', 'supertile')
@@ -114,7 +115,7 @@ class _Supertile(ModuleBase):
     overlap = Int(1)
     output_name = Output('supertile')
 
-    def execute(self, namespace):
+    def run(self, input_name):
         from PYME.IO.DataSources.SupertileDatasource import SupertileDataSource
         from PYME.IO.image import ImageStack
         from PYME.Analysis import tile_pyramid
@@ -122,18 +123,16 @@ class _Supertile(ModuleBase):
         
         warnings.warn(DeprecationWarning('Supertile will be removed, create a pyramid on disk and use a SUPERTILE URI against that instead'))
         logger.warning('Supertile is deprecated and will be removed, create a pyramid on disk and use a SUPERTILE URI against that instead')
-        
-        stack = namespace[self.input_name]
             
-        x, y = tile_pyramid.get_position_from_events(stack.events, stack.mdh)
+        x, y = tile_pyramid.get_position_from_events(input_name.events, input_name.mdh)
         
-        p = tile_pyramid.tile_pyramid(TemporaryDirectory(), stack.data, x, y, 
-                                      stack.mdh, 
+        p = tile_pyramid.tile_pyramid(TemporaryDirectory(), input_name.data, x, y, 
+                                      input_name.mdh, 
                                       pyramid_tile_size=self.base_tile_size)
             
         datasource = SupertileDataSource(p, self.level, self.stride, self.overlap)
         
-        namespace[self.output_name] = ImageStack(data=datasource, 
+        return ImageStack(data=datasource, 
                                                  mdh=datasource.mdh, 
                                                  haveGUI=False)
 
