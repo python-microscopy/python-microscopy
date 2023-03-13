@@ -24,6 +24,12 @@ from PYME.recipes.traits import HasTraits, HasStrictTraits, Float, List, Bool, I
 
 from PYME.IO.image import ImageStack
 import numpy as np
+from PYME import config
+
+try:
+    import dask.array as da
+except ImportError:
+    da = None
 
 import logging
 logger = logging.getLogger(__name__)
@@ -730,6 +736,11 @@ class Filter(ImageModuleBase):
     """Module with one image input and one image output"""
     inputName = Input('input')
     outputName = Output('filtered_image')
+
+    def _block_overlap(self):
+        # override in derrived classes to specify desired overlap between blocks
+        # this should generally be a few times the kernel width for filtering ops.
+        return None
     
     def output_shapes(self, input_shapes):
         """What shape is the output (without running any computation)
@@ -768,6 +779,46 @@ class Filter(ImageModuleBase):
         self.completeMetadata(im)
         
         return im
+
+    def dfilter(self, image, chunksize=None):
+        from PYME.IO.DataSources import ArrayDataSource
+        
+        if not chunksize:
+            # chunksize not specified, infer 
+            # Use input chunck size (if chunked), otherwise a single, large chunk 
+            chunksize = getattr(image.data_xyztc, 'chunksize', tuple(image.data_xyztc.shape))
+
+        chunksize = np.array(chunksize)
+        logger.debug('chunksize: %s' % chunksize)
+
+        # flatten last dimensions
+        if (self.dimensionality == 'XY'):
+            chunksize[2:] = 1
+        elif (self.dimensionality == 'XYZ'):
+            if (chunksize[2] == 1):
+                logger.warning('XYZ dimensionality chosen, but z chunk size is 1')
+            chunksize[3:] = 1
+        elif (self.dimensionality == 'XYZT'):
+            if (chunksize[2] == 1):
+                logger.warning('XYZT dimensionality chosen, but z chunk size is 1')
+            if (chunksize[2] == 1):
+                logger.warning('XYZT dimensionality chosen, but t chunk size is 1')
+
+        c_image = da.from_array(image.data_xyztc, chunks = tuple(chunksize))
+        #NB - map_overlap reduces to map_chunks if depth is None (or 0)  - the default case
+        out = c_image.map_overlap(self.__apply_filter, depth=self._block_overlap(), voxelsize=image.voxelsize, dtype='f')      
+        
+        im = ImageStack(ArrayDataSource.XYZTCArrayDataSource(out), titleStub = self.outputName)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        
+        self.completeMetadata(im)
+        
+        return im
+
+    def __apply_filter(self, data, voxelsize):
+        d2 = np.array(data, copy=False).squeeze().astype('f')
+        return  np.array(self.apply_filter(d2,voxelsize), copy=False, ndmin=5)
     
     def _apply_filter(self, data, image, z=None, t=None, c=None):
         if hasattr(self, 'applyFilter'):
@@ -784,7 +835,10 @@ class Filter(ImageModuleBase):
     #     namespace[self.outputName] = self.filter(namespace[self.inputName])
     
     def run(self, inputName):
-        return self.filter(inputName)
+        if da and config.get('recipes-use_dask', False):
+            return self.dfilter(inputName)
+        else:
+            return self.filter(inputName)
         
     def completeMetadata(self, im):
         pass
