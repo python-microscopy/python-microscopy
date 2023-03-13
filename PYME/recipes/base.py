@@ -737,6 +737,10 @@ class Filter(ImageModuleBase):
     inputName = Input('input')
     outputName = Output('filtered_image')
 
+    # flag which can be set to false in derived classes (e.g. Projection, Zoom)
+    # which (in their current forms) will behave badly if run blocked
+    _block_safe = True 
+
     def _block_overlap(self):
         # override in derrived classes to specify desired overlap between blocks
         # this should generally be a few times the kernel width for filtering ops.
@@ -780,14 +784,7 @@ class Filter(ImageModuleBase):
         
         return im
 
-    def dfilter(self, image, chunksize=None):
-        from PYME.IO.DataSources import ArrayDataSource
-        
-        if not chunksize:
-            # chunksize not specified, infer 
-            # Use input chunck size (if chunked), otherwise a single, large chunk 
-            chunksize = getattr(image.data_xyztc, 'chunksize', tuple(image.data_xyztc.shape))
-
+    def _chunk_dims(self, chunksize):
         chunksize = np.array(chunksize)
         logger.debug('chunksize: %s' % chunksize)
 
@@ -804,7 +801,19 @@ class Filter(ImageModuleBase):
             if (chunksize[2] == 1):
                 logger.warning('XYZT dimensionality chosen, but t chunk size is 1')
 
-        c_image = da.from_array(image.data_xyztc, chunks = tuple(chunksize))
+        return tuple(chunksize)
+    
+    def dfilter(self, image, chunksize=None):
+        from PYME.IO.DataSources import ArrayDataSource
+        
+        if not chunksize:
+            # chunksize not specified, infer 
+            # Use input chunck size (if chunked), otherwise a single, large chunk 
+            chunksize = getattr(image.data_xyztc, 'chunksize', tuple(image.data_xyztc.shape))
+
+        chunksize = self._chunk_dims(chunksize)
+
+        c_image = da.from_array(image.data_xyztc, chunks = chunksize)
         #NB - map_overlap reduces to map_chunks if depth is None (or 0)  - the default case
         out = c_image.map_overlap(self.__apply_filter, depth=self._block_overlap(), voxelsize=image.voxelsize, dtype='f')      
         

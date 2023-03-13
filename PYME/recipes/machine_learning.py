@@ -14,7 +14,7 @@ from scipy import ndimage
 from PYME.IO.image import ImageStack
 
 @register_module('SVMSegment')
-class svmSegment(Filter):
+class SVMSegment(Filter):
     classifier = FileOrURI('')
     _classifier = CStr('')
     _cf = Instance(object, allow_none=True)

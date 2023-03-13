@@ -5,7 +5,7 @@ Created on Mon May 25 17:15:01 2015
 @author: david
 """
 
-from .base import ModuleBase, register_module, Filter
+from .base import ModuleBase, register_module, Filter, da
 from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, FileOrURI, CInt
 
 #try:
@@ -19,6 +19,7 @@ from scipy import ndimage
 from PYME.IO.image import ImageStack
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
+from PYME import config
 
 import logging
 logger=logging.getLogger(__name__)
@@ -81,6 +82,8 @@ class Threshold(Filter):
 class Label(Filter):
     """Asigns a unique integer label to each contiguous region in the input mask.
     Optionally throws away all regions which are smaller than a cutoff size.
+
+    NB - minRegionPixels is currently ignored when running chunked
     """
     minRegionPixels = Int(10)
     
@@ -102,6 +105,29 @@ class Label(Filter):
             labs, nlabs = ndimage.label(m2 > 0)
             
         return labs
+
+    def run(self, inputName):
+        if hasattr(inputName.data_xyztc, 'chunksize') and da and config.get('recipes-use_dask', False):
+            # vanilla label doesn't work well when running blocked as it needs to propagate labels across block edges
+            # need to use dask-image label instead (or revert back to )
+            try:
+                from dask_image import ndmeasure
+                from PYME.IO.DataSources import ArrayDataSource
+
+                chunksize = self._chunk_dims(inputName.data_xyztc)
+                c_image = da.from_array(inputName.data_xyztc, chunks = chunksize)
+                labs, _ = ndmeasure.label(c_image > 0.5)
+
+                im = ImageStack(ArrayDataSource.XYZTCArrayDataSource(labs), titleStub = self.outputName)
+                im.mdh.copyEntriesFrom(inputName.mdh)
+                im.mdh['Parent'] = inputName.filename
+
+                return im
+            except ImportError:
+                logger.warning('Blocked image detected but could not import dask_image, forcing entire image into memory')
+                return self.filter(inputName)
+        else:
+            return self.filter(inputName)
 
     def completeMetadata(self, im):
         im.mdh['Labelling.MinSize'] = self.minRegionPixels
@@ -2520,6 +2546,8 @@ class Projection(Filter):
     axis = Int(2)
     
     dimensionality = Enum('XYZ', 'XY')
+
+    _block_safe = False
         
     def apply_filter(self, data, voxelsize):
         if self.kind == 'Mean':

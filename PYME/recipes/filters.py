@@ -262,6 +262,8 @@ class Zoom(Filter):
     dimensionality = Enum('XY', 'XYZ', desc='Which image dimensions should the filter be applied to?')
     
     zoom = Float(1.0)
+
+    _block_safe = False # TODO - make a block safe version of this!
     
     def apply_filter(self, data, voxelsize):
         return ndimage.zoom(data, self.zoom)
@@ -293,6 +295,8 @@ class Subsample(Filter):
     dimensionality = Enum('XY', 'XYZ', desc='Which image dimensions should the filter be applied to?')
     
     step = Int(2)
+
+    _block_safe = False
     
     def apply_filter(self, data, voxelsize):
         if data.ndim == 2:
