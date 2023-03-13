@@ -1465,12 +1465,17 @@ class Deconvolve(Filter):
     padding = Int(0) #how much to pad the image by (to reduce edge effects)
     zPadding = Int(0) # padding along the z axis
 
+    overlap = Int(30, descr='Amount to overlap neighbouring blocks by (ignored when not using blocking)') 
+
     #  Make deconvolution 3D by default
     #processFramesIndividually = False
     dimensionality = Enum('XYZ', 'XY', desc='Which image dimensions should the filter be applied to?')
     
     _psfCache = {}
     _decCache = {}
+
+    def _block_overlap(self):
+        return int(self.overlap) 
 
     def default_traits_view(self):
         from traitsui.api import View, Item, Group
