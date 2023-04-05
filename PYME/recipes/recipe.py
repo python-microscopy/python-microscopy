@@ -198,18 +198,18 @@ class Recipe(HasTraits):
         #remove anything which is downstream from changed inputs
         
         try:
-            print('recipe.execute()')
+            #print('recipe.execute()')  # possibly change these into logging/debug messages
             #print self.namespace.keys()
             for k, v in kwargs.items():
                 #print k, v
                 try:
                     if not (self.namespace[k] == v):
                         #input has changed
-                        print('pruning: ', k)
+                        # print('pruning: ', k) # possibly change these into logging/debug messages
                         self.prune_dependencies_from_namespace([k])
                 except KeyError:
                     #key wasn't in namespace previously
-                    print('KeyError')
+                    # print('KeyError')  # possibly change these into logging/debug messages
                     pass
             
             self.namespace.update(kwargs)
