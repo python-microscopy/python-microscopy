@@ -408,12 +408,6 @@ cdef class TriangleMesh(TrianglesBase):
         self._update_singular_edge_locally_manifold()
         self._update_singular_vertex_locally_manifold()
         return (self._vertices['locally_manifold'] == 0)
-        # self._singular_edges = None
-        # self._singular_vertices = None
-        # singular_vertices = np.zeros_like(self._vertices['halfedge'])
-        # if len(self.singular_vertices) > 0:
-        #     singular_vertices[np.array(self.singular_vertices)] = 1
-        # return singular_vertices
 
     @property
     def singular_edges(self):
@@ -449,43 +443,6 @@ cdef class TriangleMesh(TrianglesBase):
         self._update_singular_edge_locally_manifold()
         self._update_singular_vertex_locally_manifold()
         return np.flatnonzero(self._vertices['locally_manifold'] == 0)
-    #     cdef int _vertex, n_incident, n_neighbors, n_vertices, n_halfedges, j, v
-    #     cdef int [:] n_incident_v
-    #     
-    #     if self._singular_vertices is None:
-    #         # Mark vertices that are endpoints of these edges
-    #         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][self.singular_edges], self._halfedges['vertex'][self._halfedges['twin'][self.singular_edges]]]))))
-    #         
-    #         # Mark isolated singular vertices
-    #         
-    #         # run through all the halfedges and compute a vertex incidence table
-    #         n_halfedges = self._halfedges.shape[0]
-    #         n_vertices = self._vertices.shape[0]
-    #         n_incident_v = np.zeros(n_vertices, 'i')
-    #         
-    #         for j in range(n_halfedges):
-    #             v = self._chalfedges[j].vertex
-    #             if v != -1:
-    #                 n_incident_v[v] += 1
-    #         
-    #         for _vertex in range(n_vertices):
-    #             if self._cvertices[_vertex].halfedge == -1:
-    #                 continue
-    # 
-    #             # If the number of elements in the 1-neighbor ring does not match 
-    #             # the number of halfedges pointing to a vertex, we have an isolated
-    #             # singular vertex (note this requires the C code version of
-    #             # update_vertex_neighbors, which reverses direction upon hitting
-    #             # an edge to ensure a more accurate neighborhood)
-    #             n_incident = n_incident_v[_vertex]
-    #             n_neighbors = np.count_nonzero(self._vertices['neighbors'][_vertex] != -1)
-    #             if n_neighbors != n_incident:
-    #                 singular_vertices.append(_vertex)
-    # 
-    #         # Remove duplicates
-    #         self._singular_vertices = list(set(singular_vertices) - set([-1]))
-    # 
-    #     return self._singular_vertices
 
     @property
     def face_normals(self):
@@ -1295,32 +1252,6 @@ cdef class TriangleMesh(TrianglesBase):
             # assign
             for i in range(dead_count):
                 self._chalfedges[dead_vertices[i]].vertex = _live_vertex
-
-            #twin_mask = (self._halfedges['twin'] != -1)
-            #dead_mask = (self._halfedges['vertex'] == _dead_vertex)
-            #dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
-            #live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
-
-        # twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
-        # if len(twin_list) != 2:
-        #     return 0
-            
-        # Collapse to the midpoint of the original edge vertices
-        # if fast_collapse_bool:
-        #    self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
-        # else:
-        #     self._halfedges['vertex'][dead_mask] = _live_vertex
-        
-        # if fast_collapse_bool:
-        #     if not self._check_collapse_fast(_live_vertex, _dead_vertex):
-        #         return
-        # else:
-        #     if not self._check_collapse_slow(_live_vertex, _dead_vertex):
-        #         return
-        
-        # _live_pos = self._vertices['position'][_live_vertex]
-        # _dead_pos = self._vertices['position'][_dead_vertex]
-        # self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
 
         px = 0.5*(self._cvertices[_live_vertex].position0 + self._cvertices[_dead_vertex].position0)
         py = 0.5*(self._cvertices[_live_vertex].position1 + self._cvertices[_dead_vertex].position1)
@@ -2379,110 +2310,6 @@ cdef class TriangleMesh(TrianglesBase):
             
         return 1
 
-    # def _snap_faces(self, np.int32_t _h0, np.int32_t _h3):
-    #     """
-    #     Snap faces defined b halfedges _h0 and _h3 to each other.
-    # 
-    #     Parameters
-    #     ----------
-    #         _h0, _h3 : int
-    #             Indices of halfedges defining opposing faces we wish to connect
-    #             via puncture.
-    #     """
-    # 
-    #     cdef np.int32_t _h1, _h2, _h4, _h5, _v0, _v1, _v2, _v3, _v4, _v5
-    # 
-    #     # Get remaining halfedges
-    #     _h1 = self._chalfedges[_h0].next
-    #     _h2 = self._chalfedges[_h0].prev
-    #     _h4 = self._chalfedges[_h3].next
-    #     _h5 = self._chalfedges[_h3].prev
-    # 
-    #     # Get vertex indices
-    #     _v0 = self._chalfedges[_h0].vertex
-    #     _v1 = self._chalfedges[_h1].vertex
-    #     _v2 = self._chalfedges[_h2].vertex
-    #     _v3 = self._chalfedges[_h3].vertex
-    #     _v4 = self._chalfedges[_h4].vertex
-    #     _v5 = self._chalfedges[_h5].vertex
-    # 
-    #     # Average new positions
-    #     print('Averaging new positions...')
-    #     print('v0: {}'.format(self._vertices['position'][_v0]))
-    #     print('v1: {}'.format(self._vertices['position'][_v1]))
-    #     print('v2: {}'.format(self._vertices['position'][_v2]))
-    #     print('v3: {}'.format(self._vertices['position'][_v3]))
-    #     print('v4: {}'.format(self._vertices['position'][_v4]))
-    #     print('v5: {}'.format(self._vertices['position'][_v5]))
-    #     self._vertices['position'][_v0] = 0.5*(self._vertices['position'][_v0]+self._vertices['position'][_v3])
-    #     self._vertices['position'][_v1] = 0.5*(self._vertices['position'][_v1]+self._vertices['position'][_v5])
-    #     self._vertices['position'][_v2] = 0.5*(self._vertices['position'][_v2]+self._vertices['position'][_v4])
-    # 
-    #     # Set the dead vertices to the live ones
-    #     if self._manifold:
-    #         v3n = self._vertices['neighbors'][_v3]
-    #         v3n = v3n[v3n!=-1]
-    #         v4n = self._vertices['neighbors'][_v4]
-    #         v4n = v4n[v4n!=-1]
-    #         v5n = self._vertices['neighbors'][_v5]
-    #         v5n = v5n[v5n!=-1]
-    #         self._halfedges['vertex'][self._halfedges['twin'][v3n]] = _v0
-    #         self._halfedges['vertex'][self._halfedges['twin'][v4n]] = _v2
-    #         self._halfedges['vertex'][self._halfedges['twin'][v5n]] = _v1
-    #     else:
-    #         self._halfedges['vertex'][self._halfedges['vertex'] == _v3] = _v0
-    #         self._halfedges['vertex'][self._halfedges['vertex'] == _v4] = _v2
-    #         self._halfedges['vertex'][self._halfedges['vertex'] == _v5] = _v1
-    # 
-    # 
-    #     # Update vertex valences
-    #     self._cvertices[_v0].valence += self._cvertices[_v3].valence-2
-    #     self._cvertices[_v1].valence += self._cvertices[_v5].valence-2
-    #     self._cvertices[_v2].valence += self._cvertices[_v4].valence-2
-    # 
-    #     # Delete the dead vertices
-    #     self._vertices[_v3] = -1
-    #     self._vertices[_v4] = -1
-    #     self._vertices[_v5] = -1
-    #     self._vertex_vacancies.extend([_v3,_v4,_v5])
-    # 
-    #     # Twins
-    #     _t0 = self._chalfedges[_h0].twin
-    #     _t1 = self._chalfedges[_h1].twin
-    #     _t2 = self._chalfedges[_h2].twin
-    # 
-    #     # Stitch boundaries of faces _h0, _h1
-    #     self._zipper(_h0, _h4)
-    #    self._zipper(_h1, _h3)
-    #     self._zipper(_h2, _h5)
-    # 
-    #     # Delete the dead faces
-    #     self._face_delete(_h0)
-    #     self._face_delete(_h3)
-    #     
-    #     # Update halfedges
-    #     self._cvertices[_v0].halfedge = _t0
-    #     self._cvertices[_v1].halfedge = _t1
-    #     self._cvertices[_v2].halfedge = _t2
-    # 
-    #     # self._update_face_normals([self._chalfedges[_t0].face,self._chalfedges[self._chalfedges[_t0].twin].face,
-    #     #                            self._chalfedges[_t1].face,self._chalfedges[self._chalfedges[_t1].twin].face,
-    #     #                            self._chalfedges[_t2].face,self._chalfedges[self._chalfedges[_t2].twin].face])
-    #     # self._update_vertex_neighbors([_v0,_v1,_v2])
-    #     
-    #     update_face_normal(self._chalfedges[_t0].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_face_normal(self._chalfedges[self._chalfedges[_t0].twin].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_face_normal(self._chalfedges[_t1].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_face_normal(self._chalfedges[self._chalfedges[_t1].twin].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_face_normal(self._chalfedges[_t2].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_face_normal(self._chalfedges[self._chalfedges[_t2].twin].face, self._chalfedges, self._cvertices, self._cfaces)
-    #     
-    #     update_single_vertex_neighbours(_v0, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_single_vertex_neighbours(_v1, self._chalfedges, self._cvertices, self._cfaces)
-    #     update_single_vertex_neighbours(_v2, self._chalfedges, self._cvertices, self._cfaces)
-    #     
-    #     self._faces_by_vertex = None
-
     cdef _zipper(self, np.int32_t edge1, np.int32_t edge2):
         cdef np.int32_t t1, t2
 
@@ -3435,81 +3262,6 @@ cdef class TriangleMesh(TrianglesBase):
                     n_poly += new_poly
                     poly += 1  # net increment poly by the number of new polygons we created un-pinching
 
-    #     """
-    #     Return a list of closed polygons, each defined by a list of halfedges,
-    #     where each polygon defines a boundary in the mesh.
-    #     """
-    #     boundary_polygons = []
-    # 
-    #     # 1. Construct an initial list of boundary edges
-    #     boundary_edges = list(np.where((self._halfedges['twin'] == -1) & (self._halfedges['vertex'] != -1))[0])
-    # 
-    #     # 2. Get the boundary polygons
-    #     while len(boundary_edges) > 0:
-    #         _root = boundary_edges[-1]  # initial halfedge defining the polygon
-    #         curr_polygon = [_root]
-    #         # Step next-twin-next to move around the boundary
-    #         _next = self._halfedges['next'][_root]
-    #         _twin = self._halfedges['twin'][_next]
-    #         _curr = self._halfedges['next'][_twin]
-    #         if self._halfedges['twin'][_next] == -1:
-    #             _curr = _next
-    #         if self._halfedges['twin'][_twin] == -1:
-    #             _curr = _twin
-    #         
-    #         # We check open_chain instead of _curr != root since open_chain accounts for closed polygons
-    #         # ending at an isolated singular vertex (two boundaries emit from a single vertex)
-    #         open_chain = (self._halfedges['vertex'][self._halfedges['prev'][_root]] != self._halfedges['vertex'][curr_polygon[-1]])
-    #         
-    #         # Loop around the boundary until we return the initial halfedge
-    #         max_polygon_size = 100  # Put an upper limit on the polygon sizes so we don't look forever
-    #         while open_chain and (max_polygon_size > 0):
-    #             # We're not always guaranteed to hit the boundary again right 
-    #             # away doing next-twin-next, so wait until we do
-    #             twin_next_attemps = 2*BOUNDARY_VALENCE
-    #             while (twin_next_attemps > 0) and (self._halfedges['twin'][_curr] != -1):
-    #                 
-    #                 # Need to do twin next in between boundary edges
-    #                 _twin = self._halfedges['twin'][_curr]
-    #                 _curr = self._halfedges['next'][_twin]
-    #                 if _curr == -1:
-    #                     # We hit a isolated singular vertex
-    #                     break
-    #                 twin_next_attemps -= 1
-    #             
-    #             if _curr == -1:
-    #                 break
-    #             
-    #             curr_polygon.append(_curr)
-    # 
-    #             _next = self._halfedges['next'][_curr]
-    #             _twin = self._halfedges['twin'][_next]
-    #             _curr = self._halfedges['next'][_twin]
-    # 
-    #             if self._halfedges['twin'][_next] == -1:
-    #                 _curr = _next
-    #             if self._halfedges['twin'][_twin] == -1:
-    #                 _curr = _twin
-    # 
-    #             open_chain = (self._halfedges['vertex'][self._halfedges['prev'][_root]] != self._halfedges['vertex'][curr_polygon[-1]])
-    #             max_polygon_size -= 1
-    # 
-    #         if max_polygon_size == 0:
-    #             print('Polygon search took too long. Canceled.')
-    # 
-    #         if ((_curr == -1) and (open_chain)) or (max_polygon_size == 0):
-    #             # We failed to find a boundary polygon
-    #             boundary_edges.pop()
-    #             continue
-    #         else:
-    #             # We found a boundary polygon!
-    #             boundary_polygons.append(curr_polygon)
-    #             # Delete the polygon from the potential polygon list
-    #             for edge in curr_polygon:
-    #                 if edge in boundary_edges:
-    #                     boundary_edges.remove(edge)
-    # 
-    #     return boundary_polygons
 
     cdef int _disconnect_pinched_polygons(self, np.ndarray boundary_polygons, int curr_poly, int n_poly, int n_edges):
         cdef np.int32_t _orig, _curr
@@ -3765,81 +3517,6 @@ cdef class TriangleMesh(TrianglesBase):
             update_single_vertex_neighbours(int(edge1.vertex), self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(int(edge0.vertex), self._chalfedges, self._cvertices, self._cfaces)
 
-    #     """
-    #     Create a triangle inside three halfedges.
-    # 
-    #     Note that this does not update the vertices or faces.
-    #     """
-    # 
-    #     _h0_twin_vertex = self._halfedges['vertex'][h2]
-    #     _h0_twin = self._insert_new_edge(_h0_twin_vertex, twin=h0)
-    #     _face = self._new_face(_h0_twin)
-    #     _h1_twin_vertex = self._halfedges['vertex'][h0]
-    #     _h1_twin = self._insert_new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
-    #     self._halfedges['face'][_h0_twin] = _face
-    #     self._halfedges['prev'][_h0_twin] = _h1_twin
-    #     _h2_twin_vertex = self._halfedges['vertex'][h1]
-    #     _h2_twin = self._insert_new_edge(_h2_twin_vertex, twin=h2, face=_face, prev=_h0_twin, next=_h1_twin)
-    #     self._halfedges['next'][_h0_twin] = _h2_twin
-    #     self._halfedges['prev'][_h1_twin] = _h2_twin
-    # 
-    #     if h0 != -1:
-    #         self._halfedges['twin'][h0] = _h0_twin
-    #     if h1 != -1:
-    #         self._halfedges['twin'][h1] = _h1_twin
-    #     if h2 != -1:
-    #         self._halfedges['twin'][h2] = _h2_twin
-
-    # def _fan_triangulation(self, polygon):
-    #     """
-    #     Triangulate a polygon, defined by halfedges in the mesh,
-    #     by creating a fan emanating from a single vertex out to
-    #     the boundary halfedges.
-    # 
-    #     Parameters
-    #     ----------
-    #         polygon : list
-    #             List of halfedges defining a closed polygon in the mesh.
-    #     """
-    # 
-    #     if len(polygon) < 3:
-    #         raise ValueError('polygon must be of length >= 3')
-    # 
-    #     # Reverse order
-    #     polygon = polygon[::-1]
-    # 
-    #     while len(polygon) > 0:
-    #         h0 = polygon.pop()
-    #         h1 = polygon.pop()
-    #         if (len(polygon) == 1):
-    #             # Base case, make a triangle
-    #             # polygon = polygon[::-1]
-    #             h2 = polygon.pop()
-    #             self._fill_triangle(h0,h1,h2)
-    #             _h0_twin = self._halfedges['twin'][h0]
-    #         else:
-    #             # Create a new triangle with a boundary edge
-    #             self._fill_triangle(h0, h1, -1)
-    #             
-    #             # Due to the way fill_triangle works, we need to set h0's vertex after the fact
-    #             _h0_twin = self._halfedges['twin'][h0]
-    #             self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
-    #             
-    #             # Adjust the boundary
-    #             polygon.append(self._halfedges['next'][_h0_twin])
-    # 
-    #         # Update faces and vertices
-    #         #self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
-    #         #self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
-    #         
-    #         update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_face_normal(self._halfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         
-    #         update_single_vertex_neighbours(self._halfedges['vertex'][_h0_twin], self._chalfedges, self._cvertices, self._cfaces)
-    #         update_single_vertex_neighbours(self._halfedges['vertex'][h0], self._chalfedges, self._cvertices, self._cfaces)
-    #         update_single_vertex_neighbours(self._halfedges['vertex'][h1], self._chalfedges, self._cvertices, self._cfaces)
-
     cdef _zig_zag_triangulation(self, np.ndarray boundary_polygons, np.int32_t *n_edges, np.int32_t *n_faces, int row, int len_poly, bint live_update=1):
         """
         Triangulate a (boundary) polygon (an array of halfedges) by zig-zagging 
@@ -3915,61 +3592,6 @@ cdef class TriangleMesh(TrianglesBase):
             update_single_vertex_neighbours(int(self._chalfedges[_edge0].vertex), self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(int(self._chalfedges[_edge1].vertex), self._chalfedges, self._cvertices, self._cfaces)
 
-    # def _zig_zag_triangulation(self, polygon):
-    #     """
-    #     Triangulate a polygon, defined by halfedges in the mesh,
-    #     by creating zig-zagging between edges of the boundary.
-    # 
-    #     Parameters
-    #     ----------
-    #         polygon : list
-    #             List of halfedges defining a closed polygon in the mesh.
-    #     """
-    # 
-    #     if len(polygon) < 3:
-    #         raise ValueError('polygon must be of length >= 3')
-    # 
-    #     # Reverse order
-    #     polygon = polygon[::-1]
-    #     odd = True
-    # 
-    #     while len(polygon) > 0:
-    #         h0 = polygon.pop()
-    #         h1 = polygon.pop()
-    #         if (len(polygon) == 1):
-    #             # Base case, make a triangle
-    #             # polygon = polygon[::-1]
-    #             h2 = polygon.pop()
-    #             self._fill_triangle(h0,h1,h2)
-    #             _h0_twin = self._halfedges['twin'][h0]
-    #         else:
-    #             # Create a new triangle with a boundary edge
-    #             self._fill_triangle(h0, h1, -1)
-    #             
-    #             # Due to the way fill_triangle works, we need to set h0's vertex after the fact
-    #             _h0_twin = self._halfedges['twin'][h0]
-    #             self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
-    #         
-    #             # Adjust the boundary
-    #             polygon = polygon[::-1]  # zig-zag
-    #             if odd:
-    #                 polygon.insert(-1,self._halfedges['next'][_h0_twin])
-    #             else:
-    #                 polygon.append(self._halfedges['next'][_h0_twin])
-    #             odd = (not odd)
-    # 
-    #         # Update faces and vertices
-    #         #self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
-    #         #self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
-    #         
-    #         update_face_normal(self._chalfedges[_h0_twin].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_face_normal(self._chalfedges[h0].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_face_normal(self._chalfedges[h1].face, self._chalfedges, self._cvertices, self._cfaces)
-    #         
-    #         update_single_vertex_neighbours(self._chalfedges[_h0_twin].vertex, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_single_vertex_neighbours(self._chalfedges[h0].vertex, self._chalfedges, self._cvertices, self._cfaces)
-    #         update_single_vertex_neighbours(self._chalfedges[h1].vertex, self._chalfedges, self._cvertices, self._cfaces)
-
     def _fill_holes(self, np.ndarray boundary_polygons, bint live_update=1):
         """
         Fill in the mesh holes: closed loops of boundary edges, one per row in boundary_polygons.
@@ -4004,131 +3626,6 @@ cdef class TriangleMesh(TrianglesBase):
                                             j, n_edges, live_update=live_update)
 
             j += 1
-
-    # def _fill_holes(self, method='zig-zag'):
-    #     """
-    #     Fill holes in the mesh.
-    # 
-    #     Parameters
-    #     ----------
-    #         method : string
-    #             The method to use to patch boundary polygons. A string listed 
-    #             in options. 
-    #     """
-    # 
-    #     options = ['fan', 'zig-zag']
-    # 
-    #     if method not in options:
-    #         print('Unknown triangulation method. Using default.')
-    #         method = 'zig-zag'
-    # 
-    #     boundary_polygons = self._find_boundary_polygons()
-    #     
-    #     # Find length 2 polygons and zipper them ("pinch")
-    #     to_remove = []
-    #     for polygon in boundary_polygons:
-    #         if len(polygon) == 2:
-    #             self._halfedges['twin'][polygon[0]] = polygon[1]
-    #             self._halfedges['twin'][polygon[1]] = polygon[0]
-    #             to_remove.append(polygon)
-    #     
-    #     # Eliminate the length 2 polygons before triangulation
-    #     for polygon in to_remove:
-    #         boundary_polygons.remove(polygon)
-    # 
-    #     # Triangulate
-    #     if method == 'fan':
-    #         for polygon in boundary_polygons:
-    #             self._fan_triangulation(polygon)
-    #     
-    #     if method == 'zig-zag':
-    #         for polygon in boundary_polygons:
-    #             self._zig_zag_triangulation(polygon)
-    # 
-    #     # Reset display
-    #     self._faces_by_vertex = None
-    #     self._H = None
-    #     self._K = None
-
-    # def _connect_neighbors(self, _nn, starting_component=0):
-    #     """
-    #     Connect the neighbors in the list _nn starting from
-    #     starting_component.
-    # 
-    #     Parameters
-    #     ----------
-    #         _nn : list
-    #             List of neighbors to connect.
-    #         starting_component : int
-    #             Component numbering to start at.
-    # 
-    #     Returns
-    #     -------
-    #         component : int
-    #             Maxmimum component number used to group neighbors.
-    #     """
-    #     # Assign components via the 1-neighbors
-    #     component = starting_component
-    #     for _neighbor in _nn:
-    #         singular = (_neighbor in self.singular_edges)
-    #         if singular:
-    #             component += 1
-    #         if self._faces['component'][self._halfedges['face'][_neighbor]] != -1:
-    #             continue
-    #         self._faces['component'][self._halfedges['face'][_neighbor]] = component
-    # 
-    #         # Extra check in case we're examining the edges out of order
-    #         if singular:
-    #             component += 1
-    # 
-    #     # Loop through the neighbors again and group connected components
-    #     for _neighbor in _nn:
-    #         if (_neighbor in self.singular_edges):
-    #             continue
-    # 
-    #         _twin_neighbor = self._halfedges['twin'][_neighbor]
-    #         if _twin_neighbor != -1:
-    #             _face = self._halfedges['face'][_neighbor]
-    #             _twin_face = self._halfedges['face'][_twin_neighbor]
-    #             min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
-    #             self._faces['component'][_face] = min_component
-    #             self._faces['component'][_twin_face] = min_component
-    # 
-    #     return component
-
-    # def _group_neighbors(self, _vertex):
-    #     """
-    #     Group faces around the 1-neighbor ring of a vertex by reachability. 
-    #     Faces are not reachable if they are separated by a singular edge.
-    # 
-    #     Parameters
-    #     ----------
-    #         _vertex : int
-    #             Index of vertex at the center of a 1-neighbor ring.
-    #     """
-    # 
-    #     # Zero out connectivity
-    #     self._vertices['component'][:] = -1
-    #     self._faces['component'][:] = -1
-    #     self._halfedges['component'][:] = -1
-    # 
-    #     # Grab the neighbors
-    #     _nn = self._vertices[_vertex]['neighbors']
-    #     _nn = _nn[_nn!=-1]
-    # 
-    #     # Connect the neighbors
-    #     component = self._connect_neighbors(_nn, 0)
-    # 
-    #     # Don't trust self._vertices['neighbors'] because we're dealing with 
-    #     # singular vertices
-    #     _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
-    # 
-    #     # If there were any incident vertices not included in this list, group them, too
-    #     _remaining = list(set(_twin_nn) - set(self._halfedges['twin'][_nn]) - set([-1]))
-    #     
-    #     if _remaining:
-    #         component += 1  # We're off the original 1-neighbor ring, so disconnect
-    #         self._connect_neighbors(_remaining, component)
 
     def _remove_singularities(self):
         """
@@ -4220,71 +3717,6 @@ cdef class TriangleMesh(TrianglesBase):
         # reset
         self._clear_flags()
 
-        # Make sure we're working with the latest singular edges/vertices
-        # self._singular_edges = None
-        # self._singular_vertices = None
-        # 
-        #  For each marked vertex, partition the faces of the 1-neighbor ring
-        #    into nc "is reachable" equivalence classes. Faces are reachable if
-        #    they share a non-singular edge incident on the marked vertex.
-        # for _vertex in self.singular_vertices[::-1]:
-        # 
-        #     _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
-        #     _update_vertices = np.hstack([_vertex, self._halfedges['vertex'][self._halfedges['twin'][_twin_nn]]])
-        #     # _update_faces = self._faces[self._halfedges['face'][_twin_nn]]
-        # 
-        #     self._group_neighbors(_vertex)
-        #     
-        #     # Create nc-1 copies of the vertex and assign each equivalence class 
-        #     #    one of these vertices. (All but one component gets a new vertex).
-        #     components = np.unique(self._faces['component'][self._faces['component'] != -1])
-        #     for c in components[1:]:
-        #         _faces = self._faces[self._faces['component'] == c]
-        #         _edges = np.hstack([self._halfedges['prev'][_faces['halfedge']], _faces['halfedge'], self._halfedges['next'][_faces['halfedge']]])
-        #         _vertices = self._halfedges['vertex'][_edges]
-        #         
-        #         _modified_edges = _edges[_vertices == _vertex] 
-        # 
-        #         _edge = self._halfedges['next'][_modified_edges[0]]
-        # 
-        #         _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
-        #         # Assign edges in this component connected to _vertex to _new_vertex
-        #         self._halfedges['vertex'][_modified_edges] = _new_vertex
-        # 
-        #         # Disconnect the boundaries of the components
-        #         # Any edge pointing to the new vertex with a twin in a 
-        #         # different component must be reassigned
-        #         _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_modified_edges]]]
-        #         _boundary = (_twin_face_component != c)
-        #         _twin_edges = self._halfedges['twin'][_modified_edges[_boundary]]
-        #         _twin_edges_mask = (_twin_edges != -1)
-        #         _valid_edges = _modified_edges[_boundary][_twin_edges_mask]
-        #         self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
-        #         self._halfedges['twin'][_valid_edges] = -1
-        #         # Any edge emanating from the new vertex with a twin in a
-        #         # different component must be reassigned
-        #         _twin_next_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][self._halfedges['next'][_modified_edges]]]]
-        #         _boundary = (_twin_next_face_component != c)                
-        #         _twin_next_edges = self._halfedges['twin'][self._halfedges['next'][_modified_edges[_boundary]]]
-        #         _twin_next_edges_mask = (_twin_next_edges != -1)
-        #         _valid_edges = self._halfedges['next'][_modified_edges[_boundary][_twin_next_edges_mask]]
-        #         self._halfedges['twin'][_twin_next_edges[_twin_next_edges_mask]] = -1
-        #         self._halfedges['twin'][_valid_edges] = -1
-        # 
-        #         # Double check that the original vertex did not have a halfedge 
-        #         # in this component
-        #         _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
-        #         _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
-        #         _safe_halfedge = self._halfedges['next'][_safe_vertices[0]]
-        #         self._vertices['halfedge'][_vertex] = _safe_halfedge
-        # 
-        #         # self._update_face_normals(_update_faces)
-        #         self._update_vertex_neighbors(np.hstack([_update_vertices, _new_vertex]))
-
-        # Reset
-        # self._singular_edges = None
-        # self._singular_vertices = None
-
     def repair(self, bint only_largest_component=0, bint pinch=0):
         """
         Repair the mesh so it's topologically manifold.
@@ -4314,21 +3746,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         # 3. Patch mesh holes with new triangles
         self._find_boundary_polygons(boundary_polygons, boundary_edges)  # fill the boundary polygon array
-        #print(np.sum(boundary_polygons != -1), boundary_edges.shape[0])
-        #i = 0
-        #while (i < max_poly_length//2) and (boundary_polygons[i,0] !=-1):
-        #    j = 0
-        #    print(f"Polygon {i}")
-        #    while (j< max_poly_length) and (boundary_polygons[i,j] !=-1):
-        #        print(self._chalfedges[self._chalfedges[boundary_polygons[i,j]].prev].vertex, self._chalfedges[boundary_polygons[i,j]].vertex)
-        #        j += 1
-            # print(self._chalfedges[self._chalfedges[boundary_polygons[i,0]].prev].vertex, 
-            #       self._chalfedges[boundary_polygons[i,0]].vertex, 
-            #       self._chalfedges[self._chalfedges[boundary_polygons[i,j-1]].prev].vertex, 
-            #       self._chalfedges[boundary_polygons[i,j-1]].vertex)
-            # print([self._chalfedges[boundary_polygons[i,k]].vertex for k in range(j)])
-        #    print([boundary_polygons[i,k] for k in range(j)])
-        #    i += 1
+
         if pinch == 1:
             self._pinch_boundaries(boundary_polygons)                        # close the boundary polygons by pinching 
         else:
@@ -4336,11 +3754,6 @@ cdef class TriangleMesh(TrianglesBase):
         # self._color_boundaries(boundary_polygons)
 
         # Reset
-        #self._manifold = None
-        # self._faces['normal'][:] = -1
-        # self._vertices['normal'][:] = -1
-        #self._face_normals_valid = 0
-        #self._vertex_normals_valid = 0
         self._clear_flags()
         self.face_normals
         self.vertex_normals
