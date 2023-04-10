@@ -512,6 +512,10 @@ cdef class TriangleMesh(TrianglesBase):
         return chi
 
     @property
+    def genus(self):
+        return (2-self.euler_characteristic)/2
+
+    @property
     def bbox(self):
         """
         Mesh bounding box. xl, yl, zl, xu, yu, zu
