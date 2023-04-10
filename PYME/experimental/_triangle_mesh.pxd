@@ -96,8 +96,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef public object vertex_properties
     cdef public object vertex_vector_properties # Vector valued properties (to visualise as a quiver)
     cdef public object extra_vertex_data
-    cdef object fix_boundary
-    cdef object _manifold
+    cdef bint fix_boundary
+    cdef bint _manifold
 
     cdef bint _vertex_normals_valid
     cdef bint _face_normals_valid
@@ -106,7 +106,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef object _H
     cdef object _K
-    cdef public object smooth_curvature
+    cdef public bint smooth_curvature
 
     cdef public object mdh # placeholder to allow metadata injection
 

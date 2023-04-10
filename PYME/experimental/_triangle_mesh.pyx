@@ -254,15 +254,15 @@ cdef class TriangleMesh(TrianglesBase):
         
         self.extra_vertex_data = {}
 
-        self.fix_boundary = True  # Hold boundary edges in place
+        self.fix_boundary = 1  # Hold boundary edges in place
 
         # Is the mesh manifold?
-        self._manifold = None
+        self._manifold = 0
 
         # Curvatures
         self._H = None
         self._K = None
-        self.smooth_curvature = False
+        self.smooth_curvature = 0
 
         self._components_valid = 0
 
@@ -497,14 +497,19 @@ cdef class TriangleMesh(TrianglesBase):
         triangles?
         """
 
-        if self._manifold is None:
-            # self._singular_edges = None
-            # self._singular_vertices = None
+        if not self._manifold:
             vertex_mask = (self._halfedges['vertex'] != -1)
             twin_mask = (self._halfedges['twin'] == -1)
             self._manifold = (np.sum(self.singular) == 0) and (np.sum(vertex_mask & twin_mask) == 0)
 
         return self._manifold
+
+    @property
+    def euler_characteristic(self):
+        # TODO: Cache on a parameter
+        chi = self._calculate_euler_characteristic()
+        
+        return chi
 
     @property
     def bbox(self):
@@ -656,6 +661,37 @@ cdef class TriangleMesh(TrianglesBase):
             if self._chalfedges[i].vertex == -1:
                 continue
             valence[self._chalfedges[i].vertex] += 1
+
+    def _calculate_euler_characteristic(self, component=None):
+        if component is not None:
+            if not self._components_valid:
+                self.find_connected_components()
+                self._components_valid = 1
+            
+            faces = self._faces['halfedge'][self._halfedges['component'][self._faces['halfedge']] == component]
+        else:
+            faces = self._faces['halfedge'][self._faces['halfedge'] != -1]
+
+        v0 = self._halfedges['vertex'][self._halfedges['prev'][faces]]
+        v1 = self._halfedges['vertex'][faces]
+        v2 = self._halfedges['vertex'][self._halfedges['next'][faces]]
+        faces_by_vertex = np.hstack([v0, v1, v2])
+
+        F = len(faces)
+        V = len(set(faces_by_vertex.ravel()))
+
+        # grab all edges
+        edges = np.vstack([faces_by_vertex, np.hstack([v1,v2,v0])]).T
+
+        # Sort lo->hi
+        sorted_edges = np.sort(edges, axis=1)
+
+        # find the number of unique elements
+        E = len(np.unique(sorted_edges,axis=0))
+        
+        chi = V - E + F
+        
+        return chi
     
     #@cython.boundscheck(False)  # Deactivate bounds checking
     #@cython.wraparound(False)
@@ -789,7 +825,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     def _clear_flags(self):
         self._faces_by_vertex = None
-        self._manifold = None
+        self._manifold = 0
         # self._singular_edges = None
         # self._singular_vertices = None
         self._singular_edges_valid = 0
@@ -2743,7 +2779,7 @@ cdef class TriangleMesh(TrianglesBase):
             print(f"# singular: {n_singular}")
 
         # Let's double-check the mesh manifoldness
-        self._manifold = None
+        self._manifold = 0
         self.manifold
 
     def upsample(self, n=1):
@@ -2813,7 +2849,7 @@ cdef class TriangleMesh(TrianglesBase):
             # Restore boundary vertex positions
             self._vertices['position'][boundary_vertex_idxs] = boundary_vertex_positions
 
-        self._manifold = None
+        self._manifold = 0
 
     def downsample(self, n_triangles=None):
         """
@@ -2961,7 +2997,7 @@ cdef class TriangleMesh(TrianglesBase):
             for n in neighbors:
                 cost_heap.insert(np.float32(err[n]), np.int32(n))
 
-        self._manifold = None
+        self._manifold = 0
 
     def find_connected_components(self):
         """
