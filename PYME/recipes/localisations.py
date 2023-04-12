@@ -506,23 +506,28 @@ class MergeClumps(ModuleBase):
     inputName = Input('clumped')
     outputName = Output('merged')
     labelKey = CStr('clumpIndex')
+    discardTrivial = Bool(False)
 
     # def execute(self, namespace):
     #     from PYME.Analysis.points.DeClump import pyDeClump
 
     #     inp = namespace[self.inputName]
-
     #     grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
     #     try:
     #         grouped.mdh = inp.mdh
     #     except AttributeError:
     #         pass
+    #    grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
+    #    try:
+    #        grouped.mdh = inp.mdh
+    #    except AttributeError:
+    #        pass
 
     #     namespace[self.outputName] = grouped
 
     def run(self, inputName):
         from PYME.Analysis.points.DeClump import pyDeClump
-        return pyDeClump.mergeClumps(inputName, labelKey=self.labelKey)
+        return pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
 
 
 @register_module('IDTransientFrames')
