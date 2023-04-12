@@ -44,10 +44,10 @@ def get_splitter_rois(md, data_shape):
     
     if ('Splitter.Flip' in md.getEntryNames() and not md.getEntry('Splitter.Flip')):
         step = 1
-        return (slice(xg, xg + w, 1), slice(xr, xr + w, 1), slice(yg, yg + h, 1), slice(yr, yr + h, step))
+        return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg), int(yg + h), 1), slice(int(yr), int(yr + h), step))
     else:
         step = -1
-        return (slice(xg, xg + w, 1), slice(xr, xr + w, 1), slice(yg + hg-h, yg + hg, 1), slice(yr + h, yr - 1, step))
+        return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg + hg-h), int(yg + hg), 1), slice(int(yr + h), int(yr - 1), step))
 
 def map_splitter_coords(md, data_shape, x, y):
     vx, vy, _ = md.voxelsize_nm
