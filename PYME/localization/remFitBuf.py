@@ -390,7 +390,7 @@ class fitTask(taskDef.Task):
         
         self.roi_offset = [xgs.start, ygs.start]
         
-        #print xgs, xrs, ygs, yrs, g.shape, r.shape
+        #print(xgs, xrs, ygs, yrs, g.shape, r.shape)
         
         return numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
