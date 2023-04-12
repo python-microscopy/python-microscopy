@@ -177,10 +177,15 @@ class XYZTCArrayDataSource(BaseDataSource): #permit indexing with more dimension
         # zarr/dask support
         if hasattr(data, 'chuncks'):
             self.chunks =  np.ones(5, 'i')
+            self.chunksize = np.ones(5, 'i')
             for j, ax in enumerate('XYZTC'):
                 ix = self._dim_to_idx[ax]
                 if ix < self.data.ndim:
                     self.chunks[j] = self.data.chunks[ix]
+                    self.chunksize[j] = self.data.chunksize[ix]
+
+        self.chunks = tuple(self.chunks)
+        self.chunksize = tuple(self.chunksize)    
 
         self._transpose = self._dim_to_idx['Y'] < self._dim_to_idx['X']
         
@@ -196,7 +201,7 @@ class XYZTCArrayDataSource(BaseDataSource): #permit indexing with more dimension
     
     @property
     def shape(self):
-        return self._shape
+        return tuple(self._shape)
     
     @property
     def dtype(self):

@@ -15,15 +15,18 @@ class ExtractTableChannel(ModuleBase):
     channel = CStr('everything')
     outputName = Output('filtered')
 
-    def execute(self, namespace):
-        inp = namespace[self.inputName]
+    # def execute(self, namespace):
+    #     inp = namespace[self.inputName]
 
-        map = tabular.ColourFilter(inp, currentColour=self.channel)
+    #     map = tabular.ColourFilter(inp, currentColour=self.channel)
 
-        if 'mdh' in dir(inp):
-            map.mdh = inp.mdh
+    #     if 'mdh' in dir(inp):
+    #         map.mdh = inp.mdh
 
-        namespace[self.outputName] = map
+    #     namespace[self.outputName] = map
+
+    def run(self, inputName):
+        return tabular.ColourFilter(inputName, currentColour=self.channel)
 
     @property
     def _colour_choices(self):
@@ -68,9 +71,46 @@ class DensityMapping(ModuleBase):
     manualXYBounds = List(Float, [0,0,5e3, 5e3])
     
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO.image import ImageBounds
+    #     inp = namespace[self.inputLocalizations]
+    #     if not isinstance(inp, tabular.ColourFilter):
+    #         cf = tabular.ColourFilter(inp, None)
+            
+    #         print('Created colour filter with chans: %s' % cf.getColourChans())
+    #         cf.mdh = inp.mdh
+    #     else:
+    #         cf = inp
+            
+    #     #default to taking min and max localizations as image bounds
+    #     imb = ImageBounds.estimateFromSource(inp)
+        
+    #     if self.zBoundsMode == 'min-max':
+    #         self.zBounds[0], self.zBounds[1] = float(imb.z0), float(imb.z1)
+        
+    #     if (self.xyBoundsMode == 'inherit') and not (getattr(inp, 'imageBounds', None) is None):
+    #         imb = inp.imageBounds
+    #     elif self.xyBoundsMode == 'metadata':
+    #         imb = ImageBounds.extractFromMetadata(inp.mdh)
+    #     elif self.xyBoundsMode == 'manual':
+    #         imb.x0, imb.y0, imb.x1, imb.y1 = self.manualXYBounds
+            
+    #     cf.imageBounds = imb
+        
+
+    #     renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
+
+    #     logger.debug('about to generate')
+
+    #     out = renderer.Generate(self.trait_get())
+
+    #     logger.debug(f'generated:{out.data_xyztc.shape}')
+
+    #     namespace[self.outputImage] = out
+
+    def run(self, inputLocalizations):
         from PYME.IO.image import ImageBounds
-        inp = namespace[self.inputLocalizations]
+        inp = inputLocalizations
         if not isinstance(inp, tabular.ColourFilter):
             cf = tabular.ColourFilter(inp, None)
             
@@ -103,7 +143,7 @@ class DensityMapping(ModuleBase):
 
         logger.debug(f'generated:{out.data_xyztc.shape}')
 
-        namespace[self.outputImage] = out
+        return out
         
     def _view_items(self, params=None):
         from traitsui.api import Group, Item, CSVListEditor
@@ -169,10 +209,59 @@ class Pipelineify(ModuleBase):
 
     outputLocalizations = Output('Localizations')
     
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.LMVis import pipeline
+    #     fitResults = namespace[self.inputFitResults]
+    #     mdh = fitResults.mdh
+
+    #     mapped_ds = tabular.MappingFilter(fitResults)
+
+
+    #     if not self.pixelSizeNM == 1: # TODO - check close instead?
+    #         mapped_ds.addVariable('pixelSize', self.pixelSizeNM)
+    #         mapped_ds.setMapping('x', 'x*pixelSize')
+    #         mapped_ds.setMapping('y', 'y*pixelSize')
+
+    #     #extract information from any events
+    #     if self.inputEvents != '':
+    #         # Use specified table for events if given (otherwise look for a `.events` attribute on the input data
+    #         # TODO: resolve how best to handle events (i.e. should they be a separate table, or should they be attached to data tables)
+    #         events = namespace.get(self.inputEvents, None)
+    #     else:
+    #         try:
+    #             events = fitResults.events
+    #         except AttributeError:
+    #             logger.debug('no events found')
+    #             events = None
+        
+    #     if isinstance(events, tabular.TabularBase):
+    #         events = events.to_recarray()
+
+    #     ev_maps, ev_charts = pipeline._processEvents(mapped_ds, events, mdh)
+    #     pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
+
+    #     #Fit module specific filter settings
+    #     if 'Analysis.FitModule' in mdh.getEntryNames():
+    #         fitModule = mdh['Analysis.FitModule']
+
+    #         if 'LatGaussFitFR' in fitModule:
+    #             # TODO - move getPhotonNums() out of pipeline
+    #             mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+            
+    #         if 'SplitterFitFNR' in fitModule:
+    #             mapped_ds.addColumn('nPhotonsg', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, mdh))
+    #             mapped_ds.addColumn('nPhotonsr', pipeline.getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, mdh))
+    #             mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
+
+    #     mapped_ds.mdh = mdh
+
+    #     namespace[self.outputLocalizations] = mapped_ds
+
+    def run(self, inputFitResults, inputEvents=None):
         from PYME.LMVis import pipeline
-        fitResults = namespace[self.inputFitResults]
-        mdh = fitResults.mdh
+        from PYME.IO import MetaDataHandler
+        fitResults = inputFitResults
+        mdh = MetaDataHandler.DictMDHandler(fitResults.mdh)
 
         mapped_ds = tabular.MappingFilter(fitResults)
 
@@ -183,10 +272,8 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        if self.inputEvents != '':
-            # Use specified table for events if given (otherwise look for a `.events` attribute on the input data
-            # TODO: resolve how best to handle events (i.e. should they be a separate table, or should they be attached to data tables)
-            events = namespace.get(self.inputEvents, None)
+        if inputEvents:
+            events = inputEvents
         else:
             try:
                 events = fitResults.events
@@ -215,7 +302,7 @@ class Pipelineify(ModuleBase):
 
         mapped_ds.mdh = mdh
 
-        namespace[self.outputLocalizations] = mapped_ds
+        return mapped_ds
         
 @register_module("ProcessColour")
 class ProcessColour(ModuleBase):
@@ -255,8 +342,49 @@ class ProcessColour(ModuleBase):
                 self.species_ratios[strucname] = ratio
                 self.species_dyes[strucname] = dye
     
-    def execute(self, namespace):
-        input = namespace[self.input]
+    # def execute(self, namespace):
+    #     input = namespace[self.input]
+    #     mdh = input.mdh
+        
+    #     if self.ratios_from_metadata:
+    #         # turn off invalidation so we don't get a recursive loop. TODO - fix this properly as it's gross to be changing
+    #         # our parameters here
+    #         invalidate = self._invalidate_parent
+    #         self._invalidate_parent = False
+    #         self._get_dye_ratios_from_metadata(mdh)
+    #         self._invalidate_parent = invalidate
+        
+    #     output = tabular.MappingFilter(input)
+    #     output.mdh = mdh
+    
+    #     if 'gFrac' in output.keys():
+    #         #ratiometric
+    #         #raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
+    #         for structure, ratio in self.species_ratios.items():
+    #             if not ratio is None:
+    #                 output.setMapping('p_%s' % structure,
+    #                                         'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+    #     else:
+    #         if 'probe' in output.keys():
+    #             #non-ratiometric (i.e. sequential) colour
+    #             #color channel is given in 'probe' column
+    #             output.setMapping('ColourNorm', '1.0 + 0*probe')
+                
+    #             for i in range(int(output['probe'].min()), int(output['probe'].max() + 1)):
+    #                 output.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+            
+    #         nSeqCols = mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+    #         if nSeqCols > 1:
+    #             for i in range(nSeqCols):
+    #                 output.setMapping('ColourNorm', '1.0 + 0*t')
+    #                 cr = mdh['Protocol.ColorRange%d' % i]
+    #                 output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                    
+    #     cached_output = tabular.CachingResultsFilter(output)
+    #     #cached_output.mdh = output.mdh
+    #     namespace[self.output] = cached_output
+
+    def run(self, input):
         mdh = input.mdh
         
         if self.ratios_from_metadata:
@@ -295,7 +423,7 @@ class ProcessColour(ModuleBase):
                     
         cached_output = tabular.CachingResultsFilter(output)
         #cached_output.mdh = output.mdh
-        namespace[self.output] = cached_output
+        return cached_output
 
 
 @register_module('TimeBlocks')
@@ -314,19 +442,46 @@ class TimeBlocks(ModuleBase):
     
     block_size = Int(100)
     
-    def execute(self, namespace):
-        input = namespace[self.input]
-        mdh = input.mdh
+    # def execute(self, namespace):
+    #     input = namespace[self.input]
+    #     mdh = input.mdh
     
+    #     output = tabular.MappingFilter(input)
+    #     output.mdh = mdh
+        
+    #     output.addColumn('block_id', np.mod((output['t']/self.block_size).astype('int'),2))
+
+    #     channel_names = [k for k in input.keys() if k.startswith('p_')]
+        
+    #     print(channel_names)
+    #     print(input.keys())
+        
+    #     if len(channel_names) == 0:
+    #         #single channel data - no channels defined.
+    #         output.setMapping('ColourNorm', '1.0 + 0*t')
+    #         output.setMapping('p_block0', '1.0*block_id')
+    #         output.setMapping('p_block1', '1.0 - block_id')
+    #     else:
+    #         #have colour channels - subdivide them
+    #         for k in channel_names:
+    #             output.setMapping('%s_block0' % k, '%s*block_id' % k)
+    #             output.setMapping('%s_block1' % k, '%s*(1.0 - block_id)' % k)
+            
+    #         #hide original channel names
+    #         output.hidden_columns.extend(channel_names)
+        
+
+    #     namespace[self.output] = output
+
+    def run(self, input):
         output = tabular.MappingFilter(input)
-        output.mdh = mdh
         
         output.addColumn('block_id', np.mod((output['t']/self.block_size).astype('int'),2))
 
         channel_names = [k for k in input.keys() if k.startswith('p_')]
         
-        print(channel_names)
-        print(input.keys())
+        #print(channel_names)
+        #print(input.keys())
         
         if len(channel_names) == 0:
             #single channel data - no channels defined.
@@ -341,9 +496,8 @@ class TimeBlocks(ModuleBase):
             
             #hide original channel names
             output.hidden_columns.extend(channel_names)
-        
 
-        namespace[self.output] = output
+        return output
     
 
 @register_module('MergeClumps')
@@ -354,18 +508,26 @@ class MergeClumps(ModuleBase):
     labelKey = CStr('clumpIndex')
     discardTrivial = Bool(False)
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.Analysis.points.DeClump import pyDeClump
+
+    #     inp = namespace[self.inputName]
+    #     grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
+    #     try:
+    #         grouped.mdh = inp.mdh
+    #     except AttributeError:
+    #         pass
+    #    grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
+    #    try:
+    #        grouped.mdh = inp.mdh
+    #    except AttributeError:
+    #        pass
+
+    #     namespace[self.outputName] = grouped
+
+    def run(self, inputName):
         from PYME.Analysis.points.DeClump import pyDeClump
-
-        inp = namespace[self.inputName]
-
-        grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
-        try:
-            grouped.mdh = inp.mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = grouped
+        return pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
 
 
 @register_module('IDTransientFrames')
@@ -379,27 +541,45 @@ class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module
     framesPerStep = Float()
     outputName = Output('transientFiltered')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.experimental import zMotionArtifactUtils
+
+    #     inp = namespace[self.inputName]
+
+    #     mapped = tabular.MappingFilter(inp)
+
+    #     if 'mdh' not in dir(inp):
+    #         if self.framesPerStep <= 0:
+    #             raise RuntimeError('idTransientFrames needs metadata')
+    #         else:
+    #             fps = self.framesPerStep
+    #     else:
+    #         fps = inp.mdh['StackSettings.FramesPerStep']
+
+    #     mask = zMotionArtifactUtils.flagMotionArtifacts(mapped, namespace[self.inputEvents], fps)
+    #     mapped.addColumn('piezoUnstable', mask)
+
+    #     mapped.mdh = inp.mdh
+
+    #     namespace[self.outputName] = mapped
+
+    def run(self, inputName, inputEvents):
         from PYME.experimental import zMotionArtifactUtils
 
-        inp = namespace[self.inputName]
+        mapped = tabular.MappingFilter(inputName)
 
-        mapped = tabular.MappingFilter(inp)
-
-        if 'mdh' not in dir(inp):
+        if 'mdh' not in dir(inputName):
             if self.framesPerStep <= 0:
                 raise RuntimeError('idTransientFrames needs metadata')
             else:
                 fps = self.framesPerStep
         else:
-            fps = inp.mdh['StackSettings.FramesPerStep']
+            fps = inputName.mdh['StackSettings.FramesPerStep']
 
-        mask = zMotionArtifactUtils.flagMotionArtifacts(mapped, namespace[self.inputEvents], fps)
+        mask = zMotionArtifactUtils.flagMotionArtifacts(mapped, inputEvents, fps)
         mapped.addColumn('piezoUnstable', mask)
 
-        mapped.mdh = inp.mdh
-
-        namespace[self.outputName] = mapped
+        return mapped
 
 @register_module('DBSCANClustering')
 class DBSCANClustering(ModuleBase):
@@ -437,10 +617,36 @@ class DBSCANClustering(ModuleBase):
 
     outputName = Output('dbscanClustered')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from sklearn.cluster import dbscan
+
+    #     inp = namespace[self.inputName]
+    #     mapped = tabular.MappingFilter(inp)
+
+    #     # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
+    #     if self.multithreaded:
+    #         core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+    #                                      eps=self.searchRadius, min_samples=self.minClumpSize, n_jobs=self.numberOfJobs)
+    #     else:
+    #         #NB try-catch from Christians multithreaded example removed as I think we should see failure here
+    #         core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+    #                                  eps=self.searchRadius, min_samples=self.minClumpSize)
+
+    #     # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
+    #     mapped.addColumn(str(self.clumpColumnName), dbLabels + 1)
+
+    #     # propogate metadata, if present
+    #     try:
+    #         mapped.mdh = inp.mdh
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.outputName] = mapped
+
+    def run(self, inputName):
         from sklearn.cluster import dbscan
 
-        inp = namespace[self.inputName]
+        inp = inputName
         mapped = tabular.MappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
@@ -455,13 +661,7 @@ class DBSCANClustering(ModuleBase):
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
         mapped.addColumn(str(self.clumpColumnName), dbLabels + 1)
 
-        # propogate metadata, if present
-        try:
-            mapped.mdh = inp.mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = mapped
+        return mapped
 
     @property
     def hide_in_overview(self):
@@ -513,16 +713,65 @@ class ClusterCountVsImagingTime(ModuleBase):
 
     outputName = Output('incremented')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO import tabular
+
+    #     if self.lowerMinPtsPerCluster > self.higherMinPtsPerCluster:
+    #         print('Swapping low and high MinPtsPerCluster - input was reversed')
+    #         temp = self.lowerMinPtsPerCluster
+    #         self.lowerMinPtsPerCluster = self.higherMinPtsPerCluster
+    #         self.higherMinPtsPerCluster = temp
+
+    #     iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 2
+
+    #     # other counts
+    #     lowDensMinPtsClumps = np.empty(iters)
+    #     lowDensMinPtsClumps[0] = 0
+    #     hiDensMinPtsClumps = np.empty(iters)
+    #     hiDensMinPtsClumps[0] = 0
+    #     t = np.empty(iters)
+    #     t[0] = 0
+
+    #     inp = tabular.MappingFilter(namespace[self.inputName])
+
+    #     for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
+    #         # filter time
+    #         inc = tabular.ResultsFilter(inp, t=[0, self.stepSize * ind])
+    #         t[ind] = np.max(inc['t'])
+
+    #         cid, counts = np.unique(inc[self.labelsKey], return_counts=True)
+    #         # cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
+
+    #         cidL = cid[counts >= self.lowerMinPtsPerCluster]
+    #         lowDensMinPtsClumps[ind] = np.sum(cidL != -1)  # ignore unclumped in count
+    #         cid = cid[counts >= self.higherMinPtsPerCluster]
+    #         hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
+
+
+    #     res = tabular.MappingFilter({'t': t,
+    #                                  'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
+    #                                  'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
+
+    #     # propagate metadata, if present
+    #     try:
+    #         res.mdh = namespace[self.inputName].mdh
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.outputName] = res
+
+    def run(self, inputName):
         from PYME.IO import tabular
 
+        inp = tabular.MappingFilter(inputName)
+        
         if self.lowerMinPtsPerCluster > self.higherMinPtsPerCluster:
             print('Swapping low and high MinPtsPerCluster - input was reversed')
             temp = self.lowerMinPtsPerCluster
             self.lowerMinPtsPerCluster = self.higherMinPtsPerCluster
             self.higherMinPtsPerCluster = temp
 
-        iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 2
+        iters = (int(np.max(inp['t']))/int(self.stepSize)) + 2
 
         # other counts
         lowDensMinPtsClumps = np.empty(iters)
@@ -532,7 +781,6 @@ class ClusterCountVsImagingTime(ModuleBase):
         t = np.empty(iters)
         t[0] = 0
 
-        inp = tabular.MappingFilter(namespace[self.inputName])
 
         for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
             # filter time
@@ -548,17 +796,9 @@ class ClusterCountVsImagingTime(ModuleBase):
             hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
 
 
-        res = tabular.MappingFilter({'t': t,
+        return tabular.MappingFilter({'t': t,
                                      'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
                                      'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
-
-        # propagate metadata, if present
-        try:
-            res.mdh = namespace[self.inputName].mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = res
 
 
 @register_module('LabelsFromImage')
@@ -597,26 +837,38 @@ class LabelsFromImage(ModuleBase):
 
     outputName = Output('labeled_points')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO import tabular
+    #     from PYME.Analysis.points import cluster_morphology
+
+    #     inp = namespace[self.inputName]
+    #     img = namespace[self.inputImage]
+
+    #     ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp, minimum_localizations=self.minimum_localizations)
+
+    #     labeled = tabular.MappingFilter(inp)
+    #     labeled.addColumn(self.label_key_name, ids)
+    #     labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
+
+    #     # propagate metadata, if present
+    #     try:
+    #         labeled.mdh = namespace[self.inputName].mdh
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.outputName] = labeled
+
+    def run(self, inputName, inputImage):
         from PYME.IO import tabular
         from PYME.Analysis.points import cluster_morphology
 
-        inp = namespace[self.inputName]
-        img = namespace[self.inputImage]
+        ids, numPerObject = cluster_morphology.get_labels_from_image(inputImage, inputName, minimum_localizations=self.minimum_localizations)
 
-        ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp, minimum_localizations=self.minimum_localizations)
-
-        labeled = tabular.MappingFilter(inp)
+        labeled = tabular.MappingFilter(inputName)
         labeled.addColumn(self.label_key_name, ids)
         labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
-        # propagate metadata, if present
-        try:
-            labeled.mdh = namespace[self.inputName].mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = labeled
+        return labeled
 
 
 @register_module('MeasureClusters3D')
@@ -684,11 +936,62 @@ class MeasureClusters3D(ModuleBase):
 
     outputName = Output('clusterMeasures')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.Analysis.points import cluster_morphology as cmorph
+    #     import numpy as np
+
+    #     inp = namespace[self.inputName]
+
+    #     labels = inp[self.labelKey].astype(np.int)
+    #     # make sure labeling scheme is consistent with what pyme conventions
+    #     if (len(labels) > 0) and  (labels.min() < 0):
+    #         raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
+        
+    #     I = np.argsort(labels)
+    #     I = I[labels[I] > 0]
+        
+    #     x_vals, y_vals, z_vals = inp['x'][I], inp['y'][I], inp['z'][I]
+    #     labels = labels[I]
+    #     maxLabel = labels[-1] if (len(labels) > 0) else 0
+        
+    #     #find the unique labels, and their separation in the sorted list of points
+    #     unique_labels, counts = np.unique(labels, return_counts=True)
+        
+    #     #allocate memory to store results in
+    #     measurements = np.zeros(maxLabel, cmorph.measurement_dtype)
+
+    #     # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
+    #     # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
+    #     # Missing values can be filtered out later, if desired, by filtering on the 'counts' column, but having a dense
+    #     # array where index == label number makes any postprocessing in which we might want to find the data
+    #     # corresponding to a particular label MUCH easier and faster.
+    #     indi = 0
+    #     for label_num, ct in zip(unique_labels, counts):
+    #         indf = indi + ct
+
+    #         # create x,y,z arrays for this cluster, and calculate center of mass
+    #         x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
+
+    #         cluster_index = label_num - 1  # we ignore the unclustered points, and start labeling at 1
+    #         cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
+
+    #         indi = indf
+
+    #     meas = tabular.RecArraySource(measurements)
+
+    #     try:
+    #         meas.mdh = namespace[self.inputName].mdh
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.outputName] = meas
+
+
+    def run(self, inputName):
         from PYME.Analysis.points import cluster_morphology as cmorph
         import numpy as np
 
-        inp = namespace[self.inputName]
+        inp = inputName
 
         labels = inp[self.labelKey].astype(np.int)
         # make sure labeling scheme is consistent with what pyme conventions
@@ -725,14 +1028,7 @@ class MeasureClusters3D(ModuleBase):
 
             indi = indf
 
-        meas = tabular.RecArraySource(measurements)
-
-        try:
-            meas.mdh = namespace[self.inputName].mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = meas
+        return tabular.RecArraySource(measurements)
 
 
 @register_module('FiducialCorrection')
@@ -766,22 +1062,56 @@ class FiducialCorrection(ModuleBase):
     outputName = Output('corrected_localizations')
     outputFiducials = Output('corrected_fiducials')
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO import tabular
+    #     from PYME.Analysis.points import fiducials
+
+    #     locs = namespace[self.inputLocalizations]
+    #     fids = namespace[self.inputFiducials]
+        
+    #     t_fid, fid_trajectory, clump_index = fiducials.extractAverageTrajectory(fids, clumpRadiusVar=self.clumpRadiusVar,
+    #                                                     clumpRadiusMultiplier=float(self.clumpRadiusMultiplier),
+    #                                                     timeWindow=int(self.timeWindow),
+    #                                                     filter=self.temporalFilter, filterScale=float(self.temporalFilterScale))
+        
+    #     out = tabular.MappingFilter(locs)
+    #     t_out = out['t']
+
+    #     out_f = tabular.MappingFilter(fids)
+    #     out_f.addColumn('clumpIndex', clump_index)
+    #     t_out_f = out_f['t']
+
+    #     for dim in fid_trajectory.keys():
+    #         print(dim)
+    #         out.addColumn('fiducial_{0}'.format(dim), np.interp(t_out, t_fid, fid_trajectory[dim]))
+    #         out.setMapping(dim, '{0} - fiducial_{0}'.format(dim))
+
+    #         out_f.addColumn('fiducial_{0}'.format(dim), np.interp(t_out_f, t_fid, fid_trajectory[dim]))
+    #         out_f.setMapping(dim, '{0} - fiducial_{0}'.format(dim))
+
+    #     # propagate metadata, if present
+    #     try:
+    #         out.mdh = locs.mdh
+    #     except AttributeError:
+    #         pass
+
+    #     namespace[self.outputName] = out
+    #     namespace[self.outputFiducials] = out_f
+
+    def run(self, inputLocalizations, inputFiducials):
         from PYME.IO import tabular
         from PYME.Analysis.points import fiducials
-
-        locs = namespace[self.inputLocalizations]
-        fids = namespace[self.inputFiducials]
+        from PYME.IO import MetaDataHandler
         
-        t_fid, fid_trajectory, clump_index = fiducials.extractAverageTrajectory(fids, clumpRadiusVar=self.clumpRadiusVar,
+        t_fid, fid_trajectory, clump_index = fiducials.extractAverageTrajectory(inputFiducials, clumpRadiusVar=self.clumpRadiusVar,
                                                         clumpRadiusMultiplier=float(self.clumpRadiusMultiplier),
                                                         timeWindow=int(self.timeWindow),
                                                         filter=self.temporalFilter, filterScale=float(self.temporalFilterScale))
         
-        out = tabular.MappingFilter(locs)
+        out = tabular.MappingFilter(inputLocalizations)
         t_out = out['t']
 
-        out_f = tabular.MappingFilter(fids)
+        out_f = tabular.MappingFilter(inputFiducials)
         out_f.addColumn('clumpIndex', clump_index)
         t_out_f = out_f['t']
 
@@ -795,12 +1125,11 @@ class FiducialCorrection(ModuleBase):
 
         # propagate metadata, if present
         try:
-            out.mdh = locs.mdh
+            out.mdh = MetaDataHandler.DictMDHandler(inputLocalizations.mdh)
         except AttributeError:
             pass
 
-        namespace[self.outputName] = out
-        namespace[self.outputFiducials] = out_f
+        return {'outputName': out, 'outputFiducials' : out_f}
 
 
 @register_module('AutocorrelationDriftCorrection')
@@ -859,9 +1188,36 @@ class AutocorrelationDriftCorrection(ModuleBase):
     
         return np.array(tis), self.binsize * (sha - sha[0])
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO import tabular
+    #     locs = namespace[self.inputName]
+        
+    #     t_shift, shifts = self.calcCorrDrift(locs['x'], locs['y'], locs['t'])
+    #     shx = shifts[:, 0]
+    #     shy = shifts[:, 1]
+
+    #     out = tabular.MappingFilter(locs)
+    #     t_out = out['t']
+    #     dx = np.interp(t_out, t_shift, shx)
+    #     dy = np.interp(t_out, t_shift, shy)
+        
+        
+    #     out.addColumn('dx', dx)
+    #     out.addColumn('dy', dy)
+    #     out.setMapping('x', 'x + dx')
+    #     out.setMapping('y', 'y + dy')
+        
+    #     # propagate metadata, if present
+    #     try:
+    #         out.mdh = locs.mdh
+    #     except AttributeError:
+    #         pass
+        
+    #     namespace[self.outputName] = out
+
+    def run(self, inputName):
         from PYME.IO import tabular
-        locs = namespace[self.inputName]
+        locs = inputName
         
         t_shift, shifts = self.calcCorrDrift(locs['x'], locs['y'], locs['t'])
         shx = shifts[:, 0]
@@ -878,10 +1234,4 @@ class AutocorrelationDriftCorrection(ModuleBase):
         out.setMapping('x', 'x + dx')
         out.setMapping('y', 'y + dy')
         
-        # propagate metadata, if present
-        try:
-            out.mdh = locs.mdh
-        except AttributeError:
-            pass
-        
-        namespace[self.outputName] = out
+        return out
