@@ -255,7 +255,7 @@ class ModuleBase(HasStrictTraits):
         """
         from PYME.IO import MetaDataHandler
         inputs = {k: namespace[v] for k, v in self._input_traits.items()}
-        
+
         ret = self.run(**inputs)
 
         # convert output to a dictionary if needed
@@ -360,15 +360,17 @@ class ModuleBase(HasStrictTraits):
         -------
         set of input names
         """
-        return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+        #return {v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+        return set(self._input_traits.values())
 
     @property
-    def _input_traits(self):
-        return {k:v for k, v in self.trait_get().items() if (k.startswith('input') or isinstance(k, Input)) and not v == ''}
+    def _input_traits(self): 
+        return {k:getattr(self,k) for k, v in self.traits().items() if (k.startswith('input') or isinstance(v.trait_type, Input)) and not getattr(self, k) == ''}
 
     @property
     def _output_traits(self):
-        return {k:v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
+        #return {k:v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
+        return {k:getattr(self,k) for k, v in self.traits().items() if (k.startswith('output') or isinstance(v.trait_type, Output)) and not getattr(self, k) == ''}
     
     @property
     def outputs(self):
