@@ -702,11 +702,6 @@ cdef class TriangleMesh(TrianglesBase):
         chi = V - E + F
         
         return chi
-    
-    #@cython.boundscheck(False)  # Deactivate bounds checking
-    #@cython.wraparound(False)
-    #cdef _set_chalfedges(self, halfedge_t[:] halfedges):
-    #    self._chalfedges = &halfedges[0]
         
     cdef _set_chalfedges(self, np.ndarray halfedges):
         self._chalfedges = <halfedge_t *> np.PyArray_DATA(halfedges)
