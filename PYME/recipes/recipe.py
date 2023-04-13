@@ -198,7 +198,7 @@ class Recipe(HasTraits):
         #remove anything which is downstream from changed inputs
         
         try:
-            #print('recipe.execute()')  # possibly change these into logging/debug messages
+            logger.debug('recipe.execute()')  
             #print self.namespace.keys()
             for k, v in kwargs.items():
                 #print k, v
