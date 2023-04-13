@@ -111,7 +111,8 @@ class TestSpooler:
             startTime = time.time()
     
             self._spoolData(nFrames, interval)
-    
+
+            self.spooler.StopSpool()
             #wait until we've sent everything
             #this is a bit of a hack
             time.sleep(.1)
@@ -126,7 +127,6 @@ class TestSpooler:
             print('%3.0f frames per second' % (nFrames/duration))
             print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
     
-            self.spooler.StopSpool()
         finally:
             self.spooler.cleanup()
 
