@@ -837,11 +837,6 @@ cdef class TriangleMesh(TrianglesBase):
         #self._E = None
         #self._pE = None
 
-    def _clear_flags(self):
-        """ This has changed to _invalidate_cached_properties to be a bit more descripitve"""
-        warnings.warn('_clear_flags is deprecated, use _invalidate_cached_properties() instead')
-        self._invalidate_precomputed()
-
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
     def _update_face_normals(self, f_idxs):
