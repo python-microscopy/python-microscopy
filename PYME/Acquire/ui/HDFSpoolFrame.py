@@ -226,7 +226,7 @@ class PanSpool(afp.foldingPane):
     
         self.bStartSpool = wx.Button(pan, -1, 'Start', style=wx.BU_EXACTFIT)
         self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
-        self.bStartSpool.SetDefault()
+        #self.bStartSpool.SetDefault()
         hsizer.Add(self.bStartSpool, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
     
         # self.bStartStack = wx.Button(pan,-1,'Z-Series',style=wx.BU_EXACTFIT)
