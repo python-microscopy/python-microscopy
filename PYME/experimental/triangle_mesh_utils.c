@@ -322,6 +322,17 @@ static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+void _update_all_vertex_neighbors(int n_vertices, halfedge_t *halfedges, vertex_t *vertices, face_t *faces)
+{
+    int j;
+
+    for (j = 0; j < n_vertices; ++j)
+    {
+        if (vertices[j].halfedge == -1) continue;
+        update_single_vertex_neighbours(j, halfedges, vertices, faces);
+    }
+}
+
 
 static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
@@ -475,6 +486,15 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static void _update_all_face_normals(int n_faces, halfedge_t *halfedges, vertex_t *vertices, face_t *faces)
+{
+    for (int j = 0; j < n_faces; ++j)
+    {
+        if (faces[j].halfedge == -1) continue;
+        update_face_normal(j, halfedges, vertices, faces);
+    }
 }
 
 static int flood_fill_star_component(int32_t h_idx, int component, halfedge_t *halfedges)

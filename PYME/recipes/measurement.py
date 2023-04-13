@@ -26,29 +26,27 @@ class MultifitBlobs(ModuleBase):
     threshold = Float(2.0)
     scale = Float(1000)
     
-    def execute(self, namespace):
+    def run(self, inputImage):
         from PYME.localization.FitFactories import GaussMultifitSR
         import pandas as pd
         
-        img = namespace[self.inputImage]
-        
-        mdh = MetaDataHandler.NestedClassMDHandler(img.mdh)
-        mdh['Analysis.PSFSigma'] = self.blobSigma
+       # mdh = MetaDataHandler.NestedClassMDHandler(inputImage.mdh)
+        #mdh['Analysis.PSFSigma'] = self.blobSigma
         
         res = []
         
-        for i in range(img.data.shape[2]):
+        for i in range(inputImage.data.shape[2]):
             md = MetaDataHandler.NestedClassMDHandler(mdh)
             md['tIndex'] = i
-            ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], md, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
+            ff = GaussMultifitSR.FitFactory(self.scale*inputImage.data[:,:,i], md, noiseSigma=np.ones_like(inputImage.data[:,:,i].squeeze()))
         
             res.append(tabular.FitResultsSource(ff.FindAndFit(self.threshold)))
             
         #FIXME - this shouldn't be a DataFrame
         res = pd.DataFrame(np.vstack(res))
-        res.mdh = mdh
+        #res.mdh = mdh
         
-        namespace[self.outputName] = res
+        return res
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
@@ -56,14 +54,13 @@ class FitDumbells(ModuleBase):
     inputPositions = Input('objPostiions')
     outputName = Output('fitResults')
     
-    def execute(self, namespace):
+    def run(self, inputImage, inputPositions):
         from PYME.localization.FitFactories import DumbellFitR
         from PYME.IO import MetaDataHandler
-        img = namespace[self.inputImage]
         
         md = MetaDataHandler.NestedClassMDHandler()
         #set metadata entries needed for fitting to suitable defaults
-        md['Camera.ADOffset'] = img.data[:,:,0].min()
+        md['Camera.ADOffset'] = inputImage.data[:,:,0].min()
         md['Camera.TrueEMGain'] = 1.0
         md['Camera.ElectronsPerCount'] = 1.0
         md['Camera.ReadNoise'] = 1.0
@@ -71,21 +68,18 @@ class FitDumbells(ModuleBase):
         
         #copy across the entries from the real image, replacing the defaults
         #if necessary
-        md.copyEntriesFrom(img.mdh)
-        
-        
-        inp = namespace[self.inputPositions]
+        md.copyEntriesFrom(inputImage.mdh)
     
-        r = np.zeros(len(inp['x']), dtype=DumbellFitR.FitResultsDType)
+        r = np.zeros(len(inputPositions['x']), dtype=DumbellFitR.FitResultsDType)
         
         ff_t = -1
         
-        ps = img.pixelSize
+        ps = inputImage.pixelSize
         
-        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+        for x, y, t, i in zip(inputPositions['x'], inputPositions['y'], inputPositions['t'], range(len(inputPositions['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = DumbellFitR.FitFactory(img.data[:,:,t], md)
+                ff = DumbellFitR.FitFactory(inputImage.data[:,:,t], md)
                 ff_t = t
             
             r[i] = ff.FromPoint(x/ps, y/ps)
@@ -94,7 +88,7 @@ class FitDumbells(ModuleBase):
         res = tabular.FitResultsSource(r)
         res.mdh = md
         
-        namespace[self.outputName] = res
+        return res
 
 @register_module('DetectPoints2D')
 class DetectPoints2D(ModuleBase):
@@ -160,23 +154,21 @@ class DetectPoints2D(ModuleBase):
 
     output_name = Output('candidate_points')
 
-    def execute(self, namespace):
+    def run(self, input_name):
         from PYME.localization.ofind import ObjectIdentifier
         from PYME.localization.remFitBuf import fitTask
 
         if self.snr_threshold and self.muiltithreshold:
             raise RuntimeError('Cannot specify both snr_threshold and multithreshold simultaeneously')
 
-        im_stack = namespace[self.input_name]
-
         x, y, t = [], [], []
         # note that ObjectIdentifier is only 2D-aware
-        for ti in range(im_stack.data.shape[2]):
-            frame = im_stack.data.getSlice(ti)
+        for ti in range(input_name.data.shape[2]):
+            frame = input_name.data.getSlice(ti)
             finder = ObjectIdentifier(frame * (frame > 0), filterRadiusLowpass=self.filter_radius_lowpass, filterRadiusHighpass=self.filter_radius_highpass)
 
             if self.snr_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
-                sigma = fitTask.calcSigma(im_stack.mdh, frame).squeeze()
+                sigma = fitTask.calcSigma(input_name.mdh, frame).squeeze()
                 threshold = sigma * self.threshold
             else:
                 threshold = self.threshold
@@ -192,16 +184,10 @@ class DetectPoints2D(ModuleBase):
             y.append(finder.y[:])
             t.append(ti * np.ones_like(finder.x[:]))
 
-        # FIXME - make a dict source so we don't abuse the mapping filter for everything
-        out = tabular.MappingFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
+        return tabular.DictSource({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
                                      't': np.concatenate(t, axis=0)})
 
-        out.mdh = MetaDataHandler.NestedClassMDHandler()
-        out.mdh.copyEntriesFrom(im_stack.mdh)
 
-        self._params_to_metadata(out.mdh)
-
-        namespace[self.output_name] = out
 
 @register_module('FitPoints')
 class FitPoints(ModuleBase):
@@ -215,14 +201,13 @@ class FitPoints(ModuleBase):
     roiHalfSize = Int(7)
     channel = Int(0)
 
-    def execute(self, namespace):
+    def run(self, inputImage, inputPositions):
         #from PYME.localization.FitFactories import DumbellFitR
         from PYME.IO import MetaDataHandler
-        img = namespace[self.inputImage]
 
         md = MetaDataHandler.NestedClassMDHandler()
         #set metadata entries needed for fitting to suitable defaults
-        md['Camera.ADOffset'] = img.data[:, :, 0].min()
+        md['Camera.ADOffset'] = inputImage.data[:, :, 0].min()
         md['Camera.TrueEMGain'] = 1.0
         md['Camera.ElectronsPerCount'] = 1.0
         md['Camera.ReadNoise'] = 1.0
@@ -233,24 +218,22 @@ class FitPoints(ModuleBase):
 
         #copy across the entries from the real image, replacing the defaults
         #if necessary
-        md.copyEntriesFrom(img.mdh)
-
-        inp = namespace[self.inputPositions]
+        md.copyEntriesFrom(inputImage.mdh)
 
         fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
                             fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
 
-        r = np.zeros(len(inp['x']), dtype=fitMod.FitResultsDType)
+        r = np.zeros(len(inputPositions['x']), dtype=fitMod.FitResultsDType)
 
         ff_t = -1
 
-        ps = img.pixelSize
+        ps = inputImage.pixelSize
         print('pixel size: %s' % ps)
 
-        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'].astype(int), range(len(inp['x']))):
+        for x, y, t, i in zip(inputPositions['x'], inputPositions['y'], inputPositions['t'].astype(int), range(len(inputPositions['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(np.atleast_3d(img.data[:, :, t, self.channel]), md)
+                ff = fitMod.FitFactory(np.atleast_3d(inputImage.data[:, :, t, self.channel]), md)
                 ff_t = t
 
             #print x/ps, y/ps
@@ -259,7 +242,7 @@ class FitPoints(ModuleBase):
         res = tabular.FitResultsSource(r, sort=False)
         res.mdh = md
 
-        namespace[self.outputName] = res
+        return res
 
 @register_module('IntensityAtPoints')
 class IntensityAtPoints(ModuleBase):
@@ -303,14 +286,13 @@ class IntensityAtPoints(ModuleBase):
 
         return (roi.squeeze() * mask).sum()
 
-    def execute(self, namespace):
+    def run(self, inputImage, inputPositions):
         #from PYME.localization.FitFactories import DumbellFitR
         from PYME.IO import MetaDataHandler
-        img = namespace[self.inputImage]
 
         md = MetaDataHandler.NestedClassMDHandler()
         #set metadata entries needed for fitting to suitable defaults
-        md['Camera.ADOffset'] = img.data[:, :, 0].min()
+        md['Camera.ADOffset'] = inputImage.data[:, :, 0].min()
         md['Camera.TrueEMGain'] = 1.0
         md['Camera.ElectronsPerCount'] = 1.0
         md['Camera.ReadNoise'] = 1.0
@@ -318,26 +300,23 @@ class IntensityAtPoints(ModuleBase):
 
         #copy across the entries from the real image, replacing the defaults
         #if necessary
-        md.copyEntriesFrom(img.mdh)
+        md.copyEntriesFrom(inputImage.mdh)
 
-        inp = namespace[self.inputPositions]
-
-        res = np.zeros(len(inp['x']), dtype=[('r%d' % r, 'f4') for r in self.radii])
-
+        res = np.zeros(len(inputPositions['x']), dtype=[('r%d' % r, 'f4') for r in self.radii])
         ff_t = -1
 
         aggFunc = getattr(self, '_get_%s' % self.mode)
 
-        ps = img.pixelSize
+        ps = inputImage.pixelSize
         print('pixel size: %s' % ps)
-        for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
+        for x, y, t, i in zip(inputPositions['x'], inputPositions['y'], inputPositions['t'], range(len(inputPositions['x']))):
             for r in self.radii:
-                res[i]['r%d' % r] = aggFunc(img.data, np.round(x / ps), np.round(y / ps), t, r)
+                res[i]['r%d' % r] = aggFunc(inputImage.data, np.round(x / ps), np.round(y / ps), t, r)
 
         res = tabular.RecArraySource(res)
         res.mdh = md
 
-        namespace[self.outputName] = res
+        return res
 
 
 class ExtractROIs(ModuleBase):
@@ -379,45 +358,43 @@ class ExtractROIs(ModuleBase):
     output_relative_positions = Output('relative_positions')
     output_rois = Output('roi_stack')
 
-    def execute(self, namespace):
+    def run(self, input_series, input_positions):
         from PYME.IO.image import ImageStack
 
-        series = namespace[self.input_series]
-        positions = namespace[self.input_positions]
-
-        ox_nm, oy_nm, oz = series.origin
-        vs_nm = np.array([series.voxelsize_nm.x, series.voxelsize_nm.y])
+        ox_nm, oy_nm, oz = input_series.origin
+        vs_nm = np.array([input_series.voxelsize_nm.x, input_series.voxelsize_nm.y])
         roi_half_nm = (self.roi_half_size + 1) * vs_nm
-        x_max, y_max = (series.data.shape[:2] * vs_nm) - roi_half_nm
+        x_max, y_max = (input_series.data.shape[:2] * vs_nm) - roi_half_nm
         
-        edge_filtered = tabular.ResultsFilter(positions, 
+        edge_filtered = tabular.ResultsFilter(input_positions, 
                                               x=[ox_nm + roi_half_nm[0], x_max],
                                               y=[oy_nm + roi_half_nm[1], y_max])
-        n_filtered = len(positions) - len(edge_filtered)
+        n_filtered = len(input_positions) - len(edge_filtered)
         if n_filtered > 0:
             logger.error('%d positions too close to edge, filtering.' % n_filtered)
 
         extracted = FitPoints(fitModule='ROIExtractNR', 
                               roiHalfSize=self.roi_half_size, 
-                              channel=0).apply_simple(inputImage=series,
+                              channel=0).apply_simple(inputImage=input_series,
                                                       inputPositions=edge_filtered)
         
         # get roi edge position. FFBase._get_roi rounds before extracting
         relative_positions = edge_filtered.to_recarray()
-        x_edge = np.round(edge_filtered['x'] / series.voxelsize_nm.x) - self.roi_half_size
-        y_edge = np.round(edge_filtered['y'] / series.voxelsize_nm.y) - self.roi_half_size
+        x_edge = np.round(edge_filtered['x'] / input_series.voxelsize_nm.x) - self.roi_half_size
+        y_edge = np.round(edge_filtered['y'] / input_series.voxelsize_nm.y) - self.roi_half_size
         # subtract off ofset to ROI edge 
-        relative_positions['x'] = edge_filtered['x'] - (x_edge * series.voxelsize_nm.x)
-        relative_positions['y'] = edge_filtered['y'] - (y_edge * series.voxelsize_nm.y)
+        relative_positions['x'] = edge_filtered['x'] - (x_edge * input_series.voxelsize_nm.x)
+        relative_positions['y'] = edge_filtered['y'] - (y_edge * input_series.voxelsize_nm.y)
         relative_positions['fitResults_x0'] = relative_positions['x']
         relative_positions['fitResults_y0'] = relative_positions['y']
         relative_positions = tabular.RecArraySource(relative_positions)
-        relative_positions.mdh = MetaDataHandler.NestedClassMDHandler(positions.mdh)
+        relative_positions.mdh = MetaDataHandler.NestedClassMDHandler(input_positions.mdh)
         relative_positions.mdh['ExtractROIs.RoiHalfSize'] = self.roi_half_size
 
-        namespace[self.output_rois] = ImageStack(data=np.moveaxis(extracted['data'], 0, 2), 
-                                                 mdh=series.mdh)
-        namespace[self.output_relative_positions] = relative_positions
+
+        return {'output_rois' : ImageStack(data=np.moveaxis(extracted['data'], 0, 2), 
+                                                 mdh=input_series.mdh),
+                'output_relative_positions' : relative_positions}
 
 
 @register_module('MeanNeighbourDistances') 
@@ -428,22 +405,17 @@ class MeanNeighbourDistances(ModuleBase):
     outputName = Output('neighbourDists')
     key = CStr('neighbourDists')
     
-    def execute(self, namespace):
+    def run(self, inputPositions):
         from matplotlib import delaunay
         from PYME.LMVis import visHelpers
-        pos = namespace[self.inputPositions]
         
-        x, y = pos['x'], pos['y']
+        x, y = inputPositions['x'], inputPositions['y']
         #triangulate the data
         T = delaunay.Triangulation(x + .1*np.random.normal(size=len(x)), y + .1*np.random.normal(size=len(x)))
         #find the average edge lengths leading away from a given point
         res = np.array(visHelpers.calcNeighbourDists(T))
         
-        res = tabular.DictSource({self.key:res})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
-        
-        namespace[self.outputName] = res
+        return tabular.DictSource({self.key:res})
 
 @register_module('NearestNeighbourDistances')
 class NearestNeighbourDistances(ModuleBase):
@@ -455,20 +427,18 @@ class NearestNeighbourDistances(ModuleBase):
     columns = List(['x', 'y'])
     key = CStr('neighbourDists')
 
-    def execute(self, namespace):
+    def run(self, inputChan0, inputChan1 = 0):
         from scipy.spatial import cKDTree
-        pos = namespace[self.inputChan0]
         
-        if self.inputChan1 == '':
-            pos1 = pos
+        if not inputChan1:
+            inputChan1 = inputChan0
             singleChan = True  # flag to not pair molecules with themselves
         else:
-            pos1 = namespace[self.inputChan1]
             singleChan = False
 
         #create a kdtree
-        p1 = np.vstack([pos[k] for k in self.columns]).T
-        p2 = np.vstack([pos1[k] for k in self.columns]).T
+        p1 = np.vstack([inputChan0[k] for k in self.columns]).T
+        p2 = np.vstack([inputChan1[k] for k in self.columns]).T
         kdt = cKDTree(p1)
 
         if singleChan:
@@ -478,11 +448,7 @@ class NearestNeighbourDistances(ModuleBase):
         else:
             d, i = kdt.query(p2, 1)
 
-        res = tabular.DictSource({self.key: d})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
-
-        namespace[self.outputName] = res
+        return tabular.DictSource({self.key: d})
 
 @register_module('PairwiseDistanceHistogram')
 class PairwiseDistanceHistogram(ModuleBase):
@@ -494,38 +460,27 @@ class PairwiseDistanceHistogram(ModuleBase):
     binSize = Float(50.)
     threaded = Bool(False)
     
-    def execute(self, namespace):
+    def run(self, inputPositions, inputPositions2):
         from PYME.Analysis.points import DistHist
         
-        pos0 = namespace[self.inputPositions]
-        pos1 = namespace[self.inputPositions2 if self.inputPositions2 != '' else self.inputPositions]
-        if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
+        pos1 = inputPositions2 if inputPositions2 else inputPositions
+
+        if np.count_nonzero(inputPositions['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
             if self.threaded:
-                res = DistHist.distanceHistogramThreaded(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+                res = DistHist.distanceHistogramThreaded(inputPositions['x'], inputPositions['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
             else:
-                res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+                res = DistHist.distanceHistogram(inputPositions['x'], inputPositions['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
         else:
             if self.threaded:
-                res = DistHist.distanceHistogram3DThreaded(pos0['x'], pos0['y'], pos0['z'],
+                res = DistHist.distanceHistogram3DThreaded(inputPositions['x'], inputPositions['y'], inputPositions['z'],
                                                            pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
             else:
-                res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                res = DistHist.distanceHistogram3D(inputPositions['x'], inputPositions['y'], inputPositions['z'],
                                                    pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
 
         d = self.binSize*np.arange(self.nbins)
 
-        res = tabular.DictSource({'bins': d, 'counts': res})
-
-        # propagate metadata, if present
-        try:
-            res.mdh = pos0.mdh
-        except AttributeError:
-            try:
-                res.mdh = pos1.mdh
-            except AttributeError:
-                pass
-        
-        namespace[self.outputName] = res
+        return tabular.DictSource({'bins': d, 'counts': res})
 
 @register_module('Histogram')         
 class Histogram(ModuleBase):
@@ -538,20 +493,14 @@ class Histogram(ModuleBase):
     right = Float(1000)
     normalize = Bool(False)
     
-    def execute(self, namespace):        
-        v = namespace[self.inputMeasurements][self.key]
+    def run(self, inputMeasurements):        
+        v = inputMeasurements[self.key]
         
         edges = np.linspace(self.left, self.right, self.nbins)
-        
         res = np.histogram(v, edges, normed=self.normalize)[0]
         
-        res = tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
-        if 'mdh' in dir(v):
-            res.mdh = v.mdh
-        
-        namespace[self.outputName] = res
-        
-
+        return tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
+    
         
 @register_module('ImageHistogram')         
 class ImageHistogram(ModuleBase):
@@ -564,24 +513,17 @@ class ImageHistogram(ModuleBase):
     right = Float(1000)
     normalize = Bool(False)
     
-    def execute(self, namespace):
-        v = namespace[self.inputImage]
-        vals = v.data[:,:,:].ravel()
+    def run(self, inputImage, inputMask=None):
+        vals = inputImage.data[:,:,:].ravel()
         
-        if not self.inputMask == '':
-            m = namespace[self.inputMask].data[:,:,:].ravel() >0
-        
+        if inputMask:
+            m = inputMask.data[:,:,:].ravel() >0
             vals = vals[m]
         
         edges = np.linspace(self.left, self.right, self.nbins)
-        
         res = np.histogram(vals, edges, normed=self.normalize)[0]
         
-        res = tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
-        if 'mdh' in dir(v):
-            res.mdh = v.mdh
-        
-        namespace[self.outputName] = res
+        return tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         
 @register_module('ImageCumulativeHistogram')         
 class ImageCumulativeHistogram(ModuleBase):
@@ -593,25 +535,17 @@ class ImageCumulativeHistogram(ModuleBase):
     #left = Float(0.)
     #right = Float(1000)
     
-    def execute(self, namespace):
-        v = namespace[self.inputImage]
-        vals = v.data[:,:,:].ravel()
+    def run(self, inputImage, inputMask=None):
+        vals = inputImage.data[:,:,:].ravel()
         
-        if not self.inputMask == '':
-            m = namespace[self.inputMask].data[:,:,:].ravel() > 0 
-        
+        if inputMask:
+            m = inputMask.data[:,:,:].ravel() > 0 
             vals = vals[m]
         
         yvals = np.linspace(0, 1.0, len(vals))
         xvals = np.sort(vals)
         
-        #res = np.histogram(v, edges)[0]
-        
-        res = tabular.DictSource({'bins' : xvals, 'counts' : yvals})
-        if 'mdh' in dir(v):
-            res.mdh = v.mdh
-        
-        namespace[self.outputName] = res
+        return tabular.DictSource({'bins' : xvals, 'counts' : yvals})
 
 @register_module('BinnedHistogram')
 class BinnedHistogram(ModuleBase):
@@ -625,17 +559,13 @@ class BinnedHistogram(ModuleBase):
     left = Float(0.)
     right = Float(1000)
 
-    def execute(self, namespace):
+    def run(self, inputImage, binBy, inputMask=None):
         from PYME.Analysis import binAvg
+        vals = inputImage.data[:, :, :].ravel()
+        binby = binBy.data[:,:,:].ravel()
 
-        v = namespace[self.inputImage]
-        vals = v.data[:, :, :].ravel()
-
-        binby = namespace[self.binBy]
-        binby = binby.data[:,:,:].ravel()
-
-        if not self.inputMask == '':
-            m = namespace[self.inputMask].data[:, :, :].ravel() > 0
+        if inputMask:
+            m = inputMask.data[:, :, :].ravel() > 0
 
             vals = vals[m]
             binby = binby[m]
@@ -649,11 +579,8 @@ class BinnedHistogram(ModuleBase):
 
         bn, bm, bs = binAvg.binAvg(binby, vals, edges)
 
-        res = tabular.DictSource({'bins': 0.5*(edges[:-1] + edges[1:]), 'counts': bn, 'means' : bm})
-        if 'mdh' in dir(v):
-            res.mdh = v.mdh
-
-        namespace[self.outputName] = res
+        return tabular.DictSource({'bins': 0.5*(edges[:-1] + edges[1:]), 'counts': bn, 'means' : bm})
+        
 
         
 # there are some measurements we don't want / are not particlarly useful (i.e. the ones which just return the image)
@@ -686,13 +613,12 @@ class Measure2D(ModuleBase):
     
     measureContour = Bool(True)    
         
-    def execute(self, namespace):       
-        labels = namespace[self.inputLabels]
+    def run(self, inputLabels, inputIntensity):       
         
         #define the measurement class, which behaves like an input filter        
         class measurements(tabular.TabularBase):
             _name = 'Measue 2D source'
-            ps = labels.pixelSize
+            ps = inputLabels.pixelSize
             
             def __init__(self):
                 self.measures = []
@@ -768,24 +694,19 @@ class Measure2D(ModuleBase):
         
         # end measuremnt class def
         
-        assert (labels.data_xyztc.shape[4 ==1]), 'Measure2D labels must have a single colour channel'
+        assert (inputLabels.data_xyztc.shape[4 ==1]), 'Measure2D labels must have a single colour channel'
 
         m = measurements()
         
-        if self.inputIntensity in ['None', 'none', '']:
-            #if we don't have intensity data
-            intensity = None
-        else:
-            intensity = namespace[self.inputIntensity]
-
-            assert (labels.data_xyztc.shape == intensity.data_xyztc.shape), 'Measure2D labels and intensity must be the same shape'
+        if inputIntensity:
+            assert (inputLabels.data_xyztc.shape == inputIntensity.data_xyztc.shape), 'Measure2D labels and intensity must be the same shape'
             
-        for i in xrange(labels.data.shape[2]):
-            m.addFrameMeasures(i, *self._measureFrame(i, labels, intensity))
+        for i in xrange(inputLabels.data.shape[2]):
+            m.addFrameMeasures(i, *self._measureFrame(i, inputLabels, inputIntensity))
             
-        m.mdh = labels.mdh
-                    
-        namespace[self.outputName] = m#.toDataFrame()      
+        #m.mdh = inputLabels.mdh
+        
+        return m      
         
     def _measureFrame(self, frameNo, labels, intensity):
         import skimage.measure
@@ -880,20 +801,18 @@ class AddMetadataToMeasurements(ModuleBase):
     outputName = Output('annotatedMeasurements')
     string_length = Int(128, desc='Ammount of storage (characters) to allocate for string values')
     
-    def execute(self, namespace):
+    def run(self, inputMeasurements, inputImage):
+        from PYME.IO import MetaDataHandler
         res = {}
-        meas = namespace[self.inputMeasurements]
-        res.update(meas)
-        
-        img = namespace[self.inputImage]
+        res.update(inputMeasurements)
 
         nEntries = len(list(res.values())[0])
         for k, mdk in zip(self.keys.split(), self.metadataKeys.split()):
             if mdk == 'seriesName':
                 #import os
-                v = os.path.split(img.seriesName)[1]
+                v = os.path.split(inputImage.seriesName)[1]
             else:
-                v = img.mdh[mdk]
+                v = inputImage.mdh[mdk]
 
             if isinstance(v, str):
                 # use bytes/cstring dtype (rather than U) so that 
@@ -903,11 +822,11 @@ class AddMetadataToMeasurements(ModuleBase):
                 res[k] = np.array([v]*nEntries)
         
         #res = pd.DataFrame(res)
-        res = tabular.MappingFilter(res)
+        res = tabular.DictSource(res)
         #if 'mdh' in dir(meas):
-        res.mdh = img.mdh
+        res.mdh = MetaDataHandler.DictMDHandler(inputImage.mdh)
         
-        namespace[self.outputName] = res
+        return res
         
         
 @register_module('IdentifyOverlappingROIs')
@@ -942,17 +861,15 @@ class IdentifyOverlappingROIs(ModuleBase):
     reject_key = CStr('rejected')
     output = Output('cluster_metrics')
 
-    def execute(self, namespace):
+    def run(self, input):
         from scipy.spatial import KDTree
 
-        points = namespace[self.input]
-
         try:
-            positions = np.stack([points['x_um'], points['y_um']], axis=1)
-            far_flung = np.sqrt(2) * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels  # [micrometers]
+            positions = np.stack([input['x_um'], input['y_um']], axis=1)
+            far_flung = np.sqrt(2) * input.mdh['Pyramid.PixelSize'] * self.roi_size_pixels  # [micrometers]
         except KeyError:
-            positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
-            far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
+            positions = np.stack([input['x'], input['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+            far_flung = np.sqrt(2) * input.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
 
         tree = KDTree(positions)
 
@@ -967,17 +884,12 @@ class IdentifyOverlappingROIs(ModuleBase):
                 close.remove(ind)
                 tossing.update(close)
 
-        out = tabular.MappingFilter(points)
+        out = tabular.MappingFilter(input)
         reject = np.zeros(tree.n, dtype=int)
         reject[list(tossing)] = 1
         out.addColumn(self.reject_key, reject)
 
-        try:
-            out.mdh = points.mdh
-        except AttributeError:
-            pass
-
-        namespace[self.output] = out
+        return out
 
 
 @register_module('ChunkedTravelingSalesperson')

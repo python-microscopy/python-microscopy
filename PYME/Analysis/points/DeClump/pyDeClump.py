@@ -234,7 +234,7 @@ def coalesceClumps(fitResults, assigned, nphotons=None):
     return fres
 
 
-def mergeClumps(datasource, labelKey='clumpIndex'):
+def mergeClumps(datasource, labelKey='clumpIndex', discard_trivial=False):
     from PYME.IO.tabular import CachingResultsFilter, MappingFilter, DictSource
     from PYME.Analysis.points.multiview import coalesce_dict_sorted
 
@@ -256,7 +256,7 @@ def mergeClumps(datasource, labelKey='clumpIndex'):
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
-    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights,discard_trivial=discard_trivial)
     return DictSource(grouped)
 
 
