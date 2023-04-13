@@ -1,8 +1,15 @@
 from ._base import Plugin
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
-import neuroglancer
-from neuroglancer import local_volume
+try:
+    import neuroglancer
+    from neuroglancer import local_volume
+except ImportError:
+    # this is to keep tests which automatically import all modules happy.
+    logger.exception('Could not import neuroglancer, install if you need PYMEImage neuroglancer connectivity')
+    # NB - will cause a subsequent error when the code tries to access the modules
 
 
 class PyramidLocalVolume(local_volume.LocalVolume):
