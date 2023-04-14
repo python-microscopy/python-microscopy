@@ -593,7 +593,7 @@ class LMAnalyser2(Plugin):
 
         mdh = self.analysisController.analysisMDH
 
-        if not hasattr(self, '_ovl'):
+        if not hasattr(self, '_ovl') or not hasattr(self._ovl, 'filter'):
             from PYME.DSView import overlays
             from PYME.IO import tabular
             filt = tabular.FitResultsSource(self.fitResults)
