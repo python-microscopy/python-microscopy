@@ -35,9 +35,7 @@ matplotlib.use('WxAgg')
 import matplotlib.pyplot as plt
 plt.ion()
 import numpy as np
-from . import modules
-
-from PYME.DSView import splashScreen
+from PYME.DSView import modules, splashScreen
 
 try:
    import PYMEnf.DSView.modules
