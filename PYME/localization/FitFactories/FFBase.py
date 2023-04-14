@@ -89,7 +89,7 @@ class FFBase(object):
     
         data = self.data[xslice, yslice, zslice]
         sigma = self.noiseSigma[xslice, yslice, zslice] if (self.noiseSigma is not None) else None
-        if (not self.background is None) and (not np.isscalar(self.background)) and (not self.metadata.get('Analysis.subtractBackground', True)):
+        if (not self.background is None) and (not np.isscalar(self.background)) and (self.metadata.get('Analysis.subtractBackground', True)):
             background = self.background[xslice, yslice, zslice]
         else:
             background = 0
