@@ -143,8 +143,8 @@ class DualMarchingCubes(ModuleBase):
     remesh = Bool(True)
     cull_inner_surfaces = Bool(True)
 
-    #auto_threshold = Bool(False)
-    #auto_threshold_signal_fraction = Float(0.4)
+    auto_threshold = Bool(False)
+    auto_threshold_offset = Float(40) #find surface 40nm outside the points
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
@@ -156,8 +156,8 @@ class DualMarchingCubes(ModuleBase):
         inp = namespace[self.input]
         md = MetaDataHandler.DictMDHandler(getattr(inp, 'mdh', None)) # get metadata from the input dataset if present
         
-        #if self.auto_threshold:
-        #    self.threshold_density = self._calc_optimal_threshold(inp)
+        if self.auto_threshold:
+            self.threshold_density = self._calc_optimal_threshold(inp)
         
         surf = self._generate_surface(self.threshold_density, inp)
 
@@ -194,22 +194,32 @@ class DualMarchingCubes(ModuleBase):
     
     
     def _calc_optimal_threshold(self, inp):
-        from scipy.optimize import fmin, root_scalar, brentq
+        from scipy.optimize import fmin, root_scalar, brentq, fsolve
         from PYME.experimental import isosurface
         pts = np.vstack([inp.points['x'], inp.points['y'], inp.points['z']]).T
 
-        def _surface_quality(threshold):
-            s = self._generate_surface(threshold, inp)
-            d = isosurface.distance_to_mesh(pts, s, smooth=False)
+        def _surface_quality(log_threshold):
+            s = self._generate_surface(10.0**log_threshold, inp)
 
-            metric = (d < 0).sum()/len(d)
+            if len(s.faces) > 1:
+                d = isosurface.distance_to_mesh(pts, s, smooth=False)
 
-            return (metric - self.auto_threshold_signal_fraction)
+                #metric = (d < 0).sum()/len(d)
+                metric = np.median(d)
+
+                return (metric + self.auto_threshold_offset)
+            else:
+                #threshold was too high, try something return an arbitrary outside value
+                return 200 + log_threshold
 
         #t = fmin(_surface_quality, self.threshold_density, maxiter=10)
         #t = root_scalar(_surface_quality, x0=self.threshold_density, maxiter=10)
         
-        return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
+        t = 10.0**fsolve(_surface_quality, np.log10(self.threshold_density), epsfcn=0.1, xtol=0.1)
+        print('\nSurface auto-threshold: %f\n' % t)
+
+        return t
+        #return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
 
         #return t[0]
         #return t.root
