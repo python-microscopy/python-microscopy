@@ -490,7 +490,8 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 
 static void _update_all_face_normals(int n_faces, halfedge_t *halfedges, vertex_t *vertices, face_t *faces)
 {
-    for (int j = 0; j < n_faces; ++j)
+    int j;
+    for (j = 0; j < n_faces; ++j)
     {
         if (faces[j].halfedge == -1) continue;
         update_face_normal(j, halfedges, vertices, faces);
