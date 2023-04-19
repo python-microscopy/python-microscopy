@@ -527,7 +527,7 @@ class MergeClumps(ModuleBase):
 
     def run(self, inputName):
         from PYME.Analysis.points.DeClump import pyDeClump
-        return pyDeClump.mergeClumps(inp, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
+        return pyDeClump.mergeClumps(inputName, labelKey=self.labelKey, discard_trivial=self.discardTrivial)
 
 
 @register_module('IDTransientFrames')
