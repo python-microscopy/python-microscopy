@@ -66,8 +66,14 @@ def configuration(parent_package='', top_path=None):
                     include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math'],# '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
+
+    ext4 = Extension(name='.'.join([parent_package, 'experimental', 'func_octree']),
+                    sources=[os.path.join(cur_dir, 'func_octree.pyx')],
+                    include_dirs= get_numpy_include_dirs() + extra_include_dirs,
+                    extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math'],# '-march=native', '-mtune=native'],
+                    extra_link_args=linkArgs)
     
-    config = Configuration('experimental', parent_package, top_path, ext_modules=cythonize([ext, ext2, ext3]))
+    config = Configuration('experimental', parent_package, top_path, ext_modules=cythonize([ext, ext2, ext3, ext4]))
 
     config.add_extension(name='triangle_mesh_utils',
                     sources='triangle_mesh_utils.c',
