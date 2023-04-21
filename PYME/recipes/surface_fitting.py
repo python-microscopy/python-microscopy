@@ -159,14 +159,14 @@ class DualMarchingCubes(ModuleBase):
         if self.auto_threshold:
             self.threshold_density = self._calc_optimal_threshold(inp)
         
-        surf = self._generate_surface(self.threshold_density, inp)
+        surf = self._generate_surface(self.threshold_density, inp, smooth_curvature=self.smooth_curvature)
 
         self._params_to_metadata(md)
         surf.mdh = md #inject metadata
         
         namespace[self.output] = surf
 
-    def _generate_surface(self, threshold, inp):
+    def _generate_surface(self, threshold, inp, smooth_curvature=False):
         from PYME.experimental import dual_marching_cubes
         from PYME.experimental import _triangle_mesh as triangle_mesh
         
@@ -175,7 +175,7 @@ class DualMarchingCubes(ModuleBase):
         tris = dmc.march(dual_march=False)
 
         print('Generating TriangularMesh object')
-        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=self.smooth_curvature)
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=smooth_curvature)
         
         print('Generated TriangularMesh object')
         
