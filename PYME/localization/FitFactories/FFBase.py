@@ -81,7 +81,7 @@ class FFBase(object):
             z = self.data[x, y, :].argmax()
     
         roiHalfSize = int(roiHalfSize)
-        axialHalfSize = int(roiHalfSize)
+        axialHalfSize = int(axialHalfSize)
     
         xslice = slice(int(max((x - roiHalfSize), 0)), int(min((x + roiHalfSize + 1), self.data.shape[0])))
         yslice = slice(int(max((y - roiHalfSize), 0)), int(min((y + roiHalfSize + 1), self.data.shape[1])))
@@ -89,7 +89,7 @@ class FFBase(object):
     
         data = self.data[xslice, yslice, zslice]
         sigma = self.noiseSigma[xslice, yslice, zslice] if (self.noiseSigma is not None) else None
-        if (not self.background is None) and (not np.isscalar(self.background)) and (not self.metadata.get('Analysis.subtractBackground', True)):
+        if (not self.background is None) and (not np.isscalar(self.background)) and (self.metadata.get('Analysis.subtractBackground', True)):
             background = self.background[xslice, yslice, zslice]
         else:
             background = 0
@@ -99,11 +99,25 @@ class FFBase(object):
 
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point.
+
+        Parameters:
+        -----------
+        x : int
+            ROI center position, x [pixels] relative to self.roi_offset
+        y : int 
+            ROI center position, y [pixels] relative to self.roi_offset
+        z : int
+            ROI center position, z [pixels or frame]. Optional
+        roiHalfSize : int
+            lateral ROI extent. Lateral ROI size will be (2 * roiHalfSize) + 1
+        axialHalfSize : int
+            axial ROI extent. Axial ROI size will be (2 * axialHalfSize) + 1
         
         Returns:
             X - x coordinates of pixels in ROI in nm
             Y - y coordinates of pixels in ROI
-            data - raw pixel data of ROI
+            data - raw pixel data of ROI, averaged in Z if axialHalfSize is > 0 and
+                self.data dim 2 > 1 (which it usually is not).
             background - extimated background for ROI
             sigma - estimated error (std. dev) of pixel values
             xslice - x slice into original data array used to get ROI
