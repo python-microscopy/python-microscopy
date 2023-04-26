@@ -281,7 +281,7 @@ class ModuleBase(HasStrictTraits):
                 v.mdh = MetaDataHandler.DictMDHandler()
 
             v.mdh.mergeEntriesFrom(mdhin) #merge, to allow e.g. voxel size overrides due to downsampling
-            print(v.mdh, mdh)
+            #print(v.mdh, mdh)
             v.mdh.copyEntriesFrom(mdh) # copy / overwrite with module processing parameters
 
         namespace.update(out)
