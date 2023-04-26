@@ -224,6 +224,57 @@ class DualMarchingCubes(ModuleBase):
         #return t[0]
         #return t.root
 
+@register_module('NthPointIsosurface')
+class NthPointIsosurface(ModuleBase):
+    input = Input('points')
+    output = Output('mesh')
+    
+    offset = Float(40.)
+    window = Int(50) # lets us truncate on SNR
+    
+    smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
+    repair = Bool(False)
+    remesh = Bool(True)
+    cull_inner_surfaces = Bool(True)
+    
+    def run(self, input):
+        from PYME.experimental import func_octree
+        from PYME.experimental import dual_marching_cubes
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+        from scipy.spatial import cKDTree
+
+        points = np.vstack([input['x'], input['y'], input['z']]).T
+        tree = cKDTree(points)
+
+        offset = float(self.offset)
+        window = int(self.window)
+
+        def f(x, y, z):
+            pts = np.vstack([x, y, z]).T
+            dd, ii = tree.query(pts, k=window, workers=-1)
+            return -(dd.max(1) - offset)
+
+        x0, y0, z0 = points.min(0)
+        x1, y1, z1 = points.max(0)
+
+        o = func_octree.FOctree([x0, x1, y0, y1, z0, z1], f, maxdepth=6)
+        mc = dual_marching_cubes.PiecewiseDualMarchingCubes()
+        mc.set_octree(o)
+        tris = mc.march()
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=True)
+        
+        if self.repair:
+            surf.repair()
+            
+        if self.remesh:
+            # target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
+            surf.remesh(5, l=0.5, n_relax=10)
+            
+        if self.cull_inner_surfaces:
+            surf.remove_inner_surfaces()
+
+        return surf
+
 
 @register_module('Isosurface')
 class Isosurface(ModuleBase):

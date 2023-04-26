@@ -94,6 +94,24 @@ def gen_isosurface(visFr):
         dmc._invalidate_parent = True
         print('Isosurface layer added')
 
+def gen_point_dis_isosurface(visFr):
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+    from PYME.recipes.surface_fitting import NthPointIsosurface
+    from PYME.misc.colormaps import cm
+    
+    recipe = visFr.pipeline.recipe
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
+    dmc = NthPointIsosurface(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey,output=surf_name)
+    
+    if dmc.configure_traits(kind='modal'):
+        recipe.add_modules_and_execute([dmc,])
+
+        print('Isosurface generated, adding layer')
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = cm.solid_cmaps[surf_count % len(cm.solid_cmaps)])
+        visFr.add_layer(layer)
+        dmc._invalidate_parent = True
+        print('Isosurface layer added')
+
 def gen_octree_isosurface(visFr):
     """
     Generate an isosurface and octree in the pipeline
@@ -348,6 +366,7 @@ def Plug(visFr):
     visFr.AddMenuItem('View', 'Generate Isosurface from Delaunay Tesselation', lambda e: gen_isosurface_from_tesselation(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface (linked)', lambda e: gen_octree_isosurface(visFr))
+    visFr.AddMenuItem('Mesh', 'Point distance isosurface ', lambda e: gen_point_dis_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
     visFr.AddMenuItem('Mesh>Analysis', 'Distance to mesh', lambda e: distance_to_surface(visFr))
