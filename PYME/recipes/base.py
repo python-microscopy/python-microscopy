@@ -277,11 +277,11 @@ class ModuleBase(HasStrictTraits):
         self._params_to_metadata(mdh)
 
         for v in out.values():
-            if not hasattr(v, 'mdh'):
+            if getattr(v, 'mdh', None) is None:
                 v.mdh = MetaDataHandler.DictMDHandler()
 
             v.mdh.mergeEntriesFrom(mdhin) #merge, to allow e.g. voxel size overrides due to downsampling
-            print(v.mdh, mdh)
+            #print(v.mdh, mdh)
             v.mdh.copyEntriesFrom(mdh) # copy / overwrite with module processing parameters
 
         namespace.update(out)

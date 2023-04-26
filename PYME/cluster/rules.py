@@ -139,14 +139,19 @@ class RuleGroupWatcher(object):
         import uuid
         self._info = info
         self._curr_cell = str(uuid.uuid4())#info.cell_id
+        # try:
+        #     self._rule_groups.pop(_curr_cell)
+        # except KeyError:
+        #     pass
 
     def _update(self):
         from IPython.display import update_display
         from PYME.cluster.distribution import get_cached_queue_info
         
         while self.active:
-            try:
-                for rules, disp_id in self._rule_groups.values():
+            for k, v in self._rule_groups.items():
+                rules, disp_id = v
+                try:
                     status = get_cached_queue_info(rules[0].taskQueueURI)
                     if status != self._cached_status.get(disp_id, None):
                         self._cached_status[disp_id] = status
@@ -154,8 +159,9 @@ class RuleGroupWatcher(object):
                         ri = [rule._get_info(status) for rule in rules]
                         html = rg_template.render(info=ri)
                         update_display({'text/html': html}, raw=True, display_id=disp_id)
-            except:
-                logger.exception('Error polling rule')
+                except:
+                    logger.exception('Error polling rules %s' % rules)
+                    self._rule_groups.pop(k)
 
             time.sleep(1)
 

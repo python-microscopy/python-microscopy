@@ -172,7 +172,7 @@ class AggregateMeasurements(ModuleBase):
 
     #     namespace[self.outputName] = res
 
-    def run(self, inputMeasurements1, inputMeasurements2,inputMeasurements3,inputMeasurements4):
+    def run(self, inputMeasurements1, inputMeasurements2,inputMeasurements3=None,inputMeasurements4=None):
         import collections
         res = collections.OrderedDict()
         for meas, suffix in [(inputMeasurements1, self.suffix1), (inputMeasurements2, self.suffix2),(inputMeasurements3, self.suffix3),(inputMeasurements4, self.suffix4)]:

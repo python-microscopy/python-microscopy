@@ -618,7 +618,7 @@ cdef class TriangleMesh(TrianglesBase):
                 # optional so this can be chained with _update_vertex_locally_manifold
                 self._halfedges['locally_manifold'] = 1
             
-            print('iterating edges')
+            #print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
 
             for i in range(n_halfedges):
@@ -757,7 +757,7 @@ cdef class TriangleMesh(TrianglesBase):
             edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
 
 
-            print('iterating edges')
+            #print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
             for i, e in enumerate(edges_packed):
@@ -1295,7 +1295,7 @@ cdef class TriangleMesh(TrianglesBase):
         PyMem_Free(edges_to_split)
         PyMem_Free(twin_split)
                 
-        print('Split count: %d' % (split_count))
+        #print('Split count: %d' % (split_count))
         return split_count
     
     def collapse_edges(self, float collapse_threshold):
@@ -1324,7 +1324,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._update_all_vacancies() #we might have deleted edges, vertices, etc ....
         self._invalidate_cached_properties()
-        print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
+        #print('Collapse count: ' + str(collapse_count) + '[' + str(collapse_fails) +' failed]')
         
         return collapse_count
 
@@ -1383,7 +1383,7 @@ cdef class TriangleMesh(TrianglesBase):
                 flip_count += r
                 failed_flip_count += (1-r)
                 
-        print('Flip count: %d [%d failed]' % (flip_count, failed_flip_count))
+        #print('Flip count: %d [%d failed]' % (flip_count, failed_flip_count))
         return flip_count
 
     cpdef int relax(self, float l=1, int n=1):
@@ -1432,7 +1432,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         self._singular_edges_valid = 0
         n_singular = self.singular_edges.shape[0]
-        print(f"# singular: {n_singular}")
+        #f"# singular: {n_singular}")
 
         for k in range(n):
             # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
@@ -1450,7 +1450,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
-            print(f"# singular: {n_singular}")
+            #print(f"# singular: {n_singular}")
             
             ct = self.regularize()
             while (ct > 0):
@@ -1459,7 +1459,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
-            print(f"# singular: {n_singular}")
+            #print(f"# singular: {n_singular}")
             
             # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
             # collapse_count = 0
@@ -1481,7 +1481,7 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
-            print(f"# singular: {n_singular}")
+            #print(f"# singular: {n_singular}")
             # while (ct > 0):
             #     # Keep collapsing until we can't do any more splits (note - may be more effective to just run everything a couple more times)
             #     ct = self.collapse_edges(collapse_threshold)
@@ -1501,14 +1501,14 @@ cdef class TriangleMesh(TrianglesBase):
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
-            print(f"# singular: {n_singular}")
+            #print(f"# singular: {n_singular}")
 
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
 
             self._singular_edges_valid = 0
             n_singular = self.singular_edges.shape[0]
-            print(f"# singular: {n_singular}")
+            #print(f"# singular: {n_singular}")
 
         # Let's double-check the mesh manifoldness
         self._manifold = 0

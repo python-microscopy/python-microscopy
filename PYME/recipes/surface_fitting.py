@@ -143,8 +143,8 @@ class DualMarchingCubes(ModuleBase):
     remesh = Bool(True)
     cull_inner_surfaces = Bool(True)
 
-    #auto_threshold = Bool(False)
-    #auto_threshold_signal_fraction = Float(0.4)
+    auto_threshold = Bool(False)
+    auto_threshold_offset = Float(40) #find surface 40nm outside the points
     
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
@@ -156,17 +156,17 @@ class DualMarchingCubes(ModuleBase):
         inp = namespace[self.input]
         md = MetaDataHandler.DictMDHandler(getattr(inp, 'mdh', None)) # get metadata from the input dataset if present
         
-        #if self.auto_threshold:
-        #    self.threshold_density = self._calc_optimal_threshold(inp)
+        if self.auto_threshold:
+            self.threshold_density = self._calc_optimal_threshold(inp)
         
-        surf = self._generate_surface(self.threshold_density, inp)
+        surf = self._generate_surface(self.threshold_density, inp, smooth_curvature=self.smooth_curvature)
 
         self._params_to_metadata(md)
         surf.mdh = md #inject metadata
         
         namespace[self.output] = surf
 
-    def _generate_surface(self, threshold, inp):
+    def _generate_surface(self, threshold, inp, smooth_curvature=False):
         from PYME.experimental import dual_marching_cubes
         from PYME.experimental import _triangle_mesh as triangle_mesh
         
@@ -175,7 +175,7 @@ class DualMarchingCubes(ModuleBase):
         tris = dmc.march(dual_march=False)
 
         print('Generating TriangularMesh object')
-        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=self.smooth_curvature)
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=smooth_curvature)
         
         print('Generated TriangularMesh object')
         
@@ -194,25 +194,86 @@ class DualMarchingCubes(ModuleBase):
     
     
     def _calc_optimal_threshold(self, inp):
-        from scipy.optimize import fmin, root_scalar, brentq
+        from scipy.optimize import fmin, root_scalar, brentq, fsolve
         from PYME.experimental import isosurface
         pts = np.vstack([inp.points['x'], inp.points['y'], inp.points['z']]).T
 
-        def _surface_quality(threshold):
-            s = self._generate_surface(threshold, inp)
-            d = isosurface.distance_to_mesh(pts, s, smooth=False)
+        def _surface_quality(log_threshold):
+            s = self._generate_surface(10.0**log_threshold, inp)
 
-            metric = (d < 0).sum()/len(d)
+            if len(s.faces) > 1:
+                d = isosurface.distance_to_mesh(pts, s, smooth=False)
 
-            return (metric - self.auto_threshold_signal_fraction)
+                #metric = (d < 0).sum()/len(d)
+                metric = np.median(d)
+
+                return (metric + self.auto_threshold_offset)
+            else:
+                #threshold was too high, try something return an arbitrary outside value
+                return 200 + log_threshold
 
         #t = fmin(_surface_quality, self.threshold_density, maxiter=10)
         #t = root_scalar(_surface_quality, x0=self.threshold_density, maxiter=10)
         
-        return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
+        t = 10.0**fsolve(_surface_quality, np.log10(self.threshold_density), epsfcn=0.1, xtol=0.1)
+        print('\nSurface auto-threshold: %f\n' % t)
+
+        return t
+        #return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
 
         #return t[0]
         #return t.root
+
+@register_module('NthPointIsosurface')
+class NthPointIsosurface(ModuleBase):
+    input = Input('points')
+    output = Output('mesh')
+    
+    offset = Float(40.)
+    window = Int(50) # lets us truncate on SNR
+    
+    smooth_curvature = Bool(True)  # TODO: This is actually a mesh property, so it can be toggled outside of the recipe.
+    repair = Bool(False)
+    remesh = Bool(True)
+    cull_inner_surfaces = Bool(True)
+    
+    def run(self, input):
+        from PYME.experimental import func_octree
+        from PYME.experimental import dual_marching_cubes
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+        from scipy.spatial import cKDTree
+
+        points = np.vstack([input['x'], input['y'], input['z']]).T
+        tree = cKDTree(points)
+
+        offset = float(self.offset)
+        window = int(self.window)
+
+        def f(x, y, z):
+            pts = np.vstack([x, y, z]).T
+            dd, ii = tree.query(pts, k=window, workers=-1)
+            return -(dd.max(1) - offset)
+
+        x0, y0, z0 = points.min(0)
+        x1, y1, z1 = points.max(0)
+
+        o = func_octree.FOctree([x0, x1, y0, y1, z0, z1], f, maxdepth=6)
+        mc = dual_marching_cubes.PiecewiseDualMarchingCubes()
+        mc.set_octree(o)
+        tris = mc.march()
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris, smooth_curvature=True)
+        
+        if self.repair:
+            surf.repair()
+            
+        if self.remesh:
+            # target_length = np.mean(surf._halfedges[''][surf._halfedges['length'] != -1])
+            surf.remesh(5, l=0.5, n_relax=10)
+            
+        if self.cull_inner_surfaces:
+            surf.remove_inner_surfaces()
+
+        return surf
 
 
 @register_module('Isosurface')

@@ -34,6 +34,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         #TODO - get this from the octree
         self._octant_sign = np.array([[2 * (n & 1) - 1, (n & 2) - 1, (n & 4) / 2 - 1] for n in range(8)])
         
+        try:
+            vals = self._ot.nodes['value']
+            self._ot_has_value = True
+        except ValueError:
+            self._ot_has_value = False
 
         self.node_proc(self._ot._nodes[0])  # Create the dual grid
 
@@ -593,83 +598,89 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
-    def _vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
-        if not self._MC_MAP_MODE_MODIFIED:
-            # Convert from dual marching cubes to marching cubes indexing
-            nds = [n0, n1, n3, n2, n4, n5, n7, n6]
-        else:
-            nds = [n0, n1, n2, n3, n4, n5, n6, n7]
+    # def _vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
+    #     if not self._MC_MAP_MODE_MODIFIED:
+    #         # Convert from dual marching cubes to marching cubes indexing
+    #         nds = [n0, n1, n3, n2, n4, n5, n7, n6]
+    #     else:
+    #         nds = [n0, n1, n2, n3, n4, n5, n6, n7]
         
-        leaf_nodes = (n0['n_children'] == 0) & (n1['n_children'] == 0) & \
-                     (n2['n_children'] == 0) & (n3['n_children'] == 0) & \
-                     (n4['n_children'] == 0) & (n5['n_children']== 0) & \
-                     (n6['n_children'] == 0) & (n7['n_children'] == 0)
+    #     leaf_nodes = (n0['n_children'] == 0) & (n1['n_children'] == 0) & \
+    #                  (n2['n_children'] == 0) & (n3['n_children'] == 0) & \
+    #                  (n4['n_children'] == 0) & (n5['n_children']== 0) & \
+    #                  (n6['n_children'] == 0) & (n7['n_children'] == 0)
 
-        if np.any(leaf_nodes):
-            inds = np.where(leaf_nodes)[0]
+    #     if np.any(leaf_nodes):
+    #         inds = np.where(leaf_nodes)[0]
             
-            vt = np.zeros([len(inds), 8, 3])
-            vv = np.zeros([len(inds), 8])
-            vd = np.zeros([len(inds), 8])
+    #         vt = np.zeros([len(inds), 8, 3])
+    #         vv = np.zeros([len(inds), 8])
+    #         vd = np.zeros([len(inds), 8])
 
-            for j, nj in enumerate(nds):
-                nji = nj[inds]
+    #         for j, nj in enumerate(nds):
+    #             nji = nj[inds]
 
-                #vt[:, j, :] = 0
-                vt[:, j, :] = nji['centre']
-                vv[:, j] = nji['nPoints']* self._density_sc[nji['depth']]
-                vd[:, j] = nji['depth']
+    #             #vt[:, j, :] = 0
+    #             vt[:, j, :] = nji['centre']
+    #             vv[:, j] = nji['nPoints']* self._density_sc[nji['depth']]
+    #             vd[:, j] = nji['depth']
 
-            self.vertices.append(vt)
-            self.values.append(vv)
-            self.depths.append(vd)
+    #         self.vertices.append(vt)
+    #         self.values.append(vv)
+    #         self.depths.append(vd)
 
-        if np.any(~(leaf_nodes).astype(bool)):
+    #     if np.any(~(leaf_nodes).astype(bool)):
 
-            inds = np.where(~(leaf_nodes).astype(bool))
+    #         inds = np.where(~(leaf_nodes).astype(bool))
 
-            # Initialize resulting nodes to current nodes
-            c0, c1, c2, c3, c4, c5, c6, c7 = [np.copy(nj[inds]) for nj in nds]
+    #         # Initialize resulting nodes to current nodes
+    #         c0, c1, c2, c3, c4, c5, c6, c7 = [np.copy(nj[inds]) for nj in nds]
             
 
-            # Replace current nodes with their ordered children if present
-            c0_subdivided, is_c0_subdivided = self.subdivided(c0)
-            c1_subdivided, is_c1_subdivided = self.subdivided(c1)
-            c2_subdivided, is_c2_subdivided = self.subdivided(c2)
-            c3_subdivided, is_c3_subdivided = self.subdivided(c3)
-            c4_subdivided, is_c4_subdivided = self.subdivided(c4)
-            c5_subdivided, is_c5_subdivided = self.subdivided(c5)
-            c6_subdivided, is_c6_subdivided = self.subdivided(c6)
-            c7_subdivided, is_c7_subdivided = self.subdivided(c7)
+    #         # Replace current nodes with their ordered children if present
+    #         c0_subdivided, is_c0_subdivided = self.subdivided(c0)
+    #         c1_subdivided, is_c1_subdivided = self.subdivided(c1)
+    #         c2_subdivided, is_c2_subdivided = self.subdivided(c2)
+    #         c3_subdivided, is_c3_subdivided = self.subdivided(c3)
+    #         c4_subdivided, is_c4_subdivided = self.subdivided(c4)
+    #         c5_subdivided, is_c5_subdivided = self.subdivided(c5)
+    #         c6_subdivided, is_c6_subdivided = self.subdivided(c6)
+    #         c7_subdivided, is_c7_subdivided = self.subdivided(c7)
 
-            if is_c0_subdivided:
-                u7, = self.update_subdivision(c0[c0_subdivided], [7])
-                c0[c0_subdivided] = u7
-            if is_c1_subdivided:
-                u6, = self.update_subdivision(c1[c1_subdivided], [6])
-                c1[c1_subdivided] = u6
-            if is_c2_subdivided:
-                u5,  = self.update_subdivision(c2[c2_subdivided], [5])
-                c2[c2_subdivided] = u5
-            if is_c3_subdivided:
-                u4, = self.update_subdivision(c3[c3_subdivided], [4])
-                c3[c3_subdivided] = u4
-            if is_c4_subdivided:
-                u3, = self.update_subdivision(c4[c4_subdivided], [3])
-                c4[c4_subdivided] = u3
-            if is_c5_subdivided:
-                u2, = self.update_subdivision(c5[c5_subdivided], [2])
-                c5[c5_subdivided] = u2
-            if is_c6_subdivided:
-                u1, = self.update_subdivision(c6[c6_subdivided], [1])
-                c6[c6_subdivided] = u1
-            if is_c7_subdivided:
-                u0, = self.update_subdivision(c7[c7_subdivided], [0])
-                c7[c7_subdivided] = u0
+    #         if is_c0_subdivided:
+    #             u7, = self.update_subdivision(c0[c0_subdivided], [7])
+    #             c0[c0_subdivided] = u7
+    #         if is_c1_subdivided:
+    #             u6, = self.update_subdivision(c1[c1_subdivided], [6])
+    #             c1[c1_subdivided] = u6
+    #         if is_c2_subdivided:
+    #             u5,  = self.update_subdivision(c2[c2_subdivided], [5])
+    #             c2[c2_subdivided] = u5
+    #         if is_c3_subdivided:
+    #             u4, = self.update_subdivision(c3[c3_subdivided], [4])
+    #             c3[c3_subdivided] = u4
+    #         if is_c4_subdivided:
+    #             u3, = self.update_subdivision(c4[c4_subdivided], [3])
+    #             c4[c4_subdivided] = u3
+    #         if is_c5_subdivided:
+    #             u2, = self.update_subdivision(c5[c5_subdivided], [2])
+    #             c5[c5_subdivided] = u2
+    #         if is_c6_subdivided:
+    #             u1, = self.update_subdivision(c6[c6_subdivided], [1])
+    #             c6[c6_subdivided] = u1
+    #         if is_c7_subdivided:
+    #             u0, = self.update_subdivision(c7[c7_subdivided], [0])
+    #             c7[c7_subdivided] = u0
 
-            if is_c0_subdivided or is_c1_subdivided or is_c2_subdivided or is_c3_subdivided or is_c4_subdivided or is_c5_subdivided or is_c6_subdivided or is_c7_subdivided:
-                self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+    #         if is_c0_subdivided or is_c1_subdivided or is_c2_subdivided or is_c3_subdivided or is_c4_subdivided or is_c5_subdivided or is_c6_subdivided or is_c7_subdivided:
+    #             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
+    def _value(self, node):
+        if self._ot_has_value:
+            return node['value']
+        else:
+            return  node['nPoints'] * self._density_sc[node['depth']]
+    
     def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
         if not self._MC_MAP_MODE_MODIFIED:
             # Convert from dual marching cubes to marching cubes indexing
@@ -697,7 +708,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         
                 #vt[:, j, :] = 0
                 vt[:, j, :] = nji['centre']
-                vv[:, j] = nji['nPoints'] * self._density_sc[nji['depth']]
+                vv[:, j] = self._value(nji)#nji['nPoints'] * self._density_sc[nji['depth']]
                 vd[:, j] = nji['depth']
     
             self.vertices.append(vt)
