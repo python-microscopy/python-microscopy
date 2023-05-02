@@ -2593,6 +2593,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         h0 = np.concatenate([np.argwhere(self._halfedges['vertex']==id).squeeze() for id in ids_to_remove])
         h1 = self._halfedges['twin'][h0]
+        h1 = h1[h1 != -1]
 
         h_to_remove = np.concatenate((h0, h1))
 
