@@ -149,7 +149,7 @@ class RuleGroupWatcher(object):
         from PYME.cluster.distribution import get_cached_queue_info
         
         while self.active:
-            for k, v in self._rule_groups.items():
+            for k, v in list(self._rule_groups.items()):
                 rules, disp_id = v
                 try:
                     status = get_cached_queue_info(rules[0].taskQueueURI)
@@ -503,7 +503,10 @@ class Rule(object):
         if errors: 
             if (info.get('tasksFailed', 0) > 0):
                 dm = clusterIO.get_dir_manager()
-                info['errors'] = dm.locate_file(f'LOGS/rules/{self._ruleID}.html', True)[0][0]
+                try:
+                    info['errors'] = dm.locate_file(f'LOGS/rules/{self._ruleID}.html', True)[0][0]
+                except IndexError:
+                    info['errors'] = None
             else:
                 info['errors'] = None
 
