@@ -8,12 +8,14 @@ logger = logging.getLogger(__name__)
 
 class DataSource(XYTCDataSource):
     moduleName = 'OBFDataSource'
-    def __init__(self, filename, stack_number=None):
-        self.filename = getFullExistingFilename(filename)#convert relative path to full path
+    def __init__(self, obf, stack_number=None):
+        if isinstance(obf, str):
+            self.filename = getFullExistingFilename(obf)#convert relative path to full path
+            self.obf = obf_support.File(self.filename)
+            logger.debug('file: {}'.format(self.filename))
+        else:
+            self.obf = obf
         
-        self.obf = obf_support.File(self.filename)
-
-        logger.debug('file: {}'.format(self.filename))
         # logger.debug('format version: {}'.format(self.obf.format_version))
         logger.debug('description: "{}"'.format(self.obf.description))
         logger.debug('contains {} stacks'.format(len(self.obf.stacks)))
