@@ -273,7 +273,8 @@ class ImageStack(object):
         if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
-        #add ourselves to the list of open images        
+        #add ourselves to the list of open images
+        print('init: %s ' % self.filename)        
         openImages[self.filename] = self
 
     def SetData(self, data):
@@ -766,7 +767,7 @@ class ImageStack(object):
     def _loadOBF(self, filename):
         from PYME.IO.DataSources import OBFDataSource
         from PYME.IO.FileUtils import obf_support
-        from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+        from PYME.IO.FileUtils.nameUtils import getFullExistingFilename, getRelFilename
         import numpy as np
 
         stack_number = None
@@ -794,6 +795,9 @@ class ImageStack(object):
         
         data = OBFDataSource.DataSource(obf, stack_number)
         self.SetData(data)
+        self.seriesName = getRelFilename(filename) + ': ' + data.stack.name
+        self.filename = self.seriesName
+        print(self.filename)
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
         voxel_sizes = data.stack.pixel_sizes
         scales_factors = [d.scalefactor for d in data.stack.si_dimensions[:3]]
@@ -1313,6 +1317,9 @@ class ImageStack(object):
                 self._loadDBL(filename)
             elif '.obf' in os.path.splitext(filename)[1] or '.msr' in os.path.splitext(filename)[1]:
                 self._loadOBF(filename)
+                # hack to get around self.filename = filename below, otherwise if we open multiple
+                # stacks from this same file we won't be able to make composite later
+                filename = self.seriesName
             elif os.path.splitext(filename)[1] in ['.tif', '.lsm']: #try tiff
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):

@@ -16,13 +16,12 @@ class DataSource(XYTCDataSource):
         else:
             self.obf = obf
         
-        # logger.debug('format version: {}'.format(self.obf.format_version))
+        logger.debug('format version: {}'.format(self.obf.format_version))
         logger.debug('description: "{}"'.format(self.obf.description))
         logger.debug('contains {} stacks'.format(len(self.obf.stacks)))
 
         if stack_number is None:
             stack_number = 0
-            # TODO - would be nice to have an 'all' flag somewhere in image.py to open all found
             if len(self.obf.stacks) > 1:
                 logger.error('More than one stack present, add ?stack=X to filename to select one:')
                 for index, stack in enumerate(self.obf.stacks):
@@ -35,8 +34,6 @@ class DataSource(XYTCDataSource):
         self.stack_number = stack_number
         stack = self.obf.stacks[self.stack_number]
 
-        # for index, stack in enumerate(self.obf.stacks[-1:]):
-        # logger.debug('\nstack {}'.format(index))
         logger.debug(' format version: {}'.format(stack.format_version))
         logger.debug(' name: "{}"'.format(stack.name))
         logger.debug(' description: "{}"'.format(stack.description))
@@ -48,22 +45,9 @@ class DataSource(XYTCDataSource):
         logger.debug(' data type: {}'.format(stack.data_type.__name__))
 
         self.stack = stack
-        self.slice2d = tuple([slice(None), slice(None)] + [0] * (len(self.stack.data.shape) - 2))
-        # # load stack data and show first 2D image
-        # data = stack.data
-        # if data.size > 0:  # don't display empty stacks
-        #     fig, ax = plt.subplots()
-        #     idx = [slice(None), slice(None)] + [0] * (len(data.shape) - 2)
-        #     im = ax.imshow(data[tuple(idx)].reshape(data.shape[:2]), cmap=cm.hot)
-        #     ax.set_title(stack.name)
-
-        # plt.show()
         
     def getSlice(self, ind):
-        # handle different dimensionality
-        
-        #     im = ax.imshow(data[tuple(idx)].reshape(data.shape[:2])
-        return self.stack.data[self.slice2d].reshape(self.getSliceShape())
+        return self.stack.data[:,:,ind].squeeze()
 
     def getSliceShape(self):
         return self.stack.data.shape[:2]
