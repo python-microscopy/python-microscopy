@@ -273,8 +273,7 @@ class ImageStack(object):
         if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
-        #add ourselves to the list of open images
-        print('init: %s ' % self.filename)        
+        #add ourselves to the list of open images      
         openImages[self.filename] = self
 
     def SetData(self, data):
