@@ -260,7 +260,7 @@ class ModuleBase(HasStrictTraits):
 
         # convert output to a dictionary if needed
         if isinstance(ret, dict):
-            out = {v : ret[k] for v, k in self._output_traits.items()}
+            out = {k : ret[v] for v, k in self._output_traits.items()}
         elif isinstance(ret, List):
             out = {k : v  for k, v in zip(self.outputs, ret)} #TODO - is this safe (is ordering consistent)
         else:
