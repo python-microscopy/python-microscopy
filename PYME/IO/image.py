@@ -796,7 +796,7 @@ class ImageStack(object):
         self.SetData(data)
         self.seriesName = getRelFilename(filename) + ': ' + data.stack.name
         self.filename = self.seriesName
-        print(self.filename)
+        logger.debug(self.filename)
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
         voxel_sizes = data.stack.pixel_sizes
         scales_factors = [d.scalefactor for d in data.stack.si_dimensions[:3]]
