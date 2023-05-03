@@ -762,6 +762,34 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+    
+    def _loadOBF(self, filename):
+        from PYME.IO.DataSources import OBFDataSource
+        import numpy as np
+
+        stack_number = None
+        
+        if '?' in filename:
+            #we have a query string to pick the stack number
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                stack_number = int(urllib.parse.parse_qs(query)['stack'][0])
+            except KeyError:
+                pass
+        
+        data = OBFDataSource.DataSource(filename, stack_number)
+        self.SetData(data)
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+        voxel_sizes = data.stack.pixel_sizes
+        scales_factors = [d.scalefactor for d in data.stack.si_dimensions[:3]]
+        if not np.allclose(np.ones_like(scales_factors), scales_factors):
+            raise NotImplementedError('Scale factors other than 1 not yet supported for OBF metadata')
+        self.mdh['voxelsize.x'] = voxel_sizes[0] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.y'] = voxel_sizes[1] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
+        
         
 
     def _findAndParseMetadata(self, filename):
@@ -857,7 +885,7 @@ class ImageStack(object):
                 except IOError:
                     pass
 
-            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+            elif filename.endswith('.dbl'): #imspector format, Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
                 
@@ -1270,6 +1298,8 @@ class ImageStack(object):
                 self._loadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
                 self._loadDBL(filename)
+            elif '.obf' in os.path.splitext(filename)[1] or '.msr' in os.path.splitext(filename)[1]:
+                self._loadOBF(filename)
             elif os.path.splitext(filename)[1] in ['.tif', '.lsm']: #try tiff
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):
