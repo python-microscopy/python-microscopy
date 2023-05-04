@@ -157,7 +157,13 @@ class DualMarchingCubes(ModuleBase):
         md = MetaDataHandler.DictMDHandler(getattr(inp, 'mdh', None)) # get metadata from the input dataset if present
         
         if self.auto_threshold:
-            self.threshold_density = self._calc_optimal_threshold(inp)
+            # don't invalidate and trigger re-run when auto-setting threshold
+            ip = self._invalidate_parent
+            self._invalidate_parent = False
+            try:
+                self.threshold_density = self._calc_optimal_threshold(inp)
+            finally:
+                self._invalidate_parent = ip
         
         surf = self._generate_surface(self.threshold_density, inp, smooth_curvature=self.smooth_curvature)
 
@@ -194,7 +200,7 @@ class DualMarchingCubes(ModuleBase):
     
     
     def _calc_optimal_threshold(self, inp):
-        from scipy.optimize import fmin, root_scalar, brentq, fsolve
+        from scipy.optimize import fmin, root_scalar, brentq, fsolve, bisect
         from PYME.experimental import isosurface
         pts = np.vstack([inp.points['x'], inp.points['y'], inp.points['z']]).T
 
@@ -214,9 +220,27 @@ class DualMarchingCubes(ModuleBase):
 
         #t = fmin(_surface_quality, self.threshold_density, maxiter=10)
         #t = root_scalar(_surface_quality, x0=self.threshold_density, maxiter=10)
+
+        # st = np.log10(self.threshold_density)
+
+        # # decrease starting threshold until we get at least 5 faces
+        # i = 0
+        # s = self._generate_surface(10.0**st, inp)
+        # while (len(s.faces) < 5) and (i < 5):
+        #     st -=1
+        #     s = self._generate_surface(10.0**st, inp)
+        #     i += 1
         
-        t = 10.0**fsolve(_surface_quality, np.log10(self.threshold_density), epsfcn=0.1, xtol=0.1)
-        print('\nSurface auto-threshold: %f\n' % t)
+        # lt, infodict, ier, msg = fsolve(_surface_quality, st, epsfcn=0.1, xtol=0.1, full_output=True)
+        # t = 10.0**lt
+        # print('error code:',  ier, msg, 'fval:', infodict['fvec'])
+        # print('\nSurface auto-threshold: %f\n)' % t)
+
+        lt, rr = bisect(_surface_quality, -6, -3, xtol=0.1, full_output=True)
+        t = 10.0**lt
+        #print(rr)
+        print('\nSurface auto-threshold: %f\n)' % t)
+        
 
         return t
         #return brentq(_surface_quality, 1e-3, 1e-5, maxiter=10)
