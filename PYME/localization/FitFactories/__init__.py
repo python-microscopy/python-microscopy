@@ -22,8 +22,13 @@
 ################
 import glob
 import os
+from PYME import config
+import importlib
 
-__all__ = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+# discover PYME-internal fitfactories and fully qualify them
+__all__ = ['PYME.localization.FitFactories.' + os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+# find plug-in fitfactories
+__all__.extend(list(config.get_plugins('fit_factories')))
 
 #fitFactoryList = glob.glob(PYME.localization.FitFactories.__path__[0] + '/[a-zA-Z]*.py')
 #fitFactoryList = [os.path.split(p)[-1][:-3] for p in fitFactoryList]
@@ -35,7 +40,8 @@ longDescriptions = {}
 useFor = {}
 for ff in __all__:
     try:
-        fm = __import__('PYME.localization.FitFactories.' + ff, fromlist=['PYME', 'localization', 'FitFactories'])
+        fm = importlib.import_module(ff, '.'.join(ff.split('.')[:-1]))
+        ff = ff.split('.')[-1]
         if 'FitResultsDType' in dir(fm):
             resFitFactories.append(ff)
             if 'DESCRIPTION' in dir(fm):

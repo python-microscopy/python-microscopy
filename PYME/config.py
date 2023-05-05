@@ -32,6 +32,9 @@ overall template for a configuration directory is as follows: ::
       |     |- recipes
       |     |      |- anothermodule.txt
       |     |
+      |     |- reports
+      |     |      |- somemodule.txt
+      |     |
       |     |- <plugin-name>.yaml
       |     |- <another-plugin-name>.yaml
       |
@@ -118,6 +121,10 @@ doesn't supply the features in question:
         
     # a list of fully qualified import paths for recipe modules
     recipes:
+        - somepackage.somemodule
+    
+    # a list of fully qualified import paths for fitfactories
+    fit_factories:
         - somepackage.somemodule
         
     # a section detailing templates and filters for jinga2 generated reports
@@ -398,7 +405,7 @@ def _parse_plugin_config():
             with open(fn, 'r') as f:
                 plugin_conf = yaml.safe_load(f)
             
-            for app in ['visgui', 'dsviewer', 'recipes']:
+            for app in ['visgui', 'dsviewer', 'recipes', 'fit_factories']:
                 plugins[app] = plugins.get(app, set()) | set(plugin_conf.get(app, []))
             
             try:
@@ -432,7 +439,7 @@ def _parse_plugin_config():
             return [p.strip() for p in plugin_paths if not p.strip() == '']
             
 
-        for app in ['visgui', 'dsviewer', 'recipes']:
+        for app in ['visgui', 'dsviewer', 'recipes']:  # note, fit_factories support only for yaml
             plugins[app] = plugins.get(app, set()) | set(_get_app_txt_plugins(app))
 
 _parse_plugin_config()
@@ -459,7 +466,7 @@ def get_plugins(application):
     Parameters
     ----------
     application : basestring
-        One of 'visgui', 'dsviewer', or 'recipes'
+        One of 'visgui', 'dsviewer', 'recipes', or 'fit_factories'
 
     Returns
     -------
