@@ -38,10 +38,13 @@ resFitFactories = []
 descriptions = {}
 longDescriptions = {}
 useFor = {}
+package = {}
 for ff in __all__:
     try:
-        fm = importlib.import_module(ff, '.'.join(ff.split('.')[:-1]))
+        pkg = '.'.join(ff.split('.')[:-1])
+        fm = importlib.import_module(ff, pkg)
         ff = ff.split('.')[-1]
+        package[ff] = pkg
         if 'FitResultsDType' in dir(fm):
             resFitFactories.append(ff)
             if 'DESCRIPTION' in dir(fm):
