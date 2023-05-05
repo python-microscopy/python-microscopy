@@ -38,6 +38,8 @@ from PYME.localization import splitting
 
 from PYME.IO import buffers
 from PYME.IO.image import ImageStack
+import importlib
+import PYME.localization.FitFactories
 
 import logging
 
@@ -346,7 +348,8 @@ class fitTask(taskDef.Task):
     @property
     def fitMod(self):
         if self._fitMod is None:
-            self._fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+            pkg = PYME.localization.FitFactories.package[self.fitModule]
+            self._fitMod = importlib.import_module('.'.join([pkg, self.fitModule]), pkg)  # import our fitting module
          
         return self._fitMod
     
