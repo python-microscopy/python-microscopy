@@ -402,6 +402,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), int(fri['tIndex'])].squeeze()
 
     def draw( self, i = None):
+            from PYME.localization.FitFactories import import_fit_factory
             """Draw data."""
             if len(self.fitResults) == 0:
                 return
@@ -441,7 +442,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 logger.debug('in draw: showing ROI image')
                 
                 logger.debug('in draw: importing fitMod')
-                fitMod = __import__('PYME.localization.FitFactories.' + self.mdh.getEntry('Analysis.FitModule'), fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+                fitMod = import_fit_factory(self.mdh.getEntry('Analysis.FitModule'))
                 logger.debug('in draw: imported fitMod')
 
                 if 'genFitImage' in dir(fitMod):

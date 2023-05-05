@@ -61,3 +61,20 @@ for ff in __all__:
         pass
     
 resFitFactories.sort()
+
+def import_fit_factory(fit_factory):
+    """Helper function to import a fit factory from just the module name,
+    resolves the location and does the import, returning the module
+
+    Parameters
+    ----------
+    fit_factory : str
+        fit factory module name, e.g. LatGaussFitFR
+
+    Returns
+    -------
+    module
+        loaded fit factory module
+    """
+    pkg = package[fit_factory]
+    return importlib.import_module('.'.join([pkg, fit_factory]), pkg)

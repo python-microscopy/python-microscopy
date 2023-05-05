@@ -32,6 +32,7 @@ from PYME.Acquire.Hardware import EMCCDTheory
 from scipy import optimize
 import numpy as np
 from PYME.localization import remFitBuf
+from PYME.localization.FitFactories import import_fit_factory
 
 def emg(v, rg):
     return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
@@ -202,7 +203,7 @@ class fitTestJig(object):
             param_jit = self.md['Test.ParamJitter']
 
         #load the module used for simulation
-        self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
+        self.simMod = import_fit_factory(self.simModule) #import our simulation
 
         p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
         p[0] = abs(p[0])
@@ -242,8 +243,8 @@ class fitTestJig(object):
             param_jit = self.md['Test.ParamJitter']
 
         #load the modules used for simulation and fitting
-        self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
-        self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
+        self.fitMod = import_fit_factory(self.fitModule) #import our fitting module
+        self.simMod = import_fit_factory(self.simModule) #import our simulation
 
         #generate empty arrays for parameters and results
         self.res = np.empty(nTests, self.fitMod.FitResultsDType)

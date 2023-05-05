@@ -67,12 +67,14 @@ class fitTestJig(object):
 
 
     def runTests(self, params=None, param_jit=None, nTests=100):
+        from PYME.localization.FitFactories import import_fit_factory
         if not params:
             params = self.md['Test.DefaultParams']
         if not param_jit:
             param_jit = self.md['Test.ParamJitter']
-            
-        self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+        
+        
+        self.fitMod = import_fit_factory(self.fitModule)
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
         ps = numpy.zeros((nTests, len(params)), 'f4')
 
