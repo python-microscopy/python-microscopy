@@ -220,10 +220,6 @@ class FitPoints(ModuleBase):
         md['voxelsize.x'] = .001
         md['voxelsize.y'] = .001
 
-        #copy across the entries from the real image, replacing the defaults
-        #if necessary
-        md.copyEntriesFrom(inputImage.mdh)
-
         fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
                             fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
         try:
@@ -231,6 +227,10 @@ class FitPoints(ModuleBase):
                 md[param.paramName] = param.default
         except AttributeError:
             pass
+        
+        #copy across the entries from the real image, replacing the defaults
+        #if necessary
+        md.copyEntriesFrom(inputImage.mdh)
 
         r = np.zeros(len(inputPositions['x']), dtype=fitMod.FitResultsDType)
 
