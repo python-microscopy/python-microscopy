@@ -238,11 +238,10 @@ class FitPoints(ModuleBase):
 
         ps = inputImage.pixelSize
         print('pixel size: %s' % ps)
-        bg = np.zeros_like(inputImage.data_xytc[:,:,0,self.channel])
         for x, y, t, i in zip(inputPositions['x'], inputPositions['y'], inputPositions['t'].astype(int), range(len(inputPositions['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(np.atleast_3d(inputImage.data[:, :, t, self.channel]), md, background=bg)
+                ff = fitMod.FitFactory(np.atleast_3d(inputImage.data[:, :, t, self.channel]), md)
                 ff_t = t
 
             #print x/ps, y/ps
