@@ -193,6 +193,10 @@ class DetectPoints2D(ModuleBase):
 class FitPoints(ModuleBase):
     """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
     in inputPositions
+
+    Fit-specific metadata will be set to defaults specified in fitModule.PARAMETERS
+
+    Background subtraction is not currently supported in this module.
     """
     inputImage = Input('input')
     inputPositions = Input('objPositions')
@@ -222,6 +226,11 @@ class FitPoints(ModuleBase):
 
         fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
                             fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+        try:
+            for param in fitMod.PARAMETERS:
+                md[param.paramName] = param.default
+        except AttributeError:
+            pass
 
         r = np.zeros(len(inputPositions['x']), dtype=fitMod.FitResultsDType)
 
@@ -229,11 +238,11 @@ class FitPoints(ModuleBase):
 
         ps = inputImage.pixelSize
         print('pixel size: %s' % ps)
-
+        bg = np.zeros_like(inputImage.data_xytc[:,:,0,self.channel])
         for x, y, t, i in zip(inputPositions['x'], inputPositions['y'], inputPositions['t'].astype(int), range(len(inputPositions['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(np.atleast_3d(inputImage.data[:, :, t, self.channel]), md)
+                ff = fitMod.FitFactory(np.atleast_3d(inputImage.data[:, :, t, self.channel]), md, background=bg)
                 ff_t = t
 
             #print x/ps, y/ps
