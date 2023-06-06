@@ -273,7 +273,7 @@ class ImageStack(object):
         if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
-        #add ourselves to the list of open images        
+        #add ourselves to the list of open images      
         openImages[self.filename] = self
 
     def SetData(self, data):
@@ -762,6 +762,50 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+    
+    def _loadOBF(self, filename):
+        from PYME.IO.DataSources import OBFDataSource
+        from PYME.IO.FileUtils import obf_support
+        from PYME.IO.FileUtils.nameUtils import getFullExistingFilename, getRelFilename
+        import numpy as np
+
+        stack_number = None
+        
+        if '?' in filename:
+            #we have a query string to pick the stack number
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                stack_number = int(urllib.parse.parse_qs(query)['stack'][0])
+            except KeyError:
+                pass
+        
+        filename = getFullExistingFilename(filename)#convert relative path to full path
+        obf = obf_support.File(filename)
+        logger.debug('file: {}'.format(filename))
+        if len(obf.stacks) > 1 and stack_number is None and self.haveGUI:
+                import wx
+                options = ['%d: %s' % (ind, stack.name) for (ind, stack) in enumerate(obf.stacks)]
+                
+                dlg = wx.SingleChoiceDialog(None, 'Stack', 'Select a stack', options)
+                if dlg.ShowModal() == wx.ID_OK:
+                    stack_number = dlg.GetSelection()
+        
+        data = OBFDataSource.DataSource(obf, stack_number)
+        self.SetData(data)
+        self.seriesName = getRelFilename(filename) + ': ' + data.stack.name
+        self.filename = self.seriesName
+        logger.debug(self.filename)
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+        voxel_sizes = data.stack.pixel_sizes
+        scales_factors = [d.scalefactor for d in data.stack.si_dimensions[:3]]
+        if not np.allclose(np.ones_like(scales_factors), scales_factors):
+            raise NotImplementedError('Scale factors other than 1 not yet supported for OBF metadata')
+        self.mdh['voxelsize.x'] = voxel_sizes[0] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.y'] = voxel_sizes[1] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
+        
         
 
     def _findAndParseMetadata(self, filename):
@@ -857,7 +901,7 @@ class ImageStack(object):
                 except IOError:
                     pass
 
-            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+            elif filename.endswith('.dbl'): #imspector format, Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
                 
@@ -1270,6 +1314,11 @@ class ImageStack(object):
                 self._loadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
                 self._loadDBL(filename)
+            elif '.obf' in os.path.splitext(filename)[1] or '.msr' in os.path.splitext(filename)[1]:
+                self._loadOBF(filename)
+                # hack to get around self.filename = filename below, otherwise if we open multiple
+                # stacks from this same file we won't be able to make composite later
+                filename = self.seriesName
             elif os.path.splitext(filename)[1] in ['.tif', '.lsm']: #try tiff
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):
