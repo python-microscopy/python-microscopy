@@ -169,7 +169,40 @@ def _expand_z(ps_shape, im_shape, points):
 
 
 def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True, centreZ=True, centreXY=True,
-             x_offset=0, y_offset=0, z_offset=0,expand_z=False):
+             x_offset=0, y_offset=0, z_offset=0,expand_z=False, pad=(0,0,2)):
+    
+    """
+    Extract a 3D PSF by averaging the images of a set of point sources.
+
+    Parameters
+    ----------
+    im : ndarray
+        3D image stack
+    points : ndarray of shape (N, 3)
+        array of point locations
+    PSshape : tuple of 3 ints
+        half size of PSF in pixels
+    blur : tuple of 3 floats
+        standard deviation of Gaussian blur to apply to each dimension
+    normalize : bool, 'max', or 'sum'
+        If True, or max normalize the entire PSF to the maximum value. If 'sum', normalize to the sum of the in-focus plane of the PSF
+    centreZ : bool
+        If True, make sure the PSF is centred in z. If False, individual PSF images will still be aligned with respect to each other, but the
+        PSF as a whole will not be. Useful when taking multi-channel PSFs where you want to preserve chromatic shifts between the channels
+        in the PSF so that deconvolution will take care of chromatic shifts without an explicit separate shift correction step. Also used
+        when extracting multi-channel PSFs for Biplane localization.
+    centreXY : bool
+        Similar to centreZ, but for the xy plane. Do not use for biplane PSFs (it is generally not possible to assume a constant
+        lateral shift across the field of view, so this needs to be handled with shiftmaps).
+    expand_z : bool
+        Expand to the entire z range of the image. Was useful for deconvolution to ensure PSF sizes match the image size, but
+        largely unnecessary as deconvolution code now has PSF expansion built in.
+    pad : tuple of 3 ints
+        How much to pad the PSF in each dimension to avoid wrap-around when performing Fourier domain shifting. Default is (0,0,2)
+    """
+    
+    # pad the PSF shape to avoid wrap-around when performing Fourier domain shifting
+    PSshape = np.array(PSshape) + 2*np.array(pad)
     
     if expand_z:
         PSshape = _expand_z(PSshape, im.shape, points)
@@ -228,12 +261,16 @@ def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True,
         F = np.fft.fftn(imi)
         d = d + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
+    # remove padding
+    px, py, pz = pad
+    d= d[px:(-px if (px > 0) else None), py:(-py if py > 0 else None), pz:(-pz if pz > 0 else None)]
+
     d = scipy.ndimage.gaussian_filter(d, blur)
     #estimate background as a function of z by averaging rim pixels
     #bg = (d[0,:,:].squeeze().mean(0) + d[-1,:,:].squeeze().mean(0) + d[:,0,:].squeeze().mean(0) + d[:,-1,:].squeeze().mean(0))/4
     d = d - d.min()
 
-    if normalize == True:
+    if (normalize == True) or (normalize == 'max'):
         d = d/d.max()
     elif normalize == 'sum':
         d = d/d[:,:,d.shape[2]/2].sum()
