@@ -63,7 +63,7 @@ class PiezoBase(object):
         raise NotImplementedError
     
 
-class SingleAxisOnMultiaxisController(PiezoBase):
+class SingleAxisWrapper(PiezoBase):
     """
     Allows use of an axis on a multiaxis stage as a single-axis 
     PiezoBase object for compatibility with e.g. focus-lock code.
