@@ -11,12 +11,19 @@ logger = logging.getLogger(__name__)
 
 class IntensityTracePanel(FastGraphPanel):
     def __init__(self, parent, frame_wrangler, winid=-1, n_frames=1000):
-        """
-        If the square region select tool is active, will plot the average value within it
-        over time
+        """If the square region select tool is active, will plot the average value within it
+        over time. Note that the update rate is set by the GUI timer, not the camera frame rate.
+
         Parameters
         ----------
-        
+        parent : wx.Window
+            PYMEAcquire MainFrame / AUIFrame
+        frame_wrangler : PYME.Acquire.FrameWrangler
+            frame_wrangler object, which is grabbing new frames from the camera
+        winid : int, optional
+            direct pass-through to FastGraphPanel, by default -1
+        n_frames : int, optional
+            Number of frame-updates to store and display, by default 1000
         """
         self.frame_vals = np.arange(n_frames)
         self.intensity_avg = np.zeros_like(self.frame_vals, dtype=float)
@@ -29,22 +36,31 @@ class IntensityTracePanel(FastGraphPanel):
         self._relative_val = 1
 
     def assign_do(self):
+        """
+        Assign the display options object from the MainFrame. This is done lazily
+        because it might not be created when this panel is instantiated.
+        """
         logger.debug('assigning display options')
         self.do = self._mf().vp.do  # PYME.UI.displayOps.DisplayOptions
 
     def clear(self):
+        """
+        Clear the trace
+        """
         self._relative_val = 1.
         x0, x1, y0, y1, _, _ = self.do.sorted_selection
         self.intensity_avg = np.ones_like(self.intensity_avg) * np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1]))
 
-
-    def relative_clear(self):
-        x0, x1, y0, y1, _, _ = self.do.sorted_selection
-        self._relative_val = np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1]))
-        print('relative value: %f' % self._relative_val)
-        self.intensity_avg = np.ones_like(self.intensity_avg)
-
     def refr(self, sender=None, **kwargs):
+        """Updates the trace with the current frame's average value within the selected region
+
+        Note that this will be wired-up to the GUI timer, not the frameWrangler's update rate
+
+        Parameters
+        ----------
+        sender : optional
+            dispatch caller, included only to match the required function signature
+        """
         if self.do is None:
             try:
                 self.assign_do()
@@ -63,7 +79,7 @@ class IntensityTracePanel(FastGraphPanel):
 class TraceROISelectPanel(wx.Panel):
     def __init__(self, parent, trace_page, winid=-1):
         """
-        
+        Simple panel to facilitate clearing the Itensity trace through the GUI
         """
         wx.Panel.__init__(self, parent, winid)
         self.trace_page = trace_page
@@ -76,18 +92,10 @@ class TraceROISelectPanel(wx.Panel):
         self.clear_button.Bind(wx.EVT_BUTTON, self.OnClear)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
-        self.relclear_button = wx.Button(self, -1, 'Relative Clear')
-        hsizer.Add(self.relclear_button, 0, wx.ALL, 2)
-        self.relclear_button.Bind(wx.EVT_BUTTON, self.OnRelClear)
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-
         self.SetSizerAndFit(vsizer)
 
     def OnClear(self, wx_event=None):
         self.trace_page.clear()
-
-    def OnRelClear(self, wx_event=None):
-        self.trace_page.relative_clear()
 
 
 # example init script plug:
