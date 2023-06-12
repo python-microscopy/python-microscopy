@@ -3,6 +3,10 @@ import wx
 import numpy as np
 from PYME.ui.fastGraph import FastGraphPanel
 import weakref
+from PYME.ui.selection import SELECTION_RECTANGLE
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IntensityTracePanel(FastGraphPanel):
@@ -19,23 +23,23 @@ class IntensityTracePanel(FastGraphPanel):
         FastGraphPanel.__init__(self, parent, winid, self.frame_vals, 
                                 self.intensity_avg)
         self.wrangler = frame_wrangler
-        self.do = None  # display_op]
-        self._mf = weakref.ref(parent)
+        # differ display opts assignment because it might not have been created yet
+        self.do = None  # PYME.UI.displayOps.DisplayOptions gets assigned later
+        self._mf = weakref.ref(parent)  # weak ref to MainFrame
         self._relative_val = 1
 
     def assign_do(self):
-        print('assigning display options')
-        self.do = self._mf().vp.do
-        print(self.do.SELECTION_RECTANGLE)
+        logger.debug('assigning display options')
+        self.do = self._mf().vp.do  # PYME.UI.displayOps.DisplayOptions
 
     def clear(self):
         self._relative_val = 1.
-        x0, x1, y0, y1 = [self.do.selection_begin_x, self.do.selection_end_x, self.do.selection_begin_y, self.do.selection_end_y]
+        x0, x1, y0, y1, _, _ = self.do.sorted_selection
         self.intensity_avg = np.ones_like(self.intensity_avg) * np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1]))
 
 
     def relative_clear(self):
-        x0, x1, y0, y1 = [self.do.selection_begin_x, self.do.selection_end_x, self.do.selection_begin_y, self.do.selection_end_y]
+        x0, x1, y0, y1, _, _ = self.do.sorted_selection
         self._relative_val = np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1]))
         print('relative value: %f' % self._relative_val)
         self.intensity_avg = np.ones_like(self.intensity_avg)
@@ -46,9 +50,9 @@ class IntensityTracePanel(FastGraphPanel):
                 self.assign_do()
             except:
                 return
-        if self.do.selectionMode != self.do.SELECTION_RECTANGLE:
+        if self.do.selection.mode != SELECTION_RECTANGLE:
             return
-        x0, x1, y0, y1 = [self.do.selection_begin_x, self.do.selection_end_x, self.do.selection_begin_y, self.do.selection_end_y]
+        x0, x1, y0, y1, _, _ = self.do.sorted_selection
 
         self.intensity_avg[:-1] = self.intensity_avg[1:]
         # check, do we swap xy / rc here?
@@ -88,10 +92,12 @@ class TraceROISelectPanel(wx.Panel):
 
 # example init script plug:
 # @init_gui('intensity trace')
-# def focus_lock(MainFrame, scope):
-#     import numpy as np
-#     from XXX import IntensityTracePanel
+# def intensity_trace(MainFrame, scope):
+#     from PYME.Acquire.ui.intensity_trace import IntensityTracePanel, TraceROISelectPanel
 
 #     intensity_trace = IntensityTracePanel(MainFrame, scope.frameWrangler)
 #     MainFrame.AddPage(page=intensity_trace, select=False, caption='Trace')
-#     MainFrame.time1.WantNotification.append(intensity_trace.refr) 
+#     MainFrame.time1.WantNotification.append(intensity_trace.refr)
+
+#     panel = TraceROISelectPanel(MainFrame, intensity_trace)
+#     MainFrame.camPanels.append((panel, 'Trace ROI Select'))
