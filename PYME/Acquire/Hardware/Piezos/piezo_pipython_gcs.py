@@ -49,38 +49,11 @@ class GCSPiezo(PiezoBase):
         else:
             self.axes = axes
         
-        units = self.GetUnits(axes)
-        logger.debug('stage units: %s' % units)
-        # if any([r'\u03BCm' != unit for unit in units]):
-        #     raise AssertionError('PYME expects stage to be in units of um, found: %s' % units)
-        # self.SetUnits(self.axes, None)  # None default sets all axes to um
-        
-    
-    def GetUnits(self, axes=None):
-        """
-        @return : Ordered dictionary {axis: unit}, unit as string.
-        """
-        if axes is None:
-            axes = self.axes
-        units = self.pi.qPUN(axes)
-        return [units[axis] for axis in axes]
-    
-    def SetUnits(self, axes=None, values=None):
-        """
-        Set the physical unit of 'axes' to 'values'.
-        @param axes: Axis or list of axes or dictionary {axis : value}.
-        @param values : String or list of them or None.
-            Default None will set all axes to um
-            
-        """
-        raise NotImplementedError
-        if axes is None:
-            axes = self.axes
-        if values is None:
-            values = ['um' for axis in axes]
-        # PI uses unicoded um to set um, so smooth over 'u' here
-        # vals = [val if val!='um' else '\u03BCm'.encode('utf-8') for val in values]
-        self.pi.PUN(axes, values)
+        units = self.pi.qPUN(self.axes)
+        logger.debug('stage units: %s' % [units[axis] for axis in self.axes])
+        # PI appears to use unicoded um to set units to um, not funcitonal at the moment, but
+        # ideally we would remove the unit check/log above and just force to um here.
+        # self.pi.PUN(axes, values)
 
     def SetServo(self, val=1):
         # due to form of SetServo in the baseclass, just set all axes for now
