@@ -508,6 +508,11 @@ class HamamatsuDCAM(Camera):
             index of the property array to set
         val : float
             Value to set DCAM property.
+        
+        Notes
+        -----
+        Less checking is done here than in setCamPropValue, which is therefore
+        prefered if only dealing with the zeroth element of the property array.
         """
         prop = self.getCamPropAttr(prop_name)
         n = int(element_number)
