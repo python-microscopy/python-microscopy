@@ -423,6 +423,27 @@ class HamamatsuDCAM(Camera):
                          "dcamprop_getvalue")
 
         return float(val.value)
+    
+    def get_cam_prop_array_value(self, prop_name, element_number):
+        prop = self.getCamPropAttr(prop_name)
+        n = int(element_number)
+        prop_id = prop.iProp_ArrayBase + prop.iPropStep_Element * n
+        # Get the property value
+        val = ctypes.c_double(0)
+        self.checkStatus(dcam.dcamprop_getvalue(self.handle, prop_id,
+                                                ctypes.byref(val)),
+                         "dcamprop_getvalue")
+        return float(val.value)
+
+    def set_cam_prop_array_value(self, prop_name, element_number, val):
+        prop = self.getCamPropAttr(prop_name)
+        n = int(element_number)
+        prop_id = prop.iProp_ArrayBase + prop.iPropStep_Element * n
+        # Set the property value
+        self.checkStatus(dcam.dcamprop_setvalue(self.handle, prop_id,
+                                                ctypes.c_double(val)),
+                        "dcamprop_setvalue")
+
 
     def setCamPropValue(self, prop_name, val):
         """
