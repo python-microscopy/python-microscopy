@@ -86,7 +86,7 @@ class RingCorrelator(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(dsviewer)
         
-        PROC_COLOCALISE = wx.NewId()
+        PROC_COLOCALISE = wx.NewIdRef()
         
         
         dsviewer.mProcessing.Append(PROC_COLOCALISE, "Fourier Ring Correlation", "", wx.ITEM_NORMAL)

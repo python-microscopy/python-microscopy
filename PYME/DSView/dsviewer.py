@@ -126,7 +126,7 @@ class DSViewFrame(AUIFrame):
         self.mainFrame = weakref.ref(self)
         
         if not hasattr(self, "ID_OPEN_SEQ"):
-            self.ID_OPEN_SEQ = wx.NewId()
+            self.ID_OPEN_SEQ = wx.NewIdRef()
         self.AddMenuItem('File', '&Open', self.OnOpen, id=wx.ID_OPEN)
         self.AddMenuItem('File', '&Save As', self.OnSave, id=wx.ID_SAVE)
         self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
@@ -212,7 +212,7 @@ class DSViewFrame(AUIFrame):
         self.moduleMenuIDByName = {}
         self.mModules = wx.Menu()
         for mn in modules.allmodules():
-            id = wx.NewId()
+            id = wx.NewIdRef()
             self.mModules.AppendCheckItem(id, mn)
             self.moduleNameByID[id] = mn
             self.moduleMenuIDByName[mn] = id

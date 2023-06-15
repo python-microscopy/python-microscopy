@@ -226,10 +226,10 @@ class Splitter:
         parent.AddMenuItem('Splitter', 'Unmix%s\tF7' % suff, self.OnUnmix)
         parent.AddMenuItem('Splitter', 'SetShiftField%s' % suff, self.OnSetShiftField)
 
-#        idConstROI = wx.NewId()
-#        idFlipView = wx.NewId()
-#        idUnmix = wx.NewId()
-#        idShiftfield = wx.NewId()
+#        idConstROI = wx.NewIdRef()
+#        idFlipView = wx.NewIdRef()
+#        idUnmix = wx.NewIdRef()
+#        idShiftfield = wx.NewIdRef()
 #
 #        self.menu = wx.Menu(title = '')
         

@@ -125,8 +125,8 @@ class mc2000:
         """Add menu items and keyboard accelerators for joystick control
         to the specified menu & parent window"""
         #Create IDs
-        self.ID_JOY_ON = wx.NewId()
-        self.ID_JOY_OFF = wx.NewId()
+        self.ID_JOY_ON = wx.NewIdRef()
+        self.ID_JOY_OFF = wx.NewIdRef()
         
         #Add menu items
         menu.AppendSeparator()

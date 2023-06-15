@@ -191,9 +191,9 @@ class colourPanel(wx.Panel):
 
         ## only do this part the first time so the events are only bound once
         #if not hasattr(self, "ID_FILT_ADD"):
-        self.ID_SPEC_ADD = wx.NewId()
-        self.ID_SPEC_DELETE = wx.NewId()
-        #self.ID_FILT_EDIT = wx.NewId()
+        self.ID_SPEC_ADD = wx.NewIdRef()
+        self.ID_SPEC_DELETE = wx.NewIdRef()
+        #self.ID_FILT_EDIT = wx.NewIdRef()
 
         self.Bind(wx.EVT_MENU, self.OnSpecAdd, id=self.ID_SPEC_ADD)
         self.Bind(wx.EVT_MENU, self.OnSpecDelete, id=self.ID_SPEC_DELETE)

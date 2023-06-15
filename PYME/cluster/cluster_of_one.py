@@ -156,8 +156,8 @@ def main():
     ico = wx.Icon(PYME.resources.getIconPath('pymeLogo.png'))
     
     class ClusterIcon(TaskBarIcon):
-        TBMENU_CLUSTERUI = wx.NewId()
-        TBMENU_CLOSE = wx.NewId()
+        TBMENU_CLUSTERUI = wx.NewIdRef()
+        TBMENU_CLOSE = wx.NewIdRef()
         
         def __init__(self, frame):
             TaskBarIcon.__init__(self, TBI_DOCK)

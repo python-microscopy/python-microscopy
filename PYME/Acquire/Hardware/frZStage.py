@@ -31,7 +31,7 @@ def create(parent):
 [wxID_FRZSTEPPER, wxID_FRZSTEPPERBMINUS1U, wxID_FRZSTEPPERBMINUS200N, 
  wxID_FRZSTEPPERBMINUS50N, wxID_FRZSTEPPERBPLUS1U, wxID_FRZSTEPPERBPLUS200N, 
  wxID_FRZSTEPPERBPLUS50N, wxID_FRZSTEPPERPANEL1, wxID_FRZSTEPPERTCCURPOS, 
-] = [wx.NewId() for _init_ctrls in range(9)]
+] = [wx.NewIdRef() for _init_ctrls in range(9)]
 
 class frZStepper(wx.Frame):
     def _init_ctrls(self, prnt):

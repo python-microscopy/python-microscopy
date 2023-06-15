@@ -296,7 +296,7 @@ class VisGUICore(object):
         self.AddMenuItem('View', 'Fit ROI\tAlt-8', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
-        self.ID_VIEW_CLIP_ROI = wx.NewId()
+        self.ID_VIEW_CLIP_ROI = wx.NewIdRef()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
 
         self.AddMenuItem('View', 'Re&center\tAlt-C', self.OnRecenter)

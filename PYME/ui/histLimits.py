@@ -464,7 +464,7 @@ class HistLimitEditDialog(wx.Dialog):
 
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
     f = wx.Frame(parent, title=title, size=size)
-    ID_HIST_LIM = wx.NewId()
+    ID_HIST_LIM = wx.NewIdRef()
     p = HistLimitPanel(f, ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
     f.Show()
     return ID_HIST_LIM
