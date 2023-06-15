@@ -11,7 +11,7 @@ Cameras / Detectors
 
 Stages / Translation
 ====================
-* PI piezos (using e255, e662, e709 and e816 controller interface boards, covers most PI piezos, likely easily modifyable to new controllers)
+* PI piezos (using e255, e662, e709, e727 and e816 controller interface boards, covers most PI piezos, likely easily modifyable to new controllers)
 * PI piezo linear motor stages using the C867 controller (M686 stage and similar)
 * PI stepper motor stages using the Mercury command set
 * Marzhauser Tango translation stages and joystick
