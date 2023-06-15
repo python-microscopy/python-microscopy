@@ -62,3 +62,41 @@ class PiezoBase(object):
     def OnTarget(self):
         raise NotImplementedError
     
+
+class SingleAxisWrapper(PiezoBase):
+    """
+    Allows use of an axis on a multiaxis stage as a single-axis 
+    PiezoBase object for compatibility with e.g. focus-lock code.
+    """
+    def __init__(self, multiaxis_stage, axis=1):
+        super().__init__()
+        self.multiaxis_stage = multiaxis_stage
+        self.units_um = self.multiaxis_stage.units_um
+        self.axis = axis
+
+    def MoveTo(self, iChannel, fPos, bTimeOut=True):
+        self.multiaxis_stage.MoveTo(self.axis, fPos, bTimeOut)
+    
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+        self.multiaxis_stage.MoveRel(self.axis, incr, bTimeOut)
+    
+    def GetPos(self, iChannel=0):
+        return self.multiaxis_stage.GetPos(self.axis)
+    
+    def GetTargetPos(self, iChannel=0):
+        return self.multiaxis_stage.GetTargetPos(self.axis)
+    
+    def GetMin(self, iChan=1):
+        return self.multiaxis_stage.GetMin(self.axis)
+    
+    def GetMax(self, iChan=1):
+        return self.multiaxis_stage.GetMax(self.axis)
+    
+    def GetFirmwareVersion(self):
+        return self.multiaxis_stage.GetFirmwareVersion()
+    
+    def OnTarget(self):
+        return self.multiaxis_stage.OnTarget()
+    
+    def SetServo(self, val=1):
+        self.multiaxis_stage.SetServo(val)
