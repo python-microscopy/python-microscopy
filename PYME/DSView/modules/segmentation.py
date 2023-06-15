@@ -58,7 +58,7 @@ class SegmentationPanel(wx.Panel):
             ssizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.sourceImage.names[i]), wx.VERTICAL)
             ssizer.Add(wx.StaticText(self, -1, 'Intensity for p = .5:'), 0, wx.ALL, 2)
 
-            id = wx.NewId()
+            id = wx.NewIdRef()
             #self.hIds.append(id)
             c = self.sourceImage.data[:,:,:, i].ravel()
             #print c.min(), c.max()

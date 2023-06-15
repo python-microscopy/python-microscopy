@@ -97,7 +97,7 @@ class OptionsPanel(wx.Panel):
                 ssizer = wx.BoxSizer(wx.VERTICAL)
                 p = pane
 
-            id = wx.NewId()
+            id = wx.NewIdRef()
             self.hIds.append(id)
             
             c = hd[i]
@@ -111,7 +111,7 @@ class OptionsPanel(wx.Panel):
             
             hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-            id = wx.NewId()
+            id = wx.NewIdRef()
             self.cIds.append(id)
             cCmap = wx.Choice(p, id, choices=cmapnames, size=(80, -1))
             cCmap.SetSelection(cmapnames.index(self.do.cmaps[i].name))
@@ -119,7 +119,7 @@ class OptionsPanel(wx.Panel):
             hsizer2.Add(cCmap, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             
             if horizOrientation:
-                id = wx.NewId()
+                id = wx.NewIdRef()
                 self.shIds.append(id)            
                 cbShow = wx.CheckBox(p, id)
                 cbShow.SetValue(self.do.show[i])
@@ -264,9 +264,9 @@ class OptionsPanel(wx.Panel):
     def OnOptimise(self, event):
         if wx.GetKeyState(wx.WXK_SHIFT):
             if not hasattr(self, '_optim_minmax_id'):
-                #self._popupid = wx.NewId()
-                self._optim_percentile_id = wx.NewId()
-                self._optim_minmax_id = wx.NewId()
+                #self._popupid = wx.NewIdRef()
+                self._optim_percentile_id = wx.NewIdRef()
+                self._optim_minmax_id = wx.NewIdRef()
 
                 self.Bind(wx.EVT_MENU, lambda e: self._optimise('percentile'), id=self._optim_percentile_id)
                 self.Bind(wx.EVT_MENU, lambda e: self._optimise('min-max'), id=self._optim_minmax_id)
@@ -398,11 +398,11 @@ class OptionsPanel(wx.Panel):
         self.toolB = aui.AuiToolBar(wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
         self.toolB.SetToolBitmapSize(wx.Size(16, 16))
 
-        ID_SELECT_OBJECT = wx.NewId()
-        ID_CROSSHAIRS = wx.NewId()
-        ID_RECTSELECT = wx.NewId()
-        ID_LINESELECT = wx.NewId()
-        ID_SQUIGGLESELECT = wx.NewId()
+        ID_SELECT_OBJECT = wx.NewIdRef()
+        ID_CROSSHAIRS = wx.NewIdRef()
+        ID_RECTSELECT = wx.NewIdRef()
+        ID_LINESELECT = wx.NewIdRef()
+        ID_SQUIGGLESELECT = wx.NewIdRef()
 
         self.toolB.AddRadioTool(ID_CROSSHAIRS, "Set position", bmCrosshairs, bmCrosshairs)
         self.toolB.AddRadioTool(ID_SELECT_OBJECT, "Object selection", bmObjectSelect, bmObjectSelect)

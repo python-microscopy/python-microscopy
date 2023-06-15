@@ -15,9 +15,9 @@ import PYME.ui.manualFoldPanel as afp
  wxID_DSIMCONTROLSTCUROBJPOINTS, wxID_DSIMCONTROLSTSTATUS,
  wxID_DSIMCONTROLTEXPROBE, wxID_DSIMCONTROLTEXSWITCH, wxID_DSIMCONTROLTKBP,
  wxID_DSIMCONTROLTNUMFLUOROPHORES,
-] = [wx.NewId() for _init_ctrls in range(28)]
+] = [wx.NewIdRef() for _init_ctrls in range(28)]
 
-[wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
+[wxID_DSIMCONTROLTREFRESH] = [wx.NewIdRef() for _init_utils in range(1)]
 
 import numpy as np
 from . import fluor

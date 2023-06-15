@@ -51,13 +51,13 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
 
     def _init_toolbar(self):
         self._parent = self.canvas.GetParent()
-        _NTB2_HOME    =wx.NewId()
-        self._NTB2_BACK    =wx.NewId()
-        self._NTB2_FORWARD =wx.NewId()
-        self._NTB2_PAN     =wx.NewId()
-        self._NTB2_ZOOM    =wx.NewId()
-        _NTB2_SAVE    = wx.NewId()
-        _NTB2_SUBPLOT    =wx.NewId()
+        _NTB2_HOME    =wx.NewIdRef()
+        self._NTB2_BACK    =wx.NewIdRef()
+        self._NTB2_FORWARD =wx.NewIdRef()
+        self._NTB2_PAN     =wx.NewIdRef()
+        self._NTB2_ZOOM    =wx.NewIdRef()
+        _NTB2_SAVE    = wx.NewIdRef()
+        _NTB2_SUBPLOT    =wx.NewIdRef()
 
         self.SetToolBitmapSize(wx.Size(16,16))
 

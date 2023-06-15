@@ -43,7 +43,7 @@ from PYME import config
  wxID_FRSPOOLPANEL1, wxID_FRSPOOLSTATICBOX1, wxID_FRSPOOLSTATICBOX2, 
  wxID_FRSPOOLSTATICTEXT1, wxID_FRSPOOLSTNIMAGES, wxID_FRSPOOLSTSPOOLDIRNAME, 
  wxID_FRSPOOLSTSPOOLINGTO, wxID_FRSPOOLTCSPOOLFILE, 
-] = [wx.NewId() for _init_ctrls in range(14)]
+] = [wx.NewIdRef() for _init_ctrls in range(14)]
     
 
 import  PYME.ui.manualFoldPanel as afp

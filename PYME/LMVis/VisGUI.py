@@ -404,7 +404,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             
         """
         
-        ID_NEWITEM = wx.NewId()
+        ID_NEWITEM = wx.NewIdRef()
         self.extras_menu.Append(ID_NEWITEM, label)
         self.Bind(wx.EVT_MENU, callback, id=ID_NEWITEM)
         

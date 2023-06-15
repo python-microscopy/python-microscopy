@@ -48,7 +48,7 @@ def create(parent):
  wxID_ANDORFRAMESTATICTEXT3, wxID_ANDORFRAMESTATICTEXT4, 
  wxID_ANDORFRAMESTATICTEXT5, wxID_ANDORFRAMESTATICTEXT6, 
  wxID_ANDORFRAMETCCDTEMP, wxID_ANDORFRAMETEMGAIN, 
-] = [wx.NewId() for _init_ctrls in range(24)]
+] = [wx.NewIdRef() for _init_ctrls in range(24)]
 
 
 

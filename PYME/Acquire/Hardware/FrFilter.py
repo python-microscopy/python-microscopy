@@ -29,7 +29,7 @@ def create(parent):
     return FiltFrame(parent)
 
 [wxID_FILTFRAME, wxID_FILTFRAMECHFILTWHEEL, wxID_FILTFRAMEPANEL1, 
-] = [wx.NewId() for _init_ctrls in range(3)]
+] = [wx.NewIdRef() for _init_ctrls in range(3)]
 
 class FiltPanel(wx.Frame):
     def _init_ctrls(self, prnt):
