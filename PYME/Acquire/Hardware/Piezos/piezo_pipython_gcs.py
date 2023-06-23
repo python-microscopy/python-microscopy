@@ -25,6 +25,14 @@ def get_gcs_usb():
     with GCSDevice() as pidev:
         return pidev.EnumerateUSB()
 
+def get_stage_axes(description):
+    try:
+        pi = GCSDevice()
+        pi.ConnectUSB(description)
+        return pitools.getaxeslist(pi, None)
+    finally:
+        pi.CloseConnection()
+
 
 class GCSPiezo(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
@@ -38,7 +46,7 @@ class GCSPiezo(PiezoBase):
         axes : list
             list of axes if this is a multi-axis controller. e.g. [1, 2, 3]
             for a 3-axis stage. Note some PI firmwares assume ['a', 'b', 'c'],
-            or ['x', 'y', 'z']. After initialization these will be indexed into
+            or ['X', 'Y', 'Z']. After initialization these will be indexed into
             for method calls, i.e. GetPos(iChannel=0) will use axes[0] for the
             GCS axis descriptor.
 
@@ -151,9 +159,9 @@ class GCSPiezoThreaded(PiezoBase):
             description as found by GCS enumerate, e.g. 
             PI E-727 Controller SN 0118035989.
         axes : list
-            list of axes if this is a multi-axis controller. e.g. [1, 2, 3]
+            list of axes if this is a multi-axis controller. e.g. ['1', '2', '3']
             for a 3-axis stage. Note some PI firmwares assume ['a', 'b', 'c'],
-            or ['x', 'y', 'z']. After initialization these will be indexed into
+            or ['X', 'Y', 'Z']. After initialization these will be indexed into
             for method calls, i.e. GetPos(iChannel=0) will use axes[0] for the
             GCS axis descriptor.
 
@@ -169,8 +177,10 @@ class GCSPiezoThreaded(PiezoBase):
         else:
             self.axes = axes
         
-        self._min = [self.GetMin(iChan) for iChan in range(len(self.axes))]
-        self._max = [self.GetMax(iChan) for iChan in range(len(self.axes))]
+        # self._min = [self.GetMin(iChan, skip_cache=True) for iChan in range(len(self.axes))]
+        self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
+        self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
+        # self._max = [self.GetMax(iChan, skip_cache=True) for iChan in range(len(self.axes))]
 
         self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
         self.target_positions = np.copy(self.positions)
@@ -231,14 +241,14 @@ class GCSPiezoThreaded(PiezoBase):
         except:
             raise AssertionError('GetMin only supports single-axis query')
 
-        try:
-            return self._min[iChan]
-        except KeyError:
-            logger.debug('Fetching %s axis min' % iChan)
-            axis = self.axes[iChan]
-            with self._lock:
-                self._min[iChan] = pitools.getmintravelrange(self.pi, axis)[axis]  # self.pi.qTMN(axis)[axis]
-            return self._min[iChan]
+        
+        return self._min[iChan]
+        # except IndexError:
+        #     logger.debug('Fetching %s axis min' % iChan)
+        #     axis = self.axes[iChan]
+        #     with self._lock:
+        #         self._min[iChan] = pitools.getmintravelrange(self.pi, axis)[axis]  # self.pi.qTMN(axis)[axis]
+        #     return self._min[iChan]
         # return self.pi.qNLM(axes=[iChan])[iChan]
         # qCMN min commandable closed-loop target
     
@@ -250,14 +260,14 @@ class GCSPiezoThreaded(PiezoBase):
             assert np.isscalar(iChan)
         except:
             raise AssertionError('GetMax only supports single-axis query')
-        try:
-            return self._max[iChan]
-        except KeyError:
-            logger.debug('Fetching %s axis max' % iChan)
-            axis = self.axes[iChan]
-            with self._lock:
-                self._max[iChan] = pitools.getmaxtravelrange(self.pi, axis)[axis]  # self.pi.qTMX(axis)[axis]
-            return self._max[iChan]
+        
+        return self._max[iChan]
+        # except KeyError:
+        #     logger.debug('Fetching %s axis max' % iChan)
+        #     axis = self.axes[iChan]
+        #     with self._lock:
+        #         self._max[iChan] = pitools.getmaxtravelrange(self.pi, axis)[axis]  # self.pi.qTMX(axis)[axis]
+        #     return self._max[iChan]
     
     def GetFirmwareVersion(self):
         raise NotImplementedError
@@ -296,13 +306,12 @@ class GCSPiezoThreaded(PiezoBase):
                     
                     # update ontarget
                     old_on_target = np.copy(self._on_target)
-                    self._on_target = np.asarray([pitools.ontarget(self.pi)[axis] for axis in self.axes])
-
+                    on_targets = pitools.ontarget(self.pi, None)
+                    self._on_target = np.asarray([on_targets[axis] for axis in self.axes])
                     if not np.all(self._on_target == old_on_target):
                         # FIXME - something to log which axis would be cool?
                         logEvent('PiezoOnTarget', '%s' % self.positions, time.time())
                         self._all_on_target = np.all(self._on_target)
-                    
                     targets_matched = np.isclose(self.target_positions, self._last_target_positions)
                     if all(targets_matched):
                         self._all_on_target = True
