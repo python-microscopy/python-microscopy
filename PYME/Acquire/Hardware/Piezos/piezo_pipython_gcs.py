@@ -36,7 +36,10 @@ class GCSPiezo(PiezoBase):
             PI E-727 Controller SN 0118035989.
         axes : list
             list of axes if this is a multi-axis controller. e.g. [1, 2, 3]
-            for a 3-axis stage. Note some PI firmwares assume ['a', 'b', 'c']
+            for a 3-axis stage. Note some PI firmwares assume ['a', 'b', 'c'],
+            or ['x', 'y', 'z']. After initialization these will be indexed into
+            for method calls, i.e. GetPos(iChannel=0) will use axes[0] for the
+            GCS axis descriptor.
 
         """
         PiezoBase.__init__(self)
@@ -49,8 +52,13 @@ class GCSPiezo(PiezoBase):
         else:
             self.axes = axes
         
-        units = self.pi.qPUN(self.axes)
-        logger.debug('stage units: %s' % [units[axis] for axis in self.axes])
+        self._min = {}  # key'd on iChan
+        self._max = {}
+        # try:
+        #     units = self.pi.qPUN(self.axes)
+        #     logger.debug('stage units: %s' % [units[axis] for axis in self.axes])
+        # except:
+        #     pass
         # PI appears to use unicoded um to set units to um, not funcitonal at the moment, but
         # ideally we would remove the unit check/log above and just force to um here.
         # self.pi.PUN(axes, values)
@@ -60,24 +68,26 @@ class GCSPiezo(PiezoBase):
         self.pi.SVO(self.axes, [val for axis in self.axes])
     
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
-        self.pi.MOV(iChannel, fPos)
+        self.pi.MOV(self.axes[iChannel], fPos)
     
     def MoveRel(self, iChannel, incr, bTimeOut=True):
         """ relative to current target position
         @param axes: Axis or list of axes or dictionary {axis : value}.
         @param values : Float or list of floats or None.
         """
-        self.pi.MVR(iChannel, incr)
+        self.pi.MVR(self.axes[iChannel], incr)
     
     def GetPos(self, iChannel=1):
         try:
             assert np.isscalar(iChannel)
         except:
             raise AssertionError('GetPos only supports single-axis query')
-        return self.pi.qPOS([iChannel])[iChannel]
+        axis = self.axes[iChannel]
+        return self.pi.qPOS([axis])[axis]
     
     def GetTargetPos(self, iChannel=1):
         # assume that target pos = current pos. Over-ride in derived class if possible
+        # axis = self.axes[iChannel]
         return self.GetPos(iChannel)
     
     def GetMin(self, iChan=1):
@@ -88,7 +98,14 @@ class GCSPiezo(PiezoBase):
             assert np.isscalar(iChan)
         except:
             raise AssertionError('GetMin only supports single-axis query')
-        return self.pi.qTMN(iChan)[iChan]
+
+        try:
+            return self._min[iChan]
+        except KeyError:
+            logger.debug('Fetching %s axis min' % iChan)
+            axis = self.axes[iChan]
+            self._min[iChan] = self.pi.qTMN(axis)[axis]
+            return self._min[iChan]
         # return self.pi.qNLM(axes=[iChan])[iChan]
         # qCMN min commandable closed-loop target
     
@@ -100,9 +117,13 @@ class GCSPiezo(PiezoBase):
             assert np.isscalar(iChan)
         except:
             raise AssertionError('GetMax only supports single-axis query')
-        return self.pi.qTMX(iChan)[iChan]
-        # return self.pi.qPLM([iChan])[iChan]
-        # qCMX max commandable closed-loop target
+        try:
+            return self._max[iChan]
+        except KeyError:
+            logger.debug('Fetching %s axis max' % iChan)
+            axis = self.axes[iChan]
+            self._max[iChan] = self.pi.qTMX(axis)[axis]
+            return self._max[iChan]
     
     def GetFirmwareVersion(self):
         raise NotImplementedError
