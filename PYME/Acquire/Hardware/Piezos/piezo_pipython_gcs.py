@@ -73,7 +73,8 @@ class GCSPiezo(PiezoBase):
         assert self.pi.IsConnected()
 
         if axes is None:
-            self.axes = [1]  # default to the first axis
+            logger.error('NO AXES SPECIFIED. Will try and run with all axes')
+            self.axes = pitools.getaxeslist(self.pi, None)
         else:
             self.axes = axes
         
@@ -180,6 +181,9 @@ class GCSPiezoThreaded(PiezoBase):
             or ['X', 'Y', 'Z']. After initialization these will be indexed into
             for method calls, i.e. GetPos(iChannel=0) will use axes[0] for the
             GCS axis descriptor.
+        update_rate : float
+            number of seconds pause between threaded polling of position / 
+            on-targets
 
         """
         PiezoBase.__init__(self)
@@ -189,14 +193,13 @@ class GCSPiezoThreaded(PiezoBase):
         self._lock = threading.Lock()
 
         if axes is None:
-            self.axes = [1]  # default to the first axis
+            logger.error('NO AXES SPECIFIED. Will try and run with all axes')
+            self.axes = pitools.getaxeslist(self.pi, None)
         else:
             self.axes = axes
         
-        # self._min = [self.GetMin(iChan, skip_cache=True) for iChan in range(len(self.axes))]
         self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
         self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
-        # self._max = [self.GetMax(iChan, skip_cache=True) for iChan in range(len(self.axes))]
 
         self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
         self.target_positions = np.copy(self.positions)
@@ -206,14 +209,6 @@ class GCSPiezoThreaded(PiezoBase):
 
         self._update_rate = update_rate
         self._start_loop()
-        # try:
-        #     units = self.pi.qPUN(self.axes)
-        #     logger.debug('stage units: %s' % [units[axis] for axis in self.axes])
-        # except:
-        #     pass
-        # PI appears to use unicoded um to set units to um, not funcitonal at the moment, but
-        # ideally we would remove the unit check/log above and just force to um here.
-        # self.pi.PUN(axes, values)
 
     def SetServo(self, val=1):
         with self._lock:
@@ -256,17 +251,8 @@ class GCSPiezoThreaded(PiezoBase):
             assert np.isscalar(iChan)
         except:
             raise AssertionError('GetMin only supports single-axis query')
-
         
         return self._min[iChan]
-        # except IndexError:
-        #     logger.debug('Fetching %s axis min' % iChan)
-        #     axis = self.axes[iChan]
-        #     with self._lock:
-        #         self._min[iChan] = pitools.getmintravelrange(self.pi, axis)[axis]  # self.pi.qTMN(axis)[axis]
-        #     return self._min[iChan]
-        # return self.pi.qNLM(axes=[iChan])[iChan]
-        # qCMN min commandable closed-loop target
     
     def GetMax(self, iChan=1):
         """
@@ -278,12 +264,6 @@ class GCSPiezoThreaded(PiezoBase):
             raise AssertionError('GetMax only supports single-axis query')
         
         return self._max[iChan]
-        # except KeyError:
-        #     logger.debug('Fetching %s axis max' % iChan)
-        #     axis = self.axes[iChan]
-        #     with self._lock:
-        #         self._max[iChan] = pitools.getmaxtravelrange(self.pi, axis)[axis]  # self.pi.qTMX(axis)[axis]
-        #     return self._max[iChan]
     
     def GetFirmwareVersion(self):
         raise NotImplementedError
