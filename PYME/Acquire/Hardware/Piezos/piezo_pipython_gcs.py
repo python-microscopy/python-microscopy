@@ -4,6 +4,22 @@
 # Tested with a E-727 controller, on pipython 2.9.0.4 (pypi)
 # see https://github.com/PI-PhysikInstrumente/PIPython
 
+# GETTING STARTED:
+# 1. Install https://github.com/PI-PhysikInstrumente/PIPython
+# 2. In a Python shell, import this file and call get_gcs_usb()
+# to find your stage (assuming it has the drivers it needs, is turned on, etc.)
+# 3. Use the full description string returned by get_gcs_usb() to 
+# find the axes names as used by PI by calling
+# get_stage_axes(description). You'll want to use this description
+# exactly in the next step, as PIPython can be sensitive to e.g.
+# ['1', '2'] vs [1, 2], or '['A', 'B'] vs. ['a', 'b'].
+# 4. Initialize the stage with GCSPiezo(description, axes) in your
+# PYME init script.
+# 5: Consider using GCSPiezoThreaded for performance improvements,
+# particularly if you are using a multi-axis stage, or multiple GCSPiezos
+# in your setup, as updating the position of stages happens in order to
+# update the GUI and can slow down PYMEAcquire considerably.
+
 
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 from pipython import GCSDevice, pitools
@@ -277,11 +293,6 @@ class GCSPiezoThreaded(PiezoBase):
         For multiaxis stages, query with None reports for all of them
         """
         return self._all_on_target
-        if axes is None:
-            return all(self._on_target)
-        else:
-            raise NotImplementedError
-        # return all(self.pi.qONT(axes))
     
     def close(self):
         self.loop_active = False
@@ -324,41 +335,9 @@ class GCSPiezoThreaded(PiezoBase):
                                 self._on_target[ind] = False
                         
                         self._last_target_positions = np.copy(self.target_positions)
-
-                    #     gcs.MOV(self.id, b'A', pos[:1])
-                    #     self.lastTargetPosition = pos.copy()
-                    #     # print('p')
-                    #     # logging.debug('Moving piezo to target: %f' % (pos[0],))
-
-                    # if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
-                    #     if not self.onTarget:
-                    #         logEvent('PiezoOnTarget', '%.3f' % self.position[0], time.time())
-                    #         self.onTarget = True
                 
                 except Exception as e:
-                    # gcs.fcnWrap.HandleError throws Runtimes for everything
                     logger.error(str(e))
-                    # try:
-                    #     self.errCode = int(gcs.qERR(self.id))
-                    #     logger.error('error code: %s' % str(self.errCode))
-                    # except:
-                    #     logger.error('no error code retrieved')
-                    # if '-1' in str(e):
-                    #     logger.debug('reinitializing GCS connection, 10 s pause')
-                    #     gcs.CloseConnection(self.id)
-                    #     time.sleep(10.0)  # this takes at least more than 1 s
-                    #     try:
-                    #         self.id = gcs.ConnectUSB(self._identifier)
-                    #         logger.debug('restablished connection to piezo')
-                    #     except RuntimeError as e:
-                    #         logger.error('trying to get new device ID')
-                    #         devices = get_connected_devices()
-                    #         self._identifier = devices[0]
-                    #         logger.debug('new device ID acquired')
-                    #         self.id = gcs.ConnectUSB(self._identifier)
-                    #     time.sleep(1.0)
-                    #     logger.debug('turning on servo')
-                    #     gcs.SVO(self.id, b'A', [1])
-                    #     time.sleep(1.0)
+                
         logger.debug('exiting')
    
