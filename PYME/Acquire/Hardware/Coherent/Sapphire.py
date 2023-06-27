@@ -29,7 +29,12 @@ from PYME.Acquire.Hardware.lasers import Laser
 # Interlock defeat must be plugged into the analog interface
 # Oddly, the CONTROL switch on the back panel must be set to
 # LOCAL rather than REMOTE to use USB commands to do anything
-# more than query states.
+# more than query states.\
+# Laser uses a virtual COM port, if device manager does not 
+# show laser as virtual COM port, download virtual COM port
+# driver from FTDI, laser should show up as USB Serial Converter
+# in device manager, check Load VC box in properties, Laser
+# should now show up as virtual COM port
 
 
 class CoherentSapphireLaser(Laser):
