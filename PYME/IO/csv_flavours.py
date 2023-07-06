@@ -208,7 +208,7 @@ def guess_flavour(colNames, delim=None, filename=None):
     # headerless CSV/TXT.
     # TODO: Should we put this before guessing by column and during that check assert
     #       that the number of columns matches the number of expected columns?
-    if fl is None:
+    if (fl is None) and (filename is not None):
         import os
         ext = os.path.splitext(filename)[-1]
         for flavour in csv_flavours:
