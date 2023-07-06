@@ -213,7 +213,7 @@ class ImportTextDialog(ColumnMappingDialog):
         # TODO - reduce duplication with csv_flavours.guess_text_options
 
         colNames, dataLines, self.numCommentLines, self.delim = csv_flavours.parse_csv_header(file)
-        self.text_flavour = csv_flavours.guess_flavour(colNames, self.delim)
+        self.text_flavour = csv_flavours.guess_flavour(colNames, self.delim, file)
 
         self.raw_names = colNames
         colNames = csv_flavours.replace_names(colNames, self.text_flavour)

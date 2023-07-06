@@ -59,6 +59,33 @@ csv_flavours = {
             'sigma [nm]' : 'sig',
         },
     },
+    'visp_3d' : {
+        'idnames' : ['column_4'],
+        'delimiter' : '\t',
+        'ext': '.3d',
+        'column_name_mappings' : {
+            'column_0': 'x',
+            'column_1': 'y',
+            'column_2': 'z',
+            'column_3': 'A',
+            'column_4': 't'
+        }
+    },
+    'visp_3dlp' : {
+        'idnames' : ['column_7'],
+        'delimiter' : '\t',
+        'ext': '.3dlp',
+        'column_name_mappings' : {
+            'column_0': 'x',
+            'column_1': 'y',
+            'column_2': 'z',
+            'column_3': 'error_x',
+            'column_4': 'error_y',
+            'column_5': 'error_z',
+            'column_6': 'A',
+            'column_7': 't'
+        }
+    },
     'default' : {
         'column_name_mappings' : {},
     },
@@ -145,7 +172,7 @@ def replace_names(old_names, flavour):
 
 def guess_text_options(filename):
     colNames, _, n_skip, delim = parse_csv_header(filename)
-    flavour = guess_flavour(colNames, delim)
+    flavour = guess_flavour(colNames, delim, filename)
 
     logger.info('Guessed text file flavour: %s' % flavour)
     colNames = replace_names(colNames, flavour)
@@ -168,14 +195,27 @@ def check_required_names(self):
 
         
 
-def guess_flavour(colNames, delim=None):
+def guess_flavour(colNames, delim=None, filename=None):
     # guess csv flavour by matching column names
     fl = None
     for flavour in csv_flavours:
         if (not flavour == 'default') and all(idn in colNames for idn in csv_flavours[flavour]['idnames']):
-            if not fl is None:
+            if fl is not None:
                 raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
             fl = flavour
+
+    # If this failed, guess csv flavor by matching file type. This means it's a
+    # headerless CSV/TXT.
+    # TODO: Should we put this before guessing by column and during that check assert
+    #       that the number of columns matches the number of expected columns?
+    if fl is None:
+        import os
+        ext = os.path.splitext(filename)[-1]
+        for flavour in csv_flavours:
+            if (not flavour == 'default') and csv_flavours[flavour].get('ext', None) == ext:
+                if fl is not None:
+                    raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                fl = flavour
     
     if (fl is not None) and (delim is not None):
         # consistency check
