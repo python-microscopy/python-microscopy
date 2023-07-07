@@ -467,6 +467,28 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemBitmap = self.GrabImage(fullImage)
         img = MemBitmap.ConvertToImage()
         img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+    
+    def ExportStackToPNG(self, filename, fullImage=True):
+        """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
+        via ffmpeg or similar tools
+
+        Parameters
+        ----------
+        filename : str
+            fully qualified path, with extension. Note that _%d will be appended to the filename to generate the
+            individual files
+        fullImage : bool, optional
+            whether to export the full image even if it is clipped in the GUI, by default True
+        """
+        import os
+        filestub, ext = os.path.splitext(filename)
+        for ind in range(self.do.ds.shape[2]):
+            self.do.zp = ind
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+            self.GrabPNG(filestub + '_%d' % ind + ext, fullImage)
         
     def GrabPNGToBuffer(self, fullImage=True):
         '''Get PNG data in a buffer (rather than writing directly to file)'''
