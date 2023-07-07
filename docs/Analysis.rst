@@ -39,5 +39,7 @@ A particular mode can be forced by calling ``dh5view`` with the ``-m`` option, e
 
     dh5view -m LM filename
 
-
+Rendering
+=========
+Rendering image data using PYMEImage is covered in :ref:`Voxel Data Image/Movie Rendering <pymeimage_rendering>`
 

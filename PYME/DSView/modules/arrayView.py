@@ -54,7 +54,7 @@ def Plug(dsviewer):
 
     dsviewer.AddMenuItem('View', "Copy display to clipboard", lambda e : dsviewer.view.CopyImage())
     dsviewer.AddMenuItem('View', "Save image as PNG", lambda e: save_as_png(dsviewer.view))
-    dsviewer.AddMenuItem('View', "Save stack to series of PNG", lambda e: save_as_series_of_png(dsviewer.view, dsviewer.image.filename))
+    dsviewer.AddMenuItem('View', "Save movie frames as PNG", lambda e: save_as_series_of_png(dsviewer.view, dsviewer.image.filename))
 
 #    dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
 #    dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())
