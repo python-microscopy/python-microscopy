@@ -1,4 +1,4 @@
-import numpy as np
+import os
 from PYME.IO import MetaDataHandler
 
 import logging
@@ -172,7 +172,8 @@ def replace_names(old_names, flavour):
 
 def guess_text_options(filename):
     colNames, _, n_skip, delim = parse_csv_header(filename)
-    flavour = guess_flavour(colNames, delim, filename)
+    ext = os.path.splitext(filename)[-1]
+    flavour = guess_flavour(colNames, delim, ext)
 
     logger.info('Guessed text file flavour: %s' % flavour)
     colNames = replace_names(colNames, flavour)
@@ -195,7 +196,7 @@ def check_required_names(self):
 
         
 
-def guess_flavour(colNames, delim=None, filename=None):
+def guess_flavour(colNames, delim=None, ext=None):
     # guess csv flavour by matching column names
     fl = None
     for flavour in csv_flavours:
@@ -206,15 +207,13 @@ def guess_flavour(colNames, delim=None, filename=None):
 
     # If this failed, guess csv flavor by matching file type. This means it's a
     # headerless CSV/TXT.
-    # TODO: Should we put this before guessing by column and during that check assert
-    #       that the number of columns matches the number of expected columns?
-    if (fl is None) and (filename is not None):
-        import os
-        ext = os.path.splitext(filename)[-1]
+    if (fl is None) and (ext is not None):
         for flavour in csv_flavours:
-            if (not flavour == 'default') and csv_flavours[flavour].get('ext', None) == ext:
+            if (not flavour == 'default') and ext in csv_flavours[flavour].get('ext', None):
                 if fl is not None:
                     raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                if not all(idn in colNames for idn in csv_flavours[flavour]['column_name_mappings'].keys()):
+                    continue
                 fl = flavour
     
     if (fl is not None) and (delim is not None):
