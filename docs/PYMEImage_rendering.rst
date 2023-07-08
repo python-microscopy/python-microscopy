@@ -27,4 +27,7 @@ PYMEImage does not directly export movies, however, can produce the individual f
 a suitable tool such as `ffmpeg <https://ffmpeg.org/>`_. 
 To save a series of PNG files, use `View > Save movie frames as PNG`. This will again export the current display, but will iterate through
 each Z or T index of the displayed series.
-
+Consult ffmpeg or other software for usage documentation, though note that PYMEImage will not necessarily export images
+with an even width or height, which can sometimes require padding. 
+An example ffmpeg command which will pad the image if necessary as well as find the numbered PNG files in the current directory is:
+`ffmpeg -framerate 5 -i "imagefilename_%d.png" -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" imagefilename.mp4`
