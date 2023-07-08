@@ -29,5 +29,5 @@ To save a series of PNG files, use `View > Save movie frames as PNG`. This will 
 each Z or T index of the displayed series.
 Consult ffmpeg or other software for usage documentation, though note that PYMEImage will not necessarily export images
 with an even width or height, which can sometimes require padding. 
-An example ffmpeg command which will pad the image if necessary as well as find the numbered PNG files in the current directory is:
+An example ffmpeg command which will pad the image if necessary, find the numbered PNG files in the current directory, and output an mp4 video with 5 FPS playback is:
 `ffmpeg -framerate 5 -i "imagefilename_%d.png" -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" imagefilename.mp4`
