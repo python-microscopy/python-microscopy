@@ -42,12 +42,13 @@ class BlobFinder(Plugin):
         self.vObjFit = None
         self.nObjFit = 0
         
-        dsviewer.AddMenuItem("Save", "Save &Positions", self.savePositions)
-        dsviewer.AddMenuItem("Save", "Save &Fit Results", self.saveFits)
-        dsviewer.AddMenuItem("Save", "Save shift maps", self.saveShiftmaps)
+        dsviewer.AddMenuItem("File>Save", "Save &Positions", self.savePositions)
+        dsviewer.AddMenuItem("File>Save", "Save &Fit Results", self.saveFits)
+        dsviewer.AddMenuItem("File>Save", "Save shift maps", self.saveShiftmaps)
 
         dsviewer.paneHooks.append(self.GenBlobFindingPanel)
         dsviewer.paneHooks.append(self.GenBlobFitPanel)
+        dsviewer.paneHooks.append(self.GenShiftMapPanel)
 
     def GenBlobFindingPanel(self, _pnl):
         item = afp.foldingPane(_pnl, -1, caption="Object Finding", pinned = True)
@@ -77,8 +78,7 @@ class BlobFinder(Plugin):
         self.chMethod.Bind(wx.EVT_CHOICE, self.OnChangeMethod)
 
         hsizer.Add(self.chMethod, 0,wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        
-
+    
         pan.SetSizer(hsizer)
         hsizer.Fit(pan)
 
@@ -188,6 +188,8 @@ class BlobFinder(Plugin):
         else:
             self._ovl.points = self.points
 
+        self._ovl.pointSize = int(self.tROIsize.GetValue())*2+1
+
         self.dsviewer.update()
 
     def GenBlobFitPanel(self, _pnl):
@@ -195,25 +197,41 @@ class BlobFinder(Plugin):
 #        item = _pnl.AddFoldPanel("Object Fitting", collapsed=False,
 #                                      foldIcons=self.Images)
 
+        pan = wx.Panel(item, -1)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'ROI half size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tROIsize = wx.TextCtrl(pan, -1, value='8', size=(40, -1))
+        hsizer.Add(self.tROIsize, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        pan.SetSizer(hsizer)
+        hsizer.Fit(pan)
+        item.AddNewElement(pan)
+        
         bFitObjects = wx.Button(item, -1, 'Fit')
-
-
         bFitObjects.Bind(wx.EVT_BUTTON, self.OnFitObjects)
         #_pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(bFitObjects)
+        _pnl.AddPane(item)
+
+    def GenShiftMapPanel(self, _pnl):
+        item = afp.foldingPane(_pnl, -1, caption="Shiftmap", pinned = True)
 
         pan = wx.Panel(item, -1)
-
+        vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
         hsizer.Add(wx.StaticText(pan, -1, 'Bead wxy:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tBeadWXY = wx.TextCtrl(pan, -1, value='125', size=(40, -1))
-
         hsizer.Add(self.tBeadWXY, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
 
-        pan.SetSizer(hsizer)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.cShiftfieldType = wx.Choice(pan, -1, choices=['Linear (shift + rotation)', 'Quadratic (shift, rotation, and field-dependent magnification)', 'Spline interpolation (model free)'], size=(40, -1))
+        self.cShiftfieldType.SetSelection(0)
+        hsizer.Add(self.cShiftfieldType, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer, 0, wx.ALL, 5)
+
+        pan.SetSizer(vsizer)
         hsizer.Fit(pan)
-
         item.AddNewElement(pan)
         
         bCalcShiftMap = wx.Button(item, -1, 'Shiftmap')
@@ -225,6 +243,7 @@ class BlobFinder(Plugin):
     def OnFitObjects(self, event):
         import PYME.localization.FitFactories.Gauss3DFitR as fitMod
         from PYME.IO import MetaDataHandler
+        from PYME.IO import tabular
         chnum = self.chChannel.GetSelection()
         
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
@@ -258,6 +277,17 @@ class BlobFinder(Plugin):
         #else:
         #    self.vObjFit.grid.SetData(self.objFitRes['fitResults'])
 
+        f = tabular.ConcatenateFilter(*[tabular.FitResultsSource(self.objFitRes[chnum]) for chnum in range(self.image.data.shape[3])], concatKey='channel')  
+
+        if not hasattr(self, '_fit_ovl'):
+            from PYME.DSView import overlays
+            self._fit_ovl = overlays.PointDisplayOverlay(filter=f, display_name='Fitted positions')
+            self._fit_ovl.display_as = 'cross'
+            self._fit_ovl.z_mode = 'z'
+            self.view.add_overlay(self._fit_ovl)
+        else:
+            self._fit_ovl.filter = f
+
         self.dsviewer.update()
         
     def OnCalcShiftmap(self, event):
@@ -285,6 +315,8 @@ class BlobFinder(Plugin):
         
         nchans = self.image.data.shape[3]
         ch_i = 1
+
+        model_type = self.cShiftfieldType.GetSelection()
         
         for ch in range(nchans):
             if not ch == masterChan:
@@ -300,10 +332,17 @@ class BlobFinder(Plugin):
                 dy = y - y0
                 dz = z - z0
                 
-                print(('dz:', numpy.median(dz[mask])))
+                print(('dz:', numpy.median(dz[mask])))   
                 
-                
-                spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
+                if model_type == 0:
+                    spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
+                elif model_type == 1:
+                    spx, spy = twoColour.genShiftVectorFieldQuad(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
+                elif model_type == 2:
+                    _, _, spx, spy, _ = twoColour.genShiftVectorFieldSpline(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
+                else:
+                    raise ValueError('Unknown model type')
+
                 self.shiftfields[ch] = (spx, spy, numpy.median(dz[mask]))
                 #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
                 
@@ -317,7 +356,7 @@ class BlobFinder(Plugin):
         Y = Y.ravel()
         for k in self.shiftfields.keys():
             spx, spy, dz = self.shiftfields[k]
-            plt.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], scale=2e3)
+            plt.quiver(X, Y, spx.ev(X, Y), spy.ev(X, Y), color=['r', 'g', 'b'][k], angles='xy', scale_units='xy', scale=1)
             
         plt.axis('equal')
         
