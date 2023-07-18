@@ -50,7 +50,7 @@ def remap_data_2d(image, chan, shape, voxelsize, origin, shiftField=None, ignore
     Znm = Z * vzm + zm0
     
     if shiftField and os.path.exists(shiftField):
-        spx, spy, dz = np.load(shiftField)
+        spx, spy, dz = np.load(shiftField, allow_pickle=True)
         
         dx = spx.ev(Xnm, Ynm)
         dy = spy.ev(Xnm, Ynm)
