@@ -75,6 +75,9 @@ DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
 DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
 DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
+DCAMPROP_TRIGGER_MODE__START = 6
+DCAMPROP_TRIGGERACTIVE__EDGE = 1
+
 DCAMPROP_OUTPUTTRIGGER_SOURCE__EXPOSURE = 1
 DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND = 2
 DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC = 3
@@ -450,10 +453,10 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         if self.external_shutter is not None:
             self.external_shutter.SetShutter(mode)
     
-    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True):
+    def SetOutputTrigger(self, mode, delay=0, width=0.0001, positive=True,
+                         trig_number=0):
         """
-        Set output trigger of the camera. For now, only sets output trigger 0, even if
-        the camera supports multiple output triggers. 
+        Set programmable output trigger of the camera.
         
         TODO: have a look at Andor and PCO SDKs to see if this is sufficiently similar in those, and potentially move/adapt to main camera spec.
 
@@ -479,35 +482,39 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         positive : bool, optional
             Sets polarity of the output trigger to positive (True) or negative
             (False). True, by default.
+        trig_number : int, optional
+            Which output trigger to set for cameras with multiple programmable
+            output triggers.
         
         """
         if positive:
-            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
-                                DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER POLARITY[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_POLARITY__POSITIVE)
         else:
-            self.setCamPropValue('OUTPUT TRIGGER POLARITY[0]', 
-                                DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER POLARITY[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_POLARITY__NEGATIVE)
         
         if mode == 'low':
-            self.setCamPropValue('OUTPUT TRIGGER KIND[0]', 
-                                 DCAMPROP_OUTPUTTRIGGER_KIND__LOW)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER KIND[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_KIND__LOW)
             return  # return early, no need to set delay and width
         
         # in case the camera is running, set the pulse parameters before 
         # changing the trigger source
-        # self.setCamPropValue('OUTPUT TRIGGER ACTIVE[0]', DCAMPROP_OUTPUTTRIGGER_ACTIVE__EDGE)  # not writable
-        self.setCamPropValue('OUTPUT TRIGGER DELAY[0]', delay)  # [s], only relevant with 'EDGE'
-        self.setCamPropValue('OUTPUT TRIGGER PERIOD[0]', width)  # [s], width of pulse, only relevant with 'EDGE'
+        self.set_cam_prop_array_value('OUTPUT TRIGGER DELAY[0]', trig_number,
+                                      delay) # [s], only relevant with 'EDGE'
+        self.set_cam_prop_array_value('OUTPUT TRIGGER PERIOD[0]', trig_number,
+                                      width) # [s], width of pulse, only relevant with 'EDGE'
         if mode == 'readout start':
-            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
-                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
-            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
-                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER KIND[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER SOURCE[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_SOURCE__VSYNC)
         elif mode == 'readout end':
-            self.setCamPropValue('OUTPUT TRIGGER KIND[0]',
-                                 DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
-            self.setCamPropValue('OUTPUT TRIGGER SOURCE[0]',
-                                 DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER KIND[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_KIND__PROGRAMABLE)
+            self.set_cam_prop_array_value('OUTPUT TRIGGER SOURCE[0]', trig_number,
+                                          DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND)
         else:
             raise RuntimeError('Unsupported output trigger mode: %s' % mode)
     
@@ -542,6 +549,16 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
         """
         return self.getCamPropValue('TIMING GLOBAL EXPOSURE DELAY')
+    
+    def _get_n_output_triggers(self):
+        """returns the number of programmable output triggers on the camera
+
+        Returns
+        -------
+        int
+            number of programmable output triggers
+        """
+        return int(self.getCamPropValue('NUMBER OF OUTPUT TRIGGER CONNECTOR'))
 
     def Shutdown(self):
         # if self.initialized:
