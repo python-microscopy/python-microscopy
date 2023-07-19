@@ -21,7 +21,7 @@ def test_IO_imports():
     
     #from PYME.IO import clusterDuplication #Known failure due to dependence on pyro
 
-@pytest.mark.xfail(sys.platform == 'win32', reason='countdir.c not compiled on non-posix systems')
+@pytest.mark.skipif(sys.platform == 'win32', reason='countdir.c not compiled on non-posix systems')
 def test_countdir_import():
     from PYME.IO import countdir
     

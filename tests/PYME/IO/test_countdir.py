@@ -2,7 +2,7 @@
 import pytest
 import sys
 
-@pytest.mark.xfail(sys.platform=='win32', reason='countdir.c not compiled on non-posix platforms')
+@pytest.mark.skipif(sys.platform=='win32', reason='countdir.c not compiled on non-posix platforms')
 def test_dirsize():
     from PYME.IO import countdir
     import os
