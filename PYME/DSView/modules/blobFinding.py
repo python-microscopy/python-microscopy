@@ -263,7 +263,7 @@ class BlobFinder(Plugin):
             for i in range(len(self.ofd)):
                 p = self.ofd[i]
                 #try:
-                self.objFitRes[chnum][i] = fitFac.FromPoint(round(p.x), round(p.y), round(p.z), 8)
+                self.objFitRes[chnum][i] = fitFac.FromPoint(round(p.x), round(p.y), round(p.z), roiHalfSize=int(self.tROIsize.GetValue()))
                 #except:
                 #    pass
     
