@@ -2740,6 +2740,26 @@ cdef class TriangleMesh(TrianglesBase):
         vertices = self._vertices['position'][live_vertices]
 
         ply.save_ply(filename, vertices, faces, colors)
+
+    def to_threejs(self, color='red'):
+        import pythreejs as p3j
+
+        t = self.vertices[self.faces].reshape(-1, 3)
+        n = self.vertex_normals[self.faces].reshape(-1, 3)
+
+        m = p3j.Mesh(p3j.BufferGeometry(attributes={'position': p3j.BufferAttribute(t.astype('f4')),
+                                            'index': p3j.BufferAttribute(np.arange(t.shape[0], dtype='uint32')),
+                                            'normal': p3j.BufferAttribute(n.astype('f4'))}),
+              material=p3j.MeshPhongMaterial(color=color))
+
+        return m
+
+    def _repr_mimebundle_(self, **kwargs):
+        try:
+            return self.to_threejs()._repr_mimebundle_(**kwargs)
+        except ImportError:
+            return {'text/plain': repr(self) + '\nInstall pythreejs to display in notebook'}
+
         
     def plot(self, figure=None, axis=None):
         """

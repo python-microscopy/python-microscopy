@@ -303,7 +303,29 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
         
+    def draw_cross_pixel_coords(self, dc, x, y, z, w, h, d):
+        """Draws a cross on a given device contect (dc) given 3D co-ordinates
+        in image pixel space.
+
+        Usually called from overlays. NOTE: the dc should be the same one that is passed TO the overlay, and which comes from 
+        our OnPaint handler, not any arbitrary device context.
+
+        """
+        if (self.do.slice == self.do.SLICE_XY):
+            xs, ys = self.pixel_to_screen_coordinates(x,y)
+            ws, hs = (w*self.scale, h*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs, ys = self.pixel_to_screen_coordinates(x,z)
+            ws, hs = (w*self.scale, d*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs, ys = self.pixel_to_screen_coordinates(y,z)
+            ws, hs = (h*self.scale, d*self.scale*self.aspect)
+            
+        #dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        dc.DrawLine(xs - 0.5*ws, ys-0.5*hs, xs + 0.5*ws, ys+0.5*hs)
+        dc.DrawLine(xs - 0.5*ws, ys+0.5*hs, xs + 0.5*ws, ys-0.5*hs)
         
+
     @property
     def scale(self):
         """

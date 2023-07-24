@@ -206,6 +206,8 @@ class Pipelineify(ModuleBase):
 
     pixelSizeNM = Float(1, label='nanometer units',
                         desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
+    
+    foreshortening = Float(1.0, desc='scaling factor to correct for foreshortening in z')
 
     outputLocalizations = Output('Localizations')
     
@@ -286,7 +288,8 @@ class Pipelineify(ModuleBase):
 
         ev_maps, ev_charts = pipeline._processEvents(mapped_ds, events, mdh)
         pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
-
+        mapped_ds.set_variables(foreShort=self.foreshortening)
+        
         #Fit module specific filter settings
         if 'Analysis.FitModule' in mdh.getEntryNames():
             fitModule = mdh['Analysis.FitModule']
