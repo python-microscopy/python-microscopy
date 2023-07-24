@@ -93,9 +93,9 @@ class esp300:
         """Add menu items and keyboard accelerators for LED control
         to the specified menu & parent window"""
         #Create IDs
-        self.ID_stop_all = wx.NewId()
-        self.ID_LED_ON = wx.NewId()
-        self.ID_LED_OFF = wx.NewId()
+        self.ID_stop_all = wx.NewIdRef()
+        self.ID_LED_ON = wx.NewIdRef()
+        self.ID_LED_OFF = wx.NewIdRef()
         
         #Add menu items
         menu.AppendSeparator()

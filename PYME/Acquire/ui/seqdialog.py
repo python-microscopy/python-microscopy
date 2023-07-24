@@ -69,7 +69,7 @@ def create(parent):
 
  wxID_SEQDIALOGTNUMSLICES, wxID_SEQDIALOGTSTEPSIZE, wxID_SEQDIALOGTSTPOS, 
 
-] = [wx.NewId() for i in range(18)]
+] = [wx.NewIdRef() for i in range(18)]
 
 
 

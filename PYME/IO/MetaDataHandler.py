@@ -69,7 +69,7 @@ try:
     from UserDict import DictMixin
 except ImportError:
     #py3
-    from collections import MutableMapping as DictMixin
+    from collections.abc import MutableMapping as DictMixin
     
 import six
 from collections import namedtuple

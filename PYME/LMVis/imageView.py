@@ -581,7 +581,7 @@ class ColourImageViewPanel(ImageViewPanel):
 #        self.modMenuIds = {}
 #        self.mModules = wx.Menu()
 #        for mn in dsvmods.allmodules:
-#            id = wx.NewId()
+#            id = wx.NewIdRef()
 #            self.mModules.AppendCheckItem(id, mn)
 #            self.modMenuIds[id] = mn
 #            if mn in self.installedModules:
@@ -650,16 +650,16 @@ class ColourImageViewPanel(ImageViewPanel):
 #        # Make a menubar
 #        file_menu = wx.Menu()
 #
-#        #ID_SAVE = wx.NewId()
-#        #ID_CLOSE = wx.NewId()
-#        ID_EXPORT = wx.NewId()
-#        #ID_SAVEALL = wx.NewId()
+#        #ID_SAVE = wx.NewIdRef()
+#        #ID_CLOSE = wx.NewIdRef()
+#        ID_EXPORT = wx.NewIdRef()
+#        #ID_SAVEALL = wx.NewIdRef()
 #
-#        #ID_VIEW_CONSOLE = wx.NewId()
-#        ID_VIEW_BACKGROUND = wx.NewId()
-#        ID_FILTER_GAUSS = wx.NewId()
+#        #ID_VIEW_CONSOLE = wx.NewIdRef()
+#        ID_VIEW_BACKGROUND = wx.NewIdRef()
+#        ID_FILTER_GAUSS = wx.NewIdRef()
 #
-#        #self.ID_VIEW_CMAP_INVERT = wx.NewId()
+#        #self.ID_VIEW_CMAP_INVERT = wx.NewIdRef()
 #
 #        file_menu.Append(wx.ID_SAVE, "&Save")
 #        #file_menu.Append(ID_SAVEALL, "Save &Multi-channel")

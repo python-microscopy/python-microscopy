@@ -80,7 +80,7 @@ class CurrentRenderer:
             return self.pipeline.colourFilter
 
     def _addMenuItems(self):
-        #ID = wx.NewId()
+        #ID = wx.NewIdRef()
         #self.visFr.gen_menu.Append(ID, self.name)
 
         #self.mainWind.Bind(wx.EVT_MENU, self.GenerateGUI, id=ID)

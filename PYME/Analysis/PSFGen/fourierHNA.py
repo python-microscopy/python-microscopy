@@ -221,7 +221,8 @@ def _apodization_function(R, NA, n, apodization='sine', ns=None):
     if (apodization is None) or (apodization == 'none'):
         M = 1.0 * (R < (NA / n)) # NA/lambda
     elif apodization == 'sine':
-        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+        M = 1.0 * (R < (NA / n)) * np.cos(t_)
+        #M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
     elif apodization == 'empirical':
         r_ = np.minimum(R, 1)
         M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))

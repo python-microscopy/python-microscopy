@@ -370,7 +370,7 @@ class ModuleBase(HasStrictTraits):
     @property
     def _output_traits(self):
         #return {k:v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
-        return {k:getattr(self,k) for k, v in self.traits().items() if (k.startswith('output') or isinstance(v.trait_type, Output)) and not getattr(self, k) == ''}
+        return {k:getattr(self,k) for k, v in self.traits().items() if (isinstance(v.trait_type, Output)) and not getattr(self, k) == ''}
     
     @property
     def outputs(self):

@@ -299,13 +299,13 @@ if __name__=='__main__':
     from cellprofiler.cpmath.filter import stretch
     from cellprofiler.cpmath.threshold import log_transform, inverse_log_transform
     
-    FILE_OPEN = wx.NewId()
-    M_OTSU = wx.NewId()
-    M_ENTROPY = wx.NewId()
-    M_OTSU3 = wx.NewId()
-    M_ENTROPY3 = wx.NewId()
-    M_FAST_OTSU3 = wx.NewId()
-    M_LOG_TRANSFORM = wx.NewId()
+    FILE_OPEN = wx.NewIdRef()
+    M_OTSU = wx.NewIdRef()
+    M_ENTROPY = wx.NewIdRef()
+    M_OTSU3 = wx.NewIdRef()
+    M_ENTROPY3 = wx.NewIdRef()
+    M_FAST_OTSU3 = wx.NewIdRef()
+    M_LOG_TRANSFORM = wx.NewIdRef()
     class MyApp(wx.App):
         def OnInit(self):
             wx.InitAllImageHandlers()
