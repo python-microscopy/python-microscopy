@@ -1,12 +1,15 @@
 .. _pymeimage_rendering:
 
 
-Rendering Images and Movies with PYMEImage
-===========================================
+Exporting Colour-mapped Images and Movies with PYMEImage
+=========================================================
 
-PYMEImage facilities exporting image data, and rendering, two similar but distinct tasks.
-Exporting images via `File > Save As` and `File > Export Cropped` will save the image data to disk,
-while here we will cover exporting and saving rendered views of these data.
+Exporting images via `File > Save As` and `File > Export Cropped` will save the image data to 
+disk as raw data without any colour-mapping or visual manipulations, and is best option if you want
+to perform any further processing on the data.
+For visualisation tasks (e.g. incorporating in manuscript figures and presentations) it can be desirable
+to export images or movies as they appear in PYMEImage with lookup-tables and scaling applied, as described
+in this document.
 
 Sizes and overlays
 ------------------
