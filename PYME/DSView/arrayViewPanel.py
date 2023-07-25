@@ -479,6 +479,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             individual files
         fullImage : bool, optional
             whether to export the full image even if it is clipped in the GUI, by default True
+        FIXME - make this work with time series / 5D image data model.
         """
         import os
         filestub, ext = os.path.splitext(filename)
