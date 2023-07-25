@@ -33,6 +33,8 @@ def save_as_series_of_png(view, filename=None):
     """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
     via ffmpeg or similar tools
 
+    FIXME: Currently only supports z
+
     Parameters
     ----------
     view :ArrayViewPanel
