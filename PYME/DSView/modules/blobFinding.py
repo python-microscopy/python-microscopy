@@ -24,6 +24,7 @@ import wx
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
 from PYME.ui import recArrayView
+from PYME.ui import progress
 import numpy
 import numpy as np
 from PYME.DSView.OverlaysPanel import OverlayPanel
@@ -235,7 +236,7 @@ class BlobFinder(Plugin):
         item.AddNewElement(pan)
         
         bCalcShiftMap = wx.Button(item, -1, 'Shiftmap')
-        bCalcShiftMap.Bind(wx.EVT_BUTTON, self.OnCalcShiftmap)
+        bCalcShiftMap.Bind(wx.EVT_BUTTON, progress.managed(self.OnCalcShiftmap, self.dsviewer, 'Calculating shiftmap...'))
         #_pnl.AddFoldPanelWindow(item, bFitObjects, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         item.AddNewElement(bCalcShiftMap)
         _pnl.AddPane(item)
@@ -248,6 +249,7 @@ class BlobFinder(Plugin):
         
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
         mdh['tIndex'] = 0
+        #print(mdh)
         
         self.objFitRes = {}
         
@@ -273,11 +275,12 @@ class BlobFinder(Plugin):
                 
             vObjFit = recArrayView.ArrayPanel(self.dsviewer, self.objFitRes[chnum]['fitResults'])
             self.dsviewer.AddPage(vObjFit, caption = 'Fitted Positions %d - %d' % (chnum, self.nObjFit))
+        
         self.nObjFit += 1
         #else:
         #    self.vObjFit.grid.SetData(self.objFitRes['fitResults'])
 
-        f = tabular.ConcatenateFilter(*[tabular.FitResultsSource(self.objFitRes[chnum]) for chnum in range(self.image.data.shape[3])], concatKey='channel')  
+        f = tabular.ConcatenateFilter(*[tabular.FitResultsSource(self.objFitRes[chnum], sort=False) for chnum in range(self.image.data.shape[3])], concatKey='channel')  
 
         if not hasattr(self, '_fit_ovl'):
             from PYME.DSView import overlays
@@ -308,6 +311,10 @@ class BlobFinder(Plugin):
         wxy_bead = float(self.tBeadWXY.GetValue())
 
         mask = numpy.abs(wxy - wxy_bead) < (.25*wxy_bead)
+
+        nBeads = mask.sum()
+        
+        print('Using %d beads for shiftmap' % nBeads)
         
         self.shiftfields ={}
 
@@ -331,27 +338,49 @@ class BlobFinder(Plugin):
                 dx = x - x0
                 dy = y - y0
                 dz = z - z0
+
+                # plt.figure()
+                # plt.plot(x0, y0, 'x')
+                # plt.plot(x, y, 'o')
+                # plt.quiver(x0, y0, dx, dy, color=['r', 'g', 'b'][ch], angles='xy', scale_units='xy', scale=1)
+
                 
-                print(('dz:', numpy.median(dz[mask])))   
+                # print(('dz:', numpy.median(dz[mask])))  
+
+                # print(x/1e3, x0/1e3, dx/1e3) 
                 
                 if model_type == 0:
+                    if nBeads < 3:
+                        raise ValueError('Not enough beads for linear model (3 d.f), only using %d beads - try adjustin filter wxy' % nBeads)
+                    
+                    //print(dx[mask]/1e3, dy[mask]/1e3)
                     spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
                 elif model_type == 1:
+                    if nBeads < 9:
+                        raise ValueError('Not enough beads for quad model (9 d.f.), only using %d beads - try adjustin filter wxy' % nBeads)
                     spx, spy = twoColour.genShiftVectorFieldQuad(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
                 elif model_type == 2:
+                    if nBeads < 3:
+                        raise ValueError('Not enough beads for spline model, only using %d beads - try adjustin filter wxy' % nBeads)
                     _, _, spx, spy, _ = twoColour.genShiftVectorFieldSpline(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
                 else:
                     raise ValueError('Unknown model type')
 
+                # plt.figure()
+                # plt.plot(x0, y0, 'x')
+                # plt.plot(x, y, 'o')
+                # plt.quiver(x0, y0, dx, dy, color=['r', 'g', 'b'][ch], angles='xy', scale_units='xy', scale=1)
+                
                 self.shiftfields[ch] = (spx, spy, numpy.median(dz[mask]))
                 #twoColourPlot.PlotShiftField2(spx, spy, self.image.data.shape[:2])
                 
+                #plt.figure()
                 plt.subplot(1,nchans -1, ch_i)
                 ch_i += 1
                 twoColourPlot.PlotShiftResidualsS(x[mask], y[mask], dx[mask], dy[mask], spx, spy)
                 
         plt.figure()
-        X, Y = numpy.meshgrid(numpy.linspace(0., 70.*self.image.data.shape[0], 20), numpy.linspace(0., 70.*self.image.data.shape[1], 20))
+        X, Y = numpy.meshgrid(numpy.linspace(0., self.image.voxelsize_nm.x*self.image.data.shape[0], 20), numpy.linspace(0., self.image.voxelsize_nm.y*self.image.data.shape[1], 20))
         X = X.ravel()
         Y = Y.ravel()
         for k in self.shiftfields.keys():

@@ -45,8 +45,9 @@ except ImportError:
 import logging
 logger = logging.getLogger(__name__)
 
-logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
-logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+# suppress excessive logging from dependencies
+from PYME.util import log_verbosity
+log_verbosity.patch_log_verbosity()
 
 #import PYME.ui.autoFoldPanel as afp
 
