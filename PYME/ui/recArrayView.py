@@ -26,9 +26,9 @@ import wx.grid as gridlib
 import numpy as np
 from PYME.IO import tabular
 
-class RecArrayTable(gridlib.PyGridTableBase):
+class RecArrayTable(gridlib.GridTableBase):
     def __init__(self, recarray):
-        gridlib.PyGridTableBase.__init__(self)
+        gridlib.GridTableBase.__init__(self)
         self.recarray = recarray
 
     def GetNumberRows(self):
@@ -50,9 +50,9 @@ class RecArrayTable(gridlib.PyGridTableBase):
         return self.recarray.dtype.names[col]
 
 
-class TabularTable(gridlib.PyGridTableBase):
+class TabularTable(gridlib.GridTableBase):
     def __init__(self, tabular):
-        gridlib.PyGridTableBase.__init__(self)
+        gridlib.GridTableBase.__init__(self)
         self._tabular = tabular
 
     def GetNumberRows(self):
@@ -114,7 +114,7 @@ class ArrayPanel(wx.Panel):
         self.SetSizerAndFit(sizer)
         #self.SetAutoLayout(True)
 
-        wx.EVT_SIZE(self, self.OnSize)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, event):
         self.grid.SetSize(self.GetClientSize())
