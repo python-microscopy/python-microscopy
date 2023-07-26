@@ -37,7 +37,7 @@ from .BaseDataSource import XYTCDataSource
 try:
     import tifffile
 except ImportError:
-    from PYME.misc import tifffile
+    from PYME.contrib.gohlke import tifffile
 
 class DataSource(XYTCDataSource):
     moduleName = 'ImageSeriesDataSource'
