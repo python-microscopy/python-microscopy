@@ -121,7 +121,7 @@ def minimum_distance_to_poly(poly, points, closed=True):
     a set of 2D points
 
     Parameters
-    ##########
+    ----------
 
     poly : Nx2 ndarray
         line segment or polygon
@@ -130,7 +130,7 @@ def minimum_distance_to_poly(poly, points, closed=True):
         points to test
 
     Returns
-    #######
+    -------
 
     Mx1 array of (signed?) distances
     """
@@ -270,14 +270,16 @@ class AnnotationList(list):
         Label points based on the current set of annotations
 
         Parameters
-        ##########
+        ----------
 
-        points : Mx2 ndarray
+            points : Mx2 ndarray
 
         Returns
-        #######
+        -------
 
-        Mx1 array of labels
+            labels: Mx1 array of labels
+
+
         """
 
         out = np.zeros(points.shape[0], 'i4')

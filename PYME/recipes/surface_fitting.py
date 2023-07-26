@@ -439,7 +439,7 @@ class SphericalHarmonicShell(ModuleBase):
 
 
     Returns
-    ------
+    -------
     output_name: PYME.Analysis.points.spherical_harmonics.ScaledShell
         The shell instance, with to_hdf method for use with PYME.recipes.outputs.HDFOutput
     output_name_mapped: PYME.IO.tabular.TabularBase
