@@ -33,7 +33,8 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 
 class CoherentOBISLaser(Laser):
-    power_controllable = True
+    powerControlable = True
+
     def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, reply_ok=False, **kwargs):
         """
 
