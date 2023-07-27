@@ -33,13 +33,13 @@ class SKFilter(Filter):
                 return ret
         
         def completeMetadata(self, im):
-            im.mdh['Processing.' + self._filterID] = self._getargmd()
+            im.mdh.update(self._getargmd())
             
         def kwargs(self):
             return {an: getattr(self, an) for an in self._argnames}
             
         def _getargmd(self):
-            return {an: repr(getattr(self, an)) for an in self._argnames}
+            return {f'Processing.{self._filterID}.{an}': repr(getattr(self, an)) for an in self._argnames}
             
 ctemplate = """
 @register_module("%(FilterID)s")

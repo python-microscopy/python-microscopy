@@ -276,12 +276,14 @@ class IntegerIDRule(Rule):
         """
         Make a range of tasks available (to be called once the underlying data is available)
         [start, end)
+        
         Parameters
         ----------
         start : int
             first task number to release (inclusive)
         end : int
             last task number to release (exclusive)
+        
         Raises
         ------
         RuntimeError

@@ -353,7 +353,7 @@ class BlobFinder(Plugin):
                     if nBeads < 3:
                         raise ValueError('Not enough beads for linear model (3 d.f), only using %d beads - try adjustin filter wxy' % nBeads)
                     
-                    //print(dx[mask]/1e3, dy[mask]/1e3)
+                    #print(dx[mask]/1e3, dy[mask]/1e3)
                     spx, spy = twoColour.genShiftVectorFieldLinear(x[mask], y[mask], dx[mask], dy[mask], err_x[mask], err_y[mask])
                 elif model_type == 1:
                     if nBeads < 9:

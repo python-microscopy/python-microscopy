@@ -1249,7 +1249,7 @@ class Redimension(ModuleBase):
     the given dimention ordering.
 
     Parameters
-    -----------
+    ----------
 
     dim_order : enum, the order of dimensions in the image sequence
     size_z : int, number of z slices

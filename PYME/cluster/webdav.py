@@ -36,12 +36,14 @@
 
 #modified by D. Baddeley to use PYME Cluster IO as a backend, 2018
 
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-from SocketServer import ThreadingMixIn
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socketserver import ThreadingMixIn
 from io import StringIO
-import sys,urllib,re,urlparse
+import sys,urllib,re
+from urllib.parse import urlparse
 from time import time, timezone, strftime, localtime, gmtime
-import os, shutil, uuid, md5, mimetypes, base64
+import os, shutil, uuid, mimetypes, base64
+from hashlib import md5
 import socket
 import ssl
 

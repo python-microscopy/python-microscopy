@@ -3,12 +3,14 @@ This file provides a minimal test for spooling into the cluster with fake data, 
 
 Setup and Usage:
 =================
+
 - Run PYMEDataServer instances (on either local or remote host) with a -t option. This activates a testing mode where
   data is dumped on arrival rather than being written to disk.
 - Optionally use -p portNum and -v HTTP_version options on server
 - Adjust the frame size (below) as appropriate. 2k by 2k should be the standard initial benchmark as at this size per-frame
   overhead should not be excessive. We can optimize for per-frame overhead later. TODO - make this a command line option.
 - Run this file
+
 
 Performance on Macbook to 10 local servers (as of 19/7/2016):
 ========================================================================
@@ -35,6 +37,7 @@ Target: 800 MB/s
 
 Notes
 =====
+
 - Occasional connection timeout bug. Seems to be worse with HTTP/1.1
 - Now extened to permit testing of direct streaming to HDF (hacky)
 """
