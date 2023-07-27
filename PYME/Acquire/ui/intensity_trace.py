@@ -26,22 +26,28 @@ class IntensityTracePanel(FastGraphPanel):
             Number of frame-updates to store and display, by default 1000
         """
         self.frame_vals = np.arange(n_frames)
-        self.intensity_avg = np.zeros_like(self.frame_vals, dtype=float)
+        
+        # over-allocate buffer so that there is room at the end for us to record multiple values before displaying. 
+        # Overallocation is designed to give a factor of 2 margin at a maximum frame rate of around 1000 hz assuming 
+        # display and buffer shifting happens at 2Hz with the standard GUI timer
+        self.intensity_avg = np.zeros_like(self.frame_vals + 1000, dtype=float)
         FastGraphPanel.__init__(self, parent, winid, self.frame_vals, 
                                 self.intensity_avg)
         self.wrangler = frame_wrangler
-        # differ display opts assignment because it might not have been created yet
-        self.do = None  # PYME.UI.displayOps.DisplayOptions gets assigned later
+        
         self._mf = weakref.ref(parent)  # weak ref to MainFrame
         self._relative_val = 1
 
-    def assign_do(self):
+        self._buf_idx=0
+
+    
+    @property
+    def do(self):
         """
-        Assign the display options object from the MainFrame. This is done lazily
+        get the display options. This is done lazily
         because it might not be created when this panel is instantiated.
         """
-        logger.debug('assigning display options')
-        self.do = self._mf().vp.do  # PYME.UI.displayOps.DisplayOptions
+        return self._mf().vp.do  # PYME.UI.displayOps.DisplayOptions
 
     def clear(self):
         """
@@ -51,30 +57,51 @@ class IntensityTracePanel(FastGraphPanel):
         x0, x1, y0, y1, _, _ = self.do.sorted_selection
         self.intensity_avg = np.ones_like(self.intensity_avg) * np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1]))
 
-    def refr(self, sender=None, **kwargs):
-        """Updates the trace with the current frame's average value within the selected region
+    def update_trace(self, sender=None, **kwargs):
+        """
+        Update trace intensity data with the current frame's average value within the selected region (can be called separately from display). 
+        This is likely light-weight enough to be hooked to FrameWrangler.onFrame in most circumstances, although could be hooked to a lower-rate timer (e.g. onFrameGroup
+        or time1) if desired.
+        """
+        if self.do.selection.mode != SELECTION_RECTANGLE:
+            return
+            
+        # try to get data from the signal argument (if we bound to the onFrame signal), otherwise use
+        # the current frame (if bound to onFrameGroup, time1)
+        data = kwargs.get('frame_data',self.wrangler.currentFrame) 
+        
+        x0, x1, y0, y1, _, _ = self.do.sorted_selection
 
-        Note that this will be wired-up to the GUI timer, not the frameWrangler's update rate
+        # check, do we swap xy / rc here?
+        self.intensity_avg[self._buf_idx] = np.nan_to_num(np.mean(data[x0:x1, y0:y1])) / self._relative_val
+
+        if self._buf_idx < (len(self.intensity_avg) - 1):
+            # prevent an out-of-bounds error if gui bogs down and we don't re-shift buffer in time.
+            self._buf_idx += 1
+
+    def update_display(self, sender=None, **kwargs):
+        """Updates the GUI display and does buffer shifting.
+
+        Note that this must be wired-up to the GUI timer, not the frameWrangler's onFrame
 
         Parameters
         ----------
         sender : optional
             dispatch caller, included only to match the required function signature
         """
-        if self.do is None:
-            try:
-                self.assign_do()
-            except:
-                return
-        if self.do.selection.mode != SELECTION_RECTANGLE:
-            return
-        x0, x1, y0, y1, _, _ = self.do.sorted_selection
+        
 
-        self.intensity_avg[:-1] = self.intensity_avg[1:]
-        # check, do we swap xy / rc here?
-        self.intensity_avg[-1] = np.nan_to_num(np.mean(self.wrangler.currentFrame[x0:x1, y0:y1])) / self._relative_val
-        print(self.intensity_avg[-1])
-        self.SetData(self.frame_vals, self.intensity_avg)
+        
+
+        if self._buf_idx > self.frame_vals:
+            #move data backwards in the buffer so that the last data point is at the right hand side of the displayed interval.
+
+            offset = self._buf_idx - self.frame_vals
+            self.intensity_avg[:self.frame_vals] = self.intensity_avg[offset:(offset+ self.frame_vals)]
+            self._buf_idx = self.frame_vals
+        
+        print(self.intensity_avg[self.frame_vals-1])
+        self.SetData(self.frame_vals, self.intensity_avg[:self.frame_vals])
 
 class TraceROISelectPanel(wx.Panel):
     def __init__(self, parent, trace_page, winid=-1):
@@ -105,7 +132,10 @@ class TraceROISelectPanel(wx.Panel):
 
 #     intensity_trace = IntensityTracePanel(MainFrame, scope.frameWrangler)
 #     MainFrame.AddPage(page=intensity_trace, select=False, caption='Trace')
-#     MainFrame.time1.WantNotification.append(intensity_trace.refr)
+#     scope.frameWrangler.onFrame.connect(intensity_trace.update_trace) # to update data on every frame
+#     #scope.frameWrangler.onFrameGroup.connect(intensity_trace.update_trace) # to update data at ~5Hz, or every frame, whichever is slower
+
+#     MainFrame.time1.WantNotification.append(intensity_trace.update_display) # update the display at 2Hz
 
 #     panel = TraceROISelectPanel(MainFrame, intensity_trace)
 #     MainFrame.camPanels.append((panel, 'Trace ROI Select'))
