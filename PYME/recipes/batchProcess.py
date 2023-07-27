@@ -35,7 +35,7 @@ def runRec(args):
 def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS, start_callback=None, success_callback=None, error_callback=None, metadata_defaults={}):
     """Run a given recipe over using multiple proceses.
     
-    Arguments:
+    Parameters
     ----------
       recipe:       The recipe to run
       inputGlobs:   A dictionary of where the keys are the input names, and each

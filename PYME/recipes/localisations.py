@@ -206,6 +206,8 @@ class Pipelineify(ModuleBase):
 
     pixelSizeNM = Float(1, label='nanometer units',
                         desc="scaling factor to get 'x' and 'y' into units of nanometers. Useful if handling external data input in pixel units")
+    
+    foreshortening = Float(1.0, desc='scaling factor to correct for foreshortening in z')
 
     outputLocalizations = Output('Localizations')
     
@@ -286,7 +288,8 @@ class Pipelineify(ModuleBase):
 
         ev_maps, ev_charts = pipeline._processEvents(mapped_ds, events, mdh)
         pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
-
+        mapped_ds.set_variables(foreShort=self.foreshortening)
+        
         #Fit module specific filter settings
         if 'Analysis.FitModule' in mdh.getEntryNames():
             fitModule = mdh['Analysis.FitModule']
@@ -895,40 +898,40 @@ class MeasureClusters3D(ModuleBase):
     -----
 
     Measures calculated (to be expanded)
-    --------------------------------------
-        count : int
-            Number of localizations (points) in the cluster
-        x : float
-            x center of mass
-        y : float
-            y center of mass
-        z : float
-            z center of mass
-        gyrationRadius : float
-            root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
-            supplemental text of DOI: 10.1038/nature16496
-        axis0 : ndarray, shape (3,)
-            principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
-            eigenvalue
-        axis1 : ndarray, shape (3,)
-            next principle axis
-        axis2 : ndarray, shape (3,)
-            principle axis corresponding to the smallest eigenvalue
-        sigma0 : float
-            standard deviation along axis0
-        sigma1 : float
-            standard deviation along axis1
-        sigma2 : float
-            standard deviation along axis2
-        anisotropy : float
-            metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
-            where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
-            isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
-            'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
-        theta : float
-            Azimuthal angle, in radians, along which the principle axis (axis0) points
-        phi : float
-            Zenith angle, in radians, along which the principle axis (axis0) points
+
+    :count: int
+        Number of localizations (points) in the cluster
+    :x: float
+        x center of mass
+    :y: float
+        y center of mass
+    :z: float
+        z center of mass
+    :gyrationRadius : float
+        root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
+        supplemental text of DOI: 10.1038/nature16496
+    :axis0 : ndarray, shape (3,)
+        principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
+        eigenvalue
+    :axis1 : ndarray, shape (3,)
+        next principle axis
+    :axis2 : ndarray, shape (3,)
+        principle axis corresponding to the smallest eigenvalue
+    :sigma0 : float
+        standard deviation along axis0
+    :sigma1 : float
+        standard deviation along axis1
+    :sigma2 : float
+        standard deviation along axis2
+    :anisotropy : float
+        metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
+        where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
+        isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
+        'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
+    :theta : float
+        Azimuthal angle, in radians, along which the principle axis (axis0) points
+    :phi : float
+        Zenith angle, in radians, along which the principle axis (axis0) points
 
     """
     inputName = Input('input')

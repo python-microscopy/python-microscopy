@@ -1,7 +1,7 @@
 """ This just trys importing all the modules. Should cause test failures for py3k syntax errors (e.g. print statements)"""
 
 import pytest
-
+import sys
 
 # mark some tests as expected to fail if we are testing on a headless system
 try:
@@ -17,9 +17,13 @@ def test_IO_imports():
     from PYME.IO import clusterIO, clusterListing, clusterResults, clusterUpload
     from PYME.IO import dataExporter, dataWrap, dcimg, h5rFile
     from PYME.IO import image, load_psf, MetaDataHandler, PZFFormat
-    from PYME.IO import ragged, tabular, unifiedIO, countdir
+    from PYME.IO import ragged, tabular, unifiedIO
     
     #from PYME.IO import clusterDuplication #Known failure due to dependence on pyro
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='countdir.c not compiled on non-posix systems')
+def test_countdir_import():
+    from PYME.IO import countdir
     
 @pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_DSView_imports():

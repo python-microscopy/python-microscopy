@@ -303,7 +303,29 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
         
+    def draw_cross_pixel_coords(self, dc, x, y, z, w, h, d):
+        """Draws a cross on a given device contect (dc) given 3D co-ordinates
+        in image pixel space.
+
+        Usually called from overlays. NOTE: the dc should be the same one that is passed TO the overlay, and which comes from 
+        our OnPaint handler, not any arbitrary device context.
+
+        """
+        if (self.do.slice == self.do.SLICE_XY):
+            xs, ys = self.pixel_to_screen_coordinates(x,y)
+            ws, hs = (w*self.scale, h*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs, ys = self.pixel_to_screen_coordinates(x,z)
+            ws, hs = (w*self.scale, d*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs, ys = self.pixel_to_screen_coordinates(y,z)
+            ws, hs = (h*self.scale, d*self.scale*self.aspect)
+            
+        #dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        dc.DrawLine(xs - 0.5*ws, ys-0.5*hs, xs + 0.5*ws, ys+0.5*hs)
+        dc.DrawLine(xs - 0.5*ws, ys+0.5*hs, xs + 0.5*ws, ys-0.5*hs)
         
+
     @property
     def scale(self):
         """
@@ -467,6 +489,29 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemBitmap = self.GrabImage(fullImage)
         img = MemBitmap.ConvertToImage()
         img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+    
+    def ExportStackToPNG(self, filename, fullImage=True):
+        """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
+        via ffmpeg or similar tools
+
+        Parameters
+        ----------
+        filename : str
+            fully qualified path, with extension. Note that _%d will be appended to the filename to generate the
+            individual files
+        fullImage : bool, optional
+            whether to export the full image even if it is clipped in the GUI, by default True
+        FIXME - make this work with time series / 5D image data model.
+        """
+        import os
+        filestub, ext = os.path.splitext(filename)
+        for ind in range(self.do.ds.shape[2]):
+            self.do.zp = ind
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+            self.GrabPNG(filestub + '_%d' % ind + ext, fullImage)
         
     def GrabPNGToBuffer(self, fullImage=True):
         '''Get PNG data in a buffer (rather than writing directly to file)'''

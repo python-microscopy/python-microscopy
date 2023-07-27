@@ -266,7 +266,7 @@ class piezo_c867T(PiezoBase):
                     self.ser_port.write(b'ERR?\n')
                     self.ser_port.flushOutput()
                     errCode = int(self.ser_port.readline())
-                    if not ((errCode == 10) or (errCode==0):
+                    if not ((errCode == 10) or (errCode==0)):
                         self.errCode = errCode
                         self._log_error(self.errCode) 
 

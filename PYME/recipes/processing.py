@@ -2055,7 +2055,7 @@ class ColocalisationEDT(ModuleBase):
     enrichment, and the total signal contained within a given distance from a mask.
     
     Parameters
-    ===========
+    ==========
     
     inputImage : an intensity image
     mask : a mask (usually derived from a different channel)
@@ -2066,7 +2066,7 @@ class ColocalisationEDT(ModuleBase):
     minimumDistance, maximumDistance, binSize : float, nm the range of distances to calculate the histogram over
     
     
-    Outputs
+    Returns
     =======
     
     outputTable : a table containing the following columns:
@@ -2080,7 +2080,7 @@ class ColocalisationEDT(ModuleBase):
                     
     
     Notes
-    ======
+    =====
     
     - If the input image has multiple colour channels, the 0th channel will be taken (i.e. split channels first)
     - To do colocalisation both ways between two images, you will need two copies of this module

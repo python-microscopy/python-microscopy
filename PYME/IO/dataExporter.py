@@ -163,12 +163,6 @@ class H5Exporter(Exporter):
 
         if not origName is None:
             outMDH.setEntry('cropping.originalFile', origName)
-            
-        outMDH.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-        outMDH.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-        outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-        if tslice is not None:
-            outMDH.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
 
         if not events is None and len(events) > 0:
             assert isinstance(events, numpy.ndarray), "expected type of events object to be numpy array, but was {}".format(type(events))
@@ -228,12 +222,6 @@ class TiffStackExporter(Exporter):
             #xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
-
-            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-
-            print((xslice.indices(data.shape[0])))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
@@ -293,15 +281,6 @@ class OMETiffExporter(Exporter):
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
-
-            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-            try:
-                xmd.setEntry('cropping.tslice', tslice.indices(data.shape[3]))
-            except AttributeError:
-                warnings.warn('tslice not found, skipping')
-                pass
             
             description=xmd.getXML(data)
         else:
@@ -345,10 +324,6 @@ class TiffSeriesExporter(Exporter):
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
-            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
             # xmd.WriteSimple(xmlFile)
@@ -374,10 +349,6 @@ class NumpyExporter(Exporter):
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
-
-            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
             
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
@@ -456,10 +427,6 @@ class TxtExporter(Exporter):
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
-    
-            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
-            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
-            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
     
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)

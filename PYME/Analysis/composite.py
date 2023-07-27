@@ -50,7 +50,7 @@ def remap_data_2d(image, chan, shape, voxelsize, origin, shiftField=None, ignore
     Znm = Z * vzm + zm0
     
     if shiftField and os.path.exists(shiftField):
-        spx, spy, dz = np.load(shiftField)
+        spx, spy, dz = np.load(shiftField, allow_pickle=True)
         
         dx = spx.ev(Xnm, Ynm)
         dy = spy.ev(Xnm, Ynm)
@@ -69,6 +69,29 @@ def remap_data_2d(image, chan, shape, voxelsize, origin, shiftField=None, ignore
 
 
 def make_composite(images, ignoreZ=True, interp=True, shape=None, origin=None, voxelsize=None):
+    """Make a composite image from multiple ImageStacks, interpolating if necessary
+
+    Parameters
+    ----------
+    images : list-like
+        ImageStack objects to combine, potentially as a list of tuples with the second element being the channel to use,
+        and the third element being a chromatic shift field to apply
+    ignoreZ : bool, optional
+        ignore z origin when combining, by default True
+    interp : bool, optional
+        whether to interpolate with a cubic spline (True) or linear (False), by default True
+    shape : list-like, optional
+        xyztc shape of the composite, if different than the shape of the first image (default, None)
+    origin : list-like, optional
+        XYZ origin of the composite image, if different than the origin of the first image (default, None)
+    voxelsize : MetaDataHandler.VoxelSize, optional
+        voxelsize to construct the composite image, if different than that of the first image (default, None)
+
+    Returns
+    -------
+    PYME.IO.image.ImageStack
+        composite image
+    """
     from PYME.IO import MetaDataHandler
     from PYME.IO.image import ImageStack
     
@@ -77,7 +100,10 @@ def make_composite(images, ignoreZ=True, interp=True, shape=None, origin=None, v
     newNames = []
     newData = []
     
-    im0 = images[0][0]
+    if isinstance(images[0], tuple):
+        im0 = images[0][0]
+    else:
+        im0 = images[0]
     
     if voxelsize is None:
         voxelsize = im0.voxelsize
