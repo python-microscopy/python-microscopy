@@ -54,6 +54,7 @@ def setup_logging(default_level=logging.DEBUG):
     """
     import yaml
     import PYME.config
+    from PYME.util import log_verbosity
     default_config_file = os.path.join(os.path.split(__file__)[0], 'logging.yaml')
     
     path = PYME.config.get('Acquire-logging_conf_file', default_config_file)
@@ -66,9 +67,8 @@ def setup_logging(default_level=logging.DEBUG):
     else:
         logging.basicConfig(level=default_level)
 
-    # we want to somehow supress the level of matplotlib messages below debug level
-    logging.getLogger('matplotlib').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
-
+    # suppress excessively verbose logging in dependency packages
+    log_verbosity.patch_log_verbosity()
 
 class BoaApp(wx.App):
     def __init__(self, options, *args):

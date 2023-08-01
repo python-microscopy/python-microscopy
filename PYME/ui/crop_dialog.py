@@ -64,7 +64,7 @@ class ExportDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        vsizer.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        vsizer.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizerAndFit(vsizer)
 

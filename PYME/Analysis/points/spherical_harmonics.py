@@ -218,8 +218,8 @@ def generate_icosahedron():
 def icosahedron_mesh(n_subdivision=1):
     """
     Return an icosahedron subdivided n_subdivision times. This provides a
-    quasi-regular sampling of the unit sphere.
-    
+    quasi-regular sampling of the unit sphere. ::
+        
             v0               v0
             /  \             /  \
            /    \    ==>   v3----v5
@@ -607,9 +607,6 @@ class ScaledShell(object):
         'phantom' points in the plane tangent to the spherical harmonic expansion on either side of the query point(s).
         Scale back, convert to cartesian, make vectors from the phantom points (which are by definition not parallel)
         and cross them to get a vector perpindicular to the plane.
-
-        Returns
-        -------
 
         Parameters
         ----------

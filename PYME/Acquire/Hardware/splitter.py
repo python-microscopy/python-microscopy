@@ -23,7 +23,8 @@ import os.path
 ##################
 
 import wx
-from PYME.DSView.arrayViewPanel import ArrayViewPanel, OptionsPanel
+from PYME.DSView.arrayViewPanel import ArrayViewPanel
+from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 import numpy
 import os
 import wx.lib.agw.aui as aui

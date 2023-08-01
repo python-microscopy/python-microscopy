@@ -4,7 +4,7 @@ import sys
 import os
 from collections import deque
 import numpy as np
-from six.moves import xrange
+#from six.moves import xrange
 #try:
 #    from resource import getrusage, RUSAGE_SELF
 #except ImportError:
@@ -95,7 +95,7 @@ class T(Thread):
     def __init__(self):
         Thread.__init__(self)
     def run(self):                  # takes about 5 seconds
-        for i in xrange(10):
+        for i in range(10):
             self.test_method()
             test_function()
     def test_method(self):
@@ -104,10 +104,10 @@ class T(Thread):
 #profile_on('tProfile.py')
 #######################
 def runTests():
-    threads = [T() for i in xrange(3)]
+    threads = [T() for i in range(3)]
     for t in threads:
         t.start()
-    for i in xrange(10):
+    for i in range(10):
         test_function()
     for t in threads:
         t.join()

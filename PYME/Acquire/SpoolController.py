@@ -11,8 +11,8 @@ Created on Sat May 28 20:42:16 2016
 #from PYME.IO import HTTPSpooler
 from PYME.IO import acquisition_backends
 # TODO: change to use a metadata handler / provideStartMetadata hook
-#   MetaDataHandler.provideStartMetadata from the init file when
-#   loading the sampleinfo interface, see Acquire/Scripts/init.py
+# MetaDataHandler.provideStartMetadata from the init file when
+# loading the sampleinfo interface, see Acquire/Scripts/init.py
 try:
     from PYME.Acquire import sampleInformation
     sampInf = True

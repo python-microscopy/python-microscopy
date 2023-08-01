@@ -32,8 +32,8 @@ class DataSource(FlatFieldDataSource):
         photoelectrons per second (e/s). parentSource should not be camera map corrected (dark-
         or flatfield-corrected).
 
-        WARNING
-        #######
+        Warnings
+        --------
 
         A lot of PYME assumes that image units are in ADUs. This means that it would be easy to end up doing this correction
         in downstream modules as well as here and ending up with erroneous data as a result. Safe usage of this module in

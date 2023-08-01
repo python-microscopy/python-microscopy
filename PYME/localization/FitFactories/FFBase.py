@@ -100,8 +100,8 @@ class FFBase(object):
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         x : int
             ROI center position, x [pixels] relative to self.roi_offset
         y : int 
@@ -113,7 +113,8 @@ class FFBase(object):
         axialHalfSize : int
             axial ROI extent. Axial ROI size will be (2 * axialHalfSize) + 1
         
-        Returns:
+        Returns
+        -------
             X - x coordinates of pixels in ROI in nm
             Y - y coordinates of pixels in ROI
             data - raw pixel data of ROI, averaged in Z if axialHalfSize is > 0 and
