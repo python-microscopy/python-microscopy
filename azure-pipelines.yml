@@ -40,8 +40,9 @@ steps:
 - script: |
     python -m pip install --upgrade pip
     pip install -r test_requirements.txt
-    pip install git+https://github.com/olivierverdier/dispatch.git
-    pip install git+https://github.com/python-microscopy/pymecompress
+    # pip install git+https://github.com/olivierverdier/dispatch.git
+    # pip install git+https://github.com/python-microscopy/pymecompress
+    pip install pymecompress
     pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html flake8 diff-cover
   displayName: 'Install dependencies'
 
