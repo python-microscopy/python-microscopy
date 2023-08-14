@@ -18,6 +18,9 @@ ignore:
 #    - "*/loft/*"
 #    - "*/Loft/*"
 
+fixes:
+  - "::PYME/"
+
 flags:
   all:
     paths:
