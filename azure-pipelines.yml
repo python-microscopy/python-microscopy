@@ -53,7 +53,7 @@ steps:
 
 - script: |
     #cd tests
-    pytest -v --html=report.html tests/ --cov ./PYME --cov-report xml
+    pytest -v --html=report.html tests/ --cov PYME --cov-report xml
   displayName: 'pytest'
   
 - script: |
