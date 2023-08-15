@@ -19,7 +19,7 @@ ignore:
 #    - "*/Loft/*"
 
 fixes:
-  - "::PYME/"
+  - "/home/vsts/work/1/s/::"
 
 flags:
   all:
