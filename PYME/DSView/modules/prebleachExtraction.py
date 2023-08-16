@@ -59,8 +59,8 @@ class PrebleachExtractor(Plugin):
         ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
         if self.split:
-            from PYME.Acquire.Hardware import splitter
-            unmux = splitter.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], mdh.voxelsize_nm.x)
+            from PYME.Analysis import splitting
+            unmux = splitting.Unmixer([mdh.getEntry('chroma.dx'),mdh.getEntry('chroma.dy')], mdh.voxelsize_nm.x)
 
             dt = unmux.Unmix(dt, self.mixmatrix, 0, [ROIX1, ROIY1, ROIX2, ROIY2])
 
