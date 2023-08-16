@@ -27,6 +27,8 @@ flags:
       - "*"
       
   core:
+    paths:
+     - "*"
     ignore:
       - "*/ui/*"
       - "*/Acquire/*"
