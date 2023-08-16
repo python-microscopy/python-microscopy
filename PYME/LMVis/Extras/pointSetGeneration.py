@@ -156,7 +156,6 @@ There should be no need to modify this from the default and it is accordingly no
         
     def OnGenEvents(self, event):
         from PYME.simulation import locify
-        #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
         # import pylab

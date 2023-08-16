@@ -16,7 +16,8 @@ class dtype:
         self.typestr = obj
 
     def __setstate__(self, ):
-
-def _reconstruct(cls, dims, typecode):
-    return cls(dims, typecode)
+        pass
+    
+    def _reconstruct(cls, dims, typecode):
+        return cls(dims, typecode)
 
