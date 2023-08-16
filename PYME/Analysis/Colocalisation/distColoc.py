@@ -13,8 +13,6 @@
 from PYME.Analysis.points import DistHist
 import numpy as np
 
-#from PYME.Acquire.ExecTools import execBG
-
 
 #def calcCollHist(colourFilter, colour):
 
