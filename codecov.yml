@@ -51,7 +51,7 @@ component_management:
 
   
   individual_components:
-  - component_id: all
+   - component_id: all
      name: all
      paths:
       - "**"
