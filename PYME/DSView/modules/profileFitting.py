@@ -22,7 +22,6 @@
 
 import wx
 
-#from PYME.Acquire.mytimer import mytimer
 # import pylab
 import matplotlib.pyplot as plt
 from scipy import ndimage

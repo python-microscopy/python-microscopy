@@ -23,7 +23,6 @@
 import wx
 import wx.lib.agw.aui as aui
 import numpy as np
-#from PYME.Acquire.mytimer import mytimer
 #from scipy import ndimage
 from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D

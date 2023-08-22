@@ -4,7 +4,7 @@ import wx
 from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
 from PYME.cluster.rules import RecipeRuleFactory
 from collections import OrderedDict
-import queue
+#import queue
 import os
 import posixpath
 import logging

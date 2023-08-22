@@ -23,8 +23,7 @@
 
 import numpy as np
 from scipy import fftpack, ndimage
-from PYME.Acquire.Hardware import splitter
-
+from PYME.Analysis import splitting
 # from pylab import ifftshift, ifftn, fftn, fftshift
 from numpy.fft import ifftshift, ifftn, fftn, fftshift
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
@@ -108,7 +107,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     if split:
         frameSizeY /=2
         nchans = 2
-        unmux = splitter.Unmixer(shiftfield, mdh.voxelsize_nm.x)
+        unmux = splitting.Unmixer(shiftfield, mdh.voxelsize_nm.x)
     else:
         nchans = 1
 

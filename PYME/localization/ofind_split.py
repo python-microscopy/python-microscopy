@@ -118,7 +118,7 @@ class ObjectIdentifier(list):
         if not filterRadiusHighpass == filtRadHighpass:
             #recompute weights for different filter size
             filtRadHighpass = filterRadiusHighpass
-            weightsHighpass = calc_guass_weights(filtRadHighpass)
+            weightsHighpass = calc_gauss_weights(filtRadHighpass)
 
 
     def __FilterData2D(self,data):
