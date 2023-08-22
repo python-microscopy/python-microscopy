@@ -31,7 +31,7 @@ import numpy as np
 from .BaseDataSource import XYTCDataSource
 #from PYME.misc import TiffImagePlugin #monkey patch PIL with improved tiff support from Priithon
 
-from six.moves.urllib.parse import parse_qs
+from urllib.parse import parse_qs
 #import numpy as np
 
 #from PYME.misc import tifffile

@@ -80,6 +80,8 @@ def configuration(parent_package='', top_path=None):
                     include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math'],# '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
+
+    config.add_data_files('*.pxd', '*.pyx', '*.h', '*.c') #permit compilation against cython extension
     
     # config = Configuration('pymecompress', parent_package, top_path)
     #

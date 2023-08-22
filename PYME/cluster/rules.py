@@ -3,6 +3,7 @@ Refactored rule pushing. Introduces rule classes which act as a python proxy for
 factories for use when constructing equivalent rules (or chains of rules) for multiple series.
 
 Design principles as follows:
+
 - a `Rule` object is a 1:1 mapping with rules on the ruleserver
 - you create a new `Rule` object for each rule you push to the server
 - a pattern for rule creation is expressed using a `RuleFactory`
@@ -958,9 +959,10 @@ class LocalisationRuleFactory(RuleFactory):
     def __init__(self, **kwargs):
         """
         See `LocalisationRule` for full initialization arguments. Required 
-        kwargs are
-            seriesName : str
-            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        kwargs are:
+
+        :seriesName : str
+        :analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
         """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
 
@@ -969,8 +971,9 @@ class SpoolLocalLocalizationRuleFactory(RuleFactory):
     def __init__(self, **kwargs):
         """
         See `SpoolLocalLocalizationRule` for full initialization arguments. 
-        Required kwargs are
-            seriesName : str
-            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        Required kwargs are:
+
+        :seriesName : str
+        :analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
         """
         RuleFactory.__init__(self, rule_class=SpoolLocalLocalizationRule, **kwargs)   

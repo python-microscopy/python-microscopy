@@ -21,7 +21,7 @@
 #
 ################
 from .baseInterpolator import __interpolator
-from numpy import *
+#from numpy import *
 import numpy as np
 from scipy import ndimage
 from PYME.localization.cInterp import cInterp
@@ -115,9 +115,9 @@ class CSInterpolator(__interpolator):
         """placeholder to be overrriden to return coordinates needed for interpolation"""
         #generate grid to evaluate function on
         vs = metadata.voxelsize_nm
-        X = vs.x*mgrid[xslice]
-        Y = vs.y*mgrid[yslice]
-        Z = array([0]).astype('f')
+        X = vs.x*np.mgrid[xslice]
+        Y = vs.y*np.mgrid[yslice]
+        Z = np.array([0]).astype('f')
         
         #print interpolator.shape
 

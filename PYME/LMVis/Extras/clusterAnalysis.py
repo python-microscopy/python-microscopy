@@ -345,7 +345,7 @@ class ClusterAnalyser:
 
         Parameters
         ----------
-        labelsKey: pipeline key to access array of label assignments. Measurements will be calculated for each label.
+        labelKey: key name to access array of label assignments. Measurements will be calculated for each label.
 
 
         """
@@ -355,7 +355,7 @@ class ClusterAnalyser:
         # build a recipe programatically
         measrec = Recipe()
 
-        measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelsKey='dbscanClustered',
+        measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelKey='dbscanClumpID',
                                                        outputName='output'))
 
         measrec.namespace['input'] = self.pipeline.output

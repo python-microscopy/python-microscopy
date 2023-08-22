@@ -30,7 +30,8 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 
 class MPBCWLaser(Laser):
-    power_controllable = True
+    powerControlable = True
+    
     def __init__(self, serial_port='COM3', name='MPBCW', turn_on=False, init_power=200, **kwargs):
         """
 

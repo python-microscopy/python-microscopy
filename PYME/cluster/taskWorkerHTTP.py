@@ -333,6 +333,7 @@ class taskWorker(object):
             logger.exception(traceback.format_exc())
 
         if len(tasks) != 0:
+            #logger.debug('Got %d tasks' % len(tasks))
             for t in tasks:
                 self.inputQueue.put(t)
             return True
@@ -356,6 +357,7 @@ class taskWorker(object):
             # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
                 # if we don't have any new tasks, sleep to avoid constant polling
+                #logger.debug('tasksLoop-_get_tasks()')
                 if not self._get_tasks():
                     # no queues had tasks
                     time.sleep(0.1)
@@ -374,6 +376,7 @@ class taskWorker(object):
         while True:
             # turn in completed tasks
             try:
+                #logger.debug('returnLoop - _return')
                 self._return_task_results()
             except:
                 import traceback
@@ -390,7 +393,9 @@ class taskWorker(object):
             #loop over tasks - we pop each task and then delete it after processing
             #to keep memory usage down
 
+            #logger.debug('computeLoop-inputQueue.get()')
             queueURL, taskDescr = self.inputQueue.get()
+            #logger.debug('computeLoop-%s' %taskDescr)
             if taskDescr['type'] == 'localization':
                 try:
                     task = remFitBuf.createFitTaskFromTaskDef(taskDescr)

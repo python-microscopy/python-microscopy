@@ -172,6 +172,14 @@ def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
             return r.start
         else:
             return r[0]
+        
+    def _slice(r):
+        if isinstance(r, slice):
+            return r
+        else: 
+            # assume tuple or list
+            # will raise TypeError if None
+            return slice(*r)
 
     if isinstance(image.data_xyztc, ArrayDataSource.XYZTCArrayDataSource):
         # special case for array data source so that we can use views and get optimal chunk access (dask/zarr)
@@ -191,6 +199,31 @@ def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
     im.mdh['Origin.x'] = ox + vx*_offset(xrange)
     im.mdh['Origin.y'] = oy + vy*_offset(yrange)
     im.mdh['Origin.z'] = oz + vz*_offset(zrange)
+
+    try:
+        im.mdh['cropping.xslice'] = _slice(xrange)
+    except TypeError:
+        #xrange is None
+        pass
+
+    try:
+        im.mdh['cropping.yslice'] = _slice(yrange)
+    except TypeError:
+        #yrange is None
+        pass
+
+    try:
+        im.mdh['cropping.zslice'] = _slice(zrange)
+    except TypeError:
+        #zrange is None
+        pass
+
+    try:
+        im.mdh['cropping.tslice'] = _slice(trange)
+    except TypeError:
+        #trange is None
+        pass
+
     return im
 
 def roi_crop_image(image, roi, z=True, t=False):

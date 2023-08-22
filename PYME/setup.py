@@ -61,6 +61,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('experimental')
     config.add_subpackage('tileviewer')
     config.add_data_dir('tileviewer/templates')
+    config.add_data_files('*.pxd', '*.pyx') #permit inheritance of cython classes
     #config.add_subpackage('dataBrowser')
     #config.add_subpackage('shmarray')
     #config.add_subpackage('SampleDB2')

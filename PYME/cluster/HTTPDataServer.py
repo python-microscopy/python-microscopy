@@ -4,8 +4,7 @@ This is a very simple HTTP server which allows data to be saved to the server us
 
 
 .. warning::
-    Security warning
-    ----------------
+    **Security warning**
 
     The code as it stands lets any client write arbitrary data to the server.
     The only concessions we make to security are:

@@ -50,9 +50,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
-logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
-logging.getLogger('PIL.PngImagePlugin').setLevel(logging.ERROR)
+# supress excessive logging from dependencies
+from PYME.util import log_verbosity
+log_verbosity.patch_log_verbosity()
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
@@ -404,7 +404,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             
         """
         
-        ID_NEWITEM = wx.NewId()
+        ID_NEWITEM = wx.NewIdRef()
         self.extras_menu.Append(ID_NEWITEM, label)
         self.Bind(wx.EVT_MENU, callback, id=ID_NEWITEM)
         

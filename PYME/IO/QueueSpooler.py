@@ -27,7 +27,6 @@ import os
 import time
 
 import PYME.IO.Spooler as sp
-#from PYME.Acquire import protocol as p
 from PYME.IO.FileUtils import fileID
 
 try:

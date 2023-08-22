@@ -40,8 +40,10 @@ steps:
 - script: |
     python -m pip install --upgrade pip
     pip install -r test_requirements.txt
-    pip install git+https://github.com/olivierverdier/dispatch.git
-    pip install git+https://github.com/python-microscopy/pymecompress
+    # pip install git+https://github.com/olivierverdier/dispatch.git
+    # pip install git+https://github.com/python-microscopy/pymecompress
+    pip install wheel
+    pip install --no-build-isolation pymecompress
     pip install 'pytest<=5.3.2' pytest-azurepipelines pytest-cov pytest-html flake8 diff-cover
   displayName: 'Install dependencies'
 
@@ -51,7 +53,7 @@ steps:
 
 - script: |
     #cd tests
-    pytest -v --html=report.html tests/ --cov ./PYME --cov-report xml
+    pytest -v --html=report.html tests/ --cov PYME --cov-report xml
   displayName: 'pytest'
   
 - script: |
@@ -59,8 +61,9 @@ steps:
     #bash <(curl -s https://codecov.io/bash)
     curl -Os https://uploader.codecov.io/latest/linux/codecov 
     chmod +x codecov
-    ./codecov -f coverage.xml -F all -F core -C $(Build.SourceVersion)
-  condition: and(succeededOrFailed(), eq(variables['python.version'], '3.6'))
+    #./codecov -f coverage.xml -F all -F core -C $(Build.SourceVersion)
+    ./codecov -f coverage.xml -F all -F core
+  condition: and(succeededOrFailed(), eq(variables['python.version'], '3.7'))
   displayName: 'codecov upload'
   env:
     CODECOV_TOKEN: $(CODECOV_T)

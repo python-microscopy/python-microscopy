@@ -33,8 +33,9 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 
 class CoherentOBISLaser(Laser):
-    power_controllable = True
-    def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, **kwargs):
+    powerControlable = True
+
+    def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, reply_ok=False, **kwargs):
         """
 
         Parameters
@@ -47,10 +48,15 @@ class CoherentOBISLaser(Laser):
             Name of the laser
         init_power: float
             In units of mW
+        reply_ok: bool
+            Whether this laser is configured to reply 'OK' after each message or not.
+            Note this has been observed when communicating throughthe OBIS power supply
+            rather than directly with the head unit.
         kwargs
         """
         self.serial_port = serial.Serial(serial_port, timeout=.1)
         self.lock = threading.Lock()
+        self._reply_OK = int(reply_ok)
 
 
 
@@ -94,7 +100,7 @@ class CoherentOBISLaser(Laser):
         with self.lock:
             self.serial_port.reset_input_buffer()
             self.serial_port.write(command)
-            reply = [self.serial_port.readline() for line in range(lines_expected)]
+            reply = [self.serial_port.readline() for line in range(lines_expected + self._reply_OK)]
             self.serial_port.reset_input_buffer()
         return reply
 

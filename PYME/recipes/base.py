@@ -260,7 +260,7 @@ class ModuleBase(HasStrictTraits):
 
         # convert output to a dictionary if needed
         if isinstance(ret, dict):
-            out = {v : ret[k] for v, k in self._output_traits.items()}
+            out = {k : ret[v] for v, k in self._output_traits.items()}
         elif isinstance(ret, List):
             out = {k : v  for k, v in zip(self.outputs, ret)} #TODO - is this safe (is ordering consistent)
         else:
@@ -370,7 +370,7 @@ class ModuleBase(HasStrictTraits):
     @property
     def _output_traits(self):
         #return {k:v for k, v in self.trait_get().items() if (k.startswith('output') or isinstance(k, Output)) and not v ==''}
-        return {k:getattr(self,k) for k, v in self.traits().items() if (k.startswith('output') or isinstance(v.trait_type, Output)) and not getattr(self, k) == ''}
+        return {k:getattr(self,k) for k, v in self.traits().items() if (isinstance(v.trait_type, Output)) and not getattr(self, k) == ''}
     
     @property
     def outputs(self):
@@ -1249,7 +1249,7 @@ class Redimension(ModuleBase):
     the given dimention ordering.
 
     Parameters
-    -----------
+    ----------
 
     dim_order : enum, the order of dimensions in the image sequence
     size_z : int, number of z slices

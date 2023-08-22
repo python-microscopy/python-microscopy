@@ -188,10 +188,9 @@ class CRBViewPanel(wx.Panel):
     def draw(self, event=None):
         self.axes.cla()
 
-        self.axes.plot(self.z_, np.sqrt(self.crb[:,0]), label='x')
-        self.axes.plot(self.z_, np.sqrt(self.crb[:,1]), label='y')
-        self.axes.plot(self.z_, np.sqrt(self.crb[:,2]), label='z')
-        self.axes.legend()
+        self.axes.plot(self.z_, np.sqrt(self.crb[:,0]), 'b', label='x')
+        self.axes.plot(self.z_, np.sqrt(self.crb[:,1]), 'g', label='y')
+        self.axes.plot(self.z_, np.sqrt(self.crb[:,2]), 'r', label='z')
         
         self.axes.set_xlabel('Defocus [nm]')
         self.axes.set_ylabel('Std. Dev. [nm]')
@@ -199,10 +198,10 @@ class CRBViewPanel(wx.Panel):
 
         crb_as = np.sqrt(self.crb_as)        
         
-        self.axes.plot(self.z_, crb_as[:,0], 'b:')
-        self.axes.plot(self.z_, crb_as[:,1], 'g:')
-        self.axes.plot(self.z_, crb_as[:,2], 'r:')
-
+        self.axes.plot(self.z_, crb_as[:,0], 'b:', label='x (Theoretical Astig. PSF)')
+        self.axes.plot(self.z_, crb_as[:,1], 'g:', label='y (Theoretical Astig. PSF)')
+        self.axes.plot(self.z_, crb_as[:,2], 'r:', label='z (Theoretical Astig. PSF)')
+        self.axes.legend()
         self.canvas.draw()
 
     def _onSize( self, event ):
@@ -486,7 +485,6 @@ class PSFTools(HasTraits):
         plt.plot(z_, np.sqrt(crb[:,0]), label='x')
         plt.plot(z_, np.sqrt(crb[:,1]), label='y')
         plt.plot(z_, np.sqrt(crb[:,2]), label='z')
-        plt.legend()
         
         plt.xlabel('Defocus [nm]')
         plt.ylabel('Std. Dev. [nm]')
@@ -495,9 +493,10 @@ class PSFTools(HasTraits):
         ps_as = fourierHNA.GenAstigPSF(z_, vs[0], 2)  
         I = ps_as[:,:,ps_as.shape[2]/2].sum()
         crb_as = np.sqrt(cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I, 500, voxelsize=vs)))
-        plt.plot(z_, crb_as[:,0], 'b:')
-        plt.plot(z_, crb_as[:,1], 'g:')
-        plt.plot(z_, crb_as[:,2], 'r:')
+        plt.plot(z_, crb_as[:,0], 'b:', label='x (Theoretical Astig. PSF ')
+        plt.plot(z_, crb_as[:,1], 'g:', label='y (Theoretical Astig. PSF ')
+        plt.plot(z_, crb_as[:,2], 'r:', label='z (Theoretical Astig. PSF ')
+        plt.legend()
         
         
     def OnCalcCRB3DvsBG(self, event):

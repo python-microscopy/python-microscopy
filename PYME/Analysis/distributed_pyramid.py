@@ -318,10 +318,10 @@ def distributed_pyramid(
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
     
     if split:
-        from PYME.Acquire.Hardware import splitter
+        from PYME.Analysis import splitting
         frameSizeY /= 2
         nchans = 2
-        unmux = splitter.Unmixer(shiftfield, mdh.voxelsize_nm.x)
+        unmux = splitting.Unmixer(shiftfield, mdh.voxelsize_nm.x)
     else:
         nchans = 1
     

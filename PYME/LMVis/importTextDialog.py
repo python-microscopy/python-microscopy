@@ -166,7 +166,7 @@ class ColumnMappingDialog(wx.Dialog):
         fgSizer = wx.FlexGridSizer(1+len(self.dataLines), len(self.colNames), 4, 4)
 
         for cn in self.colNames:
-            id = wx.NewId()
+            id = wx.NewIdRef()
             self.comboIDs.append(id)
 
             cb = wx.ComboBox(self.scrollW, id, size=(120, -1), choices=[cn]+ list(self.requiredVariables.keys()) +list(self.recommendedVariables.keys()) + list(self.niceVariables.keys()))
@@ -209,11 +209,13 @@ class ImportTextDialog(ColumnMappingDialog):
     fileType='text'
 
     def _parse_header(self, file):
+        import os
         from PYME.IO import csv_flavours
         # TODO - reduce duplication with csv_flavours.guess_text_options
 
         colNames, dataLines, self.numCommentLines, self.delim = csv_flavours.parse_csv_header(file)
-        self.text_flavour = csv_flavours.guess_flavour(colNames, self.delim)
+        ext = os.path.splitext(file)[-1]
+        self.text_flavour = csv_flavours.guess_flavour(colNames, self.delim, ext)
 
         self.raw_names = colNames
         colNames = csv_flavours.replace_names(colNames, self.text_flavour)

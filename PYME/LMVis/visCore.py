@@ -59,6 +59,19 @@ from PYME.LMVis import statusLog
 #from PYME.recipes import recipeGui
 
 class VisGUICore(object):
+    @property
+    def _win(self):
+        """
+        Returns the window oject associated with this VisGUICore instance.
+
+        This can either be a window instance (in PYMEVis) or a non-window "manager" in the LMDisplay PYMEImage plugin. We sometimes
+        need to access the window to create controls etc ...
+        """
+        if isinstance(self, wx.Window):
+            return self
+        else:
+            return self.dsviewer
+        
     def __init__(self, use_shaders=False):
         self._new_layers = PYME.config.get('VisGUI-new_layers', True)
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
@@ -73,12 +86,9 @@ class VisGUICore(object):
         self.pipeline.onRebuild.connect(self.RefreshView)
         
         #initialize the gl canvas
-        if isinstance(self, wx.Window):
-            win = self
-        else:
-            win = self.dsviewer
+        
 
-        gl_pan = wx.Panel(win)
+        gl_pan = wx.Panel(self._win)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
 
@@ -97,7 +107,7 @@ class VisGUICore(object):
         sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
         sizer.Add(self.glCanvas, 5, wx.EXPAND, 0)
         gl_pan.SetSizerAndFit(sizer)
-        win.AddPage(page=gl_pan, caption='View')#, select=True)
+        self._win.AddPage(page=gl_pan, caption='View')#, select=True)
 
         #self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
 
@@ -286,7 +296,7 @@ class VisGUICore(object):
         self.AddMenuItem('View', 'Fit ROI\tAlt-8', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
-        self.ID_VIEW_CLIP_ROI = wx.NewId()
+        self.ID_VIEW_CLIP_ROI = wx.NewIdRef()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
 
         self.AddMenuItem('View', 'Re&center\tAlt-C', self.OnRecenter)
@@ -392,7 +402,7 @@ class VisGUICore(object):
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
-                                   wildcard='All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
+                                   wildcard='All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf;*.3d;*.3dlp|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
 
         #print filename
         if not filename == '':

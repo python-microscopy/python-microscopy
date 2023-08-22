@@ -171,9 +171,9 @@ class FocusCorrector(wx.Timer):
         """Add menu items and keyboard accelerators for LED control
         to the specified menu & parent window"""
         #Create IDs
-        self.ID_TRACK_ON = wx.NewId()
-        self.ID_TRACK_ON_CALC = wx.NewId()
-        self.ID_TRACK_OFF = wx.NewId()
+        self.ID_TRACK_ON = wx.NewIdRef()
+        self.ID_TRACK_ON_CALC = wx.NewIdRef()
+        self.ID_TRACK_OFF = wx.NewIdRef()
         
         mTracking = wx.Menu(title = '')
 

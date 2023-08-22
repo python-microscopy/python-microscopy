@@ -23,7 +23,7 @@
 
 #f = f3
 #import tcluster
-import dec
+from . import dec
 from scipy import *
 import decTask #import decTask
 

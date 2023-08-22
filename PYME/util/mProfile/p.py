@@ -24,7 +24,7 @@
 import sys
 import time
 import os
-import colorize_db_t
+from . import colorize_db_t
 import webbrowser
 
 #tPrev = time.time()

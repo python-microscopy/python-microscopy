@@ -20,7 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from numpy import *
+#from numpy import *
+import numpy as np
 from PYME.IO.image import ImageStack
 #import cPickle
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
@@ -118,15 +119,15 @@ class __interpolator:
             #using a split model - we have 2 PSFs side by side
             self.SplitPSF = True
             self.PSF2Offset = voxelsize.x*mod.shape[1]
-            self.IntXVals = voxelsize.x*mgrid[-(mod.shape[1]/2.):(mod.shape[0]-mod.shape[1]/2.)]
-            self.IntYVals = voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-            self.IntZVals = voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+            self.IntXVals = voxelsize.x*np.mgrid[-(mod.shape[1]/2.):(mod.shape[0]-mod.shape[1]/2.)]
+            self.IntYVals = voxelsize.y*np.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = voxelsize.z*np.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
         else:
             self.SplitPSF = False
             self.PSF2Offset = 0
-            self.IntXVals = voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-            self.IntYVals = voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-            self.IntZVals = voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+            self.IntXVals = voxelsize.x*np.mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+            self.IntYVals = voxelsize.y*np.mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = voxelsize.z*np.mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
         self.dx = voxelsize.x
         self.dy = voxelsize.y
@@ -140,16 +141,16 @@ class __interpolator:
     def centre2d(self,psf):
         sz = psf.shape
         psfc = psf[:,:,sz[2]/2].squeeze()
-        X, Y = meshgrid(arange(sz[0]),arange(sz[1]))
+        X, Y = np.meshgrid(np.arange(sz[0]),np.arange(sz[1]))
         xc = (X*psfc).sum()/psfc.sum()
         yc = (Y*psfc).sum()/psfc.sum()
-        psfs = roll(roll(psf,int(round(sz[0]/2-xc)),0),int(round(sz[1]/2-yc)),1)
+        psfs = np.roll(np.roll(psf,int(np.round(sz[0]/2-xc)),0),int(np.round(sz[1]/2-yc)),1)
         return psfs
     
     def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
         from PYME.Analysis.PSFGen import fourierHNA
         from PYME.IO import MetaDataHandler
-        zs = arange(-1e3, 1e3, 50)
+        zs = np.arange(-1e3, 1e3, 50)
         
         voxelsize = MetaDataHandler.VoxelSize(md.voxelsize_nm)
         voxelsize.z = 50.
@@ -166,15 +167,15 @@ class __interpolator:
 
         if not self.dx == vs.x and not self.dy == vs.y and not self.dz == vs.z:
 
-            self.IntXVals = vs.x*mgrid[-20:20]
-            self.IntYVals = vs.y*mgrid[-20:20]
-            self.IntZVals = vs.z*mgrid[-20:20]
+            self.IntXVals = vs.x*np.mgrid[-20:20]
+            self.IntYVals = vs.y*np.mgrid[-20:20]
+            self.IntZVals = vs.z*np.mgrid[-20:20]
 
             self.dx, self.dy, self.dx = vs
 
-            P = arange(0,1.01,.01)
+            P = np.arange(0,1.01,.01)
 
-            interpModel = genWidefieldPSF(self.IntXVals, self.IntYVals, self.IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3)
+            interpModel = genWidefieldPSF(self.IntXVals, self.IntYVals, self.IntZVals, P,1e3, 0, 0, 0, 2*np.pi/525, 1.47, 10e3)
 
             self.interpModel = interpModel/interpModel.max() #normalise to 1
 

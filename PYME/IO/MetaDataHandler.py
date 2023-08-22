@@ -31,8 +31,10 @@ Metadata sources
 
 Metadata sources are simply functions, which when called, write information into
 a provided handler. e.g.::
+    
     def metadataGenerator(mdhandler):
         mdhandler['a.key'] = value
+
 
 These generator functions are registered by adding them to one of two lists exposed 
 by this module: **provideStartMetadata** or **provideStopMetadata**. depending on
@@ -69,7 +71,7 @@ try:
     from UserDict import DictMixin
 except ImportError:
     #py3
-    from collections import MutableMapping as DictMixin
+    from collections.abc import MutableMapping as DictMixin
     
 import six
 from collections import namedtuple

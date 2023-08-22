@@ -60,7 +60,7 @@ body {
 .uitabs {
     position:absolute;
     bottom: 32px;
-    height:400px;
+    /*height:400px;*/
     width:100%;
     overflow: hidden;
 

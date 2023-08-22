@@ -31,21 +31,33 @@ import PYME.version
 
 #traitsui causes lots of crashes when imported without a GUI. Circumvent it by 
 from PYME.misc import mock_traitsui
+sys.modules['traitsui'] = mock.Mock()
 sys.modules['traitsui.api'] = mock_traitsui
 sys.modules['traitsui.wx'] = mock.Mock()
 sys.modules['traitsui.wx.editor'] = mock.Mock()
-sys.modules['traitsui.wx.basic_editor_factory'] = mock.Mock()
+sys.modules['traitsui.basic_editor_factory'] = mock.Mock()
 
 from PYME.misc import mock_traits
 sys.modules['traits.api'] = mock_traits
+sys.modules['traits']  = mock.Mock()
 
 from PYME.misc import mock_ctypes
 sys.modules['ctypes'] = mock_ctypes
+
+sys.modules['six']  = mock.Mock()
+sys.modules['six.moves']  = mock.Mock()
+
+sys.modules['Cython'] = mock.Mock()
+sys.modules['Cython.Build'] = mock.Mock()
+
+sys.modules['notebook'] = mock.Mock()
+sys.modules['neuroglancer'] = mock.Mock()
 
 #PIL imports
 sys.modules['Image'] = mock.Mock()
 sys.modules['ImageFile'] = mock.Mock()
 sys.modules['ImagePalette'] = mock.Mock()
+sys.modules['PIL'] = mock.Mock()
 
 sys.modules['skimage'] = mock.Mock()
 sys.modules['pyfftw'] = mock.Mock()
@@ -59,7 +71,7 @@ sys.modules['wx.core'] = mock.Mock()
 sys.modules['wx.lib.newevent'] = mock.Mock()
 sys.modules['wx.lib.mixins'] = mock.MagicMock()
 sys.modules['wx.lib.mixins.listctrl'] = mock.Mock()
-#sys.modules['wx.lib.mixins.listctrl'] = mock.Mock()
+sys.modules['wx.lib.mixins.treemixin'] = mock.Mock()
 sys.modules['wx.lib.dialogs'] = mock.Mock()
 sys.modules['wx.lib.agw'] = mock.Mock()
 sys.modules['wx.lib.agw.aui'] = mock.Mock()
@@ -112,6 +124,15 @@ sys.modules['matplotlib.pyplot'] = mock.Mock()
 sys.modules['cherrypy'] = mock.Mock()
 sys.modules['pandas'] = mock.Mock()
 sys.modules['zeroconf'] = mock.Mock()
+sys.modules['zeroconf'].__version__ = '0.35'
+
+sys.modules['tornado'] = mock.Mock()
+sys.modules['tornado.web'] = mock.Mock()
+sys.modules['tornado.ioloop'] = mock.Mock()
+sys.modules['jwt'] = mock.Mock()
+sys.modules['terminado'] = mock.Mock()
+#sys.modules['neuroglancer'] = mock.Mock()
+
 sys.modules['django'] = mock.Mock()
 sys.modules['django.utils'] = mock.Mock()
 sys.modules['django.utils.encoding'] = mock.Mock()

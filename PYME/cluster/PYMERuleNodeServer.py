@@ -112,6 +112,7 @@ def main():
     ns.register_service(service_name, externalAddr, serverPort)
 
     time.sleep(2)
+    nodeserverLog.debug('Nodeserver on port: %d' % serverPort)
     nodeserverLog.debug('Launching worker processors')
     #numWorkers = conf.get('nodeserver-num_workers', cpu_count())
     numWorkers = args.num_workers
@@ -127,6 +128,19 @@ def main():
     try:
         while proc.is_alive():
             time.sleep(1)
+
+            dead_workers = []
+            for p in workerProcs:
+                r = p.poll()
+                if r is not None:
+                    logger.error('Worker process (%d) has died' % p.pid)
+                    dead_workers.append(p)
+
+            # cleanup and respawn
+            for p in dead_workers:        
+                workerProcs.remove(p)
+                logger.debug('Spawning replacement worker')
+                workerProcs.append(subprocess.Popen('"%s" -m PYME.cluster.taskWorkerHTTP -s %d' % (sys.executable, serverPort), shell=True, stdin=subprocess.PIPE))
 
     finally:
         logger.info('Shutting down workers')
