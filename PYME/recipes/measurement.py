@@ -7,7 +7,7 @@ Created on Mon May 25 17:10:02 2015
 @author: david
 """
 from .base import ModuleBase, register_module, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrAny, observe
 import numpy as np
 #import pandas as pd
 from PYME.IO import tabular
@@ -200,7 +200,36 @@ class FitPoints(ModuleBase):
     fitModule = CStr('LatGaussFitFR')
     roiHalfSize = Int(7)
     channel = Int(0)
+    parameters = DictStrAny() #fit parameters ('Analysis' metadata entries)
 
+    @observe('fitModule')
+    def _on_fit_module_change(self, event=None):
+        # populate parameters for the given fit module
+        from PYME.localization.FitFactories import import_fit_factory
+        fitMod = import_fit_factory(self.fitModule)
+
+        try:
+            params = fitMod.PARAMETERS
+
+            # add default value for any parameters which are absent
+            for p in params:
+                if not p.paramName in self.parameters:
+                    self.parameters[p.paramName] = p.default
+
+            # remove any parameters which don't belong to the selected fit factory
+            pnames = [p.paramName for p in params]
+            for k in self.parameters.keys():
+                if not k in pnames:
+                    self.parameters.pop(k)
+
+        except AttributeError:
+            pass
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._on_fit_module_change()
+    
     def run(self, inputImage, inputPositions):
         from PYME.localization.FitFactories import import_fit_factory
         from PYME.IO import MetaDataHandler
@@ -219,6 +248,9 @@ class FitPoints(ModuleBase):
         #copy across the entries from the real image, replacing the defaults
         #if necessary
         md.copyEntriesFrom(inputImage.mdh)
+
+        #copy fitting parameters into metadata
+        md.update(self.parameters)
 
         fitMod = import_fit_factory(self.fitModule) #import our fitting module
 
