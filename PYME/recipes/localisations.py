@@ -1030,8 +1030,11 @@ class MeasureClusters3D(ModuleBase):
             cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
 
             indi = indf
-
-        return tabular.RecArraySource(measurements)
+        
+        # propagate the labelKey used to generate these measurements
+        output = tabular.MappingFilter(tabular.RecArraySource(measurements))
+        output.addColumn(self.labelKey, unique_labels)
+        return output
 
 
 @register_module('FiducialCorrection')
