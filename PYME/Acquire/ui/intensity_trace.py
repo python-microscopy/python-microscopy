@@ -30,9 +30,9 @@ class IntensityTracePanel(FastGraphPanel):
         # over-allocate buffer so that there is room at the end for us to record multiple values before displaying. 
         # Overallocation is designed to give a factor of 2 margin at a maximum frame rate of around 1000 hz assuming 
         # display and buffer shifting happens at 2Hz with the standard GUI timer
-        self.intensity_avg = np.zeros_like(self.frame_vals + 1000, dtype=float)
+        self.intensity_avg = np.zeros(n_frames + 1000, dtype=float)
         FastGraphPanel.__init__(self, parent, winid, self.frame_vals, 
-                                self.intensity_avg)
+                                self.intensity_avg[:n_frames])
         self.wrangler = frame_wrangler
         
         self._mf = weakref.ref(parent)  # weak ref to MainFrame
@@ -76,7 +76,7 @@ class IntensityTracePanel(FastGraphPanel):
         # check, do we swap xy / rc here?
         self.intensity_avg[self._buf_idx] = np.nan_to_num(np.mean(data[x0:x1, y0:y1])) / self._relative_val
 
-        if self._buf_idx < (len(self.intensity_avg) - 1):
+        if self._buf_idx < (len(self.intensity_avg)-1):
             # prevent an out-of-bounds error if gui bogs down and we don't re-shift buffer in time.
             self._buf_idx += 1
 
@@ -91,15 +91,14 @@ class IntensityTracePanel(FastGraphPanel):
             dispatch caller, included only to match the required function signature
         """
         
-
         
 
-        if self._buf_idx > self._n_frames:
+        if self._buf_idx >= (self._n_frames - 1):
             #move data backwards in the buffer so that the last data point is at the right hand side of the displayed interval.
-
-            offset = self._buf_idx - self._n_frames
+            offset = self._buf_idx - (self._n_frames -2)
+            print(self._n_frames, self._buf_idx, offset)
             self.intensity_avg[:self._n_frames] = self.intensity_avg[offset:(offset+ self._n_frames)]
-            self._buf_idx = self._n_frames
+            self._buf_idx = self._n_frames - 1
         
         print(self.intensity_avg[self._n_frames-1])
         self.SetData(self.frame_vals, self.intensity_avg[:self._n_frames])
