@@ -191,8 +191,22 @@ class DetectPoints2D(ModuleBase):
 
 @register_module('FitPoints')
 class FitPoints(ModuleBase):
-    """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
-    in inputPositions
+    """ 
+    Apply one of the fit modules from PYME.localization.FitFactories to each of
+    the points in the provided in inputPositions. 
+
+    Parameters
+    ----------
+    inputImage: PYME.IO.image.ImageStack
+        FitPoints does not do the camera correction normally done during 
+        localization analysis in PYME. To accomplish this using recipe modules,
+        run your ImageStack through `processing.FlatfieldAndDarkCorrect` first.
+    inputPositions: PYME.IO.tabular
+        positions to fit in units of nanometers. If inputImage is missing voxelsize
+        metadata, a pixel size of 1 nm is assumed.
+    outputName: PYME.IO.tabular
+        see selected fit module datatype for fit result and fit error parameters
+
     """
     inputImage = Input('input')
     inputPositions = Input('objPositions')
