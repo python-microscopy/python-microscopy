@@ -39,6 +39,7 @@ from PYME.localization import MetaDataEdit as mde
 from PYME.localization import remFitBuf
 from PYME.ui.mytimer import mytimer
 import sys
+import importlib
 
 import logging
 logger = logging.getLogger(__name__)
@@ -167,7 +168,8 @@ class AnalysisSettingsView(object):
     def _populateCustomAnalysisPanel(self, pan, vsizer):
         try:
             fitMod = self.fitFactories[self.cFitType.GetSelection()]
-            fm = __import__('PYME.localization.FitFactories.' + fitMod, fromlist=['PYME', 'localization', 'FitFactories'])
+            pkg = PYME.localization.FitFactories.package[fitMod]
+            fm = importlib.import_module('.'.join([pkg, fitMod]), pkg)
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:

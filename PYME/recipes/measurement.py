@@ -202,7 +202,7 @@ class FitPoints(ModuleBase):
     channel = Int(0)
 
     def run(self, inputImage, inputPositions):
-        #from PYME.localization.FitFactories import DumbellFitR
+        from PYME.localization.FitFactories import import_fit_factory
         from PYME.IO import MetaDataHandler
 
         md = MetaDataHandler.NestedClassMDHandler()
@@ -220,8 +220,7 @@ class FitPoints(ModuleBase):
         #if necessary
         md.copyEntriesFrom(inputImage.mdh)
 
-        fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule,
-                            fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+        fitMod = import_fit_factory(self.fitModule) #import our fitting module
 
         r = np.zeros(len(inputPositions['x']), dtype=fitMod.FitResultsDType)
 
