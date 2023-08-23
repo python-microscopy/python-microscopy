@@ -189,9 +189,8 @@ class FitPoints(ModuleBase):
         localization analysis in PYME. To accomplish this using recipe modules,
         run your ImageStack through `processing.FlatfieldAndDarkCorrect` first.
     inputPositions: PYME.IO.tabular
-        positions to fit in units of nanometers, if inputImage has voxelsize
-        metadata, otherwise units of pixels. Note these units will propogate
-        into position related fit result parameters
+        positions to fit in units of nanometers. If inputImage is missing voxelsize
+        metadata, a pixel size of 1 nm is assumed.
     outputName: PYME.IO.tabular
         see selected fit module datatype for fit result and fit error parameters
 
