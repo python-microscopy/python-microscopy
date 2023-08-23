@@ -53,7 +53,7 @@ package = {}
 def _register_fit_factory(key, module_name, pkg=_pyme_ff_pkg):
     try:
         #get fit module info
-        fm = importlib.import_module(module_name, pkg)
+        fm = importlib.import_module(pkg + '.' + module_name)
         #package[key] = pkg
         if 'FitResultsDType' in dir(fm):
             resFitFactories.append(key)
@@ -68,7 +68,7 @@ def _register_fit_factory(key, module_name, pkg=_pyme_ff_pkg):
             else:
                 useFor[key] = ''
     except:
-        logger.exception('Error registering fit factory: %s' % (key, module_name, pkg))
+        logger.exception('Error registering fit factory: %s, %s, %s' % (key, module_name, pkg))
         pass
 
 for ff in _pyme_ff:

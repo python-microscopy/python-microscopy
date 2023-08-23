@@ -391,7 +391,10 @@ logger.setLevel(logging.DEBUG)
 
 report_template_dirs = {}
 report_filters = {}
-plugins = {}
+
+# initialise to ensure that something is always defined (even if we have no plugins)
+# NB - partially replaces the defaults on line 445
+plugins = {app: set() for app in ['visgui', 'dsviewer', 'recipes', 'fit_factories']}
 
 def _parse_plugin_config():
     import importlib
@@ -439,7 +442,7 @@ def _parse_plugin_config():
             return [p.strip() for p in plugin_paths if not p.strip() == '']
             
 
-        for app in ['visgui', 'dsviewer', 'recipes']:  # note, fit_factories support only for yaml
+        for app in ['visgui', 'dsviewer', 'recipes']: 
             plugins[app] = plugins.get(app, set()) | set(_get_app_txt_plugins(app))
 
 _parse_plugin_config()
