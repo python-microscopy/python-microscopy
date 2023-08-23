@@ -49,6 +49,7 @@ FIDUCIAL_PARAMS = [
 
 
 def settings_form(analysisModule):
+    from PYME.localization.FitFactories import import_fit_factory
     #params = FINDING_PARAMS + DEFAULT_PARAMS
     analysisModule=str(analysisModule)
 
@@ -61,8 +62,7 @@ def settings_form(analysisModule):
 
 
     try:
-        fm = __import__('PYME.localization.FitFactories.' + analysisModule,
-                        fromlist=['PYME', 'localization', 'FitFactories'])
+        fm = import_fit_factory(analysisModule)
 
         categorized_fields['Module'] = [p.formField() for p in fm.PARAMETERS]
 

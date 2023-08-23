@@ -120,7 +120,7 @@ class AnalysisDetailsPanel(wx.Panel):
         try:
             #fitMod = self.fitFactories[self.cFitType.GetSelection()]
             self._analysisModule = self.analysisMDH['Analysis.FitModule']
-            fm = __import__('PYME.localization.FitFactories.' + self._analysisModule, fromlist=['PYME', 'localization', 'FitFactories'])
+            fm = PYME.localization.FitFactories.import_fit_factory(self._analysisModule)
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
