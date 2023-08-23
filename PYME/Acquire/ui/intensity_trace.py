@@ -39,6 +39,7 @@ class IntensityTracePanel(FastGraphPanel):
         self._relative_val = 1
 
         self._buf_idx=0
+        self._n_frames = n_frames
 
     
     @property
@@ -93,15 +94,15 @@ class IntensityTracePanel(FastGraphPanel):
 
         
 
-        if self._buf_idx > self.frame_vals:
+        if self._buf_idx > self._n_frames:
             #move data backwards in the buffer so that the last data point is at the right hand side of the displayed interval.
 
-            offset = self._buf_idx - self.frame_vals
-            self.intensity_avg[:self.frame_vals] = self.intensity_avg[offset:(offset+ self.frame_vals)]
-            self._buf_idx = self.frame_vals
+            offset = self._buf_idx - self._n_frames
+            self.intensity_avg[:self._n_frames] = self.intensity_avg[offset:(offset+ self._n_frames)]
+            self._buf_idx = self._n_frames
         
-        print(self.intensity_avg[self.frame_vals-1])
-        self.SetData(self.frame_vals, self.intensity_avg[:self.frame_vals])
+        print(self.intensity_avg[self._n_frames-1])
+        self.SetData(self.frame_vals, self.intensity_avg[:self._n_frames])
 
 class TraceROISelectPanel(wx.Panel):
     def __init__(self, parent, trace_page, winid=-1):
