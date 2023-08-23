@@ -977,8 +977,9 @@ class LMAnalyser2(Plugin):
                 #figure()
                 #imshow()
             except AttributeError:
+                from numbers import Number
                 #d = self.image.data[:,:,zp].squeeze().T
-                if isinstance(ft.bg, np.ndarray):
+                if isinstance(ft.bg, np.ndarray) or isinstance(ft.bg, Number):
                     # We expect our background estimate to take the form of a numpy array, correct our data by subtracting the background
                     d = (ft.data - ft.bg).squeeze().T
                 elif hasattr(ft.bg, 'get_background'):
