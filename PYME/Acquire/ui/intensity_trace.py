@@ -69,7 +69,9 @@ class IntensityTracePanel(FastGraphPanel):
             
         # try to get data from the signal argument (if we bound to the onFrame signal), otherwise use
         # the current frame (if bound to onFrameGroup, time1)
-        data = kwargs.get('frame_data',self.wrangler.currentFrame) 
+        data = kwargs.get('frameData',self.wrangler.currentFrame).squeeze() 
+
+        #print(data.shape, self.wrangler.currentFrame.shape)
         
         x0, x1, y0, y1, _, _ = self.do.sorted_selection
 
@@ -96,7 +98,7 @@ class IntensityTracePanel(FastGraphPanel):
         if self._buf_idx >= (self._n_frames - 1):
             #move data backwards in the buffer so that the last data point is at the right hand side of the displayed interval.
             offset = self._buf_idx - (self._n_frames -2)
-            print(self._n_frames, self._buf_idx, offset)
+            #print(self._n_frames, self._buf_idx, offset)
             self.intensity_avg[:self._n_frames] = self.intensity_avg[offset:(offset+ self._n_frames)]
             self._buf_idx = self._n_frames - 1
         
