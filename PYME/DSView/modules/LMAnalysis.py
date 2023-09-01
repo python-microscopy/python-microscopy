@@ -166,10 +166,10 @@ class AnalysisSettingsView(object):
             vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)    
         
     def _populateCustomAnalysisPanel(self, pan, vsizer):
+        from PYME.localization.FitFactories import import_fit_factory
         try:
             fitMod = self.fitFactories[self.cFitType.GetSelection()]
-            pkg = PYME.localization.FitFactories.package[fitMod]
-            fm = importlib.import_module('.'.join([pkg, fitMod]), pkg)
+            fm = import_fit_factory(fitMod)
             
             #vsizer = wx.BoxSizer(wx.VERTICAL)
             for param in fm.PARAMETERS:
