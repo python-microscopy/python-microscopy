@@ -980,6 +980,7 @@ class LMAnalyser2(Plugin):
                 from numbers import Number
                 #d = self.image.data[:,:,zp].squeeze().T
                 if isinstance(ft.bg, np.ndarray) or isinstance(ft.bg, Number):
+                    # TODO - revisit special cases - should we check for the GPU stuff first and then just duck-type everything else?
                     # We expect our background estimate to take the form of a numpy array, correct our data by subtracting the background
                     d = (ft.data - ft.bg).squeeze().T
                 elif hasattr(ft.bg, 'get_background'):
