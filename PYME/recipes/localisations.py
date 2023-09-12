@@ -1069,7 +1069,7 @@ class AddMeasurementsByLabel(ModuleBase):
         # only propagate 1D measurements
         annotations = dict()
         for k in input_measurements.keys():
-            if input_measurements[k].ndim == 1:
+            if input_measurements[k].ndim == 1: #TODO - also check for object dtype?
                 annotations[k] = np.zeros(len(input_points), dtype=input_measurements[k].dtype)
         
         try:
