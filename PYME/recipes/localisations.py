@@ -1033,7 +1033,7 @@ class MeasureClusters3D(ModuleBase):
         
         # propagate the labelKey used to generate these measurements
         output = tabular.MappingFilter(tabular.RecArraySource(measurements))
-        output.addColumn(self.labelKey, unique_labels)
+        output.addColumn(self.labelKey, np.arange(maxLabel))
         return output
 
 
