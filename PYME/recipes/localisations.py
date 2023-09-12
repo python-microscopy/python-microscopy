@@ -1030,8 +1030,74 @@ class MeasureClusters3D(ModuleBase):
             cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
 
             indi = indf
+        
+        # propagate the labelKey used to generate these measurements
+        output = tabular.MappingFilter(tabular.RecArraySource(measurements))
+        output.addColumn(self.labelKey, np.arange(maxLabel))
+        return output
 
-        return tabular.RecArraySource(measurements)
+
+@register_module('AddMeasurementsByLabel')
+class AddMeasurementsByLabel(ModuleBase):
+    input_points = Input('input')
+    input_measurements = Input('clusterMeasures')
+    label_key = CStr('label')
+    output_points = Output('annotated_points')
+
+    def run(self, input_points, input_measurements):
+        """
+        Propagate measurements from e.g. MeasureClusters3D back to points they were calcualted from.
+        This is particularly useful for visualizing e.g. the gyration radius of a cluster in PYMEVis
+        while looking at the original localization data.
+
+        Parameters
+        ----------
+        input_points : PYME.IO.tabular.TabularBase
+            points used to generate the measurements
+        input_measurements : PYME.IO.tabular.TabularBase
+            measurements to propagate back to the points
+
+        Returns
+        -------
+        PYME.IO.tabular.TabularBase
+            point data with new columns added, one for each scalar measurement in input_measurements, which
+            can be accessed by '<label_key>_<measurement_key>', e.g. 'clumpIndex_gyrationRadius'.
+        
+        """
+        from PYME.IO.tabular import MappingFilter
+        
+        # only propagate 1D measurements
+        annotations = dict()
+        for k in input_measurements.keys():
+            if input_measurements[k].ndim == 1: #TODO - also check for object dtype?
+                annotations[k] = np.zeros(len(input_points), dtype=input_measurements[k].dtype)
+        
+        try:
+            labels = np.unique(input_measurements[self.label_key])
+        except KeyError:
+            logger.exception('Label key %s not found in input_measurements, RISKY: continuing with assumption measurements are sorted by label and all present' % self.label_key)
+            labels = np.arange(1, len(input_measurements) + 1)  # MeasureClusters3D ignores the unclustered points 'label 0' so index 0 corresponds to 'label 1'
+        
+        for label in labels:
+            points_mask = label == input_points[self.label_key]
+            try:
+                measurement_mask = label == input_measurements[self.label_key]
+            except KeyError:
+                measurement_mask = label - 1  # MeasureClusters3D ignores the unclustered points 'label 0' so index 0 corresponds to 'label 1'
+            
+            for k in annotations.keys():
+                annotations[k][points_mask] = input_measurements[k][measurement_mask]
+
+        output_points = MappingFilter(input_points)
+        try:
+            output_points.mdh = input_points.mdh
+        except AttributeError:
+            pass
+        
+        for k in annotations.keys():
+            output_points.addColumn(self.label_key + '_' + k, annotations[k])
+        
+        return output_points
 
 
 @register_module('FiducialCorrection')
