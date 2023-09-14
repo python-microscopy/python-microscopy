@@ -325,6 +325,28 @@ def FF_MoveToPosition(serial_number, pos):
 
 class ThorlabsMFF(object):
     def __init__(self, serial_number, name='Flipper', position_names=None):
+        """Thorlabs motorized filter flipper
+
+        Parameters
+        ----------
+        serial_number : str
+            serial number, as str. Check in Thorlabs Kinesis software, or written on the device
+        name : str, optional
+            by default 'Flipper'
+        position_names : list, optional
+            names for given positions, to appear in scope state and potentially GUI, by default None
+
+        Notes
+        -----
+        Example init script start up, including registration to scope object:
+        @init_hardware('filter flipper')
+        def filter_flipper(scope):
+            from PYME.Acquire.Hardware import thorlabs_mff_flipper
+            scope.ff = thorlabs_mff_flipper.ThorlabsMFF('37004323', name='PumpQWP', position_names=['Blank', 'QWP'])
+            # POS 1 = nothing
+            # POS 2 = QWP in path
+            scope.ff.register(scope.state)
+        """
         self.serial_number = serial_number
         self.name = name
         if position_names is not None:
