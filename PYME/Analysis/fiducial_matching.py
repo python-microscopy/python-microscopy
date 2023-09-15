@@ -185,8 +185,8 @@ def match_points(points0, points1, scale=1.0, p_cutoff=0.1, gui=True):
     #print(np.diag(p))
     #print(p)
 
-    am = p.argmax(axis=1, keepdims=True)
-    score = np.take_along_axis(p, am, axis=1)
+    am = p.argmax(axis=1)
+    score = np.take_along_axis(p, am[:,None], axis=1)
 
     am, score = am.squeeze(), score.squeeze()
 
