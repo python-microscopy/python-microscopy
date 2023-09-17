@@ -383,7 +383,7 @@ class ParticleTrackingView(HasTraits, Plugin):
         if (not clump.enabled) or (clump.nEvents < 2):
             return False
             
-        xb, yb, zb = bounds
+        xb, yb, zb, tb = bounds
         vx, vy, vz = self.image.voxelsize
         
         x = clump['x']/vx
