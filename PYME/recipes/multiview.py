@@ -245,6 +245,14 @@ class MapAstigZ(ModuleBase):
 
         mapped = tabular.MappingFilter(inp)
 
+        # hack to make this work for non-multi-view data
+        if ('sigmax0' not in mapped.keys()) and (inp.mdh.getOrDefault('Multiview.NumROIs', 1) == 1):
+            # if we are single channel it is safe to define sigmax0, sigmay0 as sigmax, sigmay
+            # without any folding etc ...
+            mapped.setMapping('sigmax0', 'sigmax')
+            mapped.setMapping('sigmay0', 'sigmay')
+
+
         z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
 
         mapped.addColumn('astigmatic_z', z)

@@ -102,7 +102,7 @@ class FastGraphPanel(wx.Panel):
 
         
 
-        self.hstep = (self.hmax - self.hmin)/max(self.Size[0] - self.left_margin, 1)
+        self.hstep = np.float(self.hmax - self.hmin)/max(self.Size[0] - self.left_margin, 1)
 
         #print self.hmin, self.hmax, self.hstep
 

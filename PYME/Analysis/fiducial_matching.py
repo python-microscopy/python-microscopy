@@ -110,7 +110,7 @@ def _match_points(points0, points1, scale=1.0, p_cutoff=0.1):
 
     return am.squeeze(), score.squeeze()
 
-def match_points(points0, points1, scale=1.0, p_cutoff=0.1):
+def match_points(points0, points1, scale=1.0, p_cutoff=0.1, gui=True):
     """
     Match points between two frames
     
@@ -132,6 +132,8 @@ def match_points(points0, points1, scale=1.0, p_cutoff=0.1):
     features0 = gen_features2(points0, 10)
     features1 = gen_features2(points1, 10)
 
+    #print(features0, features1)
+
     def _robust_dist(feat1, feat2):
         """
         Calculate a robust distance between two feature vectors,
@@ -140,30 +142,26 @@ def match_points(points0, points1, scale=1.0, p_cutoff=0.1):
 
         # find which features match in each set
         a = np.abs((feat1[:,None]) - (feat2[None,:]))
+        #a = np.abs(np.abs(feat1[:,None]) - np.abs(feat2[None,:]))
+        #a = np.mod(np.angle(feat1)[:,None] - np.angle(feat2)[None,:] + np.pi, 2*np.pi) - np.pi
+        #a = a - np.median(a, axis=0)[None, :]
 
-        i = np.argmin(a,axis=1, keepdims=True)
-        delta = np.take_along_axis(a, i, axis=1).squeeze()
+        i = np.argmin(a,axis=1)
+        delta = np.take_along_axis(a, i[:,None], axis=1).squeeze()
 
         f2i = feat2[i.squeeze()]
 
-        #print('delta:', delta)
-        #print(np.angle(feat1) - np.angle(f2i))
-
-        t = np.mod(np.angle(feat1) - np.angle(f2i), 2*np.pi)
+        t = np.mod(np.angle(feat1) - np.angle(f2i) + np.pi, 2*np.pi) - np.pi
 
         w = 1.0/(1.0 + delta)
         t = (t*w).sum()/w.sum()
 
         d = np.abs(feat1 - f2i*np.exp(1j*np.median(t)))
 
-        #print(d)
-        p = 1 - erf(d/scale-1)
-
-        #print(p)
+        p = 0.5*(2 - erf(d/scale-1))
 
         return p.sum()
-        
-    
+
     # plt.figure()
     # plt.subplot(211)
     # plt.plot(features0, 'x')
@@ -184,33 +182,35 @@ def match_points(points0, points1, scale=1.0, p_cutoff=0.1):
 
     #matches = np.zeros(len(points0), dtype=np.int)
 
-    print(p)
+    #print(np.diag(p))
+    #print(p)
 
-    plt.figure()
-    plt.imshow(p)
-    plt.colorbar()
-    plt.title('Point correspondance matrix')
-    plt.xlabel('Channel 1')
-    plt.ylabel('Channel 0')
-
-    am = p.argmax(axis=1, keepdims=True)
-    score = np.take_along_axis(p, am, axis=1)
+    am = p.argmax(axis=1)
+    score = np.take_along_axis(p, am[:,None], axis=1)
 
     am, score = am.squeeze(), score.squeeze()
 
-    plt.figure()
-    plt.plot(points0[:,0], points0[:,1], '.')
-    for i, p in enumerate(points0):
-        plt.text(p[0], p[1], f'{i}', color='C0')
+    if gui:
+        plt.figure()
+        plt.imshow(p)
+        plt.colorbar()
+        plt.title('Point correspondance matrix')
+        plt.xlabel('Channel 1')
+        plt.ylabel('Channel 0')
         
-    plt.plot(points1[:,0], points1[:,1], '.')
-    for i, p in enumerate(points1):
-        plt.text(p[0], p[1], f'{i}', color='C1', verticalalignment='top')
+        plt.figure()
+        plt.plot(points0[:,0], points0[:,1], '.')
+        for i, p in enumerate(points0):
+            plt.text(p[0], p[1], f'{i}', color='C0')
+            
+        plt.plot(points1[:,0], points1[:,1], '.')
+        for i, p in enumerate(points1):
+            plt.text(p[0], p[1], f'{i}', color='C1', verticalalignment='top')
 
-    for i in range(len(points0)):
-        plt.plot([points0[i, 0], points1[am[i], 0]], [points0[i, 1], points1[am[i], 1]], 'k', lw=1)
+        for i in range(len(points0)):
+            plt.plot([points0[i, 0], points1[am[i], 0]], [points0[i, 1], points1[am[i], 1]], 'k', lw=1)
 
-    plt.title('Matched points')
+        plt.title('Matched points')
 
     return am, score
 
