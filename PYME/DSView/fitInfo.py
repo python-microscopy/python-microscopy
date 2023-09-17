@@ -164,14 +164,16 @@ class FitInfoPanel(wx.Panel):
     def DrawOverlays(self, vp, dc):
         do = vp.do
 
-        if do.ds.shape[2] > 1:
-            # stack has z
-            zp = do.zp
-        else:
+        if do.ds.shape[3] > 1:
             # stack is a time series
-            zp = do.tp
+            t = do.tp
+        else:
+            # stack is a formatted as a z-stack - pretend it's a time series
+            # this can occur due to limitations in the backwards compatibility code that guesses
+            # whether a stack is a time series or not
+            t = do.zp
         
-        frameResults = self.fitResults[self.fitResults['tIndex'] == zp]
+        frameResults = self.fitResults[self.fitResults['tIndex'] == t]
         
         vx, vy, _ = self.mdh.voxelsize_nm
         

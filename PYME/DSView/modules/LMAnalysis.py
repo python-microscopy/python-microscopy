@@ -814,14 +814,17 @@ class LMAnalyser2(Plugin):
 
     def update(self, dsviewer):
         if 'fitInf' in dir(self) and not self.dsviewer.playbackpanel.playback_running:
-            if self.do.ds.shape[2] > 1:
-                # stack has z
-                zp = self.do.zp
-            else:
+            if self.do.ds.shape[3] > 1:
                 # stack is a time series
-                zp = self.do.tp
+                idx = self.do.tp
+            else:
+                # stack is a formatted as a z-stack - pretend it's a time series
+                # this can occur due to limitations in the backwards compatibility code that guesses
+                # whether a stack is a time series or not
+                idx = self.do.zp
+            
             try:
-                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, zp, voxelsize=self.view.voxelsize))
+                self.fitInf.UpdateDisp(self._ovl.points_hit_test(self.do.xp, self.do.yp, idx, voxelsize=self.view.voxelsize))
             except:
                 import traceback
                 print((traceback.format_exc()))
