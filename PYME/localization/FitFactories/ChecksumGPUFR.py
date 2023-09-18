@@ -145,7 +145,7 @@ class ChecksumFitFactory(object):
             raise ImportError(missing_warpdrive_msg)
 
         res = np.zeros(1, fresultdtype)
-        res['tIndex'] = self.metadata.tIndex
+        res['tIndex'] = self.metadata['tIndex']
         res['ch_data_cpu'] = zlib.crc32(self.data)
         # make sure we've loaded and pre-filtered maps for the correct FOV
         self.refresh_warpdrive(cameraMaps)

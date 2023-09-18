@@ -83,7 +83,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 

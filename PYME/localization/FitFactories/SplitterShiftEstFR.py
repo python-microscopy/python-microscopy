@@ -97,7 +97,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    #tIndex = metadata['tIndex']
 
     #print fitResults.dtype
     #print fitErr.dtype
@@ -111,7 +111,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     n_params = len(fitResults)
 
-    res['tIndex'] = metadata.tIndex
+    res['tIndex'] = metadata['tIndex']
     res['fitResults'].view('9f4')[:n_params] = fitResults
 
     if fitErr is None:
@@ -145,8 +145,6 @@ class GaussianFitFactory:
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
 
-        #average in z
-        #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
         vs = self.metadata.voxelsize_nm

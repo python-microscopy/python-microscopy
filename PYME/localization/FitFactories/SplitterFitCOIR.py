@@ -48,7 +48,7 @@ def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     return numpy.array([(tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
@@ -61,9 +61,6 @@ class COIFitFactory(FFBase.FitFactory):
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
-
-        #average in z
-        #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
         Xg, Yg = scipy.mgrid[xslice, yslice]
@@ -89,7 +86,7 @@ class COIFitFactory(FFBase.FitFactory):
         Yr = Yg + DeltaY
 
 
-        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and self.metadata.getOfDefault('Analysis.subtractBackground', True):
             bgROI = self.background[xslice, yslice, zslice]
 
             dataROI = dataROI - bgROI

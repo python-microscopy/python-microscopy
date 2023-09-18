@@ -80,7 +80,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     #print fitResults.dtype
     #print fitErr.dtype
@@ -113,9 +113,6 @@ class GaussianFitFactory:
 
         #cut region out of data stack
         dataROI = self.data[xslice, yslice, zslice]
-
-        #average in z
-        #dataMean = dataROI.mean(2) - self.metadata.CCD.ADOffset
 
         #generate grid to evaluate function on
         vs = self.metadata.voxelsize_nm
@@ -162,14 +159,6 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = 1#dataROI.shape[2]
         
-        #sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*self.metadata.CCD.EMGain*dataROI)/self.metadata.CCD.electronsPerCount
-        #sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-
-        #do the fit
-        #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-        #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, X, Y)
-
         
 
         fitErrors=None

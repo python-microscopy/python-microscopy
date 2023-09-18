@@ -374,7 +374,7 @@ class PSFExporter(Exporter):
         from six.moves import cPickle
             
         fid = open(outFile, 'wb')
-        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
+        cPickle.dump((data[xslice, yslice, zslice], metadata['voxelsize']), fid, 2)
         fid.close()
 
         if progressCallback:

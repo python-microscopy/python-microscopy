@@ -47,11 +47,11 @@ autocorr = None
 def preparePSF(md, PSSize):
     global PSFFileName, cachedPSF, cachedOTF2, cachedOTFH, autocorr
     
-    PSFFilename = md.PSFFile
+    PSFFilename = md['PSFFile']
                 
     if (not (PSFFileName == PSFFilename)) or (not (cachedPSF.shape == PSSize)):
         try:
-            ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+            ps, vox = md['taskQueue'].getQueueData(md['dataSourceID'], 'PSF')
         except:
             #fid = open(getFullExistingFilename(PSFFilename), 'rb')
             #ps, vox = pickle.load(fid)

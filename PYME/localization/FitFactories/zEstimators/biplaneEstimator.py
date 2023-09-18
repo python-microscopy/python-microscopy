@@ -42,7 +42,7 @@ def calibrate(interpolator, md, roiSize=5):
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
     #print Z, safeRegion
-    axialShift = md.Analysis.AxialShift
+    axialShift = md['Analysis.AxialShift']
     
     ratio = 0.5#md.Analysis.ColourRatio
 
@@ -58,10 +58,7 @@ def calibrate(interpolator, md, roiSize=5):
 
     #astigmatic PSF is not necessarily aligned to the axes
     #TODO - estimate rotation rather than requiring it as a parameter
-    if 'PSFRotation' in md.getEntryNames():
-        theta = numpy.pi*md.PSFRotation/180.
-    else:
-        theta = 0
+    theta = md.getOrDefault('PSFRotation', 0)*numpy.pi/180.
 
     costheta = numpy.cos(theta)
     sintheta = numpy.sin(theta)

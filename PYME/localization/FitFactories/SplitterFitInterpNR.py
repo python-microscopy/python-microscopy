@@ -121,7 +121,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     
     n = len(fitResults)
 
-    fr['tIndex'] = metadata.tIndex
+    fr['tIndex'] = metadata['tIndex']
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
@@ -142,7 +142,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
-    r['tIndex'] = metadata.tIndex
+    r['tIndex'] = metadata['tIndex']
     r['fitError'].view('f4')[:] = -5e3
     return r
 
@@ -191,22 +191,19 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
         
-        if 'Analysis.EstimatorModule' in md.getEntryNames():
-            estimatorModule = md.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
+        estimatorModule = md.getOrDefault('Analysis.EstimatorModule', 'astigEstimator')
 
         #this is just here to make sure we clear our calibration when we change models        
         startPosEstimator = __import__('PYME.localization.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'localization', 'FitFactories', 'zEstimators'])        
         
-        if interpolator.setModelFromFile(md.PSFFile, md):
+        if interpolator.setModelFromFile(md['PSFFile'], md):
             print('model changed')
             startPosEstimator.splines.clear()
 
         Xg, Yg, Zg, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
         
-        DeltaX = md.chroma.dx.ev(x, y)
-        DeltaY = md.chroma.dy.ev(x, y)
+        DeltaX = md['chroma.dx'].ev(x, y)
+        DeltaY = md['chroma.dy'].ev(x, y)
 
         vx, vy, _ = md.voxelsize_nm
         
@@ -215,9 +212,9 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
 
         Xr = Xg + DeltaX - vx*dxp
         Yr = Yg + DeltaY - vx*dyp
-        Zr = Zg + md.Analysis.AxialShift
+        Zr = Zg + md['Analysis.AxialShift']
 
-        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, np.ones_like(params)), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
+        return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md['Analysis.AxialShift'], np.ones_like(params)), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
 
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
@@ -298,7 +295,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         if  self.metadata.getOrDefault('Analysis.PoissonML', False):
             res = FitModelPoissonBFGS(self.fitfcn, startParameters, dataROI + bgROI, bgROI, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift'])[0]
             cov_x = np.eye(len(res))            
-            infodict = {'fvec': self.fitfcn(res, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, ['self.metadata.Analysis.AxialShift']) - (dataROI + bgROI)}
+            infodict = {'fvec': self.fitfcn(res, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift']) - (dataROI + bgROI)}
             resCode = 1
         else:
             (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator,Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, self.metadata['Analysis.AxialShift'])

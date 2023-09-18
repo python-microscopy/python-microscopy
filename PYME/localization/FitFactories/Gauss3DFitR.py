@@ -96,7 +96,7 @@ def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitE
     
     n_params = len(fitResults)
 
-    res['tIndex'] = metadata.tIndex
+    res['tIndex'] = metadata['tIndex']
     res['fitResults'].view('7f4')[:n_params] = fitResults
 
     if fitErr is None:

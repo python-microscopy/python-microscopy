@@ -131,7 +131,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     
     n = len(fitResults)
 
-    fr['tIndex'] = metadata.tIndex
+    fr['tIndex'] = metadata['tIndex']
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
@@ -153,7 +153,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
-    r['tIndex'] = metadata.tIndex
+    r['tIndex'] = metadata['tIndex']
     r['fitError'].view('8f4')[:] = -5e3
     return r
 
@@ -197,7 +197,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         xs = slice(-roiHalfSize,roiHalfSize + 1)
         ys = slice(-roiHalfSize,roiHalfSize + 1)
         
-        ratio = md.chroma.ChannelRatio
+        ratio = md['chroma.ChannelRatio']
 
         return cls._evalModel(params, md, xs, ys, ratio, x, y)        
         

@@ -69,7 +69,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
     if startParams is None:
         startParams = -5e3*np.ones(fitResults.shape, 'f')
     
-    res['tIndex'] = metadata.tIndex
+    res['tIndex'] = metadata['tIndex']
     res['fitResults'].view('5f4')[0,:len(fitResults)] = fitResults.astype('f')
     res['fitError'].view('5f4')[0,:len(fitResults)] = fitErr.astype('f')
     res['resultCode'] = resultCode
@@ -126,10 +126,7 @@ class PSFFitFactory(FFBase.FFBase):
         interpModule = metadata.getOrDefault('Analysis.InterpModule', 'CSInterpolator')
         self.interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
-        if 'Analysis.EstimatorModule' in metadata.getEntryNames():
-            estimatorModule = metadata.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
+        estimatorModule = metadata.getOrDefault('Analysis.EstimatorModule', 'astigEstimator')
 
         self.startPosEstimator = __import__('PYME.localization.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'localization', 'FitFactories', 'zEstimators'])
 
@@ -158,7 +155,7 @@ class PSFFitFactory(FFBase.FFBase):
         interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
         if 'Analysis.EstimatorModule' in md.getEntryNames():
-            estimatorModule = md.Analysis.EstimatorModule
+            estimatorModule = md['Analysis.EstimatorModule']
         else:
             estimatorModule = 'astigEstimator'
 

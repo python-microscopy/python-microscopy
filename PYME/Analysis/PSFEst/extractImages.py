@@ -82,7 +82,7 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
 
         ims[:,:,i] = dataSource[(x-roiSize):(x+roiSize), (y-roiSize):(y+roiSize), t].squeeze() - bs[i]
 
-    return ims - metadata.Camera.ADOffset, points, zvals, zis
+    return ims - metadata['Camera.ADOffset'], points, zvals, zis
 
 
 def getPSF(ims, points, zvals, zis):

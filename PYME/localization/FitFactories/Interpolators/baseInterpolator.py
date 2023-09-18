@@ -51,7 +51,7 @@ class __interpolator:
         an existing model was reused"""
         #global IntXVals, IntYVals, IntZVals, interpModel, interpModelName, dx, dy, dz
 
-        modName = md.PSFFile
+        modName = md['PSFFile']
 
         if not modName == self.interpModelName:
             #special case for theoretical models
@@ -62,7 +62,7 @@ class __interpolator:
                 #try and get psf from task queue
                 #if not md.taskQueue == None:
                 try:
-                    mod, voxelsize = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+                    mod, voxelsize = md['taskQueue'].getQueueData(md['dataSourceID'], 'PSF')
                 except:
                     #mf = open(getFullExistingFilename(modName), 'rb')
                     #mod, voxelsize = load(mf)
