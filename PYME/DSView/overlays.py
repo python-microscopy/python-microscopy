@@ -114,9 +114,13 @@ class PointDisplayOverlay(Overlay):
                     else:
                         t = self.filter['fitResults_z0']/vz
                 
-                xb, yb, zb = vp.visible_bounds
+                xb, yb, zb, tb = vp.visible_bounds
                 
-                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+                if vp.do.ds.shape[3] <= 1:
+                    # stack is a pure z-series, pretend it's a time series for backwards compatibility
+                    tb = zb
+                
+                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= tb[0])*(x < xb[1])*(y < yb[1])*(t < tb[1])
                     
                 pFoc = np.vstack((x[IFoc], y[IFoc], t[IFoc])).T
 

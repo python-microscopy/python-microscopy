@@ -531,7 +531,7 @@ class AnnotateBase(object):
 
     def _visibletest(self, clump, bounds):
     
-        xb, yb, zb = bounds
+        xb, yb, zb, tb = bounds
         
         x, y = np.array(clump['points']).T
         t = clump['z']

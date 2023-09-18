@@ -163,7 +163,17 @@ class FitInfoPanel(wx.Panel):
         
     def DrawOverlays(self, vp, dc):
         do = vp.do
-        frameResults = self.fitResults[self.fitResults['tIndex'] == do.zp]
+
+        if do.ds.shape[3] > 1:
+            # stack is a time series
+            t = do.tp
+        else:
+            # stack is a formatted as a z-stack - pretend it's a time series
+            # this can occur due to limitations in the backwards compatibility code that guesses
+            # whether a stack is a time series or not
+            t = do.zp
+        
+        frameResults = self.fitResults[self.fitResults['tIndex'] == t]
         
         vx, vy, _ = self.mdh.voxelsize_nm
         
@@ -326,7 +336,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 
             return np.hstack([g,r])  - self.mdh.get('Camera.ADOffset', 0)
         else:
-            return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), zi, ci, ti].squeeze()  - self.mdh.get('Camera.ADOffset', 0)
+            return self.ds[slice(*fri['slicesUsed']['x']), slice(*fri['slicesUsed']['y']), zi, ti, ci].squeeze()  - self.mdh.get('Camera.ADOffset', 0)
 
     def _extractROI_1(self, fri):
         from PYME.IO.MetaDataHandler import get_camera_roi_origin

@@ -390,7 +390,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             x = self.filter['x']/self.voxelsize[0]
             y = self.filter['y']/self.voxelsize[1]
             
-            xb, yb, zb = self.visible_bounds
+            xb, yb, zb, tb = self.visible_bounds
             
             IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
 
@@ -414,7 +414,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     @property
     def visible_bounds(self):
         """
-        The currently visible bounds of the image, in image pixel coordinates [x, y, z]
+        The currently visible bounds of the image, in image pixel coordinates [x, y, z, t]
 
         Used to avoid drawing overlays in regions of the image which are not shown.
 
@@ -426,11 +426,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sX, sY = self.imagepanel.Size
         
         if self.do.slice == self.do.SLICE_XY:
-            bnds = [(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.zp-.5, self.do.zp+.5)]
+            bnds = [(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.zp-.5, self.do.zp+.5), (self.do.tp-.5, self.do.tp+.5)]
         elif self.do.slice == self.do.SLICE_XZ:
-            bnds = [(x0/sc, (x0+sX)/sc), (self.do.yp-.5, self.do.yp+.5), (y0/sc, (y0+sY)/sc)]
+            bnds = [(x0/sc, (x0+sX)/sc), (self.do.yp-.5, self.do.yp+.5), (y0/sc, (y0+sY)/sc), (self.do.tp-.5, self.do.tp+.5)]
         elif self.do.slice == self.do.SLICE_YZ:
-            bnds = [(self.do.xp-.5, self.do.xp+.5),(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc)]
+            bnds = [(self.do.xp-.5, self.do.xp+.5),(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.tp-.5, self.do.tp+.5)]
 
         return bnds
         

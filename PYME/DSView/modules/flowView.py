@@ -107,7 +107,7 @@ class FlowView(HasTraits):
         if (not self.showFlow) or flow is None:
             return
         
-        xb, yb, zb = view.visible_bounds
+        xb, yb, zb, tb = view.visible_bounds
         x0, x1 = xb
         y0, y1 = yb 
                 
@@ -178,7 +178,7 @@ class FlowView(HasTraits):
         if (not self.showFlow) or flow is None:
             return
         
-        xb, yb, zb = view.visible_bounds
+        xb, yb, zb, tb = view.visible_bounds
         x0, x1 = xb
         y0, y1 = yb 
                 
