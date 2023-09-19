@@ -55,20 +55,15 @@ class fitTestJig(object):
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule
-        self.md.tIndex = 0
         
-        if 'Test.SimModule' in self.md.getEntryNames():
-            self.simModule = self.md['Test.SimModule']
-        else:
-            self.simModule = self.fitModule
+        self.md['tIndex'] = 0
         
-        self.bg = 0
-        if 'Test.Background' in self.md.getEntryNames():
-            self.bg = float(self.md['Test.Background'])
-            
-        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
+        self.simModule = self.md.getOrDefault('Test.SimModule', self.fitModule)     
+        self.bg = float(self.md.getOrDefault('Test.Background', 0.0))
 
-        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0)
+        emGain = optimize.fmin(emg, 150, args=(float(self.md['Camera.TrueEMGain']),))[0]
+
+        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md['Camera.ADOffset'], background=self.bg, QE=1.0)
 
 
     @classmethod
@@ -110,12 +105,12 @@ class fitTestJig(object):
             #from PYME.DSView import View3D
             #View3D(self.data)
 
-            self.d2.append(self.md.Camera.ADOffset + 1*(self.noiseM.noisify(self.data) - self.md.Camera.ADOffset))
+            self.d2.append(self.md['Camera.ADOffset'] + 1*(self.noiseM.noisify(self.data) - self.md['Camera.ADOffset']))
             #print self.d2.min(), self.d2.max(), self.data.min(), self.data.max()
             
             #print self.d2.shape
             
-        bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
+        bg = self.bg*1.0/(self.md['Camera.TrueEMGain']/self.md['Camera.ElectronsPerCount']) + self.md['Camera.ADOffset']
         
         print((bg, self.noiseM.getbg()))
         

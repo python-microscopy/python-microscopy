@@ -181,8 +181,8 @@ def get_shifts(md, data_shape, x, y):
 
     # look up shifts
     if not md.getOrDefault('Analysis.FitShifts', False):
-        DeltaX = md.chroma.dx.ev(x_, y_)
-        DeltaY = md.chroma.dy.ev(x_, y_)
+        DeltaX = md['chroma.dx'].ev(x_, y_)
+        DeltaY = md['chroma.dy'].ev(x_, y_)
     else:
         DeltaX = 0
         DeltaY = 0

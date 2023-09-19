@@ -64,9 +64,9 @@ def generateThumbnail(inputFile, thumbSize):
 
     size = (int(xsize*zoom), int(ysize*zoom))
 
-    im = h5f.root.ImageData[min(md.EstimatedLaserOnFrameNo+10,(h5f.root.ImageData.shape[0]-1)) , :,:].astype('f')
+    im = h5f.root.ImageData[min(md['EstimatedLaserOnFrameNo']+10,(h5f.root.ImageData.shape[0]-1)) , :,:].astype('f')
 
-    im = im.T - min(md.Camera.ADOffset, im.min())
+    im = im.T - min(md['Camera.ADOffset'], im.min())
 
     h5f.close()
 

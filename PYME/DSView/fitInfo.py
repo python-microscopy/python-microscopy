@@ -379,8 +379,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
 
                 # look up shifts
                 if not self.mdh.getOrDefault('Analysis.FitShifts', False):
-                    DeltaX = self.mdh.chroma.dx.ev(x_, y_)
-                    DeltaY = self.mdh.chroma.dy.ev(x_, y_)
+                    DeltaX = self.mdh['chroma.dx'].ev(x_, y_)
+                    DeltaY = self.mdh['chroma.dy'].ev(x_, y_)
                 else:
                     DeltaX = 0
                     DeltaY = 0

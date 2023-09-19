@@ -36,14 +36,14 @@ from numpy import sqrt
 md = MetaData.ConfocDefault
 
 #Voxel sizes - alter as appropriate, in um
-md.voxelsize.x = 0.09
-md.voxelsize.y = 0.09
-md.voxelsize.z = 0.20
+md['voxelsize.x'] = 0.09
+md['voxelsize.y'] = 0.09
+md['voxelsize.z'] = 0.20
 
 #Hack the 'ccd' so we don't have to worry about the ADOffset preventing
 #fits from working. FIXME: find sensible values for all parameter for confocal
 #imaging so we can get error estimates.
-md.Camera.ADOffset=0
+md['Camera.ADOffset']=0
 
 
 #set this to the measured PSF FWHM. The correct way measure the PSF 
@@ -56,7 +56,7 @@ scopeFWHM = 250 #in nm
 #enter this on the command line instead
 ofindThreshold = 100
 
-md.tIndex=0
+md['tIndex']=0
 
 ####################################
 #End of user-modifiable parameters #

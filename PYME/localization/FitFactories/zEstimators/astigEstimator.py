@@ -57,10 +57,8 @@ def calibrate(interpolator, md, roiSize=5):
 
     #astigmatic PSF is not necessarily aligned to the axes
     #TODO - estimate rotation rather than requiring it as a parameter
-    if 'PSFRotation' in md.getEntryNames():
-        theta = numpy.pi*md.PSFRotation/180.
-    else:
-        theta = 0
+
+    theta = md.getOrDefault('PSFRotation', 0)*numpy.pi/180.
 
     costheta = numpy.cos(theta)
     sintheta = numpy.sin(theta)

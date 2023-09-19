@@ -84,13 +84,13 @@ class BufferManager(object):
         if dataSourceModule is None:
             #if the data source module is not specified, guess based on data source ID
             import PYME.IO.DataSources
-            DataSource = PYME.IO.DataSources.getDataSourceForFilename(md.dataSourceID)
+            DataSource = PYME.IO.DataSources.getDataSourceForFilename(md['dataSourceID'])
         else:
             DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
 
         #read the data
-        if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
-            self.dBuffer = buffers.SliceBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
+        if not self.dataSourceID == md['dataSourceID']: #avoid unnecessary opening and closing 
+            self.dBuffer = buffers.SliceBuffer(DataSource(md['dataSourceID'], md['taskQueue']), bufferLen)
             self.bBuffer = None
         
         #fix our background buffers
@@ -121,7 +121,7 @@ class BufferManager(object):
             if not isinstance(self.bBuffer, buffers.backgroundBuffer):
                 self.bBuffer = buffers.backgroundBuffer(self.dBuffer)
                 
-        self.dataSourceID = md.dataSourceID
+        self.dataSourceID = md['dataSourceID']
 
 #instance of our buffer manager
 bufferManager = BufferManager()
@@ -358,10 +358,7 @@ class fitTask(taskDef.Task):
 
     def _get_bgindices(self):
         if not 'Analysis.BGRange' in self.md.getEntryNames():
-            if 'Analysis.NumBGFrames' in self.md.getEntryNames():
-                nBGFrames = self.md.Analysis.NumBGFrames
-            else:
-                nBGFrames = 10
+            nBGFrames = self.md.getOrDefault('Analysis.NumBGFrames', 10)
 
             self.md.setEntry('Analysis.BGRange', (-nBGFrames, 0))
 
@@ -407,9 +404,9 @@ class fitTask(taskDef.Task):
         
         #create a local copy of the metadata        
         md = copy.copy(self.md)
-        md.tIndex = self.index
-        md.taskQueue = taskQueue
-        md.dataSourceID = self.dataSourceID
+        md['tIndex'] = self.index
+        md['taskQueue'] = taskQueue
+        md['dataSourceID'] = self.dataSourceID
         
         self.roi_offset = [0,0]
 

@@ -88,7 +88,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
 
     return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
@@ -135,7 +135,7 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
-        sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
+        sigma = scipy.sqrt(self.metadata['CCD.ReadNoise']**2 + (self.metadata['CCD.noiseFactor']**2)*self.metadata['CCD.electronsPerCount']*dataMean/nSlices)/self.metadata['CCD.electronsPerCount']
 
 
         #do the fit

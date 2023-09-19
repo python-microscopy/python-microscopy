@@ -92,7 +92,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     res = np.zeros(1, dtype=fresultdtype)
     
-    res['tIndex'] = metadata.tIndex
+    res['tIndex'] = metadata['tIndex']
     res['fitResults'].view('5f4')[:] = fitResults
 
     if fitErr is None:

@@ -78,28 +78,23 @@ class fitTestJig(object):
             backwards compatibility. You should set the fit module in the metadata.
         """
         self.md = copy.copy(metadata)
+        
         if fitModule is None:
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule
-        self.md.tIndex = 0
         
-        if 'Test.SimModule' in self.md.getEntryNames():
-            self.simModule = self.md['Test.SimModule']
-        else:
-            self.simModule = self.fitModule
-        
-        self.bg = 0
-        if 'Test.Background' in self.md.getEntryNames():
-            self.bg = float(self.md['Test.Background'])
+        self.md['tIndex'] = 0
 
+        self.simModule = self.md.getOrDefault('Test.SimModule', self.fitModule)        
+        self.bg = float(self.md.getOrDefault('Test.Background', 0.0))
         self.rs=self.md.getOrDefault('Test.ROISize', 7)
 
         self._prepSimulationCameraMaps()
 
         #by still including emGain estimation etc ... we can use the same code for sCMOS and EMCCD estimation. This will
         #evaluate to 1 in the sCMOS case
-        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
+        emGain = optimize.fmin(emg, 150, args=(float(self.md['Camera.TrueEMGain']),))[0]
 
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
                                  electronsPerCount= self.md['Camera.ElectronsPerCount']/self.gain,
@@ -272,8 +267,6 @@ class fitTestJig(object):
 
             
         #calculate our background
-        #bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
-        #print((bg, self.noiseM.getbg()))
         bg = self.noiseM.getbg()
         #bg = remFitBuf.cameraMaps.getDarkMap(self.md)
 

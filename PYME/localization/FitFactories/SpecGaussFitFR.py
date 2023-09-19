@@ -64,7 +64,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
 
     return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
@@ -129,9 +129,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = dataROI.shape[1]
         
-        sigma = scipy.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*scipy.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = scipy.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*scipy.maximum(dataMean, 1)/nSlices)/self.metadata['Camera.ElectronsPerCount']
 
-        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and self.metadata.getOrDefault('Analysis.subtractBackground', True):
             bgROI = self.background[xslice, yslice, zslice]
 
             #average in z

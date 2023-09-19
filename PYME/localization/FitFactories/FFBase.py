@@ -69,7 +69,7 @@ class FFBase(object):
         """ NOTE: This is a fallback and will normally not be used - fit factories should get noiseSigma passed in from
         remFitBuf which uses camera maps if available. Refer to the `calcSigma()` method in remFitBuf for details.
         """
-        read_noise, noise_factor,e_per_count, em_gain = float(self.metadata.Camera.ReadNoise), float(self.metadata.Camera.NoiseFactor), float(self.metadata.Camera.ElectronsPerCount), float(self.metadata.Camera.TrueEMGain)
+        read_noise, noise_factor,e_per_count, em_gain = float(self.metadata['Camera.ReadNoise']), float(self.metadata['Camera.NoiseFactor']), float(self.metadata['Camera.ElectronsPerCount']), float(self.metadata['Camera.TrueEMGain'])
         
         return np.sqrt(read_noise ** 2 + (noise_factor ** 2) * e_per_count * em_gain * (np.maximum(data, 1) + em_gain**2) / n_slices_averaged) / e_per_count
     
@@ -350,9 +350,6 @@ class FFBase(object):
         dataROI[:, :, 1] = self.data[xslice2, yslice2, 1]
     
         nSlices = 1
-        #sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataROI, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
-        #phConv = self.metadata.Camera.ElectronsPerCount/self.metadata.Camera.TrueEMGain
-        #nPhot = dataROI*phConv
     
         if self.noiseSigma is None:
             sigma = self._calc_sigma(dataROI)

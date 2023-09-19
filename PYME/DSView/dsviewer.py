@@ -273,28 +273,29 @@ class DSViewFrame(AUIFrame):
 
     def update(self):
         if not self.updating:
-            self.updating = True
-            #if 'view' in dir(self):
-            #    self.view.Refresh()
-            statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
-            
-            #intensity at current cursor
-            statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.xp, self.do.xp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
-            
-            #grab status from modules which supply it
-            for sCallback in self.statusHooks:
-                statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
-            self.statusbar.SetStatusText(statusText)
+            try:
+                self.updating = True
+                #if 'view' in dir(self):
+                #    self.view.Refresh()
+                statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
+                
+                #intensity at current cursor
+                statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.xp, self.do.yp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
+                
+                #grab status from modules which supply it
+                for sCallback in self.statusHooks:
+                    statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
+                self.statusbar.SetStatusText(statusText)
 
-            #if 'playbackpanel' in dir(self):
-            #    self.playbackpanel.update()
+                #if 'playbackpanel' in dir(self):
+                #    self.playbackpanel.update()
 
-            #update any modules which require it
-            for uCallback in self.updateHooks:
-                #print uCallback
-                uCallback(self)
-
-            self.updating = False
+                #update any modules which require it
+                for uCallback in self.updateHooks:
+                    #print uCallback
+                    uCallback(self)
+            finally:
+                self.updating = False
             
     #def Redraw(self):
     #    self.v
