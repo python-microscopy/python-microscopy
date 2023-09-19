@@ -345,6 +345,7 @@ class XYZTCDataSource(BaseDataSource):
                     slice_idx = self._c_stride * c + self._t_stride * t + self._z_stride * z
                     out[:, :, zi, ci, ti] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
+        #print('out.shape:', out.shape, 'to_squeeze:', to_squeeze)
         return out.squeeze(axis=tuple(to_squeeze))
 
 
