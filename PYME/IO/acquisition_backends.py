@@ -10,6 +10,10 @@ from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 from PYME.IO import PZFFormat
 
 class Backend(abc.ABC):
+    """
+    Base class for acquisition backends.
+
+    """
     def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1]):
         if not hasattr(self, 'mdh'):
             self.mdh = MetaDataHandler.DictMDHandler()

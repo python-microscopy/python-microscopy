@@ -450,19 +450,13 @@ class DisplayPaneHorizontal(wx.Panel):
         self.glCanvas.Refresh()
         
     def OnViewTop(self, event):
-        self.glCanvas.view.vec_up=np.array([0,1,0])
-        self.glCanvas.view.vec_back = np.array([0,0,1])
-        self.glCanvas.view.vec_right = np.array([1,0,0])
+        self.glCanvas.view.top()
         self.glCanvas.Refresh()
         
     def OnViewFront(self, event):
-        self.glCanvas.view.vec_up=np.array([0,0,-1])
-        self.glCanvas.view.vec_back = np.array([0,-1,0])
-        self.glCanvas.view.vec_right = np.array([1,0,0])
+        self.glCanvas.view.front()
         self.glCanvas.Refresh()
         
     def OnViewRight(self, event):
-        self.glCanvas.view.vec_up=np.array([1,0,0])
-        self.glCanvas.view.vec_back = np.array([0,-1,0])
-        self.glCanvas.view.vec_right = np.array([0,0,1])
+        self.glCanvas.view.right()
         self.glCanvas.Refresh()
