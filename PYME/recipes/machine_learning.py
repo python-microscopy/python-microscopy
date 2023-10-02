@@ -35,6 +35,32 @@ class SVMSegment(Filter):
     def completeMetadata(self, im):
         im.mdh['SVMSegment.classifier'] = self.classifier
 
+@register_module('LabelsToChannels')
+class LabelsToChannels(ModuleBase):
+    """ Convert a label image to a set of channels, one for each label.
+
+    """
+    inputLabels = Input('labels')
+    output = Output('channels')
+    
+    def run(self, inputLabels):
+        chans=[]
+        channel_names = []
+
+        labels = inputLabels.data_xyztc[:,:,:,:,0].astype('i4')
+        num_chans = np.max(labels)
+
+        for i in range(1, num_chans+1):
+            chans.append(np.atleast_3d(labels == i))
+            channel_names.append('label%d' %i)
+
+        im = ImageStack(chans, titleStub = 'Composite Image')
+        
+        im.mdh.copyEntriesFrom(inputLabels.mdh)
+        im.names = channel_names
+        im.mdh['Parent'] = inputLabels.filename
+
+        return im
 
 @register_module('CNNFilter')
 class CNNFilter(Filter):
