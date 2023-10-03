@@ -578,7 +578,7 @@ class TextfileSource(TabularBase):
         #print('invalid_raise:', invalid_raise)
 
         if config.get('TextFileSource-use_pandas',False):
-            print('Opening %s using pandas (set TextFileSource-use_pandas: False in config.yaml to use legacy np.genfromtxt instead)')
+            logger.info('Opening "%s" using pandas (set TextFileSource-use_pandas: False in config.yaml to use legacy np.genfromtxt instead)' % filename)
             import pandas as pd
             self.res = pd.read_csv(filename,
                 comment=comments,
@@ -592,7 +592,7 @@ class TextfileSource(TabularBase):
                 ).to_records(index=False)
 
         else:
-            print('Opening %s using np.genfromtxt (set TextFileSource-use_pandas: True in config.yaml to use pandas instead)')
+            logger.info('Opening %s using np.genfromtxt (set TextFileSource-use_pandas: True in config.yaml to use pandas instead)' % filename)
             self.res = np.genfromtxt(filename,
                              comments=comments,
                              delimiter=delimiter,
