@@ -249,8 +249,10 @@ class MapAstigZ(ModuleBase):
         if ('sigmax0' not in mapped.keys()) and (inp.mdh.getOrDefault('Multiview.NumROIs', 1) == 1):
             # if we are single channel it is safe to define sigmax0, sigmay0 as sigmax, sigmay
             # without any folding etc ...
-            mapped.setMapping('sigmax0', 'sigmax')
-            mapped.setMapping('sigmay0', 'sigmay')
+            mapped.setMapping('sigmax0', 'fitResults_sigmax')
+            mapped.setMapping('sigmay0', 'fitResults_sigmay')
+            mapped.setMapping('error_sigmax0', 'fitError_sigmax')
+            mapped.setMapping('error_sigmay0', 'fitError_sigmay')
 
 
         z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)

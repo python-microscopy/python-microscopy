@@ -541,7 +541,7 @@ class AnnotateBase(object):
     def _hittest(self, clump, pos):
         xp, yp, zp = pos
     
-        bounds = [(xp - 2, xp + 2), (yp - 2, yp + 2), (zp, zp + 1)]
+        bounds = [(xp - 2, xp + 2), (yp - 2, yp + 2), (zp, zp + 1), (0, 100)]
     
         return self._visibletest(clump, bounds)
     

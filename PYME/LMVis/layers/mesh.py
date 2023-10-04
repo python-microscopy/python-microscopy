@@ -12,6 +12,9 @@ from PYME.contrib import dispatch
 
 from OpenGL.GL import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class WireframeEngine(BaseEngine):
     _outlines = True
@@ -23,13 +26,17 @@ class WireframeEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
+        vertices = layer.get_vertices()
+        n_vertices = vertices.shape[0]
+
+        if n_vertices == 0:
+            logger.warning('Layer (%s) has no vertices to render' % layer)
+            return
+
+        normals = layer.get_normals()
+        colors = layer.get_colors()
+
         with self.get_shader_program(gl_canvas):
-            vertices = layer.get_vertices()
-            n_vertices = vertices.shape[0]
-
-            normals = layer.get_normals()
-            colors = layer.get_colors()
-
             glVertexPointerf(vertices)
             glNormalPointerf(normals)
             glColorPointerf(colors)

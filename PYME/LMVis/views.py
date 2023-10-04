@@ -190,6 +190,26 @@ class View(object):
     @classmethod
     def copy(cls, view):
         return cls.decode_json(view.to_json())
+    
+    def top(self):
+        """ set the view to top-down view"""
+        self.vec_up = np.array([0,1,0])
+        self.vec_back = np.array([0,0,1])
+        self.vec_right = np.array([1,0,0])
+        
+    def front(self):
+        """ set the view to front view"""
+        self.vec_up = np.array([0,0, -1])
+        self.vec_back = np.array([0,-1,0])
+        self.vec_right = np.array([1,0,0])
+
+    def right(self):
+        """ set the view to right view"""
+        self.vec_up = np.array([1, 0, 0])
+        self.vec_back = np.array([0, -1,0])
+        self.vec_right = np.array([0,0,1])    
+
+
 
     
 #TOP = View()

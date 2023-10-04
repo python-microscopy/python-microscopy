@@ -470,7 +470,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         xs, ys = self._unscrolled_view_size()
         if fullImage:
-            if (xs > 2e3 or ys > 2e3) and wx.MessageBox('Captured image will be very large, continue?', 'Warning', style=wx.OK|wx.CANCEL) != wx.OK:
+            from PYME import warnings
+            if (xs > 2e3 or ys > 2e3) and not warnings.warn('Captured image will be very large, continue?',allow_cancel=True):
                 return
         else:
             s = self.GetClientSize()

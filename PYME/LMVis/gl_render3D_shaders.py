@@ -982,6 +982,9 @@ class LMGLShaderCanvas(GLCanvas):
                 
                     self.setView(x0, x0 + self.view_port_size[0]*pixel_size,
                             y0, y0 + self.view_port_size[1]*pixel_size)
+                    
+                    #enforce top-down view (2D)
+                    self.view.top()
 
                     print(pixel_size, self.pixelsize)
                     assert(self.pixelsize == pixel_size)
