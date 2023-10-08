@@ -507,7 +507,48 @@ class dec_bead(ICTMDeconvolution, SpatialConvolutionMapping):
         ICTMDeconvolution.__init__(self, *args, **kwargs)
 
 class dec_4pi(ICTMDeconvolution):
-    """Variable phase 4Pi deconvolution"""
+    """Variable phase 4Pi deconvolution, as descibed in Baddeley et al, Applied Optics 2006.
+
+    NOTE: this is a translation of Matlab code, without extensive testing, and without maintenance in over 10 years. I'm not sure it is 100%
+    correct or working. Use at your own risk.
+    
+    Usage: 
+
+    dec = dec_4pi()
+    dec.psf_calc(psf, kz, data_size=data.shape)
+    result = dec.deconv(data, lamb, num_iters, weights, alpha)
+    
+    where:
+
+    psf - the corresponding *confocal/widefield* PSF *without* 4Pi axial modulation. Must be the same size (shape) as the data. 
+    kz - the axial wavenumber of the 4Pi illumination in voxels. This should be the wavelength/(refractive index * axial step size)
+    data - the raw data
+    lamb - the ICTM regularisation parameter. See ICTMDeconvolution for details. Around 0.1 is a good starting point,
+           vary on a log scale - i.e. 10^-1, 10^-2 etc ...
+    num_iters - number of iterations. 20 is a reasonably good starting point.
+    weights - a weighting on the residuals to deweight missing data and/or adjust the noise behavior (see ICTMDeconvolution).
+              Using the default of 1.0 is usually fine.
+    alpha - the phase of the 4Pi illumination. This is the magic parameter, specific to variable phase deconvolution. It should
+            be an array of the same dimensions as the data, containing a pixel-wise map of phase values in radians. In the original
+            paper, these were calculated by fitting axial PSF profiles to areas in the data where there was a high chance that the 
+            underlying object was sparse (e.g. a bead or a piece of membrane parallel to the coverslip), and interpolating these to 
+            the entire 3D volume. The code to do this was written in Matlab and might be lost to time. Without fitting profiles and
+            interpolating, you can sometimes get reasonable results by eye-balling the phase and assuming a linear variation with z, 
+            although this is not recommended for anything but exploratory use.
+
+    NOTE: Vicidomini et al, Optics Letters, 2009 describe an extension of the concept which uses a joint estimation of both the 
+    phase and the underlying object, avoiding the need to supply alpha. In principle this should be preferable, but I have no first-hand
+    experience of how reliable it is. Keeping phase estimation separate from deconvolution might have it's advantages in some special cases
+    (I could imagine, e.g., that a double membrane at roughly the peak-sidelobe distance could be problematic for the joint estimation approach).
+
+    NOTE: Some of the 4PI specific logic (specifically the pre-calculation of the phase exponentials self.e1 and self.e2) lives in the base 
+    ICTMDeconvolution class. This is a historic artifact (all the deconvolution code was originally written for the 4Pi project and has since
+    been generalised). This, along with setting alpha, should be refactored into this class. 
+
+    NOTE: This should really be refactored as a on top of DeconvMappingBase to enable use with Richardson-Lucy deconvolution as well as ICTM, which
+    should be preferable for a microscope noise model.
+
+    """
     
     def psf_calc(self, psf, kz, data_size):
         """Pre calculate OTFs etc ..."""
