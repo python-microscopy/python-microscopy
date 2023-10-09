@@ -27,6 +27,8 @@ import scipy.ndimage
 import logging
 logger = logging.getLogger(__name__)
 
+import PYME.warnings
+
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
     f1 = tabular.ResultsFilter(resultsSource, error_x=[1, 30], A=[10, 500], sig=(150 / 2.35, 900 / 2.35))
@@ -169,7 +171,7 @@ def _expand_z(ps_shape, im_shape, points):
 
 
 def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True, centreZ=True, centreXY=True,
-             x_offset=0, y_offset=0, z_offset=0,expand_z=False, pad=(0,0,2)):
+             x_offset=0, y_offset=0, z_offset=0,expand_z=False, pad=(0,0,4)):
     
     """
     Extract a 3D PSF by averaging the images of a set of point sources.
@@ -202,7 +204,7 @@ def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True,
     """
     
     # pad the PSF shape to avoid wrap-around when performing Fourier domain shifting
-    PSshape = np.array(PSshape) + 2*np.array(pad)
+    PSshape = np.array(PSshape) + np.array(pad)
     
     if expand_z:
         PSshape = _expand_z(PSshape, im.shape, points)
@@ -261,6 +263,11 @@ def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True,
         F = np.fft.fftn(imi)
         d = d + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
+    print('dzs:', dzs)
+    if np.any(np.abs(dzs) > pad[2]):
+        PYME.warnings.warn('Axial shift of PSF is greater than padding. PSF is likely to exhibit wrap-around artifacts. This is \
+                           typically caused by insufficent z-extent in the requested PSF shape and/or the calibration z-stack.')
+    
     # remove padding
     px, py, pz = pad
     d= d[px:(-px if (px > 0) else None), py:(-py if py > 0 else None), pz:(-pz if pz > 0 else None)]
