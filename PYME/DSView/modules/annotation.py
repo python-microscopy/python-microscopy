@@ -59,7 +59,7 @@ class LabelPanel(wx.Panel):
         
         self.bAdjustSnake = wx.Button(self, label='Adj', style=wx.BU_EXACTFIT)
         self.bAdjustSnake.Bind(wx.EVT_BUTTON, self.on_adjust_snake)
-        self.bAdjustSnake.SetToolTipString('Adjust the parameters of fo the "snake" (active contour) used for curve locking')
+        self.bAdjustSnake.SetToolTip('Adjust the parameters of fo the "snake" (active contour) used for curve locking')
         
         sbsizer.Add(self.bAdjustSnake, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 2)
         
@@ -70,10 +70,10 @@ class LabelPanel(wx.Panel):
         self.lLabels.InsertColumn(1, 'Structure')
         
         for i in range(10):
-            self.lLabels.InsertStringItem(i, '%d' % i)
-            self.lLabels.SetStringItem(i, 1, 'Structure %d' % i)
+            self.lLabels.InsertItem(i, '%d' % i)
+            self.lLabels.SetItem(i, 1, 'Structure %d' % i)
         
-        self.lLabels.SetStringItem(0, 1, 'No label')
+        self.lLabels.SetItem(0, 1, 'No label')
         
         self.lLabels.SetItemState(1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
         self.lLabels.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -92,7 +92,7 @@ class LabelPanel(wx.Panel):
         self.bAddLine = wx.Button(self, label='Add', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bAddLine, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bAddLine.Bind(wx.EVT_BUTTON, self.labeler.add_curved_line)
-        self.bAddLine.SetToolTipString('Add a curve annotation (ctrl-L / cmd-L)')
+        self.bAddLine.SetToolTip('Add a curve annotation (ctrl-L / cmd-L)')
         vsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 5)
         
         self.SetSizer(vsizer)
