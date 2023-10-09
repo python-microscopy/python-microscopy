@@ -29,6 +29,8 @@ from ._base import Plugin
 import logging
 logger = logging.getLogger(__name__)
 
+import PYME.warnings
+
 class PsfExtractor(Plugin):
     def __init__(self, dsviewer):
         Plugin.__init__(self, dsviewer)
@@ -308,6 +310,13 @@ class PsfExtractor(Plugin):
 
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+
+            if self.image.data.shape[2]*self.image.voxelsize_nm.z < 3000:
+                PYME.warnings.warn('Calibration stack is only %3.2f um in z (recommended 4 um or more)' % (self.image.data.shape[2]*self.image.voxelsize_nm.z/1000.0))
+            
+            if psfROISize[2]*self.image.voxelsize_nm.z < 1000:
+                PYME.warnings.warn('Requested PSF ROI is less than 2um in z (recommended size 3 um, or %d voxel half-sze in this image)' % (1500/self.image.voxelsize_nm.z))
+
             #print psfROISize
             psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur,
                                                   expand_z=self.cbExpandROI.GetValue())
