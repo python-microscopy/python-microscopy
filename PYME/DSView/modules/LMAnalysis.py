@@ -214,13 +214,15 @@ class AnalysisSettingsView(object):
 
         #find out what fit factories we have
         self.fitFactories = PYME.localization.FitFactories.resFitFactories
-        print((self.fitFactories))
+        logger.debug((self.fitFactories))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(pan, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
+        # the original tab character (\t) creates warnings and discards the strings after the tab as this are incorrectly interpreted as accelerators
+        # leaving out the tab seems fine on both mac and windows
+        self.cFitType = wx.Choice(pan, -1, choices = ['{:<35} - {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
         
         if 'Analysis.FitModule' in self.analysisMDH.getEntryNames():
             #has already been analysed - most likely to want the same method again
