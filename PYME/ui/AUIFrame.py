@@ -5,6 +5,9 @@ import PYME.ui.manualFoldPanel as afp
 from PYME.ui import progress
 from PYME.misc import check_for_updates
 
+import logging
+logger = logging.getLogger(__name__)
+
 class AUIFrame(wx.Frame):
     """A class which encapsulated the common frame layout code used by
     dsviewer, VisGUI, and PYMEAcquire.
@@ -61,7 +64,7 @@ class AUIFrame(wx.Frame):
             self._mgr.Update()
             pn = self._mgr.GetPaneByName(self.pane0)
             if pn.IsNotebookPage():
-                print((pn.notebook_id))
+                logger.debug((pn.notebook_id))
                 nbs = self._mgr.GetNotebooks()
                 if len(nbs) > pn.notebook_id:
                     currPage = nbs[pn.notebook_id].GetSelection()
@@ -122,7 +125,7 @@ class AUIFrame(wx.Frame):
         loops over all the functions defined in self.paneHooks and calls them
         to generate the drawers.
         """
-        print('Creating fold panel')
+        logger.debug('Creating fold panel')
         pinfo = self._mgr.GetPaneByName('sidePanel')
         if pinfo.IsOk(): #we already have a sidepanel, clear
             self.sidePanel.Clear()
