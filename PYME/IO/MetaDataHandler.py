@@ -868,7 +868,9 @@ class XMLMDHandler(MDHandlerBase):
         elif cls == 'pickle':
             #return None
             try:
-                val = pickle.loads(base64.b64decode(val.encode('ascii')))
+                # note that we seem to need 'latin1' option for pickle.loads after the base64 decoding
+                # this seems to work in all instances of older metadata tested so far
+                val = pickle.loads(base64.b64decode(val.encode('ascii')),encoding='latin1')
             except:
                 logger.exception(u'Error loading metadata from pickle')
 
