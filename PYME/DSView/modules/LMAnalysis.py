@@ -214,7 +214,7 @@ class AnalysisSettingsView(object):
 
         #find out what fit factories we have
         self.fitFactories = PYME.localization.FitFactories.resFitFactories
-        logger.debug((self.fitFactories))
+        logger.debug("registered FitFactories: ",(self.fitFactories))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
