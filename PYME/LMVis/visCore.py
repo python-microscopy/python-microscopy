@@ -147,7 +147,7 @@ class VisGUICore(object):
                 
             self.glCanvas.Refresh()
             self.glCanvas.Update()
-            logger.debug('refreshed')
+            logger.debug('Refreshed glCanvas after load')
             
     def GenPanels(self, sidePanel):
         logger.debug('GenPanels')
