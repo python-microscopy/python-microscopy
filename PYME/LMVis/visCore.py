@@ -711,6 +711,7 @@ class VisGUICore(object):
                 self.add_pointcloud_layer(ds_name=('output.' + c), **layer_defaults.new_layer_settings('points_channel', i, overrides=dict(visible=False)))
                 
     def _populate_open_args(self, filename):
+        from PYME.warnings import warn
         args = {}
     
         if os.path.splitext(filename)[1] == '.h5r':
@@ -732,6 +733,7 @@ class VisGUICore(object):
                 
                     if not ret == wx.ID_OK:
                         dlg.Destroy()
+                        logger.info("opening Matlab file was canceled")
                         return #we cancelled
                 
                     args['FieldNames'] = dlg.GetFieldNames()
@@ -750,6 +752,7 @@ class VisGUICore(object):
                 
                     if not ret == wx.ID_OK:
                         dlg.Destroy()
+                        logger.info("opening Matlab file was canceled")
                         return #we cancelled
 
                     args['FieldNames'] = dlg.GetFieldNames()
@@ -767,6 +770,8 @@ class VisGUICore(object):
         
             if not ret == wx.ID_OK:
                 dlg.Destroy()
+                logger.info("opening Text/CSV file was canceled")
+                warn('Open file was canceled by user') # example how we could bring up a message box
                 return #we cancelled
             
             text_options = {'columnnames': dlg.GetFieldNames(),
@@ -798,7 +803,6 @@ class VisGUICore(object):
         else:
             args = self._populate_open_args(filename)
             if args is None:
-                logger.info("OpenFile was canceled or not a valid file format")
                 return
             self.pipeline.OpenFile(filename, **args)
         logger.debug('Pipeline Created')
