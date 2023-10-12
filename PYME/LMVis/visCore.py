@@ -127,7 +127,12 @@ class VisGUICore(object):
         
     
     def OnIdle(self, event=None):
-        logger.debug('Ev Idle')
+       """ Refresh the glDisplay *after* all windows have been created and data loaded.
+       
+       TODO - rename, as the OnIdle name is a historical artifact (was originally called using an wx.EVT_IDLE binding, 
+       now uses wx.CallLater with a delay.
+       """
+        #logger.debug('Ev Idle')
         if self.glCanvas._is_initialized and not self.refv:
             self.refv = True
             logger.debug((self.viewMode, self.pointDisplaySettings.colourDataKey))
