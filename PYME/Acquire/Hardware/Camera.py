@@ -116,6 +116,7 @@ class Camera(object):
     MODE_SOFTWARE_TRIGGER = 2
     MODE_HARDWARE_TRIGGER = 3
     MODE_HARDWARE_START_TRIGGER = 4
+    MODE_HARDWARE_TRIGGER_SYNC = 5
 
 
     def __init__(self, *args, **kwargs):
@@ -616,6 +617,11 @@ class Camera(object):
                 MODE_HARDWARE_START_TRIGGER
                     camera waits for an external hardware trigger and enters 
                     free-running internal timing mode once received
+                MODE_HARDWARE_TRIGGER_SYNC
+                    (stops then) starts exposing a frame every time an
+                    external hardware trigger is received by the camera.
+                    Allows timing the camera frames entirely off an external
+                    clock.
 
         See Also
         --------
@@ -654,7 +660,12 @@ class Camera(object):
                 MODE_HARDWARE_START_TRIGGER
                     camera waits for an external hardware trigger and enters 
                     free-running internal timing mode once received
-
+                MODE_HARDWARE_TRIGGER_SYNC
+                    (stops then) starts exposing a frame every time an
+                    external hardware trigger is received by the camera.
+                    Allows timing the camera frames entirely off an external
+                    clock.
+        
         Returns
         -------
         None
