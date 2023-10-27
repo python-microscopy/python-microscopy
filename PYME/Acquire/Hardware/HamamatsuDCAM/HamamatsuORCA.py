@@ -571,11 +571,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         rising : bool
             toggles whether active edge is positive going (rising=True) or
             falling
-
-        Notes
-        -----
-        Currently hardcoded to trigger on the rising/falling edge of the trigger,
-        depending on the instance attribute `_external_trigger_rising`.
+        
         """
         if rising:
             self.setCamPropValue('TRIGGER POLARITY',
