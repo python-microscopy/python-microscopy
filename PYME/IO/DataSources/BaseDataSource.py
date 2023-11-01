@@ -397,7 +397,12 @@ class XYZTCWrapper(XYZTCDataSource):
                 size_t = 1
                 size_z = data.shape[2]
 
-        return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=data.shape[3])
+        if len(data.shape) >= 4:
+            size_c = data.shape[3]
+        else:
+            size_c = 1
+        
+        return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=size_c)
     
     
     def getSlice(self, ind):

@@ -179,7 +179,8 @@ class Splitter:
             self.SetShiftField(sfname)
 
     def SetShiftField(self, sfname):
-        self.shiftField = numpy.load(sfname)
+        from PYME.IO.compatibility import np_load_legacy
+        self.shiftField = np_load_legacy(sfname)
         self.shiftFieldName = sfname
         self.unmixer.SetShiftField(self.shiftField, self.scope)
 
