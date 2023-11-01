@@ -108,7 +108,7 @@ class IOSlave(object):
         with self.lock:
             with serial.Serial(**self.ser_args) as ser:
                 ser.write(b'QA%d\n' % chan)
-                res = float(str(ser.readline()))
+                res = float((ser.readline()).decode().split('\\')[0])
         
         return res
         
@@ -157,7 +157,7 @@ class IOSlaveAlwaysOpen(object):
     def GetAnalog(self, chan):
         with self.lock:
             self.ser.write(b'QA%d\n' % chan)
-            res = float(str(self.ser.readline()))
+            res = float((self.ser.readline()).decode().split('\\')[0])
 
         return res
 
