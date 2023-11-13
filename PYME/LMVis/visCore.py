@@ -135,7 +135,7 @@ class VisGUICore(object):
         #logger.debug('Ev Idle')
         if self.glCanvas._is_initialized and not self.refv:
             self.refv = True
-            logger.debug((self.viewMode, self.pointDisplaySettings.colourDataKey))
+            #logger.debug((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
            
             if self._new_layers:
