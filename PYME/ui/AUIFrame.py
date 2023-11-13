@@ -64,7 +64,7 @@ class AUIFrame(wx.Frame):
             self._mgr.Update()
             pn = self._mgr.GetPaneByName(self.pane0)
             if pn.IsNotebookPage():
-                logger.debug((pn.notebook_id))
+                #logger.debug((pn.notebook_id))
                 nbs = self._mgr.GetNotebooks()
                 if len(nbs) > pn.notebook_id:
                     currPage = nbs[pn.notebook_id].GetSelection()
