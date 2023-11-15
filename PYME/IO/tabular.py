@@ -1236,7 +1236,7 @@ class AnndataSource(TabularBase):
         
         # backed='r' keeps us from loading the full file into memory
         # TODO: Is this the behaviour we want?
-        self.res = ad.read(filename) #, backed='r')
+        self.res = ad.read(filename, backed='r')
 
         # Flatten the anndata structure as best we can to fit our tabular structure
         self._keys = list(self.res.var_names) + list(self.res.obs.keys())
