@@ -649,7 +649,7 @@ class Annotater(Plugin, AnnotateBase):
     
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier()
-        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze().astype('f'), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
 
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
@@ -680,7 +680,7 @@ class Annotater(Plugin, AnnotateBase):
         from PYME.misc.colormaps import cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
-        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze())#, self.image.labels[:,:,self.do.zp])
+        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze().astype('f'))#, self.image.labels[:,:,self.do.zp])
         #self.vmax = 0
         #self.image.labels = self.mask
     
