@@ -1261,7 +1261,7 @@ class AnndataSource(TabularBase):
                     self._keys_attrs.update({proposed_keys[i]: {'obsm': {k: i}}})
             else:
                 self._keys += [f"{k}_{j}" for j in range(n_var)]
-                self._keys_attrs.update({f"{k}_{j}": 'obsm' for j in range(n_var)})
+                self._keys_attrs.update({f"{k}_{j}": {'obsm': {k: j}} for j in range(n_var)})
 
     def keys(self):
         return self._keys
@@ -1270,9 +1270,14 @@ class AnndataSource(TabularBase):
         key, sl = self._getKeySlice(key)
         if key not in self._keys:
             raise KeyError('Key (%s) not found' % key)
+            
+        print(f"Getting {key}")
         
         if self._keys_attrs[key] == "X":
-            return self.res[sl, key].X.toarray().squeeze()
+            x = self.res[sl, key].X
+            if isinstance(x, np.ndarray):
+                return x.squeeze()
+            return x.toarray().squeeze()
         elif isinstance(self._keys_attrs[key], dict):
             first_key = next(iter(self._keys_attrs[key]))
             if first_key == "obsm":
