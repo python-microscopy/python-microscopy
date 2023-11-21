@@ -717,6 +717,9 @@ class Pipeline:
                         field_names.append('probe')  # don't forget to copy this field over
                     ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
+        elif os.path.splitext(filename)[1] == '.h5ad':
+            ds = tabular.AnndataSource(filename)
+            
         else: #assume it's a delimited (tab or csv) text file
             # use provided `text_options` argument to Open(), or guess using csv_flavours
             text_options = kwargs.get('text_options', None)
