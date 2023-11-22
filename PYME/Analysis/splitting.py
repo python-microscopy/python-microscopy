@@ -6,6 +6,9 @@ using an image splitting device which splits the channels onto a single camera.
 import os
 import numpy as np
 
+import logging
+logger=logging.getLogger(__name__)
+
 def LoadShiftField(filename = None):
     if not filename:
         import wx
@@ -39,112 +42,182 @@ def LoadShiftField(filename = None):
 
 
 
+def get_channel(data, ROI=None, flip=False, chanROIs=None, chan=0, chanShape=None):
+    '''
+    Extract a channel from an image which has been recorded using an image splitting device.
+
+    Parameters
+    ----------
+    data : array_like (2D)
+        The image data to extract the channel from.
+    ROI : array_like (4 elements)
+        The region of interest which was used to acquire the data. Channel ROIs are speficied with respect to
+        the full chip, so we need to correct for any acquisition ROI.
+    flip : One of False, 'left_right',  or 'up_down'
+        Whether, and in which direction to flip the channel data. This is necessary if the channel was flipped by the splitter.
+    chanROIs : array_like (Nx4 elements)
+        The ROIs on the unclipped sensor corresponding to the individual channels. Each ROI is a 4-tuple of (x,y,w,h) where 
+        x and y are the ROI origin (0-indexed) and w, h are the width and height of the ROI.
+    chan : int
+        The index of the channel to extract.
+    chanShape : array_like (2 elements)
+        Used to specify the shape of the extracted data if it should be smaller than provided for by the chanROIs spec. 
+        This can be indicated if an acquisition ROI has cropped one or more of the channels (i.e. to specify the shape of the 
+        largest common ROI between channels). TODO - move the logic for determining this in here?? 
+
+    '''
+    data = data.squeeze()
+
+    if ROI is None:
+        logger.warning('No ROI specified - assuming full chip (deprecated)')
+        ROI = [0,0,data.shape[0], data.shape[1]]
+
+    if chanROIs:
+        x, y, w, h = chanROIs[chan]
+        x1 = x -(ROI[0])
+        y1 = y -(ROI[1])
+        
+        x = max(x1, 0)
+        y = max(y1, 0)
+
+        if chanShape:
+            chanShape = (min(w, chanShape[0]), min(h, chanShape[1]))
+        else:
+            chanShape = (w, h)
+        
+        if flip == 'up_down':
+            #print y, h + min(y1, 0), self.sliceShape
+            y = y + h + min(y1, 0) - chanShape[1]
+
+        w, h = chanShape
+        
+        
+    else:
+        logger.warning('No channel ROIs specified - using deprecated backwards compatible behaviour')
+        
+        if chan == 0:
+            x, y, w, h = 0,0, data.shape[0], int(data.shape[1] / 2)
+        else:
+            x, y, w, h = 0, int(data.shape[1] / 2), data.shape[0], int(data.shape[1] / 2)
+            #print x, y
+            return data[x:(x+w), y:(y+h)]
+    
+    c = data[x:(x+w), y:(y+h)]
+            
+    if flip == 'left_right':
+        c = np.flipud(c)
+    elif flip == 'up_down':
+        c = np.fliplf(c)
+
+
+    return c
+
+
+class ShiftCorrector(object):
+    '''
+    Nearest pixel shift correction for a single channel.
+    '''
+    def __init__(self, shiftfield=None):
+       self.set_shiftfield(shiftfield)
+       self._idx_cache = {} 
+
+    def set_shiftfield(self, shiftfield):
+        if isinstance(shiftfield, str):
+            shiftfield = LoadShiftField(shiftfield)
+        
+        self.shiftfield = shiftfield
+
+        if shiftfield:
+            self.spx, self.spy = shiftfield
+
+        # clear the cache
+        self._idx_cache = {}
+
+    def correct(self, data, voxelsize, origin_nm=None):
+        ''' Correct a single channel of data for chromatic shift.
+        '''
+        if self.shiftfield:
+            X, Y = self._idx(data.shape, voxelsize, origin_nm)
+
+            return data[X,Y]
+        else:
+            # no shiftfield, so no correction
+            return data
+
+    def __idx(self, data_shape, voxelsize, origin_nm=None):
+        ''' Calculate the indices for a shift correction.
+        '''
+        if origin_nm is None:
+            logger.warning('No origin specified - assuming (0,0)')
+            origin_nm = (0,0)
+
+        X, Y = np.ogrid[:data_shape[0], :data_shape[1]]
+        x_ = X * voxelsize[0] + origin_nm[0]
+        y_ = Y * voxelsize[1] + origin_nm[1]
+
+        dx = self.spx.ev(x_, y_)
+        dy = self.spy.ev(x_, y_)
+
+        X = np.clip(np.round(X - dx/voxelsize[0]).astype('i'), 0, data_shape[0]-1)
+        Y = np.clip(np.round(Y - dy/voxelsize[1]).astype('i'), 0, data_shape[1]-1)
+
+        return X, Y
+        
+    def _idx(self, data_shape, voxelsize, origin_nm=None):
+        ''' Access a cached version of the indices calculated by __idx.
+        '''
+        cache_key = (data_shape, voxelsize, origin_nm)
+        try:
+            return self._idx_cache[cache_key]
+        except KeyError:
+            self._idx_cache[cache_key] = self.__idx(data_shape, voxelsize, origin_nm)
+            return self._idx_cache[cache_key]
+
+    
+
+    
+
+
+
 
 class Unmixer(object):
-    def __init__(self, shiftfield=None, pixelsize=70., flip=True, axis='up_down'):
+    def __init__(self, shiftfield=None, pixelsize=70., flip=True, axis='up_down', chanROIs=None):
         self.pixelsize = pixelsize
-        self.flip = flip
         self.axis = axis
-        if shiftfield:
-            self.SetShiftField(shiftfield)
 
-    def SetShiftField(self, shiftField, scope):
-        #self.shiftField = shiftField
-        #self.shiftFieldname = sfname
-    
-        if self.axis == 'up_down':
-            X, Y = np.ogrid[:512, :256]
+        # patch flip to be consistent with splitter.get_channel
+        # TODO - change calling code
+        if flip and axis == 'up_down':
+            self.flip='up_down'
+        elif flip and axis == 'left_right':
+            self.flip='left_right'
         else:
-            X, Y = np.ogrid[:scope.cam.GetPicWidth()/2, :scope.cam.GetPicHeight()]
+            self.flip=False
 
-        self.X2 = np.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
-        self.Y2 = np.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
+        self.chanROIs = chanROIs
 
-    def _deshift(self, red_chan, ROI=[0,0,512, 512]):
-        if 'X2' in dir(self):
-            x1, y1, x2, y2 = ROI
-
-            #print self.X2.shape
-
-            if self.axis == 'up_down':
-                Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
-                Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
-            else:
-                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - x1
-                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - y1
-
-            #print Xn.shape
-
-            Xn = np.maximum(np.minimum(Xn, red_chan.shape[0]-1), 0)
-            Yn = np.maximum(np.minimum(Yn, red_chan.shape[1]-1), 0)
-
-            return red_chan[Xn, Yn]
-
-        else:
-            return red_chan
-
-
-    def Unmix_(self, data, mixMatrix, offset, ROI=[0,0,512, 512]):
-        import scipy.linalg
-        from PYME.localisation import splitting
-        #from pylab import *
-        #from PYME.DSView.dsviewer_npy import View3D
-
-        umm = scipy.linalg.inv(mixMatrix)
-
-        dsa = data.squeeze() - offset
-        g_, r_ = [dsa[roi[0]:roi[2], roi[1]:roi[3]] for roi in rois]
+        self.SetShiftField(shiftfield)
         
-        if self.flip:
-            if self.axis == 'up_down':
-                r_ = np.fliplr(r_)
-            else:
-                r_ = np.flipud(r_)
 
-            r_ = self._deshift(r_, ROI)
+    def SetShiftField(self, shiftField, scope=None):
+       self.shift_corr = ShiftCorrector(shiftField)
 
-        #print g_.shape, r_.shape
-
-        g = umm[0,0]*g_ + umm[0,1]*r_
-        r = umm[1,0]*g_ + umm[1,1]*r_
-
-        g = g*(g > 0)
-        r = r*(r > 0)
-
-#        figure()
-#        subplot(211)
-#        imshow(g.T, cmap=cm.hot)
-#
-#        subplot(212)
-#        imshow(r.T, cmap=cm.hot)
-
-        #View3D([r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))])
-        return [r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))]
 
     def Unmix(self, data, mixMatrix, offset, ROI=[0,0,512, 512]):
-        import scipy.linalg
+        ''' Extract channels and do linear unmixing.
         
-        #from pylab import *
-        #from PYME.DSView.dsviewer_npy import View3D
+        TODO - separate out the channel extraction, shift correction and unmixing steps.
+        '''
+        import scipy.linalg
 
         umm = scipy.linalg.inv(mixMatrix)
 
         dsa = data.squeeze() - offset
-        
-        if self.axis == 'up_down':
-            g_ = dsa[:, :int(dsa.shape[1]/2)]
-            r_ = dsa[:, int(dsa.shape[1]/2):]
-            if self.flip:
-                r_ = np.fliplr(r_)
-            r_ = self._deshift(r_, ROI)
-        else:
-            g_ = dsa[:int(dsa.shape[0]/2), :]
-            r_ = dsa[int(dsa.shape[0]/2):, :]
-            if self.flip:
-                r_ = np.flipud(r_)
-            r_ = self._deshift(r_, ROI)
 
-        #print g_.shape, r_.shape
+        g_ = get_channel(dsa, ROI, False, self.chanROIs, chan=0)
+        r_ = get_channel(dsa, ROI, self.flip, self.chanROIs, chan=1)
+        r_ = self.shift_corr.correct(r_, (self.pixelsize, self.pixelsize), origin_nm=self.pixelsize*np.array(ROI[:2]))
+        
 
         g = umm[0,0]*g_ + umm[0,1]*r_
         r = umm[1,0]*g_ + umm[1,1]*r_
@@ -152,12 +225,4 @@ class Unmixer(object):
         g = g*(g > 0)
         r = r*(r > 0)
 
-#        figure()
-#        subplot(211)
-#        imshow(g.T, cmap=cm.hot)
-#
-#        subplot(212)
-#        imshow(r.T, cmap=cm.hot)
-
-        #View3D([r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))])
         return [r.reshape(r.shape + (1,)),g.reshape(r.shape + (1,))]

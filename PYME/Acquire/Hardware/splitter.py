@@ -187,7 +187,7 @@ class Splitter:
     def Unmix(self):
         dsa = self.scope.frameWrangler.currentFrame.squeeze()
 
-        return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
+        return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=self.scope.cam.GetROI())
 
 
 class UnMixSettingsPanel(wx.Panel):
