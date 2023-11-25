@@ -741,7 +741,8 @@ class LMAnalyser2(Plugin):
             self.progPan.fitResults = self.fitResults
             # self._ovl.points = np.vstack(
             #    (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
-            self._ovl.filter.setResults(self.fitResults)
+            if hasattr(self, '_ovl') and hasattr(self._ovl, 'filter'): # is this the correct check? should we have a valid _ovl?
+                self._ovl.filter.setResults(self.fitResults)
             self.numEvents = len(self.fitResults)
         
             try:
