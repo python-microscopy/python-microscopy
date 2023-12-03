@@ -3,6 +3,10 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 
 def _bdsClip(x, w, x0, iw):
+    '''
+    subtracts x0 (camera ROI origin) from x (which is relative to chip origin)
+    and clips w to fit within the image width
+    '''
     x -= x0
     if (x < 0):
         w += x
@@ -13,6 +17,10 @@ def _bdsClip(x, w, x0, iw):
     return x, w
 
 def get_splitter_rois(md, data_shape):
+    '''
+    Gets max-size common ROIs for the two 
+    channels of a splitter, relative to the data origin. 
+    '''
     x0, y0 = get_camera_roi_origin(md)
     
     if 'Splitter.Channel0ROI' in md.getEntryNames():
@@ -29,18 +37,18 @@ def get_splitter_rois(md, data_shape):
         yr = hg
         wr = data_shape[0]
         hr = data_shape[1] / 2
-     
-    #print yr, hr
     
+    # _bdsClip both clips to the image width and subtracts the origin
     xg, wg = _bdsClip(xg, wg, x0, data_shape[0])
     xr, wr = _bdsClip(xr, wr, x0, data_shape[0])
     yg, hg = _bdsClip(yg, hg, y0, data_shape[1])
     yr, hr = _bdsClip(yr, hr, y0, data_shape[1])
     
+    # find largest common ROI
+    # TODO - does this work  correctly for Flip=True??
     w = min(wg, wr)
     h = min(hg, hr)
     
-    #print yg, hg, yr, hr
     
     if ('Splitter.Flip' in md.getEntryNames() and not md.getEntry('Splitter.Flip')):
         step = 1
@@ -50,6 +58,13 @@ def get_splitter_rois(md, data_shape):
         return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg + hg-h), int(yg + hg), 1), slice(int(yr + h), int(yr - 1), step))
 
 def map_splitter_coords(md, data_shape, x, y):
+    '''
+    Legacy code for mapping spltter coordinates
+
+    DO NOT USE
+    '''
+    import warnings
+    warnings.warn('map_splitter_coords is deprecated, use map_splitter_coords_ instead', DeprecationWarning)
     vx, vy, _ = md.voxelsize_nm
 
     x0, y0 = get_camera_roi_origin(md)
@@ -92,17 +107,29 @@ def map_splitter_coords(md, data_shape, x, y):
     return np.clip(xn, 0, w - 1), np.clip(yn, 0, h - 1)
 
 def map_splitter_coords_(x, y, xslices, yslices, flip=True):
+    '''
+    Translate coordinates from the camera frame into the 
+    frame of the individual splitter ROI the point lies in.
+    '''
     xo = np.zeros_like(x)
     yo = np.zeros_like(y)
-    for i in range(len(xslices)):
+    for i in range(len(xslices)): #loop over splitter ROIs
         x0 = min(xslices[i].start, xslices[i].stop)
         x1 = max(xslices[i].start, xslices[i].stop)
         y0 = min(yslices[i].start, yslices[i].stop)
         y1 = max(yslices[i].start, yslices[i].stop)
         
+        # Which points lie within this ROI?
+        # Use a mask to avoid looping over points
+        # individually. We expect msk to be one for only one
+        # ROI in the list of ROIs (i.e. we require splitter ROIs
+        # to be non-overlapping). 
         msk = (x > x0) & (x < x1) & (y > y0) & (y < y1)
         
-        xo += msk*(x-x0)
+        # set the position relative to this ROI origin for all points in *this* ROI
+        # Because we expect msk to be one for only one ROI, this addition is equivalent to 
+        # masked assignment
+        xo += msk*(x-x0) 
         
         if flip and (i > 0):
             yo += msk*(y1 - y)
