@@ -17,6 +17,25 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin
 #     return x, w
 
 def _get_supported_sub_roi(x, w, x0, iw, flip=0):
+    '''
+    Find the largest sub-ROI which is fully covered in all
+    channenls for a given acquisition ROI
+
+    Parameters
+    ----------
+    x : array_like, int
+        The origin of the splitter channel ROIs (0-indexed)
+        relative to the uncropped sensor.
+    w : array_like (or constant), int
+        The width of the splitter channel ROIs.
+    x0 : int
+        The origin of the acquisition ROI (0-indexed).  
+    iw : int
+        The width of the acquisition ROI / the acquired image.
+    flip : array_like (or constant), int
+        Whether the channel was flipped by the splitter. 
+        Int masquerading as a boolean. 
+    '''
     _rx0 = np.maximum(x0-x, 0)
     _rx1 = (np.minimum(x+w, iw + x0) - (x))
 
