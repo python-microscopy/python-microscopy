@@ -10,11 +10,18 @@ def _bdsClip(x, w, x0, iw):
     x -= x0
     if (x < 0):
         w += x
-        x = 0
+        x = 0    
     if ((x + w) > iw):
         w -= (x + w) - iw
     
     return x, w
+
+def _get_supported_sub_roi(x, w, x0, iw):
+    rx0 = np.maximum(x0-x, 0)
+    rx1 = (np.minimum(x+w, iw + x0) - (x))
+    print(rx0, rx1)
+    return rx0.max(), rx1.min()
+
 
 def get_splitter_rois(md, data_shape):
     '''
@@ -38,21 +45,29 @@ def get_splitter_rois(md, data_shape):
         wr = data_shape[0]
         hr = data_shape[1] / 2
     
-    # _bdsClip both clips to the image width and subtracts the origin
-    xg, wg = _bdsClip(xg, wg, x0, data_shape[0])
-    xr, wr = _bdsClip(xr, wr, x0, data_shape[0])
-    yg, hg = _bdsClip(yg, hg, y0, data_shape[1])
-    yr, hr = _bdsClip(yr, hr, y0, data_shape[1])
+    rx0, rx1 = _get_supported_sub_roi(np.array([xg, xr]), np.array([wg, wr]), x0, data_shape[0])
+    ry0, ry1 = _get_supported_sub_roi(np.array([yg, yr]), np.array([hg, hr]), y0, data_shape[1])
+
+    print(rx0, rx1, ry0, ry1)
+
+    # # _bdsClip both clips to the image width and subtracts the origin
+    # xg, wg = _bdsClip(xg, wg, x0, data_shape[0])
+    # xr, wr = _bdsClip(xr, wr, x0, data_shape[0])
+    # yg, hg = _bdsClip(yg, hg, y0, data_shape[1])
+    # yr, hr = _bdsClip(yr, hr, y0, data_shape[1])
     
-    # find largest common ROI
-    # TODO - does this work  correctly for Flip=True??
-    w = min(wg, wr)
-    h = min(hg, hr)
+    # # find largest common ROI
+    # # TODO - does this work  correctly for Flip=True??
+    # w = min(wg, wr)
+    # h = min(hg, hr)
     
     
     if ('Splitter.Flip' in md.getEntryNames() and not md.getEntry('Splitter.Flip')):
         step = 1
-        return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg), int(yg + h), 1), slice(int(yr), int(yr + h), step))
+        return (slice(int(xg+rx0 - x0), int(xg + rx1-x0), 1), 
+                slice(int(xr+rx0 - x0), int(xr + rx1 - x0), 1), 
+                slice(int(yg + ry0 - y0), int(yg + ry1 -y0), 1), 
+                slice(int(yr + ry0 -y0), int(yr + ry1-y0), step))
     else:
         step = -1
         return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg + hg-h), int(yg + hg), 1), slice(int(yr + h), int(yr - 1), step))
@@ -190,7 +205,7 @@ def split_image(md, img):
     g = img[xgs, ygs]
     r = img[xrs, yrs]
 
-    # print xgs, xrs, ygs, yrs, g.shape, r.shape
+    print(xgs, xrs, ygs, yrs, g.shape, r.shape, img.shape)
 
     return np.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)), 2)
 
