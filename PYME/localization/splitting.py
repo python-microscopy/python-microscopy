@@ -23,7 +23,7 @@ def _get_supported_sub_roi(x, w, x0, iw, flip=0):
     #print(rx0, rx1, flip, w)
     rx0 = (1-flip)*_rx0 + flip*(w-_rx1)
     rx1 = (1-flip)*_rx1 + flip*(w-_rx0)
-    print(rx0, rx1)
+    #print(rx0, rx1)
     return rx0.max(), rx1.min()
 
 
@@ -203,7 +203,7 @@ def split_image(md, img):
     g = img[xgs, ygs]
     r = img[xrs, yrs]
 
-    print(xgs, xrs, ygs, yrs, g.shape, r.shape, img.shape)
+    #print(xgs, xrs, ygs, yrs, g.shape, r.shape, img.shape)
 
     return np.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)), 2)
 
