@@ -343,7 +343,8 @@ class Correlator(object):
             self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
             eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
             
-            self.lockActive = self.lockFocus and (cCoeff > .5*self.corrRef)
+            #self.lockActive = self.lockFocus and (cCoeff > .5*self.corrRef)
+            self.lockActive = self.lockFocus
             if self.lockActive:
                 if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
@@ -414,6 +415,7 @@ class ServerThread(threading.Thread):
         threading.Thread.__init__(self)
         import Pyro.core
         import Pyro.naming
+        from PYME.Acquire.Hardware.Piezos.offsetPiezo import piezoOffsetProxy
 
         import socket
         ip_addr = socket.gethostbyname(socket.gethostname())
