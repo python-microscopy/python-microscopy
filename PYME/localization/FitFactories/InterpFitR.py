@@ -89,7 +89,8 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
 
-    vx, vy = metadata.voxelsize_nm
+    #vx, vy = metadata.voxelsize_nm
+    vx, vy, vz = metadata.voxelsize_nm
     
     #position in nm from camera origin
     roi_x0, roi_y0 = get_camera_roi_origin(metadata)
@@ -162,7 +163,8 @@ class PSFFitFactory(FFBase.FFBase):
         #this is just here to make sure we clear our calibration when we change models        
         startPosEstimator = __import__('PYME.localization.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'localization', 'FitFactories', 'zEstimators'])        
         
-        if interpolator.setModelFromFile(md.PSFFile, md):
+        #if interpolator.setModelFromFile(md.PSFFile, md):
+        if interpolator.setModelFromFile(md['PSFFile'], md):
             print('model changed')
             startPosEstimator.splines.clear()
 
