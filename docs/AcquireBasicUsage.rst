@@ -51,7 +51,10 @@ Multiple camera support
 
 PYMEAcquire has some basic support for multiple cameras. If multiple cameras are
 defined in the initialisation file, a control will be shown permitting switching
-between the cameras.
+between the cameras. Additionally, multiple instances of PYMEAcquire can be run
+simultaneously, each with a different camera selected. Server backends (action 
+queues, or the full acquire server) can then be used to coordinate multi-
+camera acquisition protocols.
 
 Acquiring data
 ==============
@@ -86,3 +89,7 @@ sequence (by clicking on **Series**), or one in which the focus is stepped at re
 intervals (**Z-Series**). The Z-Series uses the z-stepping regime defined using the
 Z-stack control.
 
+Changing the Graphical User Interface (GUI)
+===========================================
+The default GUI for PYMEAcquire is based on the WX framework. We are additionally
+developing a web GUI. Use of this is described in :ref:`PYMEAcquire Web GUI <PYMEAcquireWebGUI>`.
