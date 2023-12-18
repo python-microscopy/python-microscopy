@@ -219,9 +219,9 @@ class iXonCamera(Camera):
         Parameters
         ----------
         mode : int, optional
-            0: The EM Gain is controlled by DAC settings in the range 0-255. Default mode.
-            1: The EM Gain is controlled by DAC settings in the range 0-4095.
-            2: Linear mode.
+            0: The EM Gain is controlled by settings in the range 0-255. Default mode
+            1: The EM Gain is controlled by settings in the range 0-4095
+            2: Linear mode
             3: Real EM gain
 
         Raises
