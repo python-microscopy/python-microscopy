@@ -2848,3 +2848,36 @@ class RawADUToElectronsPerSecond(ModuleBase):
         series_epers.mdh['Camera.ADOffset'] = 0
 
         return series_epers
+    
+
+@register_module('Rotate180')
+class Rotate180(Filter):
+    """
+    Rotate the image 180 degrees
+
+    Parameters
+    ----------
+    input_name : PYME.IO.ImageStack
+    output_name : PYME.IO.ImageStack
+    """
+    def applyFilter(self, data, chanNum, i, image0):
+        return data[::-1,::-1]
+    
+
+@register_module('SplineFitBgSub')
+class SplineFitBgSub(Filter):
+    """
+    Background subtraction using spline fit
+
+    Parameters
+    ----------
+    smooth : Positive smoothing factor defined for estimation
+    """
+    smooth = Float(1e7)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        from scipy.interpolate import RectBivariateSpline
+        x = np.arange(data.shape[0])
+        y = np.arange(data.shape[1])
+        fit = RectBivariateSpline(x, y, data, s=self.smooth)
+        return data-fit(x,y) - np.min(data-fit(x,y))
