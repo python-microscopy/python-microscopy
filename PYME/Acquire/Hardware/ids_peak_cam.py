@@ -9,12 +9,15 @@ import ctypes
 import queue
 from PYME.Acquire import eventLog as event_log
 
-# first install the IDS Peak SDK (our interface develoepd on version 2.6.2.0)
-# install ids_peak python package from their wheel in your IDS peak installation folder, e.g.:
+# The IDS Peak API supports uEye+ cameras (U3/GV models) as well as "almost all" uEye (UI models) 
+# to use this implementation, first install the IDS Peak SDK (our interface developed on version 2.6.2.0)
+# You'll have to download the IDS Peak SDK from the IDS website and install it.
+# install the ids_peak python package from their wheel in your IDS peak installation folder, e.g.:
 # C:\Program Files\IDS\ids_peak\sdk\api\binding\python\wheel\x86_[32|64]
 # pip install ids_peak-<version>-cp<version>-cp<version>[m]-[win32|win_amd64].whl
-# There are some options for 'basic image processing' and 'auto features', but I
-# installed the most generic one I could find, for 64 bit windows, python 3.8:
+# You can ignore the IPL / AFL wheels - these are for 'basic image processing' and 'auto features' libraries
+# which we don't use. We use the generic SDK (rather than the 'comfort' SDK).
+# For my installation, 64 bit windows, python 3.8, I installed ids_peak with:
 # python -m pip install "C:\Program Files\IDS\ids_peak\generic_sdk\api\binding\python\wheel\x86_64\ids_peak-1.6.2.0-cp38-cp38-win_amd64.whl"
 
 logger = logging.getLogger(__name__)
@@ -24,7 +27,6 @@ def find_ids_peak_cameras():
     device_manager = peak.DeviceManager.Instance()
     device_manager.Update()
     return device_manager.Devices()
-
 
 class IDS_Camera(Camera):
     def __init__(self, device_number=0, nbits=8):
