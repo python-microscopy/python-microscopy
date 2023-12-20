@@ -213,9 +213,18 @@ class iXonCamera(Camera):
 
         
     def SetEMGainMode(self, mode=0):
-        """change the calibration mode used for EMGain values
-
+        """Change the calibration mode used for EMGain values
+        
         See Andor manual / SDK for more information.
+
+        NOTE: Use anything other than mode 0 (default) with caution as mode 0 is assumed
+        by the gain calibration and reporting functionality in PYMEAcquire. This code replaces
+        and removes the need for the more advanced modes in the SDK, which are not available for all cameras. 
+        If you do use anything other than mode 0, ensure that gain is set at startup (immediately after creating the
+        camera object) and does not change between sessions. If changing the gain mode after
+        you have already calibrated the camera, ensure that you run a re-calibration after
+        changing the gain mode.
+        
         Parameters
         ----------
         mode : int, optional
@@ -228,6 +237,8 @@ class iXonCamera(Camera):
         ------
         RuntimeError
             if the mode cannot be set
+
+        
         """
         ret = ac.SetEMGainMode(mode)
         if not ret == ac.DRV_SUCCESS:
