@@ -57,12 +57,17 @@ class IDS_Camera(Camera):
         self._data_stream_node_map.FindNode("StreamBufferHandlingMode").SetCurrentEntry("OldestFirst")
 
         # set ROI size to full usable sensor size ---------------------
-        # get min offsets:
+        # get min offsets. Note that some IDS cameras do not use the full chip.
         self._offset_x_min = self._node_map.FindNode("OffsetX").Minimum()
         self._offset_y_min = self._node_map.FindNode("OffsetY").Minimum()
-        # get max sizes:
+        self._offset_x_max = self._node_map.FindNode("OffsetX").Maximum()
+        self._offset_y_max = self._node_map.FindNode("OffsetY").Maximum()
+        self._width_min = self._node_map.FindNode("Width").Minimum()
+        self._height_min = self._node_map.FindNode("Height").Minimum()
         self._width_max = self._node_map.FindNode("Width").Maximum()
         self._height_max = self._node_map.FindNode("Height").Maximum()
+        self._width_increment = self._node_map.FindNode("Width").Increment()
+        self._height_increment = self._node_map.FindNode("Height").Increment()
         # set ROI to full sensor size:
         self._node_map.FindNode("OffsetX").SetValue(self._offset_x_min)
         self._node_map.FindNode("OffsetY").SetValue(self._offset_y_min)
@@ -354,6 +359,44 @@ class IDS_Camera(Camera):
         x1 = x0 + self._node_map.FindNode("Width").Value()
         y1 = y0 + self._node_map.FindNode("Height").Value()
         return (x0, y0, x1, y1)
+    
+    def SetROI(self, x1, y1, x2, y2):
+        """
+        Set the ROI via coordinates (as opposed to via an index).
+
+        Parameters
+        ----------
+        x1 : int
+            Left x-coordinate, zero-indexed
+        y1 : int
+            Top y-coordinate, zero-indexed
+        x2 : int
+            Right x-coordinate, (excluded from ROI)
+        y2 : int
+            Bottom y-coordinate, (excluded from ROI)
+
+        Returns
+        -------
+        None
+
+
+        """
+        logger.debug('setting ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
+        x1 = int(np.clip(x1, self._offset_x_min, self._offset_x_max))
+        y1 = int(np.clip(y1, self._offset_y_min, self._offset_y_max))
+        x2 = int(np.clip(x2, x1 + self._width_min, self._width_max))
+        y2 = int(np.clip(y2, y1 + self._height_min, self._height_max))
+        x2 -= (x2 - x1) % self._width_increment  # ROI must be a multiple of increment
+        y2 -= (y2 - y1) % self._height_increment
+        logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
+
+        self._node_map.FindNode("OffsetX").SetValue(x1)
+        self._node_map.FindNode("OffsetY").SetValue(y1)
+        self._node_map.FindNode("Width").SetValue(x2 - x1)
+        self._node_map.FindNode("Height").SetValue(y2 - y1)
+        # using ueye api we used to have to set integration time after adjusting
+        # ROI. Not sure if we need that here or not. Leave it for not just in case.
+        self.SetIntegTime(self.GetIntegTime())
 
     def SetAcquisitionMode(self, mode):
         """Set a flag so next StartExposure can toggle between continuous and single shot mode.
@@ -394,3 +437,23 @@ class IDS_Camera(Camera):
 
     def GetCycleTime(self):
         return 1 / self.GetFPS()
+
+    def GetCCDHeight(self):
+        """
+        Returns
+        -------
+        int
+            The sensor height in pixels
+
+        """
+        return self._height_max
+    
+    def GetCCDWidth(self):
+        """
+        Returns
+        -------
+        int
+            The sensor width in pixels
+
+        """
+        return self._width_max
