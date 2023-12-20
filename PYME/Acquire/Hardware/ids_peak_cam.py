@@ -29,6 +29,14 @@ def find_ids_peak_cameras():
     return device_manager.Devices()
 
 class IDS_Camera(Camera):
+    """
+
+    Notes
+    -----
+    Camera noise_properties dictionary will be keyed off the gain_mode property,
+    which corresponds to the bit-depth for this class. See uEye example in
+    PYME.Acquire.Hardware.camera_noise.
+    """
     def __init__(self, device_number=0, nbits=8):
         self.initialized = False
         super().__init__()
@@ -457,3 +465,7 @@ class IDS_Camera(Camera):
 
         """
         return self._width_max
+    
+    @property
+    def _gain_mode(self):
+        return '%d-bit' % self.nbits
