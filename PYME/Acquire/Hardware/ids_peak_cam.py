@@ -340,6 +340,11 @@ class IDS_Camera(Camera):
         int
             Number of images in buffer
         """
+        # can enable camera-side buffer queue monitoring, but seems to return total number
+        # of frames acquired, not number of full frames waiting in the queue.
+        # self._data_stream_node_map.FindNode("BufferStatusMonitoringEnabled").SetValue(True)
+        # return self._data_stream_node_map.FindNode("BufferStatusOutputQueueCount").Value()
+        
         return self.n_full
     
     def GetBufferSize(self):
