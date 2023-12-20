@@ -40,6 +40,11 @@ from PYME.Acquire import eventLog
 
 from PYME.Acquire.Hardware.Camera import Camera
 class iXonCamera(Camera):
+    """ Andor iXon camera class
+
+    Note that the camera will initialize in the default EM gain mode (0)
+    with EMGain of 0, and the shutter open.
+    """
     numpy_frames=False
 
     @property
@@ -184,9 +189,7 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
-        ret = ac.SetEMGainMode(0)
-        if not ret == ac.DRV_SUCCESS:
-            raise RuntimeError('Error setting EM Gain Mode: %s' % ac.errorCodes[ret])
+        self.SetEMGainMode(0) # use the default
 
         self.EMGain = 0 #start with zero EM gain
         ret = ac.SetEMCCDGain(self.EMGain)
@@ -209,7 +212,37 @@ class iXonCamera(Camera):
             print(('Error setting shutter: %s' % ac.errorCodes[ret]))
 
         
+    def SetEMGainMode(self, mode=0):
+        """Change the calibration mode used for EMGain values
+        
+        See Andor manual / SDK for more information.
 
+        NOTE: Use anything other than mode 0 (default) with caution as mode 0 is assumed
+        by the gain calibration and reporting functionality in PYMEAcquire. This code replaces
+        and removes the need for the more advanced modes in the SDK, which are not available for all cameras. 
+        If you do use anything other than mode 0, ensure that gain is set at startup (immediately after creating the
+        camera object) and does not change between sessions. If changing the gain mode after
+        you have already calibrated the camera, ensure that you run a re-calibration after
+        changing the gain mode.
+        
+        Parameters
+        ----------
+        mode : int, optional
+            0: The EM Gain is controlled by settings in the range 0-255. Default mode
+            1: The EM Gain is controlled by settings in the range 0-4095
+            2: Linear mode
+            3: Real EM gain
+
+        Raises
+        ------
+        RuntimeError
+            if the mode cannot be set
+
+        
+        """
+        ret = ac.SetEMGainMode(mode)
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error setting EM Gain Mode: %s' % ac.errorCodes[ret])
 
     def _InitSpeedInfo(self):
         #temporary vars for function returns
