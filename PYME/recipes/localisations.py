@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Str, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Str, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr, FileOrURI
 
 import numpy as np
 from PYME.IO import tabular
@@ -1304,3 +1304,80 @@ class AutocorrelationDriftCorrection(ModuleBase):
         out.setMapping('y', 'y + dy')
         
         return out
+
+@register_module('MapAstigZ')
+class MapAstigZ(ModuleBase):
+    """
+
+    Uses astigmatism calibration (widths of PSF along each dimension as a function of z) to determine the z-position of
+    localizations relative to the focal plane of the frame during which it was imaged. Note this is the single channel version
+    and does not work for combined biplane and astigmatism (see Multiview.MapAstigZ). It also uses the more robust but less precise
+    dsigma method.
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    astigmatism_calibration_location : traits.File
+        file path or URL to astigmatism calibration file
+
+    Returns
+    -------
+    output_name : traits.Output
+        output is a json wrapped by PYME.IO.ragged.RaggedCache
+
+    Notes
+    -----
+
+    """
+    input_name = Input('merged')
+
+    astigmatism_calibration_location = FileOrURI('')
+    rough_knot_spacing = Float(50.)
+    z_scale = Float(1.0)
+
+    output_name = Output('zmapped')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points.astigmatism import astigTools
+        from PYME.IO import unifiedIO
+        from PYME.IO import MetaDataHandler
+        import json
+
+        inp = namespace[self.input_name]
+
+        if 'mdh' not in dir(inp):
+            raise RuntimeError('MapAstigZ needs metadata')
+
+        if self.astigmatism_calibration_location == '':  # grab calibration from the metadata
+            calibration_location = inp.mdh['Analysis.AstigmatismMapID']
+        else:
+            calibration_location = self.astigmatism_calibration_location
+
+        s = unifiedIO.read(calibration_location)
+
+        astig_calibrations = json.loads(s)
+
+        mapped = tabular.MappingFilter(inp)
+
+        # hack to make this work for non-multi-view data
+        if ('sigmax' not in mapped.keys()) and (inp.mdh.getOrDefault('Multiview.NumROIs', 1) == 1):
+            # if we are single channel it is safe to define sigmax0, sigmay0 as sigmax, sigmay
+            # without any folding etc ...
+            mapped.setMapping('sigmax', 'fitResults_sigmax')
+            mapped.setMapping('sigmay', 'fitResults_sigmay')
+            mapped.setMapping('error_sigmax', 'fitError_sigmax')
+            mapped.setMapping('error_sigmay', 'fitError_sigmay')
+
+
+        z, zerr = astigTools.lookup_astig_z_dsigma(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
+
+        mapped.addColumn('astigmatic_z', z)
+        mapped.addColumn('astigmatic_z_lookup_error', zerr)
+        mapped.addVariable('z_scale', self.z_scale)
+        mapped.setMapping('z', 'astigmatic_z*z_scale + z')
+
+        mapped.mdh = MetaDataHandler.NestedClassMDHandler(inp.mdh)
+        mapped.mdh['Analysis.astigmatism_calibration_used'] = calibration_location
+
+        namespace[self.output_name] = mapped
