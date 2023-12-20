@@ -83,6 +83,13 @@ class IDS_Camera(Camera):
         self._node_map.FindNode("Height").SetValue(self._height_max)
         # ----------------------------------------------------------------
 
+        # find out if this model supports board/sensor temperature:
+        try:
+            self._node_map.FindNode("DeviceTemperature")
+            self._has_temperature = True
+        except:
+            self._has_temperature = False
+
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
         # allocate buffers
         # self.allocate_buffers()
@@ -440,8 +447,10 @@ class IDS_Camera(Camera):
         return self.serial_number
     
     def GetCCDTemp(self):
-        # FIXME
-        return 1
+        if self._has_temperature:
+            return self._node_map.FindNode("DeviceTemperature").Value()  # [degrees C]
+        else:
+            return 0
 
     def GetCycleTime(self):
         return 1 / self.GetFPS()
