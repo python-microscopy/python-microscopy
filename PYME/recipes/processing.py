@@ -2877,6 +2877,7 @@ class SplineFitBgSub(Filter):
     smooth : Positive smoothing factor defined for estimation
     """
     smooth = Float(1e7)
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
     
     def applyFilter(self, data, chanNum, i, image0):
         from scipy.interpolate import RectBivariateSpline
