@@ -6,14 +6,9 @@ Modifying PYMEAcquire and writing hardware drivers
 Initial setup
 =============
 
-- Download and install a *development* build following the instructions at
-  http://python-microscopy.org/doc/Installation/InstallationFromSource.html
+- Download and install a *development* build following the instructions at :ref:`installation`.
 
-- Run PYMEAcquire (either from the console, or by making a shortcut to it). When run without parameters, it uses
-  `PYME/Acquire/Scripts/init.py` as a startup script and should run with a simulated camera. Copy and rename this script
-  keeping it in the `Acquire/Scripts` directory (this will be your new hardware config script, and you can slowly edit
-  it to use real hardware rather than the simulated bits) [NB - support for init scripts in other directories is on our
-  wishlist]. You can specify which initialization script to use with the `-i` command line option to `PYMEAcquire`
+- see :ref:`configuringpymeacquire` for how to set up an 'init' script to configure your microscope.
 
 Making a camera driver
 ======================
@@ -23,8 +18,6 @@ This can be a little involved
 - Subclass `PYME.Acquire.Hardware.Camera.Camera` and implement the methods for your camera. It will probably be hepful to refer
   the drivers of other similar cameras when doing this. Note that for most sCMOS cameras it is the drivers responsibility to
   handle circular buffers and the like. The Zyla code might be a good place to go for inspiration here.
-
-- [optional] In the same file as your new camera, also add a class which inherits from both PYME.Acquire.Hardware.Camera.MultiviewMixIn.
 
 - change your `init_XXX.py` script to initialize your new camera class instead of the fake camera. Register the camera with the microscope
   using `scope.register_camera()`.
