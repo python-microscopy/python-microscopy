@@ -2860,6 +2860,9 @@ class Rotate180(Filter):
     input_name : PYME.IO.ImageStack
     output_name : PYME.IO.ImageStack
     """
+    
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?') # our code only works in 2D, so restrict dimensionality choices
+    
     def applyFilter(self, data, chanNum, i, image0):
         return data[::-1,::-1]
     
