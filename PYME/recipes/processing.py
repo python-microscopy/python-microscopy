@@ -2870,7 +2870,7 @@ class Rotate180(Filter):
 @register_module('SplineFitBackgroundSubtract')
 class SplineFitBackgroundSubtract(Filter):
     """
-    Background subtraction using spline fit
+    Background subtraction using a 2D smoothing spline fit
 
     Parameters
     ----------
