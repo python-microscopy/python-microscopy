@@ -2879,7 +2879,7 @@ class SplineFitBgSub(Filter):
     smooth = Float(1e7)
     dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
     
-    def applyFilter(self, data, chanNum, i, image0):
+    def apply_filter(self, data, voxelsize):
         from scipy.interpolate import RectBivariateSpline
         x = np.arange(data.shape[0])
         y = np.arange(data.shape[1])
