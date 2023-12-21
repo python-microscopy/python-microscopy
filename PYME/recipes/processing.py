@@ -2867,7 +2867,7 @@ class Rotate180(Filter):
         return data[::-1,::-1]
     
 
-@register_module('SplineFitBgSub')
+@register_module('SplineFitBackgroundSubtract')
 class SplineFitBackgroundSubtract(Filter):
     """
     Background subtraction using spline fit
