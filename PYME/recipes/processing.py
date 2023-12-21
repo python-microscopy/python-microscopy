@@ -2853,7 +2853,7 @@ class RawADUToElectronsPerSecond(ModuleBase):
 @register_module('Rotate180')
 class Rotate180(Filter):
     """
-    Rotate the image 180 degrees
+    Rotate the image 180 degrees in x-y 
 
     Parameters
     ----------
