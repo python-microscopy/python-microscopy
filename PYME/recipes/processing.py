@@ -2863,7 +2863,7 @@ class Rotate180(Filter):
     
     dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?') # our code only works in 2D, so restrict dimensionality choices
     
-    def applyFilter(self, data, chanNum, i, image0):
+    def apply_filter(self, data, voxelsize):
         return data[::-1,::-1]
     
 
