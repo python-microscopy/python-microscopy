@@ -139,7 +139,7 @@ clicking the **Go** button. The results will automatically be saved as ``.h5r`` 
 ``PYMEDATADIR`` directory (if the environment variable was set earlier), or in a directory
 called ``PYMEData`` in the users home directory (``c:\\Users\\<username>\\`` under windows).
 
-The resulting ``.h5r`` files can be opened in :ref:`VisGUI <VisGUI>`.
+The resulting ``.h5r`` files can be opened in :ref:`PYMEVisualise <visgui>`.
 
 
 Localizing directly from PYMEAcquire
@@ -154,7 +154,7 @@ Batching analysis
 =================
 
 To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI``.
-This will require the optional dependency django (See also :ref:`cluster setup <cluster_install>`).
+This will require the optional dependency django (See also :ref:`cluster setup <clusterinstall>`).
 
 
 .. rubric:: Footnotes
