@@ -153,7 +153,7 @@ you can either click the 'Analyse' button in spooling progress section, or your 
 Batching analysis
 =================
 
-To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI=True``.
+To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI``.
 This will require the optional dependency django (See also :ref:`cluster setup <cluster_install>`).
 
 
