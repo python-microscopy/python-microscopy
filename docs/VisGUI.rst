@@ -1,4 +1,4 @@
-.. _visgui:
+.. _oldvisgui:
 
 **PYMEVisualise (VisGUI)** - Visualising Localization Data Sets
 ***************************************************************
