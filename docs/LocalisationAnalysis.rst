@@ -34,7 +34,7 @@ python through the firewall, which you should accept.
 
 .. note::
 
-   To distribute analysis over a computer cluster, see :ref:`cluster setup <cluster_install>`.
+   To distribute analysis over a computer cluster, see :ref:`cluster setup <clusterinstall>`.
 
 Loading data
 ============
