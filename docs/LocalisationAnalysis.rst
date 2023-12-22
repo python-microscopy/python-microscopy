@@ -13,7 +13,7 @@ Starting analysis infrastructure
 ================================
 
 To improve performance, PYME distributes localization analysis over multiple worker processes, with a server process
-used for communication. These can either all be on the same machine, or be distributed across a network/cluster. The
+used for communication. These can either all be on the same machine, or be distributed across a network/cluster (see :ref:`cluster setup <clusterinstall>`). The
 server and worker processes need to be running before starting the analysis. To launch all components on a single machine
 , launch ``PYME>PYMEClusterOfOne`` from the start menu (Windows), or run
 
@@ -32,9 +32,6 @@ python through the firewall, which you should accept.
    rather than a higher level analysis directory. We've done a reasonable ammount of testing, but if something doesn't
    work ``launchWorkers`` is still available (for now, python 2.7 only). Please also let us know so we can fix it.
 
-.. note::
-
-   To distribute analysis over a computer cluster, see :ref:`cluster setup <clusterinstall>`.
 
 Loading data
 ============
