@@ -93,6 +93,29 @@ class StandardFrameSource(object):
     def disconnect(self, callback):
         self._on_frame.disconnect(callback)
 
+class OIDICFrameSource(StandardFrameSource):
+    """ Emit frames from the camera to the tracking code only for a single OIDIC orientation.
+
+        Currently a straw man / skeleton pending details of OIDIC code.
+    
+    """
+
+    def __init__(self, frameWrangler, oidic_controller, oidic_orientation=0):
+        super().__init__(frameWrangler)
+
+        self._oidic = oidic_controller
+        self._target_orientation = oidic_orientation
+
+    def tick(self, *args, **kwargs):
+        # FIXME - change to match actual naming etc ... in OIDIC code.
+        # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
+        # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
+        # registered with the frameWrangler?
+        if self._oidic.orientation == self._target_orientation:
+            super().tick(*args, **kwargs)
+        else:
+            # clobber all frames coming from camera when not in the correct DIC orientation
+            pass
 class Correlator(object):
     def __init__(self, scope, piezo=None, frame_source=None):
         self.piezo = piezo
