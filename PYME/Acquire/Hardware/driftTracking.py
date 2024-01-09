@@ -97,6 +97,8 @@ class OIDICFrameSource(StandardFrameSource):
     """ Emit frames from the camera to the tracking code only for a single OIDIC orientation.
 
         Currently a straw man / skeleton pending details of OIDIC code.
+
+        TODO - should this reside here, or with the other OIDIC code (which I believe to be in a separate repo)?
     
     """
 
