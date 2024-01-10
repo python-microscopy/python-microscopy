@@ -127,30 +127,35 @@ class VisGUICore(object):
         
     
     def OnIdle(self, event=None):
-        print('Ev Idle')
+        """ Refresh the glDisplay *after* all windows have been created and data loaded.
+       
+        TODO - rename, as the OnIdle name is a historical artifact (was originally called using an wx.EVT_IDLE binding, 
+        now uses wx.CallLater with a delay.
+        """
+        #logger.debug('Ev Idle')
         if self.glCanvas._is_initialized and not self.refv:
             self.refv = True
-            print((self.viewMode, self.pointDisplaySettings.colourDataKey))
+            #logger.debug((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
-            
+           
             if self._new_layers:
                 pass
-                # if self.pipeline.ready and not len(self.layers) > 0:
-                #     l = self.add_layer(method='points')
-                #     if 't' in self.pipeline.keys():
-                #         l.engine.set(vertexColour='t')
-                #     elif 'z' in self.pipeline.keys():
-                #         l.engine.set(vertexColour='t')
+               # if self.pipeline.ready and not len(self.layers) > 0:
+               #     l = self.add_layer(method='points')
+               #     if 't' in self.pipeline.keys():
+               #         l.engine.set(vertexColour='t')
+               #     elif 'z' in self.pipeline.keys():
+               #         l.engine.set(vertexColour='t')
             else:
                 self.RefreshView()
                 self.displayPane.OnPercentileCLim(None)
                 
             self.glCanvas.Refresh()
             self.glCanvas.Update()
-            print('refreshed')
+            logger.debug('Refreshed glCanvas after load')
             
     def GenPanels(self, sidePanel):
-        print('GenPanels')
+        logger.debug('GenPanels')
         self.GenDataSourcePanel(sidePanel)
         
         #if HAVE_DRIFT_CORRECTION:
@@ -193,7 +198,7 @@ class VisGUICore(object):
     def GenDataSourcePanel(self, pnl):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
         
-        print('Creating datasource panel')
+        logger.debug('Creating datasource panel')
         item = afp.foldingPane(pnl, -1, caption="Data Pipeline", pinned = True)
 
         pan = wx.Panel(item, -1)
@@ -711,11 +716,14 @@ class VisGUICore(object):
                 self.add_pointcloud_layer(ds_name=('output.' + c), **layer_defaults.new_layer_settings('points_channel', i, overrides=dict(visible=False)))
                 
     def _populate_open_args(self, filename):
+        from PYME.warnings import warn
         args = {}
     
         if os.path.splitext(filename)[1] == '.h5r':
             pass
         elif os.path.splitext(filename)[1] == '.hdf':
+            pass
+        elif os.path.splitext(filename)[1] == '.h5ad':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
@@ -732,6 +740,7 @@ class VisGUICore(object):
                 
                     if not ret == wx.ID_OK:
                         dlg.Destroy()
+                        logger.info("opening Matlab file was canceled")
                         return #we cancelled
                 
                     args['FieldNames'] = dlg.GetFieldNames()
@@ -750,6 +759,7 @@ class VisGUICore(object):
                 
                     if not ret == wx.ID_OK:
                         dlg.Destroy()
+                        logger.info("opening Matlab file was canceled")
                         return #we cancelled
 
                     args['FieldNames'] = dlg.GetFieldNames()
@@ -767,6 +777,8 @@ class VisGUICore(object):
         
             if not ret == wx.ID_OK:
                 dlg.Destroy()
+                logger.info("opening Text/CSV file was canceled")
+                warn('Open file was canceled by user') # example how we could bring up a message box
                 return #we cancelled
             
             text_options = {'columnnames': dlg.GetFieldNames(),
@@ -792,13 +804,15 @@ class VisGUICore(object):
         while len(self.layers) > 0:
             self.layers.pop()
         
-        print('Creating Pipeline')
+        logger.debug('Creating Pipeline')
         if filename is None and not ds is None:
             self.pipeline.OpenFile(ds=ds)
         else:
             args = self._populate_open_args(filename)
+            if args is None:
+                return
             self.pipeline.OpenFile(filename, **args)
-        print('Pipeline Created')
+        logger.debug('Pipeline Created')
         
         #############################
         #now do all the gui stuff
@@ -812,7 +826,7 @@ class VisGUICore(object):
             self._createNewTabs()
             
             #self.CreateFoldPanel()
-            print('Gui stuff done')
+            logger.debug('Gui stuff done')
         
         try:
             if recipe_callback:
@@ -828,9 +842,9 @@ class VisGUICore(object):
     def OpenChannel(self, filename, recipe_callback=None, channel_name=''):
         args = self._populate_open_args(filename)
     
-        print('Creating Pipeline')
+        logger.debug('Creating Pipeline')
         self.pipeline.OpenChannel(filename, channel_name=channel_name, **args)
-        print('Pipeline Created')
+        logger.debug('Pipeline Created')
     
         #############################
         #now do all the gui stuff
@@ -842,7 +856,7 @@ class VisGUICore(object):
         #     self._createNewTabs()
         #
         #     self.CreateFoldPanel()
-        #     print('Gui stuff done')
+        #     logger.debug('Gui stuff done')
         
         self.update_datasource_panel()
     

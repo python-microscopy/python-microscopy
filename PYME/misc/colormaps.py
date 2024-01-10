@@ -100,7 +100,13 @@ _hsv_part = {'red':   ((0., 1., 1.),(0.25, 1.000000, 1.000000),
 
 ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 
-cm.update({cmapname: colors.LinearSegmentedColormap(cmapname, ndat[cmapname], mp_cm.LUTSIZE) for cmapname in ndat.keys()})
+# Newer versions of matplotlib use _LUTSIZE
+try:
+    lutsize = mp_cm.LUTSIZE
+except AttributeError:
+    lutsize = mp_cm._LUTSIZE
+
+cm.update({cmapname: colors.LinearSegmentedColormap(cmapname, ndat[cmapname], lutsize) for cmapname in ndat.keys()})
 
 #solid colour colormaps for VisGUI multichannel and isosurface display
 @cm.register_cmap('SolidRed', solid=True)
