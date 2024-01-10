@@ -23,47 +23,35 @@ from __future__ import print_function
 import numpy as np
 from .BaseDataSource import XYTCDataSource
 
-from PYME.localization import splitting
+from PYME.Analysis import splitting
+
+#from PYME.localization import splitting
 
 class DataSource(XYTCDataSource):
     moduleName = 'UnsplitDataSource'
-    def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.), chanROIs=None):
+    def __init__(self,dataSource, splitting_info : splitting.SplittingInfo, chan=0, shiftfield=None, voxelsize=(70., 70., 200.)):
         #self.unmixer = unmixer
         self.dataSource = dataSource
+        self.splitting_info = splitting_info
+
         self.sliceShape = list(self.dataSource.shape[:-1])
         
         self._raw_w, self._raw_h = self.dataSource.shape[:2]
-        
-        self.sliceShape[1] = int(self.sliceShape[1] / 2)
-        
-        if not chanROIs is None:
-            x, y, w, h = chanROIs[0]
-            #self.sliceShape = [min(self.dataSource.shape[0], w), min(self.dataSource.shape[1], h)]
-            
-            for x_, y_, w_, h_ in chanROIs:
-                w = min(self._raw_w - x_, w)
-                h = min(self._raw_h - y_, h)
-                
-            self.sliceShape = [w, h]
-        
-        self.ROI = ROI
+
+        self.sliceShape[:2] = self.splitting_info.channel_shape
+    
         self.chan = chan
 
-        #self.pixelsize = pixelsize
-        self.flip = flip
         self.voxelsize = voxelsize
         if shiftfield and chan == 1:
-            #fixme for nChans >= 2 
+            # FIXME for nChans >= 2 
             self.SetShiftField(shiftfield)
 
-        self.chanROIs = chanROIs
 
     def SetShiftField(self, shiftField):
-       from PYME.Analysis import splitting
        self.shift_corr = splitting.ShiftCorrector(shiftField)
 
     def getSlice(self,ind):
-        from PYME.Analysis import splitting
         sl = self.dataSource.getSlice(ind)
         dsa = sl.squeeze()
 
@@ -72,7 +60,7 @@ class DataSource(XYTCDataSource):
             if self.flip: #FIXME - change the flip parameter to the data source to be consistent with splitting.get_channel
                 flip='up_down'
 
-        c = splitting.get_channel(dsa, self.ROI, flip=flip, chanROIs=self.chanROIs, chan=self.chan)
+        c = splitting.get_channel(dsa, self.splitting_info, chan=self.chan)
 
         if hasattr(self, 'shift_corr'):
             # do shift correction

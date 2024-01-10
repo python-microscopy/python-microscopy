@@ -9,6 +9,144 @@ import numpy as np
 import logging
 logger=logging.getLogger(__name__)
 
+def _get_supported_sub_roi(x, w, x0, iw, flip=0):
+    '''
+    Find the largest sub-ROI which is fully covered in all
+    channenls for a given acquisition ROI
+
+    Parameters
+    ----------
+    x : array_like, int
+        The origin of the splitter channel ROIs (0-indexed)
+        relative to the uncropped sensor.
+    w : array_like (or constant), int
+        The width of the splitter channel ROIs.
+    x0 : int
+        The origin of the acquisition ROI (0-indexed).  
+    iw : int
+        The width of the acquisition ROI / the acquired image.
+    flip : array_like (or constant), int
+        Whether the channel was flipped by the splitter. 
+        Int masquerading as a boolean. 
+    '''
+    _rx0 = np.maximum(x0-x, 0)
+    _rx1 = (np.minimum(x+w, iw + x0) - (x))
+
+    #print(rx0, rx1, flip, w)
+    rx0 = (1-flip)*_rx0 + flip*(w-_rx1)
+    rx1 = (1-flip)*_rx1 + flip*(w-_rx0)
+    #print(rx0, rx1)
+    return rx0.max(), rx1.min()
+
+
+class SplittingInfo(object):
+    """ Common class which captures all the splitter ROI information
+    
+    Uses the metadata if available, otherwise falls back to legacy defaults.
+    Gives priority to Splitter.Channel0ROI and Splitter.Channel1ROI, but uses
+    Multiview metadata if present.
+    """
+    def __init__(self, mdh=None, data_shape=None, ROI=None, chanROIs = None, flip=False) -> None:
+        """
+        Note that the flip parameter is ignored if there is metadata
+        """
+        if mdh is None or data_shape is None:
+            # assume we have been passed an ROI and chanROIS
+            if ROI is None or chanROIs is None:
+                raise RuntimeError('SplittingInfo needs either mdh and data_shape or ROI and chanROIs')
+            
+            self.chanROIs = chanROIs
+            self.camera_roi_origin = ROI[:2]
+            self.data_shape = np.array(ROI[2:]) - np.array(ROI[:2])
+        else:
+            # assume we have been passed an mdh and data_shape  
+            from PYME.IO.MetaDataHandler import get_camera_roi_origin
+            self.mdh = mdh
+            self.data_shape = data_shape
+
+            self.camera_roi_origin = get_camera_roi_origin(mdh)
+            self._flip = flip 
+            self.chanROIs = None
+
+            if 'Splitter.Channel0ROI' in mdh.getEntryNames():
+                self._flip = self.mdh.get('Splitter.Flip', True)
+                self.chanROIs = [mdh['Splitter.Channel0ROI'], mdh['Splitter.Channel1ROI']]
+
+            elif 'Multiview.NumROIs' in mdh.getEntryNames():
+                # we have more than 2 ROIs
+                numROIs = mdh['Multiview.NumROIs']
+                w, h = mdh['Multiview.ROISize']
+
+                #print self.image.data.shape, w, h, numROIs
+                self._flip = False
+
+                if data_shape[0] == numROIs*w:
+                    # ROIS have already been extracted ....
+                    # we need to fudge things
+                    h_ = min(h, int(data_shape[1]))
+
+                    self.chanROIs = []
+                    for i in range(numROIs):
+                        x0, y0 = (i * w, 0)
+                        self.chanROIs.append((x0, y0, w, h_))
+
+                    # as we've already extracted the ROIs, the origin metadata is no longer valid
+                    # so fudge a 0 offset
+                    # FIXME - this will likely also bite us elsewhere
+                    self.camera_roi_origin = (0,0)
+
+                else:
+                    #raw data - do the extraction ourselves
+                    raise RuntimeError("data is full frame / ROIed multiview, we can't handle this at present")
+                    self.chanROIs = []
+                    for i in range(numROIs):
+                        x0, y0 = mdh['Multiview.ROISize']
+                        self.chanROIs.append((x0, y0, w, h))
+            else:
+                #default to legacy splitting (i.e. 2 channels split up and down on the chip, each half the chip height)
+                self._flip = self.mdh.get('Splitter.Flip', True)
+
+                w = self.mdh.get('Camera.SensorWidth', 512) #If we get here we are probably dealing with really old data which can be assumed to come from a 512x512 sensor
+                h = self.mdh.get('Camera.SensorHeight', 512)
+                
+                self.chanROIs = [
+                    (0, 0, w, h / 2),
+                    (0, h / 2, 2, h / 2)
+                ]
+            
+        self.flip_y = np.zeros(len(self.chanROIs), dtype=np.int)
+        if self._flip:
+            self.flip_y[1] = 1
+
+        self.data_slicesx, self.data_slicesy = self._get_common_rois()
+
+    @property
+    def channel_shape(self):
+        return self.data_slicesx[0].stop - self.data_slicesx[0].start, self.data_slicesy[0].stop - self.data_slicesy[0].start
+        
+    
+    @property
+    def channel_rois(self):
+        return self.chanROIs
+    
+    @property
+    def num_chans(self):
+        return len(self.chanROIs)
+    
+    def _get_common_rois(self):
+        """Get max-size common ROIs for the channels relative to the data origin"""
+
+        x0, y0 = self.camera_origin
+
+        xs, ys, ws, hs = np.array([np.array(r) for r in self.chanROIs]).T
+        rx0, rx1 = _get_supported_sub_roi(xs, ws, x0, self.data_shape[0])
+        ry0, ry1 = _get_supported_sub_roi(ys, hs, y0, self.data_shape[1], self.flip_y)
+
+        xslices = [slice(int(x + rx0 - x0), int(x + rx1 - x0), 1) for x in xs]
+        yslices = [slice(int(y + h - y0 - ry0 -1), int(y + h - y0 - ry1 -1), -1) if f else slice(int(y + ry0 - y0), int(y + ry1 - y0), 1) for y, f, h in zip(ys, self.flip_y, hs)]
+
+        return xslices, yslices
+
 def LoadShiftField(filename = None):
     if not filename:
         import wx
@@ -42,7 +180,7 @@ def LoadShiftField(filename = None):
 
 
 
-def get_channel(data, ROI=None, flip=False, chanROIs=None, chan=0, chanShape=None):
+def get_channel(data, splitting_info : SplittingInfo, chan=0):
     '''
     Extract a channel from an image which has been recorded using an image splitting device.
 
@@ -68,49 +206,52 @@ def get_channel(data, ROI=None, flip=False, chanROIs=None, chan=0, chanShape=Non
     '''
     data = data.squeeze()
 
-    if ROI is None:
-        logger.warning('No ROI specified - assuming full chip (deprecated)')
-        ROI = [0,0,data.shape[0], data.shape[1]]
+    return data[splitting_info.data_slicesx[chan], splitting_info.data_slicesy[chan]]
 
-    if chanROIs:
-        x, y, w, h = chanROIs[chan]
-        x1 = x -(ROI[0])
-        y1 = y -(ROI[1])
-        
-        x = max(x1, 0)
-        y = max(y1, 0)
 
-        if chanShape:
-            chanShape = (min(w, chanShape[0]), min(h, chanShape[1]))
-        else:
-            chanShape = (w, h)
-        
-        if flip == 'up_down':
-            #print y, h + min(y1, 0), self.sliceShape
-            y = y + h + min(y1, 0) - chanShape[1]
+    # if ROI is None:
+    #     logger.warning('No ROI specified - assuming full chip (deprecated)')
+    #     ROI = [0,0,data.shape[0], data.shape[1]]
 
-        w, h = chanShape
+    # if chanROIs:
+    #     x, y, w, h = chanROIs[chan]
+    #     x1 = x -(ROI[0])
+    #     y1 = y -(ROI[1])
+        
+    #     x = max(x1, 0)
+    #     y = max(y1, 0)
+
+    #     if chanShape:
+    #         chanShape = (min(w, chanShape[0]), min(h, chanShape[1]))
+    #     else:
+    #         chanShape = (w, h)
+        
+    #     if flip == 'up_down':
+    #         #print y, h + min(y1, 0), self.sliceShape
+    #         y = y + h + min(y1, 0) - chanShape[1]
+
+    #     w, h = chanShape
         
         
-    else:
-        logger.warning('No channel ROIs specified - using deprecated backwards compatible behaviour')
+    # else:
+    #     logger.warning('No channel ROIs specified - using deprecated backwards compatible behaviour')
         
-        if chan == 0:
-            x, y, w, h = 0,0, data.shape[0], int(data.shape[1] / 2)
-        else:
-            x, y, w, h = 0, int(data.shape[1] / 2), data.shape[0], int(data.shape[1] / 2)
-            #print x, y
-            return data[x:(x+w), y:(y+h)]
+    #     if chan == 0:
+    #         x, y, w, h = 0,0, data.shape[0], int(data.shape[1] / 2)
+    #     else:
+    #         x, y, w, h = 0, int(data.shape[1] / 2), data.shape[0], int(data.shape[1] / 2)
+    #         #print x, y
+    #         return data[x:(x+w), y:(y+h)]
     
-    c = data[x:(x+w), y:(y+h)]
+    # c = data[x:(x+w), y:(y+h)]
             
-    if flip == 'left_right':
-        c = np.flipud(c)
-    elif flip == 'up_down':
-        c = np.fliplf(c)
+    # if flip == 'left_right':
+    #     c = np.flipud(c)
+    # elif flip == 'up_down':
+    #     c = np.fliplf(c)
 
 
-    return c
+    # return c
 
 
 class ShiftCorrector(object):
@@ -214,8 +355,10 @@ class Unmixer(object):
 
         dsa = data.squeeze() - offset
 
-        g_ = get_channel(dsa, ROI, False, self.chanROIs, chan=0)
-        r_ = get_channel(dsa, ROI, self.flip, self.chanROIs, chan=1)
+        si = SplittingInfo(ROI=ROI, chanROIs=self.chanROIs, flip=self.flip)
+
+        g_ = get_channel(dsa, si, chan=0)
+        r_ = get_channel(dsa, si, chan=1)
         r_ = self.shift_corr.correct(r_, (self.pixelsize, self.pixelsize), origin_nm=self.pixelsize*np.array(ROI[:2]))
         
 

@@ -32,7 +32,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.FileUtils import nameUtils
 from PYME.Analysis import splitting
 
-class Splitter:
+class Splitter(object):
     def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top',
                  constrain=True, flip = True, cam_name='', rois=None):
         self.dir = dir
