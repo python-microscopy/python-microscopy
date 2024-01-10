@@ -2867,8 +2867,8 @@ class Rotate180(Filter):
         return data[::-1,::-1]
     
 
-@register_module('SplineFitBackgroundSubtract')
-class SplineFitBackgroundSubtract(Filter):
+@register_module('SplineFitBackgroundEstimate')
+class SplineFitBackgroundEstimate(Filter):
     """
     Background subtraction using a 2D smoothing spline fit
 
@@ -2884,4 +2884,25 @@ class SplineFitBackgroundSubtract(Filter):
         x = np.arange(data.shape[0])
         y = np.arange(data.shape[1])
         fit = RectBivariateSpline(x, y, data, s=self.smooth)
-        return data-fit(x,y) - np.min(data-fit(x,y))
+        return fit(x, y)
+    
+
+@register_module('Offset')
+class Offset(Filter):
+    """
+    Offset the grayscale value by a certain number
+
+    Parameters
+    ----------
+    offset_constant : a constant that the image will subtract, float
+    offset_selection : which kind of image offset is set to process
+    """
+    offset_constant = Float(0.0)
+    offset_selection = Enum('offset by a constant', 'offset by minimum')
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+
+    def applyFilter(self, data, chanNum, i, image0):
+        if self.offset_selection == 'offset by a constant':
+            return data - self.offset_constant
+        elif self.offset_selection == 'offset by minimum':
+            return data - np.min(data)
