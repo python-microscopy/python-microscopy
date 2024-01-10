@@ -64,7 +64,7 @@ from PYME.Analysis.splitting import SplittingInfo
     
 #     return xgs, xrs, ygs, yrs
 
-def get_splitter_rois_(md, data_shape):
+def get_splitter_rois(md, data_shape):
     '''
     Gets max-size common ROIs for the two 
     channels of a splitter, relative to the data origin. 

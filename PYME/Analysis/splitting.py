@@ -136,7 +136,7 @@ class SplittingInfo(object):
     def _get_common_rois(self):
         """Get max-size common ROIs for the channels relative to the data origin"""
 
-        x0, y0 = self.camera_origin
+        x0, y0 = self.camera_roi_origin
 
         xs, ys, ws, hs = np.array([np.array(r) for r in self.chanROIs]).T
         rx0, rx1 = _get_supported_sub_roi(xs, ws, x0, self.data_shape[0])
