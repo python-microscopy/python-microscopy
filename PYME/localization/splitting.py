@@ -237,4 +237,4 @@ def get_shifts(md, data_shape, x, y):
     dxp = int(DeltaX / vx)
     dyp = int(DeltaY / vy)
 
-    return DeltaX, DeltaY, dxp, dxy
+    return DeltaX, DeltaY, dxp, dyp
