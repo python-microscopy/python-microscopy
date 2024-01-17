@@ -34,10 +34,10 @@ class FocusKeys:
         parent.AddMenuItem('Focus', 'Sensitivity Down\t%s' % keys[2], self.OnSensDown)
         parent.AddMenuItem('Focus', 'Sensitivity Up\t%s' % keys[3], self.OnSensUp)
 
-#        idFocUp = wx.NewId()
-#        idFocDown = wx.NewId()
-#        idSensUp = wx.NewId()
-#        idSensDown = wx.NewId()
+#        idFocUp = wx.NewIdRef()
+#        idFocDown = wx.NewIdRef()
+#        idSensUp = wx.NewIdRef()
+#        idSensDown = wx.NewIdRef()
 
 #        self.menu = wx.Menu(title = '')
 #
@@ -124,10 +124,10 @@ class PositionKeys:
         parent.AddMenuItem('Position', 'Sensitivity Down\tCtrl-N', self.OnSensDown)
         parent.AddMenuItem('Position', 'Sensitivity Up\tCtrl-M', self.OnSensUp)
 
-        # idFocUp = wx.NewId()
-        # idFocDown = wx.NewId()
-        # idSensUp = wx.NewId()
-        # idSensDown = wx.NewId()
+        # idFocUp = wx.NewIdRef()
+        # idFocDown = wx.NewIdRef()
+        # idSensUp = wx.NewIdRef()
+        # idSensDown = wx.NewIdRef()
 
         # self.menu = wx.Menu(title = '')
 

@@ -44,11 +44,18 @@ class HistLimitPanel(wx.Panel):
         
         dSort = np.argsort(self.data)
         
-        self.upper_pctile = float(self.data[dSort[int(len(self.data)*.99)]])
-        self.lower_pctile = float(self.data[dSort[int(len(self.data)*.01)]])
+        if len(self.data) == 0:
+            # special case - we have no data
+            self.upper_pctile = 1
+            self.lower_pctile = 0
+            self.dmin, self.dmax = 0,1
+        else:
+        
+            self.upper_pctile = float(self.data[dSort[int(len(self.data)*.99)]])
+            self.lower_pctile = float(self.data[dSort[int(len(self.data)*.01)]])
 
-        self.dmin = self.data[dSort[0]]
-        self.dmax = self.data[dSort[-1]]
+            self.dmin = self.data[dSort[0]]
+            self.dmax = self.data[dSort[-1]]
 
         self.limit_lower = float(limit_lower)
         self.limit_upper = float(limit_upper)
@@ -457,7 +464,7 @@ class HistLimitEditDialog(wx.Dialog):
 
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
     f = wx.Frame(parent, title=title, size=size)
-    ID_HIST_LIM = wx.NewId()
+    ID_HIST_LIM = wx.NewIdRef()
     p = HistLimitPanel(f, ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
     f.Show()
     return ID_HIST_LIM

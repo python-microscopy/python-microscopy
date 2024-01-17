@@ -32,7 +32,7 @@ class AnnotationOverlayLayer(OverlayLayer):
 
 class Annotator(ann.AnnotateBase):
     def __init__(self, vis_fr):
-        ann.AnnotateBase.__init__(self, vis_fr, vis_fr.glCanvas.selectionSettings, minimize=True)
+        ann.AnnotateBase.__init__(self, vis_fr._win, vis_fr.glCanvas.selectionSettings, minimize=True)
         vis_fr.glCanvas.overlays.append(AnnotationOverlayLayer(self))
 
         vis_fr.AddMenuItem('Annotation', 'Label points', self.apply_labels_to_points)

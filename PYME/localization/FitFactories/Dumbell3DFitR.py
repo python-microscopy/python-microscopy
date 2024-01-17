@@ -79,7 +79,7 @@ def Dumbell3DFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fi
     
     n_params = len(fitResults)
     
-    res['tIndex'] = metadata.tIndex
+    res['tIndex'] = metadata['tIndex']
     res['fitResults'].view('10f4')[:n_params] = fitResults
 
     if fitErr is None:

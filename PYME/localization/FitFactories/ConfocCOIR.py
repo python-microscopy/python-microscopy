@@ -38,7 +38,7 @@ fresultdtype=[('tIndex', '<i4'),
 
 def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     return numpy.array([(tIndex, fitResults.astype('f'))], dtype=fresultdtype)
 
@@ -56,7 +56,7 @@ def ConfocCOI(data, metadata, thresh=5, background=None):
     Y = vs.y*Y
 
 
-    if not background is None and len(numpy.shape(background)) > 1 and not ('Analysis.subtractBackground' in metadata.getEntryNames() and metadata.Analysis.subtractBackground == False):
+    if not background is None and len(numpy.shape(background)) > 1 and not ('Analysis.subtractBackground' in metadata.getEntryNames() and metadata['Analysis.subtractBackground'] == False):
         bgROI = background.squeeze()
 
         dataROI = dataROI - bgROI

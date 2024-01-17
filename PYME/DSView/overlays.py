@@ -51,6 +51,15 @@ class PointDisplayOverlay(Overlay):
         self.pointMode = 'confoc'
         self.pointTolNFoc = {'confoc' : (5,5,5), 'lm' : (2, 5, 5), 'splitter' : (2,5,5)}
         self.showAdjacentPoints = False
+        self.display_as = 'box' # 'box' or 'cross'
+        self.z_mode='t'
+
+        # keep a single, global copy of pens
+        self._pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'))
+        self._pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'))
+        self._pBlue = wx.Pen(wx.TheColourDatabase.FindColour('BLUE'))
+
+        self._pens = [self._pGreen, self._pRed, self._pBlue]
 
         if filter:
             self.filter = filter
@@ -84,7 +93,7 @@ class PointDisplayOverlay(Overlay):
             pos = [vp.do.xp, vp.do.yp, vp.do.tp]
 
         try:
-            vx, vy = vp.voxelsize[:2]
+            vx, vy, vz = vp.voxelsize
         except KeyError:
             logger.exception('No voxelsize set, cannot display scale bar.')
             print('No voxelsize set, cannot display scale bar.')
@@ -94,17 +103,27 @@ class PointDisplayOverlay(Overlay):
             #print('plotting points')
             
             if 'filter' in dir(self):
+                f_keys = self.filter.keys()
+
                 t = self.filter['t'] #prob safe as int
                 x = self.filter['x']/vx
                 y = self.filter['y']/vy
+                if self.z_mode == 'z':
+                    if 'z' in f_keys:
+                        t = self.filter['z']/vz
+                    else:
+                        t = self.filter['fitResults_z0']/vz
                 
-                xb, yb, zb = vp.visible_bounds
+                xb, yb, zb, tb = vp.visible_bounds
                 
-                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
+                if vp.do.ds.shape[3] <= 1:
+                    # stack is a pure z-series, pretend it's a time series for backwards compatibility
+                    tb = zb
+                
+                IFoc = (x >= xb[0])*(y >= yb[0])*(t >= tb[0])*(x < xb[1])*(y < yb[1])*(t < tb[1])
                     
                 pFoc = np.vstack((x[IFoc], y[IFoc], t[IFoc])).T
 
-                f_keys = self.filter.keys()
                 
                 #assume splitter, then test for keys
                 pm = 'splitter'    
@@ -115,7 +134,13 @@ class PointDisplayOverlay(Overlay):
                 elif 'fitResults_Ag' in f_keys:
                     pCol = self.filter['fitResults_Ag'][IFoc] > self.filter['fitResults_Ar'][IFoc]
                 else:
-                    pm = self.pointMode               
+                    pm = self.pointMode
+                    if 'channel' in f_keys:
+                        pCol = self.filter['channel'][IFoc]
+                    elif 'probe' in f_keys:
+                        pCol = self.filter['probe'][IFoc]
+                    else:
+                        pCol = np.zeros(len(pFoc), dtype='i4')               
                 
                 pNFoc = []
 
@@ -129,16 +154,18 @@ class PointDisplayOverlay(Overlay):
                     
                 pFoc = self.points[IFoc]
                 pNFoc = self.points[INFoc]
-                
-                if self.pointMode == 'splitter':
+
+                if len(self.pointColours) == len(self.points):
                     pCol = self.pointColours[IFoc]
+                else:
+                    pCol = np.zeros(len(pFoc), dtype='i4')
                     
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             ps = self.pointSize
 
             if self.showAdjacentPoints:
-                dc.SetPen(wx.Pen(wx.TheColourDatabase.FindColour('BLUE'),1))
+                dc.SetPen(self._pBlue)
                 
                 for xi, yi, zi in pNFoc:
                     vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
@@ -148,30 +175,33 @@ class PointDisplayOverlay(Overlay):
                     x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
                     for xi, yi, zi in zip(x_, y_, z):#, dxi, dyi in zip(pNFoc, dxn, dyn):
                         vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
-
-
-            pGreen = wx.Pen(wx.TheColourDatabase.FindColour('GREEN'),1)
-            pRed = wx.Pen(wx.TheColourDatabase.FindColour('RED'),1)
-            dc.SetPen(pGreen)
             
             if pm == 'splitter':
                 x, y, z = pFoc.T
                 x_, y_ = self._map_splitter_coords(x, y, vp.do.ds.shape)
-                for xi, x_i, yi, y_i, zi, c in zip(x, x_, y, y_, z, pCol):
-                    if c:
-                        dc.SetPen(pGreen)
-                    else:
-                        dc.SetPen(pRed)
-                        
-                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
-                    vp.draw_box_pixel_coords(dc, x_i, y_i, zi, ps, ps, ps)
-                    
+
+                self._draw_points(dc, vp, x, y, z, pCol)
+                self._draw_points(dc, vp, x_, y_, z, pCol)
             else:
-                for xi, yi, zi in pFoc:
-                    vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+                x, y, z = pFoc.T
+                self._draw_points(dc, vp, x, y, z, pCol)
             
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
+
+    def _draw_points(self, dc, vp, x, y, z, c):
+        ps = self.pointSize
+
+        for xi, yi, zi, ci in zip(x, y, z, c):
+            dc.SetPen(self._pens[int(ci)])
+
+            if self.display_as == 'box':
+                vp.draw_box_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+            elif self.display_as == 'cross':
+                vp.draw_cross_pixel_coords(dc, xi, yi, zi, ps, ps, ps)
+            else:
+                raise ValueError('Unknown display_as type: %s - expected \'box\' or \'cross\'' % self.display_as)
+
 
     def points_hit_test(self, xp, yp, zp, voxelsize=None):
         if len(self.points) > 0:

@@ -190,11 +190,15 @@ class IPYTermManager(object):
     """Base class for a terminal manager."""
     
     def __init__(self, server_url="", ioloop=None, user_ns=None, user_module=None):
+        from concurrent import futures
         self.server_url = server_url
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.WARNING)
         
         self.ptys_by_fd = {}
+
+        self._blocking_io_executor_is_external = False
+        self.blocking_io_executor = futures.ThreadPoolExecutor(max_workers=1)
         
         if ioloop is not None:
             self.ioloop = ioloop
@@ -273,6 +277,8 @@ class IPYTermManager(object):
     @gen.coroutine
     def shutdown(self):
         yield self.kill_all()
+        if not self._blocking_io_executor_is_external:
+            self.blocking_io_executor.shutdown(wait=False, cancel_futures=True)
     
     @gen.coroutine
     def kill_all(self):
@@ -303,6 +309,15 @@ def create_ipy_server(user_ns=None, user_module=None):
       
     #end demo stuff
 
+    try:
+        # notebook < 6.5
+        ipstatic = notebook.DEFAULT_STATIC_FILES_PATH
+    except AttributeError:
+        # notebook >= 6.5
+        import nbclassic
+        ipstatic = nbclassic.DEFAULT_STATIC_FILES_PATH
+
+
     term_manager = IPYTermManager(user_ns=user_ns, user_module=user_module)
     handlers = [
                 (r"/websocket", TermSocket,
@@ -310,7 +325,7 @@ def create_ipy_server(user_ns=None, user_module=None):
                 (r"/", TerminalPageHandler),
                 #(r"/xstatic/(.*)", tornado_xstatic.XStaticFileHandler,
                 #     {'allowed_modules': ['termjs']}),
-                (r"/ipstatic/(.*)", tornado.web.StaticFileHandler, {'path' : notebook.DEFAULT_STATIC_FILES_PATH})
+                (r"/ipstatic/(.*)", tornado.web.StaticFileHandler, {'path' : ipstatic})
                ]
     app = tornado.web.Application(handlers, static_path=STATIC_DIR,
                       template_path=TEMPLATE_DIR,

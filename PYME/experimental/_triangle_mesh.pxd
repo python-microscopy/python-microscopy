@@ -83,6 +83,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef halfedge_t * _chalfedges
     cdef face_d * _cfaces
     cdef vertex_d * _cvertices
+    cdef int _n_edges
+    cdef int _n_faces
+    cdef int _n_vertices
 
     cdef object _faces_by_vertex
     cdef object _loop_subdivision_flip_edges
@@ -96,8 +99,8 @@ cdef class TriangleMesh(TrianglesBase):
     cdef public object vertex_properties
     cdef public object vertex_vector_properties # Vector valued properties (to visualise as a quiver)
     cdef public object extra_vertex_data
-    cdef object fix_boundary
-    cdef object _manifold
+    cdef bint fix_boundary
+    cdef bint _manifold
 
     cdef bint _vertex_normals_valid
     cdef bint _face_normals_valid
@@ -106,7 +109,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef object _H
     cdef object _K
-    cdef public object smooth_curvature
+    cdef public bint smooth_curvature
 
     cdef public object mdh # placeholder to allow metadata injection
 
@@ -114,25 +117,25 @@ cdef class TriangleMesh(TrianglesBase):
     cdef _set_cfaces(self, np.ndarray)#face_d[:])
     cdef _set_cvertices(self, np.ndarray)#vertex_d[:])
     cdef bint _check_neighbour_twins(self, int)
-    cdef bint _check_collapse_fast(self, int, int)
-    cdef bint _check_collapse_slow(self, int, int)
+    #cdef bint _check_collapse_fast(self, int, int)
+    #cdef bint _check_collapse_slow(self, int, int)
     cdef int _face_delete(self, np.int32_t)
     cdef int _edge_delete(self, np.int32_t)
     cdef int _vertex_delete(self, np.int32_t v_idx)
-    cdef _zipper(self, np.int32_t, np.int32_t)
+    #cdef _zipper(self, np.int32_t, np.int32_t)
     cpdef int edge_flip(self, np.int32_t, bint live_update=*)
-    cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
-    cpdef int edge_split(self, np.int32_t, bint live_update=*, bint upsample=*)
+    #cpdef int edge_collapse(self, np.int32_t, bint live_update=*)
+    #cpdef int edge_split(self, np.int32_t, bint live_update=*, bint upsample=*)
     cpdef int relax(self, float l=*, int n=*)
     cpdef int regularize(self)
 
-    cdef int edge_split_2(self, np.int32_t _curr, np.int32_t* new_edges, np.int32_t* new_vertices, np.int32_t* new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
-                            bint live_update=*, bint upsample=*)
+    # cdef int edge_split_2(self, np.int32_t _curr, np.int32_t* new_edges, np.int32_t* new_vertices, np.int32_t* new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx,  
+    #                         bint live_update=*, bint upsample=*)
     
     cdef _populate_edge(self, int idx, int vertex, int prev=*, int next=*, int face=*, int twin=*, int locally_manifold=*)
     #cdef int _insert_new_edge(self, int vertex, int prev=-1, int next=-1, int face=-1, int twin=-1
     
-    cdef int _new_face(self, int)
+    #cdef int _new_face(self, int)
     #cdef int _new_vertex(self, np.ndarray, int)
 
     cdef _compute_raw_vertex_valences(self, np.ndarray valence)

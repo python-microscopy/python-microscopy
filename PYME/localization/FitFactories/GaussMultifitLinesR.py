@@ -144,13 +144,6 @@ class GaussianFitFactory:
         else:
             sigma = self.noiseSigma
 
-#        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
-#            #average in z
-#            bgMean = self.background.mean(2) - self.metadata.Camera.ADOffset
-#            
-#            dataMean = dataMean - bgMean
-        
-        
         #estimate and subtract background by assuming that the background pattern is 
         #spatially separable into components along each of the two image axes.
         #this should work for background caused by an illumination pattern (e.g. lines)

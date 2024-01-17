@@ -87,7 +87,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
     if startParams is None:
         startParams = -5e3*numpy.ones(fitResults.shape, 'f')
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
@@ -101,16 +101,13 @@ def genFitImage(fitResults, md, fitfcn=f_Interp3d):
         params = fitResults['fitResults']
 
         interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
-        
-        if 'Analysis.EstimatorModule' in md.getEntryNames():
-            estimatorModule = md.Analysis.EstimatorModule
-        else:
-            estimatorModule = 'astigEstimator'
+     
+        estimatorModule = md.getOrDefault('Analysis.EstimatorModule', 'astigEstimator')
 
         #this is just here to make sure we clear our calibration when we change models        
         startPosEstimator = __import__('PYME.localization.FitFactories.zEstimators.' + estimatorModule , fromlist=['PYME', 'localization', 'FitFactories', 'zEstimators'])        
         
-        if interpolator.setModelFromFile(md.PSFFile, md):
+        if interpolator.setModelFromFile(md['PSFFile'], md):
             print('model changed')
             startPosEstimator.splines.clear()
 

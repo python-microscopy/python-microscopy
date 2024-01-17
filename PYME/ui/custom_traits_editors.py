@@ -197,9 +197,9 @@ class DictChoiceStrPanel(wx.Panel):
 
         # only do this part the first time so the events are only bound once
         if not hasattr(self, "ID_FILT_ADD"):
-            self.ID_FILT_ADD = wx.NewId()
-            self.ID_FILT_DELETE = wx.NewId()
-            self.ID_FILT_EDIT = wx.NewId()
+            self.ID_FILT_ADD = wx.NewIdRef()
+            self.ID_FILT_DELETE = wx.NewIdRef()
+            self.ID_FILT_EDIT = wx.NewIdRef()
 
             self.Bind(wx.EVT_MENU, self.OnFilterAdd, id=self.ID_FILT_ADD)
             self.Bind(wx.EVT_MENU, self.OnFilterDelete, id=self.ID_FILT_DELETE)

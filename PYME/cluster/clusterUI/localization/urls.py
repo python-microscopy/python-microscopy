@@ -1,10 +1,10 @@
-from django.conf.urls import url
+from django.urls import re_path
 from . import views
 
 app_name='localization'
 
 urlpatterns = [
-    url(r'^settings/$', views.settings, name='analysis_settings'),
-    url(r'^settings/(?P<analysisModule>.+)/$', views.settings, name='analysis_settings'),
-    url(r'^localize/$', views.localize, name='localize'),
+    re_path(r'^settings/$', views.settings, name='analysis_settings'),
+    re_path(r'^settings/(?P<analysisModule>.+)/$', views.settings, name='analysis_settings'),
+    re_path(r'^localize/$', views.localize, name='localize'),
 ]

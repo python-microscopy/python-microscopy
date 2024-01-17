@@ -106,7 +106,7 @@ class LMDisplay(visCore.VisGUICore, Plugin):
             
         """
         
-        ID_NEWITEM = wx.NewId()
+        ID_NEWITEM = wx.NewIdRef()
         self.extras_menu.Append(ID_NEWITEM, label)
         self.dsviewer.Bind(wx.EVT_MENU, callback, id=ID_NEWITEM)
    

@@ -32,6 +32,7 @@ from PYME.Acquire.Hardware import EMCCDTheory
 from scipy import optimize
 import numpy as np
 from PYME.localization import remFitBuf
+from PYME.localization.FitFactories import import_fit_factory
 
 def emg(v, rg):
     return (EMCCDTheory.M((80. + v)/(255 + 80.), 6.6, -70, 536, 2.2) - rg)**2
@@ -77,28 +78,23 @@ class fitTestJig(object):
             backwards compatibility. You should set the fit module in the metadata.
         """
         self.md = copy.copy(metadata)
+        
         if fitModule is None:
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule
-        self.md.tIndex = 0
         
-        if 'Test.SimModule' in self.md.getEntryNames():
-            self.simModule = self.md['Test.SimModule']
-        else:
-            self.simModule = self.fitModule
-        
-        self.bg = 0
-        if 'Test.Background' in self.md.getEntryNames():
-            self.bg = float(self.md['Test.Background'])
+        self.md['tIndex'] = 0
 
+        self.simModule = self.md.getOrDefault('Test.SimModule', self.fitModule)        
+        self.bg = float(self.md.getOrDefault('Test.Background', 0.0))
         self.rs=self.md.getOrDefault('Test.ROISize', 7)
 
         self._prepSimulationCameraMaps()
 
         #by still including emGain estimation etc ... we can use the same code for sCMOS and EMCCD estimation. This will
         #evaluate to 1 in the sCMOS case
-        emGain = optimize.fmin(emg, 150, args=(float(self.md.Camera.TrueEMGain),))[0]
+        emGain = optimize.fmin(emg, 150, args=(float(self.md['Camera.TrueEMGain']),))[0]
 
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
                                  electronsPerCount= self.md['Camera.ElectronsPerCount']/self.gain,
@@ -202,7 +198,7 @@ class fitTestJig(object):
             param_jit = self.md['Test.ParamJitter']
 
         #load the module used for simulation
-        self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
+        self.simMod = import_fit_factory(self.simModule) #import our simulation
 
         p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
         p[0] = abs(p[0])
@@ -242,8 +238,8 @@ class fitTestJig(object):
             param_jit = self.md['Test.ParamJitter']
 
         #load the modules used for simulation and fitting
-        self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
-        self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
+        self.fitMod = import_fit_factory(self.fitModule) #import our fitting module
+        self.simMod = import_fit_factory(self.simModule) #import our simulation
 
         #generate empty arrays for parameters and results
         self.res = np.empty(nTests, self.fitMod.FitResultsDType)
@@ -271,8 +267,6 @@ class fitTestJig(object):
 
             
         #calculate our background
-        #bg = self.bg*1.0/(self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount) + self.md.Camera.ADOffset
-        #print((bg, self.noiseM.getbg()))
         bg = self.noiseM.getbg()
         #bg = remFitBuf.cameraMaps.getDarkMap(self.md)
 

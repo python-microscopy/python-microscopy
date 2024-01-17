@@ -345,6 +345,7 @@ class XYZTCDataSource(BaseDataSource):
                     slice_idx = self._c_stride * c + self._t_stride * t + self._z_stride * z
                     out[:, :, zi, ci, ti] = self.getSlice(slice_idx)[keys[0], keys[1]]
         
+        #print('out.shape:', out.shape, 'to_squeeze:', to_squeeze)
         return out.squeeze(axis=tuple(to_squeeze))
 
 
@@ -396,7 +397,12 @@ class XYZTCWrapper(XYZTCDataSource):
                 size_t = 1
                 size_z = data.shape[2]
 
-        return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=data.shape[3])
+        if len(data.shape) >= 4:
+            size_c = data.shape[3]
+        else:
+            size_c = 1
+        
+        return cls(data, input_order=dim_order, size_z=size_z,size_t=size_t, size_c=size_c)
     
     
     def getSlice(self, ind):

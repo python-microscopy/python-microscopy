@@ -156,6 +156,8 @@ class H5RFile(object):
                     self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
+            except ValueError:
+                logger.exception('Error appending data (%s) to table (%s)' % (data, table))
                     
             if (tablename == 'PZFImageData'):
                 from PYME.IO import PZFFormat

@@ -148,10 +148,10 @@ class NoiseMaker:
         if self.approximate_read_noise:
             o = self._read_approx(im.shape)
         else:
-            o = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount) * scipy.random.standard_normal(im.shape)
+            o = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount) * np.random.standard_normal(im.shape)
         
         if self.shutterOpen:
-            o = o +  (M/(self.ElectronsPerCount*F2))*scipy.random.poisson((self.QE*F2)*(im + self.background))
+            o = o +  (M/(self.ElectronsPerCount*F2))*np.random.poisson((self.QE*F2)*(im + self.background))
 
         return o
         
@@ -593,9 +593,19 @@ class FakeCamera(Camera):
             mdh['Multiview.NumROIs'] = nChans
             mdh['Multiview.ROISize'] =  [x_chan_pixels, y_pixels]
             mdh['Multiview.ChannelColor'] =  list(chan_specs)
+            mdh['Splitter.Flip'] = False
+
+            # write shift information (zero shifts)
+            mdh['chroma.dx'] = '{"PYME.Analysis.points.twoColour.lin2Model": {"mx": 0, "my": 0, "x0": 0}}'
+            mdh['chroma.dy'] = '{"PYME.Analysis.points.twoColour.lin2Model": {"mx": 0, "my": 0, "x0": 0}}'
+
             for i in range(nChans):
                 mdh['Multiview.ROI%dOrigin' % i] = [i*x_chan_pixels, 0]
                 mdh['Splitter.Channel%dROI' % i] = [i*x_chan_pixels, 0, x_chan_pixels, y_pixels]
+
+        
+            mdh['Simulator.ChanZOffsets'] = self._chan_z_offsets
+            mdh['Simulator.ChanSpecs'] = self._chan_specs
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

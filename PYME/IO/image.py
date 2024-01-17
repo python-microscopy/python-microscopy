@@ -48,6 +48,7 @@ from PYME.IO.compatibility import np_load_legacy
 
 logger = logging.getLogger(__name__)
 import warnings
+import PYME.warnings
 
 class PYMEDeprecationWarning(DeprecationWarning):
     pass
@@ -273,7 +274,7 @@ class ImageStack(object):
         if self.data_xyztc.shape[1] == 1:
             self.mode = 'graph'
 
-        #add ourselves to the list of open images        
+        #add ourselves to the list of open images      
         openImages[self.filename] = self
 
     def SetData(self, data):
@@ -507,9 +508,7 @@ class ImageStack(object):
         if self.dataSource.mdh is not None: #should be true the whole time    
             self.mdh.copyEntriesFrom(self.dataSource.mdh)
         else:
-            import wx
-            wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
-            print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
+            PYME.warnings.warn("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
         #attempt to estimate any missing parameters from the data itself
         try:
@@ -762,6 +761,50 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+    
+    def _loadOBF(self, filename):
+        from PYME.IO.DataSources import OBFDataSource
+        from PYME.IO.FileUtils import obf_support
+        from PYME.IO.FileUtils.nameUtils import getFullExistingFilename, getRelFilename
+        import numpy as np
+
+        stack_number = None
+        
+        if '?' in filename:
+            #we have a query string to pick the stack number
+            from six.moves import urllib
+            filename, query = filename.split('?')
+            
+            try:
+                stack_number = int(urllib.parse.parse_qs(query)['stack'][0])
+            except KeyError:
+                pass
+        
+        filename = getFullExistingFilename(filename)#convert relative path to full path
+        obf = obf_support.File(filename)
+        logger.debug('file: {}'.format(filename))
+        if len(obf.stacks) > 1 and stack_number is None and self.haveGUI:
+                import wx
+                options = ['%d: %s' % (ind, stack.name) for (ind, stack) in enumerate(obf.stacks)]
+                
+                dlg = wx.SingleChoiceDialog(None, 'Stack', 'Select a stack', options)
+                if dlg.ShowModal() == wx.ID_OK:
+                    stack_number = dlg.GetSelection()
+        
+        data = OBFDataSource.DataSource(obf, stack_number)
+        self.SetData(data)
+        self.seriesName = getRelFilename(filename) + ': ' + data.stack.name
+        self.filename = self.seriesName
+        logger.debug(self.filename)
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
+        voxel_sizes = data.stack.pixel_sizes
+        scales_factors = [d.scalefactor for d in data.stack.si_dimensions[:3]]
+        if not np.allclose(np.ones_like(scales_factors), scales_factors):
+            raise NotImplementedError('Scale factors other than 1 not yet supported for OBF metadata')
+        self.mdh['voxelsize.x'] = voxel_sizes[0] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.y'] = voxel_sizes[1] / 1E-6 # [m -> um]
+        self.mdh['voxelsize.z'] = voxel_sizes[2] / 1E-6 # [m -> um]
+        
         
 
     def _findAndParseMetadata(self, filename):
@@ -857,7 +900,7 @@ class ImageStack(object):
                 except IOError:
                     pass
 
-            elif filename.endswith('.dbl'): #Bewersdorf lab STED
+            elif filename.endswith('.dbl'): #imspector format, Bewersdorf lab STED
                 mdfn = filename[:-4] + '.txt'
                 entrydict = {}
                 
@@ -951,9 +994,8 @@ class ImageStack(object):
         self.dataSource = TiffDataSource.DataSource(filename, None)
         print(self.dataSource.shape)
 
-        if getattr(self.dataSource, 'RGB', False) and self.haveGUI:
-            import wx
-            wx.MessageBox('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).', 'WARNING', wx.OK)
+        if getattr(self.dataSource, 'RGB', False):
+            PYME.warnings.warn('Detected an RGB TIFF.\n\nThese are typically screenshots, or other colour-mapped images and not generally suitable for quantitative analysis. Procced with caution (or preferably use the raw data instead).')
         
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         data = self.dataSource #this will get replaced with a wrapped version
@@ -1124,6 +1166,7 @@ class ImageStack(object):
     def _load_zarr(self, filename):
         import zarr
         from PYME.IO.DataSources import ArrayDataSource
+        from PYME.IO.DataSources import BaseDataSource
         
         if '?' in filename:
             fn, arrayname = filename.split('?')
@@ -1135,27 +1178,49 @@ class ImageStack(object):
         
         # reopen using a caching store with 1GB cache size
         z = zarr.open(zarr.LRUStoreCache(z.store, int(1e9)), 'r')
+
+        # TODO - is this a standard OME-NGFF property?
+        dims = z.attrs.get('_ARRAY_DIMENSIONS', ['x', 'y', 'z'])            
+        dimOrder = ''.join(dims).upper()
+        print('dimOrder:', dimOrder)
+
+        # expand to full xyztc by apending missing dimensions
+        for d in 'XYZTC':
+            if (d not in dimOrder):
+                dimOrder += d
+
+        print('dimOrder:', dimOrder)
+        def array_ds(a):
+            if dimOrder[:a.ndim] == 'XYZTC'[:a.ndim]:
+                # array has the correct dimension ordering for the dimensions that count, we can use direct slicing
+                return ArrayDataSource.XYZTCArrayDataSource(a)
+            else:
+                logger.warning(f'Zarr dimenision order, {dims}, is not XYZTC, performance might not be optimal')
+                #TODO - better support for slicing on chunked data with non-standard order
+                return ArrayDataSource.XYZTCArrayDataSource(a, dimOrder=dimOrder)
+
         
         if isinstance(z, zarr.Group):
             array_names = sorted(list(z.array_keys()))
             print('Zarr file contains multiple datasets: %s' % (array_names,))
             
             if arrayname and (arrayname in array_names):
-                a = ArrayDataSource.XYZTCArrayDataSource(z[arrayname])
+                a = array_ds(z[arrayname])
             else:
-                a = ArrayDataSource.XYZTCArrayDataSource(z[array_names[0]])
+                a = array_ds(z[array_names[0]])
             
             if ('0' in array_names) and ('1' in array_names):
                 # hack to detect pyramid
                 print('Detected pyramidal .zarr')
                 self.is_pyramid = True
                 
-                self.levels = [ArrayDataSource.XYZTCArrayDataSource(z[n]) for n in array_names]
+                self.levels = [array_ds(z[n]) for n in array_names]
                 a.levels = self.levels
             
         else:
-            a = ArrayDataSource.XYZTCArrayDataSource(z)
+            a = array_ds(z)
 
+        logger.debug('Setting data')
         self.SetData(a)
         
         self.seriesName = getRelFilename(fn)
@@ -1247,6 +1312,11 @@ class ImageStack(object):
                 self._loadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
                 self._loadDBL(filename)
+            elif '.obf' in os.path.splitext(filename)[1] or '.msr' in os.path.splitext(filename)[1]:
+                self._loadOBF(filename)
+                # hack to get around self.filename = filename below, otherwise if we open multiple
+                # stacks from this same file we won't be able to make composite later
+                filename = self.seriesName
             elif os.path.splitext(filename)[1] in ['.tif', '.lsm']: #try tiff
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):
@@ -1265,29 +1335,17 @@ class ImageStack(object):
                     # is used to force bioformats loading of tiffs which we otherwise wouldn't understand.
                     
                     if os.path.splitext(filename)[1] in ['.tiff']:
-                        logger.warning('Loading .tiff with internal code not bioformats, is this really what you wanted?\n\
-                                       The .tiff extension is normally used in PYME to force bioformats loading of TIFF \
-                                       files which would not load correctly using the internal TIFF handling code. \
-                                       Normal TIFF files should use the .tif extension instead.')
-                        
-                        # Also print warning in case logging is not configured.
-                        print('WARNING: Could not load bioformats, falling back to internal TIFF code for .tiff')
-                        
-                        if haveGUI:
-                            import wx
-                            wx.MessageBox("Bioformats could not be loaded, trying to load .tiff using native TIFF loader.\n\
+                        PYME.warnings.warn("Bioformats could not be loaded, trying to load .tiff using native TIFF loader.\n\
                                           This might not work as expected as the .tiff format is typically used for TIFFs\
                                           which don\'t load properly using the native code.\n\
                                           Try installing python-bioformats as detailed in step 4 of the installation instructions \
-                                          (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html)", 'WARNING', wx.OK)
+                                          (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html)")
                         
                         self._loadTiff(filename)
                     else:
-                        if haveGUI:
-                            import wx
-                            wx.MessageBox('No native support for file type, and Bioformats could not be loaded. \n\
+                        PYME.warnings.warn('No native support for file type, and Bioformats could not be loaded. \n\
                             Try installing python-bioformats as detailed in step 4 of the installation instructions \
-                            (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html', 'WARNING', wx.OK)
+                            (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html')
                             
                         raise RuntimeError('Cannot load file %s, no native handler and failed to import bioformats' % filename)
             

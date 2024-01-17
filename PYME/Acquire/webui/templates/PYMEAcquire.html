@@ -146,35 +146,13 @@
                     <div class="tab-pane fade uitab" id="home" role="tabpanel" aria-labelledby="home-tab"></div>
 
                     <div class="tab-pane fade uitab bg-dark" id="aq_settings" role="tabpanel" aria-labelledby="aq-tab">
-                        <div style=" width: 100%; height: 400px;  overflow: scroll;">
+                        <div style=" width: 100%; height: 300px;  overflow: scroll;">
                             {% raw %}
                             <h3>PALM/STORM/PAINT Settings</h3>
                             <div class="container-fluid">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <h6>Protocol</h6>
-                                        <form class="form">
-                                            <div class="input-group input-group-sm">
-                                                <span class="form-control-sm">Protocol File: </span>
-                                                <select id="inputState" class="form-control form-control-sm">
-                                                    <option selected>None chosen...</option>
-                                                    <option>...</option>
-                                                  </select>
-                                            </div>
-                                            <div class="input-group input-group-sm ml-2 mt-1">
-                                                <div class="form-check-inline">
-                                                <input class="form-check-input" type="radio" id="aq_standard" v-model="spool_z_stepping" value=false>
-                                                <label class="form-check-label" for="aq_standard">Standard</label>
-                                                </div>
-                                                <div class="form-check-inline">
-                                                <input class="form-check-input" type="radio" id="aq_zs" v-model="spool_z_stepping" value=true>
-                                                <label class="form-check-label" for="aq_zs">Z stepped</label>
-                                                </div>
-                                            </div>
-
-                                            <stack-settings v-if="spooler.settings.z_stepped" v-model="stack" class="mt-1"></stack-settings>
-
-                                        </form>
+                                        <palm-storm-settings :spooler="spooler" :stack="stack"></palm-storm-settings>
                                     </div>
                                     <div class="col-md-6">
                                         <h6>Spooling</h6>

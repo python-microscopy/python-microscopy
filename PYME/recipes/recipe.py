@@ -22,6 +22,14 @@ class RecipeExecutionError(RecipeError):
 
         self.recipe = recipe # keep a reference to the recipe so that handlers can get fancy with formatting if they want to
 
+    #def __getstate__(self):
+    #    
+    #    return {}
+
+    # make this pickle-able even when the recipe isn't (so you see the error when running from bakeshop)
+    def __reduce__(self):
+        return self.__class__, self.args
+
 class Recipe(HasTraits):
     modules = List()
     execute_on_invalidation = Bool(False)
@@ -190,18 +198,18 @@ class Recipe(HasTraits):
         #remove anything which is downstream from changed inputs
         
         try:
-            print('recipe.execute()')
+            logger.debug('recipe.execute()')  
             #print self.namespace.keys()
             for k, v in kwargs.items():
                 #print k, v
                 try:
                     if not (self.namespace[k] == v):
                         #input has changed
-                        print('pruning: ', k)
+                        # print('pruning: ', k) # possibly change these into logging/debug messages
                         self.prune_dependencies_from_namespace([k])
                 except KeyError:
                     #key wasn't in namespace previously
-                    print('KeyError')
+                    # print('KeyError')  # possibly change these into logging/debug messages
                     pass
             
             self.namespace.update(kwargs)

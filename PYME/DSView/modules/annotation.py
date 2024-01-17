@@ -59,7 +59,7 @@ class LabelPanel(wx.Panel):
         
         self.bAdjustSnake = wx.Button(self, label='Adj', style=wx.BU_EXACTFIT)
         self.bAdjustSnake.Bind(wx.EVT_BUTTON, self.on_adjust_snake)
-        self.bAdjustSnake.SetToolTipString('Adjust the parameters of fo the "snake" (active contour) used for curve locking')
+        self.bAdjustSnake.SetToolTip('Adjust the parameters of fo the "snake" (active contour) used for curve locking')
         
         sbsizer.Add(self.bAdjustSnake, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 2)
         
@@ -70,10 +70,10 @@ class LabelPanel(wx.Panel):
         self.lLabels.InsertColumn(1, 'Structure')
         
         for i in range(10):
-            self.lLabels.InsertStringItem(i, '%d' % i)
-            self.lLabels.SetStringItem(i, 1, 'Structure %d' % i)
+            self.lLabels.InsertItem(i, '%d' % i)
+            self.lLabels.SetItem(i, 1, 'Structure %d' % i)
         
-        self.lLabels.SetStringItem(0, 1, 'No label')
+        self.lLabels.SetItem(0, 1, 'No label')
         
         self.lLabels.SetItemState(1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
         self.lLabels.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -92,7 +92,7 @@ class LabelPanel(wx.Panel):
         self.bAddLine = wx.Button(self, label='Add', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bAddLine, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         self.bAddLine.Bind(wx.EVT_BUTTON, self.labeler.add_curved_line)
-        self.bAddLine.SetToolTipString('Add a curve annotation (ctrl-L / cmd-L)')
+        self.bAddLine.SetToolTip('Add a curve annotation (ctrl-L / cmd-L)')
         vsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 5)
         
         self.SetSizer(vsizer)
@@ -121,7 +121,7 @@ def minimum_distance_to_poly(poly, points, closed=True):
     a set of 2D points
 
     Parameters
-    ##########
+    ----------
 
     poly : Nx2 ndarray
         line segment or polygon
@@ -130,7 +130,7 @@ def minimum_distance_to_poly(poly, points, closed=True):
         points to test
 
     Returns
-    #######
+    -------
 
     Mx1 array of (signed?) distances
     """
@@ -270,14 +270,16 @@ class AnnotationList(list):
         Label points based on the current set of annotations
 
         Parameters
-        ##########
+        ----------
 
-        points : Mx2 ndarray
+            points : Mx2 ndarray
 
         Returns
-        #######
+        -------
 
-        Mx1 array of labels
+            labels: Mx1 array of labels
+
+
         """
 
         out = np.zeros(points.shape[0], 'i4')
@@ -529,7 +531,7 @@ class AnnotateBase(object):
 
     def _visibletest(self, clump, bounds):
     
-        xb, yb, zb = bounds
+        xb, yb, zb, tb = bounds
         
         x, y = np.array(clump['points']).T
         t = clump['z']
@@ -539,7 +541,7 @@ class AnnotateBase(object):
     def _hittest(self, clump, pos):
         xp, yp, zp = pos
     
-        bounds = [(xp - 2, xp + 2), (yp - 2, yp + 2), (zp, zp + 1)]
+        bounds = [(xp - 2, xp + 2), (yp - 2, yp + 2), (zp, zp + 1), (0, 100)]
     
         return self._visibletest(clump, bounds)
     
@@ -705,13 +707,13 @@ class Annotater(Plugin, AnnotateBase):
         self.dv.Update()
 
     def OnSaveClassifier(self, event=None):
-        filename = wx.FileSelector("Save classifier as:", wildcard="*.pkl", flags=wx.FD_SAVE)
+        filename = wx.FileSelector("Save classifier as:", wildcard="*.joblib", flags=wx.FD_SAVE)
         if not filename == '':
             self.cf.save(filename)
 
     def OnLoadClassifier(self, event=None):
         from PYME.Analysis import svmSegment
-        filename = wx.FileSelector("Load Classifier:", wildcard="*.pkl", flags=wx.FD_OPEN)
+        filename = wx.FileSelector("Load Classifier:", wildcard="*.joblib", flags=wx.FD_OPEN)
         if not filename == '':
             self.cf = svmSegment.svmClassifier(filename=filename)
             self._mi_run.Enable(True)

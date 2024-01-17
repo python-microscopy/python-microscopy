@@ -4,7 +4,7 @@ import wx
 from PYME.cluster.rules import LocalisationRuleFactory as LocalizationRuleFactory
 from PYME.cluster.rules import RecipeRuleFactory
 from collections import OrderedDict
-import queue
+#import queue
 import os
 import posixpath
 import logging
@@ -106,6 +106,7 @@ class ProtocolRules(OrderedDict):
     def on_spool_event(self, event):
         """
         pipe input series name into rule chain and post them all
+        
         Parameters
         ----------
         kwargs: dict
@@ -805,6 +806,7 @@ class ChainedAnalysisPanel(wx.Panel):
     def plug(main_frame, scope, default_pairings=None):
         """
         Adds a ChainedAnalysisPanel to a microscope gui during start-up
+        
         Parameters
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
@@ -814,6 +816,7 @@ class ChainedAnalysisPanel(wx.Panel):
         default_pairings : dict
             [optional] protocol keys with lists of RuleFactorys as values to
             prepopulate panel on start up. By default, None
+        
         """
 
         scope.protocol_rules = ProtocolRules(scope.spoolController)
@@ -908,6 +911,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
     def _open_live_view(self, **kwargs):
         """
         Open PYMEVisualize on a freshly spooled series which is being localized
+        
         Parameters
         ----------
         kwargs: dict
@@ -922,6 +926,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
     def plug(main_frame, scope, default_pairings=None):
         """
         Adds a SMLMChainedAnalysisPanel to a microscope gui during start-up
+        
         Parameters
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame

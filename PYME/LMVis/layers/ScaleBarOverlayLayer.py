@@ -48,11 +48,12 @@ class ScaleBarOverlayLayer(OverlayLayer):
 
         Parameters
         ----------
-        gl_canvas
+        gl_canvas: GLCanvas
             the scaleBarLength is currently used, but should be passed with a setter in the future
             xmin, xmax, ymin, ymax and Size is used to get the total size of the canvas and to calculate
-             the real size of the scale bar
+            the real size of the scale bar
 
+             
         Returns
         -------
 

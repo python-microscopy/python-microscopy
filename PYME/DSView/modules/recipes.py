@@ -64,7 +64,7 @@ class RecipePlugin(recipeGui.PipelineRecipeManager, Plugin):
             for r in recipeGui.CANNED_RECIPES:
                 #print r, 
                 ID = dsviewer.AddMenuItem('Recipes', os.path.split(r)[1], self.OnRunCanned).GetId()
-                #ID = wx.NewId()
+                #ID = wx.NewIdRef()
                 self.cannedIDs[ID] = r
                 #self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)
                 #wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)

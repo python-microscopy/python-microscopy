@@ -18,20 +18,73 @@ ignore:
 #    - "*/loft/*"
 #    - "*/Loft/*"
 
-flags:
-  all:
-    paths:
-      - "*"
+# fixes:
+#   - "/home/vsts/work/1/s/::"
+
+# flags:
+#   all:
+#     paths:
+#       - "*"
       
-  core:
-    ignore:
-      - "*/ui/*"
-      - "*/Acquire/*"
-      - "*/DSView/*"
-      - "*/LMVis/*"
-      - "*/recipes/recipeGui.py"
-      - "*/recipes/vertical_recipe_display.py"
-      - "*/ParallelTasks/*"
-      - "*/tileviewer/*"
-      - "*/contrib/*"
+#   core:
+#     paths:
+#       - "*"
+#     ignore:
+#       - "*/ui/*"
+#       - "*/Acquire/*"
+#       - "*/DSView/*"
+#       - "*/LMVis/*"
+#       - "*/recipes/recipeGui.py"
+#       - "*/recipes/vertical_recipe_display.py"
+#       - "*/ParallelTasks/*"
+#       - "*/tileviewer/*"
+#       - "*/contrib/*"
+
+comment:
+  layout: "header, diff, components" #show components in PR comment
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+      - target: auto
+
+  
+  individual_components:
+   - component_id: all
+     name: all
+     paths:
+      - "**"
+      
+   - component_id: core
+     name: core
+     paths:
+      - "PYME/IO/**"
+      - "PYME/cluster/**"
+      - "PYME/Analysis/**"
+      - "PYME/localization/**"
+      - "PYME/simulation/**"
+      - "PYME/misc/**"
+      - "PYME/Deconv/**"
+      - "PYME/config.py"
+      - "PYME/recipes/**"
+
+   - component_id: gui
+     name: gui
+     paths:
+        - "PYME/ui/**"
+        - "PYME/DSView/**"
+        - "PYME/LMVis/**"
+        - "PYME/tileviewer/**"
+
+   - component_id: experimental
+     name: experimental
+     paths:
+       - "PYME/experimental/**"
+       - "PYME/reports/**"
+
+   - component_id: acquire
+     name: acquire
+     paths:
+       - "PYME/Acquire/**"
       

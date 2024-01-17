@@ -146,7 +146,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0
 
     #print slicesUsed
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
 
     return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype)

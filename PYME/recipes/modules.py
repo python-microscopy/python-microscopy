@@ -40,9 +40,9 @@ from .base import ModuleCollection
 #load any custom recipe modules
 for mn in config.get_plugins('recipes'):
     try:
-        print('Trying to load 3rd party recipe module %s' % mn)
+        logger.debug('Trying to load 3rd party recipe module %s' % mn)
         m = __import__(mn, fromlist=mn.split('.')[:-1])
-        print('Loaded 3rd party recipe module %s' % mn)
+        logger.debug('Loaded 3rd party recipe module %s' % mn)
     except Exception as e:
         logger.exception('Error loading plugin: %s' % mn)
 

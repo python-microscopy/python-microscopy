@@ -578,7 +578,7 @@ class TextfileSource(TabularBase):
         #print('invalid_raise:', invalid_raise)
 
         if config.get('TextFileSource-use_pandas',False):
-            print('Opening %s using pandas (set TextFileSource-use_pandas: False in config.yaml to use legacy np.genfromtxt instead)')
+            logger.info('Opening "%s" using pandas (set TextFileSource-use_pandas: False in config.yaml to use legacy np.genfromtxt instead)' % filename)
             import pandas as pd
             self.res = pd.read_csv(filename,
                 comment=comments,
@@ -592,7 +592,7 @@ class TextfileSource(TabularBase):
                 ).to_records(index=False)
 
         else:
-            print('Opening %s using np.genfromtxt (set TextFileSource-use_pandas: True in config.yaml to use pandas instead)')
+            logger.info('Opening %s using np.genfromtxt (set TextFileSource-use_pandas: True in config.yaml to use pandas instead)' % filename)
             self.res = np.genfromtxt(filename,
                              comments=comments,
                              delimiter=delimiter,
@@ -907,26 +907,30 @@ class IdFilter(SelectionFilter):
 class ConcatenateFilter(TabularBase):
     _name = "Concatenation Filter"
 
-    def __init__(self, source0, source1):
-        """Class which concatenates two tabular data sources. The data sources should have the same keys.
+    def __init__(self, source0, source1, *args, concatKey='concatSource'):
+        """Class which concatenates two (or more) tabular data sources. The data sources should have the same keys.
 
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
 
         self.source0 = source0
-        self.source1 = source1
+        #self.source1 = source1
+
+        self._sources = [source0, source1, ] + list(args)
+        self._concat_key = concatKey
 
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
-        if key == 'concatSource':
-            return np.hstack((np.zeros(len(self.source0[list(self.source0.keys())[0]])), np.ones(len(self.source1[list(self.source1.keys())[0]]))))
+        if key == self._concat_key:
+            return np.hstack([i* np.ones(len(s[list(s.keys())[0]])) for i, s in enumerate(self._sources)])
+            #return np.hstack((np.zeros(len(self.source0[list(self.source0.keys())[0]])), np.ones(len(self.source1[list(self.source1.keys())[0]]))))
         else:
-            return np.hstack((self.source0[key], self.source1[key]))[sl]
+            return np.hstack([s[key] for s in self._sources])[sl]
 
     def keys(self):
-        s1_keys = self.source1.keys()
-        return list(set(['concatSource', ] + [k for k in self.source0.keys() if k in s1_keys]))
+        return set(self.source0.keys()).intersection(*[s.keys() for s in self._sources]).union([self._concat_key,])
+        
 
 @deprecated_name('cachingResultsFilter')
 class CachingResultsFilter(TabularBase):
@@ -1220,3 +1224,70 @@ class CloneSource(TabularBase):
     def keys(self):
         return list(self.cache.keys())
 
+class AnndataSource(TabularBase):
+    """Interfaces with anndata/scanpy/squidpy packages for spatialomics."""
+    _name = "Anndata Source"
+
+    def __init__(self, filename):
+        try:
+            import anndata as ad
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError("No module named anndata. Please install anndata to use this source.")
+        
+        # backed='r' keeps us from loading the full file into memory
+        # TODO: Is this the behaviour we want?
+        self.res = ad.read(filename, backed='r')
+
+        # Flatten the anndata structure as best we can to fit our tabular structure
+        self._keys = list(self.res.var_names) + list(self.res.obs.keys())
+        self._keys_attrs = {**{k: 'X' for k in self.res.var_names}, **{k: 'obs' for k in self.res.obs_keys()}}
+        for k, v in self.res.obsm.items():
+            n_var = v.shape[1]
+            if k == "spatial" or k == "spatial3d":
+                if n_var == 2:
+                    proposed_keys = ['x', 'y']
+                elif n_var == 3:
+                    proposed_keys = ['x', 'y', 'z']
+                else:
+                    print(f"Could not load spatial data. Unsupported number of dimensions {n_var}.")
+                    proposed_keys = None
+                
+                for i, kk in enumerate(proposed_keys):
+                    count = 0
+                    while proposed_keys[i] in self._keys:
+                        proposed_keys[i] = f"{kk}{count}"
+                        count += 1
+                    self._keys += [proposed_keys[i]]
+                    self._keys_attrs.update({proposed_keys[i]: {'obsm': {k: i}}})
+            else:
+                self._keys += [f"{k}_{j}" for j in range(n_var)]
+                self._keys_attrs.update({f"{k}_{j}": {'obsm': {k: j}} for j in range(n_var)})
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, key):
+        key, sl = self._getKeySlice(key)
+        if key not in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+            
+        print(f"Getting {key}")
+        
+        if self._keys_attrs[key] == "X":
+            x = self.res[sl, key].X
+            if isinstance(x, np.ndarray):
+                return x.squeeze()
+            return x.toarray().squeeze()
+        elif isinstance(self._keys_attrs[key], dict):
+            first_key = next(iter(self._keys_attrs[key]))
+            if first_key == "obsm":
+                d = self._keys_attrs[key][first_key]
+                dkey = next(iter(d))
+                return getattr(self.res, first_key)[dkey][:,d[dkey]]
+            else:
+                raise KeyError(f"Unknown subkeys starting from {first_key}.")
+        else:
+            return getattr(self.res, self._keys_attrs[key])[key][sl].to_numpy().squeeze()
+
+    def getInfo(self):
+        return f"Anndata Data Source\n\n {self.res.X.shape[0]} points"

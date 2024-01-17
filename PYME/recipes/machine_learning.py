@@ -1,5 +1,5 @@
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  FileOrURI, Instance, WeakRef
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -14,12 +14,15 @@ from scipy import ndimage
 from PYME.IO.image import ImageStack
 
 @register_module('SVMSegment')
-class svmSegment(Filter):
+class SVMSegment(Filter):
     classifier = FileOrURI('')
+    _classifier = CStr('')
+    _cf = Instance(object, allow_none=True)
     
     def _loadClassifier(self):
         from PYME.Analysis import svmSegment
-        if not (('_cf' in dir(self)) and (self._classifier == self.classifier)):
+        if not (self._cf and (self._classifier == self.classifier)):
+            print('loading classifier')
             self._classifier = self.classifier
             with unifiedIO.local_or_temp_filename(self.classifier) as fn:
                 self._cf = svmSegment.svmClassifier(filename=fn)
@@ -32,6 +35,32 @@ class svmSegment(Filter):
     def completeMetadata(self, im):
         im.mdh['SVMSegment.classifier'] = self.classifier
 
+@register_module('LabelsToChannels')
+class LabelsToChannels(ModuleBase):
+    """ Convert a label image to a set of channels, one for each label.
+
+    """
+    inputLabels = Input('labels')
+    output = Output('channels')
+    
+    def run(self, inputLabels):
+        chans=[]
+        channel_names = []
+
+        labels = inputLabels.data_xyztc[:,:,:,:,0].astype('i4')
+        num_chans = np.max(labels)
+
+        for i in range(1, num_chans+1):
+            chans.append(np.atleast_3d(labels == i))
+            channel_names.append('label%d' %i)
+
+        im = ImageStack(chans, titleStub = 'Composite Image')
+        
+        im.mdh.copyEntriesFrom(inputLabels.mdh)
+        im.names = channel_names
+        im.mdh['Parent'] = inputLabels.filename
+
+        return im
 
 @register_module('CNNFilter')
 class CNNFilter(Filter):
@@ -132,19 +161,32 @@ class PointFeaturesPairwiseDist(PointFeatureBase):
 
     normaliseRelativeDensity = Bool(False) # divide by the sum of all radial bins. If not performed, the first principle component will likely be average density
     
-    def execute(self, namespace):
-        from PYME.Analysis.points import DistHist
-        points = namespace[self.inputLocalisations]
+    # def execute(self, namespace):
+    #     from PYME.Analysis.points import DistHist
+    #     points = namespace[self.inputLocalisations]
         
-        if self.threeD:
-            x, y, z = points['x'], points['y'], points['z']
-            f = np.array([DistHist.distanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numBins, self.binWidth) for i in xrange(len(x))])
-        else:
-            x, y = points['x'], points['y']
-            f = np.array([DistHist.distanceHistogram(x[i], y[i], x, y, self.numBins, self.binWidth) for i in xrange(len(x))])
+    #     if self.threeD:
+    #         x, y, z = points['x'], points['y'], points['z']
+    #         f = np.array([DistHist.distanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numBins, self.binWidth) for i in xrange(len(x))])
+    #     else:
+    #         x, y = points['x'], points['y']
+    #         f = np.array([DistHist.distanceHistogram(x[i], y[i], x, y, self.numBins, self.binWidth) for i in xrange(len(x))])
             
         
-        namespace[self.outputName] = self._process_features(points, f)
+    #     namespace[self.outputName] = self._process_features(points, f)
+
+    def run(self, inputLocalisations):
+        from PYME.Analysis.points import DistHist
+        
+        if self.threeD:
+            x, y, z = inputLocalisations['x'], inputLocalisations['y'], inputLocalisations['z']
+            f = np.array([DistHist.distanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numBins, self.binWidth) for i in xrange(len(x))])
+        else:
+            x, y = inputLocalisations['x'], inputLocalisations['y']
+            f = np.array([DistHist.distanceHistogram(x[i], y[i], x, y, self.numBins, self.binWidth) for i in xrange(len(x))])
+
+        return self._process_features(inputLocalisations, f)
+
 
 
 @register_module('PointFeaturesVectorial')
@@ -178,17 +220,28 @@ class PointFeaturesVectorial(PointFeatureBase):
         
         return f.reshape([f.shape[0], -1])
     
-    def execute(self, namespace):
-        from PYME.Analysis.points.features import metal
-        points = namespace[self.inputLocalisations]
+    # def execute(self, namespace):
+    #     from PYME.Analysis.points.features import metal
+    #     points = namespace[self.inputLocalisations]
         
-        #if self.threeD:
-        x, y, z = points['x'], points['y'], points['z']
+    #     #if self.threeD:
+    #     x, y, z = points['x'], points['y'], points['z']
+    #     #f = np.array([self._reduce_features(DistHist.vectDistanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numRadialBins, self.radialBinWidth, self.numAngleBins)) for i in xrange(len(x))])
+    #     f = metal.Backend().vector_features_3d(x, y, z, radial_bin_size=self.radialBinWidth, n_radial_bins=self.numRadialBins, n_angle_bins=self.numAngleBins)       
+    #     f = self._reduce_features(f)
+
+    #     namespace[self.outputName] = self._process_features(points, f)
+
+    def run(self, inputLocalisations):
+        from PYME.Analysis.points.features import metal
+
+        x, y, z = inputLocalisations['x'], inputLocalisations['y'], inputLocalisations['z']
         #f = np.array([self._reduce_features(DistHist.vectDistanceHistogram3D(x[i], y[i], z[i], x, y, z, self.numRadialBins, self.radialBinWidth, self.numAngleBins)) for i in xrange(len(x))])
         f = metal.Backend().vector_features_3d(x, y, z, radial_bin_size=self.radialBinWidth, n_radial_bins=self.numRadialBins, n_angle_bins=self.numAngleBins)       
         f = self._reduce_features(f)
 
-        namespace[self.outputName] = self._process_features(points, f)
+        return self._process_features(inputLocalisations, f)
+
     
 @register_module('AnnotatePoints')
 class AnnotatePoints(ModuleBase):
@@ -205,18 +258,29 @@ class AnnotatePoints(ModuleBase):
     outputName = Output('labeled')
 
 
-    def execute(self, namespace):
+    # def execute(self, namespace):
+    #     from PYME.IO.tabular import MappingFilter
+    #     from PYME.IO import MetaDataHandler
+
+    #     inp = namespace[self.inputLocalisations]
+    #     ann = namespace[self.inputAnnotations]
+
+    #     pts = np.array([inp['x'], inp['y']]).T
+        
+    #     labels = ann.label_points(pts)
+    #     out = MappingFilter(inp)
+    #     out.addColumn('labels', labels)
+    #     out.mdh = MetaDataHandler.NestedClassMDHandler(getattr(inp, 'mdh', None))
+
+    #     namespace[self.outputName] = out
+
+    def run(inputLocalisations, inputAnnotations):
         from PYME.IO.tabular import MappingFilter
         from PYME.IO import MetaDataHandler
 
-        inp = namespace[self.inputLocalisations]
-        ann = namespace[self.inputAnnotations]
-
-        pts = np.array([inp['x'], inp['y']]).T
+        pts = np.array([inputLocalisations['x'], inputLocalisations['y']]).T
         
-        labels = ann.label_points(pts)
-        out = MappingFilter(inp)
+        labels = inputAnnotations.label_points(pts)
+        out = MappingFilter(inputLocalisations)
         out.addColumn('labels', labels)
-        out.mdh = MetaDataHandler.NestedClassMDHandler(getattr(inp, 'mdh', None))
-
-        namespace[self.outputName] = out
+        return out

@@ -45,8 +45,8 @@ class TrackList(wx.ListCtrl):
 
         # only do this part the first time so the events are only bound once
         #if not hasattr(self, "ID_TRACK_SHOW"):
-        self.ID_TRACK_SHOW = wx.NewId()
-        self.ID_TRACK_HIDE = wx.NewId()
+        self.ID_TRACK_SHOW = wx.NewIdRef()
+        self.ID_TRACK_HIDE = wx.NewIdRef()
 
         self.Bind(wx.EVT_MENU, self.OnShowTrack, id=self.ID_TRACK_SHOW)
         self.Bind(wx.EVT_MENU, self.OnHideTrack, id=self.ID_TRACK_HIDE)
@@ -383,7 +383,7 @@ class ParticleTrackingView(HasTraits, Plugin):
         if (not clump.enabled) or (clump.nEvents < 2):
             return False
             
-        xb, yb, zb = bounds
+        xb, yb, zb, tb = bounds
         vx, vy, vz = self.image.voxelsize
         
         x = clump['x']/vx

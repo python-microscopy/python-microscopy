@@ -432,7 +432,7 @@ class HamamatsuDCAM(Camera):
         ----------
         prop_name : str
             DCAM property string (e.g. 'EXPOSURE TIME')
-        value : float
+        val : float
             Value to set DCAM property.
 
         Returns
@@ -454,6 +454,71 @@ class HamamatsuDCAM(Camera):
 
         # Set the property value
         self.checkStatus(dcam.dcamprop_setvalue(self.handle, iProp,
+                                                ctypes.c_double(val)),
+                        "dcamprop_setvalue")
+    
+    def get_cam_prop_array_value(self, prop_name, element_number):
+        """get a property value for an array property
+        
+        Some of these properties are obvious because they include a [0] in
+        the property name. When called alone through `self.getCamPropValue`
+        you can only get the first (element_number=0) element of the array. This function will
+        access other elements of the array too.
+
+        Parameters
+        ----------
+        prop_name : str
+            DCAM property string (e.g. 'OUTPUT TRIGGER DELAY[0]')
+        element_number : int
+            index of the property array to access
+        
+        Returns
+        -------
+        value : float
+            Value of DCAM property.
+        
+        Notes
+        -----
+        Less checking is done here than in getCamPropValue, which is therefore
+        prefered if only dealing with the zeroth element of the property array.
+        """
+        prop = self.getCamPropAttr(prop_name)
+        n = int(element_number)
+        prop_id = prop.iProp_ArrayBase + prop.iPropStep_Element * n
+        # Get the property value
+        val = ctypes.c_double(0)
+        self.checkStatus(dcam.dcamprop_getvalue(self.handle, prop_id,
+                                                ctypes.byref(val)),
+                         "dcamprop_getvalue")
+        return float(val.value)
+
+    def set_cam_prop_array_value(self, prop_name, element_number, val):
+        """Set a property value for an array property
+
+        Some of these properties are obvious because they include a [0] in
+        the property name. When called alone through `self.setCamPropValue`
+        you can only set the first (element_number=0) element of the array. 
+        This function will access other elements of the array too.
+
+        Parameters
+        ----------
+        prop_name : str
+            DCAM property string (e.g. 'OUTPUT TRIGGER DELAY[0]')
+        element_number : int
+            index of the property array to set
+        val : float
+            Value to set DCAM property.
+        
+        Notes
+        -----
+        Less checking is done here than in setCamPropValue, which is therefore
+        prefered if only dealing with the zeroth element of the property array.
+        """
+        prop = self.getCamPropAttr(prop_name)
+        n = int(element_number)
+        prop_id = prop.iProp_ArrayBase + prop.iPropStep_Element * n
+        # Set the property value
+        self.checkStatus(dcam.dcamprop_setvalue(self.handle, prop_id,
                                                 ctypes.c_double(val)),
                         "dcamprop_setvalue")
 

@@ -3,6 +3,7 @@ Refactored rule pushing. Introduces rule classes which act as a python proxy for
 factories for use when constructing equivalent rules (or chains of rules) for multiple series.
 
 Design principles as follows:
+
 - a `Rule` object is a 1:1 mapping with rules on the ruleserver
 - you create a new `Rule` object for each rule you push to the server
 - a pattern for rule creation is expressed using a `RuleFactory`
@@ -139,14 +140,19 @@ class RuleGroupWatcher(object):
         import uuid
         self._info = info
         self._curr_cell = str(uuid.uuid4())#info.cell_id
+        # try:
+        #     self._rule_groups.pop(_curr_cell)
+        # except KeyError:
+        #     pass
 
     def _update(self):
         from IPython.display import update_display
         from PYME.cluster.distribution import get_cached_queue_info
         
         while self.active:
-            try:
-                for rules, disp_id in self._rule_groups.values():
+            for k, v in list(self._rule_groups.items()):
+                rules, disp_id = v
+                try:
                     status = get_cached_queue_info(rules[0].taskQueueURI)
                     if status != self._cached_status.get(disp_id, None):
                         self._cached_status[disp_id] = status
@@ -154,8 +160,9 @@ class RuleGroupWatcher(object):
                         ri = [rule._get_info(status) for rule in rules]
                         html = rg_template.render(info=ri)
                         update_display({'text/html': html}, raw=True, display_id=disp_id)
-            except:
-                logger.exception('Error polling rule')
+                except:
+                    logger.exception('Error polling rules %s' % rules)
+                    self._rule_groups.pop(k)
 
             time.sleep(1)
 
@@ -497,7 +504,10 @@ class Rule(object):
         if errors: 
             if (info.get('tasksFailed', 0) > 0):
                 dm = clusterIO.get_dir_manager()
-                info['errors'] = dm.locate_file(f'LOGS/rules/{self._ruleID}.html', True)[0][0]
+                try:
+                    info['errors'] = dm.locate_file(f'LOGS/rules/{self._ruleID}.html', True)[0][0]
+                except IndexError:
+                    info['errors'] = None
             else:
                 info['errors'] = None
 
@@ -949,9 +959,10 @@ class LocalisationRuleFactory(RuleFactory):
     def __init__(self, **kwargs):
         """
         See `LocalisationRule` for full initialization arguments. Required 
-        kwargs are
-            seriesName : str
-            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        kwargs are:
+
+        :seriesName : str
+        :analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
         """
         RuleFactory.__init__(self, rule_class=LocalisationRule, **kwargs)   
 
@@ -960,8 +971,9 @@ class SpoolLocalLocalizationRuleFactory(RuleFactory):
     def __init__(self, **kwargs):
         """
         See `SpoolLocalLocalizationRule` for full initialization arguments. 
-        Required kwargs are
-            seriesName : str
-            analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
+        Required kwargs are:
+
+        :seriesName : str
+        :analysisMetadata : PYME.IO.MetaDataHandler.MDHandlerBase
         """
         RuleFactory.__init__(self, rule_class=SpoolLocalLocalizationRule, **kwargs)   

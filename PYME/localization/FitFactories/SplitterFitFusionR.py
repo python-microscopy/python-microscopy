@@ -109,7 +109,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
     
     #print n, fitResults, fr['fitResults'].dtype, fr['fitResults'].view('8f4').shape
 
-    fr['tIndex'] = metadata.tIndex
+    fr['tIndex'] = metadata['tIndex']
     fr['resultCode'] = resultCode
     fr['nchi2'] = nchi2
     #print n, fr['fitResults'].view('f4').shape
@@ -130,7 +130,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
  
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
-    r['tIndex'] = metadata.tIndex
+    r['tIndex'] = metadata['tIndex']
     r['fitError'].view('5f')[:] = -5e3
     return r
 		
@@ -210,8 +210,8 @@ class GaussianFitFactory(FFBase.FFBase):
         Yg = y + vs.y*scipy.mgrid[slice(-roiHalfSize,roiHalfSize + 1)]
 
         #generate a corrected grid for the red channel      
-        DeltaX = md.chroma.dx.ev(x, y)
-        DeltaY = md.chroma.dy.ev(x, y)
+        DeltaX = md['chroma.dx'].ev(x, y)
+        DeltaY = md['chroma.dy'].ev(x, y)
 
         Xr = Xg + DeltaX
         Yr = Yg + DeltaY

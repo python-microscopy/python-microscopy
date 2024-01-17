@@ -32,7 +32,7 @@ class SarcomereChecker:
     def __init__(self, parent, menu, scope, key = 'F12'):
         self.scope = scope
 
-        idSarcCheck = wx.NewId()
+        idSarcCheck = wx.NewIdRef()
 
         self.menu = wx.Menu(title = '')
 

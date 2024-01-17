@@ -29,6 +29,26 @@ def save_as_png(view):
     if filename.strip():
         view.GrabPNG(filename)
 
+def save_as_series_of_png(view, filename=None):
+    """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
+    via ffmpeg or similar tools
+
+    FIXME: Currently only supports z
+
+    Parameters
+    ----------
+    view :ArrayViewPanel
+    filename: str
+        filename of the Imagestack used to generate the View. Provided only as a default filestub for the PNG series
+    """
+    if filename is not None:
+        import os
+        series_stub = os.path.split(os.path.splitext(filename)[0])[-1]
+    filename = wx.FileSelector('Save series of PNGs with the following base name', wildcard="PNG files(*.png)|*.png", flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT,
+                               default_filename=series_stub)
+    if filename.strip():
+        view.ExportStackToPNG(filename)
+
 def Plug(dsviewer):
     dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=lambda : getattr(dsviewer.image, 'voxelsize_nm'))
     dsviewer.updateHooks.append(dsviewer.view.Redraw)
@@ -36,6 +56,7 @@ def Plug(dsviewer):
 
     dsviewer.AddMenuItem('View', "Copy display to clipboard", lambda e : dsviewer.view.CopyImage())
     dsviewer.AddMenuItem('View', "Save image as PNG", lambda e: save_as_png(dsviewer.view))
+    dsviewer.AddMenuItem('View', "Save movie frames as PNG", lambda e: save_as_series_of_png(dsviewer.view, dsviewer.image.filename))
 
 #    dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
 #    dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())

@@ -85,6 +85,7 @@ class BaseLayer(HasTraits):
 .
     In simpler cases, such as rendering an overlay it is acceptable for a layer to do it's own rendering and manage it's
     own shader. In this case, use `SimpleLayer` as a base.
+
     """
     visible = Bool(True)
     
@@ -94,7 +95,6 @@ class BaseLayer(HasTraits):
     @property
     def bbox(self):
         """Bounding box in form [x0,y0,z0, x1,y1,z1] (or none if a bounding box does not make sense for this layer)
-        
         over-ride in derived classes
         """
         return None

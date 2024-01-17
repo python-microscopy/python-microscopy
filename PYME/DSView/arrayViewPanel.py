@@ -303,7 +303,29 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
         
+    def draw_cross_pixel_coords(self, dc, x, y, z, w, h, d):
+        """Draws a cross on a given device contect (dc) given 3D co-ordinates
+        in image pixel space.
+
+        Usually called from overlays. NOTE: the dc should be the same one that is passed TO the overlay, and which comes from 
+        our OnPaint handler, not any arbitrary device context.
+
+        """
+        if (self.do.slice == self.do.SLICE_XY):
+            xs, ys = self.pixel_to_screen_coordinates(x,y)
+            ws, hs = (w*self.scale, h*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs, ys = self.pixel_to_screen_coordinates(x,z)
+            ws, hs = (w*self.scale, d*self.scale*self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs, ys = self.pixel_to_screen_coordinates(y,z)
+            ws, hs = (h*self.scale, d*self.scale*self.aspect)
+            
+        #dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        dc.DrawLine(xs - 0.5*ws, ys-0.5*hs, xs + 0.5*ws, ys+0.5*hs)
+        dc.DrawLine(xs - 0.5*ws, ys+0.5*hs, xs + 0.5*ws, ys-0.5*hs)
         
+
     @property
     def scale(self):
         """
@@ -368,7 +390,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             x = self.filter['x']/self.voxelsize[0]
             y = self.filter['y']/self.voxelsize[1]
             
-            xb, yb, zb = self.visible_bounds
+            xb, yb, zb, tb = self.visible_bounds
             
             IFoc = (x >= xb[0])*(y >= yb[0])*(t >= zb[0])*(x < xb[1])*(y < yb[1])*(t < zb[1])
 
@@ -392,7 +414,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
     @property
     def visible_bounds(self):
         """
-        The currently visible bounds of the image, in image pixel coordinates [x, y, z]
+        The currently visible bounds of the image, in image pixel coordinates [x, y, z, t]
 
         Used to avoid drawing overlays in regions of the image which are not shown.
 
@@ -404,11 +426,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sX, sY = self.imagepanel.Size
         
         if self.do.slice == self.do.SLICE_XY:
-            bnds = [(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.zp-.5, self.do.zp+.5)]
+            bnds = [(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.zp-.5, self.do.zp+.5), (self.do.tp-.5, self.do.tp+.5)]
         elif self.do.slice == self.do.SLICE_XZ:
-            bnds = [(x0/sc, (x0+sX)/sc), (self.do.yp-.5, self.do.yp+.5), (y0/sc, (y0+sY)/sc)]
+            bnds = [(x0/sc, (x0+sX)/sc), (self.do.yp-.5, self.do.yp+.5), (y0/sc, (y0+sY)/sc), (self.do.tp-.5, self.do.tp+.5)]
         elif self.do.slice == self.do.SLICE_YZ:
-            bnds = [(self.do.xp-.5, self.do.xp+.5),(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc)]
+            bnds = [(self.do.xp-.5, self.do.xp+.5),(x0/sc, (x0+sX)/sc), (y0/sc, (y0+sY)/sc), (self.do.tp-.5, self.do.tp+.5)]
 
         return bnds
         
@@ -448,7 +470,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         xs, ys = self._unscrolled_view_size()
         if fullImage:
-            if (xs > 2e3 or ys > 2e3) and wx.MessageBox('Captured image will be very large, continue?', 'Warning', style=wx.OK|wx.CANCEL) != wx.OK:
+            from PYME import warnings
+            if (xs > 2e3 or ys > 2e3) and not warnings.warn('Captured image will be very large, continue?',allow_cancel=True):
                 return
         else:
             s = self.GetClientSize()
@@ -467,6 +490,29 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemBitmap = self.GrabImage(fullImage)
         img = MemBitmap.ConvertToImage()
         img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+    
+    def ExportStackToPNG(self, filename, fullImage=True):
+        """Save current view to a series of PNG files with z (or t) index as suffix, suitable for use in making a movie
+        via ffmpeg or similar tools
+
+        Parameters
+        ----------
+        filename : str
+            fully qualified path, with extension. Note that _%d will be appended to the filename to generate the
+            individual files
+        fullImage : bool, optional
+            whether to export the full image even if it is clipped in the GUI, by default True
+        FIXME - make this work with time series / 5D image data model.
+        """
+        import os
+        filestub, ext = os.path.splitext(filename)
+        for ind in range(self.do.ds.shape[2]):
+            self.do.zp = ind
+            if ('update' in dir(self.GetParent())):
+                self.GetParent().update()
+            else:
+                self.imagepanel.Refresh()
+            self.GrabPNG(filestub + '_%d' % ind + ext, fullImage)
         
     def GrabPNGToBuffer(self, fullImage=True):
         '''Get PNG data in a buffer (rather than writing directly to file)'''

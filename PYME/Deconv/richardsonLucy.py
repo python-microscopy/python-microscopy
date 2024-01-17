@@ -125,7 +125,7 @@ class RichardsonLucyDeconvolution(object):
             #set the current estimate to out new estimate
             self.f[:] = fnew
 
-        return real(self.fs)
+        return np.real(self.fs)
 
 
 class rlbead(RichardsonLucyDeconvolution, dec.SpatialConvolutionMapping):

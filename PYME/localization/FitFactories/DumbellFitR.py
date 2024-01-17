@@ -73,7 +73,7 @@ def FitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
     
-    res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), length, resultCode, slicesUsed, background)], dtype=fresultdtype) 
+    res =  np.array([(metadata['tIndex'], fitResults.astype('f'), fitErr.astype('f'), length, resultCode, slicesUsed, background)], dtype=fresultdtype) 
     #print res
     return res
 		

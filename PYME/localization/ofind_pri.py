@@ -110,12 +110,12 @@ lobeSeparation = None
 def preparePSF(md, axis):
     global PSFFileName, lobeSeparation
     
-    PSFFilename = md.PSFFile
+    PSFFilename = md['PSFFile']
                 
     if (not (PSFFileName == PSFFilename)):
         
         try:
-            ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
+            ps, vox = md['taskQueue'].getQueueData(md['dataSourceID'], 'PSF')
         except:
             #fid = open(getFullExistingFilename(PSFFilename), 'rb')
             #ps, vox = pickle.load(fid)

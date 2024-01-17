@@ -50,15 +50,14 @@ class fitTestJig(object):
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule
-        self.md.tIndex = 0
         
-        self.bg = 0
-        if 'Test.Background' in self.md.getEntryNames():
-            self.bg = float(self.md['Test.Background'])
+        self.md['tIndex'] = 0
+        
+        self.bg = float(self.md.getOrDefault('Test.Background', 0.0))
             
-        emGain = optimize.fmin(emg, 150, args=[self.md.Camera.TrueEMGain])[0]
+        emGain = optimize.fmin(emg, 150, args=[self.md['Camera.TrueEMGain']])[0]
 
-        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0,
+        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md['Camera.ADOffset'], background=self.bg, QE=1.0,
                                  fast_read_approx=False)
 
     @classmethod
@@ -67,12 +66,14 @@ class fitTestJig(object):
 
 
     def runTests(self, params=None, param_jit=None, nTests=100):
+        from PYME.localization.FitFactories import import_fit_factory
         if not params:
             params = self.md['Test.DefaultParams']
         if not param_jit:
             param_jit = self.md['Test.ParamJitter']
-            
-        self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+        
+        
+        self.fitMod = import_fit_factory(self.fitModule)
         self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
         ps = numpy.zeros((nTests, len(params)), 'f4')
 
@@ -102,11 +103,11 @@ class fitTestJig(object):
             
             #print self.d2.shape
             
-            bg = self.bg*self.md.Camera.TrueEMGain/self.md.Camera.ElectronsPerCount
+            bg = self.bg*self.md['Camera.TrueEMGain']/self.md['Camera.ElectronsPerCount']
             
             #print bg, self.md.Camera.ADOffset
 
-            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2), self.md, background = bg + self.md.Camera.ADOffset)
+            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2), self.md, background = bg + self.md['Camera.ADOffset'])
             self.res[i] = self.fitFac.FromPoint(rs, rs)#, roiHalfSize=rs)
 
         

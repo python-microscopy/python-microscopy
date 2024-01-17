@@ -6,6 +6,8 @@ Mock standins for traits classes for use in documentation generation
 class HasTraits(object):
     def __init__(self, *args, **kwargs):
         pass
+
+HasStrictTraits = HasTraits
 class CStr(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -17,6 +19,7 @@ class List(HasTraits):
         pass
 
 Int = CStr
+CInt = CStr
 Bool = CStr
 Str = CStr
 Enum = CStr
@@ -33,6 +36,9 @@ ListInt = CStr
 BaseFloat = CStr
 
 Property = CStr
+WeakRef = CStr
+Dict = CStr
+
 class BaseEnum(HasTraits):
     pass
 

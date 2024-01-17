@@ -57,3 +57,4 @@ pyme-bootstrap/package-lock.json
 PYME/experimental/_octree.html
 PYME/experimental/_treap.html
 PYME/experimental/_triangle_mesh.html
+PYME/experimental/func_octree.c

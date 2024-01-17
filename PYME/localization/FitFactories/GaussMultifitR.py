@@ -124,7 +124,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None):
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-    tIndex = metadata.tIndex
+    tIndex = metadata['tIndex']
 
     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode)], dtype=fresultdtype)
 
@@ -161,9 +161,9 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
+        sigma = np.sqrt(self.metadata['Camera.ReadNoise']**2 + (self.metadata['Camera.NoiseFactor']**2)*self.metadata['Camera.ElectronsPerCount']*self.metadata['Camera.TrueEMGain']*np.maximum(dataMean, 1)/nSlices)/self.metadata['Camera.ElectronsPerCount']
 
-        if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(np.shape(self.background)) > 1 and self.metadata.getOrDefault('Analysis.subtractBackground', True):
             #average in z
             bgMean = self.background.mean(2)
             

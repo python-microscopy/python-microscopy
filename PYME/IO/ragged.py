@@ -83,6 +83,7 @@ class RaggedVLArray(RaggedBase):
     def __init__(self, h5f, tablename, mdh=None, copy=False):
         """
         Ragged type which wraps an HDF table variable-length array
+        
         Parameters
         ----------
         h5f : HDF table or str

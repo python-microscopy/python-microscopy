@@ -61,7 +61,7 @@ class ChecksumFitFactory(FFBase.FitFactory):
         
         #package results
         res = np.zeros(1, fresultdtype)
-        res['tIndex'] = self.metadata.tIndex
+        res['tIndex'] = self.metadata['tIndex']
         res['x'] = x
         res['y'] = y
         res['ch_sigma'] = ch_sigma

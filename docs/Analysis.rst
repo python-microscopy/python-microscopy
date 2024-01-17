@@ -39,5 +39,7 @@ A particular mode can be forced by calling ``dh5view`` with the ``-m`` option, e
 
     dh5view -m LM filename
 
-
+Exporting colour-mapped images and movies
+=========================================
+Exporting colour-mapped image data from PYMEImage for visualization (as opposed to further analysis) is covered in :ref:`Voxel Data Image/Movie Rendering <pymeimage_rendering>`
 

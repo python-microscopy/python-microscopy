@@ -8,7 +8,7 @@
 
 #define EPS 1e-12
 
-float norm(const float *pos)
+inline float norm(const float *pos)
 {
     float n = 0;
     int i = 0;
@@ -18,7 +18,7 @@ float norm(const float *pos)
     return sqrt(n);
 }
 
-void cross(const float *a, const float *b, float *n)
+inline void cross(const float *a, const float *b, float *n)
 {
     /*
     One thing that might be worth thinking about is making a typedef for a vector
@@ -31,12 +31,37 @@ void cross(const float *a, const float *b, float *n)
     n[2] = a[0]*b[1] - a[1]*b[0];
 }
 
-void difference(const float *a, const float *b, float *d)
+inline void difference(const float *a, const float *b, float *out)
 {
     int k = 0;
     for (k=0; k < VECTORSIZE; ++k)
-        d[k] = a[k] - b[k];
+        out[k] = a[k] - b[k];
 }
+
+inline void vsum(const float *a, const float *b, float *out)
+{
+    int k = 0;
+    for (k=0; k < VECTORSIZE; ++k)
+        out[k] = a[k] + b[k];
+}
+
+inline float dot(const float *a, const float *b)
+{
+    float n = 0;
+    int i = 0;
+
+    for (i = 0; i < VECTORSIZE; ++i)
+        n += a[i] * b[i];
+    
+    return n;
+}
+
+/*inline void scalar_mult(float *a, const float b)
+{
+    int i=0;
+    for (i = 0; i < VECTORSIZE; ++i)
+        a[i] *= b;
+}*/
 
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
 
@@ -297,6 +322,17 @@ static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+void _update_all_vertex_neighbors(int n_vertices, halfedge_t *halfedges, vertex_t *vertices, face_t *faces)
+{
+    int j;
+
+    for (j = 0; j < n_vertices; ++j)
+    {
+        if (vertices[j].halfedge == -1) continue;
+        update_single_vertex_neighbours(j, halfedges, vertices, faces);
+    }
+}
+
 
 static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_, void *faces_)
 {
@@ -450,6 +486,16 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
 
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static void _update_all_face_normals(int n_faces, halfedge_t *halfedges, vertex_t *vertices, face_t *faces)
+{
+    int j;
+    for (j = 0; j < n_faces; ++j)
+    {
+        if (faces[j].halfedge == -1) continue;
+        update_face_normal(j, halfedges, vertices, faces);
+    }
 }
 
 static int flood_fill_star_component(int32_t h_idx, int component, halfedge_t *halfedges)

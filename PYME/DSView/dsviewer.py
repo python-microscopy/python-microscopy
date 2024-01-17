@@ -35,9 +35,7 @@ matplotlib.use('WxAgg')
 import matplotlib.pyplot as plt
 plt.ion()
 import numpy as np
-from . import modules
-
-from PYME.DSView import splashScreen
+from PYME.DSView import modules, splashScreen
 
 try:
    import PYMEnf.DSView.modules
@@ -47,8 +45,9 @@ except ImportError:
 import logging
 logger = logging.getLogger(__name__)
 
-logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR) #clobber unhelpful matplotlib debug messages
-logging.getLogger('matplotlib.backends.backend_wx').setLevel(logging.ERROR)
+# suppress excessive logging from dependencies
+from PYME.util import log_verbosity
+log_verbosity.patch_log_verbosity()
 
 #import PYME.ui.autoFoldPanel as afp
 
@@ -115,7 +114,10 @@ class DSViewFrame(AUIFrame):
         self.do = DisplayOpts(self.image.data_xyztc)
         if self.image.data_xyztc.shape[1] == 1:
             self.do.slice = self.do.SLICE_XZ
+        
+        logger.debug('Optimising ...')
         self.do.Optimise()
+        logger.debug('Optimise done')
 
         if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
             chan_names = self.image.mdh.getEntry('ChannelNames')
@@ -125,7 +127,7 @@ class DSViewFrame(AUIFrame):
         self.mainFrame = weakref.ref(self)
         
         if not hasattr(self, "ID_OPEN_SEQ"):
-            self.ID_OPEN_SEQ = wx.NewId()
+            self.ID_OPEN_SEQ = wx.NewIdRef()
         self.AddMenuItem('File', '&Open', self.OnOpen, id=wx.ID_OPEN)
         self.AddMenuItem('File', '&Save As', self.OnSave, id=wx.ID_SAVE)
         self.AddMenuItem('File', '&Export Cropped', self.OnExport, id=wx.ID_SAVEAS)
@@ -211,7 +213,7 @@ class DSViewFrame(AUIFrame):
         self.moduleMenuIDByName = {}
         self.mModules = wx.Menu()
         for mn in modules.allmodules():
-            id = wx.NewId()
+            id = wx.NewIdRef()
             self.mModules.AppendCheckItem(id, mn)
             self.moduleNameByID[id] = mn
             self.moduleMenuIDByName[mn] = id
@@ -271,28 +273,29 @@ class DSViewFrame(AUIFrame):
 
     def update(self):
         if not self.updating:
-            self.updating = True
-            #if 'view' in dir(self):
-            #    self.view.Refresh()
-            statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
-            
-            #intensity at current cursor
-            statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.xp, self.do.xp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
-            
-            #grab status from modules which supply it
-            for sCallback in self.statusHooks:
-                statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
-            self.statusbar.SetStatusText(statusText)
+            try:
+                self.updating = True
+                #if 'view' in dir(self):
+                #    self.view.Refresh()
+                statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
+                
+                #intensity at current cursor
+                statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.xp, self.do.yp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
+                
+                #grab status from modules which supply it
+                for sCallback in self.statusHooks:
+                    statusText += '\t' + sCallback() #'Frames Analysed: %d    Events detected: %d' % (self.vp.do.zp, self.vp.do.ds.shape[2], self.vp.do.xp, self.vp.do.yp, self.LMAnalyser.numAnalysed, self.LMAnalyser.numEvents)
+                self.statusbar.SetStatusText(statusText)
 
-            #if 'playbackpanel' in dir(self):
-            #    self.playbackpanel.update()
+                #if 'playbackpanel' in dir(self):
+                #    self.playbackpanel.update()
 
-            #update any modules which require it
-            for uCallback in self.updateHooks:
-                #print uCallback
-                uCallback(self)
-
-            self.updating = False
+                #update any modules which require it
+                for uCallback in self.updateHooks:
+                    #print uCallback
+                    uCallback(self)
+            finally:
+                self.updating = False
             
     #def Redraw(self):
     #    self.v
@@ -442,7 +445,7 @@ class MyApp(wx.App):
             #md = None
             #if not options.metadata == '':
             #    md = options.metadata
-            print('Loading data')
+            logger.debug('Loading data')
             if options.test:
                 # import pylab
                 im = ImageStack(np.random.randn(100,100))
@@ -462,8 +465,9 @@ class MyApp(wx.App):
                 mode = im.mode
             else:
                 mode = options.mode
-                print('Mode: %s' % mode)
+                logger.debug('Mode: %s' % mode)
     
+            logger.debug('Data loaded, launching viewer')
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
             
             #this is a bit of a hack - requires explicit knowledge of the LMAnalysis module here
@@ -500,6 +504,7 @@ class MyApp(wx.App):
 # end of class MyApp
 import sys
 def main(argv=sys.argv[1:]):
+    logging.basicConfig(level=logging.DEBUG)
     from PYME.misc import check_for_updates
     #from PYME.util import mProfile
     #mProfile.profileOn(['dsviewer.py', 'arrayViewPanel.py', 'DisplayOptionsPanel.py'])
@@ -512,8 +517,7 @@ def main(argv=sys.argv[1:]):
     #mProfile.report()
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+if __name__ == "__main__":  
     main(sys.argv[1:])
 
 

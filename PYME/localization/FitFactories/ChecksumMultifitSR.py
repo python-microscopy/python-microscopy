@@ -60,7 +60,7 @@ class ChecksumFitFactory:
     
         #package results
         res = np.zeros(1, fresultdtype)
-        res['tIndex'] = self.metadata.tIndex
+        res['tIndex'] = self.metadata['tIndex']
         res['ch_sigma'] = zlib.crc32(self.noiseSigma.data)
         res['ch_data'] = zlib.crc32(self.data.data)
         res['ch_background'] = zlib.crc32(self.background.data)

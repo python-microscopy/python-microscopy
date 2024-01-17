@@ -31,7 +31,7 @@ class filterer:
 
         self.image = dsviewer.image
         
-        PROC_GAUSSIAN_FILTER = wx.NewId()
+        PROC_GAUSSIAN_FILTER = wx.NewIdRef()
         
         
         dsviewer.mProcessing.Append(PROC_GAUSSIAN_FILTER, "&Spark", "", wx.ITEM_NORMAL)
