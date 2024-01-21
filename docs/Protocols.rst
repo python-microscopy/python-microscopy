@@ -11,7 +11,7 @@ Protocols are designed so that users can create a protocol without necessarily k
 more advanced users can include arbitrary python code.
 
 Protocols are formatted as a list of tasks, each specified as `T(when, what, *args)` where 'when' is the camera frame
-after which to execute the 'what', and 'what' can be given (several) parameters, '*args' (for the python-savy, `T` is an 
+after which to execute the 'what', and 'what' can be given (several) parameters, `*args` (for the python-savy, `T` is an 
 alias for creating a `PYME.Acquire.protocol.TaskListTask` object). 
 
 Timing
@@ -39,6 +39,7 @@ Example
 An example protocol is shown in the code block below
 
 .. code-block:: python
+    
     from PYME.Acquire.protocol import *
 
     # T(when, what, *args) creates a new task. "when" is the frame number, "what" is a function to
@@ -85,6 +86,7 @@ These conditionals are meant to be relatively simple to write, and are specified
 For example:
 
 .. code-block:: python
+
     #optional - pre-flight check
     #a list of checks which should be performed prior to launching the protocol
     #syntax: C(expression to evaluate (quoted, should have boolean return), message to display on failure),
