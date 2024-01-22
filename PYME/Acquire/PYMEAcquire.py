@@ -77,11 +77,17 @@ class BoaApp(wx.App):
         
         
     def OnInit(self):
-        from PYME.Acquire import acquiremainframe
-        #wx.InitAllImageHandlers()
+        if self.options.server:
+            from PYME.Acquire import acquirewx as acquiremainframe
+        else:
+            from PYME.Acquire import acquiremainframe
+
         self.main = acquiremainframe.create(None, self.options)
-        #self.main.Show()
         self.SetTopWindow(self.main)
+
+        if self.options.browser:
+            import webbrowser
+            webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up
         return True
 
 
@@ -104,6 +110,10 @@ def main():
 
     parser.add_option("-t", "--title", dest="window_title", default='PYME Acquire',
                       help="Set the PYMEAcquire display name (useful when running multiple copies - e.g. for drift tracking)")
+    
+    parser.add_option('-p', '--port', dest='port', default=8999, help='port to use for server functions')
+    parser.add_option('-s', '--server', dest='server', default=False, action='store_true', help='run in server mode')
+    parser.add_option('-b', '--browser', dest='browser', default=False, action='store_true', help='launch web browser based ui')
 
 
     (options, args) = parser.parse_args()

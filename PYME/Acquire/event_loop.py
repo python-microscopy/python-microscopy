@@ -36,6 +36,9 @@ class _Timer(object):
             finally:
                 if not self._single_shot:
                     self._next_trigger = t + self._delay_s
+                return True
+        else:
+            return False
     
     def start(self, delay_ms, single_shot=True):
         self._single_shot = single_shot
@@ -89,8 +92,13 @@ class EventLoop(object):
             except(queue.Empty):
                 #do timer stuff
                 t = time.time()
+                did_stuff = False
                 for tm in self._timers:
-                    tm.check(t)
+                    did_stuff = did_stuff or tm.check(t)
+
+                if not did_stuff:
+                    # sleep a bit (to limit CPU usage)
+                    time.sleep(0.001)
             
     def stop(self):
         self._loop_active = False
