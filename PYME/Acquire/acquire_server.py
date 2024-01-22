@@ -328,8 +328,11 @@ class PYMEAcquireServer(object):
 from PYME.Acquire import webui
 from PYME.Acquire import SpoolController
 class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
-    def __init__(self, options, port, bind_addr='', evt_loop=None):
+    def __init__(self, options, port, bind_addr=None, evt_loop=None):
         PYMEAcquireServer.__init__(self, options, evt_loop=evt_loop)
+
+        if bind_addr is None:
+            bind_addr = 'localhost' # bind to localhost by default in an attempt to make this safer
         
         server_address = (bind_addr, port)
         webframework.APIHTTPServer.__init__(self, server_address)

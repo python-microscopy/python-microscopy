@@ -148,10 +148,14 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
             self._server_thread = threading.Thread(target=self.serve_forever)
             self._server_thread.start()
 
-            from PYME.Acquire.webui import ipy
-            ns = dict(scope=self.scope, server=self)
-            print('namespace:', ns)
-            ipy.launch_ipy_server_thread(user_ns=ns)
+            if self.options.ipy:
+                # make this a separate config option as port is hard coded so can't run more than one
+                # process with this option. Also probably not desirable if you just want progamatic
+                # remote control (through REST API).
+                from PYME.Acquire.webui import ipy
+                ns = dict(scope=self.scope, server=self)
+                print('namespace:', ns)
+                ipy.launch_ipy_server_thread(user_ns=ns)
         
 
     def _check_init_done(self):
