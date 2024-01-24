@@ -166,7 +166,7 @@ This will require the optional dependency django (See also :ref:`cluster setup <
    cores available (e.g. 8),  better performance can be achieved by reserving a core for
    each of the Acquisition and Server processes (ie limiting the number of workers to 6 in our
    8 core case). This can be done by explicitly specifying the number of workers to launch as
-   an argument eg: ``PYMEClusterOfOne -n 6`` or ``launchWorkers 6``.
+   an argument eg: ``PYMEClusterOfOne -n 6``.
 
 .. [#lmmode] Instead of manually loading the LMAnalysis module every time you launch dh5view, you can force it to start
    in localisation mode with the ``-m LM`` command line switch - i.e. ``dh5view -m LM filename``
