@@ -58,6 +58,7 @@ class SplittingInfo(object):
             self.chanROIs = chanROIs
             self.camera_roi_origin = ROI[:2]
             self.data_shape = np.array(ROI[2:]) - np.array(ROI[:2])
+            self._flip = flip
         else:
             # assume we have been passed an mdh and data_shape  
             from PYME.IO.MetaDataHandler import get_camera_roi_origin

@@ -40,9 +40,11 @@ class Splitter(object):
         self.cam = cam
         self.flipChan=flipChan
         self.parent = parent
-        self.unmixer = splitting.Unmixer(flip=flip, axis = dir)
         self.flip = flip
         self._rois=rois
+        pixelsize_nm = 1e3*(scope.GetPixelSize(cam)[0])
+        self.unmixer = splitting.Unmixer(flip=flip, axis = dir, chanROIs=self.rois, pixelsize=pixelsize_nm)
+
 
         #which dichroic mirror is installed
         self.dichroic = dichroic

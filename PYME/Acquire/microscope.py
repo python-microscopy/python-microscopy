@@ -439,7 +439,7 @@ class microscope(object):
                 conn.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
                 conn.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
 
-    def GetPixelSize(self):
+    def GetPixelSize(self,cam=None):
         """Get the (sample space) pixel size for the current camera
         
         Returns
@@ -448,18 +448,21 @@ class microscope(object):
         pixelsize : tuple
             the pixel size in the x and y axes, in um
         """
+
+        if cam is None:
+            cam = self.cam
         with self.settingsDB as conn:
-            currVoxelSizeID = conn.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
+            currVoxelSizeID = conn.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (cam.GetSerialNumber(),)).fetchone()
             if not currVoxelSizeID is None:
                 voxx, voxy = conn.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
                 
-                return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
-            elif hasattr(self.cam, 'XVals'): # change to looking for attribute so that wrapped (e.g. multiview) cameras still work
+                return voxx*cam.GetHorizontalBin(), voxy*cam.GetVerticalBin()
+            elif hasattr(cam, 'XVals'): # change to looking for attribute so that wrapped (e.g. multiview) cameras still work
                 # read voxel size from directly from our simulated camera
                 logger.info('Reading voxel size directly from simulated camera')
-                vx_um = float(self.cam.XVals[1] - self.cam.XVals[0]) / 1.0e3
-                vy_um = float(self.cam.YVals[1] - self.cam.YVals[0]) / 1.0e3
-                return vx_um * self.cam.GetHorizontalBin(), vy_um * self.cam.GetVerticalBin()
+                vx_um = float(cam.XVals[1] - cam.XVals[0]) / 1.0e3
+                vy_um = float(cam.YVals[1] - cam.YVals[0]) / 1.0e3
+                return vx_um * cam.GetHorizontalBin(), vy_um * cam.GetVerticalBin()
                     
 
     def GenStartMetadata(self, mdh):
