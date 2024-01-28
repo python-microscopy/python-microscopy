@@ -460,7 +460,7 @@ class specAddDialog(wx.Dialog):
 
         sizer2.Add(self.tVal, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(sizer2, 0, wx.ALL, 5)
 
 
         btSizer = wx.StdDialogButtonSizer()
@@ -476,7 +476,7 @@ class specAddDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
