@@ -140,10 +140,22 @@ def loadLibrary(cameratype='uc480'):
     #libuc480 = ctypes.cdll.LoadLibrary(lib)
     if plat.startswith('Windows'):
         if cameratype=='uc480':
+            try:
                 libuc480 = ctypes.WinDLL('uc480_64')
-                print("loading uc480_64")
+            except OSError:
+                # see https://stackoverflow.com/questions/59330863/cant-import-dll-module-in-python
+                # winmode=0 enforces windows default dll search mechanism including searching the path set
+                # necessary since python 3.8.x
+                libuc480 = ctypes.WinDLL('uc480_64',winmode=0)
+            print("loading uc480_64")
         elif cameratype=='ueye':
+            try:
                 libuc480 = ctypes.WinDLL('ueye_api_64')
+            except OSError:
+                # see https://stackoverflow.com/questions/59330863/cant-import-dll-module-in-python
+                # winmode=0 enforces windows default dll search mechanism including searching the path set
+                # necessary since python 3.8.x
+                libuc480 = ctypes.WinDLL('ueye_api_64',winmode=0))  
                 print("loading ueye_api_64")
         else:
                 raise RuntimeError("unknown camera type")
