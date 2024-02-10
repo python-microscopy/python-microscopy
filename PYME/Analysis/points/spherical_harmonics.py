@@ -211,7 +211,7 @@ def generate_icosahedron():
                         zip(np.zeros(5),idxs[::2],np.roll(idxs[::2],-1))])
     lower_cap = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                         zip(11*np.ones(5),np.roll(idxs[1::2],-1),idxs[1::2])])
-    faces = np.vstack([upper_cap, upper_middle_strip, lower_middle_strip, lower_cap]).astype(np.int)
+    faces = np.vstack([upper_cap, upper_middle_strip, lower_middle_strip, lower_cap]).astype(int)
     
     return azimuth, zenith, faces
 
@@ -270,7 +270,7 @@ def icosahedron_mesh(n_subdivision=1):
         f0 = np.vstack([faces[:,0], new_idxs[:,0], new_idxs[:,2]]).T
         f1 = np.vstack([faces[:,1], new_idxs[:,1], new_idxs[:,0]]).T
         f2 = np.vstack([faces[:,2], new_idxs[:,2], new_idxs[:,1]]).T
-        faces = np.vstack([f0,f1,f2,new_idxs]).astype(np.int)
+        faces = np.vstack([f0,f1,f2,new_idxs]).astype(int)
         
         # Append the new vertices to azimuth
         azimuth = np.hstack([azimuth, new_v[:,0]])

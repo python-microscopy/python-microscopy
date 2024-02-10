@@ -214,7 +214,7 @@ def save_surface(visFr):
                 faces = vertex_lookup[visFr.pipeline.dataSources[key].faces]
 
                 colors = np.zeros((live_vertices.size, 3), dtype=np.ubyte)
-                colors[faces.ravel().astype(np.int)] = np.floor(layer._colors[:,:3]*255).astype(np.ubyte)
+                colors[faces.ravel().astype(int)] = np.floor(layer._colors[:,:3]*255).astype(np.ubyte)
                 
             visFr.pipeline.dataSources[key].to_ply(filename, colors)
         else:
