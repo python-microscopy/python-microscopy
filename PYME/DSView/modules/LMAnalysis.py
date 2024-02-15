@@ -518,7 +518,7 @@ class FitDefaults(object):
         from PYME.IO.FileUtils.nameUtils import getCalibrationDir
         
         caldir = getCalibrationDir(self.analysisMDH['Camera.SerialNumber'])
-        itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
+        itime = round(1000*self.analysisMDH['Camera.IntegrationTime'])
         darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
         varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
         flatpath = os.path.join(caldir,'flatfield.tif')
