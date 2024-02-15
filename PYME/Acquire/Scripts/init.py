@@ -117,7 +117,8 @@ def samp_db(MainFrame, scope):
 
 @init_gui('Fake DMD')
 def fake_dmd(MainFrame, scope):
-    from PYMEnf.Hardware import FakeDMD, DMDGui
+    from PYMEnf.Hardware import FakeDMD
+    from PYME.Acquire.Hardware import DMDGui
     scope.LC = FakeDMD.FakeDMD(scope)
     
     LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)

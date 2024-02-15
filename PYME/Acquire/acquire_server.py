@@ -44,9 +44,13 @@ import threading
 from PYME.Acquire import event_loop
 #from PYME.Acquire import webui
 
-class PYMEAcquireServer(event_loop.EventLoop):
-    def __init__(self, options = None):
-        event_loop.EventLoop.__init__(self)
+class PYMEAcquireServer(object):
+    def __init__(self, options = None, evt_loop = None):
+        if evt_loop is None:
+            self.evt_loop = event_loop.EventLoop()
+        else:
+            self.evt_loop = evt_loop
+
         self.options = options
 
         self.snapNum = 0
@@ -108,7 +112,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
         
         try:
             logger.debug('Starting event loop')
-            self.loop_forever()
+            self.evt_loop.loop_forever()
         except:
             logger.exception('Exception in event loop')
         finally:
@@ -143,7 +147,7 @@ class PYMEAcquireServer(event_loop.EventLoop):
             self._state_updated_condition.notify()
     
     def _start_polling_camera(self):
-        self.scope.startFrameWrangler(event_loop=self)
+        self.scope.startFrameWrangler(event_loop=self.evt_loop)
         self.scope.frameWrangler.onFrameGroup.connect(self._on_frame_group)
         
     @webframework.register_endpoint('/get_frame_pzf', mimetype='image/pzf')
@@ -324,8 +328,11 @@ class PYMEAcquireServer(event_loop.EventLoop):
 from PYME.Acquire import webui
 from PYME.Acquire import SpoolController
 class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
-    def __init__(self, options, port, bind_addr=''):
-        PYMEAcquireServer.__init__(self, options)
+    def __init__(self, options, port, bind_addr=None, evt_loop=None):
+        PYMEAcquireServer.__init__(self, options, evt_loop=evt_loop)
+
+        if bind_addr is None:
+            bind_addr = 'localhost' # bind to localhost by default in an attempt to make this safer
         
         server_address = (bind_addr, port)
         webframework.APIHTTPServer.__init__(self, server_address)
@@ -380,7 +387,7 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         try:
             self.serve_forever()
         finally:
-            self.stop()
+            self.evt_loop.stop()
             #logger.info('Shutting down ...')
             #self.distributor.shutdown()
             logger.info('Closing server ...')

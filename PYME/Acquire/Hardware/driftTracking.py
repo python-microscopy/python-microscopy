@@ -65,11 +65,65 @@ def correlateAndCompareFrames(A, B):
     
     return (As -B).mean(), dx, dy
     
+from PYME.contrib import dispatch
+class StandardFrameSource(object):
+    '''This is a simple source which emits frames once per polling interval of the frameWrangler 
+    (i.e. corresponding to the onFrameGroup signal of the frameWrangler).
     
+    The intention is to reproduce the historical behaviour of the drift tracking code, whilst
+    abstracting some of the detailed knowledge of frame handling out of the actual tracking code. 
+    
+    '''
+    def __init__(self, frameWrangler):
+        self._fw = frameWrangler
+        self._on_frame = dispatch.Signal(['frameData'])
+        self._fw.onFrameGroup.connect(self.tick)
+
+
+    def tick(self, *args, **kwargs):
+        self._on_frame.send(sender=self, frameData=self._fw.currentFrame)
+
+    @property
+    def shape(self):
+        return self._fw.currentFrame.shape
+    
+    def connect(self, callback):
+        self._on_frame.connect(callback)
+
+    def disconnect(self, callback):
+        self._on_frame.disconnect(callback)
+
+class OIDICFrameSource(StandardFrameSource):
+    """ Emit frames from the camera to the tracking code only for a single OIDIC orientation.
+
+        Currently a straw man / skeleton pending details of OIDIC code.
+
+        TODO - should this reside here, or with the other OIDIC code (which I believe to be in a separate repo)?
+    
+    """
+
+    def __init__(self, frameWrangler, oidic_controller, oidic_orientation=0):
+        super().__init__(frameWrangler)
+
+        self._oidic = oidic_controller
+        self._target_orientation = oidic_orientation
+
+    def tick(self, *args, **kwargs):
+        # FIXME - change to match actual naming etc ... in OIDIC code.
+        # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
+        # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
+        # registered with the frameWrangler?
+        if self._oidic.orientation == self._target_orientation:
+            super().tick(*args, **kwargs)
+        else:
+            # clobber all frames coming from camera when not in the correct DIC orientation
+            pass
 class Correlator(object):
-    def __init__(self, scope, piezo=None):
-        self.scope = scope
+    def __init__(self, scope, piezo=None, frame_source=None):
         self.piezo = piezo
+
+        if frame_source is None:
+            self.frame_source = StandardFrameSource(scope.frameWrangler)
         
         self.focusTolerance = .05 #how far focus can drift before we correct
         self.deltaZ = 0.2 #z increment used for calibration
@@ -91,8 +145,8 @@ class Correlator(object):
         self.maxfac = 1.5e3
         self.Zfactor = 1.0
         
-    def initialise(self):
-        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()        
+    def _initialise(self, frame_data):
+        d = 1.0*frame_data.squeeze()        
         
         self.X, self.Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
 #        self.X -= d.shape[0]/2
@@ -124,37 +178,14 @@ class Correlator(object):
         self.historyCorrections = []
 
         
-    # def setRefA(self):
-    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
-    #     self.refA = d/d.mean() - 1        
-    #     self.FA = ifftn(self.refA)
-    #     self.refA *= self.mask
         
-    # def setRefB(self):
-    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
-    #     self.refB = d/d.mean() - 1
-    #     self.refB *= self.mask        
-        
-    # def setRefC(self):
-    #     d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
-    #     self.refC = d/d.mean() - 1
-    #     self.refC *= self.mask
-        
-    #     self.dz = (self.refC - self.refB).ravel()
-    #     self.dzn = 2./np.dot(self.dz, self.dz)
-        
-    def setRefN(self, N):
-        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+    def _setRefN(self, frame_data, N):
+        d = 1.0*frame_data.squeeze()
         ref = d/d.mean() - 1
         self.refImages[:,:,N] = ref        
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
         
-    #def setRefD(self):
-    #    self.refD = (1.0*self.d).squeeze()/self.d.mean() - 1 
-    #    self.refD *= self.mask
-        
-        #self.dz = (self.refC - self.refA).ravel()
 
     def set_focus_tolerance(self, tolerance):
         """ Set the tolerance for locking position
@@ -211,8 +242,8 @@ class Correlator(object):
     def set_offset(self, offset):
         self.piezo.SetOffset(offset)
         
-    def compare(self):
-        d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()
+    def compare(self, frame_data):
+        d = 1.0*frame_data.squeeze()
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
@@ -280,11 +311,14 @@ class Correlator(object):
         return dx, dy, dz, Cm, dz, nomPos, posInd, calPos, posDelta
         
     
-    def tick(self, **kwargs):
+    def tick(self, frameData = None, **kwargs):
+        if frameData is None:
+            raise ValueError('frameData must be specified')
+        
         targetZ = self.piezo.GetTargetPos(0)
         
-        if not 'mask' in dir(self) or not self.scope.frameWrangler.currentFrame.shape[:2] == self.mask.shape[:2]:
-            self.initialise()
+        if not 'mask' in dir(self) or not self.frame_source.shape[:2] == self.mask.shape[:2]:
+            self._initialise(frameData)
             
         #called on a new frame becoming available
         if self.calibState == 0:
@@ -306,7 +340,7 @@ class Correlator(object):
             # print "cal proceed"
             if (self.calibState % 1) == 0:
                 #full step - record current image and move on to next position
-                self.setRefN(int(self.calibState - 1))
+                self._setRefN(frameData, int(self.calibState - 1))
                 self.piezo.MoveTo(0, self.calPositions[int(self.calibState)])
             
 			
@@ -315,7 +349,7 @@ class Correlator(object):
             
         elif (self.calibState == self.NCalibStates):
             # print "cal finishing"
-            self.setRefN(int(self.calibState - 1))
+            self.setRefN(frameData, int(self.calibState - 1))
             
             #perform final bit of calibration - calcuate gradient between steps
             #self.dz = (self.refC - self.refB).ravel()
@@ -333,7 +367,7 @@ class Correlator(object):
             
         elif (self.calibState > self.NCalibStates) and np.allclose(self._last_target_z, targetZ):
             # print "fully calibrated"
-            dx, dy, dz, cCoeff, dzcorr, nomPos, posInd, calPos, posDelta = self.compare()
+            dx, dy, dz, cCoeff, dzcorr, nomPos, posInd, calPos, posDelta = self.compare(frameData)
             
             self.corrRef = max(self.corrRef, cCoeff)
             
@@ -376,13 +410,11 @@ class Correlator(object):
         self.lockActive = False
         
     def register(self):
-        #self.scope.frameWrangler.WantFrameGroupNotification.append(self.tick)
-        self.scope.frameWrangler.onFrameGroup.connect(self.tick)
+        self.frame_source.connect(self.tick)
         self.tracking = True
         
     def deregister(self):
-        #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.tick)
-        self.scope.frameWrangler.onFrameGroup.disconnect(self.tick)
+        self.frame_source.disconnect(self.tick)
         self.tracking = False
     
     # def setRefs(self, piezo):

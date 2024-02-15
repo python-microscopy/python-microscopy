@@ -744,6 +744,9 @@ class SpoolControllerWrapper(object):
              
         """
         import json
+        # FIXME - do some sanity checks on filename (this can't be as simple as urlescaping, as we need to support
+        # URIs as well as filenames). In practice this is best dealt with by enforcing authentication and only using on a 
+        # trusted network.
         if len(body) > 0:
             # have settings in message body
             self.spool_controller.start_spooling(filename, settings=json.loads(body), preflight_mode=preflight_mode)

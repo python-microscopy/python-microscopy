@@ -92,3 +92,8 @@ def call_in_main_thread(callable, *args, **kwargs):
 
     """
     wx.CallAfter(callable, *args, **kwargs)
+
+def loop_forever():
+    '''Dummy loop forever (real event loop is in wx)'''
+    while (wx.GetApp().IsMainLoopRunning()):
+        time.sleep(1)
