@@ -591,10 +591,8 @@ class LMAnalyser2(Plugin):
     def toggle_new_style(self, event=None):
         self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
-    def SetFitInfo(self):
-        # TODO - use filter / raw fit results rather than creating a points array.
-        # TODO - de-duplicate with method of same name in  LMDisplay
-
+    def _update_points_overlay(self):
+        ''' Make sure the points overlay is up to date with the current analysis progress'''
         mdh = self.analysisController.analysisMDH
 
         if not hasattr(self, '_ovl') or not hasattr(self._ovl, 'filter'):
@@ -606,6 +604,14 @@ class LMAnalyser2(Plugin):
             self.view.add_overlay(self._ovl)
         else:
             self._ovl.filter.setResults(self.fitResults)
+
+    def SetFitInfo(self):
+        # TODO - use filter / raw fit results rather than creating a points array.
+        # TODO - de-duplicate with method of same name in  LMDisplay
+
+        # ensure points overlay is up to date with the current analysis progress
+        # (we need this for hit-testing to work correctly)
+        self._update_points_overlay()
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -741,7 +747,8 @@ class LMAnalyser2(Plugin):
             self.progPan.fitResults = self.fitResults
             # self._ovl.points = np.vstack(
             #    (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
-            self._ovl.filter.setResults(self.fitResults)
+            #self._ovl.filter.setResults(self.fitResults)
+            self._update_points_overlay()
             self.numEvents = len(self.fitResults)
         
             try:
