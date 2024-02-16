@@ -378,7 +378,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                
 
                 dc.DrawLine(int(lx),int( ly),int( hx),int( hy))
-                drawPolygon(dc,[(x_0, y_0), (x_1, y_1), (x_2, y_2), (x_3, y_3)])
                 dc.DrawPolygon([(int(x_0), int(y_0)), (int(x_1), int(y_1)), (int(x_2), int(y_2)), (int(x_3), int(y_3))])
                 
             dc.SetPen(wx.NullPen)
