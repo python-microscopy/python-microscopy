@@ -49,15 +49,6 @@ def getLUT(cmap):
 
     return LUTCache[cmap.name]
 
-# python 3.10 compat definitions
-def drawRectangle(dc,a,b,c,d):
-    dc.DrawRectangle(int(a),int(b),int(c),int(d))
-
-def drawLine(dc,a,b,c,d):
-    dc.DrawLine(int(a),int(b),int(c),int(d))
-
-def drawPolygon(dc,poly):
-    dc.DrawPolygon([int(point) for point in poly])
 
 default_overlays = [(overlays.ScaleBarOverlay, 'Scale Bar'), 
                     (overlays.CrosshairsOverlay, 'Crosshairs')]          
@@ -310,7 +301,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             xs, ys = self.pixel_to_screen_coordinates(y,z)
             ws, hs = (h*self.scale, d*self.scale*self.aspect)
             
-        drawRectangle(dc,xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        dc.DrawRectangle(int(xs - 0.5*ws),int( ys - 0.5*hs),int( ws),int(hs))
         
     def draw_cross_pixel_coords(self, dc, x, y, z, w, h, d):
         """Draws a cross on a given device contect (dc) given 3D co-ordinates
@@ -331,8 +322,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             ws, hs = (h*self.scale, d*self.scale*self.aspect)
             
         #dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
-        drawLine(dc,xs - 0.5*ws, ys-0.5*hs, xs + 0.5*ws, ys+0.5*hs)
-        drawLine(dc,xs - 0.5*ws, ys+0.5*hs, xs + 0.5*ws, ys-0.5*hs)
+        dc.DrawLine(int(xs - 0.5*ws),int( ys-0.5*hs),int( xs + 0.5*ws),int( ys+0.5*hs))
+        dc.DrawLine(int(xs - 0.5*ws),int( ys+0.5*hs),int( xs + 0.5*ws),int( ys-0.5*hs))
         
 
     @property
@@ -356,7 +347,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             hx, hy = self.pixel_to_screen_coordinates(hx, hy)
             
             if self.do.selection.mode == selection.SELECTION_RECTANGLE:
-                drawRectangle(dc,lx,ly, (hx-lx),(hy-ly))
+                dc.DrawRectangle(int(lx),int(ly),int( (hx-lx)),int((hy-ly)))
                 
             elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
                 if len(self.do.selection.trace) > 2:
@@ -364,7 +355,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     pts = numpy.vstack(self.pixel_to_screen_coordinates(x, y)).T
                     dc.DrawSpline(pts.astype('i'))
             elif self.do.selection.width == 1:
-                drawLine(dc,lx,ly, hx,hy)
+                dc.DrawLine(int(lx),int(ly),int( hx),int(hy))
             else:
                 lx, ly, hx, hy = self.do.GetSliceSelection()
                 dx = hx - lx
@@ -386,9 +377,10 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 hx, hy = self.pixel_to_screen_coordinates(hx, hy)
                
 
-                drawLine(dc,lx, ly, hx, hy)
+                dc.DrawLine(int(lx),int( ly),int( hx),int( hy))
                 drawPolygon(dc,[(x_0, y_0), (x_1, y_1), (x_2, y_2), (x_3, y_3)])
-                    
+                dc.DrawPolygon([(int(x_0), int(y_0)), (int(x_1), int(y_1)), (int(x_2), int(y_2)), (int(x_3), int(y_3))])
+                
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
                 
