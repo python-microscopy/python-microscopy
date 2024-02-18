@@ -349,7 +349,7 @@ class Correlator(object):
             
         elif (self.calibState == self.NCalibStates):
             # print "cal finishing"
-            self.setRefN(frameData, int(self.calibState - 1))
+            self._setRefN(frameData, int(self.calibState - 1))
             
             #perform final bit of calibration - calcuate gradient between steps
             #self.dz = (self.refC - self.refB).ravel()
