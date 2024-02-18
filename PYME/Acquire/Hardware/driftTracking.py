@@ -125,9 +125,9 @@ class Correlator(object):
         if frame_source is None:
             self.frame_source = StandardFrameSource(scope.frameWrangler)
         
-        self.focusTolerance = .05 #how far focus can drift before we correct
-        self.deltaZ = 0.2 #z increment used for calibration
-        self.stackHalfSize = 35
+        self.focusTolerance = .01 #how far focus can drift before we correct
+        self.deltaZ = 0.3 #z increment used for calibration
+        self.stackHalfSize = 20
         self.NCalibStates = 2*self.stackHalfSize + 1
         self.calibState = 0
 
@@ -201,6 +201,38 @@ class Correlator(object):
 
     def get_focus_tolerance(self):
         return self.focusTolerance
+
+
+    def set_delta_Z(self, delta):
+        """ Set the Z increment for calibration stack
+
+        Parameters
+        ----------
+
+        delta : float
+            The delta in nm
+        """
+
+        self.deltaZ = delta
+
+    def get_delta_Z(self):
+        return self.deltaZ
+
+
+    def set_stack_halfsize(self, halfsize):
+        """ Set the calibration stack half size
+
+        Parameters
+        ----------
+
+        halfsize : int
+        """
+
+        self.stackHalfSize = halfsize
+
+    def get_stack_halfsize(self):
+        return self.stackHalfSize
+    
 
     def set_focus_lock(self, lock=True):
         """ Set locking on or off
