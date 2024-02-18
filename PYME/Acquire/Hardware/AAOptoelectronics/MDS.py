@@ -58,7 +58,7 @@ class AAOptoMDS(AOTF):
         # initialize serial
         self.timeout = serial_timeout
         # initialize and configure the serial port without opening it
-        self.com_port = serial.Serial(com_port, timeout=serial_timeout)
+        self.com_port = serial.Serial(com_port, 57600, timeout=serial_timeout)
         self.lock = threading.Lock()
         self.is_on = True
         # set to internal control mode, grab a couple extra lines to give the unit time to write before clearing buffer
