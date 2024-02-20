@@ -37,7 +37,7 @@ class AAOptoMDS(AOTF):
     because we connect to it through an external USB hub. As a result we keep the serial ports open rather than using
     context managers.
     """
-    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8, serial_timeout=1):
+    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8, serial_timeout=1, baud_rate=57600):
         """
         Parameters
         ----------
@@ -58,7 +58,7 @@ class AAOptoMDS(AOTF):
         # initialize serial
         self.timeout = serial_timeout
         # initialize and configure the serial port without opening it
-        self.com_port = serial.Serial(com_port, timeout=serial_timeout)
+        self.com_port = serial.Serial(com_port, baud_rate, timeout=serial_timeout)
         self.lock = threading.Lock()
         self.is_on = True
         # set to internal control mode, grab a couple extra lines to give the unit time to write before clearing buffer
