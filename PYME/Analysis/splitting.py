@@ -115,7 +115,7 @@ class SplittingInfo(object):
                     (0, h / 2, 2, h / 2)
                 ]
             
-        self.flip_y = np.zeros(len(self.chanROIs), dtype=np.int)
+        self.flip_y = np.zeros(len(self.chanROIs), dtype=int)
         if self._flip:
             self.flip_y[1] = 1
 
