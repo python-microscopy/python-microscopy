@@ -168,7 +168,8 @@ import threading
 from PYME.Acquire.eventLog import logEvent
 class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
-    def __init__(self, description=None, axes=None, update_rate=0.01):
+    def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
+                 stages=None, refmodes=None, servostates=True, controlmodes=None):
         """
         Parameters
         ----------
@@ -184,7 +185,28 @@ class GCSPiezoThreaded(PiezoBase):
         update_rate : float
             number of seconds pause between threaded polling of position / 
             on-targets
+        startup: boolean to use pitools.startup function to startup device
 
+        remaining keyword parameters are 'inherited' from pitools.startup command:
+        
+        stages: Name of stage(s) to initialize as string or list (not tuple!) or 'None' to skip.
+        refmodes: Referencing command(s) as string (for all stages) or list (not tuple!) or 'None' to skip.
+                     Please see the manual of the controller for the valid reference procedure.
+                     'refmodes' can be:
+                         'FRF': References the stage using the reference position.
+                         'FNL': References the stage using the negative limit switch.
+                         'FPL': References the stage using the positive limit switch.
+                         'POS': Sets the current position of the stage to 0.0.
+                         'ATZ': Runs an auto zero procedure.
+        servostates: Desired servo state(s) as Boolean (for all stages) or dict {axis : state} or 'None' to skip.
+                        For controllers with GCS 3.0 syntax:
+                            If True the axis is switched to control mode 0x2.
+                            If False the axis is switched to control mode 0x1.
+        controlmodes: Only valid for controllers with GCS 3.0 syntax!
+                         Switch the axis to the given control mode:
+                             int (for all axes) or dict {axis : controlmode} or 'None' to skip.
+                         To skip any control mode switch make sure the servostate is also 'None'!
+                         If 'controlmodes' is set (not 'None') the parameter 'servostates' is ignored.
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
@@ -197,7 +219,14 @@ class GCSPiezoThreaded(PiezoBase):
             self.axes = pitools.getaxeslist(self.pi, None)
         else:
             self.axes = axes
-        
+
+        # startup device with supplied per axes parameters
+        if startup:
+            pitools.startup(self.pi, stages=stages, refmodes=refmodes,
+                            servostates=servostates, controlmodes=controlmodes)
+            if not refmodes is None: # if any referencing is carried out wait to finish
+                pitools.waitonreferencing(self.pi, None, timeout=120) # for now 2 min timeout
+
         self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
         self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
 
