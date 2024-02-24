@@ -169,7 +169,7 @@ from PYME.Acquire.eventLog import logEvent
 class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
     def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
-                 stages=None, refmodes=None, servostates=True, controlmodes=None):
+                 stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None):
         """
         Parameters
         ----------
@@ -187,7 +187,7 @@ class GCSPiezoThreaded(PiezoBase):
             on-targets
         startup: boolean to use pitools.startup function to startup device
 
-        remaining keyword parameters are 'inherited' from pitools.startup command:
+        next keyword parameters below are passed to the pitools.startup command:
         
         stages: Name of stage(s) to initialize as string or list (not tuple!) or 'None' to skip.
         refmodes: Referencing command(s) as string (for all stages) or list (not tuple!) or 'None' to skip.
@@ -207,6 +207,8 @@ class GCSPiezoThreaded(PiezoBase):
                              int (for all axes) or dict {axis : controlmode} or 'None' to skip.
                          To skip any control mode switch make sure the servostate is also 'None'!
                          If 'controlmodes' is set (not 'None') the parameter 'servostates' is ignored.
+
+        joystick: should be a joystick object or None if no joystick; needs to support a few standard methods
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
@@ -230,14 +232,31 @@ class GCSPiezoThreaded(PiezoBase):
         self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
         self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
 
-        self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
-        self.target_positions = np.copy(self.positions)
-        self._last_target_positions = np.copy(self.positions)
-        self._all_on_target = True
-        self._on_target = np.asarray([True for axis in self.axes])
-
+        self.joystick = joystick
+        if self.joystick is not None:
+            self.joystick.init(self) # the joystick object should have an init method
+            self.disable_joystick() # this includes enabling updating_ontarget
+        else:
+            self.enable_updating_ontarget()
+        
         self._update_rate = update_rate
         self._start_loop()
+
+    def enable_joystick(self):
+        if self.joystick is None:
+            return
+        with self._lock:
+            self.joystick.enablecommands(self.pi)
+            self.disable_updating_ontarget()
+            self._joystick_enabled = True
+
+    def disable_joystick(self):
+        if self.joystick is None:
+            return
+        with self._lock:
+            self.joystick.disablecommands(self.pi)
+            self.enable_updating_ontarget()
+            self._joystick_enabled = False
 
     def SetServo(self, val=1):
         with self._lock:
@@ -314,6 +333,20 @@ class GCSPiezoThreaded(PiezoBase):
         self.tloop.daemon=True
         self.tloop.start()
 
+    def enable_updating_ontarget(self):
+        with self._lock:
+            # first reset the relevant variables
+            self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
+            self.target_positions = np.copy(self.positions)
+            self._last_target_positions = np.copy(self.positions)
+            self._all_on_target = True
+            self._on_target = np.asarray([True for axis in self.axes])
+            # now also switch the flag
+            self._updating_ontarget = True
+
+    def disable_updating_ontarget(self): # do we need a lock?
+        self._updating_ontarget = False
+
     def _Loop(self):
         while self.loop_active:
             with self._lock:
@@ -323,6 +356,9 @@ class GCSPiezoThreaded(PiezoBase):
                     for ind, axis in enumerate(self.axes):
                         # does this need a lock?
                         self.positions[ind] = self.pi.qPOS([axis])[axis]
+                    
+                    if not self._updating_ontarget:
+                        continue # skip below if not currently in update target mode (e.g. when joystick active)
                     
                     # update ontarget
                     old_on_target = np.copy(self._on_target)
