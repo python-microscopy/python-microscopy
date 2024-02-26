@@ -43,8 +43,15 @@ if plat.startswith('Windows'):
         _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
         _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
     else:
-        _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
-        _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
+        try:
+            _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore')
+            _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
+        except OSError:
+            # see https://stackoverflow.com/questions/59330863/cant-import-dll-module-in-python
+            # winmode=0 enforces windows default dll search mechanism including searching the path set
+            # necessary since python 3.8.x
+            _stdcall_libraries['ATCORE'] = ctypes.WinDLL('atcore',winmode=0)
+            _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility',winmode=0)
     CALLBACKTYPE = ctypes.WINFUNCTYPE(c_int, AT_H, POINTER(AT_WC), c_void_p)
 else:
     _stdcall_libraries['ATCORE'] = ctypes.CDLL('atcore.so')

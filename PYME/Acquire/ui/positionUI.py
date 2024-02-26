@@ -54,7 +54,7 @@ class PositionSliders(wx.Panel):
             rmin, rmax = self.ranges[pName]
             #print rmin, rmax
             pos = poss[pName]
-            sl = wx.Slider(self, -1, 100*pos, 100*rmin, 100*rmax, size=wx.Size(100,-1), style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, int(100*pos), int(100*rmin), int(100*rmax), size=wx.Size(100,-1), style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else:
             #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #sl.SetSize((800,20))
@@ -225,7 +225,7 @@ class PositionPanel(wx.Panel):
             rmin, rmax = self.ranges[pName]
             #print rmin, rmax
             pos = poss[pName]
-            sl = wx.Slider(self, -1, 100 * pos, 100 * rmin, 100 * rmax, size=wx.Size(100, -1),
+            sl = wx.Slider(self, -1, int(100 * pos), int(100 * rmin), int(100 * rmax), size=wx.Size(100, -1),
                            style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else:
             #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
@@ -315,8 +315,8 @@ class PositionPanel(wx.Panel):
             self.sliders[ind].SetValue(int(100 * pos))
             self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName, pos, unit))
             
-            self.sliders[ind].SetMin(100 * self.ranges[pName][0])
-            self.sliders[ind].SetMax(100 * self.ranges[pName][1])
+            self.sliders[ind].SetMin(int(100 * self.ranges[pName][0]))
+            self.sliders[ind].SetMax(int(100 * self.ranges[pName][1]))
             
         if len(self.stageNames) > 0:
             if not self.tX.HasFocus():
