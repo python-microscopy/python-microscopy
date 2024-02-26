@@ -7,6 +7,7 @@ Cameras / Detectors
 * PCO Cameras (tested on pco.edge 4.2 LT)
 * Thorlabs DCC1240 (maybe also DCC3240)
 * IDS uEye industrial cameras (UI306x, UI327x, UI324x, probably others. Thorlabs-branded IDS)
+* IDS uEye+ (U3/GV models) industrial cameras using the IDS Peak API. (tested on U3-368xXLE-NIR)
 * Ocean Optics spectrometers (probably suffering from bitrot)
 
 Stages / Translation

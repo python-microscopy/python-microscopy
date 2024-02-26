@@ -93,7 +93,7 @@ class PCO_Description(ctypes.Structure):
                 ("dwExtSyncFrequency", ctypes.wintypes.DWORD * 4),
                 ("dwGeneralCapsDESC3", ctypes.wintypes.DWORD),
                 ("dwGeneralCapsDESC4", ctypes.wintypes.DWORD),
-                ("ZzdwDummy", ctypes.wintypes.DWORD)]
+                ("ZzdwDummy", 40*ctypes.wintypes.DWORD)]
 class PCO_SC2_Hardware_DESC(ctypes.Structure):
     # _pack_ = 1
     _fields_ = [

@@ -185,7 +185,7 @@ class PanSpool(afp.foldingPane):
         self.tQuantizeScale = wx.TextCtrl(pan, -1, '0.5')
         self.tQuantizeScale.SetToolTip(wx.ToolTip(
             'Quantization scale in units of sigma\n. The default of 0.5 will give a quantization interval that is half the std dev. of the expected Poisson noise in a pixel.'))
-        hsizer.Add(self.tQuantizeScale, 1.0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tQuantizeScale, 1, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
     
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
     

@@ -256,6 +256,24 @@ class DriftTrackingControl(wx.Panel):
         self.bSetTolerance.Bind(wx.EVT_BUTTON, self.OnBSetTolerance)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
 
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, "Z increment [nm]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tdeltaZ = wx.TextCtrl(self, -1, '%3.0f'% (1e3*self.dt.get_delta_Z()), size=[30,-1])
+        hsizer.Add(self.tdeltaZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSetdeltaZ = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetdeltaZ, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bSetdeltaZ.Bind(wx.EVT_BUTTON, self.OnBSetdeltaZ)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, "Stack halfsize:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tHalfsize = wx.TextCtrl(self, -1, '%3.0f'% (self.dt.get_stack_halfsize()), size=[30,-1])
+        hsizer.Add(self.tHalfsize, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSetHalfsize = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetHalfsize, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bSetHalfsize.Bind(wx.EVT_BUTTON, self.OnBSetHalfsize)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+
         # hsizer = wx.BoxSizer(wx.HORIZONTAL)
         # hsizer.Add(wx.StaticText(self, -1, "Z-factor:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         # self.tZfactor = wx.TextCtrl(self, -1, '%3.1f'% self.dt.Zfactor, size=[30,-1])
@@ -363,6 +381,12 @@ class DriftTrackingControl(wx.Panel):
 
     def OnBSetTolerance(self, event):
         self.dt.set_focus_tolerance(float(self.tTolerance.GetValue())/1e3)
+
+    def OnBSetdeltaZ(self, event):
+        self.dt.set_delta_Z(float(self.tdeltaZ.GetValue())/1e3)
+
+    def OnBSetHalfsize(self, event):
+        self.dt.set_stack_halfsize(int(self.tHalfsize.GetValue()))
 
     def OnBSetZfactor(self, event):
         self.dt.Zfactor = float(self.tZfactor.GetValue())

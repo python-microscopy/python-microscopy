@@ -351,8 +351,8 @@ def distributed_pyramid(
     ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
     
     # get splitter ROI coordinates in units of pixels
-    ROIX1 = x0_cam + 1  # TODO - is splitter 1-indexed?
-    ROIY1 = y0_cam + 1
+    ROIX1 = x0_cam   # TODO - is splitter 1-indexed?
+    ROIY1 = y0_cam 
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
     

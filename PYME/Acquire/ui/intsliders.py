@@ -53,7 +53,7 @@ class IntegrationSliders_(wx.Panel):
         
         for c in range(nsliders):
             #if not sys.platform == 'darwin':
-            sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, min(5*self.chaninfo.itimes[c], 10000), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, int(self.chaninfo.itimes[c]), 1, int(min(5*self.chaninfo.itimes[c], 10000)), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
             #else:#workaround for broken mouse event handling (and hence sliders) on MacOS
             #    sl = wx.Slider(self, -1, self.chaninfo.itimes[c], 1, min(5*self.chaninfo.itimes[c], 10000), size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 
@@ -142,7 +142,7 @@ class IntegrationSliders(wx.Panel):
         itime = 1e3*self.scope.state['Camera.IntegrationTime']
 
         
-        sl = wx.Slider(self, -1, itime, 1, min(5*itime, 10000), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
+        sl = wx.Slider(self, -1, int(itime), 1, int(min(5*itime, 10000)), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
         
         sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % itime, size=(65, -1), style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
  
@@ -205,8 +205,8 @@ class IntegrationSliders(wx.Panel):
         self.scope.state['Camera.IntegrationTime'] = itime/1e3
         new_itime= self.scope.state['Camera.IntegrationTime']
         wx.CallAfter(self.cboxes[ind].SetValue, '%1.2f' % (1e3*new_itime))
-        self.sliders[ind].SetValue(new_itime*1e3)
-        self.sliders[ind].SetRange(1, min(5*new_itime*1e3, 10000))
+        self.sliders[ind].SetValue(int(new_itime*1e3))
+        self.sliders[ind].SetRange(1, min(int(5*new_itime*1e3), 10000))
         #self.scope.frameWrangler.stop()
         #self.scope.frameWrangler.start()
 
@@ -214,7 +214,7 @@ class IntegrationSliders(wx.Panel):
     def update(self, value, **kwargs):
         ind = 0
         #print 'update: ', value
-        value = value*1e3
+        value = int(value*1e3)
         
         self.sliders[ind].SetValue(value)
         self.sliders[ind].SetRange(1, min(5*value, 10000))

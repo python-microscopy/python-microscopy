@@ -150,7 +150,7 @@ class bgFrameBuffer:
         bufShape = (size,) + shape #[:2]
         self.frameBuffer = self.MAXSHORT*np.ones(bufShape, dtype)
         self.indices = self.MAXIDX*np.ones(bufShape, np.uint16)
-        self.validData = np.zeros(size, np.bool)
+        self.validData = np.zeros(size, bool)
         
     def _growBuffer(self, data=None):
         if self.frameBuffer is None:

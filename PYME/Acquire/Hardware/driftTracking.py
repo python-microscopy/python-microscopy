@@ -119,15 +119,15 @@ class OIDICFrameSource(StandardFrameSource):
             # clobber all frames coming from camera when not in the correct DIC orientation
             pass
 class Correlator(object):
-    def __init__(self, scope, piezo=None, frame_source=None):
+    def __init__(self, scope, piezo=None, frame_source=None, focusTolerance=.05, deltaZ=0.2, stackHalfSize=35):
         self.piezo = piezo
 
         if frame_source is None:
             self.frame_source = StandardFrameSource(scope.frameWrangler)
         
-        self.focusTolerance = .05 #how far focus can drift before we correct
-        self.deltaZ = 0.2 #z increment used for calibration
-        self.stackHalfSize = 35
+        self.focusTolerance = focusTolerance #how far focus can drift before we correct
+        self.deltaZ = deltaZ #z increment used for calibration
+        self.stackHalfSize = stackHalfSize
         self.NCalibStates = 2*self.stackHalfSize + 1
         self.calibState = 0
 
@@ -201,6 +201,46 @@ class Correlator(object):
 
     def get_focus_tolerance(self):
         return self.focusTolerance
+
+
+    def set_delta_Z(self, delta):
+        """ Set the Z increment for calibration stack
+
+        Parameters
+        ----------
+
+        delta : float
+            The delta in um. This should be the distance over which changes in PSF intensity with depth 
+            can be approximated as being linear, with an upper bound of the Nyquist sampling in Z. 
+            At Nyquist sampling, the linearity assumption is already getting a bit tenuous. Default = 0.2 um, 
+            which is approximately Nyquist sampled at 1.4NA.
+        """
+
+        self.deltaZ = delta
+
+    def get_delta_Z(self):
+        return self.deltaZ
+
+
+    def set_stack_halfsize(self, halfsize):
+        """ Set the calibration stack half size
+
+        This dictates the maximum size of z-stack you can record whilst retaining focus lock. The resulting 
+        calibration range can be calculated as deltaZ*(2*halfsize), and should extend about 1 micron above 
+        and below the size of the the largest z-stack to ensure that lock can be maintained at the edges of 
+        the stack. The default of 35 gives about 12 um of axial range.
+
+        Parameters
+        ----------
+
+        halfsize : int
+        """
+
+        self.stackHalfSize = halfsize
+
+    def get_stack_halfsize(self):
+        return self.stackHalfSize
+    
 
     def set_focus_lock(self, lock=True):
         """ Set locking on or off
@@ -349,7 +389,7 @@ class Correlator(object):
             
         elif (self.calibState == self.NCalibStates):
             # print "cal finishing"
-            self.setRefN(frameData, int(self.calibState - 1))
+            self._setRefN(frameData, int(self.calibState - 1))
             
             #perform final bit of calibration - calcuate gradient between steps
             #self.dz = (self.refC - self.refB).ravel()

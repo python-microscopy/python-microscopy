@@ -103,6 +103,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator
               #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
               #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
+              mde.IntParam('Analysis.ROISize', u'ROI half size', 5),
               ]
               
 

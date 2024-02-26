@@ -280,7 +280,7 @@ class CaptionBar(wx.Window):
                 w, h = b.size
                 y0 = self.style['HEIGHT'] / 2. - h / 2.
                 x0 -= (w + (i>0)*5)
-                b._rect = (x0, y0, w,h)
+                b._rect = (int(x0), int(y0), int(w), int(h))
                 
                 if b.active:
                     gc.DrawBitmap(b._active_bitmap, *b._rect)
