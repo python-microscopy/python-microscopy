@@ -996,7 +996,7 @@ class MeasureClusters3D(ModuleBase):
 
         inp = inputName
 
-        labels = inp[self.labelKey].astype(np.int)
+        labels = inp[self.labelKey].astype(int)
         # make sure labeling scheme is consistent with what pyme conventions
         if (len(labels) > 0) and  (labels.min() < 0):
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
