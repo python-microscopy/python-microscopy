@@ -1,55 +1,89 @@
 import numpy as np
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
+from PYME.Analysis.splitting import SplittingInfo
 
 
-def _bdsClip(x, w, x0, iw):
-    x -= x0
-    if (x < 0):
-        w += x
-        x = 0
-    if ((x + w) > iw):
-        w -= (x + w) - iw
+# def _bdsClip(x, w, x0, iw):
+#     '''
+#     subtracts x0 (camera ROI origin) from x (which is relative to chip origin)
+#     and clips w to fit within the image width
+#     '''
+#     x -= x0
+#     if (x < 0):
+#         w += x
+#         x = 0    
+#     if ((x + w) > iw):
+#         w -= (x + w) - iw
     
-    return x, w
+#     return x, w
+
+
+
+
+
+# def get_splitter_rois(md, data_shape):
+#     '''
+#     Gets max-size common ROIs for the two 
+#     channels of a splitter, relative to the data origin. 
+#     '''
+#     x0, y0 = get_camera_roi_origin(md)
+    
+#     if 'Splitter.Channel0ROI' in md.getEntryNames():
+#         xg, yg, wg, hg = md['Splitter.Channel0ROI']
+#         xr, yr, wr, hr = md['Splitter.Channel1ROI']
+#         #print 'Have splitter ROIs'
+#     else:
+#         xg = 0
+#         yg = 0
+#         wg = data_shape[0]
+#         hg = data_shape[1] / 2
+        
+#         xr = 0
+#         yr = hg
+#         wr = data_shape[0]
+#         hr = data_shape[1] / 2
+    
+#     if md.get('Splitter.Flip', True):
+#         ch_flip = np.array([0, 1])
+#         y_step = -1
+#     else:
+#         ch_flip = np.array([0, 0])
+#         y_step = 1
+    
+#     rx0, rx1 = _get_supported_sub_roi(np.array([xg, xr]), np.array([wg, wr]), x0, data_shape[0])
+#     ry0, ry1 = _get_supported_sub_roi(np.array([yg, yr]), np.array([hg, hr]), y0, data_shape[1], ch_flip)
+    
+#     xgs = slice(int(xg+rx0 - x0), int(xg + rx1-x0), 1)
+#     xrs = slice(int(xr+rx0 - x0), int(xr + rx1 - x0), 1)
+#     ygs = slice(int(yg + ry0 - y0), int(yg + ry1 -y0), 1)
+
+#     if y_step == -1:
+#         yrs = slice(int(yr + hr - y0 - ry0 -1), int(yr + hr - y0 - ry1 -1), y_step)
+#     else:
+#         yrs = slice(int(yr + ry0 -y0), int(yr + ry1-y0), y_step)
+    
+#     return xgs, xrs, ygs, yrs
 
 def get_splitter_rois(md, data_shape):
-    x0, y0 = get_camera_roi_origin(md)
-    
-    if 'Splitter.Channel0ROI' in md.getEntryNames():
-        xg, yg, wg, hg = md['Splitter.Channel0ROI']
-        xr, yr, wr, hr = md['Splitter.Channel1ROI']
-        #print 'Have splitter ROIs'
-    else:
-        xg = 0
-        yg = 0
-        wg = data_shape[0]
-        hg = data_shape[1] / 2
-        
-        xr = 0
-        yr = hg
-        wr = data_shape[0]
-        hr = data_shape[1] / 2
-     
-    #print yr, hr
-    
-    xg, wg = _bdsClip(xg, wg, x0, data_shape[0])
-    xr, wr = _bdsClip(xr, wr, x0, data_shape[0])
-    yg, hg = _bdsClip(yg, hg, y0, data_shape[1])
-    yr, hr = _bdsClip(yr, hr, y0, data_shape[1])
-    
-    w = min(wg, wr)
-    h = min(hg, hr)
-    
-    #print yg, hg, yr, hr
-    
-    if ('Splitter.Flip' in md.getEntryNames() and not md.getEntry('Splitter.Flip')):
-        step = 1
-        return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg), int(yg + h), 1), slice(int(yr), int(yr + h), step))
-    else:
-        step = -1
-        return (slice(int(xg), int(xg + w), 1), slice(int(xr), int(xr + w), 1), slice(int(yg + hg-h), int(yg + hg), 1), slice(int(yr + h), int(yr - 1), step))
+    '''
+    Gets max-size common ROIs for the two 
+    channels of a splitter, relative to the data origin. 
+    '''
+    si = SplittingInfo(md, data_shape)
+
+    xgs, xrs = si.data_slicesx
+    ygs, yrs = si.data_slicesy
+
+    return xgs, xrs, ygs, yrs
 
 def map_splitter_coords(md, data_shape, x, y):
+    '''
+    Legacy code for mapping spltter coordinates
+
+    DO NOT USE
+    '''
+    import warnings
+    warnings.warn('map_splitter_coords is deprecated, use map_splitter_coords_ instead', DeprecationWarning)
     vx, vy, _ = md.voxelsize_nm
 
     x0, y0 = get_camera_roi_origin(md)
@@ -92,17 +126,29 @@ def map_splitter_coords(md, data_shape, x, y):
     return np.clip(xn, 0, w - 1), np.clip(yn, 0, h - 1)
 
 def map_splitter_coords_(x, y, xslices, yslices, flip=True):
+    '''
+    Translate coordinates from the camera frame into the 
+    frame of the individual splitter ROI the point lies in.
+    '''
     xo = np.zeros_like(x)
     yo = np.zeros_like(y)
-    for i in range(len(xslices)):
+    for i in range(len(xslices)): #loop over splitter ROIs
         x0 = min(xslices[i].start, xslices[i].stop)
         x1 = max(xslices[i].start, xslices[i].stop)
         y0 = min(yslices[i].start, yslices[i].stop)
         y1 = max(yslices[i].start, yslices[i].stop)
         
+        # Which points lie within this ROI?
+        # Use a mask to avoid looping over points
+        # individually. We expect msk to be one for only one
+        # ROI in the list of ROIs (i.e. we require splitter ROIs
+        # to be non-overlapping). 
         msk = (x > x0) & (x < x1) & (y > y0) & (y < y1)
         
-        xo += msk*(x-x0)
+        # set the position relative to this ROI origin for all points in *this* ROI
+        # Because we expect msk to be one for only one ROI, this addition is equivalent to 
+        # masked assignment
+        xo += msk*(x-x0) 
         
         if flip and (i > 0):
             yo += msk*(y1 - y)
@@ -163,7 +209,7 @@ def split_image(md, img):
     g = img[xgs, ygs]
     r = img[xrs, yrs]
 
-    # print xgs, xrs, ygs, yrs, g.shape, r.shape
+    #print(xgs, xrs, ygs, yrs, g.shape, r.shape, img.shape)
 
     return np.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)), 2)
 
@@ -191,4 +237,4 @@ def get_shifts(md, data_shape, x, y):
     dxp = int(DeltaX / vx)
     dyp = int(DeltaY / vy)
 
-    return DeltaX, DeltaY, dxp, dxy
+    return DeltaX, DeltaY, dxp, dyp

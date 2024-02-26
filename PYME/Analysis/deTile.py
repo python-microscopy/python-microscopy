@@ -160,8 +160,8 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     
     roi_x0, roi_y0 =get_camera_roi_origin(mdh)
     
-    ROIX1 = roi_x0 + 1
-    ROIY1 = roi_y0 + 1
+    ROIX1 = roi_x0
+    ROIY1 = roi_y0
 
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')

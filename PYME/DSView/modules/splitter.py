@@ -43,7 +43,12 @@ class Unmixer(Plugin):
         dsviewer.AddMenuItem('Processing', "Set Shift Field", self.OnSetShiftField)
 
     def _getUSDataSources(self):
+        from PYME.Analysis import splitting
+
         mdh = self.image.mdh
+
+        si = splitting.SplittingInfo(self.image.mdh, self.image.shape[:2])
+        
         if 'chroma.dx' in mdh.getEntryNames():
             sf = (mdh['chroma.dx'], mdh['chroma.dy'])
         elif global_shiftfield:
@@ -51,62 +56,9 @@ class Unmixer(Plugin):
         else:
             sf = None
 
-        flip = True
-        if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
-            flip = False
 
-        chanROIs = None
-        if 'Splitter.Channel0ROI' in mdh.getEntryNames():
-            chanROIs = [mdh['Splitter.Channel0ROI'], mdh['Splitter.Channel1ROI']]
-
-        if 'Multiview.NumROIs' in mdh.getEntryNames():
-            # we have more than 2 ROIs
-            numROIs = mdh['Multiview.NumROIs']
-            w, h = mdh['Multiview.ROISize']
-
-            #print self.image.data.shape, w, h, numROIs
-            flip = False
-
-            if self.image.data.shape[0] == numROIs*w:
-                #we are extracted as expected.
-                h_ = min(h, int(self.image.data.shape[1]))
-
-                chanROIs = []
-                for i in range(numROIs):
-                    x0, y0 = (i * w, 0)
-                    chanROIs.append((x0, y0, w, h_))
-
-                #TODO - Fix me to use proper coordinates
-                ROIX1, ROIY1 = (1, 1)
-                ROIX2, ROIY2 = (w * numROIs, h_)
-
-            else:
-                #raw data - do the extraction ourselves
-                raise RuntimeError("data has not been unsplit, we can't handle this at present")
-                chanROIs = []
-                for i in range(numROIs):
-                    x0, y0 = mdh['Multiview.ROISize']
-                    chanROIs.append((x0, y0, w, h))
-        else:
-            #default to old splitter code
-            from PYME.IO.MetaDataHandler import get_camera_roi_origin
-
-            roi_x0, roi_y0 = get_camera_roi_origin(mdh)
-
-            ROIX1 = roi_x0 + 1
-            ROIY1 = roi_y0 + 1
-
-            ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
-            ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
-
-            numROIs = 2
-
-
-
-        usds = [UnsplitDataSource.DataSource(self.image.data,
-                                             [ROIX1, ROIY1, ROIX2, ROIY2],
-                                             i, flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize) for i in
-                range(numROIs)]
+        usds = [UnsplitDataSource.DataSource(self.image.data, si, i, sf, voxelsize=self.image.voxelsize) for i in
+                range(si.num_chans)]
 
         return usds
 
