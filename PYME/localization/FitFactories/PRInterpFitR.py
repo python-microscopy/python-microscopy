@@ -216,7 +216,8 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'priEstimator', choices=zEstimators.estimatorList),
-              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])]
+              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y']),
+              mde.IntParam('Analysis.ROISize', u'ROI half size', 5),]
               
 DESCRIPTION = '3D fitting for the PRI PSF with variable lobe heights.'
 LONG_DESCRIPTION = '3D fitting for the PRI PSF with variable lobe heights. A special version of InterpFit which allows us to measure the realative strength of the two PRI lobes. Fairly specialised use cases - unless you know you need it use InterpFitR instead.'
