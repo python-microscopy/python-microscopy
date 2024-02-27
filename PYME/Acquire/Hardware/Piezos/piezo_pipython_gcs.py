@@ -232,6 +232,8 @@ class GCSPiezoThreaded(PiezoBase):
         self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
         self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
 
+        # before the loop is active, need to query positions explicitly to make self.positions valid
+        self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
         self.joystick = joystick
         if self.joystick is not None:
             self.joystick.init(self) # the joystick object should have an init method
@@ -245,16 +247,16 @@ class GCSPiezoThreaded(PiezoBase):
     def enable_joystick(self):
         if self.joystick is None:
             return
-        with self._lock:
-            self.joystick.enablecommands(self.pi)
         self.disable_updating_ontarget()
+        # running this command under lock seemed to hang
+        self.joystick.enablecommands(self.pi)
         self._joystick_enabled = True
 
     def disable_joystick(self):
         if self.joystick is None:
             return
-        with self._lock:
-            self.joystick.disablecommands(self.pi)
+        # running this command under lock seemed to hang
+        self.joystick.disablecommands(self.pi)
         self.enable_updating_ontarget()
         self._joystick_enabled = False
 
@@ -334,25 +336,23 @@ class GCSPiezoThreaded(PiezoBase):
         self.tloop.start()
 
     def enable_updating_ontarget(self):
-        with self._lock:
-            # first reset the relevant variables
-            self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
-            self.target_positions = np.copy(self.positions)
-            self._last_target_positions = np.copy(self.positions)
-            self._all_on_target = True
-            self._on_target = np.asarray([True for axis in self.axes])
-            # now also switch the flag
-            self._updating_ontarget = True
+        # first reset the relevant variables
+        self.target_positions = np.copy(self.positions)
+        self._last_target_positions = np.copy(self.positions)
+        self._all_on_target = True
+        self._on_target = np.asarray([True for axis in self.axes])
+        # now also switch the flag
+        self._updating_ontarget = True
 
     def disable_updating_ontarget(self): # does this need a lock, any race conditions?
         self._updating_ontarget = False
 
     def _Loop(self):
         while self.loop_active:
+            time.sleep(self._update_rate) # I imagine we should sleep while not holding the lock so that others can grab it if needed
             with self._lock:
                 try:
                     # check position
-                    time.sleep(self._update_rate)
                     for ind, axis in enumerate(self.axes):
                         # does this need a lock?
                         self.positions[ind] = self.pi.qPOS([axis])[axis]
