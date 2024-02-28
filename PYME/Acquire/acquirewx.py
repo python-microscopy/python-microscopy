@@ -169,9 +169,11 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
             self.time1.Start(500)
     
     def _refreshDataStack(self):
-        if 'vp' in dir(self):
-            if not (self.vp.do.ds.data is self.scope.frameWrangler.currentFrame):
-                self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
+        try:
+            if not (self.view.do.ds.data is self.scope.frameWrangler.currentFrame):
+                self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
+        except ArithmeticError:
+            pass
         
     
     def _add_live_view(self):
@@ -181,28 +183,27 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         """
 
         if self.scope.cam.GetPicHeight() > 1:
-            if 'vp' in dir(self):
-                    self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
-            else:
-                self.vp = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame, initial_overlays=[])
-                self.vp.crosshairs = False
-                self.vp.showScaleBar = False
-                self.vp.do.leftButtonAction = self.vp.do.ACTION_SELECTION
-                self.vp.do.showSelection = True
-                self.vp.CenteringHandlers.append(self.scope.PanCamera)
+            try:
+                self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
+            except AttributeError:
+                self._view = arrayViewPanel.ArrayViewPanel(self, self.scope.frameWrangler.currentFrame, initial_overlays=[])
+                self.view.crosshairs = False
+                self.view.showScaleBar = False
+                self.view.do.leftButtonAction = self.view.do.ACTION_SELECTION
+                self.view.do.showSelection = True
+                self.view.CenteringHandlers.append(self.scope.PanCamera)
 
-                self.vsp = disppanel.dispSettingsPanel2(self, self.vp, self.scope)
+                self.vsp = disppanel.dispSettingsPanel2(self, self.view, self.scope)
 
 
                 self.time1.WantNotification.append(self.vsp.RefrData)
                 self.time1.WantNotification.append(self._refreshDataStack)
 
-                self.AddPage(page=self.vp, select=True,caption='Preview')
+                self.AddPage(page=self.view, select=True,caption='Preview')
 
                 self.AddCamTool(self.vsp, 'Display')
 
-            #self.scope.frameWrangler.WantFrameGroupNotification.append(self.vp.Redraw)
-            self.scope.frameWrangler.onFrameGroup.connect(self.vp.Redraw)
+            self.scope.frameWrangler.onFrameGroup.connect(self.view.Redraw)
 
         else:
             #1d data - use graph instead
@@ -504,12 +505,12 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         logging.debug('Preparing frame wrangler for new ROI size')
 
         self.scope.frameWrangler.Prepare()
-        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
+        self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
 
         logging.debug('Restarting frame wrangler with new ROI')
         self.scope.frameWrangler.start()
-        self.vp.Refresh()
-        self.vp.GetParent().Refresh()
+        self.view.Refresh()
+        self.view.GetParent().Refresh()
 
     def OnMCamSetPixelSize(self, event):
         from PYME.Acquire.ui import voxelSizeDialog
@@ -522,8 +523,6 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         logging.debug('Stopping frame wrangler to set ROI')
         self.scope.frameWrangler.stop()
         
-        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
-
         if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
             #print('setting ROI')
@@ -547,7 +546,7 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
                 self.scope.state['Camera.ROI'] = (0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
                 self.roi_on = False
             else:
-                x1, y1, x2, y2 = self.vp.do.GetSliceSelection()
+                x1, y1, x2, y2 = self.view.do.GetSliceSelection()
     
                 #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
                 if 'splitting' in dir(self.scope.cam):
@@ -582,20 +581,18 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         #self.scope.cam.SetCOC()
         #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
-        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
+        self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
         
-        self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
+        self.view.do.SetSelection((x1,y1,0), (x2,y2,0))
 
         logging.debug('Restarting frame wrangler with new ROI')
         self.scope.frameWrangler.start()
-        self.vp.Refresh()
-        self.vp.GetParent().Refresh()
+        self.view.Refresh()
+        self.view.GetParent().Refresh()
         #event.Skip()
 
     def SetCentredRoi(self, event=None, halfwidth=5):
         self.scope.frameWrangler.stop()
-
-        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
 
         w = self.scope.cam.GetCCDWidth()
         h = self.scope.cam.GetCCDHeight()
@@ -619,19 +616,40 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         #self.scope.cam.SetCOC()
         #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
-        self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
+        self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
         
-        self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
+        self.view.do.SetSelection((x1,y1,0), (x2,y2,0))
 
         self.scope.frameWrangler.start()
-        self.vp.Refresh()
-        self.vp.GetParent().Refresh()
+        self.view.Refresh()
+        self.view.GetParent().Refresh()
         #event.Skip()
 
     def OnMDisplayClearSel(self, event):
-        self.vp.ResetSelection()
+        self.view.ResetSelection()
         #event.Skip()
 
+    @property
+    def view(self):
+        '''Return the current view panel. This is the panel that is used to display the camera data.
+        
+        deprecates .vp
+
+        '''
+        try:
+            return self._view
+        except AttributeError:
+            raise AttributeError('View panel not yet created. This usually happens if .view is accessed too early in the initialisation process.')
+
+    @property
+    def vp(self):
+        ''' Backwards compatibility for access to the view panel
+        
+        Generates a deprecation warning - use .view instead
+        '''
+        import warnings
+        warnings.warn('The .vp attribute is deprecated. Use .view instead', DeprecationWarning)
+        return self.view
 
     def OnCloseWindow(self, event):   
         self.scope.frameWrangler.stop()
