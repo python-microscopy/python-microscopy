@@ -316,7 +316,13 @@ class GCSPiezoThreaded(PiezoBase):
         return self._max[iChan]
     
     def GetFirmwareVersion(self):
-        raise NotImplementedError
+        if self.pi.HasqVER():
+            ver = self.pi.qVER() # under lock?
+            verinfo = ver.strip()
+        else:
+            verinfo = 'Controller has no version info'
+
+        return verinfo
     
     def OnTarget(self):
         """
