@@ -205,15 +205,30 @@ class ZFactorPlotPanel(PlotPanel):
 
 
 
-# add controls for lastAdjustment
+from PYME.DSView import overlays
+import weakref
+class DriftROIOverlay(overlays.Overlay):
+    # TODO - implement this - should display a box around the current sub-ROI
+    pass
+
 class DriftTrackingControl(wx.Panel):
-    def __init__(self, parent, driftTracker, winid=-1, showPlots=True):
+    def __init__(self, main_frame, driftTracker, winid=-1, showPlots=True):
+        ''' This class provides a GUI for controlling the drift tracking system. 
+        
+        It should be initialised with a reference to the PYMEAcquire main frame, which will stand in as a parent while other GUI items are
+        created. Note that the actual parent will be reassigned once the GUI tool panel is created using a Reparent() call.
+        '''
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
-        wx.Panel.__init__(self, parent, winid)
+        wx.Panel.__init__(self, main_frame, winid)
         self.dt = driftTracker
         self.plotInterval = 10
         self.showPlots = showPlots
+
+        # keep a reference to the main frame. Do this as a weakref to avoid circular references.
+        # we need this to be able to access the view to get the current selection and to add overlays.
+        self._main_frame = weakref.proxy(main_frame)
+        self._view_overlay = None # dummy reference to the overlay so we only create it once
 
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -236,6 +251,15 @@ class DriftTrackingControl(wx.Panel):
         self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
         hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
         self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnBSetPostion)
+        #self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
+        #hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2)
+        #self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
+        sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.tbSubROI = wx.ToggleButton(self, -1, 'Restrict to sub-ROI')
+        hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
+        self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnTBToggleSubROI)
         #self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
         #hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2)
         #self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
@@ -335,6 +359,22 @@ class DriftTrackingControl(wx.Panel):
             
     def OnBSetPostion(self, event):
         self.dt.reCalibrate()
+
+    def OnTBToggleSubROI(self, event):
+        self.toggle_subroi(self.tbSubROI.GetValue())
+    
+    def toggle_subroi(self, new_state=True):
+        ''' Turn sub-ROI tracking on or off, using the current selection in the live image display'''
+        if new_state:
+            x0, x1, y0, y1, _, _ = self._main_frame.view.do.sorted_selection
+            self.dt.set_subroi((x0, x1, y0, y1)) # TODO - implement dt.set_subroi
+        else:
+            self.dt.set_subroi(None)
+
+        self.dt.reCalibrate() # FIXME - move to dt.set_subroi
+
+        if self._view_overlay is None:
+            self._view_overlay = self._main_frame.view.add_overlay(DriftROIOverlay(self.dt), 'Drift tracking Sub-ROI')
         
     def OnBSaveCalib(self, event):
         if not hasattr(self.dt, 'calibState') or (self.dt.calibState < self.dt.NCalibStates):
