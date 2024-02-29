@@ -355,7 +355,7 @@ class GCSPiezoThreaded(PiezoBase):
 
     def _Loop(self):
         while self.loop_active:
-            time.sleep(self._update_rate) # I imagine we should sleep while not holding the lock so that others can grab it if needed
+            time.sleep(self._update_rate) # we should sleep while NOT holding the lock so that others can grab it if needed
             with self._lock:
                 try:
                     # check position
@@ -393,11 +393,12 @@ class GCSPiezoThreaded(PiezoBase):
         logger.debug('exiting')
    
 
-# a piezo_pipython_gcs compatible joystick class needs
-# - Enable() and IsEnabled() methods for use by PYME position ui and scope object
+# a piezo_pipython_gcs compatible joystick class
+# - provides Enable() and IsEnabled() methods for use by PYME position ui and scope object
 # - an init() method to set the joystick parameters via GCS commands and register the gcspiezo "parent" instance
 # - an enablecommands() method of GCS commands that will be used by the gcspiezo "parent" object to enable the joystick
 # - a disablecommands() method of GCS commands that will be used by the gcspiezo "parent" object to disable the joystick
+
 # example usage:
 #    from PYME.Acquire.Hardware.Piezos.piezo_pipython_gcs import GCSPiezoThreaded
 #    from PYMEcs.Acquire.Hardware.Piezos.joystick_c867_digital import DigitalJoystick
@@ -412,10 +413,13 @@ class JoystickBase(object):
     # this method needs to be tweaked to the specific controller and joystick model in derived class
     def init(self,gcspiezo):
         # register the piezo device
-        self.gcspiezo = gcspiezo
+        self.gcspiezo = gcspiezo # needs to be retained in derived class implementation
+        
         # further initialisation code should go below (e.g. GCS commands)
-        # this method needs to be implemented in a derived class
-        #   and retain the registration of the gcspiezo attribute!
+        # i.e., this method needs to be implemented in a derived class
+        
+        # when completed needs to set the initialised flag: self._initialised = True
+        
         raise NotImplementedError('Needs to be implemented in derived class.')
 
     def Enable(self, enabled = True):
@@ -432,14 +436,14 @@ class JoystickBase(object):
 
     def check_initialised(self):
         if not self._initialised:
-            raise RuntimeError("joystick must have been initialised before using these methods")
+            raise RuntimeError("joystick must be initialised before using these methods")
 
     # GCS commands to enable the joystick
-    def enablecommands(self): # this method should only be used from the parent gcspiezo object
+    def enablecommands(self): # this method is supposed to be used from the parent gcspiezo object
         #    e.g. self.gcspiezo.pi.HIN(self.gcspiezo.axes,[True for axis in self.gcspiezo.axes])
         raise NotImplementedError('Needs to be implemented in derived class.')
 
     # GCS commands to enable the joystick
-    def disablecommands(self): # this method should only be used from the parent gcspiezo object
+    def disablecommands(self): # this method is supposed to be used from the parent gcspiezo object
         #    e.g. self.gcspiezo.pi.HIN(self.gcspiezo.axes,[False for axis in self.gcspiezo.axes])
         raise NotImplementedError('Needs to be implemented in derived class.')
