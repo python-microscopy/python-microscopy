@@ -123,7 +123,9 @@ class Correlator(object):
 
         if frame_source is None:
             self.frame_source = StandardFrameSource(scope.frameWrangler)
-        self.frame_source = frame_source
+        else:
+            self.frame_source = frame_source
+
         
         self.focusTolerance = focusTolerance #how far focus can drift before we correct
         self.deltaZ = deltaZ #z increment used for calibration
