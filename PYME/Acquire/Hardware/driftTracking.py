@@ -109,11 +109,10 @@ class OIDICFrameSource(StandardFrameSource):
         self._target_orientation = oidic_orientation
 
     def tick(self, *args, **kwargs):
-        # FIXME - change to match actual naming etc ... in OIDIC code.
         # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
         # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
         # registered with the frameWrangler?
-        if self._oidic.orientation == self._target_orientation:
+        if self._oidic.current_channel == self._target_orientation:
             super().tick(*args, **kwargs)
         else:
             # clobber all frames coming from camera when not in the correct DIC orientation
@@ -124,6 +123,9 @@ class Correlator(object):
 
         if frame_source is None:
             self.frame_source = StandardFrameSource(scope.frameWrangler)
+        else:
+            self.frame_source = frame_source
+
         
         self.focusTolerance = focusTolerance #how far focus can drift before we correct
         self.deltaZ = deltaZ #z increment used for calibration
