@@ -367,11 +367,9 @@ class DriftTrackingControl(wx.Panel):
         ''' Turn sub-ROI tracking on or off, using the current selection in the live image display'''
         if new_state:
             x0, x1, y0, y1, _, _ = self._main_frame.view.do.sorted_selection
-            self.dt.set_subroi((x0, x1, y0, y1)) # TODO - implement dt.set_subroi
+            self.dt.set_subroi((x0, x1, y0, y1))
         else:
             self.dt.set_subroi(None)
-
-        self.dt.reCalibrate() # FIXME - move to dt.set_subroi
 
         if self._view_overlay is None:
             self._view_overlay = self._main_frame.view.add_overlay(DriftROIOverlay(self.dt), 'Drift tracking Sub-ROI')
