@@ -82,6 +82,7 @@ class XYZTCAcquisition(object):
         
         
     def start(self):
+        self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
         self.scope.frameWrangler.stop()
         self.frame_num = 0
         
@@ -101,6 +102,7 @@ class XYZTCAcquisition(object):
     def finish(self):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
+        self.scope.stackSettings.piezoGoHome()
         self.scope.frameWrangler.start()
         
         self.on_series_end.send(self)
