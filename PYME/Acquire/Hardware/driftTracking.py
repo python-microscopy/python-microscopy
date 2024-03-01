@@ -118,7 +118,7 @@ class OIDICFrameSource(StandardFrameSource):
             # clobber all frames coming from camera when not in the correct DIC orientation
             pass
 class Correlator(object):
-    def __init__(self, scope, piezo=None, frame_source=None, focusTolerance=.05, deltaZ=0.2, stackHalfSize=35):
+    def __init__(self, scope, piezo=None, frame_source=None, sub_roi=None, focusTolerance=.05, deltaZ=0.2, stackHalfSize=35):
         self.piezo = piezo
 
         if frame_source is None:
@@ -126,7 +126,7 @@ class Correlator(object):
         else:
             self.frame_source = frame_source
 
-        
+        self.sub_roi = sub_roi
         self.focusTolerance = focusTolerance #how far focus can drift before we correct
         self.deltaZ = deltaZ #z increment used for calibration
         self.stackHalfSize = stackHalfSize
@@ -188,6 +188,19 @@ class Correlator(object):
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
         
+    def set_subroi(self, position):
+        """ Set the position of the roi to crop
+
+        Parameters
+        ----------
+
+        position : tuple
+            The pixel position (x0, x1, y0, y1) in int
+        """
+
+        self.sub_roi = position
+        self.reCalibrate()
+
 
     def set_focus_tolerance(self, tolerance):
         """ Set the tolerance for locking position
