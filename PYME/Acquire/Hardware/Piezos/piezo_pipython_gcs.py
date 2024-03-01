@@ -240,7 +240,7 @@ class GCSPiezoThreaded(PiezoBase):
             self.disable_joystick() # this includes enabling updating_ontarget
         else:
             self.enable_updating_ontarget()
-        
+
         self._update_rate = update_rate
         self._start_loop()
 
@@ -248,15 +248,15 @@ class GCSPiezoThreaded(PiezoBase):
         if self.joystick is None:
             return
         self.disable_updating_ontarget()
-        # running this command under lock seemed to hang
-        self.joystick.enablecommands()
+        with self._lock:
+            self.joystick.enablecommands()
         self._joystick_enabled = True
 
     def disable_joystick(self):
         if self.joystick is None:
             return
-        # running this command under lock seemed to hang
-        self.joystick.disablecommands()
+        with self._lock:
+            self.joystick.disablecommands()
         self.enable_updating_ontarget()
         self._joystick_enabled = False
 
