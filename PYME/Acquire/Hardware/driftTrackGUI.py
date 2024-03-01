@@ -261,7 +261,7 @@ class DriftTrackingControl(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.tbSubROI = wx.ToggleButton(self, -1, 'Restrict to sub-ROI')
         hsizer.Add(self.tbSubROI, 0, wx.ALL, 2)
-        self.tbSubROI.Bind(wx.EVT_BUTTON, self.OnTBToggleSubROI)
+        self.tbSubROI.Bind(wx.EVT_TOGGLEBUTTON, self.OnTBToggleSubROI)
         #self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
         #hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2)
         #self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
