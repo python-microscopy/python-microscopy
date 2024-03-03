@@ -208,8 +208,22 @@ class ZFactorPlotPanel(PlotPanel):
 from PYME.DSView import overlays
 import weakref
 class DriftROIOverlay(overlays.Overlay):
-    # TODO - implement this - should display a box around the current sub-ROI
-    pass
+    def __init__(self, driftTracker):
+        self.dt = driftTracker
+    
+    def __call__(self, view, dc):
+        if self.dt.sub_roi is not None:
+            dc.SetPen(wx.Pen(colour=wx.CYAN, width=1))
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x0, x1, y0, y1 = self.dt.sub_roi
+            x0c, y0c = view.pixel_to_screen_coordinates(x0, y0)
+            x1c, y1c = view.pixel_to_screen_coordinates(x1, y1)
+            sX, sY = x1c-x0c, y1c-y0c
+            dc.DrawRectangle(int(x0c), int(y0c), int(sX), int(sY))
+            dc.SetPen(wx.NullPen)
+        else:
+            dc.SetBackground(wx.TRANSPARENT_BRUSH)
+            dc.Clear()
 
 class DriftTrackingControl(wx.Panel):
     def __init__(self, main_frame, driftTracker, winid=-1, showPlots=True):
