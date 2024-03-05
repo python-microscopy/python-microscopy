@@ -201,6 +201,13 @@ class Correlator(object):
         self.sub_roi = bounds
         self.reCalibrate()
 
+    def _crop_frame(self, frame_data):
+        if self.sub_roi is None:
+            return frame_data.squeeze()   # we may as well do the squeeze here to avoid lots of squeezes elsewhere
+        else:
+            x0, x1, y0, y1 = self.sub_roi
+            return frame_data.squeeze()[x0:x1, y0:y1]
+
 
     def set_focus_tolerance(self, tolerance):
         """ Set the tolerance for locking position
@@ -369,10 +376,13 @@ class Correlator(object):
     def tick(self, frameData = None, **kwargs):
         if frameData is None:
             raise ValueError('frameData must be specified')
+        else:
+            frameData = self._crop_frame(frameData)
         
         targetZ = self.piezo.GetTargetPos(0)
         
-        if not 'mask' in dir(self) or not self.frame_source.shape[:2] == self.mask.shape[:2]:
+        #if not 'mask' in dir(self) or not self.frame_source.shape[:2] == self.mask.shape[:2]:
+        if not 'mask' in dir(self) or not frameData.shape[:2] == self.mask.shape[:2]:
             self._initialise(frameData)
             
         #called on a new frame becoming available
