@@ -188,7 +188,7 @@ class Correlator(object):
         self.calFTs[:,:,N] = ifftn(ref)
         self.calImages[:,:,N] = ref*self.mask
         
-    def set_subroi(self, position):
+    def set_subroi(self, bounds):
         """ Set the position of the roi to crop
 
         Parameters
