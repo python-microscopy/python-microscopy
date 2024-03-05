@@ -176,7 +176,8 @@ class PYMEMainFrame(AUIFrame):
         try:
             if not (self.view.do.ds.data is self.scope.frameWrangler.currentFrame):
                 self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
-        except ArithmeticError:
+        except AttributeError:
+
             pass
         
     def _start_polling_camera(self):
