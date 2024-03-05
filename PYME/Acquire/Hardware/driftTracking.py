@@ -198,7 +198,7 @@ class Correlator(object):
             The pixel position (x0, x1, y0, y1) in int
         """
 
-        self.sub_roi = position
+        self.sub_roi = bounds
         self.reCalibrate()
 
 
