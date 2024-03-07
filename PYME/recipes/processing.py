@@ -2906,3 +2906,23 @@ class Offset(Filter):
             return data - self.offset_constant
         elif self.offset_selection == 'offset by minimum':
             return data - np.min(data)
+        
+
+@register_module('ModifyOrigin')
+class ModifyOrigin(Filter):
+    """
+    Modify the origin metadata 
+
+    Parameters
+    ----------
+    ROI_OriginX : the origin of x that the image will set to, int
+    ROI_OriginY : the origin of y that the image will set to, int
+    """
+    ROI_OriginX = Int(578)
+    ROI_OriginY = Int(519)
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+
+    def applyFilter(self, data, chanNum, i, im):
+        im.mdh.Camera.ROIOriginX = self.ROI_OriginX
+        im.mdh.Camera.ROIOriginY = self.ROI_OriginY
+        return data
