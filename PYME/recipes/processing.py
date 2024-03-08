@@ -2908,21 +2908,37 @@ class Offset(Filter):
             return data - np.min(data)
         
 
-@register_module('ModifyOrigin')
-class ModifyOrigin(Filter):
+@register_module('SetOriginMetadata')
+class SetOriginMetadata(ModuleBase):
     """
-    Modify the origin metadata 
+        Set the origin metadata
 
-    Parameters
-    ----------
-    ROI_OriginX : the origin of x that the image will set to, int
-    ROI_OriginY : the origin of y that the image will set to, int
+        Parameters
+        ----------
+        Origin_x : the origin of x that the image will be set to, float in nm
+        Origin_y : the origin of y that the image will be set to, float in nm
+        Origin_z : the origin of z that the image will be set to, float in nm
     """
-    ROI_OriginX = Int(578)
-    ROI_OriginY = Int(519)
-    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+    inputImage = Input('input')
+    outputImage = Output('output')
+    Origin_x = Float(37281.0)
+    Origin_y = Float(33475.5)
+    Origin_z = Float(0.0)
 
-    def applyFilter(self, data, chanNum, i, im):
-        im.mdh.Camera.ROIOriginX = self.ROI_OriginX
-        im.mdh.Camera.ROIOriginY = self.ROI_OriginY
-        return data
+    def run(self, inputImage):
+        # create a new image, using the data from the old image
+        # this re-uses the reference to the unmodified image data so we don't need to allocate more memory
+        # but creates a new, empty, metadata
+        im = ImageStack(inputImage.data, titleStub=self.outputImage)
+        
+        # copy the metadata entries from the original image (note, this is not technically required, as the .execute()
+        # method will automatically copy (merge) the input metadata to the output, but it doesn't hurt to be explicit)
+        im.mdh.copyEntriesFrom(inputImage.mdh)
+        
+        # add any module-specific metadata to the output image
+        im.mdh['Origin.x'] = self.Origin_x
+        im.mdh['Origin.y'] = self.Origin_y
+        im.mdh['Origin.z'] = self.Origin_z
+
+        # return the new image.
+        return im
