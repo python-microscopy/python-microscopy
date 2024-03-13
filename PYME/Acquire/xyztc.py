@@ -6,8 +6,57 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.acquisition_backends import MemoryBackend
 
 
+class TimeSettings(object):
+    '''
+    Class to hold settings for time acquisition
+
+    This class pricipally exists to document the interface of the time_settings parameter to XYZTCAcquisition.
+    
+    Parameters
+    ----------
+    
+    num_timepoints : int
+        Number of timepoints to acquire.
+
+    time_interval : float (or None)
+        Time interval between timepoints. If None, the acquisition will be continuous. NOTE: the logic for non-none values 
+        is not yet implemented, and this parameter will be ignored.
+    
+    
+    '''
+    def __init__(self, num_timepoints=1, time_interval=None):
+        self.num_timepoints = num_timepoints
+        self.time_interval = time_interval
+
 class XYZTCAcquisition(object):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend):
+        """
+        Class to handle an XYZTC acquisition. This should serve as a base class for more specific acquisition classes, whilst also allowing 
+        for simple 3D and time-series acquisitions.
+
+        Parameters
+        ----------
+
+        scope : PYME.Acquire.microscope.microscope instance
+            The microscope instance to use for acquisition.
+
+        dim_order : str
+            A string specifying the order of dimensions in the acquisition. Currently only 'XYCZT' is supported. 
+
+        stack_settings : PYME.Acquire.stackSettings.StackSettings instance
+            The settings for the Z-stack acquisition. If None, the settings from scope.stackSettings will be used.
+
+        time_settings : an object with a num_timepoints attribute
+            The settings for the time acquisition. If None, only one timepoint will be acquired.
+
+        channel_settings : an object with a num_channels attribute
+            The settings for the channel acquisition. If None, only one channel will be acquired.  
+
+        backend : class
+            A class implementing the backend interface (see PYME.IO.acquisition_backends) to use for storing the acquired data.
+            Used for storing the acquired data and metadata. If None, a MemoryBackend will be used.     
+
+        """
         if stack_settings is None:
             stack_settings = scope.stackSettings
 
