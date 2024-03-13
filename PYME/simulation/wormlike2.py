@@ -144,7 +144,8 @@ def dist_along_vector(p, n, verts):
 
     return d.min(axis=1)
 
-class SelfAvoidingWormlikeChain:         
+class SelfAvoidingWormlikeChain:
+    #FIXME - make this actually self-avoiding - it's currently just a placeholder         
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(round(lengthPerKbp*kbp/steplength))
 
