@@ -127,6 +127,7 @@ class Correlator(object):
             self.frame_source = frame_source
 
         self.sub_roi = sub_roi
+
         self.focusTolerance = focusTolerance #how far focus can drift before we correct
         self.deltaZ = deltaZ #z increment used for calibration
         self.stackHalfSize = stackHalfSize
