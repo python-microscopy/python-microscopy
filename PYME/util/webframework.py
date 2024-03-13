@@ -353,7 +353,7 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
         
     def add_endpoints(self, cls, prefix=''):
         for a in dir(cls):
-            func = getattr(cls, a)
+            func = getattr(cls, a, None)
             endpoint_path = getattr(func, '_expose_path', None)
             if not endpoint_path is None:
                 self._endpoints[prefix + endpoint_path] = func
