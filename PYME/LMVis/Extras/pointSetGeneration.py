@@ -161,7 +161,7 @@ There should be no need to modify this from the default and it is accordingly no
         # import pylab
         import matplotlib.pyplot as plt
         
-        #wc = wormlike2.wormlikeChain(100)
+        #wc = wormlike2.WormlikeChain(100)
         
         pipeline = self.visFr.pipeline
         pipeline.filename='Simulation'
