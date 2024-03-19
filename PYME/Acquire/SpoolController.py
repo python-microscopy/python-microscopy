@@ -400,9 +400,10 @@ class SpoolController(object):
             via the action manager.
 
         """
+        from PYME.Acquire.protocol_acquisition import ProtocolAcquision
+        
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
-        
         
         fn = self.seriesName if fn in ['', None] else fn
         stack = settings.get('z_stepped', self.z_stepped)
@@ -480,31 +481,21 @@ class SpoolController(object):
             
         frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
-        if self.spoolType == 'Queue':
-            from PYME.IO import QueueSpooler
-            self.queueName = getRelFilename(self._get_queue_name(fn, subdirectory=subdirectory))
-            self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
-                                                frameShape = frameShape, protocol=protocol, 
-                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
-        elif self.spoolType == 'Cluster':
-            from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+        if self.spoolType == 'Cluster':
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
                                                   subdirectory=subdirectory)
-            self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame,
-                                               frameShape = frameShape, protocol=protocol,
-                                               guiUpdateCallback=self._ProgressUpate,
-                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, stack_settings=stack_settings)
-           
         else:
-            from PYME.IO import HDFSpooler
-            self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn, subdirectory=subdirectory),
-                                              self.scope.frameWrangler.onFrame,
-                                              frameShape = frameShape, protocol=protocol, 
-                                              guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                              fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames, stack_settings=stack_settings)
-
+            self.queueName = self._get_queue_name(fn, subdirectory=subdirectory)
+        
+        self.spooler = ProtocolAcquision(self.queueName, self.scope.frameWrangler.onFrame,
+                                            frameShape = frameShape, protocol=protocol,
+                                            guiUpdateCallback=self._ProgressUpate,
+                                            fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                            compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, complevel=compLevel,
+                                            stack_settings=stack_settings,
+                                            backend=self.spoolType)
+           
+        
         #TODO - sample info is probably better handled with a metadata hook
         #if sampInf:
         #    try:
@@ -525,7 +516,7 @@ class SpoolController(object):
         
         try:
             self.spooler.onSpoolStop.connect(self.SpoolStopped)
-            self.spooler.StartSpool()
+            self.spooler.start()
         except:
             self.spooler.abort()
             raise
@@ -558,7 +549,7 @@ class SpoolController(object):
 
     def StopSpooling(self, **kwargs):
         """GUI callback to stop spooling."""
-        self.spooler.StopSpool()
+        self.spooler.stop()
         
     def SpoolStopped(self, **kwargs):
         self.seriesCounter +=1
@@ -577,8 +568,8 @@ class SpoolController(object):
     def LaunchAnalysis(self):
         """Launch analysis
         """
-        from PYME.IO import QueueSpooler
-        from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+        #from PYME.IO import QueueSpooler
+        #from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':
@@ -587,9 +578,7 @@ class SpoolController(object):
         if self.autostart_analysis:
             dh5view_cmd += ' -g'
         
-        if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
-            subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
-        elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
+        if self.spoolType == 'Cluster': #queue or not
             if self.autostart_analysis:
                 # launch analysis in a separate thread
                 t = threading.Thread(target=self.launch_cluster_analysis)
