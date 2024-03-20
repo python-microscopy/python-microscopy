@@ -47,7 +47,7 @@ from PYME.Acquire.ui import intsliders
 from PYME.Acquire.ui import seqdialog
 from PYME.Acquire.ui import selectCameraPanel
 from PYME.Acquire.ui import splashScreen
-from PYME.Acquire.ui import HDFSpoolFrame
+from PYME.Acquire.ui import spool_panel
 
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
@@ -286,8 +286,11 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(*t)
             
         if self.scope.cam.CamReady():
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Time/Blinking series', pinned=False, folded=False)
+            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
+            self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
+
+            self.pan_spool = spool_panel.SpoolingPane(self, self.scope)
+            self.AddAqTool(self.pan_spool, 'Spooling', pinned=True, folded=False)
             
         for t in self.aqPanels:
             self.AddAqTool(*t)

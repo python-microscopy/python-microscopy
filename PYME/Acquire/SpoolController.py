@@ -7,8 +7,6 @@ Created on Sat May 28 20:42:16 2016
 
 
 #import datetime
-#from PYME.Acquire import HDFSpooler, QueueSpooler
-#from PYME.IO import HTTPSpooler
 from PYME.IO import acquisition_backends
 # TODO: change to use a metadata handler / provideStartMetadata hook
 # MetaDataHandler.provideStartMetadata from the init file when
@@ -23,6 +21,8 @@ except:
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
 from PYME.IO import unifiedIO, MetaDataHandler
+
+from PYME.Acquire.protocol_acquisition import ProtocolAcquision
 
 
 #import PYME.Acquire.Protocols
@@ -52,6 +52,90 @@ logger = logging.getLogger(__name__)
 
 from PYME.util import webframework
 
+class ProtocolAcquisitionSettings(object):
+    '''
+    Manages settings which are specific to protocol-based acquisitions
+    '''
+    def __init__(self) -> None:
+        self.protocol = prot.NullProtocol
+        self.protocolZ = prot.NullZProtocol
+        self.z_stepped = False  # z-step during acquisition
+        self.z_dwell = 100 # time to spend at each z level (if z_stepped == True)
+
+    def set_protocol(self, protocolName=None, reloadProtocol=True):
+        """
+        Set the current protocol.
+        
+        Parameters
+        ----------
+        protocolName: str
+            path to protocol file including extension
+        reloadProtocol : bool
+            currently ignored; protocol module is reinitialized regardless.
+        
+        See also: PYME.Acquire.Protocols.
+        """
+
+        if (protocolName is None) or (protocolName == '<None>'):
+            self.protocol = prot.NullProtocol
+            self.protocolZ = prot.NullZProtocol
+        else:
+            #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
+            
+            #if reloadProtocol:
+            #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+            pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
+
+            self.protocol = pmod.PROTOCOL
+            self.protocol.filename = protocolName
+            
+            self.protocolZ = pmod.PROTOCOL_STACK
+            self.protocolZ.filename = protocolName
+            self.z_dwell = self.protocolZ.dwellTime
+
+    def get_protocol_for_acquistion(self, stack = False, settings={}):
+        stack_settings = settings.get('stack_settings', None)
+        
+        # try stack settings for z_dwell, then aq settings.
+        # precedence is settings > stack_settings > self.z_dwell
+        # The reasoning for allowing the dwell time to be set in either the spooling or stack settings is to allow
+        # API users to choose which is most coherent for their use case (it would seem logical to put dwell time with
+        # the other stack settings, but this becomes problematic when sharing stack settings across modalities - e.g.
+        # PALM/STORM and widefield stacks which are likely to share most of the stack settings but have greatly different
+        # z dwell times). PYMEAcquire specifies it in the spooling/series settings by default to allow shared usage
+        # between modalities.
+        if stack_settings:
+            if isinstance(stack_settings, dict):
+                z_dwell = stack_settings.get('DwellFrames', self.z_dwell)
+            else:
+                # have a StackSettings object
+                # TODO - fix this to be a bit more sane and not use private attributes etc ...
+                z_dwell = stack_settings._dwell_frames
+                # z_dwell defaults to -1  (with a meaning of ignore) in StackSettings objects if not value is not
+                # explicitly provided. In this case, use our internal value instead. The reason for the 'ignore'
+                # special value is to allow the same StackSettings object to be used for widefield stacks and
+                # localization series (where sharing everything except dwell time makes sense).
+                if z_dwell < 1:
+                    z_dwell = self.z_dwell
+        else:
+            z_dwell = self.z_dwell
+        
+        z_dwell = settings.get('z_dwell', z_dwell)
+        protocol_name = settings.get('protocol_name', None)
+
+        if protocol_name is None:
+            protocol, protocol_z = self.protocol, self.protocolZ
+        else:
+            pmod = prot.get_protocol(protocol_name)
+            protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
+
+        if stack:
+            protocol = protocol_z
+            protocol.dwellTime = z_dwell
+            #print(protocol)
+        else:
+            protocol = protocol
+
 class SpoolController(object):
     def __init__(self, scope, defDir=genHDFDataFilepath(), defSeries='%(day)d_%(month)d_series'):
         """Initialise the spooling controller.
@@ -76,10 +160,6 @@ class SpoolController(object):
             #else default to file
             self.spoolType = 'File'
         
-        #dtn = datetime.datetime.now()
-        
-        #dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
-        
         self._base_dir = nameUtils.get_local_data_directory()
         self._dirname = os.sep.join([self._base_dir, ] + nameUtils.get_spool_subdir())
         self._cluster_dirname = self.get_cluster_dirname(self._dirname)
@@ -89,8 +169,9 @@ class SpoolController(object):
         self.seriesCounter = 0
         self._series_name = None
 
-        self.protocol = prot.NullProtocol
-        self.protocolZ = prot.NullZProtocol
+        
+        self.acquisition_type='ProtocolAcquision'
+        self.protocol_settings = ProtocolAcquisitionSettings()
         
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
@@ -102,8 +183,7 @@ class SpoolController(object):
         
         #settings which were managed by GUI
         self.hdf_compression_level = 2 # zlib compression level that pytables should use (spool to file and queue)
-        self.z_stepped = False  # z-step during acquisition
-        self.z_dwell = 100 # time to spend at each z level (if z_stepped == True)
+
         self.cluster_h5 = False # spool to h5 on cluster (cluster of one)
         self.pzf_compression_settings=acquisition_backends.ClusterBackend.default_compression_settings # only for cluster spooling
 
@@ -118,19 +198,19 @@ class SpoolController(object):
             
     @property
     def available_spool_methods(self):
-        if int(sys.version[0]) < 3:
-            return ['File', 'Queue', 'Cluster']
-        else:
+        if False:#self.acquisition_type == 'ProtocolAcquision':
             return ['File', 'Cluster']
+        else:
+            return ['File', 'Cluster', 'Memory']
         
     def get_info(self):
         info =  {'settings' : {'method' : self.spoolType,
                                 'hdf_compression_level': self.hdf_compression_level,
-                                'z_stepped' : self.z_stepped,
-                                'z_dwell' : self.z_dwell,
+                                'z_stepped' : self.protocol_settings.z_stepped,
+                                'z_dwell' : self.protocol_settings.z_dwell,
                                 'cluster_h5' : self.cluster_h5,
                                 'pzf_compression_settings' : self.pzf_compression_settings,
-                                'protocol_name' : self.protocol.filename,
+                                'protocol_name' : self.protocol_settings.protocol.filename,
                                 'series_name' : self.seriesName
                               },
                  'available_spool_methods' : self.available_spool_methods
@@ -184,14 +264,20 @@ class SpoolController(object):
         
         protocol_name = settings.pop('protocol_name', None)
         if protocol_name:
-            self.SetProtocol(protocol_name)
+            self.protocol_settings.SetProtocol(protocol_name)
+
             
         pzf_settings = settings.pop('pzf_compression_settings', None)
         if pzf_settings:
             self.pzf_compression_settings = dict(pzf_settings)
         
         for k, v in settings.items():
-            setattr(self, k, v)
+            if k in ['z_stepped', 'z_dwell']:
+                # these settings belong to the protocol
+                # TODO - rename to protocol.xx???
+                setattr(self.protocol_settings, k, v)
+            else:
+                setattr(self, k, v)
 
         with self._status_changed_condition:
             self._status_changed_condition.notify_all()
@@ -272,6 +358,7 @@ class SpoolController(object):
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
+            #FIXME - remove dependance on HTTPSpooler
             from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
@@ -400,58 +487,22 @@ class SpoolController(object):
             via the action manager.
 
         """
-        from PYME.Acquire.protocol_acquisition import ProtocolAcquision
         
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
         
         fn = self.seriesName if fn in ['', None] else fn
-        stack = settings.get('z_stepped', self.z_stepped)
+        stack = settings.get('z_stepped', self.protocol_settings.z_stepped)
         compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
         pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         cluster_h5 = settings.get('cluster_h5', self.cluster_h5)
         maxFrames = settings.get('max_frames', sys.maxsize)
         stack_settings = settings.get('stack_settings', None)
-        
-        
-        # try stack settings for z_dwell, then aq settings.
-        # precedence is settings > stack_settings > self.z_dwell
-        # The reasoning for allowing the dwell time to be set in either the spooling or stack settings is to allow
-        # API users to choose which is most coherent for their use case (it would seem logical to put dwell time with
-        # the other stack settings, but this becomes problematic when sharing stack settings across modalities - e.g.
-        # PALM/STORM and widefield stacks which are likely to share most of the stack settings but have greatly different
-        # z dwell times). PYMEAcquire specifies it in the spooling/series settings by default to allow shared usage
-        # between modalities.
-        if stack_settings:
-            if isinstance(stack_settings, dict):
-                z_dwell = stack_settings.get('DwellFrames', self.z_dwell)
-            else:
-                # have a StackSettings object
-                # TODO - fix this to be a bit more sane and not use private attributes etc ...
-                z_dwell = stack_settings._dwell_frames
-                # z_dwell defaults to -1  (with a meaning of ignore) in StackSettings objects if not value is not
-                # explicitly provided. In this case, use our internal value instead. The reason for the 'ignore'
-                # special value is to allow the same StackSettings object to be used for widefield stacks and
-                # localization series (where sharing everything except dwell time makes sense).
-                if z_dwell < 1:
-                    z_dwell = self.z_dwell
-        else:
-            z_dwell = self.z_dwell
-        
-        z_dwell = settings.get('z_dwell', z_dwell)
-        
-        if (stack_settings is not None) and (not isinstance(stack_settings, stackSettings.StackSettings)):
-            # let us pass stack settings as a dict, constructing a StackSettings instance as needed
-            stack_settings = stackSettings.StackSettings(**dict(stack_settings))
-        
-        protocol_name = settings.get('protocol_name')
-        if protocol_name is None:
-            protocol, protocol_z = self.protocol, self.protocolZ
-        else:
-            pmod = prot.get_protocol(protocol_name)
-            protocol, protocol_z = pmod.PROTOCOL, pmod.PROTOCOL_STACK
+
+        acquisition_type = settings.get('acquisition_type', self.acquisition_type)  
 
         subdirectory  = settings.get('subdirectory', None)
+
         # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
         if (self.spoolType != 'Cluster') and (not os.path.exists(self.get_dirname(subdirectory))):
                 os.makedirs(self.get_dirname(subdirectory))
@@ -461,16 +512,6 @@ class SpoolController(object):
             self.seriesName = self._GenSeriesName()
             
             raise IOError('A series with the same name already exists')
-
-        if stack:
-            protocol = protocol_z
-            protocol.dwellTime = z_dwell
-            #print(protocol)
-        else:
-            protocol = protocol
-
-        if (preflight_mode != 'skip') and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
-            return #bail if we failed the pre flight check, and the user didn't choose to continue
             
           
         #fix timing when using fake camera
@@ -479,31 +520,38 @@ class SpoolController(object):
         else:
             fakeCycleTime = None
             
-        frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
+        #frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Cluster':
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
                                                   subdirectory=subdirectory)
         else:
             self.queueName = self._get_queue_name(fn, subdirectory=subdirectory)
+
         
-        self.spooler = ProtocolAcquision(self.queueName, self.scope.frameWrangler.onFrame,
-                                            frameShape = frameShape, protocol=protocol,
-                                            guiUpdateCallback=self._ProgressUpate,
-                                            fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                            compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, complevel=compLevel,
-                                            stack_settings=stack_settings,
-                                            backend=self.spoolType)
+        if acquisition_type == 'ProtocolAcquision':
+            protocol = self.protocol_settings.get_protocol_for_acquistion(stack=stack, settings=settings)
+            if (preflight_mode != 'skip') and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
+                return #bail if we failed the pre flight check, and the user didn't choose to continue
+            
+            self.spooler = ProtocolAcquision(self.queueName, self.scope.frameWrangler.onFrame,
+                                                #frameShape = frameShape, 
+                                                protocol=protocol,
+                                                guiUpdateCallback=self._ProgressUpate,
+                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, complevel=compLevel,
+                                                stack_settings=stack_settings,
+                                                backend=self.spoolType)
+        elif acquisition_type == 'XYZTCAcquisition':
+            # XYZTC stack
+            from PYME.Acquire import xyztc
+            from PYME.IO import acquisition_backends
+            self.spooler = xyztc.XYZTCAcquisition(self.scope, stack_settings=stack_settings, backend_kwargs={'series_name':self.queueName})
+        
+        else:
+            raise RuntimeError('Unknown acquisition type %s' % self.acquisition_type)
            
         
-        #TODO - sample info is probably better handled with a metadata hook
-        #if sampInf:
-        #    try:
-        #        sampleInformation.getSampleData(self, self.spooler.md)
-        #    except:
-        #        #the connection to the database will timeout if not present
-        #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
-        #        pass
         extra_metadata = settings.get('extra_metadata')
         if extra_metadata is not None:
             self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(extra_metadata))
@@ -601,36 +649,36 @@ class SpoolController(object):
             logger.exception('Error launching analysis for %s' % seriesName)
 
 
-    def SetProtocol(self, protocolName=None, reloadProtocol=True):
-        """
-        Set the current protocol.
+    # def SetProtocol(self, protocolName=None, reloadProtocol=True):
+    #     """
+    #     Set the current protocol.
         
-        Parameters
-        ----------
-        protocolName: str
-            path to protocol file including extension
-        reloadProtocol : bool
-            currently ignored; protocol module is reinitialized regardless.
+    #     Parameters
+    #     ----------
+    #     protocolName: str
+    #         path to protocol file including extension
+    #     reloadProtocol : bool
+    #         currently ignored; protocol module is reinitialized regardless.
         
-        See also: PYME.Acquire.Protocols.
-        """
+    #     See also: PYME.Acquire.Protocols.
+    #     """
 
-        if (protocolName is None) or (protocolName == '<None>'):
-            self.protocol = prot.NullProtocol
-            self.protocolZ = prot.NullZProtocol
-        else:
-            #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
+    #     if (protocolName is None) or (protocolName == '<None>'):
+    #         self.protocol = prot.NullProtocol
+    #         self.protocolZ = prot.NullZProtocol
+    #     else:
+    #         #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
             
-            #if reloadProtocol:
-            #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
-            pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
+    #         #if reloadProtocol:
+    #         #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+    #         pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
 
-            self.protocol = pmod.PROTOCOL
-            self.protocol.filename = protocolName
+    #         self.protocol = pmod.PROTOCOL
+    #         self.protocol.filename = protocolName
             
-            self.protocolZ = pmod.PROTOCOL_STACK
-            self.protocolZ.filename = protocolName
-            self.z_dwell = self.protocolZ.dwellTime
+    #         self.protocolZ = pmod.PROTOCOL_STACK
+    #         self.protocolZ.filename = protocolName
+    #         self.z_dwell = self.protocolZ.dwellTime
             
     def SetSpoolMethod(self, method):
         """Set the spooling method

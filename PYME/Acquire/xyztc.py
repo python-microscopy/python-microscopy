@@ -29,7 +29,7 @@ class TimeSettings(object):
         self.time_interval = time_interval
 
 class XYZTCAcquisition(object):
-    def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend):
+    def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
         """
         Class to handle an XYZTC acquisition. This should serve as a base class for more specific acquisition classes, whilst also allowing 
         for simple 3D and time-series acquisitions.
@@ -75,7 +75,7 @@ class XYZTCAcquisition(object):
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
         self.frame_num = 0
         
-        self.storage = backend(self.shape_x, self.shape_y, self.n_frames, dim_order=dim_order, shape=self.shape)
+        self.storage = backend(self.shape_x, self.shape_y, self.n_frames, dim_order=dim_order, shape=self.shape, **backend_kwargs)
         
         #do any precomputation
         self._init_z(stack_settings)
@@ -88,6 +88,16 @@ class XYZTCAcquisition(object):
     @property
     def shape(self):
         return self.shape_x, self.shape_y, self.shape_z, self.shape_t, self.shape_c
+    
+    @property
+    def md(self):
+        ''' for compatibility with spoolers'''
+        return self.storage.mdh
+    
+    @property
+    def onSpoolStop(self):
+        ''' for compatibility with spoolers'''
+        return self.on_series_end
         
     def _zct_indices(self, frame_no):
         if self.dim_order == 'XYCZT':
@@ -153,6 +163,9 @@ class XYZTCAcquisition(object):
         self.scope.frameWrangler.start()
         
         self.on_series_end.send(self)
+
+    def abort(self):
+        self.finish()
         
     def _init_z(self, stack_settings):
         self._z_poss = np.arange(stack_settings.GetStartPos(),
