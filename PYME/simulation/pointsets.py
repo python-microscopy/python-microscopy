@@ -24,7 +24,7 @@ class WormlikeSource(PointSource):
     
     def getPoints(self):
         from PYME.simulation import wormlike2
-        wc = wormlike2.wormlikeChain(self.kbp, self.steplength, self.lengthPerKbp, self.persistLength)
+        wc = wormlike2.WormlikeChain(self.kbp, self.steplength, self.lengthPerKbp, self.persistLength)
         
         return wc.xp, wc.yp, wc.zp
 

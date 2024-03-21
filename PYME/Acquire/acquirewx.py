@@ -639,7 +639,7 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         try:
             return self._view
         except AttributeError:
-            raise AttributeError('View panel not yet created. This usually happens if .view is accessed too early in the initialisation process.')
+            raise AttributeError('View panel not yet created. This usually happens if .view is accessed too early in the initialisation process.') from None
 
     @property
     def vp(self):

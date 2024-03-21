@@ -212,8 +212,10 @@ class HDFBackend(Backend):
     def finalise(self, events=None):
         self.imageData.attrs.DimOrder = self._dim_order
         self.imageData.attrs.SizeC = self._shape[4]
-        self.imageData.attrs.SizeZ = self._shape[3]
-        self.imageData.attrs.SizeT = self._shape[2]
+        #self.imageData.attrs.SizeZ = self._shape[3]
+        #self.imageData.attrs.SizeT = self._shape[2]
+        self.imageData.attrs.SizeZ = self._shape[2]
+        self.imageData.attrs.SizeT = self._shape[3]
 
         self.h5File.flush()
         self.h5File.close()
