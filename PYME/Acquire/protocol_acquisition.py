@@ -121,21 +121,19 @@ class ProtocolAcquision(object):
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
                                                                 shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
-                                                                )
+                                                                evt_time_fcn=self._time_fcn)
             
-            self.md = self._backend.mdh
-            self.evtLogger = MemoryEventLogger(self, time_fcn=self._time_fcn)
         else: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.get('complevel', 6), complib=kwargs.get('complib','zlib'),
                             shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
-                            )
-            
-            self.evtLogger = HDFEventLogger(self, self._backend.h5File, time_fcn=self._time_fcn)
-
-            self.md = self._backend.mdh 
+                            evt_time_fcn=self._time_fcn)
         
         
         self._stopping = False
+
+    @property
+    def md(self):
+        return self._backend.mdh
 
     def StartSpool(self):
         from PYME import warnings
@@ -152,7 +150,7 @@ class ProtocolAcquision(object):
         to the frame source.
         """
         self.watchingFrames = True
-        eventLog.WantEventNotification.append(self.evtLogger)
+        eventLog.register_event_handler(self._backend.event_logger)
 
         self.imNum = 0
         
@@ -194,7 +192,7 @@ class ProtocolAcquision(object):
             traceback.print_exc()
             
         try:
-            eventLog.WantEventNotification.remove(self.evtLogger)
+            eventLog.remove_event_handler(self._backend.event_logger)
         except ValueError:
             pass
         
@@ -212,18 +210,6 @@ class ProtocolAcquision(object):
 
         """
         self._backend.finalise()
-
-        if isinstance(self._backend, acquisition_backends.ClusterBackend):
-            # TODO - move event handling into backend????
-            from PYME.IO import clusterIO
-            # save events
-            # do this here, **after** we have joined all the pushing threads to make sure that writing to all nodes has
-            # finished when we save events.
-            # TODO - use a binary format for saving events - they can be quite
-            # numerous, and can trip the standard 1 s clusterIO.put_file timeout.
-            clusterIO.put_file(self._backend._series_location + '/events.json', 
-                                self.evtLogger.to_JSON().encode(),
-                                self.clusterFilter, timeout=10)
 
         
     def abort(self):
@@ -243,7 +229,7 @@ class ProtocolAcquision(object):
 
 
         try:
-            eventLog.WantEventNotification.remove(self.evtLogger)
+            eventLog.remove_event_handler(self._backend.event_logger)
         except ValueError:
             pass
 

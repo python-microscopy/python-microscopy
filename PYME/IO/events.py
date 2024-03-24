@@ -139,6 +139,10 @@ class MemoryEventLogger(EventLogger):
         
         with self._event_lock:
             self._events.append((eventName, eventDescr, timestamp))
+
+    @property
+    def events(self):
+        return self._events
     
     def to_JSON(self):
         import json
