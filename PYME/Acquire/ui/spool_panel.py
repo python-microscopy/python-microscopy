@@ -139,7 +139,8 @@ class ProtocolAcquisitionPane(afp.foldingPane):
             This specifies a pattern for file naming. Keys will be substituted as for `defDir`
             
         """
-        afp.foldingPane.__init__(self, parent, caption='Protocol Acquisition', **kwargs)
+        #afp.foldingPane.__init__(self, parent, caption='Protocol Acquisition', **kwargs)
+        afp.foldingPane.__init__(self, parent, **kwargs)
         self.scope = scope
         self.spoolController = scope.spoolController
         
@@ -353,9 +354,49 @@ class SpoolingPane(afp.foldingPane):
         pan.SetSizerAndFit(vsizer)
         return pan
         
+    def _aq_settings_pan(self):
+        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+    
+        self._aq_type_btns = []
+
+        for i, aq_type in enumerate(self.spoolController.acquisition_types):
+            pane, name = self.acquisition_uis[aq_type]
+            btn = wx.ToggleButton(pan, -1, name)
+            btn.aq_type = aq_type
+            btn.SetValue(aq_type == self.spoolController.acquisition_type)
+            btn.Bind(wx.EVT_TOGGLEBUTTON, self.OnAqTypeChanged)
+            vsizer.Add(btn, 0, wx.ALL | wx.EXPAND, 2)
+            self._aq_type_btns.append(btn)
+
+            pane.Reparent(pan)
+            vsizer.Add(pane, 0, wx.ALL | wx.EXPAND, 2)
+            pane.Show(aq_type == self.spoolController.acquisition_type)
+    
+        pan.SetSizerAndFit(vsizer)
+
+        self.aq_settings_pan = pan
+        return pan
+    
+    def OnAqTypeChanged(self, event):
+        #btn = event.GetEventObject()
+        #if btn.GetValue():
+        self.spoolController.acquisition_type = event.GetEventObject().aq_type
+        self.on_aq_type_changed()
+
+    def on_aq_type_changed(self):
+        for btn in self._aq_type_btns:
+            btn.SetValue(btn.aq_type == self.spoolController.acquisition_type)
+
+        for aq_type in self.spoolController.acquisition_types:
+            self.acquisition_uis[aq_type][0].Show(aq_type == self.spoolController.acquisition_type)
+
+        self.aq_settings_pan.Layout()
+        self.cascading_layout()
     
     def _init_ctrls(self):
         
+        self.AddNewElement(self._aq_settings_pan())
         self.AddNewElement(self._spool_to_pan())
 
         ### Compression etc
@@ -363,14 +404,12 @@ class SpoolingPane(afp.foldingPane):
         clp.AddNewElement(self._comp_pan(clp))
         self.AddNewElement(clp)
 
-        
-
         self.AddNewElement(self._spool_pan())
 
         
         
 
-    def __init__(self, parent, scope, **kwargs):
+    def __init__(self, parent, scope, acquisition_uis = {}, **kwargs):
         """Initialise the spooling panel.
         
         Parameters
@@ -389,6 +428,7 @@ class SpoolingPane(afp.foldingPane):
         afp.foldingPane.__init__(self, parent, caption='Spooling', **kwargs)
         self.scope = scope
         self.spoolController = scope.spoolController
+        self.acquisition_uis = acquisition_uis
 
         #check to see if we have a cluster
         #self._N_data_servers = len(hybrid_ns.getNS('_pyme-http').get_advertised_services())

@@ -290,20 +290,20 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(*t)
             
         if self.scope.cam.CamReady():
-            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
+            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope, folded=False)
             self.register_acqusition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
             #self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
 
-            for t in self.scope.spoolController.acquisition_types.keys():
-                if t in self._aq_uis:
-                    self.AddAqTool(*self._aq_uis[t], folded=(t != self.scope.spoolController.acquisition_type))
-                else:
-                    logger.warning('No UI registered for acquisition type %s' % t)
+            # for t in self.scope.spoolController.acquisition_types.keys():
+            #     if t in self._aq_uis:
+            #         self.AddAqTool(*self._aq_uis[t], folded=(t != self.scope.spoolController.acquisition_type))
+            #     else:
+            #         logger.warning('No UI registered for acquisition type %s' % t)
 
             
 
-            self.pan_spool = spool_panel.SpoolingPane(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Spooling', pinned=True, folded=False)
+            self.pan_spool = spool_panel.SpoolingPane(self, self.scope, acquisition_uis=self._aq_uis)
+            self.AddAqTool(self.pan_spool, 'Acquisition', pinned=True, folded=False)
 
         for t in self.aqPanels:
             self.AddAqTool(*t)
