@@ -561,6 +561,8 @@ class SpoolingPane(afp.foldingPane):
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
+        self.Refresh()
+        self.Update()
 
     def OnBAnalyse(self, event):
         self.spoolController.LaunchAnalysis()

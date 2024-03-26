@@ -93,7 +93,8 @@ class ProtocolAcquisitionSettings(object):
             self.protocolZ.filename = protocolName
             self.z_dwell = self.protocolZ.dwellTime
 
-    def get_protocol_for_acquistion(self, stack = False, settings={}):
+    def get_protocol_for_acquistion(self, settings={}):
+        stack = settings.get('z_stepped', self.z_stepped)
         stack_settings = settings.get('stack_settings', None)
         
         # try stack settings for z_dwell, then aq settings.
@@ -135,6 +136,8 @@ class ProtocolAcquisitionSettings(object):
             #print(protocol)
         else:
             protocol = protocol
+
+        return protocol
 
 class SpoolController(object):
     def __init__(self, scope, defDir=genHDFDataFilepath(), defSeries='%(day)d_%(month)d_series'):
@@ -490,17 +493,15 @@ class SpoolController(object):
         
         # these settings were managed by the GUI, but are now managed by the 
         # controller, still allow them to be passed in, but default to internals
+
+        acquisition_type = settings.get('acquisition_type', self.acquisition_type)
         
         fn = self.seriesName if fn in ['', None] else fn
-        stack = settings.get('z_stepped', self.protocol_settings.z_stepped)
+        
         compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
         pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         cluster_h5 = settings.get('cluster_h5', self.cluster_h5)
-        maxFrames = settings.get('max_frames', sys.maxsize)
-        stack_settings = settings.get('stack_settings', None)
-
-        acquisition_type = settings.get('acquisition_type', self.acquisition_type)  
-
+        
         subdirectory  = settings.get('subdirectory', None)
 
         # make directories as needed, makedirs(dir, exist_ok=True) once py2 support is dropped
@@ -520,7 +521,6 @@ class SpoolController(object):
         else:
             fakeCycleTime = None
             
-        #frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Cluster':
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
@@ -530,7 +530,12 @@ class SpoolController(object):
 
         
         if acquisition_type == 'ProtocolAcquision':
-            protocol = self.protocol_settings.get_protocol_for_acquistion(stack=stack, settings=settings)
+            if self.spoolType == 'Memory':
+                # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
+                raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
+            
+            
+            protocol = self.protocol_settings.get_protocol_for_acquistion(settings=settings)
             if (preflight_mode != 'skip') and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
                 return #bail if we failed the pre flight check, and the user didn't choose to continue
             
@@ -538,15 +543,26 @@ class SpoolController(object):
                                                 #frameShape = frameShape, 
                                                 protocol=protocol,
                                                 guiUpdateCallback=self._ProgressUpate,
-                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                                fakeCamCycleTime=fakeCycleTime, 
+                                                maxFrames=settings.get('max_frames', sys.maxsize),
                                                 compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, complevel=compLevel,
-                                                stack_settings=stack_settings,
+                                                stack_settings=settings.get('stack_settings', None),
                                                 backend=self.spoolType)
+        
         elif acquisition_type == 'XYZTCAcquisition':
             # XYZTC stack
             from PYME.Acquire import xyztc
             from PYME.IO import acquisition_backends
-            self.spooler = xyztc.XYZTCAcquisition(self.scope, stack_settings=stack_settings, backend_kwargs={'series_name':self.queueName})
+            backends = {'File': acquisition_backends.HDFBackend,
+                        'Cluster': acquisition_backends.ClusterBackend, 
+                        'Memory': acquisition_backends.MemoryBackend}
+
+            self.spooler = xyztc.XYZTCAcquisition(self.scope, 
+                                                  stack_settings=settings.get('stack_settings', None),
+                                                  backend =  backends[self.spoolType],
+                                                  backend_kwargs={'series_name':self.queueName})
+            
+            self.spooler.on_single_frame.connect(self._ProgressUpate)
         
         else:
             raise RuntimeError('Unknown acquisition type %s' % self.acquisition_type)
@@ -574,9 +590,44 @@ class SpoolController(object):
         self.scope.frameWrangler.start()
         
         self.onSpoolStart.send(self)
+
+        if self.spoolType == 'Memory':
+            # open a viewer window for the data that is being acquired
+            self._display_image()
         
         #return a function which can be called to indicate if we are done
         return lambda : self.spooler.spool_complete
+    
+    def _display_image(self):
+        ''' Display the image in a viewer (for memory backend)
+        '''
+        try:
+            assert isinstance(self.spooler.storage, acquisition_backends.MemoryBackend)
+            
+            import wx
+            if not wx.App.IsMainLoopRunning():
+                logger.debug("No wx app, can't show image")
+                return
+            
+            from PYME.DSView import ViewIm3D
+            self._view = ViewIm3D(self.spooler.storage.image)
+            self.scope.frameWrangler.onFrameGroup.connect(self._update_display)
+        except:
+            logger.exception('Error displaying image')
+
+    def _update_display(self, *args, **kwargs):
+        ''' Update the displayed image (for memory backend)
+        '''
+        import wx
+        wx.CallAfter(self._view.view.Redraw)
+
+    def _unlink_display(self, *args, **kwargs):
+        ''' Unlink the display from the frameWrangler (for memory backend)
+        '''
+        try:
+            self.scope.frameWrangler.onFrameGroup.disconnect(self._update_display)
+        except:
+            pass
 
     @property
     def display_dirname(self):
@@ -602,8 +653,17 @@ class SpoolController(object):
     def SpoolStopped(self, **kwargs):
         self.seriesCounter +=1
         self.seriesName = self._GenSeriesName()
+
+        logger.info('Spooling stopped')
         
         self.onSpoolStop.send(self)
+
+        try:
+            self.spooler.on_single_frame.disconnect(self._ProgressUpate)
+            self._ProgressUpate()
+        except AttributeError:
+            pass
+
         
     @property
     def autostart_analysis(self):
@@ -648,37 +708,6 @@ class SpoolController(object):
         except:
             logger.exception('Error launching analysis for %s' % seriesName)
 
-
-    # def SetProtocol(self, protocolName=None, reloadProtocol=True):
-    #     """
-    #     Set the current protocol.
-        
-    #     Parameters
-    #     ----------
-    #     protocolName: str
-    #         path to protocol file including extension
-    #     reloadProtocol : bool
-    #         currently ignored; protocol module is reinitialized regardless.
-        
-    #     See also: PYME.Acquire.Protocols.
-    #     """
-
-    #     if (protocolName is None) or (protocolName == '<None>'):
-    #         self.protocol = prot.NullProtocol
-    #         self.protocolZ = prot.NullZProtocol
-    #     else:
-    #         #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
-            
-    #         #if reloadProtocol:
-    #         #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
-    #         pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
-
-    #         self.protocol = pmod.PROTOCOL
-    #         self.protocol.filename = protocolName
-            
-    #         self.protocolZ = pmod.PROTOCOL_STACK
-    #         self.protocolZ.filename = protocolName
-    #         self.z_dwell = self.protocolZ.dwellTime
             
     def SetSpoolMethod(self, method):
         """Set the spooling method

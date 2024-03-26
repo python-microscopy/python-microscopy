@@ -28,9 +28,11 @@ class Backend(abc.ABC):
         self.mdh['SizeT'] =  shape[3]
         self.mdh['SizeZ'] =  shape[2]
 
+        self.imNum = 0 # for event logger compatibility
+
         if not hasattr(self, 'event_logger'):
             # if we haven't already defined an event logger in a derived class, create a memory logger
-            self.event_logger = MemoryEventLogger(time_fcn=evt_time_fcn)
+            self.event_logger = MemoryEventLogger(spooler=self, time_fcn=evt_time_fcn)
 
 
     @abc.abstractmethod
@@ -75,7 +77,7 @@ class Backend(abc.ABC):
 
 
 class MemoryBackend(Backend):
-    def __init__(self, size_x, size_y, n_frames, dtype='uint16', dim_order='XYCZT', shape=[-1, -1,1,1,1], evt_time_fcn=time.time):
+    def __init__(self, size_x, size_y, n_frames, dtype='uint16', series_name=None, dim_order='XYCZT', shape=[-1, -1,1,1,1], evt_time_fcn=time.time, **kwargs):
         Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
         self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
         
@@ -85,6 +87,7 @@ class MemoryBackend(Backend):
         
     def store_frame(self, n, frame_data):
         self.data[:,:,n] = frame_data
+        self.imNum = n+1
 
     def finalise(self):
         self.image.events = self.event_logger.events
@@ -111,7 +114,7 @@ class ClusterBackend(Backend):
     }
 
     def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], distribution_fcn=None, compression_settings={}, 
-                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, evt_time_fcn = time.time):
+                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, evt_time_fcn = time.time, **kwargs):
         from PYME.IO import cluster_streaming
         from PYME.IO import PZFFormat
 
@@ -172,6 +175,7 @@ class ClusterBackend(Backend):
         fn = '/'.join([self._series_location, 'frame%05d.pzf' % n])
 
         self._streamer.put(fn, (frame_data, n), i=n)
+        self.imNum = n+1
 
     def initialise(self):
         self._streamer.put(self._series_location + '/metadata.json', self.mdh.to_JSON().encode())
@@ -189,12 +193,12 @@ class ClusterBackend(Backend):
 
 
 class HDFBackend(Backend):
-    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time):
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, **kwargs):
         import tables
 
         self.h5File = tables.open_file(series_name, 'w')
         self.mdh = MetaDataHandler.HDFMDHandler(self.h5File)
-        self.event_logger = HDFEventLogger(self.h5File, time_fcn=evt_time_fcn)
+        self.event_logger = HDFEventLogger(self, self.h5File, time_fcn=evt_time_fcn)
         Backend.__init__(self, dim_order, shape)
            
         self._complevel = complevel

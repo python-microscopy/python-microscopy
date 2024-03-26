@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import datetime
 
 from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
@@ -75,7 +76,7 @@ class XYZTCAcquisition(object):
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
         self.frame_num = 0
         
-        self.storage = backend(self.shape_x, self.shape_y, self.n_frames, dim_order=dim_order, shape=self.shape, **backend_kwargs)
+        self.storage = backend(size_x = self.shape_x, size_y=self.shape_y, n_frames=self.n_frames, dim_order=dim_order, shape=self.shape, **backend_kwargs)
         
         #do any precomputation
         self._init_z(stack_settings)
@@ -143,6 +144,8 @@ class XYZTCAcquisition(object):
     def start(self):
         self.scope.frameWrangler.stop()
         self.frame_num = 0
+
+        self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
         
         z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
 
@@ -155,12 +158,22 @@ class XYZTCAcquisition(object):
         
         self.scope.frameWrangler.onFrame.connect(self.on_frame)
         self.scope.frameWrangler.start()
+
+    @property
+    def imNum(self):
+        ''' for compatibility with spoolers
+        
+        FIXME - refactor so that both use the same names
+        '''
+        return self.frame_num
         
         
     def finish(self):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         self.scope.frameWrangler.start()
+
+        self.storage.finalise()
         
         self.on_series_end.send(self)
 
