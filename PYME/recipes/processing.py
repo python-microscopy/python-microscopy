@@ -2906,3 +2906,43 @@ class Offset(Filter):
             return data - self.offset_constant
         elif self.offset_selection == 'offset by minimum':
             return data - np.min(data)
+
+
+@register_module('SubPixelDriftCorrect')
+class SubPixelDriftCorrect(ModuleBase):
+    """
+    Sub-pixel lateral drift correction based on the drift tracking events
+    in the transmitted-light channel
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+
+    Returns
+    -------
+    output_name = Output
+        PYME.IO.ImageStack
+
+    """
+
+    input = Input('input')
+    output = Output('sub_pixel_drift_corrected')
+
+    def run(self, input):
+        from PYME.IO.image import ImageStack
+        #from PYME.DSView import ViewIm3D
+        from PYME.LMVis import pipeline
+        from PYME.IO.DataSources import DriftCorrectDataSource
+
+        # read lateral drift values from events
+        ev_mappings, _ = pipeline._processEvents(input.data_xyztc, input.events, input.mdh)
+        driftx = ev_mappings['driftx']
+        drifty = ev_mappings['drifty']
+    
+        ds = DriftCorrectDataSource.XYZTCDriftCorrectSource(input.data_xyztc, driftx, drifty, x_scale=1.0, y_scale=1.0)
+        im = ImageStack(ds[:,:,:,:,:], mdh=input.mdh)
+        #ViewIm3D(im, mode=self.dsviewer.mode, glCanvas=self.dsviewer.glCanvas)
+
+        return im
+
