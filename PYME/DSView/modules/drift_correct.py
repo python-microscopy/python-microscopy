@@ -24,8 +24,8 @@ class DriftCorrector(Plugin):
         ev_mappings, _ = pipeline._processEvents(self.image.data_xyztc, self.image.events, self.image.mdh)
         driftx = ev_mappings['driftx']
         drifty = ev_mappings['drifty']
-        dx = driftx(np.arange(1, self.image.data_xyztc.shape[3]+1))   # in pixel unit
-        dy = drifty(np.arange(1, self.image.data_xyztc.shape[3]+1))   # in pixel unit
+        #dx = driftx(np.arange(1, self.image.data_xyztc.shape[3]+1))   # in pixel unit
+        #dy = drifty(np.arange(1, self.image.data_xyztc.shape[3]+1))   # in pixel unit
 
         """
         # correct lateral drift
@@ -39,7 +39,7 @@ class DriftCorrector(Plugin):
         im.mdh.copyEntriesFrom(self.image.mdh)
         """
 
-        ds = DriftCorrectDataSource.XYZTCDriftCorrectSource(self.image.data_xyztc, dx, dy, x_scale=1.0, y_scale=1.0)
+        ds = DriftCorrectDataSource.XYZTCDriftCorrectSource(self.image.data_xyztc, driftx, drifty, x_scale=1.0, y_scale=1.0)
         im = ImageStack(ds[:,:,:,:,:], mdh=ds.mdh)
         ViewIm3D(im, mode=self.dsviewer.mode, glCanvas=self.dsviewer.glCanvas)
 

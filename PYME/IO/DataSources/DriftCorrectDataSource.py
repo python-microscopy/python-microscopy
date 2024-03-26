@@ -21,7 +21,7 @@ class XYZTCDriftCorrectSource(XYZTCDataSource):
     
     def getSlice(self, ind):
         sl = self._datasource.getSlice(ind)
-        return ndimage.shift(sl, [-self._x_scale*self._x_map[ind], -self._y_scale*self._y_map[ind]], order=3, mode='nearest') 
+        return ndimage.shift(sl, [-self._x_scale*self._x_map(np.array([ind+1])), -self._y_scale*self._y_map(np.array([ind+1]))], order=3, mode='nearest') 
     
    # proxy original data source attributes 
     def __getattr__(self, item):
