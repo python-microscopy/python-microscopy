@@ -22,7 +22,8 @@ from PYME.IO.FileUtils import nameUtils
 from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFilepath
 from PYME.IO import unifiedIO, MetaDataHandler
 
-from PYME.Acquire.protocol_acquisition import ProtocolAcquision
+from PYME.Acquire.protocol_acquisition import ProtocolAcquisition
+from PYME.Acquire.xyztc import XYZTCAcquisition
 
 
 #import PYME.Acquire.Protocols
@@ -172,8 +173,12 @@ class SpoolController(object):
         self.seriesCounter = 0
         self._series_name = None
 
+        self.acquisition_types = {'XYZTCAcquisition': XYZTCAcquisition,
+                                  'ProtocolAcquisition': ProtocolAcquisition,
+                                 }
+
         
-        self.acquisition_type='ProtocolAcquision'
+        self.acquisition_type='ProtocolAcquisition'
         self.protocol_settings = ProtocolAcquisitionSettings()
         
         self.onSpoolProgress = dispatch.Signal()
@@ -225,6 +230,9 @@ class SpoolController(object):
             info['status'] = {'spooling':False}
         
         return info
+    
+    def register_acquisition_type(self, name, cls):
+        self.acquisition_types[name] = cls
     
     def update_settings(self, settings):
         """
@@ -498,8 +506,8 @@ class SpoolController(object):
         
         fn = self.seriesName if fn in ['', None] else fn
         
-        compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
-        pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
+        #compLevel = settings.get('hdf_compression_level', self.hdf_compression_level)
+        #pzf_compression_settings = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         cluster_h5 = settings.get('cluster_h5', self.cluster_h5)
         
         subdirectory  = settings.get('subdirectory', None)
@@ -515,11 +523,7 @@ class SpoolController(object):
             raise IOError('A series with the same name already exists')
             
           
-        #fix timing when using fake camera
-        if self.scope.cam.__class__.__name__ == 'FakeCamera':
-            fakeCycleTime = self.scope.cam.GetIntegTime()
-        else:
-            fakeCycleTime = None
+        
             
         
         if self.spoolType == 'Cluster':
@@ -528,44 +532,29 @@ class SpoolController(object):
         else:
             self.queueName = self._get_queue_name(fn, subdirectory=subdirectory)
 
-        
-        if acquisition_type == 'ProtocolAcquision':
-            if self.spoolType == 'Memory':
-                # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
-                raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
-            
-            
-            protocol = self.protocol_settings.get_protocol_for_acquistion(settings=settings)
-            if (preflight_mode != 'skip') and not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
-                return #bail if we failed the pre flight check, and the user didn't choose to continue
-            
-            self.spooler = ProtocolAcquision(self.queueName, self.scope.frameWrangler.onFrame,
-                                                #frameShape = frameShape, 
-                                                protocol=protocol,
-                                                guiUpdateCallback=self._ProgressUpate,
-                                                fakeCamCycleTime=fakeCycleTime, 
-                                                maxFrames=settings.get('max_frames', sys.maxsize),
-                                                compressionSettings=pzf_compression_settings, aggregate_h5=cluster_h5, complevel=compLevel,
-                                                stack_settings=settings.get('stack_settings', None),
-                                                backend=self.spoolType)
-        
-        elif acquisition_type == 'XYZTCAcquisition':
-            # XYZTC stack
-            from PYME.Acquire import xyztc
-            from PYME.IO import acquisition_backends
-            backends = {'File': acquisition_backends.HDFBackend,
-                        'Cluster': acquisition_backends.ClusterBackend, 
-                        'Memory': acquisition_backends.MemoryBackend}
 
-            self.spooler = xyztc.XYZTCAcquisition(self.scope, 
-                                                  stack_settings=settings.get('stack_settings', None),
-                                                  backend =  backends[self.spoolType],
-                                                  backend_kwargs={'series_name':self.queueName})
-            
-            self.spooler.on_single_frame.connect(self._ProgressUpate)
+        from PYME.IO import acquisition_backends
+        backends = {'File': acquisition_backends.HDFBackend,
+                    'Cluster': acquisition_backends.ClusterBackend, 
+                    'Memory': acquisition_backends.MemoryBackend}
         
-        else:
-            raise RuntimeError('Unknown acquisition type %s' % self.acquisition_type)
+        backend_kwargs = {}
+        if self.spoolType == 'Cluster':
+            backend_kwargs['cluster_h5'] = settings.get('cluster_h5', self.cluster_h5)
+            backend_kwargs['compression_settings'] = settings.get('pzf_compression_settings', self.pzf_compression_settings)
+        elif self.spoolType == 'File':
+            backend_kwargs['complevel'] = settings.get('hdf_compression_level', self.hdf_compression_level)
+        
+        # put preflight mode into settings so we can pass it to the protocol acquisition
+        settings['preflight_mode'] = preflight_mode
+
+        
+        try:
+            self.spooler = self.acquisition_types[acquisition_type].from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
+        except KeyError:
+            raise RuntimeError('Unknown acquisition type %s' % acquisition_type)
+        
+        self.spooler.on_progress_update.connect(self._ProgressUpate)
            
         
         extra_metadata = settings.get('extra_metadata')
@@ -659,7 +648,7 @@ class SpoolController(object):
         self.onSpoolStop.send(self)
 
         try:
-            self.spooler.on_single_frame.disconnect(self._ProgressUpate)
+            self.spooler.on_progress_update.disconnect(self._ProgressUpate)
             self._ProgressUpate()
         except AttributeError:
             pass

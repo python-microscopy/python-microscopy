@@ -12,6 +12,7 @@ import datetime
 import time
 import os
 import uuid
+import sys
 
 from PYME.contrib import dispatch
 
@@ -45,10 +46,10 @@ def getReducedFilename(filename):
     return sname
 
 
-class ProtocolAcquision(object):
+class ProtocolAcquisition(object):
     """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
-                 guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', **kwargs):
+                 fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
         """Create a new spooler.
         
         Parameters
@@ -71,7 +72,7 @@ class ProtocolAcquision(object):
         self.filename=filename
         self.frameSource = frameSource
         self.seriesName = getReducedFilename(filename)
-        self.guiUpdateCallback = guiUpdateCallback
+        
         self.protocol = protocol
         
         self.maxFrames = maxFrames
@@ -84,7 +85,7 @@ class ProtocolAcquision(object):
         
         self.onSpoolStop = dispatch.Signal()
 
-        self._last_gui_update = 0
+        
         self.spoolOn = False
         self.imNum = 0
         
@@ -94,13 +95,51 @@ class ProtocolAcquision(object):
             
         self._fakeCamCycleTime = fakeCamCycleTime
 
-        self._create_backend(backend_type=backend, **kwargs)
+        self._last_gui_update = 0
+        self.on_progress_update = dispatch.Signal() # signal to send status updates to GUI
+
+        self._create_backend(backend_type=backend, **backend_kwargs)
+
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+        from PYME.IO import acquisition_backends
+
+        if isinstance(backend, acquisition_backends.MemoryBackend):
+            # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
+            raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
+        
+        protocol = spool_controller.protocol_settings.get_protocol_for_acquistion(settings=settings)
+        
+        preflight_mode = settings.get('preflight_mode', 'interactive')
+        if (preflight_mode != 'skip'):
+            from PYME.Acquire.ui import preflight
+            if not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
+                logger.debug('Bailing from preflight check')
+                return None #bail if we failed the pre flight check, and the user didn't choose to continue
+        
+        #fix timing when using fake camera
+        if scope.cam.__class__.__name__ == 'FakeCamera':
+            fakeCycleTime = scope.cam.GetIntegTime()
+        else:
+            fakeCycleTime = None
+        
+        #logger.info('Creating spooler for %s' % series_name)
+        return cls(filename=series_name,
+                    frameSource=scope.frameWrangler.onFrame,
+                    protocol=protocol,
+                    fakeCamCycleTime=fakeCycleTime, 
+                    maxFrames=settings.get('max_frames', sys.maxsize),
+                    stack_settings=settings.get('stack_settings', None),
+                    backend=backend, backend_kwargs=backend_kwargs,) 
+                   
 
 
-    def _create_backend(self, backend_type='hdf', **kwargs):
+    def _create_backend(self, backend_type=acquisition_backends.HDFBackend, **kwargs):
         logger.debug('Creating backend of type %s' % backend_type)
+        
         if backend_type in  ['cluster', 'Cluster', acquisition_backends.ClusterBackend]:
-            self._aggregate_h5 = kwargs.get('aggregate_h5', False)
+            self._aggregate_h5 = kwargs.get('cluster_h5', False)
             
             self.clusterFilter = kwargs.get('serverfilter', config.get('dataserver-filter', ''))
             
@@ -117,7 +156,7 @@ class ProtocolAcquision(object):
             
             self._backend = acquisition_backends.ClusterBackend(self.seriesName, 
                                                                 distribution_fcn=dist_fcn, 
-                                                                compression_settings=kwargs.get('compressionSettings', {}),
+                                                                compression_settings=kwargs.get('compression_settings', {}),
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
                                                                 shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
@@ -197,8 +236,8 @@ class ProtocolAcquision(object):
             pass
         
         self.spoolOn = False
-        if not self.guiUpdateCallback is None:
-            self.guiUpdateCallback()
+
+        self.on_progress_update.send(self)
         
         self.finalise()
         self.onSpoolStop.send(self)
@@ -248,10 +287,10 @@ class ProtocolAcquision(object):
         t = time.time()
             
         self.imNum += 1
-        if not self.guiUpdateCallback is None:
-            if (t > (self._last_gui_update +.1)):
-                self._last_gui_update = t
-                self.guiUpdateCallback()
+        
+        if (t > (self._last_gui_update +.1)):
+            self._last_gui_update = t
+            self.on_progress_update.send(self)
             
         try:
             import wx #FIXME - shouldn't do this here

@@ -85,6 +85,24 @@ class XYZTCAcquisition(object):
 
         self.on_single_frame = dispatch.Signal()  #dispatched when a frame is ready
         self.on_series_end = dispatch.Signal()  #dispatched when a sequence is complete
+
+        self.on_progress_update = self.on_single_frame  # generate a gui status update on every frame - TODO do we need to throttle this as in ProtocolAcquisition
+    
+    
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+
+        backend_kwargs['series_name'] = series_name
+
+        return cls(scope=scope, 
+                   #dim_order=settings.dim_order, 
+                   stack_settings=settings.get('stack_settings', None), 
+                   time_settings=settings.get('time_settings', None), 
+                   channel_settings=settings.get('channel_settings', None), 
+                   backend=backend, backend_kwargs=backend_kwargs)
+        
+    
     
     @property
     def shape(self):

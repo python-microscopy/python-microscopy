@@ -173,21 +173,22 @@ class seqPanel(wx.Panel):
         #hsizer.Add(sNSlices, 1, 0, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.BOTTOM, 5)
 
-        if not (self.mode == 'sequence'):
+        if not (self.mode in ['sequence']):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             self.stMemory = wx.StaticText(self, -1, '')
             hsizer.Add(self.stMemory, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
     
-            self.bStart = wx.Button(self, -1, 'Single Stack', style=wx.BU_EXACTFIT)
-            self.bStart.Bind(wx.EVT_BUTTON, self.OnBSingle)
-            hsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
-            
-            self.bLive = wx.Button(self, -1, 'Live', style=wx.BU_EXACTFIT)
-            self.bLive.Bind(wx.EVT_BUTTON, self.OnBLive)
-            hsizer.Add(self.bLive, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
+            if not (self.mode in ['compact']):
+                self.bStart = wx.Button(self, -1, 'Single Stack', style=wx.BU_EXACTFIT)
+                self.bStart.Bind(wx.EVT_BUTTON, self.OnBSingle)
+                hsizer.Add(self.bStart, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
+                
+                self.bLive = wx.Button(self, -1, 'Live', style=wx.BU_EXACTFIT)
+                self.bLive.Bind(wx.EVT_BUTTON, self.OnBLive)
+                hsizer.Add(self.bLive, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5, 0)
     
             vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        else:
+        elif self.mode == 'sequence':
             # sequence mode doesn't have dwell functionality yet
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(wx.StaticText(self, -1, 'Dwell [frames]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
