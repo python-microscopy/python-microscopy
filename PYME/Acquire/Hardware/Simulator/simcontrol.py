@@ -145,7 +145,7 @@ class SimController(object):
         self.states = states
         self.stateTypes = stateTypes
         self.activeState = activeState
-        self.scope = scope # type: PYME.Acquire.microscope.microscope
+        self.scope = scope # type: PYME.Acquire.microscope.Microscope
 
         if scope:
             scope.StatusCallbacks.append(self.simulation_status)

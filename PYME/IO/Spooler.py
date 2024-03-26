@@ -52,7 +52,7 @@ class Spooler(object):
         
         Parameters
         ----------
-        scope : PYME.Acquire.microscope.microscope object
+        scope : PYME.Acquire.microscope.Microscope object
             The microscope providing the data
         filename : string
             The file into which to spool

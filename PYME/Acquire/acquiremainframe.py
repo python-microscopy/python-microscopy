@@ -119,7 +119,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.initDone = False
 
-        self.scope = microscope.microscope()
+        self.scope = microscope.Microscope()
 
         self.splash = splashScreen.SplashScreen(self, self.scope)
         self.splash.Show()

@@ -38,7 +38,7 @@ class XYZTCAcquisition(object):
         Parameters
         ----------
 
-        scope : PYME.Acquire.microscope.microscope instance
+        scope : PYME.Acquire.microscope.Microscope instance
             The microscope instance to use for acquisition.
 
         dim_order : str

@@ -811,7 +811,7 @@ class ChainedAnalysisPanel(wx.Panel):
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
             microscope gui application
-        scope : PYME.Acquire.microscope.microscope
+        scope : PYME.Acquire.microscope.Microscope
             the microscope itself
         default_pairings : dict
             [optional] protocol keys with lists of RuleFactorys as values to
@@ -931,7 +931,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
             microscope gui application
-        scope : PYME.Acquire.microscope.microscope
+        scope : PYME.Acquire.microscope.Microscope
             the microscope itself
         default_pairings : dict
             [optional] protocol keys with RuleChains as values to

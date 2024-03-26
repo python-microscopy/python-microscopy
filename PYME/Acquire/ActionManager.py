@@ -46,7 +46,7 @@ class ActionManager(object):
         Parameters
         ----------
         
-        scope : PYME.Acquire.microscope.microscope object
+        scope : PYME.Acquire.microscope.Microscope object
             The microscope. The function object to call for an action should be 
             accessible within the scope namespace, and will be resolved by
             calling eval('scope.functionName')
