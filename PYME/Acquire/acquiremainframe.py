@@ -441,7 +441,7 @@ class PYMEMainFrame(AUIFrame):
         self.AddTool(pane, title, pinned=pinned, panel=self.camPanel, folded=folded)
         
 
-    def AddAqTool(self, pane, title, pinned=True, folded=True):
+    def AddAqTool(self, pane, title, pinned=False, folded=True):
         """Adds a pane to the Acquisition section of the GUI
         
         Parameters
