@@ -208,8 +208,22 @@ class ZFactorPlotPanel(PlotPanel):
 from PYME.DSView import overlays
 import weakref
 class DriftROIOverlay(overlays.Overlay):
-    # TODO - implement this - should display a box around the current sub-ROI
-    pass
+    def __init__(self, driftTracker):
+        self.dt = driftTracker
+    
+    def __call__(self, view, dc):
+        if self.dt.sub_roi is not None:
+            dc.SetPen(wx.Pen(colour=wx.CYAN, width=1))
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            x0, x1, y0, y1 = self.dt.sub_roi
+            x0c, y0c = view.pixel_to_screen_coordinates(x0, y0)
+            x1c, y1c = view.pixel_to_screen_coordinates(x1, y1)
+            sX, sY = x1c-x0c, y1c-y0c
+            dc.DrawRectangle(int(x0c), int(y0c), int(sX), int(sY))
+            dc.SetPen(wx.NullPen)
+        else:
+            dc.SetBackground(wx.TRANSPARENT_BRUSH)
+            dc.Clear()
 
 class DriftTrackingControl(wx.Panel):
     def __init__(self, main_frame, driftTracker, winid=-1, showPlots=True):
@@ -258,8 +272,8 @@ class DriftTrackingControl(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.tbSubROI = wx.ToggleButton(self, -1, 'Restrict to sub-ROI')
-        hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
-        self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnTBToggleSubROI)
+        hsizer.Add(self.tbSubROI, 0, wx.ALL, 2)
+        self.tbSubROI.Bind(wx.EVT_TOGGLEBUTTON, self.OnTBToggleSubROI)
         #self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
         #hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2)
         #self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
@@ -367,11 +381,9 @@ class DriftTrackingControl(wx.Panel):
         ''' Turn sub-ROI tracking on or off, using the current selection in the live image display'''
         if new_state:
             x0, x1, y0, y1, _, _ = self._main_frame.view.do.sorted_selection
-            self.dt.set_subroi((x0, x1, y0, y1)) # TODO - implement dt.set_subroi
+            self.dt.set_subroi((x0, x1, y0, y1))
         else:
             self.dt.set_subroi(None)
-
-        self.dt.reCalibrate() # FIXME - move to dt.set_subroi
 
         if self._view_overlay is None:
             self._view_overlay = self._main_frame.view.add_overlay(DriftROIOverlay(self.dt), 'Drift tracking Sub-ROI')
