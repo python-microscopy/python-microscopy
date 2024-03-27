@@ -103,13 +103,13 @@ class ProtocolAcquisitionPane(cascading_layout.CascadingLayoutPanel):
     
     def _init_ctrls(self):
         vsizer = wx.BoxSizer(wx.VERTICAL)
-        vsizer.Add(self._protocol_pan(), 0, wx.ALL | wx.EXPAND, 5)
+        vsizer.Add(self._protocol_pan(), 0, wx.ALL | wx.EXPAND, 0)
 
         if hasattr(self.scope, 'stackSettings'):
             clp = afp.collapsingPane(self, caption='Z stepping ...')
             self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
             clp.AddNewElement(self._seq_panel, priority=1)
-            vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 5)
+            vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 0)
             #self.AddNewElement(clp, priority=1)
             self.seq_pan = clp
 
@@ -123,7 +123,7 @@ class ProtocolAcquisitionPane(cascading_layout.CascadingLayoutPanel):
         clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, self.scope.analysisSettings,
                                                                   self.scope.analysisSettings.onMetadataChanged))
         #self.AddNewElement(clp)
-        vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 5)
+        vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 0)
         self.SetSizerAndFit(vsizer)
         #end analysis settings
         
@@ -373,19 +373,31 @@ class SpoolingPane(afp.foldingPane):
     
         self._aq_type_btns = []
 
+        _settings_box_name = ''
+
         for i, aq_type in enumerate(self.spoolController.acquisition_types):
             pane, name = self.acquisition_uis[aq_type]
-            btn = wx.ToggleButton(pan, -1, name)
+            btn = wx.RadioButton(pan, -1, name, style=(wx.RB_GROUP if i == 0 else 0))
             btn.aq_type = aq_type
             btn.SetValue(aq_type == self.spoolController.acquisition_type)
-            btn.Bind(wx.EVT_TOGGLEBUTTON, self.OnAqTypeChanged)
+            if aq_type == self.spoolController.acquisition_type:
+                _settings_box_name = f'{name} Settings'
+            btn.Bind(wx.EVT_RADIOBUTTON, self.OnAqTypeChanged)
             vsizer.Add(btn, 0, wx.ALL | wx.EXPAND, 2)
             self._aq_type_btns.append(btn)
+
+    
+        v1.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
+        self.sbAqSettings = wx.StaticBox(pan, -1, _settings_box_name)
+        vsizer = wx.StaticBoxSizer(self.sbAqSettings, wx.VERTICAL)
+
+        for i, aq_type in enumerate(self.spoolController.acquisition_types):
+            pane, name = self.acquisition_uis[aq_type]
 
             pane.Reparent(pan)
             vsizer.Add(pane, 1, wx.ALL | wx.EXPAND, 2)
             pane.Show(aq_type == self.spoolController.acquisition_type)
-    
+        
         v1.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
         pan.SetSizerAndFit(v1)
 
@@ -404,6 +416,8 @@ class SpoolingPane(afp.foldingPane):
 
         for aq_type in self.spoolController.acquisition_types:
             self.acquisition_uis[aq_type][0].Show(aq_type == self.spoolController.acquisition_type)
+            if (aq_type == self.spoolController.acquisition_type):
+                self.sbAqSettings.SetLabel(f'{self.acquisition_uis[aq_type][1]} Settings')
 
         self.aq_settings_pan.Layout()
         self.cascading_layout()
