@@ -31,6 +31,9 @@ import numpy as np
 import wx.lib.newevent
 from PYME.ui import cascading_layout
 
+import logging
+logger = logging.getLogger(__name__)
+
 PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
 
 def ColourFromStyle(col):
@@ -402,7 +405,7 @@ class foldingPane(wx.Panel, cascading_layout.CascadingLayoutMixin):
 
         self.SetSizer(self.sizer)
         
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
         
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
@@ -532,7 +535,9 @@ class foldingPane(wx.Panel, cascading_layout.CascadingLayoutMixin):
             #self.Layout()
     
     def OnSize(self, event):
-        self.Layout()
+        print('foldPane size event - %s, %s - %s' % (self.__class__.__name__, hex(id(self)), event.GetSize()))
+        #self.Layout()
+        event.Skip()
 
 
 r_arrow = b'\xff\xff\xdf\xff\x9f\xff\x1f\xff\x5f\xfe\xdf\xfc\xdf\xf9\xdf\xf3\xdf' \
@@ -677,7 +682,8 @@ class foldPanel(wx.Panel):
 
         self.sizer.Layout()
 
-    def cascading_layout(self):
+    def cascading_layout(self, depth=0):
+        #logger.info('cascade layout - %s' % self)
         self.fold1()
 
     def Clear(self):
@@ -765,6 +771,8 @@ class foldPanel(wx.Panel):
     def OnResize(self, event):
         if (not self._in_fold1) and self.IsShownOnScreen():
             self.fold1()
+
+        event.Skip()
 
     def _layout(self, *args, **kwargs):
         self.Layout()

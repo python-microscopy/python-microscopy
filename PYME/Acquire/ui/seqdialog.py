@@ -28,6 +28,7 @@ import wx.lib.agw.aui as aui
 
 #from PYME.Acquire import simplesequenceaquisator
 from PYME.Acquire import stackSettings
+from PYME.ui import cascading_layout
 #from PYME.IO import MetaDataHandler
 
 #redefine wxFrame with a version that hides when someone tries to close it
@@ -73,7 +74,7 @@ def create(parent):
 
 
 
-class seqPanel(wx.Panel):
+class seqPanel(cascading_layout.CascadingLayoutPanel):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
 

@@ -218,6 +218,8 @@ class HDFBackend(Backend):
         else:
             self.imageData.append(frame_data.reshape(1,frame_data.shape[0],frame_data.shape[1]))
 
+        self.imNum = n+1
+
 
     def finalise(self, events=None):
         self.imageData.attrs.DimOrder = self._dim_order

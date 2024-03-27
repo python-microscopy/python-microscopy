@@ -48,13 +48,14 @@ from PYME import config
     
 
 import  PYME.ui.manualFoldPanel as afp
+from PYME.ui import cascading_layout
 from . import seqdialog
 from . import AnalysisSettingsUI
 
 import logging
 logger = logging.getLogger(__name__)
 
-class ProtocolAcquisitionPane(afp.foldingPane):
+class ProtocolAcquisitionPane(cascading_layout.CascadingLayoutPanel):
     def _protocol_pan(self):
         pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
     
@@ -101,13 +102,15 @@ class ProtocolAcquisitionPane(afp.foldingPane):
         return pan
     
     def _init_ctrls(self):
-        self.AddNewElement(self._protocol_pan())
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer.Add(self._protocol_pan(), 0, wx.ALL | wx.EXPAND, 5)
 
         if hasattr(self.scope, 'stackSettings'):
             clp = afp.collapsingPane(self, caption='Z stepping ...')
             self._seq_panel = seqdialog.seqPanel(clp, self.scope, mode='sequence')
-            clp.AddNewElement(self._seq_panel)
-            self.AddNewElement(clp)
+            clp.AddNewElement(self._seq_panel, priority=1)
+            vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 5)
+            #self.AddNewElement(clp, priority=1)
             self.seq_pan = clp
 
         #analysis settings
@@ -119,7 +122,9 @@ class ProtocolAcquisitionPane(afp.foldingPane):
                                                                    self.scope.analysisSettings.onMetadataChanged))
         clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, self.scope.analysisSettings,
                                                                   self.scope.analysisSettings.onMetadataChanged))
-        self.AddNewElement(clp)
+        #self.AddNewElement(clp)
+        vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 5)
+        self.SetSizerAndFit(vsizer)
         #end analysis settings
         
 
@@ -140,7 +145,7 @@ class ProtocolAcquisitionPane(afp.foldingPane):
             
         """
         #afp.foldingPane.__init__(self, parent, caption='Protocol Acquisition', **kwargs)
-        afp.foldingPane.__init__(self, parent, **kwargs)
+        cascading_layout.CascadingLayoutPanel.__init__(self, parent, **kwargs)
         self.scope = scope
         self.spoolController = scope.spoolController
         
@@ -186,7 +191,7 @@ class SpoolingPane(afp.foldingPane):
     """A Panel containing the GUI controls for spooling"""
     
     def _spool_to_pan(self):
-        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
+        pan = cascading_layout.CascadingLayoutPanel(parent=self, style=wx.TAB_TRAVERSAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
     
         ###Spool directory
@@ -238,6 +243,13 @@ class SpoolingPane(afp.foldingPane):
     
         self.stDiskSpace = wx.StaticText(pan, -1, 'Free space:')
         spoolDirSizer.Add(self.stDiskSpace, 0, wx.ALL | wx.EXPAND, 2)
+
+        ### Compression etc
+        clp = afp.collapsingPane(pan, caption='Compression and quantization ...', padding=2)
+        clp.AddNewElement(self._comp_pan(clp))
+        spoolDirSizer.Add(clp, 0, wx.ALL | wx.EXPAND, 2)
+
+        self._comp_p = clp
     
         vsizer.Add(spoolDirSizer, 0, wx.ALL | wx.EXPAND, 0)
     
@@ -245,7 +257,7 @@ class SpoolingPane(afp.foldingPane):
         return pan
     
     def _comp_pan(self, clp):
-        pan = wx.Panel(clp, -1)
+        pan = cascading_layout.CascadingLayoutPanel(clp, -1)
     
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -355,8 +367,9 @@ class SpoolingPane(afp.foldingPane):
         return pan
         
     def _aq_settings_pan(self):
-        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
-        vsizer = wx.BoxSizer(wx.VERTICAL)
+        pan = cascading_layout.CascadingLayoutPanel(parent=self, style=wx.TAB_TRAVERSAL)
+        v1 = wx.BoxSizer(wx.VERTICAL)
+        vsizer = wx.StaticBoxSizer(wx.StaticBox(pan, label='Acquisition Type'), wx.VERTICAL)
     
         self._aq_type_btns = []
 
@@ -370,10 +383,11 @@ class SpoolingPane(afp.foldingPane):
             self._aq_type_btns.append(btn)
 
             pane.Reparent(pan)
-            vsizer.Add(pane, 0, wx.ALL | wx.EXPAND, 2)
+            vsizer.Add(pane, 1, wx.ALL | wx.EXPAND, 2)
             pane.Show(aq_type == self.spoolController.acquisition_type)
     
-        pan.SetSizerAndFit(vsizer)
+        v1.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
+        pan.SetSizerAndFit(v1)
 
         self.aq_settings_pan = pan
         return pan
@@ -396,13 +410,8 @@ class SpoolingPane(afp.foldingPane):
     
     def _init_ctrls(self):
         
-        self.AddNewElement(self._aq_settings_pan())
+        self.AddNewElement(self._aq_settings_pan(), priority=1, foldable=False)
         self.AddNewElement(self._spool_to_pan())
-
-        ### Compression etc
-        clp = afp.collapsingPane(self, caption='Compression and quantization ...')
-        clp.AddNewElement(self._comp_pan(clp))
-        self.AddNewElement(clp)
 
         self.AddNewElement(self._spool_pan())
 
@@ -651,6 +660,11 @@ class SpoolingPane(afp.foldingPane):
             self.tcSpoolFile.Show()
             self.stDiskSpace.Show()
             self.bSetSpoolDir.Show()
+
+        if self.spoolController.spoolType in ['Cluster', 'File']:
+            self._comp_p.Show()
+        else:
+            self._comp_p.Hide()
 
         self.Layout()
 

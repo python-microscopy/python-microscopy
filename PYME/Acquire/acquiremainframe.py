@@ -290,7 +290,7 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(*t)
             
         if self.scope.cam.CamReady():
-            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope, folded=False)
+            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
             self.register_acqusition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
             #self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
 
