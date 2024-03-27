@@ -86,7 +86,7 @@ class XYZTCAcquisition(object):
         self.on_single_frame = dispatch.Signal()  #dispatched when a frame is ready
         self.on_series_end = dispatch.Signal()  #dispatched when a sequence is complete
 
-        self.on_progress_update = self.on_single_frame  # generate a gui status update on every frame - TODO do we need to throttle this as in ProtocolAcquisition
+        self.on_progress = self.on_single_frame  # generate a gui status update on every frame - TODO do we need to throttle this as in ProtocolAcquisition
     
     
     @classmethod

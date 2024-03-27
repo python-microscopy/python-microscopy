@@ -554,7 +554,7 @@ class SpoolController(object):
         except KeyError:
             raise RuntimeError('Unknown acquisition type %s' % acquisition_type)
         
-        self.spooler.on_progress_update.connect(self._ProgressUpate)
+        self.spooler.on_progress.connect(self._ProgressUpate)
            
         
         extra_metadata = settings.get('extra_metadata')
@@ -648,7 +648,7 @@ class SpoolController(object):
         self.onSpoolStop.send(self)
 
         try:
-            self.spooler.on_progress_update.disconnect(self._ProgressUpate)
+            self.spooler.on_progress.disconnect(self._ProgressUpate)
             self._ProgressUpate()
         except AttributeError:
             pass

@@ -96,7 +96,7 @@ class ProtocolAcquisition(object):
         self._fakeCamCycleTime = fakeCamCycleTime
 
         self._last_gui_update = 0
-        self.on_progress_update = dispatch.Signal() # signal to send status updates to GUI
+        self.on_progress = dispatch.Signal() # signal to send status updates to GUI
 
         self._create_backend(backend_type=backend, **backend_kwargs)
 
@@ -237,7 +237,7 @@ class ProtocolAcquisition(object):
         
         self.spoolOn = False
 
-        self.on_progress_update.send(self)
+        self.on_progress.send(self)
         
         self.finalise()
         self.onSpoolStop.send(self)
@@ -290,7 +290,7 @@ class ProtocolAcquisition(object):
         
         if (t > (self._last_gui_update +.1)):
             self._last_gui_update = t
-            self.on_progress_update.send(self)
+            self.on_progress.send(self)
             
         try:
             import wx #FIXME - shouldn't do this here
