@@ -144,7 +144,7 @@ class PointScanner(object):
 
 
         #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
-        self.scope.frameWrangler.onFrame.connect(self.tick, dispatch_uid=self._uuid)
+        self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
 
         if self.trigger:
             self.scope.cam.FireSoftwareTrigger()
@@ -172,7 +172,7 @@ class PointScanner(object):
         
         return new_x, new_y
 
-    def tick(self, frameData, **kwargs):
+    def on_frame(self, frameData, **kwargs):
         with self._rlock:
             if not self.running:
                 return
@@ -236,7 +236,7 @@ class PointScanner(object):
         #self.scope.SetPos(**self.currPos)
         try:
             #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
-            self.scope.frameWrangler.onFrame.disconnect(self.tick, dispatch_uid=self._uuid)
+            self.scope.frameWrangler.onFrame.disconnect(self.on_frame, dispatch_uid=self._uuid)
             #if self.sync:
             #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
         except:

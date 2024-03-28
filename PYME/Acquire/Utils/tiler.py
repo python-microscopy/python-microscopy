@@ -75,9 +75,9 @@ class Tiler(pointScanner.PointScanner):
         
         pointScanner.PointScanner.start(self)
         
-    def tick(self, frameData, **kwargs):
+    def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
-        pointScanner.PointScanner.tick(self, frameData, **kwargs)
+        pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
         
         d = frameData.astype('f').squeeze()
         if not self.background is None:
