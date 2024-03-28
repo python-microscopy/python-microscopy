@@ -71,13 +71,13 @@ class HDFEventLogger(EventLogger):
         The open HDF5 file to write to
     """
     
-    def __init__(self, spool, hdf5File, time_fcn=time.time):
+    def __init__(self, spooler, hdf5File, time_fcn=time.time):
         """Create a new Events table.
   
   
         """
         EventLogger.__init__(self, time_fcn=time_fcn)
-        self.spooler = spool
+        self.spooler = spooler
         #self.scope = scope
         self.hdf5File = hdf5File
         self._event_lock = threading.Lock()
@@ -139,6 +139,10 @@ class MemoryEventLogger(EventLogger):
         
         with self._event_lock:
             self._events.append((eventName, eventDescr, timestamp))
+
+    @property
+    def events(self):
+        return self._events
     
     def to_JSON(self):
         import json
@@ -147,23 +151,3 @@ class MemoryEventLogger(EventLogger):
     def to_recarray(self):
         return self.list_to_array(self._events)
     
-    
-class QueueEventLogger(EventLogger):
-    """ Event backend for TaskQueue (Pyro) based spooling
-    
-    Exists for Py27 backwards compatibility and does not work on py3. Don't use in new code.
-    """
-    def __init__(self, spool, tq, queueName, time_fcn=time.time):
-      EventLogger.__init__(self, time_fcn=time_fcn)
-      self.spooler = spool
-      #self.scope = scope
-      self.tq = tq
-      self.queueName = queueName
-    
-    def logEvent(self, eventName, eventDescr = '', timestamp=None):
-      if eventName == 'StartAq':
-          eventDescr = '%d' % self.spooler.imNum
-    
-      if timestamp is None:
-          timestamp = self._time_fcn()
-      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, timestamp))

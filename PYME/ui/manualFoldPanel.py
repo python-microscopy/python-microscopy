@@ -29,6 +29,10 @@ import time
 import numpy as np
 
 import wx.lib.newevent
+from PYME.ui import cascading_layout
+
+import logging
+logger = logging.getLogger(__name__)
 
 PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
 
@@ -329,7 +333,7 @@ class CaptionBar(wx.Window):
 
 
 
-class foldElement:
+class foldElement(object):
     def __init__(self, window, foldable=True, foldedWindow=None):
         self.window = window
         self.foldable = foldable
@@ -339,7 +343,7 @@ class foldElement:
 #            self.foldedWindow = wx.StaticText(self.window.GetParent(), -1, '...')
 #            self.foldedWindow.Hide()
 
-class foldingPane(wx.Panel):
+class foldingPane(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, *args, **kwargs):
         # NOTE: If you are creating a foldingPane to encapsulate other 
         # foldingPanes, the top-level foldingPane must have the flag
@@ -401,7 +405,7 @@ class foldingPane(wx.Panel):
 
         self.SetSizer(self.sizer)
         
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
         
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
@@ -498,7 +502,7 @@ class foldingPane(wx.Panel):
                 pass
             self.Layout()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
-            self.fold1()
+            self.cascading_layout()
             return True
         else:
             return False
@@ -521,8 +525,8 @@ class foldingPane(wx.Panel):
                 self.stCaption.Refresh()
             except AttributeError:
                 pass
-            self.Layout()
-            self.fold1()
+
+            self.cascading_layout()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
             return True
         else:
@@ -531,7 +535,9 @@ class foldingPane(wx.Panel):
             #self.Layout()
     
     def OnSize(self, event):
-        self.Layout()
+        print('foldPane size event - %s, %s - %s' % (self.__class__.__name__, hex(id(self)), event.GetSize()))
+        #self.Layout()
+        event.Skip()
 
 
 r_arrow = b'\xff\xff\xdf\xff\x9f\xff\x1f\xff\x5f\xfe\xdf\xfc\xdf\xf9\xdf\xf3\xdf' \
@@ -608,7 +614,7 @@ class collapsingPane(foldingPane):
 
         #self.Layout()
         #self.Fit()
-        self.fold1()
+        self.cascading_layout()
 
 
 
@@ -675,6 +681,10 @@ class foldPanel(wx.Panel):
             self.sizer.AddStretchSpacer()
 
         self.sizer.Layout()
+
+    def cascading_layout(self, depth=0):
+        #logger.info('cascade layout - %s' % self)
+        self.fold1()
 
     def Clear(self):
         self.priorities = []
@@ -761,6 +771,8 @@ class foldPanel(wx.Panel):
     def OnResize(self, event):
         if (not self._in_fold1) and self.IsShownOnScreen():
             self.fold1()
+
+        event.Skip()
 
     def _layout(self, *args, **kwargs):
         self.Layout()

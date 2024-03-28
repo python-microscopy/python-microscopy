@@ -51,6 +51,28 @@ TODO - Make this a bit saner by providing either an `EventReceiver` base class, 
 
 WantEventNotification = []
 
+def register_event_handler(EventReceiver):
+    """
+    Register an event handler to receive events.
+    
+    Parameters
+    ----------
+    EventReceiver : object (PYME.IO.events.EventLogger or subclass thereof)
+        an object with a `logEvent(eventName, eventDescr = '', timestamp=None)` method
+    """
+    WantEventNotification.append(EventReceiver)
+
+def remove_event_handler(EventReceiver):
+    """
+    Remove an event handler from the list of event receivers.
+    
+    Parameters
+    ----------
+    EventReceiver : object (PYME.IO.events.EventLogger or subclass thereof)
+        an object with a `logEvent(eventName, eventDescr = '', timestamp=None)` method
+    """
+    WantEventNotification.remove(EventReceiver)
+
 def logEvent(eventName, eventDescr = '', timestamp=None):
     """
     Log an event to all event receivers.

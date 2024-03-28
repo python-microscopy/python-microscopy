@@ -95,7 +95,7 @@ class ProtocolRules(OrderedDict):
         self['default'] = RuleChain()
 
         self._spool_controller.onSpoolStart.connect(self.on_spool_start)
-        self._spool_controller.onSpoolStop.connect(self.on_spool_stop)
+        self._spool_controller.on_stop.connect(self.on_spool_stop)
     
     def on_spool_start(self, **kwargs):
         self.on_spool_event('spool start')
@@ -811,7 +811,7 @@ class ChainedAnalysisPanel(wx.Panel):
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
             microscope gui application
-        scope : PYME.Acquire.microscope.microscope
+        scope : PYME.Acquire.microscope.Microscope
             the microscope itself
         default_pairings : dict
             [optional] protocol keys with lists of RuleFactorys as values to
@@ -931,7 +931,7 @@ class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
         ----------
         main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
             microscope gui application
-        scope : PYME.Acquire.microscope.microscope
+        scope : PYME.Acquire.microscope.Microscope
             the microscope itself
         default_pairings : dict
             [optional] protocol keys with RuleChains as values to

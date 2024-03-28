@@ -46,7 +46,7 @@ class QueueAcquisitions(OutputModule):
                 spool to single h5 file on cluster (True) or pzf files (False).
                 Only relevant for `Cluster` method.
             pzf_compression_settings : dict
-                see PYME.IO.HTTPSpooler
+                see PYME.IO.acquisition_backends
             protocol_name : str
                 filename of the acquisition protocol to follow while spooling
             subdirectory : str

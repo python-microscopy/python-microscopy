@@ -20,7 +20,7 @@ class StageLeveler(object):
 
         Parameters
         ----------
-        scope: PYME.Acquire.microscope.microscope
+        scope: PYME.Acquire.microscope.Microscope
         offset_piezo: PYME.Acquire.Hardware.offsetPiezoREST.OffsetPiezo
         pause_on_relocate: float
             [optional] time to pause during measure loop after moving to a new location and before measuring offset.
@@ -28,7 +28,7 @@ class StageLeveler(object):
 
         Notes
         -----
-        Units are derived from PYME.Acquire.microscope.microscope.GetPos and SetPos and should be in micrometers.
+        Units are derived from PYME.Acquire.microscope.Microscope.GetPos and SetPos and should be in micrometers.
 
         Attributes
         ----------

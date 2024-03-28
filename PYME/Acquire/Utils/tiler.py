@@ -34,7 +34,7 @@ class Tiler(pointScanner.PointScanner):
         self._backend = backend
         
         self.on_stop = dispatch.Signal()
-        self.progress = dispatch.Signal()
+        self.on_progress = dispatch.Signal()
         
     
         
@@ -75,9 +75,9 @@ class Tiler(pointScanner.PointScanner):
         
         pointScanner.PointScanner.start(self)
         
-    def tick(self, frameData, **kwargs):
+    def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
-        pointScanner.PointScanner.tick(self, frameData, **kwargs)
+        pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
         
         d = frameData.astype('f').squeeze()
         if not self.background is None:
@@ -95,11 +95,11 @@ class Tiler(pointScanner.PointScanner):
         t = time.time()
         if t > (self._last_update_time + 1):
             self._last_update_time = t
-            self.progress.send(self)
+            self.on_progress.send(self)
         
     def _stop(self):
         pointScanner.PointScanner._stop(self, send_stop=False)
-        self.progress.send(self)
+        self.on_progress.send(self)
         t_ = time.time()
         
         logger.info('Finished tile acquisition')
@@ -123,7 +123,7 @@ class Tiler(pointScanner.PointScanner):
         logger.info('Pyramid complete (dt = %3.2f)' % (time.time()-t_))
             
         self.on_stop.send(self)
-        self.progress.send(self)
+        self.on_progress.send(self)
 
 class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
@@ -153,7 +153,7 @@ class CircularTiler(Tiler, pointScanner.CircularPointScanner):
         self._last_update_time = 0
         
         self.on_stop = dispatch.Signal()
-        self.progress = dispatch.Signal()
+        self.on_progress = dispatch.Signal()
 
 
 class MultiwellCircularTiler(object):

@@ -1,53 +1,55 @@
-#!/usr/bin/python
+# protocol_acquisition.py 
 
-##################
-# Spooler.py
+# replaces Spooler.py and the various backend-specific spoolers, factoring out everything which is specific to 
+# asynchronous protocol based acquisition.
 #
-# Copyright David Baddeley, 2009
-# d.baddeley@auckland.ac.nz
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##################
+# Protocol based asynchronous acquisition should be used where it is important that the camera runs as fast as possible.
+# To allow this, we do not wait for various hardware events to complete, but rather just record timestamps ("Events") and work things
+# out in post-processing.
 
-import os
-#import logparser
+
 import datetime
+import time
+import os
+import uuid
+import sys
 
+from PYME.contrib import dispatch
+
+from PYME import config
 from PYME.IO import MetaDataHandler
+from PYME.IO import acquisition_backends
+from PYME.IO.events import HDFEventLogger, MemoryEventLogger
+
+from PYME.Acquire import eventLog
+from PYME.Acquire import protocol as p
+
 
 try:
     from PYME.Acquire import sampleInformation
 except:
     sampleInformation= None
 
-import time
-
-from PYME.contrib import dispatch
-import uuid
-
-from PYME.Acquire import eventLog
-from PYME.Acquire import protocol as p
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class Spooler(object):
+
+def getReducedFilename(filename):
+    #rname = filename[len(nameUtils.datadir):]
+        
+    sname = '/'.join(filename.split(os.path.sep))
+    if sname.startswith('/'):
+        sname = sname[1:]
+    
+    return sname
+
+
+class ProtocolAcquisition(object):
     """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
-                 guiUpdateCallback=None, fakeCamCycleTime=None, maxFrames = p.maxint, **kwargs):
+                 fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
         """Create a new spooler.
         
         Parameters
@@ -69,7 +71,8 @@ class Spooler(object):
         #self.scope = scope
         self.filename=filename
         self.frameSource = frameSource
-        self.guiUpdateCallback = guiUpdateCallback
+        self.seriesName = getReducedFilename(filename)
+        
         self.protocol = protocol
         
         self.maxFrames = maxFrames
@@ -82,7 +85,7 @@ class Spooler(object):
         
         self.on_stop = dispatch.Signal()
 
-        self._last_gui_update = 0
+        
         self.spoolOn = False
         self.imNum = 0
         
@@ -92,12 +95,101 @@ class Spooler(object):
             
         self._fakeCamCycleTime = fakeCamCycleTime
 
+        self._last_gui_update = 0
+        self.on_progress = dispatch.Signal() # signal to send status updates to GUI
+
+        self._create_backend(backend_type=backend, **backend_kwargs)
+
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+        from PYME.IO import acquisition_backends
+
+        if isinstance(backend, acquisition_backends.MemoryBackend):
+            # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
+            raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
+        
+        protocol = spool_controller.protocol_settings.get_protocol_for_acquistion(settings=settings)
+        
+        preflight_mode = settings.get('preflight_mode', 'interactive')
+        if (preflight_mode != 'skip'):
+            from PYME.Acquire.ui import preflight
+            if not preflight.ShowPreflightResults(protocol.PreflightCheck(), preflight_mode):
+                logger.debug('Bailing from preflight check')
+                return None #bail if we failed the pre flight check, and the user didn't choose to continue
+        
+        #fix timing when using fake camera
+        if scope.cam.__class__.__name__ == 'FakeCamera':
+            fakeCycleTime = scope.cam.GetIntegTime()
+        else:
+            fakeCycleTime = None
+        
+        #logger.info('Creating spooler for %s' % series_name)
+        return cls(filename=series_name,
+                    frameSource=scope.frameWrangler.onFrame,
+                    protocol=protocol,
+                    fakeCamCycleTime=fakeCycleTime, 
+                    maxFrames=settings.get('max_frames', sys.maxsize),
+                    stack_settings=settings.get('stack_settings', None),
+                    backend=backend, backend_kwargs=backend_kwargs,) 
+                   
+
+
+    def _create_backend(self, backend_type=acquisition_backends.HDFBackend, **kwargs):
+        logger.debug('Creating backend of type %s' % backend_type)
+        
+        if backend_type in  ['cluster', 'Cluster', acquisition_backends.ClusterBackend]:
+            self._aggregate_h5 = kwargs.get('cluster_h5', False)
+            
+            self.clusterFilter = kwargs.get('serverfilter', config.get('dataserver-filter', ''))
+            
+            chunk_size = config.get('httpspooler-chunksize', 50)
+            
+            def dist_fcn(n_servers, i=None):
+                if i is None:
+                    # distribute at random
+                    import random
+                    return random.randrange(n_servers)
+                
+                return int(i/chunk_size) % n_servers
+            
+            
+            self._backend = acquisition_backends.ClusterBackend(self.seriesName, 
+                                                                distribution_fcn=dist_fcn, 
+                                                                compression_settings=kwargs.get('compression_settings', {}),
+                                                                cluster_h5=self._aggregate_h5,
+                                                                serverfilter=self.clusterFilter,
+                                                                shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
+                                                                evt_time_fcn=self._time_fcn)
+            
+        else: # assume hdf
+            self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.get('complevel', 6), complib=kwargs.get('complib','zlib'),
+                            shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
+                            evt_time_fcn=self._time_fcn)
+        
+        
+        self._stopping = False
+
+    @property
+    def md(self):
+        return self._backend.mdh
+
     def StartSpool(self):
+        from PYME import warnings
+        warnings.warn('StartSpool is deprecated. Use start instead', DeprecationWarning)
+        self.start()
+
+    def StopSpool(self):
+        from PYME import warnings
+        warnings.warn('StopSpool is deprecated. Use stop instead', DeprecationWarning)
+        self.stop()
+    
+    def start(self):
         """ Perform protocol 'frame -1' tasks, log start metadata, then connect
         to the frame source.
         """
         self.watchingFrames = True
-        eventLog.WantEventNotification.append(self.evtLogger)
+        eventLog.register_event_handler(self._backend.event_logger)
 
         self.imNum = 0
         
@@ -110,14 +202,18 @@ class Spooler(object):
         # record start time when we start receiving frames.
         self.tStart = time.time()
         self._collect_start_metadata()
-        self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        self.frameSource.connect(self.on_frame, dispatch_uid=self._spooler_uuid)
         
         self.spoolOn = True
+
+        logger.debug('Starting spooling: %s' %self.seriesName)
+
+        self._backend.initialise()
        
-    def StopSpool(self):
+    def stop(self):
         #try:
         logger.debug('Disconnecting from frame source')
-        self.frameSource.disconnect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        self.frameSource.disconnect(self.on_frame, dispatch_uid=self._spooler_uuid)
         logger.debug('Frame source should be disconnected')
         
         #there is a race condition on disconnect - ignore any additional frames
@@ -135,13 +231,13 @@ class Spooler(object):
             traceback.print_exc()
             
         try:
-            eventLog.WantEventNotification.remove(self.evtLogger)
+            eventLog.remove_event_handler(self._backend.event_logger)
         except ValueError:
             pass
         
         self.spoolOn = False
-        if not self.guiUpdateCallback is None:
-            self.guiUpdateCallback()
+
+        self.on_progress.send(self)
         
         self.finalise()
         self.on_stop.send(self)
@@ -152,7 +248,8 @@ class Spooler(object):
         Over-ride in derived classes to do any spooler specific tidy up - e.g. sending events to server
 
         """
-        pass
+        self._backend.finalise()
+
         
     def abort(self):
         """
@@ -171,7 +268,7 @@ class Spooler(object):
 
 
         try:
-            eventLog.WantEventNotification.remove(self.evtLogger)
+            eventLog.remove_event_handler(self._backend.event_logger)
         except ValueError:
             pass
 
@@ -179,19 +276,21 @@ class Spooler(object):
         self.on_stop.send(self)
         
 
-    def OnFrame(self, **kwargs):
+    def on_frame(self, sender, frameData, **kwargs):
         """Callback which should be called on every frame"""
         if not self.watchingFrames:
             #we have allready disconnected - ignore any new frames
             return
+        
+        self._backend.store_frame(self.imNum, frameData)
 
         t = time.time()
             
         self.imNum += 1
-        if not self.guiUpdateCallback is None:
-            if (t > (self._last_gui_update +.1)):
-                self._last_gui_update = t
-                self.guiUpdateCallback()
+        
+        if (t > (self._last_gui_update +.1)):
+            self._last_gui_update = t
+            self.on_progress.send(self)
             
         try:
             import wx #FIXME - shouldn't do this here
@@ -204,7 +303,7 @@ class Spooler(object):
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
             
         if self.imNum >= self.maxFrames:
-            self.StopSpool()
+            self.stop()
             
 
     def _collect_start_metadata(self):
@@ -265,11 +364,14 @@ class Spooler(object):
     
     def cleanup(self):
         """ over-ride to do any cleanup"""
-        pass
+        del self._backend
     
     def finished(self):
         """ over-ride in derived classes to indicate when buffers flushed"""
-        return True
+        
+        # FIXME - this probably needs a bit more work.
+        # FIXME - delegate to backend?
+        return self._stopping
     
     def get_n_frames(self):
         return self.imNum
@@ -277,3 +379,7 @@ class Spooler(object):
     def __del__(self):
         if self.spoolOn:
             self.StopSpool()
+
+
+
+

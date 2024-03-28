@@ -26,7 +26,7 @@ class PYMEAcquireBase(object):
         self.initDone = False
         self.postInit = [] #for protocol compat
         
-        self.scope = microscope.microscope()
+        self.scope = microscope.Microscope()
 
         self.roi_on = False
         self.bin_on = False
