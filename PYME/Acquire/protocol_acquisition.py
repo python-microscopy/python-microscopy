@@ -83,7 +83,7 @@ class ProtocolAcquisition(object):
             # if not provided / None)
             self.stack_settings = stack_settings
         
-        self.onSpoolStop = dispatch.Signal()
+        self.on_stop = dispatch.Signal()
 
         
         self.spoolOn = False
@@ -240,7 +240,7 @@ class ProtocolAcquisition(object):
         self.on_progress.send(self)
         
         self.finalise()
-        self.onSpoolStop.send(self)
+        self.on_stop.send(self)
         self.spool_complete = True
         
     def finalise(self):
@@ -273,7 +273,7 @@ class ProtocolAcquisition(object):
             pass
 
         self.spoolOn = False
-        self.onSpoolStop.send(self)
+        self.on_stop.send(self)
         
 
     def on_frame(self, sender, frameData, **kwargs):

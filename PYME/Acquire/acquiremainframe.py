@@ -281,7 +281,7 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(self.pos_sl, 'Positioning')
 
             self.seq_d = seqdialog.seqPanel(self, self.scope, mode='compact')
-            self.register_acqusition_ui('XYZTCAcquisition', (self.seq_d, 'Z-Stack'))
+            self.register_acqusition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
             #self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
         

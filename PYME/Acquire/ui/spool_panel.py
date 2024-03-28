@@ -462,7 +462,7 @@ class SpoolingPane(afp.foldingPane):
         
         self.spoolController.onSpoolProgress.connect(self._tick)
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
-        self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
+        self.spoolController.on_stop.connect(self.OnSpoolingStopped)
 
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
@@ -624,8 +624,12 @@ class SpoolingPane(afp.foldingPane):
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
-        self.Refresh()
-        self.Update()
+        
+        
+        wx.CallAfter(self.Refresh)
+        #self.Refresh()
+        #self.Update()
+        #self.cascading_layout()
 
     def OnBAnalyse(self, event):
         self.spoolController.LaunchAnalysis()

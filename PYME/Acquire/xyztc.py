@@ -89,7 +89,7 @@ class XYZTCAcquisition(object):
         self._init_c(channel_settings)
 
         self.on_single_frame = dispatch.Signal()  #dispatched when a frame is ready
-        self.on_series_end = dispatch.Signal()  #dispatched when a sequence is complete
+        self.on_stop = dispatch.Signal()  #dispatched when acquisition is stopped
 
         self.on_progress = self.on_single_frame  # generate a gui status update on every frame - TODO do we need to throttle this as in ProtocolAcquisition
     
@@ -118,10 +118,6 @@ class XYZTCAcquisition(object):
         ''' for compatibility with spoolers'''
         return self.storage.mdh
     
-    @property
-    def onSpoolStop(self):
-        ''' for compatibility with spoolers'''
-        return self.on_series_end
         
     def _zct_indices(self, frame_no):
         if self.dim_order == 'XYCZT':
@@ -200,7 +196,7 @@ class XYZTCAcquisition(object):
 
         self.storage.finalise()
         
-        self.on_series_end.send(self)
+        self.on_stop.send(self)
 
     def abort(self):
         self.stop()

@@ -343,7 +343,7 @@ class PanSpool(afp.foldingPane):
         
         self.spoolController.onSpoolProgress.connect(self._tick)
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
-        self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
+        self.spoolController.on_stop.connect(self.OnSpoolingStopped)
 
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)

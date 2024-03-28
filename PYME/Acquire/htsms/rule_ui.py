@@ -95,7 +95,7 @@ class ProtocolRules(OrderedDict):
         self['default'] = RuleChain()
 
         self._spool_controller.onSpoolStart.connect(self.on_spool_start)
-        self._spool_controller.onSpoolStop.connect(self.on_spool_stop)
+        self._spool_controller.on_stop.connect(self.on_spool_stop)
     
     def on_spool_start(self, **kwargs):
         self.on_spool_event('spool start')

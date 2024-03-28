@@ -23,7 +23,7 @@ from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFi
 from PYME.IO import unifiedIO, MetaDataHandler
 
 from PYME.Acquire.protocol_acquisition import ProtocolAcquisition
-from PYME.Acquire.xyztc import XYZTCAcquisition
+from PYME.Acquire.xyztc import XYZTCAcquisition, ZStackAcquisition
 
 
 #import PYME.Acquire.Protocols
@@ -173,7 +173,7 @@ class SpoolController(object):
         self.seriesCounter = 0
         self._series_name = None
 
-        self.acquisition_types = {'XYZTCAcquisition': XYZTCAcquisition,
+        self.acquisition_types = {'ZStackAcquisition': ZStackAcquisition,
                                   'ProtocolAcquisition': ProtocolAcquisition,
                                  }
 
@@ -183,7 +183,7 @@ class SpoolController(object):
         
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
-        self.onSpoolStop = dispatch.Signal()
+        self.on_stop = dispatch.Signal()
 
         self._analysis_launchers = queue.Queue(3)
         
@@ -568,7 +568,7 @@ class SpoolController(object):
         self.scope.frameWrangler.stop()
         
         try:
-            self.spooler.onSpoolStop.connect(self.SpoolStopped)
+            self.spooler.on_stop.connect(self.SpoolStopped)
             self.spooler.start()
         except:
             self.spooler.abort()
@@ -645,11 +645,12 @@ class SpoolController(object):
 
         logger.info('Spooling stopped')
         
-        self.onSpoolStop.send(self)
+        self.on_stop.send(self)
 
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)
             self._ProgressUpate()
+            self._unlink_display()
         except AttributeError:
             pass
 
