@@ -58,8 +58,8 @@ class XYZTCAcquisition(object):
             Used for storing the acquired data and metadata. If None, a MemoryBackend will be used.     
 
         """
-        if stack_settings is None:
-            stack_settings = scope.stackSettings
+        #if stack_settings is None:
+        #    stack_settings = scope.stackSettings
 
         assert(dim_order[:2] == 'XY') #first two dimensions must be XY (camera acquisition)
         # TODO more sanity checks on dim_order
@@ -68,7 +68,12 @@ class XYZTCAcquisition(object):
         self.scope = scope
         
         self.shape_x, self.shape_y = scope.frameWrangler.currentFrame.shape[:2]
-        self.shape_z = stack_settings.GetSeqLength()
+        
+        if stack_settings:
+            self.shape_z = stack_settings.GetSeqLength()
+        else:
+            self.shape_z = 1
+
         self.shape_t = getattr(time_settings, 'num_timepoints', 1)
         self.shape_c = getattr(channel_settings, 'num_channels', 1)
         
@@ -137,7 +142,7 @@ class XYZTCAcquisition(object):
         
         if (self.frame_num >= self.n_frames) and (self.n_frames > 0):
             # if shape_t  == -1 (infinte loop), then self.n_frames is negative, don't stop.
-            self.finish()
+            self.stop()
             return
         
         z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
@@ -187,7 +192,7 @@ class XYZTCAcquisition(object):
         return self.frame_num
         
         
-    def finish(self):
+    def stop(self):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         self.scope.stackSettings.piezoGoHome()
@@ -198,14 +203,19 @@ class XYZTCAcquisition(object):
         self.on_series_end.send(self)
 
     def abort(self):
-        self.finish()
+        self.stop()
         
     def _init_z(self, stack_settings):
-        self._z_poss = np.arange(stack_settings.GetStartPos(),
+        if stack_settings:
+            self._z_poss = np.arange(stack_settings.GetStartPos(),
                                stack_settings.GetEndPos() + .95 * stack_settings.GetStepSize(),
                                stack_settings.GetStepSize() * stack_settings.GetDirection())
 
-        self._z_chan = stack_settings.GetScanChannel()
+            self._z_chan = stack_settings.GetScanChannel()
+        else:
+            self._z_chan = 'z'
+            self._z_poss = [self.scope.GetPos()[self._z_chan]]
+
         self._z_initial_pos = self.scope.GetPos()[self._z_chan]
         
     
@@ -228,4 +238,19 @@ class XYZTCAcquisition(object):
             
             
         
-        
+class ZStackAcquisition(XYZTCAcquisition):
+    """
+    Class for a simple Z-Stack acquisition.
+    """
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+         '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+    
+         backend_kwargs['series_name'] = series_name
+    
+         return cls(scope=scope, 
+                    #dim_order=settings.dim_order, 
+                    stack_settings=settings.get('stack_settings', scope.stackSettings), 
+                    time_settings=settings.get('time_settings', None), 
+                    channel_settings=settings.get('channel_settings', None), 
+                    backend=backend, backend_kwargs=backend_kwargs)
