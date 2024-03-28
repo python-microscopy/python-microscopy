@@ -281,7 +281,7 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(self.pos_sl, 'Positioning')
 
             self.seq_d = seqdialog.seqPanel(self, self.scope, mode='compact')
-            self.register_acqusition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
+            self.register_acquisition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
             #self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
         
@@ -291,7 +291,7 @@ class PYMEMainFrame(AUIFrame):
             
         if self.scope.cam.CamReady():
             self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
-            self.register_acqusition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
+            self.register_acquisition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
             #self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
 
             # for t in self.scope.spoolController.acquisition_types.keys():
@@ -467,7 +467,7 @@ class PYMEMainFrame(AUIFrame):
         """
         self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel, folded=folded)
         
-    def register_acqusition_ui(self, acquisition_type, panel):
+    def register_acquisition_ui(self, acquisition_type, panel):
         """Registers a panel as a UI for a particular acquisition type"""
         pane, title = panel
         #self.aqPanels.append((pane, title))

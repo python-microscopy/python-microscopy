@@ -419,13 +419,14 @@ class SpoolingPane(afp.foldingPane):
             if (aq_type == self.spoolController.acquisition_type):
                 self.sbAqSettings.SetLabel(f'{self.acquisition_uis[aq_type][1]} Settings')
 
-        self.aq_settings_pan.Layout()
-        self.cascading_layout()
+        self.aq_settings_pan.cascading_layout()
+        #self.cascading_layout()
     
     def _init_ctrls(self):
         
         self.AddNewElement(self._aq_settings_pan(), priority=1, foldable=False)
-        self.AddNewElement(self._spool_to_pan())
+        self._pan_spool_to = self._spool_to_pan()
+        self.AddNewElement(self._pan_spool_to)
 
         self.AddNewElement(self._spool_pan())
 
@@ -684,7 +685,7 @@ class SpoolingPane(afp.foldingPane):
         else:
             self._comp_p.Hide()
 
-        self.Layout()
+        self._pan_spool_to.cascading_layout()
 
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
