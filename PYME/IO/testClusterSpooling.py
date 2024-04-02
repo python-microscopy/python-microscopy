@@ -95,16 +95,16 @@ class TestSpooler:
         if hdf_spooler:
             if compression:
                 #self.spooler = HDFSpooler.Spooler(filename, self.onFrame, frameShape = frameShape, complevel=0)
-                self.spooler = protocol_acquisition.ProtocolAcquision(filename, self.onFrame, frameShape = frameShape, complevel=0,backend='hdf')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=0,backend='hdf')
             else:
                 #self.spooler = HDFSpooler.Spooler(filename, self.onFrame,frameShape = frameShape, complevel=3)
-                self.spooler = protocol_acquisition.ProtocolAcquision(filename, self.onFrame, frameShape = frameShape, complevel=3,backend='hdf')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=3,backend='hdf')
         else:
             if compression:
-                self.spooler = protocol_acquisition.ProtocolAcquision(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter, backend='cluster')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter, backend='cluster')
 
             else:
-                self.spooler = protocol_acquisition.ProtocolAcquision(filename, self.onFrame,
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame,
                                                    frameShape = None, serverfilter=self.serverfilter,
                                                    compressionSettings={'compression': PZFFormat.DATA_COMP_RAW,
                                                                         'quantization':PZFFormat.DATA_QUANT_NONE}, backend='cluster')
