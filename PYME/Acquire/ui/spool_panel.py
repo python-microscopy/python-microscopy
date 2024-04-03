@@ -646,7 +646,7 @@ class SpoolingPane(afp.foldingPane):
         
         dtt = dtn - self.spoolController.spooler.dtStart
         
-        self.stNImages.SetLabel('%d images spooled in %d seconds' % (self.spoolController.spooler.imNum, dtt.seconds))
+        self.stNImages.SetLabel('%d images spooled in %d seconds' % (self.spoolController.spooler.frame_num, dtt.seconds))
         self.UpdateFreeSpace()
 
     def OnBSetSpoolDirButton(self, event):

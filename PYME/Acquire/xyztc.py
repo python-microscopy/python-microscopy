@@ -5,6 +5,7 @@ import datetime
 from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
 from PYME.IO.acquisition_backends import MemoryBackend
+from PYME.Acquire.acquisition_base import AcquisitionBase
 
 
 class TimeSettings(object):
@@ -29,7 +30,7 @@ class TimeSettings(object):
         self.num_timepoints = num_timepoints
         self.time_interval = time_interval
 
-class XYZTCAcquisition(object):
+class XYZTCAcquisition(AcquisitionBase):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
         """
         Class to handle an XYZTC acquisition. This should serve as a base class for more specific acquisition classes, whilst also allowing 
@@ -60,6 +61,7 @@ class XYZTCAcquisition(object):
         """
         #if stack_settings is None:
         #    stack_settings = scope.stackSettings
+        AcquisitionBase.__init__(self)
 
         assert(dim_order[:2] == 'XY') #first two dimensions must be XY (camera acquisition)
         # TODO more sanity checks on dim_order
@@ -87,11 +89,6 @@ class XYZTCAcquisition(object):
         self._init_z(stack_settings)
         self._init_t(time_settings)
         self._init_c(channel_settings)
-
-        self.on_single_frame = dispatch.Signal()  #dispatched when a frame is ready
-        self.on_stop = dispatch.Signal()  #dispatched when acquisition is stopped
-
-        self.on_progress = self.on_single_frame  # generate a gui status update on every frame - TODO do we need to throttle this as in ProtocolAcquisition
     
     
     @classmethod
@@ -149,7 +146,7 @@ class XYZTCAcquisition(object):
         #probably don't need to set anything along the t axis, but provide anyway
         self.set_t(t_idx)
         
-        self.on_single_frame.send(self)
+        self.on_progress.send(self)
         
     def _collect_metadata(self):
         self.storage.mdh['StartTime'] = time.time()
@@ -179,14 +176,6 @@ class XYZTCAcquisition(object):
         self.scope.frameWrangler.onFrame.connect(self.on_frame)
         self.scope.frameWrangler.start()
 
-    @property
-    def imNum(self):
-        ''' for compatibility with spoolers
-        
-        FIXME - refactor so that both use the same names
-        '''
-        return self.frame_num
-        
         
     def stop(self):
         self.scope.frameWrangler.stop()

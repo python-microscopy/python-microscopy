@@ -23,6 +23,7 @@ from PYME.IO.events import HDFEventLogger, MemoryEventLogger
 
 from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
+from PYME.Acquire.acquisition_base import AcquisitionBase
 
 
 try:
@@ -46,7 +47,7 @@ def getReducedFilename(filename):
     return sname
 
 
-class ProtocolAcquisition(object):
+class ProtocolAcquisition(AcquisitionBase):
     """Spooler base class"""
     def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
                  fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
@@ -68,7 +69,8 @@ class ProtocolAcquisition(object):
             a function to call when the spooling GUI needs updating
             
         """
-        #self.scope = scope
+        AcquisitionBase.__init__(self)
+
         self.filename=filename
         self.frameSource = frameSource
         self.seriesName = getReducedFilename(filename)
@@ -82,12 +84,10 @@ class ProtocolAcquisition(object):
             # only record stack settings if provided (letting protocol fall through to global stack settings,
             # if not provided / None)
             self.stack_settings = stack_settings
-        
-        self.on_stop = dispatch.Signal()
 
         
         self.spoolOn = False
-        self.imNum = 0
+        self.frame_num = 0
         
         self.spool_complete = False
         
@@ -96,7 +96,6 @@ class ProtocolAcquisition(object):
         self._fakeCamCycleTime = fakeCamCycleTime
 
         self._last_gui_update = 0
-        self.on_progress = dispatch.Signal() # signal to send status updates to GUI
 
         self._create_backend(backend_type=backend, **backend_kwargs)
 
@@ -191,7 +190,7 @@ class ProtocolAcquisition(object):
         self.watchingFrames = True
         eventLog.register_event_handler(self._backend.event_logger)
 
-        self.imNum = 0
+        self.frame_num = 0
         
         # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
         # **after** protocol.Init() call
@@ -282,11 +281,11 @@ class ProtocolAcquisition(object):
             #we have allready disconnected - ignore any new frames
             return
         
-        self._backend.store_frame(self.imNum, frameData)
+        self._backend.store_frame(self.frame_num, frameData)
 
         t = time.time()
             
-        self.imNum += 1
+        self.frame_num += 1
         
         if (t > (self._last_gui_update +.1)):
             self._last_gui_update = t
@@ -294,15 +293,15 @@ class ProtocolAcquisition(object):
             
         try:
             import wx #FIXME - shouldn't do this here
-            wx.CallAfter(self.protocol.OnFrame, self.imNum)
+            wx.CallAfter(self.protocol.OnFrame, self.frame_num)
             #FIXME - The GUI logic shouldn't be here (really needs to change at the level of the protocol and/or general structure of PYMEAcquire
         except (ImportError, AssertionError):  # handle if spooler doesn't have a GUI
-            self.protocol.OnFrame(self.imNum) #FIXME - This will most likely fail for anything but a NullProtocol
+            self.protocol.OnFrame(self.frame_num) #FIXME - This will most likely fail for anything but a NullProtocol
 
-        if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
+        if self.frame_num == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
             
-        if self.imNum >= self.maxFrames:
+        if self.frame_num >= self.maxFrames:
             self.stop()
             
 
@@ -345,8 +344,8 @@ class ProtocolAcquisition(object):
     def _fake_time(self):
         """Generate a fake timestamp for use with the simulator where the camera
         cycle time does not match the actual time elapsed to generate the frame"""
-        #return self.tStart + self.imNum*self.scope.cam.GetIntegTime()
-        return self.tStart + self.imNum*self._fakeCamCycleTime
+        #return self.tStart + self.frame_num*self.scope.cam.GetIntegTime()
+        return self.tStart + self.frame_num*self._fakeCamCycleTime
     
     @property
     def _time_fcn(self):
@@ -360,7 +359,7 @@ class ProtocolAcquisition(object):
     
     def status(self):
         return {'spooling' : self.spoolOn,
-                'frames_spooled' : self.imNum}
+                'frames_spooled' : self.frame_num}
     
     def cleanup(self):
         """ over-ride to do any cleanup"""
@@ -374,7 +373,7 @@ class ProtocolAcquisition(object):
         return self._stopping
     
     def get_n_frames(self):
-        return self.imNum
+        return self.frame_num
         
     def __del__(self):
         if self.spoolOn:
