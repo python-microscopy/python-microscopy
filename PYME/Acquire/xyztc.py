@@ -159,22 +159,25 @@ class XYZTCAcquisition(AcquisitionBase):
         
     def start(self):
         self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
-        self.scope.frameWrangler.stop()
-        self.frame_num = 0
 
-        self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
-        
-        z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
+        with self.scope.frameWrangler.spooling_stopped():
+            # avoid stopping both here and in the SpoolController
+            #self.scope.frameWrangler.stop()
+            self.frame_num = 0
+            
+            z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
 
-        self.set_z(z_idx)
-        self.set_c(c_idx)
-        #probably don't need to set anything along the t axis, but provide anyway
-        self.set_t(t_idx)
-        
-        self._collect_metadata()
-        
-        self.scope.frameWrangler.onFrame.connect(self.on_frame)
-        self.scope.frameWrangler.start()
+            self.set_z(z_idx)
+            self.set_c(c_idx)
+            #probably don't need to set anything along the t axis, but provide anyway
+            self.set_t(t_idx)
+            
+            self._collect_metadata()
+            
+            self.scope.frameWrangler.onFrame.connect(self.on_frame)
+
+            self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
+            #self.scope.frameWrangler.start()
 
         
     def stop(self):
@@ -186,6 +189,7 @@ class XYZTCAcquisition(AcquisitionBase):
         self.storage.finalise()
         
         self.on_stop.send(self)
+        self.spool_complete = True
 
     def abort(self):
         self.stop()

@@ -23,6 +23,10 @@ class AcquisitionBase(abc.ABC):
         # this should always be emitted when the acquisition is stopped, regardless of the reason
         self.on_stop = dispatch.Signal()
 
+        # A flag to indicate whether the spool is complete. Ths should be set to True once spooling is finished 
+        # (it is watched by the ActionManager to determine if the acquisition is complete and the next action should be executed)
+        self.spool_complete = False
+
     @classmethod
     @abc.abstractmethod
     def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
@@ -73,7 +77,7 @@ class AcquisitionBase(abc.ABC):
 
         It is desirable to send a final on_progress signal so that the GUI reflects the actual number of frames spooled etc... .
 
-        Once everything is complete, the on_stop signal should be emitted.
+        Once everything is complete, the on_stop signal should be emitted and the spool_complete flag set.
         
         '''
         pass
@@ -87,7 +91,8 @@ class AcquisitionBase(abc.ABC):
         to a starting state. Especially for cases which involve moving translation stages or other hardware it is desirable
         that the abort method not result in further movement of hardware unless to a known safe state (e.g. lasers off).
         
-        Abort should, however, finalise the backend and emit the on_stop signal.
+        Abort should, however, finalise the backend and emit the on_stop signal. 
+        TODO - should abort set spool_complete? 
         '''
         self.stop()
 

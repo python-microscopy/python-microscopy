@@ -53,6 +53,8 @@ from PYME.Acquire import eventLog
 import threading
 #sfrom PYME.ui import mytimer
 
+from contextlib import contextmanager
+
 class FrameWrangler(object):
     """
     Grabs frames from the camera buffers
@@ -463,6 +465,21 @@ class FrameWrangler(object):
         #start our timer, this will call Notify
         self.timer.start(self.tiint)
         return True
+    
+
+    @contextmanager
+    def spooling_stopped(self):
+        """ Context manager to ensure that spooling is stopped while performing a task,
+        returning to the original state when the task is complete."""
+
+        was_running = self.aqOn
+        if was_running:
+            self.stop()
+        try:
+            yield
+        finally:
+            if was_running:
+                self.start()
 
 
     def isRunning(self):
