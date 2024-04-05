@@ -64,11 +64,7 @@ class PYMEAcquireBase(object):
         
         logger.debug('Starting post-init')
 
-        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
-            self._start_polling_camera()
-
-        self._want_loop_notification.append(self.scope.actions.Tick)
-        self.initDone = True
+        self.non_gui_post_init()
 
         logger.debug('Finished post-init')
         
@@ -80,6 +76,13 @@ class PYMEAcquireBase(object):
         finally:
             logger.debug('Shutting down')
             self._shutdown()
+
+    def non_gui_post_init(self):
+        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
+            self._start_polling_camera()
+
+        self._want_loop_notification.append(self.scope.actions.Tick)
+        self.initDone = True
 
 
     def _initialize_hardware(self):

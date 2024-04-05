@@ -112,12 +112,17 @@ def main():
                       help="Set the PYMEAcquire display name (useful when running multiple copies - e.g. for drift tracking)")
     
     parser.add_option('-p', '--port', dest='port', default=8999, help='port to use for server functions')
+    parser.add_option('-a', '--bind_addr', dest='bind_addr', default=None, help='address to bind to for server functions (defaults to localhost). Only bind to an external address if you are on a trusted network and *really* know what you are doing. NB - university networks should generally not be trusted.')
     parser.add_option('-s', '--server', dest='server', default=False, action='store_true', help='run in server mode')
     parser.add_option('-b', '--browser', dest='browser', default=False, action='store_true', help='launch web browser based ui')
+    parser.add_option('-e', '--threaded_event_loop', dest='threaded_event_loop', default=False, action='store_true', help='Run hardware event loop in separate thread. Required (and implied) for server mode.')
 
 
     (options, args) = parser.parse_args()
-    
+
+    if options.server:
+        options.threaded_event_loop = True
+
     # continue to support loading scripts from the PYMEAcquire/Scripts directory
     legacy_scripts_dir = os.path.join(os.path.dirname(__file__), 'Scripts')
     
