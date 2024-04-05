@@ -47,7 +47,7 @@ from PYME.Acquire.ui import intsliders
 from PYME.Acquire.ui import seqdialog
 from PYME.Acquire.ui import selectCameraPanel
 from PYME.Acquire.ui import splashScreen
-from PYME.Acquire.ui import HDFSpoolFrame
+from PYME.Acquire.ui import spool_panel
 
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
@@ -172,7 +172,8 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         try:
             if not (self.view.do.ds.data is self.scope.frameWrangler.currentFrame):
                 self.view.SetDataStack(self.scope.frameWrangler.currentFrame)
-        except ArithmeticError:
+        except AttributeError:
+
             pass
         
     
@@ -264,8 +265,9 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
 
             self.AddTool(self.pos_sl, 'Positioning')
 
-            self.seq_d = seqdialog.seqPanel(self, self.scope)
-            self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
+            self.seq_d = seqdialog.seqPanel(self, self.scope, mode='compact')
+            self.register_acquisition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
+            #self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
         
         for t in self.toolPanels:
@@ -273,9 +275,21 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
             self.AddTool(*t)
             
         if self.scope.cam.CamReady():
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Time/Blinking series', pinned=False, folded=False)
+            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
+            self.register_acquisition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
+            #self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
+
+            # for t in self.scope.spoolController.acquisition_types.keys():
+            #     if t in self._aq_uis:
+            #         self.AddAqTool(*self._aq_uis[t], folded=(t != self.scope.spoolController.acquisition_type))
+            #     else:
+            #         logger.warning('No UI registered for acquisition type %s' % t)
+
             
+
+            self.pan_spool = spool_panel.SpoolingPane(self, self.scope, acquisition_uis=self._aq_uis)
+            self.AddAqTool(self.pan_spool, 'Acquisition', pinned=True, folded=False)
+
         for t in self.aqPanels:
             self.AddAqTool(*t)
             
@@ -424,7 +438,7 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         self.AddTool(pane, title, pinned=pinned, panel=self.camPanel, folded=folded)
         
 
-    def AddAqTool(self, pane, title, pinned=True, folded=True):
+    def AddAqTool(self, pane, title, pinned=False, folded=True):
         """Adds a pane to the Acquisition section of the GUI
         
         Parameters
@@ -436,6 +450,12 @@ class PYMEMainFrame(acquire_server.AcquireHTTPServer, AUIFrame):
         """
         self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel, folded=folded)
         
+    def register_acquisition_ui(self, acquisition_type, panel):
+        """Registers a panel as a UI for a particular acquisition type"""
+        pane, title = panel
+        #self.aqPanels.append((pane, title))
+        pane._aq_type = acquisition_type
+        self._aq_uis[acquisition_type] = (pane, title)
 
     def OnFileOpenStack(self, event):
         #self.dv = dsviewer.DSViewFrame(self)
