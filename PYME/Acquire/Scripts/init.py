@@ -38,8 +38,14 @@ scope.microscope_name = 'PYMESimulator'
 @init_hardware('Fake Piezos')
 def pz(scope):
     from PYME.Acquire.Hardware.Simulator import fakePiezo
-    scope.fakePiezo = fakePiezo.FakePiezo(100)
+    from PYME.Acquire.Hardware.Piezos import offsetPiezoREST
+
+    scope._fakePiezo = fakePiezo.FakePiezo(100)
+    #scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+
+    scope.fakePiezo = offsetPiezoREST.server_class()(scope._fakePiezo)
     scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+
     
     scope.fakeXPiezo = fakePiezo.FakePiezo(10000)
     scope.register_piezo(scope.fakeXPiezo, 'x')
@@ -48,6 +54,7 @@ def pz(scope):
     scope.register_piezo(scope.fakeYPiezo, 'y')
 
 pz.join() #piezo must be there before we start camera
+
 
 @init_hardware('Fake Camera')
 def cm(scope):

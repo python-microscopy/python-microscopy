@@ -13,6 +13,24 @@ class PointSource(HasTraits):
         c = np.zeros_like(x)
         yield np.array([x,y,z,c], 'f').T
 
+class RandomSource(PointSource):
+    numPoints = Int(100)
+    xRange = Float(10000)
+    yRange = Float(10000)
+    zRange = Float(100)
+    
+    #name = Str('Random')
+    
+    def getPoints(self):
+        return np.random.uniform(-self.xRange, self.xRange, self.numPoints), np.random.uniform(-self.yRange, self.yRange, self.numPoints), np.random.uniform(-self.zRange, self.zRange, self.numPoints)
+
+    def genMetaData(self, mdh):
+        mdh['GeneratedPoints.Source.Type'] = 'Random'
+        mdh['GeneratedPoints.Source.NumPoints'] = self.numPoints
+        mdh['GeneratedPoints.Source.XRange'] = self.xRange
+        mdh['GeneratedPoints.Source.YRange'] = self.yRange
+        mdh['GeneratedPoints.Source.ZRange'] = self.zRange
+
 
 class WormlikeSource(PointSource):
     kbp = Float(200)
