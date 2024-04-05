@@ -61,4 +61,20 @@ class AcquireClient(object):
         
         requests.post(self.base_url + f'/spool_controller/start_spooling?filename={filename}&preflight_mode={preflight_mode}', json=settings)
 
+        return self.spooling_finished
+
+    def spooling_info(self):
+        """
+        Returns information about the current spooling.
+
+        TODO - Use the long-polling endpoint???
+        """
+        return requests.get(self.base_url + '/spool_controller/info').json()
+    
+    def spooling_finished(self):
+        """
+        Returns True if the spooling is finished, False otherwise.
+        """
+        return self.spooling_info()['status']['spool_complete']
+
     

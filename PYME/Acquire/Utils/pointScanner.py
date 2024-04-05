@@ -92,27 +92,6 @@ class PointScanner(object):
     def start(self):
         self.running = True
         
-        #pixels = np.array(pixels)
-
-#        if np.isscalar(self.pixels):
-#            #constant - use as number of pixels
-#            #center on current piezo position
-#            self.xp = self.pixelsize*np.arange(-self.pixels/2, self.pixels/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
-#            self.yp = self.pixelsize*np.arange(-self.pixels/2, self.pixels/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
-#        elif np.isscalar(self.pixels[0]):
-#            #a 1D array - numbers in either direction centered on piezo pos
-#            self.xp = self.pixelsize*np.arange(-self.pixels[0]/2, self.pixels[0]/2 +1) + self.xpiezo[0].GetPos(self.xpiezo[1])
-#            self.yp = self.pixelsize*np.arange(-self.pixels[1]/2, self.pixels[1]/2 +1) + self.ypiezo[0].GetPos(self.ypiezo[1])
-#        else:
-#            #actual pixel positions
-#            self.xp = self.pixels[0]
-#            self.yp = self.pixels[1]
-#
-#        self.nx = len(self.xp)
-#        self.ny = len(self.yp)
-#
-#        self.imsize = self.nx*self.ny
-
         self.genCoords()
 
         self.callNum = 0
@@ -128,11 +107,11 @@ class PointScanner(object):
         #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
 
         #self.scope.SetPos(x=self.xp[0], y = self.yp[0])
-        self.scope.frameWrangler.stop()
-        self.scope.state.setItems({'Positioning.x' : self.xp[0], 'Positioning.y' : self.yp[0]}, stopCamera = True)
-        if self.trigger:
-            self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_SOFTWARE_TRIGGER)
-        self.scope.frameWrangler.start()
+        with self.scope.frameWrangler.spooling_stopped():
+            self.scope.state.setItems({'Positioning.x' : self.xp[0], 'Positioning.y' : self.yp[0]}, stopCamera = True)
+            if self.trigger:
+                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_SOFTWARE_TRIGGER)
+            #self.scope.frameWrangler.start()
 
         #if self.sync:
         #    while not self.xpiezo[0].IsOnTarget(): #wait for stage to move

@@ -359,7 +359,8 @@ class ProtocolAcquisition(AcquisitionBase):
     
     def status(self):
         return {'spooling' : self.spoolOn,
-                'frames_spooled' : self.frame_num}
+                'frames_spooled' : self.frame_num,
+                'spool_complete' : self.spool_complete,}
     
     def cleanup(self):
         """ over-ride to do any cleanup"""

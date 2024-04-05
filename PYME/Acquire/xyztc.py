@@ -82,6 +82,8 @@ class XYZTCAcquisition(AcquisitionBase):
         # note shape_t can be negative if we want to run until explicitly stopped
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
         self.frame_num = 0
+
+        self._running = False
         
         self.storage = backend(size_x = self.shape_x, size_y=self.shape_y, n_frames=self.n_frames, dim_order=dim_order, shape=self.shape, **backend_kwargs)
         
@@ -176,6 +178,10 @@ class XYZTCAcquisition(AcquisitionBase):
             
             self.scope.frameWrangler.onFrame.connect(self.on_frame)
 
+            self.storage.initialise()
+
+            self._running = True
+
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
 
@@ -189,6 +195,7 @@ class XYZTCAcquisition(AcquisitionBase):
         self.storage.finalise()
         
         self.on_stop.send(self)
+        self._running = False
         self.spool_complete = True
 
     def abort(self):
@@ -222,6 +229,11 @@ class XYZTCAcquisition(AcquisitionBase):
 
     def set_t(self, t_idx):
         pass
+
+    def status(self):
+        return {'spooling' : self._running,
+                'frames_spooled' : self.frame_num,
+                'spool_complete' : self.spool_complete,}
         
         
             
