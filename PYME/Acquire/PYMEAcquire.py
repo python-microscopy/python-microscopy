@@ -124,6 +124,8 @@ def main():
 
     options = parser.parse_args()
 
+    print(options)
+
     if options.server:
         options.threaded_event_loop = True
 
@@ -147,7 +149,7 @@ def main():
         assert options.server
 
         from PYME.Acquire.acquire_server import AcquireHTTPServer
-        server = AcquireHTTPServer(options, port=options.port, bind_addr=options.bind_addr)
+        server = AcquireHTTPServer(options, port=int(options.port), bind_addr=options.bind_addr)
         if options.browser:
             import webbrowser
             webbrowser.open('http://localhost:8999') #FIXME - delay this until server is up

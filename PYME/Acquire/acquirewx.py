@@ -32,7 +32,7 @@ from PYME.Acquire.acquiremainframe import PYMEMainFrame
 from PYME.Acquire.acquire_server import AcquireHTTPServerMixin
 
 def create(parent, options = None):
-    return AcquireWxHTTPServer(parent, options, port=options.port, bind_addr=options.bind_addr)
+    return AcquireWxHTTPServer(parent, options, port=int(options.port), bind_addr=options.bind_addr)
 
 class AcquireWxHTTPServer(PYMEMainFrame, AcquireHTTPServerMixin):
     """Server with wx GUI"""
