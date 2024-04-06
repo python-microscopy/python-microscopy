@@ -135,11 +135,11 @@ def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
     #lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    #MainFrame.time1.WantNotification.append(lcf.update)
+    #MainFrame.time1.register_callback(lcf.update)
     #MainFrame.camPanels.append((lcf, 'Laser Control'))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.time1.register_callback(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Control'))
 
 @init_gui('Drift tracking')
@@ -148,7 +148,7 @@ def drift_tracking(MainFrame, scope):
     scope.dt = driftTracking.Correlator(scope, scope.piFoc)
     dtp = driftTrackGUI.DriftTrackingControl(MainFrame, scope.dt)
     MainFrame.camPanels.append((dtp, 'Focus Lock'))
-    MainFrame.time1.WantNotification.append(dtp.refresh)
+    MainFrame.time1.register_callback(dtp.refresh)
 
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):

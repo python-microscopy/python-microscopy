@@ -62,7 +62,7 @@ def drift_tracking(MainFrame, scope):
     scope.dt = driftTracking.Correlator(scope, scope.piFoc)
     dtp = driftTrackGUI.DriftTrackingControl(MainFrame, scope.dt)
     MainFrame.camPanels.append((dtp, 'Focus Lock'))
-    MainFrame.time1.WantNotification.append(dtp.refresh)
+    MainFrame.time1.register_callback(dtp.refresh)
 
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):

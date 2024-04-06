@@ -11,7 +11,7 @@ class DelayPanel(wx.Panel):
         from PYME.Acquire.ui import mpd_picosecond_delay_panel
         delay_panel = mpd_picosecond_delay_panel.DelayPanel(MainFrame, scope.mpd, scope)
         MainFrame.camPanels.append((delay_panel, 'Phase Delay', False, False))
-        MainFrame.time1.WantNotification.append(delay_panel.update)
+        MainFrame.time1.register_callback(delay_panel.update)
     """
     def __init__(self, parent, delayer, scope):
         self.delayer = delayer

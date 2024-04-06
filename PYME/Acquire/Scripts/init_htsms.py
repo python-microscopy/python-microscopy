@@ -175,7 +175,7 @@ def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
 
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.time1.register_callback(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
 @init_gui('Failsafe')
@@ -197,7 +197,7 @@ def multiview_selection(MainFrame, scope):
     from PYME.Acquire.ui import multiview_select
 
     ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
-    MainFrame.time1.WantNotification.append(ms.update)
+    MainFrame.time1.register_callback(ms.update)
     MainFrame.camPanels.append((ms, 'Multiview Selection'))
 
 @init_gui('Focus Keys')
@@ -207,7 +207,7 @@ def focus_keys(MainFrame, scope):
     fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
     panel = FocusLockPanel(MainFrame, scope.focus_lock, offset_piezo=scope.piFoc)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
-    MainFrame.time1.WantNotification.append(panel.refresh)
+    MainFrame.time1.register_callback(panel.refresh)
 
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):

@@ -62,7 +62,7 @@ scope.piezos.append((scope.piez, 1, 'Y'))
 InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
-time1.WantNotification.append(fk.refresh)
+time1.register_callback(fk.refresh)
 """)
 
 
@@ -72,7 +72,7 @@ from PYME.Acquire.Hardware.Old import SMI1
 import wx
 
 scope.step = SMI1.CStepOp()
-time1.WantNotification.append(scope.step.ContIO)
+time1.register_callback(scope.step.ContIO)
 
 mb = wx.MessageDialog(sh.GetParent(), 'Continue with Calibration of stage?\\nPLEASE CHECK that the slide holder has been removed\\n(and then press OK)', 'Stage Callibration', wx.YES_NO|wx.NO_DEFAULT)
 ret = mb.ShowModal()
@@ -97,7 +97,7 @@ InitGUI("""
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
+    time1.register_callback(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 """)
 
