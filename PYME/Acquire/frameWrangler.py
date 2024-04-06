@@ -400,7 +400,7 @@ class FrameWrangler(object):
                 self.inNotify = False
                 
                 #restart the time so we get called again
-                self.timer.start(self.tiint)
+                self.timer.start(self.tiint, single_shot=True)
             
             
     @property
@@ -463,7 +463,7 @@ class FrameWrangler(object):
         self.n_Frames = 0
 
         #start our timer, this will call Notify
-        self.timer.start(self.tiint)
+        self.timer.start(self.tiint, single_shot=True)
         return True
     
 

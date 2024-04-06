@@ -24,9 +24,11 @@
 import wx
 import time
 
+from wx.core import TIMER_CONTINUOUS
 
 
-class MultiTimer(wx.Timer):
+
+class MultiTargetTimer(wx.Timer):
     """
     Timer which calls multiple handlers
     """
@@ -52,7 +54,13 @@ class MultiTimer(wx.Timer):
     def register_callback(self, callback):
         self.WantNotification.append(callback)
 
-mytimer=MultiTimer #alias for backwards compatibility
+    def start(self, delay_ms, single_shot=False):
+        if single_shot:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
+        else:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_CONTINUOUS)
+
+mytimer=MultiTargetTimer #alias for backwards compatibility
 
 class SingleTargetTimer(wx.Timer):
     """
@@ -68,7 +76,7 @@ class SingleTargetTimer(wx.Timer):
     def Notify(self):
         self._target()
         
-    def start(self, delay_ms, single_shot=True):
+    def start(self, delay_ms, single_shot=False):
         if single_shot:
             wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
         else:

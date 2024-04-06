@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class _Timer(object):
     def __init__(self):
         self._next_trigger = sys.float_info.max
-        self._single_shot = True
+        self._single_shot = False
         self._delay_s = -1
         
         logger.debug('Created timer')
@@ -40,7 +40,7 @@ class _Timer(object):
         else:
             return False
     
-    def start(self, delay_ms, single_shot=True):
+    def start(self, delay_ms, single_shot=False):
         self._single_shot = single_shot
         self._delay_s = 0.001*delay_ms
         self._next_trigger = time.time() + self._delay_s

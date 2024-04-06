@@ -140,8 +140,8 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
             wx.CallAfter(self._initialize_hardware)
 
         #poll to see if the init script has run
-        self.time1.WantNotification.append(self._check_init_done)
-        self.time1.WantNotification.append(self.splash.Tick)
+        self.time1.register_callback(self._check_init_done)
+        self.time1.register_callback(self.splash.Tick)
 
     def run(self):
         import threading
@@ -188,8 +188,8 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
                 self.vsp = disppanel.dispSettingsPanel2(self, self.view, self.scope)
 
 
-                self.time1.WantNotification.append(self.vsp.RefrData)
-                self.time1.WantNotification.append(self._refreshDataStack)
+                self.time1.register_callback(self.vsp.RefrData)
+                self.time1.register_callback(self._refreshDataStack)
 
                 self.AddPage(page=self.view, select=True,caption='Preview')
 
@@ -247,7 +247,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
 
         
         
-        self.time1.WantNotification.append(self.StatusBarUpdate)
+        self.time1.register_callback(self.StatusBarUpdate)
 
         for t in self.camPanels:
             #print(t)
@@ -255,7 +255,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
         
         if len(self.scope.positioning.keys()) > 0.5:
             self.pos_sl = positionUI.PositionPanel(self.scope, self, self.scope.joystick)
-            self.time1.WantNotification.append(self.pos_sl.update)
+            self.time1.register_callback(self.pos_sl.update)
 
             self.AddTool(self.pos_sl, 'Positioning')
 
@@ -294,7 +294,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
 
         #self.splash.Destroy()
 
-        #self.time1.WantNotification.append(self.scope.actions.Tick)
+        #self.time1.register_callback(self.scope.actions.Tick)
         
         self.initDone = True
         self._mgr.Update()
