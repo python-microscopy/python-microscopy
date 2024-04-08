@@ -8,7 +8,10 @@ from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
-class Tiler(pointScanner.PointScanner):
+from PYME.Acquire.acquisition_base import AcquisitionBase
+from PYME.IO import acquisition_backends
+
+class Tiler(pointScanner.PointScanner, AcquisitionBase):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256, return_to_start=True, backend='file'):
         """
@@ -33,10 +36,34 @@ class Tiler(pointScanner.PointScanner):
         
         self._backend = backend
         
-        self.on_stop = dispatch.Signal()
-        self.progress = dispatch.Signal()
+        #self.on_stop = dispatch.Signal()
+        #self.on_progress = dispatch.Signal()
+        AcquisitionBase.__init__(self)
         
-    
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an Acquisition object from settings and a backend.'''
+
+        if backend is acquisition_backends.ClusterBackend:
+            backend='cluster'
+        elif backend is acquisition_backends.HDFBackend:
+            backend='file'
+        else:
+            raise ValueError('Unknown backend')
+        
+        tile_dir = settings.get('tile_dir', series_name)
+        
+        return cls(scope=scope, 
+                    tile_dir=tile_dir, 
+                    n_tiles=settings.get('n_tiles', 10), 
+                    tile_spacing=settings.get('tile_spacing', None),
+                    dwelltime=settings.get('dwelltime', 1),
+                    background=settings.get('background', 0),
+                    evtLog=settings.get('evtLog', False),
+                    trigger=settings.get('software_trigger', False),
+                    base_tile_size=settings.get('base_tile_size', 256),
+                    return_to_start=settings.get('return_to_start', True),
+                    backend=backend)
         
     def start(self):
         #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()
@@ -75,9 +102,9 @@ class Tiler(pointScanner.PointScanner):
         
         pointScanner.PointScanner.start(self)
         
-    def tick(self, frameData, **kwargs):
+    def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
-        pointScanner.PointScanner.tick(self, frameData, **kwargs)
+        pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
         
         d = frameData.astype('f').squeeze()
         if not self.background is None:
@@ -95,11 +122,11 @@ class Tiler(pointScanner.PointScanner):
         t = time.time()
         if t > (self._last_update_time + 1):
             self._last_update_time = t
-            self.progress.send(self)
+            self.on_progress.send(self)
         
     def _stop(self):
         pointScanner.PointScanner._stop(self, send_stop=False)
-        self.progress.send(self)
+        self.on_progress.send(self)
         t_ = time.time()
         
         logger.info('Finished tile acquisition')
@@ -123,7 +150,10 @@ class Tiler(pointScanner.PointScanner):
         logger.info('Pyramid complete (dt = %3.2f)' % (time.time()-t_))
             
         self.on_stop.send(self)
-        self.progress.send(self)
+        self.on_progress.send(self)
+
+    def md(self):
+        return self.mdh
 
 class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
@@ -153,7 +183,7 @@ class CircularTiler(Tiler, pointScanner.CircularPointScanner):
         self._last_update_time = 0
         
         self.on_stop = dispatch.Signal()
-        self.progress = dispatch.Signal()
+        self.on_progress = dispatch.Signal()
 
 
 class MultiwellCircularTiler(object):

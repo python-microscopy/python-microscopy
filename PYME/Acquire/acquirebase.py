@@ -26,14 +26,14 @@ class PYMEAcquireBase(object):
         self.initDone = False
         self.postInit = [] #for protocol compat
         
-        self.scope = microscope.microscope()
+        self.scope = microscope.Microscope()
 
         self.roi_on = False
         self.bin_on = False
-        
-        #functions to call in each polling iteration
-        # Replaces time1 in GUI version
-        self._want_loop_notification = []
+
+        # non-GUI timer (replaces time1 for non-GUI sceduled events)
+        self._timer0 = self.evt_loop.MultiTargetTimer()
+        self._timer0.start(50)
         
         self._is_running = False
         
@@ -64,11 +64,7 @@ class PYMEAcquireBase(object):
         
         logger.debug('Starting post-init')
 
-        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
-            self._start_polling_camera()
-
-        self._want_loop_notification.append(self.scope.actions.Tick)
-        self.initDone = True
+        self.non_gui_post_init()
 
         logger.debug('Finished post-init')
         
@@ -80,6 +76,13 @@ class PYMEAcquireBase(object):
         finally:
             logger.debug('Shutting down')
             self._shutdown()
+
+    def non_gui_post_init(self):
+        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
+            self._start_polling_camera()
+
+        self._timer0.register_callback(self.scope.actions.Tick)
+        self.initDone = True
 
 
     def _initialize_hardware(self):

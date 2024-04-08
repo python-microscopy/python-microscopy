@@ -47,7 +47,7 @@ from PYME.Acquire.ui import intsliders
 from PYME.Acquire.ui import seqdialog
 from PYME.Acquire.ui import selectCameraPanel
 from PYME.Acquire.ui import splashScreen
-from PYME.Acquire.ui import HDFSpoolFrame
+from PYME.Acquire.ui import spool_panel
 
 from PYME.Acquire import microscope
 from PYME.Acquire import protocol
@@ -58,11 +58,13 @@ import six
 
 
 from PYME.ui.AUIFrame import AUIFrame
+from PYME.Acquire import acquirebase
+
 
 def create(parent, options = None):
     return PYMEMainFrame(parent, options)
 
-class PYMEMainFrame(AUIFrame):
+class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
     def _create_menu(self):     
         #self._menus = {}
         #self.menubar = wx.MenuBar()
@@ -101,25 +103,20 @@ class PYMEMainFrame(AUIFrame):
               parent=parent, pos=wx.Point(20, 20), size=wx.Size(600, 800),
               style=wx.DEFAULT_FRAME_STYLE, title= getattr(options, 'window_title', 'PYME Acquire'))
         
+        acquirebase.PYMEAcquireBase.__init__(self, options, evt_loop=mytimer)
+
         self._create_menu()
-        self.options = options
-
-        self.snapNum = 0
-
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)        
         
-        self.MainFrame = self #reference to this window for use in scripts etc...
-        protocol.MainFrame = self
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
+        # create list of UI panels to be added after init
+        # Will be populated buy init script
         self.toolPanels = []
         self.camPanels = []
         self.aqPanels = []
         self.anPanels = []
-        self.postInit = []
 
-        self.initDone = False
-
-        self.scope = microscope.microscope()
+        self._aq_uis = {}
 
         self.splash = splashScreen.SplashScreen(self, self.scope)
         self.splash.Show()
@@ -133,34 +130,24 @@ class PYMEMainFrame(AUIFrame):
         self.CreateToolPanel(getattr(options, 'gui_mode', 'default'))
 
         self.SetSize((1030, 895))
-
-        self.roi_on = False
-        self.bin_on = False
         
         self.time1 = mytimer.mytimer()
-        
         self.time1.Start(50)
-        
-        wx.CallAfter(self._initialize_hardware)
 
-        #self.time1.WantNotification.append(self.runInitScript)
-        self.time1.WantNotification.append(self.splash.Tick)
+        if self.options.threaded_event_loop:
+            wx.CallAfter(self.run)
+        else:
+            wx.CallAfter(self._initialize_hardware)
 
-
-    def _initialize_hardware(self):
-        """
-        Launch microscope hardware initialization and start polling for completion
-
-        """
-        #this spawns a new thread to run the initialization script
-        self.scope.initialize(self.options.initFile, self.__dict__)
-
-        logger.debug('Init run, waiting on background threads')
-        
         #poll to see if the init script has run
-        self.time1.WantNotification.append(self._check_init_done)
+        self.time1.register_callback(self._check_init_done)
+        self.time1.register_callback(self.splash.Tick)
 
-        
+    def run(self):
+        import threading
+        self._poll_thread = threading.Thread(target=self.main_loop)
+        self._poll_thread.start()
+     
 
     def _check_init_done(self):
         if self.scope.initialized == True and self._check_init_done in self.time1.WantNotification:
@@ -179,9 +166,7 @@ class PYMEMainFrame(AUIFrame):
         except AttributeError:
 
             pass
-        
-    def _start_polling_camera(self):
-        self.scope.startFrameWrangler()
+
     
     def _add_live_view(self):
         """Gets called once during post-init to start pulling data from the
@@ -203,8 +188,8 @@ class PYMEMainFrame(AUIFrame):
                 self.vsp = disppanel.dispSettingsPanel2(self, self.view, self.scope)
 
 
-                self.time1.WantNotification.append(self.vsp.RefrData)
-                self.time1.WantNotification.append(self._refreshDataStack)
+                self.time1.register_callback(self.vsp.RefrData)
+                self.time1.register_callback(self._refreshDataStack)
 
                 self.AddPage(page=self.view, select=True,caption='Preview')
 
@@ -231,8 +216,8 @@ class PYMEMainFrame(AUIFrame):
     def doPostInit(self):
         logger.debug('Starting post-init')
         
-        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
-            self._start_polling_camera()
+        if not self.options.threaded_event_loop:
+            self.non_gui_post_init()
         
         for cm in self.postInit:
             logger.debug('Loading GUI component for %s' %cm.name)
@@ -240,10 +225,6 @@ class PYMEMainFrame(AUIFrame):
                 cm.run(self, self.scope)
             except Exception as e:
                 logger.exception('Error whilst initializing %s GUI' % cm.name)
-
-        #if len(self.scope.piezos) > 0.5:
-        #    self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
-        #    self.time1.WantNotification.append(self.piezo_sl.update)
 
         logger.debug('Run all custom GUI init tasks')
             
@@ -266,7 +247,7 @@ class PYMEMainFrame(AUIFrame):
 
         
         
-        self.time1.WantNotification.append(self.StatusBarUpdate)
+        self.time1.register_callback(self.StatusBarUpdate)
 
         for t in self.camPanels:
             #print(t)
@@ -274,12 +255,13 @@ class PYMEMainFrame(AUIFrame):
         
         if len(self.scope.positioning.keys()) > 0.5:
             self.pos_sl = positionUI.PositionPanel(self.scope, self, self.scope.joystick)
-            self.time1.WantNotification.append(self.pos_sl.update)
+            self.time1.register_callback(self.pos_sl.update)
 
             self.AddTool(self.pos_sl, 'Positioning')
 
-            self.seq_d = seqdialog.seqPanel(self, self.scope)
-            self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
+            self.seq_d = seqdialog.seqPanel(self, self.scope, mode='compact')
+            self.register_acquisition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
+            #self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
         
         for t in self.toolPanels:
@@ -287,9 +269,21 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(*t)
             
         if self.scope.cam.CamReady():
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Time/Blinking series', pinned=False, folded=False)
+            self.pan_protocol = spool_panel.ProtocolAcquisitionPane(self, self.scope)
+            self.register_acquisition_ui('ProtocolAcquisition', (self.pan_protocol, 'Time/Blinking series'))
+            #self.AddAqTool(self.pan_protocol, 'Time/Blinking series', pinned=False, folded=False)
+
+            # for t in self.scope.spoolController.acquisition_types.keys():
+            #     if t in self._aq_uis:
+            #         self.AddAqTool(*self._aq_uis[t], folded=(t != self.scope.spoolController.acquisition_type))
+            #     else:
+            #         logger.warning('No UI registered for acquisition type %s' % t)
+
             
+
+            self.pan_spool = spool_panel.SpoolingPane(self, self.scope, acquisition_uis=self._aq_uis)
+            self.AddAqTool(self.pan_spool, 'Acquisition', pinned=True, folded=False)
+
         for t in self.aqPanels:
             self.AddAqTool(*t)
             
@@ -300,7 +294,7 @@ class PYMEMainFrame(AUIFrame):
 
         #self.splash.Destroy()
 
-        self.time1.WantNotification.append(self.scope.actions.Tick)
+        #self.time1.register_callback(self.scope.actions.Tick)
         
         self.initDone = True
         self._mgr.Update()
@@ -438,7 +432,7 @@ class PYMEMainFrame(AUIFrame):
         self.AddTool(pane, title, pinned=pinned, panel=self.camPanel, folded=folded)
         
 
-    def AddAqTool(self, pane, title, pinned=True, folded=True):
+    def AddAqTool(self, pane, title, pinned=False, folded=True):
         """Adds a pane to the Acquisition section of the GUI
         
         Parameters
@@ -450,6 +444,12 @@ class PYMEMainFrame(AUIFrame):
         """
         self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel, folded=folded)
         
+    def register_acquisition_ui(self, acquisition_type, panel):
+        """Registers a panel as a UI for a particular acquisition type"""
+        pane, title = panel
+        #self.aqPanels.append((pane, title))
+        pane._aq_type = acquisition_type
+        self._aq_uis[acquisition_type] = (pane, title)
 
     def OnFileOpenStack(self, event):
         #self.dv = dsviewer.DSViewFrame(self)
@@ -537,8 +537,6 @@ class PYMEMainFrame(AUIFrame):
         logging.debug('Stopping frame wrangler to set ROI')
         self.scope.frameWrangler.stop()
         
-        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
-
         if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
             #print('setting ROI')
@@ -609,8 +607,6 @@ class PYMEMainFrame(AUIFrame):
 
     def SetCentredRoi(self, event=None, halfwidth=5):
         self.scope.frameWrangler.stop()
-
-        #print (self.scope.vp.selection.start.x, self.scope.vp.selection.start.y, self.scope.vp.selection.finish.x, self.scope.vp.selection.finish.y)
 
         w = self.scope.cam.GetCCDWidth()
         h = self.scope.cam.GetCCDHeight()

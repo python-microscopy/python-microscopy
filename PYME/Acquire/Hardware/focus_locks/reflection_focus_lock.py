@@ -116,7 +116,7 @@ class ReflectedLinePIDFocusLock(PID):
 
         Parameters
         ----------
-        scope: PYME.Acquire.Hardware.microscope.microscope
+        scope: PYME.Acquire.Hardware.microscope.Microscope
         piezo: PYME.Acquire.Hardware.Piezos.offsetPiezoREST.OffsetPiezoClient
         p: float
         i: float

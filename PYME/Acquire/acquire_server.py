@@ -38,9 +38,9 @@ import threading
 
 from PYME.Acquire.acquirebase import PYMEAcquireBase
 
-class PYMEAcquireServer(PYMEAcquireBase):
-    def __init__(self, options = None, evt_loop = None):
-       PYMEAcquireBase.__init__(self, options, evt_loop=evt_loop)
+class PYMEAcquireServerMixin(object):
+    def __init__(self, *args, **kwargs):
+       pass
         
     @webframework.register_endpoint('/get_frame_pzf', mimetype='image/pzf')
     def get_frame_pzf(self):
@@ -185,9 +185,9 @@ class PYMEAcquireServer(PYMEAcquireBase):
 
 from PYME.Acquire import webui
 from PYME.Acquire import SpoolController
-class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
-    def __init__(self, options, port, bind_addr=None, evt_loop=None):
-        PYMEAcquireServer.__init__(self, options, evt_loop=evt_loop)
+class AcquireHTTPServerMixin(webframework.APIHTTPServer, PYMEAcquireServerMixin):
+    def __init__(self, port, bind_addr=None):
+        PYMEAcquireServerMixin.__init__(self)
 
         if bind_addr is None:
             bind_addr = 'localhost' # bind to localhost by default in an attempt to make this safer
@@ -250,6 +250,12 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
             #self.distributor.shutdown()
             logger.info('Closing server ...')
             self.server_close()
+
+class AcquireHTTPServer(PYMEAcquireBase, AcquireHTTPServerMixin):
+    """Server without wx GUI"""
+    def __init__(self, options, port, bind_addr=None, evt_loop=None):
+        PYMEAcquireBase.__init__(self, options, evt_loop=evt_loop)
+        AcquireHTTPServerMixin.__init__(self, port, bind_addr)
 
 
 def main():

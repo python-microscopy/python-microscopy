@@ -137,7 +137,7 @@ class TraceROISelectPanel(wx.Panel):
 #     scope.frameWrangler.onFrame.connect(intensity_trace.update_trace) # to update data on every frame
 #     #scope.frameWrangler.onFrameGroup.connect(intensity_trace.update_trace) # to update data at ~5Hz, or every frame, whichever is slower
 
-#     MainFrame.time1.WantNotification.append(intensity_trace.update_display) # update the display at 2Hz
+#     MainFrame.time1.register_callback(intensity_trace.update_display) # update the display at 2Hz
 
 #     panel = TraceROISelectPanel(MainFrame, intensity_trace)
 #     MainFrame.camPanels.append((panel, 'Trace ROI Select'))

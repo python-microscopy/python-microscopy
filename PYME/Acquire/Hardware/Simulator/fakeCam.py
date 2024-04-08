@@ -259,15 +259,15 @@ class compThread(threading.Thread):
             while ((not self.aqRunning) or (self.numBufferedImages > self.bufferlength/2.)) and (not self.kill) :
                 time.sleep(.01)
 
-            zPos = (self.zPiezo.GetPos() - self.zOffset)*1e3
+            zPos = (self.zPiezo.effective_pos - self.zOffset)*1e3
 
             xp = 0
             yp = 0
             if not self.xPiezo is None:
-                xp = (self.xPiezo.GetPos() - self.xPiezo.max_travel/2)*1e3
+                xp = (self.xPiezo.effective_pos - self.xPiezo.max_travel/2)*1e3
 
             if not self.xPiezo is None:
-                yp = (self.yPiezo.GetPos() - self.yPiezo.max_travel/2)*1e3
+                yp = (self.yPiezo.effective_pos - self.yPiezo.max_travel/2)*1e3
 
             roi_bbox = (xp,yp, xp+self.XVals[-1], yp + self.YVals[-1])
 

@@ -60,29 +60,28 @@ def cm(scope):
                                              fakeCam.NoiseMaker(),
                                              scope.fakePiezo, xpiezo = scope.fakeXPiezo,
                                              ypiezo = scope.fakeYPiezo,
-                                             pixel_size_nm=100.,
+                                             pixel_size_nm=70.,
                                              illumFcn = 'ROIIllumFunction'
                                              )
     cam.SetEMGain(150)
     
-    mv_cam = multiview.MultiviewWrapper(cam, multiview_info = {
-                                                                'Multiview.NumROIs': 4,
-                                                                'Multiview.ChannelColor': [0, 1, 1, 0],
-                                                                'Multiview.DefaultROISize': (size, size),
-                                                                'Multiview.ROISizeOptions': [128, 240, 256],
-                                                                'Multiview.ROI0Origin': (0, 0),
-                                                                'Multiview.ROI1Origin': (size, 0),
-                                                                'Multiview.ROI2Origin': (2*size, 0),
-                                                                'Multiview.ROI3Origin': (3*size, 0),
-                                                            }, 
-                                            default_roi= {
-                                                            'xi' : 0,
-                                                            'yi' : 0,
-                                                            'xf' : size*4,
-                                                            'yf' : size
-                                                         })
-    scope.register_camera(mv_cam,'Fake Camera')
-    mv_cam.register_state_handlers(scope.state)
+    # mv_cam = multiview.MultiviewWrapper(cam, multiview_info = {
+    #                                                             'Multiview.NumROIs': 4,
+    #                                                             'Multiview.ChannelColor': [0, 1, 1, 0],
+    #                                                             'Multiview.DefaultROISize': (size, size),
+    #                                                             'Multiview.ROISizeOptions': [128, 240, 256],
+    #                                                             'Multiview.ROI0Origin': (0, 0),
+    #                                                             'Multiview.ROI1Origin': (size, 0),
+    #                                                             'Multiview.ROI2Origin': (2*size, 0),
+    #                                                             'Multiview.ROI3Origin': (3*size, 0),
+    #                                                         }, 
+    #                                         default_roi= {
+    #                                                         'xi' : 0,
+    #                                                         'yi' : 0,
+    #                                                         'xf' : size*4,
+    #                                                         'yf' : size
+    #                                                      })
+    scope.register_camera(cam,'Fake Camera')
 
 #scope.EnableJoystick = 'foo'
 
@@ -114,13 +113,14 @@ def sim_controls(MainFrame, scope):
     transition_tensor =  simcontrol.fluor.createSimpleTransitionMatrix(pPA=[1e9, 0, 0],
                         pOnDark=[0, 0, 0.1],
                         pDarkOn=[0.02,0.001, 0],
-                        pOnBleach=[0, 0, 0.01])
+                        pOnBleach=[0, 0, 0.00])
     scope.simcontrol = simcontrol.SimController(scope, 
                                                 transistion_tensor=transition_tensor,
                                                 spectral_signatures=[[1, 0.05], [0.05, 1]],
-                                                splitter_info=([0, 0, 500., 500.], [0, 1, 1, 0]))
-    scope.simcontrol.change_num_channels(4)
-    scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
+                                                splitter_info=([0, 0, 500., 500.], [0, 1, 1, 0]),
+                                                excitation_crossections=(1, 200))
+    #scope.simcontrol.change_num_channels(4)
+    #scope.simcontrol.set_psf_model(simcontrol.PSFSettings(zernike_modes={4:1.5}))
     dsc = simui_wx.dSimControl(MainFrame, scope.simcontrol, show_status=False)
     MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 
@@ -128,9 +128,9 @@ def sim_controls(MainFrame, scope):
     MainFrame.camPanels.append((msc, 'Simulation'))
 
     from PYME.simulation import pointsets
-    scope.simcontrol.point_gen = simcontrol.RandomDistribution(n_instances=25,region_size=70e3, force_at_origin=True,
+    scope.simcontrol.point_gen = simcontrol.RandomDistribution(n_instances=25,region_size=70e3, 
                                                                 generator=simcontrol.Group(generators=[pointsets.WiglyFibreSource(),
-                                                                    simcontrol.AssignChannel(channel=1, generator=pointsets.SHNucleusSource())
+                                                                    #simcontrol.AssignChannel(channel=1, generator=pointsets.SHNucleusSource())
                                                                     ]))
     scope.simcontrol.generate_fluorophores()
     
@@ -142,21 +142,8 @@ def cam_controls(MainFrame, scope):
     scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
     MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties', False))
 
-    MainFrame.AddMenuItem('Camera', 'Set Multiview', 
-                          lambda e: scope.state.setItem('Multiview.ActiveViews', [0, 1, 2, 3]))
-    MainFrame.AddMenuItem('Camera', 'Clear Multiview', 
-                          lambda e: scope.state.setItem('Multiview.ActiveViews', []))
-
-
 cm.join()
 
-@init_gui('Multiview Selection')
-def multiview_selection(MainFrame, scope):
-    from PYME.Acquire.ui import multiview_select
-
-    ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
-    MainFrame.time1.register_callback(ms.update)
-    MainFrame.camPanels.append((ms, 'Multiview Selection'))
 
 @init_hardware('Lasers')
 def lasers(scope):
@@ -184,14 +171,14 @@ def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
     fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
 
-@init_gui('Sample Metadata')
-def sample_metadata(main_frame, scope):
-    from PYME.Acquire.sampleInformation import SimpleSampleInfoPanel
-    sampanel = SimpleSampleInfoPanel(main_frame)
-    main_frame.camPanels.append((sampanel, 'Sample Metadata'))
-    # Prefill the data for our simulated structure
-    sampanel.slide.SetValue('HTSMS_Sim01')
-    sampanel.notes.SetValue('Chan0: WiglyFibre, Chan1: SHNucleus')
+# @init_gui('Sample Metadata')
+# def sample_metadata(main_frame, scope):
+#     from PYME.Acquire.sampleInformation import SimpleSampleInfoPanel
+#     sampanel = SimpleSampleInfoPanel(main_frame)
+#     main_frame.camPanels.append((sampanel, 'Sample Metadata'))
+#     # Prefill the data for our simulated structure
+#     sampanel.slide.SetValue('Sim01')
+#     sampanel.notes.SetValue('Chan0: WiglyFibre')
 
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):

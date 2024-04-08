@@ -5,7 +5,8 @@ Created on Sun May 22 17:13:51 2016
 @author: david
 """
 
-from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+#from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+from PYME.IO import acquisition_backends
 from PYME.IO import MetaDataHandler
 
 from PYME.contrib import dispatch
@@ -65,26 +66,42 @@ def ExportImageToCluster(image, filename, progCallback=None):
     """
     
     #create virtual frame and metadata sources
-    imgSource = ImageFrameSource()
-    mds = MDSource(image.mdh)
-    MetaDataHandler.provideStartMetadata.append(mds)
+    # imgSource = ImageFrameSource()
+    # mds = MDSource(image.mdh)
+    # MetaDataHandler.provideStartMetadata.append(mds)
     
-    if not progCallback is None:
-        imgSource.spoolProgress.connect(progCallback)
+    # if not progCallback is None:
+    #     imgSource.spoolProgress.connect(progCallback)
     
     #queueName = getRelFilename(self.dirname + filename + '.h5')
     
     #generate the spooler
-    spooler = HTTPSpooler.Spooler(filename, imgSource.onFrame, frameShape = image.data.shape[:2])
+    #spooler = HTTPSpooler.Spooler(filename, imgSource.onFrame, frameShape = image.data.shape[:2])
+
+    backend = acquisition_backends.ClusterBackend(filename, shape=image.data.shape)
+    backend.mdh.copyEntriesFrom(image.mdh)
+
+    backend.initialise()
+
+    nFrames = image.data.getNumSlices()
+    for i in range(nFrames):
+        # self.onFrame.send(self, frameData=data.getSlice(i))
+        backend.store_frame(i, image.data.getSlice(i))
+        if (i % 3000) == 0:
+            progCallback(percent=float(i)/nFrames)
+            print('Spooling %d of %d frames' % (i, nFrames))
+
+    backend.finalise() #TODO - copy events?
     
-    #spool our data    
-    spooler.StartSpool()
-    imgSource.spoolData(image.data)
-    spooler.FlushBuffer()
-    spooler.StopSpool()
+    
+    # #spool our data    
+    # spooler.StartSpool()
+    # imgSource.spoolData(image.data)
+    # spooler.FlushBuffer()
+    # spooler.StopSpool()
     
     #remove the metadata generator
-    MetaDataHandler.provideStartMetadata.remove(mds)
+    #MetaDataHandler.provideStartMetadata.remove(mds)
 
 
 SERIES_PATTERN = '%(day)d_%(month)d_series_%(counter)'

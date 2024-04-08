@@ -8,13 +8,14 @@ from PYME.IO import image
 from PYME.IO.DataSources.BaseDataSource import XYZTCWrapper
 from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 from PYME.IO import PZFFormat
+from PYME.IO.events import HDFEventLogger, MemoryEventLogger
 
 class Backend(abc.ABC):
     """
     Base class for acquisition backends.
 
     """
-    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1]):
+    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1], evt_time_fcn=time.time):
         if not hasattr(self, 'mdh'):
             self.mdh = MetaDataHandler.DictMDHandler()
         self.mdh['imageID'] = self.sequence_id
@@ -26,6 +27,13 @@ class Backend(abc.ABC):
         self.mdh['SizeC'] =  shape[4]
         self.mdh['SizeT'] =  shape[3]
         self.mdh['SizeZ'] =  shape[2]
+
+        self.imNum = 0 # for event logger compatibility
+
+        if not hasattr(self, 'event_logger'):
+            # if we haven't already defined an event logger in a derived class, create a memory logger
+            self.event_logger = MemoryEventLogger(spooler=self, time_fcn=evt_time_fcn)
+
 
     @abc.abstractmethod
     def store_frame(self, n, frame_data):
@@ -69,8 +77,8 @@ class Backend(abc.ABC):
 
 
 class MemoryBackend(Backend):
-    def __init__(self, size_x, size_y, n_frames, dtype='uint16', dim_order='XYCZT', shape=[-1, -1,1,1,1]):
-        Backend.__init__(self)
+    def __init__(self, size_x, size_y, n_frames, dtype='uint16', series_name=None, dim_order='XYCZT', shape=[-1, -1,1,1,1], evt_time_fcn=time.time, **kwargs):
+        Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
         self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
         
         # once we have proper xyztc support in the image viewer
@@ -79,8 +87,10 @@ class MemoryBackend(Backend):
         
     def store_frame(self, n, frame_data):
         self.data[:,:,n] = frame_data
+        self.imNum = n+1
 
-
+    def finalise(self):
+        self.image.events = self.event_logger.events
 
 
 def distfcn_oidic(n_servers, i=None):
@@ -104,11 +114,11 @@ class ClusterBackend(Backend):
     }
 
     def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], distribution_fcn=None, compression_settings={}, 
-                cluster_h5=False, serverfilter=clusterIO.local_serverfilter):
+                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, evt_time_fcn = time.time, **kwargs):
         from PYME.IO import cluster_streaming
         from PYME.IO import PZFFormat
 
-        Backend.__init__(self, dim_order, shape)
+        Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
 
         self.series_name = series_name
         self._cluster_h5 = cluster_h5
@@ -165,11 +175,12 @@ class ClusterBackend(Backend):
         fn = '/'.join([self._series_location, 'frame%05d.pzf' % n])
 
         self._streamer.put(fn, (frame_data, n), i=n)
+        self.imNum = n+1
 
     def initialise(self):
         self._streamer.put(self._series_location + '/metadata.json', self.mdh.to_JSON().encode())
     
-    def finalise(self, events='[]'):
+    def finalise(self):
         #TODO - is this needed
         self._streamer.put(self._series_location + '/final_metadata.json', self.mdh.to_JSON().encode())
 
@@ -177,18 +188,17 @@ class ClusterBackend(Backend):
         # TODO - better events support - current assumption is that they are passed already formatted as json
         # TODO - use a binary format for saving events - they can be quite
         # numerous
-        if events is not None:
-            self._streamer.put(self._series_location + '/events.json', events) 
-        
+        self._streamer.put(self._series_location + '/events.json', self.event_logger.to_JSON().encode()) 
         self._streamer.close()
 
 
 class HDFBackend(Backend):
-    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib'):
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, **kwargs):
         import tables
 
         self.h5File = tables.open_file(series_name, 'w')
         self.mdh = MetaDataHandler.HDFMDHandler(self.h5File)
+        self.event_logger = HDFEventLogger(self, self.h5File, time_fcn=evt_time_fcn)
         Backend.__init__(self, dim_order, shape)
            
         self._complevel = complevel
@@ -207,6 +217,8 @@ class HDFBackend(Backend):
             self.imageData.append(frame_data)
         else:
             self.imageData.append(frame_data.reshape(1,frame_data.shape[0],frame_data.shape[1]))
+
+        self.imNum = n+1
 
 
     def finalise(self, events=None):

@@ -65,7 +65,7 @@ scope.shutters = fakeShutters
 InitGUI("""
 from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-time1.WantNotification.append(lcf.refresh)
+time1.register_callback(lcf.refresh)
 lcf.Show()
 toolPanels.append((lcf, 'Laser Control'))
 """)

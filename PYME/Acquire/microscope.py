@@ -312,7 +312,7 @@ class StateManager(object):
         
     
 
-class microscope(object):
+class Microscope(object):
     """
 
     Attributes

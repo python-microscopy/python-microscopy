@@ -135,7 +135,7 @@ def samp_db(MainFrame, scope):
 #notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
 ##camPanels.append((snrPan, 'SNR etc ...'))
 ##f.Show()
-##time1.WantNotification.append(snrPan.ccdPan.draw)
+##time1.register_callback(snrPan.ccdPan.draw)
 #""")
 
 # @init_hardware('Lasers')
@@ -163,11 +163,11 @@ def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
     # lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    # MainFrame.time1.WantNotification.append(lcf.update)
+    # MainFrame.time1.register_callback(lcf.update)
     # MainFrame.camPanels.append((lcf, 'Lasers', False, False))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.time1.register_callback(lsf.update)
     MainFrame.camPanels.append((lsf, 'Lasers', False, False))
 
 # @init_hardware('Line scanner')

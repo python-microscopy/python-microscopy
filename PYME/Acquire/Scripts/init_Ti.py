@@ -108,7 +108,7 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 #pt = positionTracker.PositionTracker(scope, time1)
 #pv = positionTracker.TrackerPanel(MainFrame, pt)
 #MainFrame.AddPage(page=pv, select=False, caption='Track')
-#time1.WantNotification.append(pv.draw)
+#time1.register_callback(pv.draw)
 #""")
 
 #splitter
@@ -137,7 +137,7 @@ scope.lightpath = NikonTi.LightPath()
 
 TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
 toolPanels.append((TiPanel, 'Nikon Ti'))
-time1.WantNotification.append(TiPanel.SetSelections)
+time1.register_callback(TiPanel.SetSelections)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
@@ -146,7 +146,7 @@ MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
+time1.register_callback(fk.refresh)
 """)
 
 #from PYME.Acquire.Hardware import frZStage
@@ -223,7 +223,7 @@ InitGUI("""
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
+    time1.register_callback(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 """)
 #
