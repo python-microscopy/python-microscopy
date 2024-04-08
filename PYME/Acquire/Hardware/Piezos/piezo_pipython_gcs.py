@@ -168,7 +168,8 @@ import threading
 from PYME.Acquire.eventLog import logEvent
 class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
-    def __init__(self, description=None, axes=None, update_rate=0.01):
+    def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
+                 stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None):
         """
         Parameters
         ----------
@@ -184,7 +185,30 @@ class GCSPiezoThreaded(PiezoBase):
         update_rate : float
             number of seconds pause between threaded polling of position / 
             on-targets
+        startup: boolean to use pitools.startup function to startup device
 
+        next keyword parameters below are passed to the pitools.startup command:
+        
+        stages: Name of stage(s) to initialize as string or list (not tuple!) or 'None' to skip.
+        refmodes: Referencing command(s) as string (for all stages) or list (not tuple!) or 'None' to skip.
+                     Please see the manual of the controller for the valid reference procedure.
+                     'refmodes' can be:
+                         'FRF': References the stage using the reference position.
+                         'FNL': References the stage using the negative limit switch.
+                         'FPL': References the stage using the positive limit switch.
+                         'POS': Sets the current position of the stage to 0.0.
+                         'ATZ': Runs an auto zero procedure.
+        servostates: Desired servo state(s) as Boolean (for all stages) or dict {axis : state} or 'None' to skip.
+                        For controllers with GCS 3.0 syntax:
+                            If True the axis is switched to control mode 0x2.
+                            If False the axis is switched to control mode 0x1.
+        controlmodes: Only valid for controllers with GCS 3.0 syntax!
+                         Switch the axis to the given control mode:
+                             int (for all axes) or dict {axis : controlmode} or 'None' to skip.
+                         To skip any control mode switch make sure the servostate is also 'None'!
+                         If 'controlmodes' is set (not 'None') the parameter 'servostates' is ignored.
+
+        joystick: should be a joystick object or None if no joystick; needs to support a few standard methods
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
@@ -197,18 +221,44 @@ class GCSPiezoThreaded(PiezoBase):
             self.axes = pitools.getaxeslist(self.pi, None)
         else:
             self.axes = axes
-        
+
+        # startup device with supplied per axes parameters
+        if startup:
+            pitools.startup(self.pi, stages=stages, refmodes=refmodes,
+                            servostates=servostates, controlmodes=controlmodes)
+            if not refmodes is None: # if any referencing is carried out wait to finish
+                pitools.waitonreferencing(self.pi, None, timeout=120) # for now 2 min timeout
+
         self._min = [pitools.getmintravelrange(self.pi, axis)[axis] for axis in self.axes]
         self._max = [pitools.getmaxtravelrange(self.pi, axis)[axis] for axis in self.axes]
 
+        # before the loop is active, need to query positions explicitly to make self.positions valid
         self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
-        self.target_positions = np.copy(self.positions)
-        self._last_target_positions = np.copy(self.positions)
-        self._all_on_target = True
-        self._on_target = np.asarray([True for axis in self.axes])
+        self.joystick = joystick
+        if self.joystick is not None:
+            self.joystick.init(self) # the joystick object should have an init method
+            self.disable_joystick() # this includes enabling updating_ontarget
+        else:
+            self.enable_updating_ontarget()
 
         self._update_rate = update_rate
         self._start_loop()
+
+    def enable_joystick(self):
+        if self.joystick is None:
+            return
+        self.disable_updating_ontarget()
+        with self._lock:
+            self.joystick.enablecommands()
+        self._joystick_enabled = True
+
+    def disable_joystick(self):
+        if self.joystick is None:
+            return
+        with self._lock:
+            self.joystick.disablecommands()
+        self.enable_updating_ontarget()
+        self._joystick_enabled = False
 
     def SetServo(self, val=1):
         with self._lock:
@@ -266,7 +316,13 @@ class GCSPiezoThreaded(PiezoBase):
         return self._max[iChan]
     
     def GetFirmwareVersion(self):
-        raise NotImplementedError
+        if self.pi.HasqVER():
+            ver = self.pi.qVER() # under lock?
+            verinfo = ver.strip()
+        else:
+            verinfo = 'Controller has no version info'
+
+        return verinfo
     
     def OnTarget(self):
         """
@@ -285,15 +341,30 @@ class GCSPiezoThreaded(PiezoBase):
         self.tloop.daemon=True
         self.tloop.start()
 
+    def enable_updating_ontarget(self):
+        # first reset the relevant variables
+        self.target_positions = np.copy(self.positions)
+        self._last_target_positions = np.copy(self.positions)
+        self._all_on_target = True
+        self._on_target = np.asarray([True for axis in self.axes])
+        # now also switch the flag
+        self._updating_ontarget = True
+
+    def disable_updating_ontarget(self): # does this need a lock, any race conditions?
+        self._updating_ontarget = False
+
     def _Loop(self):
         while self.loop_active:
+            time.sleep(self._update_rate) # we should sleep while NOT holding the lock so that others can grab it if needed
             with self._lock:
                 try:
                     # check position
-                    time.sleep(self._update_rate)
                     for ind, axis in enumerate(self.axes):
                         # does this need a lock?
                         self.positions[ind] = self.pi.qPOS([axis])[axis]
+                    
+                    if not self._updating_ontarget:
+                        continue # skip below if not currently in update target mode (e.g. when joystick active)
                     
                     # update ontarget
                     old_on_target = np.copy(self._on_target)
@@ -321,3 +392,58 @@ class GCSPiezoThreaded(PiezoBase):
                 
         logger.debug('exiting')
    
+
+# a piezo_pipython_gcs compatible joystick class
+# - provides Enable() and IsEnabled() methods for use by PYME position ui and scope object
+# - an init() method to set the joystick parameters via GCS commands and register the gcspiezo "parent" instance
+# - an enablecommands() method of GCS commands that will be used by the gcspiezo "parent" object to enable the joystick
+# - a disablecommands() method of GCS commands that will be used by the gcspiezo "parent" object to disable the joystick
+
+# example usage:
+#    from PYME.Acquire.Hardware.Piezos.piezo_pipython_gcs import GCSPiezoThreaded
+#    from PYMEcs.Acquire.Hardware.Piezos.joystick_c867_digital import DigitalJoystick
+#    scope.stage = GCSPiezoThreaded('PI C-867 Piezomotor Controller SN 0122013807', axes=['1', '2'],
+#                                   refmodes='FRF',joystick=DigitalJoystick())
+
+class JoystickBase(object):
+    def __init__(self):
+        self.gcspiezo = None
+        self._initialised = False
+
+    # this method needs to be tweaked to the specific controller and joystick model in derived class
+    def init(self,gcspiezo):
+        # register the piezo device
+        self.gcspiezo = gcspiezo # needs to be retained in derived class implementation
+        
+        # further initialisation code should go below (e.g. GCS commands)
+        # i.e., this method needs to be implemented in a derived class
+        
+        # when completed needs to set the initialised flag: self._initialised = True
+        
+        raise NotImplementedError('Needs to be implemented in derived class.')
+
+    def Enable(self, enabled = True):
+        self.check_initialised()
+        if not self.IsEnabled() == enabled:
+            if enabled:
+                self.gcspiezo.enable_joystick()
+            else:
+                self.gcspiezo.disable_joystick()
+
+    def IsEnabled(self):
+        self.check_initialised()
+        return self.gcspiezo._joystick_enabled
+
+    def check_initialised(self):
+        if not self._initialised:
+            raise RuntimeError("joystick must be initialised before using these methods")
+
+    # GCS commands to enable the joystick
+    def enablecommands(self): # this method is supposed to be used from the parent gcspiezo object
+        #    e.g. self.gcspiezo.pi.HIN(self.gcspiezo.axes,[True for axis in self.gcspiezo.axes])
+        raise NotImplementedError('Needs to be implemented in derived class.')
+
+    # GCS commands to enable the joystick
+    def disablecommands(self): # this method is supposed to be used from the parent gcspiezo object
+        #    e.g. self.gcspiezo.pi.HIN(self.gcspiezo.axes,[False for axis in self.gcspiezo.axes])
+        raise NotImplementedError('Needs to be implemented in derived class.')
