@@ -100,7 +100,7 @@ class qtLeafNode(qtNode):
             newBranch = qtBranchNode(self.x0,self.x1, self.y0, self.y1, self.depth)
             #for r in self.records: #copy records
             newBranch.insertRecords(self.records[:self.numRecords, :])
-            newBranch.insert(recs)
+            newBranch.insertRecords(recs)
             return newBranch
 
     def get(self,x0,x1, y0, y1):
