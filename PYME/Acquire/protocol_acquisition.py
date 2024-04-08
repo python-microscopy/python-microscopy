@@ -238,6 +238,7 @@ class ProtocolAcquisition(AcquisitionBase):
 
         self.on_progress.send(self)
         
+        self._stopping=True
         self.finalise()
         self.on_stop.send(self)
         self.spool_complete = True
