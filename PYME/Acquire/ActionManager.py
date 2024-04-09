@@ -52,7 +52,8 @@ class ActionManager(object):
             calling eval('scope.functionName')
         
         """
-        self.actionQueue = Queue.PriorityQueue()
+        self.actionQueue = Queue.PriorityQueue() # queue for immediate execution
+        self.scheduledQueue = Queue.PriorityQueue() # queue for scheduled execution
         self.scope = weakref.ref(scope)
         
         #this will be assigned to a callback to indicate if the last task has completed        
@@ -73,7 +74,7 @@ class ActionManager(object):
         self._lock = threading.Lock()
         
     def QueueAction(self, functionName, args, nice=10, timeout=1e6, 
-                    max_duration=np.finfo(float).max):
+                    max_duration=np.finfo(float).max, execute_after=0):
         """Add an action to the queue. Legacy version for string based actions. Most applications should use queue_actions() below instead
         
         Parameters
@@ -106,6 +107,13 @@ class ActionManager(object):
             though it has presumably already failed at that point. Intended as a
             safety feature for automated acquisitions, the check is every 3 s 
             rather than fine-grained.
+        execute_after: float
+            A timestamp in system time before which the action should not be executed.
+            If this is before the current time, the action will be queued for immediate
+            execution, otherwise it will be placed in a queue of scheduled acquisitions
+            which is polled by the Tick() method and added to the execution queue when
+            the time is right. The default of 0 means that the action will be queued for
+            immediate execution.
             
         """
         # make sure nice is in supported range.
@@ -120,10 +128,16 @@ class ActionManager(object):
         #ensure FIFO behaviour for events with the same priority
         nice_ = nice + self._timestamp*1e-10
         
-        self.actionQueue.put_nowait((nice_, FunctionAction(functionName, args), expiry, max_duration))
+        if execute_after < curTime:
+            logger.debug('Queuing action %s for immediate execution (%s, %s)' % (functionName, curTime, execute_after))
+            self.actionQueue.put_nowait((nice_, FunctionAction(functionName, args), expiry, max_duration))
+        else:
+            logger.debug('Queuing action %s for delayed execution (%s, %s)' % (functionName, curTime, execute_after))
+            self.scheduledQueue.put_nowait((execute_after, (nice_, FunctionAction(functionName, args), expiry, max_duration)))
+        
         self.onQueueChange.send(self)
         
-    def queue_actions(self, actions, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+    def queue_actions(self, actions, nice=10, timeout=1e6, max_duration=np.finfo(float).max, execute_after=0):
         '''
         Queue a number of actions for subsequent execution
         
@@ -144,6 +158,13 @@ class ActionManager(object):
             though it has presumably already failed at that point. Intended as a
             safety feature for automated acquisitions, the check is every 3 s
             rather than fine-grained.
+        execute_after: float
+            A timestamp in system time before which the action should not be executed.
+            If this is before the current time, the action will be queued for immediate
+            execution, otherwise it will be placed in a queue of scheduled acquisitions
+            which is polled by the Tick() method and added to the execution queue when
+            the time is right. The default of 0 means that the action will be queued for
+            immediate execution.
 
         Returns
         -------
@@ -168,7 +189,7 @@ class ActionManager(object):
         with self._lock:
             # lock to prevent 'nice' collisions when queueing from separate threads.
             
-            for action in actions:
+            for j, action in enumerate(actions):
                 curTime = time.time()
                 expiry = curTime + timeout
             
@@ -177,8 +198,18 @@ class ActionManager(object):
             
                 #ensure FIFO behaviour for events with the same priority
                 nice_ = nice + self._timestamp * 1e-10
-            
-                self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
+
+                if np.isscalar(execute_after):
+                    after = execute_after
+                else:
+                    after = execute_after[j]
+
+                if after < curTime:
+                    #logger.debug('Queuing action %s for immediate execution (%s, %s)' % (functionName, curTime, execute_after))
+                    self.actionQueue.put_nowait((nice_, action, expiry, max_duration))
+                else:
+                    #logger.debug('Queuing action %s for delayed execution (%s, %s)' % (functionName, curTime, execute_after))
+                    self.scheduledQueue.put_nowait((after, (nice_, action, expiry, max_duration)))
             
         self.onQueueChange.send(self)
         
@@ -192,6 +223,17 @@ class ActionManager(object):
         if self.paused:
             return
             
+        # queue scheduled actions which are now due
+        _n_queued = 0
+        while (self.scheduledQueue.qsize() > 0) and ((self.scheduledQueue.queue[0][0]) < time.time()):
+            execute_after, action = self.scheduledQueue.get_nowait()
+            print(time.time(), execute_after, action)
+            self.actionQueue.put_nowait(action)
+            _n_queued += 1
+
+        if _n_queued > 0:
+            self.onQueueChange.send(self) # TODO - avoid sending this signal here and below??
+        
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
@@ -246,7 +288,7 @@ class ActionManagerWebWrapper(object):
         self.action_manager = action_manager
 
     @webframework.register_endpoint('/queue_actions', output_is_json=False)
-    def queue_actions(self, body, nice=10, timeout=1e6, max_duration=np.finfo(float).max):
+    def queue_actions(self, body, nice=10, timeout=1e6, max_duration=np.finfo(float).max, execute_after=0):
         """
         Add a list of actions to the queue
         
@@ -277,7 +319,8 @@ class ActionManagerWebWrapper(object):
 
         self.action_manager.queue_actions(actions, nice=int(nice), 
                                           timeout=float(timeout), 
-                                          max_duration=float(max_duration))
+                                          max_duration=float(max_duration),
+                                          execute_after=execute_after)
         
     
     @webframework.register_endpoint('/queue_action', output_is_json=False)
@@ -319,9 +362,10 @@ class ActionManagerWebWrapper(object):
         nice = params.get('nice', 10.)
         timeout = params.get('timeout', 1e6)
         max_duration = params.get('max_duration', np.finfo(float).max)
+        execute_after = params.get('execute_after', 0)
 
         self.action_manager.QueueAction(function_name, args, nice, timeout,
-                                        max_duration)
+                                        max_duration, execute_after)
 
 
 class ActionManagerServer(webframework.APIHTTPServer, ActionManagerWebWrapper):

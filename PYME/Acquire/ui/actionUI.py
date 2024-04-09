@@ -7,6 +7,7 @@ Created on Sat May 28 23:55:50 2016
 import wx
 import numpy as np
 import logging
+import time
 
 from PYME.Acquire import actions
 
@@ -20,29 +21,41 @@ class ActionList(wx.ListCtrl):
         self.actionManager = actionManager
         self.actionManager.onQueueChange.connect(self.update)
         
-        self.InsertColumn(0, "Priority")
-        self.InsertColumn(1, "Action")
+        self.InsertColumn(0, "When")
+        self.InsertColumn(1, "Priority")
+        self.InsertColumn(2, "Action")
         #self.InsertColumn(2, "Args")
-        self.InsertColumn(2, "Expiry")
-        self.InsertColumn(3, 'Max Duration')
+        self.InsertColumn(3, "Expiry")
+        self.InsertColumn(4, 'Max Duration')
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 600)
+        self.SetColumnWidth(1, 50)
+        self.SetColumnWidth(2, 600)
         #self.SetColumnWidth(2, 450)
-        self.SetColumnWidth(2, 50)
-        self.SetColumnWidth(3, 200)
+        self.SetColumnWidth(3, 50)
+        self.SetColumnWidth(4, 200)
 
 
     def OnGetItemText(self, item, col):
-        vals = self._queueItems[item]
+        if item < len(self._queueItems):
+            vals = self._queueItems[item]
+            if (col==0): 
+                return 'pending'
+        else:
+            item -= len(self._queueItems)
+            when, vals = self._scheduledItems[item]
+            if (col==0):
+                return time.strftime('%H:%M:%S', time.localtime(when))
         
-        val = vals[col]
+        val = vals[col-1]
         return repr(val)
         
     def update(self, **kwargs):
         self._queueItems = list(self.actionManager.actionQueue.queue)
         self._queueItems.sort(key=lambda a : a[0])
-        self.SetItemCount(len(self._queueItems))
+        self._scheduledItems = list(self.actionManager.scheduledQueue.queue)
+        self._scheduledItems.sort(key=lambda a : a[0])
+        self.SetItemCount(len(self._queueItems) + len(self._scheduledItems))
         self.Refresh()
 
 ACTION_DEFAULTS = ['spoolController.start_spooling',
@@ -71,6 +84,10 @@ class ActionPanel(wx.Panel):
         vsizer.Add(self.actionList, 1, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Delay [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tDelay = wx.TextCtrl(self, -1, '0', size=(30, -1))
+        hsizer.Add(self.tDelay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tNice = wx.TextCtrl(self, -1, '10', size=(30, -1))
@@ -131,17 +148,17 @@ class ActionPanel(wx.Panel):
         hsizer.Add(self.bAddAquisition, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer = wx.StaticBoxSizer(wx.StaticBox(self, label='Queue acquisitions for each ROI'), wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(self, -1, 'Sort Function:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
         self.SortSelect = wx.ComboBox(self, -1, 'None', choices=list(SORT_FUNCTIONS.keys()), size=(150, -1))
         hsizer.Add(self.SortSelect, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
 
-        self.bQueueROIsFromFile = wx.Button(self, -1, 'Queue ROIs from file')
+        self.bQueueROIsFromFile = wx.Button(self, -1, 'from file')
         self.bQueueROIsFromFile.Bind(wx.EVT_BUTTON, self.OnROIsFromFile)
         hsizer.Add(self.bQueueROIsFromFile, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
-        self.bQueueROIsFromTileviewer = wx.Button(self, -1, 'Queue ROIs from Tile Viewer')
+        self.bQueueROIsFromTileviewer = wx.Button(self, -1, 'from Tile Viewer')
         self.bQueueROIsFromTileviewer.Bind(wx.EVT_BUTTON, self.OnROIsFromTileviewer)
         hsizer.Add(self.bQueueROIsFromTileviewer, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
 
@@ -171,13 +188,20 @@ class ActionPanel(wx.Panel):
             self.bPause.SetLabel('Resume')
     
     def OnAddAction(self, event):
+        delay = float(self.tDelay.GetValue())
         nice = float(self.tNice.GetValue())
         functionName = self.tFunction.GetValue()
         args = eval('dict(%s)' % self.tArgs.GetValue())
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
+
+        if delay > 0:
+            execute_after = time.time() + delay
+        else:
+            execute_after = 0
+
         self.actionManager.QueueAction(functionName, args, nice, timeout,
-                                       max_duration)
+                                       max_duration, execute_after=execute_after)
 
     def OnAddMove(self, event):
         nice = float(self.tNice.GetValue())
