@@ -293,7 +293,7 @@ def _processEvents(ds, events, mdh):
 
     return ev_mappings, eventCharts
 
-class Pipeline:
+class Pipeline(object):
     def __init__(self, filename=None, visFr=None, execute_on_invalidation=True):
         self.filter = None
         self.mapping = None
@@ -310,7 +310,7 @@ class Pipeline:
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
-        self.mdh = MetaDataHandler.NestedClassMDHandler()
+        #self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.Triangles = None
         self.edb = None
@@ -340,6 +340,10 @@ class Pipeline:
             self.OpenFile(filename)
             
         #renderers.renderMetadataProviders.append(self.SaveMetadata)
+            
+    @property
+    def mdh(self):
+        return self.selectedDataSource.mdh
             
     @property
     def output(self):
@@ -776,7 +780,7 @@ class Pipeline:
         self.mapping = None
         self.colourFilter = None
         self.events = None
-        self.mdh = MetaDataHandler.NestedClassMDHandler()
+        #self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.filename = filename
         
@@ -791,15 +795,15 @@ class Pipeline:
                 # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
                 ds = self._ds_from_file(fn, **kwargs)
                 self.events = getattr(ds, 'events', None)
-                self.mdh.copyEntriesFrom(ds.mdh)
+                #self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
         self.dataSources['FitResults'] = ds
 
         # Fit module specific filter settings
         # TODO - put all the defaults here and use a local variable rather than in __init__ (self.filterKeys is largely an artifact of pre-recipe based pipeline)
-        if 'Analysis.FitModule' in self.mdh.getEntryNames():
-            fitModule = self.mdh['Analysis.FitModule']
+        if 'Analysis.FitModule' in ds.mdh.getEntryNames():
+            fitModule = ds.mdh['Analysis.FitModule']
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
             if fitModule == 'SplitterShiftEstFR':
