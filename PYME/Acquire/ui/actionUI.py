@@ -382,28 +382,28 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         #                               max_duration, execute_after=execute_after)
         self.actionManager.queue_actions([self._pan_action.get_action()], nice, timeout, max_duration, execute_after=execute_after)
 
-    def OnAddMove(self, event):
-        nice = float(self.tNice.GetValue())
-        timeout = float(self.tTimeout.GetValue())
-        max_duration = float(self.t_duration.GetValue())
+    # def OnAddMove(self, event):
+    #     nice = float(self.tNice.GetValue())
+    #     timeout = float(self.tTimeout.GetValue())
+    #     max_duration = float(self.t_duration.GetValue())
 
-        state =  {'Positioning.x': self.scope.state['Positioning.x'],
-                  'Positioning.y': self.scope.state['Positioning.y'],
-                  'Positioning.z': self.scope.state['Positioning.z']}
+    #     state =  {'Positioning.x': self.scope.state['Positioning.x'],
+    #               'Positioning.y': self.scope.state['Positioning.y'],
+    #               'Positioning.z': self.scope.state['Positioning.z']}
 
-        self.actionManager.queue_actions([actions.UpdateState(state),],
-                                         nice, timeout, max_duration)
+    #     self.actionManager.queue_actions([actions.UpdateState(state),],
+    #                                      nice, timeout, max_duration)
         
 
-    def OnAddSequence(self, event):
-        nice = float(self.tNice.GetValue())
-        timeout = float(self.tTimeout.GetValue())
-        max_duration = float(self.t_duration.GetValue())
+    # def OnAddSequence(self, event):
+    #     nice = float(self.tNice.GetValue())
+    #     timeout = float(self.tTimeout.GetValue())
+    #     max_duration = float(self.t_duration.GetValue())
 
-        settings = {'max_frames': int(self.tNumFrames.GetValue()), 'z_stepped': bool(self.rbZStepped.GetValue())}
+    #     settings = {'max_frames': int(self.tNumFrames.GetValue()), 'z_stepped': bool(self.rbZStepped.GetValue())}
         
-        self.actionManager.queue_actions([actions.SpoolSeries(settings=settings, preflight_mode='warn'),],
-                                         nice , timeout,max_duration)
+    #     self.actionManager.queue_actions([actions.SpoolSeries(settings=settings, preflight_mode='warn'),],
+    #                                      nice , timeout,max_duration)
         
     
     def _add_ROIs(self, rois):
