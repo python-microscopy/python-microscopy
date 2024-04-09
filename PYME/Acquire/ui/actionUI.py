@@ -10,6 +10,7 @@ import logging
 import time
 
 from PYME.Acquire import actions
+from PYME.ui import cascading_layout
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,8 @@ SORT_FUNCTIONS = {
     'None': lambda positions, scope_position: positions,
 }
 
+ACTION_TYPES = ['MoveTo', 'UpdateState', 'CenterROIOn', 'SpoolSeries', 'FunctionAction']
+
 try:
     from PYME.Analysis.points.traveling_salesperson import sort as tspsort #avoid clobbering sort() builtin
     from PYME.Analysis.points.traveling_salesperson import queue_opt
@@ -73,7 +76,189 @@ try:
 except ImportError:
     pass
 
-class ActionPanel(wx.Panel):
+
+class SingleActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
+    description='An action that does something'
+    supports_then =True
+
+    def __init__(self, parent, actionManager, scope):
+        wx.Panel.__init__(self, parent)
+        self.actionManager = actionManager
+        self.scope = scope
+
+        self._pan_then = None
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self._init_controls(sizer)
+        
+        if self.supports_then:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+            hsizer.Add(wx.StaticText(self, -1, 'Then:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+            self.cThen = wx.Choice(self, -1, choices=['None', ] + ACTION_TYPES)
+            self.cThen.Bind(wx.EVT_CHOICE, self.OnThenChanged)
+            hsizer.Add(self.cThen, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+            sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+            self._then_sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self._then_sizer, 0, wx.EXPAND|wx.LEFT, 20)
+
+        self.SetSizerAndFit(sizer)
+
+    def _init_controls(self, sizer):
+        pass
+
+    def OnThenChanged(self, event):
+        if self._pan_then is not None:
+            self._pan_then.Destroy()
+            self._then_sizer.Clear()
+        
+        then = self.cThen.GetStringSelection()
+        if then != 'None':
+            #print('Changing then to %s' % then)
+            self._pan_then = globals()[then + 'Panel'](self, self.actionManager, self.scope)
+            self._then_sizer.Add(self._pan_then, 0, wx.EXPAND, 0)
+        else:
+            self._pan_then = None
+
+        #print('re-layouting')
+        self.cascading_layout()
+        
+
+    def get_action(self):
+        action = self._get_action()
+        
+        if self._pan_then:
+            return action.then(self._pan_then.get_action())
+        else:
+            return action
+        
+
+    def _get_action(self):
+        """Return an Action object that represents the current state of the panel
+        
+        This should be implemented in an action-specific subclass.
+        """
+        raise NotImplementedError('This should be implemented in a subclass')
+                   
+class MoveToPanel(SingleActionPanel):
+    def _init_controls(self, sizer):
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'X:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tX = wx.TextCtrl(self, -1, '0', size=(50, -1))
+        hsizer.Add(self.tX, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Y:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tY = wx.TextCtrl(self, -1, '0', size=(50, -1))
+        hsizer.Add(self.tY, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        self.bSetCurrent = wx.Button(self, -1, 'Use current')
+        self.bSetCurrent.Bind(wx.EVT_BUTTON, self.OnSetCurrent)
+        hsizer.Add(self.bSetCurrent, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def OnSetCurrent(self, event):
+        pos = self.scope.GetPos()
+        self.tX.SetValue('%.2f' % pos['x'])
+        self.tY.SetValue('%.2f' % pos['y'])
+
+    def _get_action(self):
+        x = float(self.tX.GetValue())
+        y = float(self.tY.GetValue())
+        return actions.MoveTo(x, y)
+
+class UpdateStatePanel(SingleActionPanel):
+    def _init_controls(self, sizer):
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'State:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tState = wx.TextCtrl(self, -1, '', size=(150, -1))
+        hsizer.Add(self.tState, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def _get_action(self):
+        # TODO - use a cleaner dictionary editor
+        state = eval('dict(%s)' % self.tState.GetValue())
+        return actions.UpdateState(state)
+
+class CenterROIOnPanel(SingleActionPanel):
+    def _init_controls(self, sizer):
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'X:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tX = wx.TextCtrl(self, -1, '0', size=(50, -1))
+        hsizer.Add(self.tX, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Y:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tY = wx.TextCtrl(self, -1, '0', size=(50, -1))
+        hsizer.Add(self.tY, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def _get_action(self):
+        x = float(self.tX.GetValue())
+        y = float(self.tY.GetValue())
+        return actions.CentreROIOn(x, y)
+
+class SpoolSeriesPanel(SingleActionPanel):
+    supports_then = False
+
+    def __init__(self, parent, actionManager, scope):
+        super().__init__(parent, actionManager, scope)
+
+        #scope.spoolController.onSettingsChange.connect(self._update)
+
+    def _init_controls(self, sizer):
+        self.stAqType = wx.StaticText(self, -1, 'Add an acquisition using the currently selected type and settings')
+        sizer.Add(self.stAqType, 0, wx.ALL, 2)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stNumFramesLabel = wx.StaticText(self, -1, 'Max frames:')
+        hsizer.Add(self.stNumFramesLabel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
+        hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def _get_action(self):
+        settings = self.scope.spoolController.get_settings()
+        settings['max_frames']  = int(self.tNumFrames.GetValue())
+        return actions.SpoolSeries(settings=settings, preflight_mode='warn', )  
+
+    def _update(self, **kwargs):
+        aqType = self.scope.spoolController.acquisition_type
+        if aqType == 'ProtocolAcquisition':
+            self.stNumFramesLabel.Show()
+            self.tNumFrames.Show()
+        else:
+            self.stNumFramesLabel.Hide()
+            self.tNumFrames.Hide()
+
+        self.stAqType.SetLabel(f'An {aqType} acquisition will be added with the following settings: {self.scope.spoolController.get_settings()}')
+
+        self.cascading_layout()
+
+
+class FunctionActionPanel(SingleActionPanel):
+    supports_then = False
+
+    def _init_controls(self, sizer):
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Function:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tFunction = wx.ComboBox(self, -1, '', choices=ACTION_DEFAULTS,size=(150, -1))
+        hsizer.Add(self.tFunction, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Args:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tArgs = wx.TextCtrl(self, -1, '', size=(150, -1))
+        hsizer.Add(self.tArgs, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+    def _get_action(self):
+        function_name = self.tFunction.GetValue()
+        args = eval('dict(%s)' % self.tArgs.GetValue())
+        return actions.FunctionAction(function_name, args)
+
+
+class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, parent, actionManager, scope):
         wx.Panel.__init__(self, parent)
         self.actionManager = actionManager
@@ -83,71 +268,47 @@ class ActionPanel(wx.Panel):
         self.actionList = ActionList(self, self.actionManager)
         vsizer.Add(self.actionList, 1, wx.EXPAND, 0)
         
+        self.add_single_sizer = wx.StaticBoxSizer(wx.StaticBox(self, label='Add Single Action'), wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Action type:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.cActionType = wx.Choice(self, -1, choices=ACTION_TYPES)
+        self.cActionType.Bind(wx.EVT_CHOICE, self.OnActionChanged)
+        hsizer.Add(self.cActionType, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.add_single_sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        self._pan_action = MoveToPanel(self, self.actionManager, self.scope)
+        self._pan_action_sizer = wx.BoxSizer(wx.VERTICAL)
+        self._pan_action_sizer.Add(self._pan_action, 0, wx.EXPAND, 0)
+        self.add_single_sizer.Add(self._pan_action_sizer, 0, wx.EXPAND|wx.LEFT, 20)
+        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(self, -1, 'Delay [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        self.tDelay = wx.TextCtrl(self, -1, '0', size=(30, -1))
+        hsizer.Add(wx.StaticText(self, -1, 'Delay[s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tDelay = wx.TextCtrl(self, -1, '0', size=(40, -1))
         hsizer.Add(self.tDelay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
         hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tNice = wx.TextCtrl(self, -1, '10', size=(30, -1))
         hsizer.Add(self.tNice, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
-        hsizer.Add(wx.StaticText(self, -1, 'Function:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        self.tFunction = wx.ComboBox(self, -1, '', choices=ACTION_DEFAULTS,size=(150, -1))
-        hsizer.Add(self.tFunction, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        
-        hsizer.Add(wx.StaticText(self, -1, 'Args:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        self.tArgs = wx.TextCtrl(self, -1, '', size=(150, -1))
-        hsizer.Add(self.tArgs, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        
-        hsizer.Add(wx.StaticText(self, -1, 'Timeout [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Timeout[s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tTimeout = wx.TextCtrl(self, -1, '1000000', size=(50, -1))
         hsizer.Add(self.tTimeout, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
-        hsizer.Add(wx.StaticText(self, -1, 'Max Duration [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Max duration[s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.t_duration = wx.TextCtrl(self, -1, '%.1f' % np.finfo(float).max, size=(50, -1))
         hsizer.Add(self.t_duration, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        
+
+        hsizer.AddStretchSpacer()
+
         self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
         self.bAdd.Bind(wx.EVT_BUTTON, self.OnAddAction)
         hsizer.Add(self.bAdd, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        vsizer.Add(wx.StaticLine(self), 0, wx.EXPAND|wx.ALL, 4)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.bMoveToHere = wx.Button(self, -1, 'Add move to current location')
-        self.bMoveToHere.Bind(wx.EVT_BUTTON, self.OnAddMove)
-        hsizer.Add(self.bMoveToHere, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-
-        hsizer.AddStretchSpacer()
-
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.rbNoSteps = wx.RadioButton(self, -1, '2D', style=wx.RB_GROUP)
-        hsizer.Add(self.rbNoSteps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        self.rbZStepped = wx.RadioButton(self, -1, 'Z stepped')
-        hsizer.Add(self.rbZStepped, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-
-        self.rbNoSteps.SetValue(True)
-        
-        hsizer.AddStretchSpacer()
-
-        hsizer.Add(wx.StaticText(self, -1, 'Num frames: '), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-
-        self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
-        hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        
-        hsizer.AddStretchSpacer()
-
-        self.bAddAquisition = wx.Button(self, -1, 'Add acquisition')
-        self.bAddAquisition.Bind(wx.EVT_BUTTON, self.OnAddSequence)
-        hsizer.Add(self.bAddAquisition, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-
-        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        self.add_single_sizer.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
+        vsizer.Add(self.add_single_sizer, 0, wx.EXPAND, 0)
+       
         hsizer = wx.StaticBoxSizer(wx.StaticBox(self, label='Queue acquisitions for each ROI'), wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(self, -1, 'Sort Function:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
@@ -178,6 +339,23 @@ class ActionPanel(wx.Panel):
         #hsizer.Add(vsizer, 0, 0, 0)
 
         self.SetSizerAndFit(vsizer)
+
+    def OnActionChanged(self, event):
+        if self._pan_action is not None:
+            self._pan_action.Destroy()
+            self._pan_action_sizer.Clear()
+        
+        action = self.cActionType.GetStringSelection()
+        if action != 'None':
+            #print('Changing action to %s' % action)
+            self._pan_action = globals()[action + 'Panel'](self, self.actionManager, self.scope)
+            self._pan_action_sizer.Add(self._pan_action, 0, wx.EXPAND, 0)
+        else:
+            self._pan_action = None
+            logger.warning('No action selected (we shouldn\'t get here)')
+
+        #print('re-layouting')
+        self.cascading_layout()
         
     def OnPauseActions(self, event):
         if self.actionManager.paused:
@@ -190,8 +368,8 @@ class ActionPanel(wx.Panel):
     def OnAddAction(self, event):
         delay = float(self.tDelay.GetValue())
         nice = float(self.tNice.GetValue())
-        functionName = self.tFunction.GetValue()
-        args = eval('dict(%s)' % self.tArgs.GetValue())
+        #functionName = self.tFunction.GetValue()
+        #args = eval('dict(%s)' % self.tArgs.GetValue())
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
 
@@ -200,8 +378,9 @@ class ActionPanel(wx.Panel):
         else:
             execute_after = 0
 
-        self.actionManager.QueueAction(functionName, args, nice, timeout,
-                                       max_duration, execute_after=execute_after)
+        #self.actionManager.QueueAction(functionName, args, nice, timeout,
+        #                               max_duration, execute_after=execute_after)
+        self.actionManager.queue_actions([self._pan_action.get_action()], nice, timeout, max_duration, execute_after=execute_after)
 
     def OnAddMove(self, event):
         nice = float(self.tNice.GetValue())

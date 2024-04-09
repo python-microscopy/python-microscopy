@@ -58,6 +58,16 @@ class AcquisitionBase(abc.ABC):
         '''
         pass
 
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        '''Return a dictionary of settings for the acquisition
+        
+        Used to "freeze" the state of the spool_controller and/or other settings objects when queueing
+        acquisitions for subsequent execution via the ActionManager
+        '''
+
+        return {}
+    
     @abc.abstractmethod
     def start(self):
         '''Start the acquisition

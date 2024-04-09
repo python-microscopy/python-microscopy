@@ -72,6 +72,10 @@ class XYZTCAcquisition(AcquisitionBase):
         self.shape_x, self.shape_y = scope.frameWrangler.currentFrame.shape[:2]
         
         if stack_settings:
+            if isinstance(stack_settings, dict):
+                from PYME.Acquire.stackSettings import StackSettings
+                stack_settings = StackSettings(scope, **stack_settings)
+
             self.shape_z = stack_settings.GetSeqLength()
         else:
             self.shape_z = 1
@@ -105,8 +109,6 @@ class XYZTCAcquisition(AcquisitionBase):
                    time_settings=settings.get('time_settings', None), 
                    channel_settings=settings.get('channel_settings', None), 
                    backend=backend, backend_kwargs=backend_kwargs)
-        
-    
     
     @property
     def shape(self):
@@ -255,3 +257,7 @@ class ZStackAcquisition(XYZTCAcquisition):
                     time_settings=settings.get('time_settings', None), 
                     channel_settings=settings.get('channel_settings', None), 
                     backend=backend, backend_kwargs=backend_kwargs)
+    
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        return {'stack_settings' : scope.stackSettings.settings(),}

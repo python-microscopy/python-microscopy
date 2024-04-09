@@ -18,6 +18,13 @@ class Action(object):
             d['then'] = then.serialise()
         
         return {self.__class__.__name__: d}
+    
+    @property
+    def _repr_then(self):
+        if self._then is not None:
+            return '- then -> %s' % repr(self._then)
+        else:
+            return ''
 
 
 class FunctionAction(Action):
@@ -39,7 +46,7 @@ class FunctionAction(Action):
         return fcn(**self._args)
     
     def __repr__(self):
-        return 'FunctionAction: %s(%s)' % (self._fcn, self._args)
+        return 'FunctionAction: %s(%s)' % (self._fcn, self._args) + self._repr_then
 
 
 class StateAction(Action):
@@ -72,10 +79,33 @@ class UpdateState(StateAction):
         return self._do_then(scope)
     
     def __repr__(self):
-        return 'UpdateState: %s' % self._state
+        return 'UpdateState: %s' % self._state + self._repr_then
 
+class MoveTo(StateAction):
+    """
+    Move to a specific position in absolute stage coordinates.
+
+    Most useful when queueing actions to return to a specific
+    already identified position.
+    """
+    def __init__(self, x, y):
+        StateAction.__init__(self, x=x, y=y)
+        self.x, self.y = x, y
+    
+    def __call__(self, scope):
+        scope.SetPos(x=self.x, y=self.y)
+        return self._do_then(scope)
+    
+    def __repr__(self):
+        return 'MoveTo: %f, %f (x, y)' % (self.x, self.y) + self._repr_then
 
 class CentreROIOn(StateAction):
+    """
+    Centre the ROI on a specific position in absolute stage coordinates.
+
+    Most useful when queueing actions where target have been automatically
+    identified.
+    """
     def __init__(self, x, y):
         StateAction.__init__(self, x=x, y=y)
         self.x, self.y = x, y
@@ -85,7 +115,7 @@ class CentreROIOn(StateAction):
         return self._do_then(scope)
     
     def __repr__(self):
-        return 'CentreROIOn: %f, %f (x, y)' % (self.x, self.y)
+        return 'CentreROIOn: %f, %f (x, y)' % (self.x, self.y) + self._repr_then
 
 
 class SpoolSeries(Action):

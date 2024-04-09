@@ -587,6 +587,28 @@ class SpoolController(object):
         #return a function which can be called to indicate if we are done
         return lambda : self.spooler.spool_complete
     
+    def get_settings(self):
+        """Get the current settings for the spool controller
+        
+        Used when adding actions to the action manager - this should freeze
+        the relevant settings for the acquisition type and method.
+        """
+        settings = {'acquisiton_type' : self.acquisition_type,
+                    'method' : self.spoolType,
+        }
+
+        if self.spoolType == 'File':
+            settings['hdf_compression_level'] = self.hdf_compression_level
+
+        if self.spoolType == 'Cluster':
+            settings['cluster_h5'] = self.cluster_h5
+            settings['pzf_compression_settings'] = self.pzf_compression_settings
+
+        settings.update(self.acquisition_types[self.acquisition_type].get_frozen_settings(self.scope, self)) 
+        
+        return settings
+
+    
     def _display_image(self):
         ''' Display the image in a viewer (for memory backend)
         '''
