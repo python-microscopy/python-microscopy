@@ -433,25 +433,37 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         self.tDelay = wx.TextCtrl(self, -1, '0', size=(40, -1))
         hsizer.Add(self.tDelay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
+
+        hsizer.Add(wx.StaticText(self, -1, 'Repetitions:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tRepeats = wx.TextCtrl(self, -1, '1', size=(30, -1))
+        hsizer.Add(self.tRepeats, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Period [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tPeriod = wx.TextCtrl(self, -1, '0', size=(30, -1))
+        hsizer.Add(self.tPeriod, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
         hsizer.Add(wx.StaticText(self, -1, 'Nice:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tNice = wx.TextCtrl(self, -1, '10', size=(30, -1))
         hsizer.Add(self.tNice, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        self.add_single_sizer.Add(hsizer, 0, wx.EXPAND|wx.TOP, 15)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(self, -1, 'Timeout[s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Timeout [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tTimeout = wx.TextCtrl(self, -1, '1000000', size=(50, -1))
         hsizer.Add(self.tTimeout, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
-        hsizer.Add(wx.StaticText(self, -1, 'Max duration[s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(wx.StaticText(self, -1, 'Max duration [s]:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.t_duration = wx.TextCtrl(self, -1, '3600', size=(50, -1))
         hsizer.Add(self.t_duration, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
         hsizer.AddStretchSpacer()
 
         self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
-        self.bAdd.Bind(wx.EVT_BUTTON, progress.managed(self.OnAddAction, self, 'Adding action'))
+        self.bAdd.Bind(wx.EVT_BUTTON, progress.managed(self.OnAddActions, self, 'Adding action'))
         hsizer.Add(self.bAdd, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         
-        self.add_single_sizer.Add(hsizer, 0, wx.EXPAND|wx.TOP, 10)
+        self.add_single_sizer.Add(hsizer, 0, wx.EXPAND|wx.TOP, 2)
         vsizer.Add(self.add_single_sizer, 0, wx.EXPAND, 0)
 
         
@@ -495,13 +507,16 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
             self.bPause.SetLabel('Resume')
     
 
-    def OnAddAction(self, event):
+    def OnAddActions(self, event):
         delay = float(self.tDelay.GetValue())
         nice = float(self.tNice.GetValue())
         #functionName = self.tFunction.GetValue()
         #args = eval('dict(%s)' % self.tArgs.GetValue())
         timeout = float(self.tTimeout.GetValue())
         max_duration = float(self.t_duration.GetValue())
+
+        repetitions = int(self.tRepeats.GetValue())
+        period = float(self.tPeriod.GetValue())
 
         if delay > 0:
             execute_after = time.time() + delay
@@ -518,58 +533,60 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         max_duration = max(2*t_est, max_duration)
         timeout = max(max_duration*len(actions), timeout)
 
-        self.actionManager.queue_actions(actions, nice, timeout, max_duration, execute_after=execute_after)
+        for i in range(repetitions):
+            self.actionManager.queue_actions(actions, nice, timeout, max_duration, execute_after=execute_after)
+            execute_after += period
 
     
-    def _add_ROIs(self, rois):
-        """
-        Add ROI positioning and spooling actions to queue.
+    # def _add_ROIs(self, rois):
+    #     """
+    #     Add ROI positioning and spooling actions to queue.
 
-        Parameters
-        ----------
-        rois: list-like
-            list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers.
+    #     Parameters
+    #     ----------
+    #     rois: list-like
+    #         list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers.
         
-        Notes
-        -----
-        Currently ignores the `Max Duration` GUI control, ensuring the timeout
-        is long enough for all queued ROI tasks, and with 10 s max duration on
-        movements and ~2x acquisition time max durations for spooling series.
-        """
+    #     Notes
+    #     -----
+    #     Currently ignores the `Max Duration` GUI control, ensuring the timeout
+    #     is long enough for all queued ROI tasks, and with 10 s max duration on
+    #     movements and ~2x acquisition time max durations for spooling series.
+    #     """
         
-        # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
-        # correct this for a custom ROI.
-        roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
+    #     # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
+    #     # correct this for a custom ROI.
+    #     roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
 
-        # subtract offset and reshape to N x 2 array
-        positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
+    #     # subtract offset and reshape to N x 2 array
+    #     positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
 
-        # apply sorting function
-        scope_pos = self.scope.GetPos()
-        positions = SORT_FUNCTIONS[self.SortSelect.GetValue()](positions, (scope_pos['x'], scope_pos['y']))
+    #     # apply sorting function
+    #     scope_pos = self.scope.GetPos()
+    #     positions = SORT_FUNCTIONS[self.SortSelect.GetValue()](positions, (scope_pos['x'], scope_pos['y']))
 
-        # get queue parameters
-        n_frames = int(self.tNumFrames.GetValue())
-        nice = float(self.tNice.GetValue())
-        try:
-            time_est =  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
-        except NotImplementedError:
-            # specifically the simulated camera here, which has a non-predictable frame rate
-            # use a conservative default of 10 s/frame (should not matter as simulation will generally not be doing 10s of thousands of series)
-            time_est = 10*n_frames
+    #     # get queue parameters
+    #     n_frames = int(self.tNumFrames.GetValue())
+    #     nice = float(self.tNice.GetValue())
+    #     try:
+    #         time_est =  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
+    #     except NotImplementedError:
+    #         # specifically the simulated camera here, which has a non-predictable frame rate
+    #         # use a conservative default of 10 s/frame (should not matter as simulation will generally not be doing 10s of thousands of series)
+    #         time_est = 10*n_frames
 
-        logger.debug('Expecting series to complete in %.1f s each' % time_est)
-        # allow enough time for what we queue
-        timeout = max(float(self.tTimeout.GetValue()), 
-                      positions.shape[0] * time_est)
+    #     logger.debug('Expecting series to complete in %.1f s each' % time_est)
+    #     # allow enough time for what we queue
+    #     timeout = max(float(self.tTimeout.GetValue()), 
+    #                   positions.shape[0] * time_est)
         
-        acts = []
-        for ri in range(positions.shape[0]):
-            state = {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}
-            settings = {'max_frames': n_frames, 'z_stepped': bool(self.rbZStepped.GetValue())}
+    #     acts = []
+    #     for ri in range(positions.shape[0]):
+    #         state = {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}
+    #         settings = {'max_frames': n_frames, 'z_stepped': bool(self.rbZStepped.GetValue())}
             
-            acts.append(actions.UpdateState(state).then(actions.SpoolSeries(settings=settings, preflight_mode='warn')))
+    #         acts.append(actions.UpdateState(state).then(actions.SpoolSeries(settings=settings, preflight_mode='warn')))
             
-        self.actionManager.queue_actions(acts, nice, timeout, 2 * time_est)
+    #     self.actionManager.queue_actions(acts, nice, timeout, 2 * time_est)
     
     
