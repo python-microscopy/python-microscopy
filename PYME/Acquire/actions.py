@@ -25,6 +25,19 @@ class Action(object):
             return '- then -> %s' % repr(self._then)
         else:
             return ''
+        
+    def _estimated_duration(self, scope):
+        '''Return the estimated duration of the action in seconds'''
+        return 1.0
+    
+    def estimated_duration(self, scope):
+        t =  self._estimated_duration(scope)
+
+        then = getattr(self, '_then', None)
+        if then:
+            t += then.estimated_duration(scope)
+
+        return t
 
 
 class FunctionAction(Action):
@@ -128,6 +141,9 @@ class SpoolSeries(Action):
     
     def __repr__(self):
         return 'SpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return scope.spoolController.estimate_spool_time(**self._args)
 
 
 def action_from_dict(serialised):

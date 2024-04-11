@@ -587,6 +587,41 @@ class SpoolController(object):
         #return a function which can be called to indicate if we are done
         return lambda : self.spooler.spool_complete
     
+    def estimate_spool_time(self, settings={}, **kwargs):
+        """
+        Estimate the time to spool a series based on the current settings
+
+        used by queued actions to set timeouts etc ... if in doubt, we should 
+        overestimate.
+        
+        Returns
+        -------
+        float
+            estimated time in seconds
+
+        FIXME - these are extremely rough estimates
+        FIXME - defer to acquisition type
+        """
+        
+        acquisition_type = settings.get('acquisition_type', self.acquisition_type)
+        
+        if acquisition_type == 'ProtocolAcquisition':
+            #FIXME - this is a very rough estimate
+            n_frames = settings.get('max_frames', 100000)
+
+            try:
+                return  1.25 * n_frames / self.scope.cam.GetFPS()  # per series
+            except NotImplementedError:
+                # specifically the simulated camera here, which has a non-predictable frame rate
+                # use a conservative default of 10 s/frame (should not matter as simulation will generally not be doing 10s of thousands of series)
+                return 10*n_frames
+
+        
+        else:
+            # 30 minutes for all other acquisition types
+            # TODO - does this need to be longer for tiling??
+            return 30*60  
+    
     def get_settings(self):
         """Get the current settings for the spool controller
         
