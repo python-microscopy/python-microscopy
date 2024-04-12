@@ -73,7 +73,7 @@ class AcquisitionBase(abc.ABC):
         '''Start the acquisition
         
         This will usually record any metadata, connect self.on_frame to a frame source (i.e. scope.frameWrangler.onFrame), and initialise
-        the backend. It should not block, with the bulk of the acquisiton logic taking place in frame source handler.
+        the backend. It should not block, with the bulk of the acquisition logic taking place in frame source handler.
         
         '''
         pass
