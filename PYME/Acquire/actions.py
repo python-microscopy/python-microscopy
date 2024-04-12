@@ -38,6 +38,13 @@ class Action(object):
             t += then.estimated_duration(scope)
 
         return t
+    
+    def finalise(self, scope):
+        ''' Called after the action has executed'''
+        # TODO - do then here??
+        pass
+
+        
 
 
 class FunctionAction(Action):
@@ -144,6 +151,48 @@ class SpoolSeries(Action):
     
     def _estimated_duration(self, scope):
         return scope.spoolController.estimate_spool_time(**self._args)
+    
+class RemoteSpoolSeries(Action):
+    def __init__(self, remote_instance='remote_acquire_instance', **kwargs):
+        self._remote_instance = remote_instance
+        self._args = kwargs
+        Action.__init__(self, **kwargs)
+    
+    def __call__(self, scope):
+        # let the local spoolController handle the filename incrementing
+        return getattr(scope,self._remote_instance).start_spooling(filename=scope.spoolController.seriesName, **self._args)
+    
+    def __repr__(self):
+        return 'RemoteSpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return 30*60 # 30 minutes
+    
+    def finalise(self, scope):
+        super().finalise()
+        scope.spoolController.SpoolStopped() #make sure file name increments
+
+class SimultaeneousSpoolSeries(Action):
+    '''Spool local and remote series simultaneously'''
+    def __init__(self, remote_instance='remote_acquire_instance', local_settings = {}, remote_settings = {}, **kwargs):
+        self._remote_instance = remote_instance
+        self._local_settings = local_settings
+        self._remote_settings = remote_settings
+        self._args = kwargs
+        Action.__init__(self, **kwargs)
+    
+    def __call__(self, scope):
+        a =  scope.spoolController.start_spooling(settings = self._local_settings, **self._args)
+        b =  getattr(scope,self._remote_instance).start_spooling(filename=scope.spoolController.seriesName + '_B', settings = self._remote_settings, **self._args)
+
+        return lambda : a() and b()
+    
+    def __repr__(self):
+        return 'SimultaeneousSpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return scope.spoolController.estimate_spool_time(**self._args)
+    
 
 
 def action_from_dict(serialised):

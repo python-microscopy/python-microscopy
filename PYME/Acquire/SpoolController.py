@@ -212,15 +212,8 @@ class SpoolController(object):
             return ['File', 'Cluster', 'Memory']
         
     def get_info(self):
-        info =  {'settings' : {'method' : self.spoolType,
-                                'hdf_compression_level': self.hdf_compression_level,
-                                'z_stepped' : self.protocol_settings.z_stepped,
-                                'z_dwell' : self.protocol_settings.z_dwell,
-                                'cluster_h5' : self.cluster_h5,
-                                'pzf_compression_settings' : self.pzf_compression_settings,
-                                'protocol_name' : self.protocol_settings.protocol.filename,
-                                'series_name' : self.seriesName
-                              },
+        info =  {'settings' : self.get_settings(),
+                 'series_name' : self.seriesName,
                  'available_spool_methods' : self.available_spool_methods
                 }
         
@@ -622,14 +615,13 @@ class SpoolController(object):
             # TODO - does this need to be longer for tiling??
             return 30*60  
     
-    def get_settings(self):
+    def get_settings(self, method_only=False):
         """Get the current settings for the spool controller
         
         Used when adding actions to the action manager - this should freeze
         the relevant settings for the acquisition type and method.
         """
-        settings = {'acquisiton_type' : self.acquisition_type,
-                    'method' : self.spoolType,
+        settings = {'method' : self.spoolType,
         }
 
         if self.spoolType == 'File':
@@ -639,9 +631,14 @@ class SpoolController(object):
             settings['cluster_h5'] = self.cluster_h5
             settings['pzf_compression_settings'] = self.pzf_compression_settings
 
-        settings.update(self.acquisition_types[self.acquisition_type].get_frozen_settings(self.scope, self)) 
+        if method_only:
+            return settings
         
-        return settings
+        else:
+            settings['acquisition_type'] = self.acquisition_type
+            settings.update(self.acquisition_types[self.acquisition_type].get_frozen_settings(self.scope, self)) 
+            
+            return settings
 
     
     def _display_image(self):

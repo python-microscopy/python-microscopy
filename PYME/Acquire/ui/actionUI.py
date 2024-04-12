@@ -72,7 +72,7 @@ SORT_FUNCTIONS = {
     'None': lambda positions, scope_position: positions,
 }
 
-ACTION_TYPES = ['MoveTo', 'UpdateState', 'CenterROIOn', 'SpoolSeries', 'FunctionAction']
+ACTION_TYPES = ['MoveTo', 'UpdateState', 'CenterROIOn', 'SpoolSeries', 'RemoteSpoolSeries', 'SimultaneousSpoolSeries', 'FunctionAction']
 
 try:
     from PYME.Analysis.points.traveling_salesperson import sort as tspsort #avoid clobbering sort() builtin
@@ -382,6 +382,89 @@ class SpoolSeriesPanel(SingleActionPanel):
 
         self.cascading_layout()
 
+class RemoteSpoolSeriesPanel(SpoolSeriesPanel):
+    supports_then = False
+
+    def __init__(self, parent, actionManager, scope):
+        super().__init__(parent, actionManager, scope)
+
+        #scope.spoolController.onSettingsChange.connect(self._update)
+
+    def _init_controls(self, sizer):
+        self.stAqType = wx.StaticText(self, -1, 'Add a remote acquisition using the remotely selected type and settings')
+        sizer.Add(self.stAqType, 0, wx.ALL, 2)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stRemoteInstanceName = wx.StaticText(self, -1, 'Remote instance name:')
+        hsizer.Add(self.stRemoteInstanceName, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tRemoteInstanceName = wx.TextCtrl(self, -1, 'remote_acquire_instance', size=(150, -1))
+        hsizer.Add(self.tRemoteInstanceName, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.stNumFramesLabel = wx.StaticText(self, -1, 'Max frames:')
+        hsizer.Add(self.stNumFramesLabel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
+        hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def _get_action(self, idx=0):
+        # use remote settings for acquisition type and type-specific settings
+        remote_instance = self.tRemoteInstanceName.GetValue()
+        settings = getattr(self.scope, remote_instance).spooling_info()['settings']
+
+        # use local settings for spool method and compression
+        settings.update(self.scope.spoolController.get_settings(method_only=True))
+        settings['max_frames']  = int(self.tNumFrames.GetValue())
+
+        return actions.RemoteSpoolSeries(remote_instance=remote_instance,settings=settings, preflight_mode='warn', ) 
+
+class SimultaneousSpoolSeriesPanel(SpoolSeriesPanel):
+    supports_then = False
+
+    def __init__(self, parent, actionManager, scope):
+        super().__init__(parent, actionManager, scope)
+
+        #scope.spoolController.onSettingsChange.connect(self._update)
+
+    def _init_controls(self, sizer):
+        self.stAqType = wx.StaticText(self, -1, 'Add simultaneously executing remote and local acquisition')
+        sizer.Add(self.stAqType, 0, wx.ALL, 2)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.stRemoteInstanceName = wx.StaticText(self, -1, 'Remote instance name:')
+        hsizer.Add(self.stRemoteInstanceName, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tRemoteInstanceName = wx.TextCtrl(self, -1, 'remote_acquire_instance', size=(150, -1))
+        hsizer.Add(self.tRemoteInstanceName, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.stNumFramesLabel = wx.StaticText(self, -1, 'Max frames:')
+        hsizer.Add(self.stNumFramesLabel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
+        hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def _get_action(self, idx=0):
+        # use remote settings for acquisition type and type-specific settings
+        remote_instance = self.tRemoteInstanceName.GetValue()
+        remote_settings = getattr(self.scope, remote_instance).spooling_info()['settings']
+
+        # use local settings for spool method and compression
+        remote_settings.update(self.scope.spoolController.get_settings(method_only=True))
+        remote_settings['max_frames']  = int(self.tNumFrames.GetValue())
+
+        local_settings = self.scope.spoolController.get_settings()
+        local_settings['max_frames']  = int(self.tNumFrames.GetValue())
+
+        return actions.SimultaeneousSpoolSeries(remote_instance=remote_instance,local_settings=local_settings, remote_settings=remote_settings, preflight_mode='warn', )  
+ 
+
+    # def _update(self, **kwargs):
+    #     aqType = self.scope.spoolController.acquisition_type
+    #     if aqType == 'ProtocolAcquisition':
+    #         self.stNumFramesLabel.Show()
+    #         self.tNumFrames.Show()
+    #     else:
+    #         self.stNumFramesLabel.Hide()
+    #         self.tNumFrames.Hide()
+
+    #     self.stAqType.SetLabel(f'An {aqType} acquisition will be added with the following settings: {self.scope.spoolController.get_settings()}')
+
+    #     self.cascading_layout()
+
 
 class FunctionActionPanel(SingleActionPanel):
     supports_then = False
@@ -390,11 +473,12 @@ class FunctionActionPanel(SingleActionPanel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Function:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tFunction = wx.ComboBox(self, -1, '', choices=ACTION_DEFAULTS,size=(150, -1))
-        hsizer.Add(self.tFunction, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        hsizer.Add(self.tFunction, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
         hsizer.Add(wx.StaticText(self, -1, 'Args:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         self.tArgs = wx.TextCtrl(self, -1, '', size=(150, -1))
         hsizer.Add(self.tArgs, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        sizer.Add(hsizer)
 
     def _get_action(self, idx=0):
         function_name = self.tFunction.GetValue()

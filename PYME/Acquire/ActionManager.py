@@ -236,6 +236,12 @@ class ActionManager(object):
         
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
+                self.currentTask.finalise(self.scope())
+                self.currentTask = None
+            except AttributeError:
+                pass
+
+            try:
                 self.currentTask = self.actionQueue.get_nowait()
                 nice, action, expiry, max_duration = self.currentTask
                 self._cur_task_kill_time = time.time() + max_duration
