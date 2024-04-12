@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-"""The GUI controls for streaming acquisiton.
+"""The GUI controls for streaming acquisition.
 
 """
 
