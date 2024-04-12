@@ -202,12 +202,12 @@ def drift_tracking(MainFrame, scope):
     import wx
 
 
-    def _drift_init():
+    #def _drift_init():
         #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
-        scope.p_drift = subprocess.Popen('%s "%s" -i init_sim_drift_tracking.py -s -p 8155 -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), shell=True)#, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    scope.p_drift = subprocess.Popen('%s "%s" -i init_sim_drift_tracking.py -s -p 8155 -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), shell=True)#, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-    time.sleep(15)
-    _drift_init()
+    #time.sleep(15)
+    #_drift_init()
 
     # create a client for the drift tracking server process
     # this should be safe to do here, as the connection to the server is only made on demand
