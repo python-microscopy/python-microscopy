@@ -1,5 +1,6 @@
 import os
 from PYME.IO import MetaDataHandler
+from PYME import warnings
 
 import logging
 logger = logging.getLogger(__file__)
@@ -202,7 +203,7 @@ def guess_flavour(colNames, delim=None, ext=None):
     for flavour in csv_flavours:
         if (not flavour == 'default') and all(idn in colNames for idn in csv_flavours[flavour]['idnames']):
             if fl is not None:
-                logger.info('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                warnings.warn('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
                 fl = 'default'
                 break
             fl = flavour
@@ -213,7 +214,7 @@ def guess_flavour(colNames, delim=None, ext=None):
         for flavour in csv_flavours:
             if (not flavour == 'default') and ext in csv_flavours[flavour].get('ext',[]):
                 if fl is not None:
-                    logger.info('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                    warnings.warn('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
                     fl = 'default'
                     break
                 if not all(idn in colNames for idn in csv_flavours[flavour]['column_name_mappings'].keys()):
