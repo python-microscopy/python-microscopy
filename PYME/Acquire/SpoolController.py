@@ -562,6 +562,7 @@ class SpoolController(object):
         
         try:
             self.spooler.on_stop.connect(self.SpoolStopped)
+            self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
             self.spooler.start()
         except:
             self.spooler.abort()
@@ -698,6 +699,7 @@ class SpoolController(object):
         self.seriesName = self._GenSeriesName()
 
         logger.info('Spooling stopped')
+        self.scope.stackSettings.piezoGoHome()
         
         self.on_stop.send(self)
 
