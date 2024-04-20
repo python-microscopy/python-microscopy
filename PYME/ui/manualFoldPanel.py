@@ -118,21 +118,37 @@ pin_bits     = b'\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xf
 
 
 
-DEFAULT_CAPTION_STYLE = {
-'HEIGHT'              : 20,
-'FONT_COLOUR'         : 'BLACK',
-#'FONT_WEIGHT' : wx.BOLD,
-#'FONT_SIZE'           : 12,
-'CAPTION_INDENT'      : 5,
-'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
-'BACKGROUND_COLOUR_2' : (226, 226, 226),
-'INACTIVE_PIN_COLOUR' : (170, 170, 170),
-'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
-'ELLIPSES_COLOUR'     : (170, 170, 170),
-'ELLIPSES_RADIUS'     : 2,
-'HAS_PIN' : True,
-}
+DEFAULT_CAPTION_STYLE_DARK = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'WHITE',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (38, 38, 38), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (82, 82, 82),
+    'INACTIVE_PIN_COLOUR' : (125, 125, 125),
+    'ACTIVE_PIN_COLOUR'   : (255, 255, 255),
+    'ELLIPSES_COLOUR'     : (125, 125, 125),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+   
 
+DEFAULT_CAPTION_STYLE = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'BLACK',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (226, 226, 226),
+    'INACTIVE_PIN_COLOUR' : (170, 170, 170),
+    'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
+    'ELLIPSES_COLOUR'     : (170, 170, 170),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+    
 class CaptionButton(object):
     def __init__(self, active_bitmap, inactive_bitmap=None, show_fcn=None, active_fcn = None, onclick=None):
         self._active_bitmap = active_bitmap
@@ -172,11 +188,19 @@ class CaptionButton(object):
 
 class CaptionBar(wx.Window):
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
-                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
+                 foldIcons=None, cbstyle=None, pin_bits=pin_bits):
 
+        if cbstyle is None:
+            if wx.SystemSettings().GetAppearance().IsDark():
+                cbstyle = DEFAULT_CAPTION_STYLE_DARK
+            else:
+                cbstyle = DEFAULT_CAPTION_STYLE
+        
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
 
+        
+        
         self.style = dict(cbstyle)
         self.parent = parent
         self.caption = caption
