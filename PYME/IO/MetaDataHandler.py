@@ -23,7 +23,7 @@
 
 #!/usr/bin/python
 """
-Defines metadata handlers for the saving of acquisiton metadata to a variety 
+Defines metadata handlers for the saving of acquisition metadata to a variety 
 of file formats, as well as keeping track of metadata sources. 
 
 Metadata sources

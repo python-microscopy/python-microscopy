@@ -398,6 +398,18 @@ class Microscope(object):
         dx, dy = self.get_roi_offset()
         
         self.SetPos(x=(x-dx), y=(y-dy))
+
+    def get_roi_centre(self):
+        """Convenience function to get the centre of the ROI
+        
+        exists to allow both automatically and manually specified actions to use the same code
+        """
+        dx, dy = self.get_roi_offset()
+        pos = self.GetPos()
+
+        return pos['x'] + dx, pos['y'] + dy
+
+
             
     def GetPosRange(self):
         #Todo - fix to use positioning

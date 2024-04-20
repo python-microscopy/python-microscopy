@@ -552,7 +552,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
 
 
     def StartExposure(self):
-        #make sure no acquisiton is running
+        #make sure no acquisition is running
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()

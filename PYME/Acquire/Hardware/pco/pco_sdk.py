@@ -1123,7 +1123,7 @@ def get_acquire_mode(handle):
     Returns
     -------
     mode : unsigned short int
-        Camera acquisiton mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
+        Camera acquisition mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
         PCO_ACQUIRE_EXTERNAL_MODULATE (2).
     """
     mode = ctypes.wintypes.WORD()
@@ -1144,7 +1144,7 @@ def set_acquire_mode(handle, mode):
     handle : ctypes.wintypes.HANDLE
         Unique pco. camera handle (pointer).
     mode : unsigned short int
-        Camera acquisiton mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
+        Camera acquisition mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
         PCO_ACQUIRE_EXTERNAL_MODULATE (2).
     """
     check_status(sc2_cam.PCO_GetAcquireMode(handle, ctypes.wintypes.WORD(mode)))

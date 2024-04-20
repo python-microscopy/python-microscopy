@@ -18,6 +18,33 @@ class Action(object):
             d['then'] = then.serialise()
         
         return {self.__class__.__name__: d}
+    
+    @property
+    def _repr_then(self):
+        if self._then is not None:
+            return '- then -> %s' % repr(self._then)
+        else:
+            return ''
+        
+    def _estimated_duration(self, scope):
+        '''Return the estimated duration of the action in seconds'''
+        return 1.0
+    
+    def estimated_duration(self, scope):
+        t =  self._estimated_duration(scope)
+
+        then = getattr(self, '_then', None)
+        if then:
+            t += then.estimated_duration(scope)
+
+        return t
+    
+    def finalise(self, scope):
+        ''' Called after the action has executed'''
+        # TODO - do then here??
+        pass
+
+        
 
 
 class FunctionAction(Action):
@@ -39,7 +66,7 @@ class FunctionAction(Action):
         return fcn(**self._args)
     
     def __repr__(self):
-        return 'FunctionAction: %s(%s)' % (self._fcn, self._args)
+        return 'FunctionAction: %s(%s)' % (self._fcn, self._args) + self._repr_then
 
 
 class StateAction(Action):
@@ -72,10 +99,33 @@ class UpdateState(StateAction):
         return self._do_then(scope)
     
     def __repr__(self):
-        return 'UpdateState: %s' % self._state
+        return 'UpdateState: %s' % self._state + self._repr_then
 
+class MoveTo(StateAction):
+    """
+    Move to a specific position in absolute stage coordinates.
+
+    Most useful when queueing actions to return to a specific
+    already identified position.
+    """
+    def __init__(self, x, y):
+        StateAction.__init__(self, x=x, y=y)
+        self.x, self.y = x, y
+    
+    def __call__(self, scope):
+        scope.SetPos(x=self.x, y=self.y)
+        return self._do_then(scope)
+    
+    def __repr__(self):
+        return 'MoveTo: %f, %f (x, y)' % (self.x, self.y) + self._repr_then
 
 class CentreROIOn(StateAction):
+    """
+    Centre the ROI on a specific position in absolute stage coordinates.
+
+    Most useful when queueing actions where target have been automatically
+    identified.
+    """
     def __init__(self, x, y):
         StateAction.__init__(self, x=x, y=y)
         self.x, self.y = x, y
@@ -85,7 +135,7 @@ class CentreROIOn(StateAction):
         return self._do_then(scope)
     
     def __repr__(self):
-        return 'CentreROIOn: %f, %f (x, y)' % (self.x, self.y)
+        return 'CentreROIOn: %f, %f (x, y)' % (self.x, self.y) + self._repr_then
 
 
 class SpoolSeries(Action):
@@ -98,6 +148,51 @@ class SpoolSeries(Action):
     
     def __repr__(self):
         return 'SpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return scope.spoolController.estimate_spool_time(**self._args)
+    
+class RemoteSpoolSeries(Action):
+    def __init__(self, remote_instance='remote_acquire_instance', **kwargs):
+        self._remote_instance = remote_instance
+        self._args = kwargs
+        Action.__init__(self, **kwargs)
+    
+    def __call__(self, scope):
+        # let the local spoolController handle the filename incrementing
+        return getattr(scope,self._remote_instance).start_spooling(filename=scope.spoolController.seriesName, **self._args)
+    
+    def __repr__(self):
+        return 'RemoteSpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return 30*60 # 30 minutes
+    
+    def finalise(self, scope):
+        super().finalise()
+        scope.spoolController.SpoolStopped() #make sure file name increments
+
+class SimultaeneousSpoolSeries(Action):
+    '''Spool local and remote series simultaneously'''
+    def __init__(self, remote_instance='remote_acquire_instance', local_settings = {}, remote_settings = {}, **kwargs):
+        self._remote_instance = remote_instance
+        self._local_settings = local_settings
+        self._remote_settings = remote_settings
+        self._args = kwargs
+        Action.__init__(self, **kwargs)
+    
+    def __call__(self, scope):
+        a =  scope.spoolController.start_spooling(settings = self._local_settings, **self._args)
+        b =  getattr(scope,self._remote_instance).start_spooling(filename=scope.spoolController.seriesName + '_B', settings = self._remote_settings, **self._args)
+
+        return lambda : a() and b()
+    
+    def __repr__(self):
+        return 'SimultaeneousSpoolSeries(%s)' % ', '.join(['%s = %s' % (k,repr(v)) for k, v in self._args.items()])
+    
+    def _estimated_duration(self, scope):
+        return scope.spoolController.estimate_spool_time(**self._args)
+    
 
 
 def action_from_dict(serialised):

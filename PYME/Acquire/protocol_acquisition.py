@@ -131,7 +131,16 @@ class ProtocolAcquisition(AcquisitionBase):
                     maxFrames=settings.get('max_frames', sys.maxsize),
                     stack_settings=settings.get('stack_settings', None),
                     backend=backend, backend_kwargs=backend_kwargs,) 
-                   
+
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        settings = {'z_stepped' : spool_controller.protocol_settings.z_stepped,
+                'z_dwell' : spool_controller.protocol_settings.z_dwell,} 
+        
+        if not spool_controller.protocol_settings.protocol in [p.NullProtocol, p.NullZProtocol]:
+            settings['protocol_name'] = spool_controller.protocol_settings.protocol.filename
+
+        return settings           
 
 
     def _create_backend(self, backend_type=acquisition_backends.HDFBackend, **kwargs):

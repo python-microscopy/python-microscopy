@@ -58,12 +58,22 @@ class AcquisitionBase(abc.ABC):
         '''
         pass
 
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        '''Return a dictionary of settings for the acquisition
+        
+        Used to "freeze" the state of the spool_controller and/or other settings objects when queueing
+        acquisitions for subsequent execution via the ActionManager
+        '''
+
+        return {}
+    
     @abc.abstractmethod
     def start(self):
         '''Start the acquisition
         
         This will usually record any metadata, connect self.on_frame to a frame source (i.e. scope.frameWrangler.onFrame), and initialise
-        the backend. It should not block, with the bulk of the acquisiton logic taking place in frame source handler.
+        the backend. It should not block, with the bulk of the acquisition logic taking place in frame source handler.
         
         '''
         pass
