@@ -123,4 +123,26 @@ class DarkAwareTabArt(tabart.AuiDefaultTabArt):
         self._tab_disabled_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
 
 tabart.AuiDefaultTabArt = DarkAwareTabArt
+
+from wx.lib.agw.aui import dockart
+from wx.lib.agw.aui.aui_utilities import LightContrastColour
+
+class DarkAwareDockArt(dockart.AuiDefaultDockArt):
+    def Init(self):
+        """ Initializes the dock art. """
+
+        self.SetDefaultColours()
+
+        isMac = wx.Platform == "__WXMAC__"
+
+        if isMac:
+            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        else:
+            self._active_caption_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_ACTIVECAPTION)
+
+        self._active_caption_gradient_colour = LightContrastColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        self._active_caption_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+        self._inactive_caption_text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+
+dockart.AuiDefaultDockArt = DarkAwareDockArt
         
