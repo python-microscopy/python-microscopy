@@ -25,9 +25,53 @@ sys.meta_path.insert(0, MyMetaFinder())
 
 # also patch wx aui to use a more appropriate background colour
 from wx.lib.agw.aui import aui_utilities
+from wx.lib.agw.aui.aui_utilities import BlendColour
+import wx
+def StepColour(c, ialpha):
+    """
+    Darken/lighten the input colour `c`.
+
+    :param wx.Colour `c`: a colour to darken/lighten;
+    :param integer `ialpha`: a transparency value.
+    """
+
+    if ialpha == 100:
+        return c
+
+    r, g, b, a = c.Red(), c.Green(), c.Blue(), c.Alpha()
+
+    if (r + g + b) < (255*3)/2:
+        # dark mode
+        ialpha = 200 - ialpha
+
+    # ialpha is 0..200 where 0 is completely black
+    # and 200 is completely white and 100 is the same
+    # convert that to normal alpha 0.0 - 1.0
+    ialpha = min(ialpha, 200)
+    ialpha = max(ialpha, 0)
+    alpha = (ialpha - 100.0)/100.0
+
+    if ialpha > 100:
+
+        # blend with white
+        bg = 255
+        alpha = 1.0 - alpha  # 0 = transparent fg 1 = opaque fg
+
+    else:
+
+        # blend with black
+        bg = 0
+        alpha = 1.0 + alpha  # 0 = transparent fg 1 = opaque fg
+
+    r = BlendColour(r, bg, alpha)
+    g = BlendColour(g, bg, alpha)
+    b = BlendColour(b, bg, alpha)
+
+    return wx.Colour(int(r), int(g), int(b), int(a))
+
+aui_utilities.StepColour.__code__ = StepColour.__code__
+
 def GetBaseColour():
-    import wx
-    
     base_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
 
     # the base_colour is too pale to use as our base colour,
@@ -41,6 +85,8 @@ def GetBaseColour():
     return base_colour
 
 aui_utilities.GetBaseColour.__code__ = GetBaseColour.__code__
+
+
 
 from wx.lib.agw.aui import tabart
 from wx.lib.agw.aui.aui_utilities import StepColour
