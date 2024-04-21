@@ -575,8 +575,8 @@ class foldButton(wx.Window):
     def __init__(self, parent, id=-1):
         wx.Window.__init__(self, parent, id, size=(16,16))
 
-        self.bmR = BitmapFromBits(r_arrow, 16, 16, ColourFromStyle('BLACK'))
-        self.bmD = BitmapFromBits(d_arrow, 16, 16, ColourFromStyle('BLACK'))
+        self.bmR = BitmapFromBits(r_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#ColourFromStyle('BLACK'))
+        self.bmD = BitmapFromBits(d_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#)
 
         self.folded = True
 

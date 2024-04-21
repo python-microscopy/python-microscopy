@@ -507,7 +507,7 @@ class SpoolingPane(afp.foldingPane):
         if freeGB < 5:
             self.stDiskSpace.SetForegroundColour(wx.Colour(200, 0,0))
         else:
-            self.stDiskSpace.SetForegroundColour(wx.BLACK)
+            self.stDiskSpace.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
        
     
                 
