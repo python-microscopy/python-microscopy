@@ -6,6 +6,7 @@ from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
 from PYME.IO.acquisition_backends import MemoryBackend
 from PYME.Acquire.acquisition_base import AcquisitionBase
+from PYME.Acquire import eventLog
 
 
 class TimeSettings(object):
@@ -186,6 +187,7 @@ class XYZTCAcquisition(AcquisitionBase):
 
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
+        eventLog.register_event_handler(self.storage.event_logger)
 
         
     def stop(self):
@@ -193,6 +195,11 @@ class XYZTCAcquisition(AcquisitionBase):
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         self.scope.stackSettings.piezoGoHome()
         self.scope.frameWrangler.start()
+
+        try:
+            eventLog.remove_event_handler(self.storage.event_logger)
+        except ValueError:
+            pass
 
         self.storage.finalise()
         
