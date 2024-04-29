@@ -118,21 +118,37 @@ pin_bits     = b'\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xf
 
 
 
-DEFAULT_CAPTION_STYLE = {
-'HEIGHT'              : 20,
-'FONT_COLOUR'         : 'BLACK',
-#'FONT_WEIGHT' : wx.BOLD,
-#'FONT_SIZE'           : 12,
-'CAPTION_INDENT'      : 5,
-'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
-'BACKGROUND_COLOUR_2' : (226, 226, 226),
-'INACTIVE_PIN_COLOUR' : (170, 170, 170),
-'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
-'ELLIPSES_COLOUR'     : (170, 170, 170),
-'ELLIPSES_RADIUS'     : 2,
-'HAS_PIN' : True,
-}
+DEFAULT_CAPTION_STYLE_DARK = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'WHITE',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (38, 38, 38), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (82, 82, 82),
+    'INACTIVE_PIN_COLOUR' : (125, 125, 125),
+    'ACTIVE_PIN_COLOUR'   : (255, 255, 255),
+    'ELLIPSES_COLOUR'     : (125, 125, 125),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+   
 
+DEFAULT_CAPTION_STYLE = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'BLACK',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (226, 226, 226),
+    'INACTIVE_PIN_COLOUR' : (170, 170, 170),
+    'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
+    'ELLIPSES_COLOUR'     : (170, 170, 170),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+    
 class CaptionButton(object):
     def __init__(self, active_bitmap, inactive_bitmap=None, show_fcn=None, active_fcn = None, onclick=None):
         self._active_bitmap = active_bitmap
@@ -172,11 +188,19 @@ class CaptionButton(object):
 
 class CaptionBar(wx.Window):
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
-                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
+                 foldIcons=None, cbstyle=None, pin_bits=pin_bits):
 
+        if cbstyle is None:
+            if wx.SystemSettings().GetAppearance().IsDark():
+                cbstyle = DEFAULT_CAPTION_STYLE_DARK
+            else:
+                cbstyle = DEFAULT_CAPTION_STYLE
+        
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
 
+        
+        
         self.style = dict(cbstyle)
         self.parent = parent
         self.caption = caption
@@ -551,8 +575,8 @@ class foldButton(wx.Window):
     def __init__(self, parent, id=-1):
         wx.Window.__init__(self, parent, id, size=(16,16))
 
-        self.bmR = BitmapFromBits(r_arrow, 16, 16, ColourFromStyle('BLACK'))
-        self.bmD = BitmapFromBits(d_arrow, 16, 16, ColourFromStyle('BLACK'))
+        self.bmR = BitmapFromBits(r_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#ColourFromStyle('BLACK'))
+        self.bmD = BitmapFromBits(d_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#)
 
         self.folded = True
 
@@ -620,7 +644,7 @@ class collapsingPane(foldingPane):
 
 
 from PYME.contrib import dispatch
-class foldPanel(wx.Panel):
+class foldPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, *args, **kwargs):
         try:
             self.orientation = kwargs.pop('orientation')
@@ -669,6 +693,7 @@ class foldPanel(wx.Panel):
 
         self.RegenSizer()
 
+
     def RegenSizer(self):
         self.sizer.Clear()
 
@@ -678,12 +703,13 @@ class foldPanel(wx.Panel):
         self._calc_min_max_sizes()
 
         if self._stretch_sizer:
-            self.sizer.AddStretchSpacer()
+            self.sizer.AddStretchSpacer(0)
 
         self.sizer.Layout()
 
     def cascading_layout(self, depth=0):
         #logger.info('cascade layout - %s' % self)
+        cascading_layout.CascadingLayoutMixin.cascading_layout(self, depth+1)
         self.fold1()
 
     def Clear(self):
@@ -737,7 +763,7 @@ class foldPanel(wx.Panel):
             self._collapse_all_other_frames(pan)
         else:
             if (self.GetBestSize()[1] > self.GetSize()[1]):
-                #print('collaping old panes')
+                #print('collaping old panes %s' % self)
                 self._collapse_old_frames(pan)
         
         
@@ -751,7 +777,7 @@ class foldPanel(wx.Panel):
 
         #print(candidates)
 
-        if len(candidates) > 0:
+        if (len(candidates) > 0):
             i = np.argmin([p._time_last_unfolded for p in candidates])
             #print i, candidates[i].caption
             candidates[i].Fold()

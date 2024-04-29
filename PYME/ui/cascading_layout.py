@@ -14,16 +14,22 @@ class CascadingLayoutMixin(object):
         """Lays out the parent window in a cascading fashion.
         """
         #print('    '*depth + 'Cascading layout - %s, size = %s' % (self, tuple(self.GetSize()))) 
-        self.GetSizer().Fit(self)
-        self.SetMinSize(self.GetSize())
         
-
+        contents_min_size = self.GetSizer().GetMinSize()
+        #print('    '*depth + 'Cascading layout - %s, sizer min size = %s' % (self, tuple(contents_min_size)))
+        self.SetMinClientSize(contents_min_size)
+        
+        
+        self.GetSizer().Fit(self)
         #print('    '*depth + 'Cascading layout - %s, new size = %s' % (self,  tuple(self.GetSize())))
+        #self.SetMinSize(self.GetSize())
+           
 
         try:
             self.GetParent().cascading_layout(depth + 1)
         except AttributeError:
             try:
+                #print('    '*depth + 'Cascading layout - %s, parent has no cascading_layout method, trying Layout' % self)
                 self.GetParent().Layout()
             except AttributeError:
                 pass

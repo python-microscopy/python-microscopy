@@ -36,6 +36,8 @@ class ImagePanel(wx.Panel):
         self.record = False
         self.frameNum = 0
 
+        self._backgroundBrush = wx.Brush(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
@@ -57,6 +59,7 @@ class ImagePanel(wx.Panel):
         try:
             #DC.BeginDrawing()
             
+            MemDC.SetBackground(self._backgroundBrush)
             self.renderer(MemDC)
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             #DC.EndDrawing()

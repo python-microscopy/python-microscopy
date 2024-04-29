@@ -20,6 +20,7 @@
 #
 ##################
 from PYME.misc import big_sur_fix
+from PYME.ui import patch_traitsui
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
