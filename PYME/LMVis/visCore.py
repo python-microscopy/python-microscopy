@@ -215,9 +215,9 @@ class VisGUICore(object):
 
         self.recipeView = RecipeDisplayPanel(item)
         self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView, priority=20, foldable=False)
+        item.AddNewElement(self.recipeView, priority=1, foldable=False)
 
-        pnl.AddPane(item, 20)
+        pnl.AddPane(item, 1)
         
     def update_datasource_panel(self, event=None, **kwargs):
         dss = list(self.pipeline.dataSources.keys())

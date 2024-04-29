@@ -644,7 +644,7 @@ class collapsingPane(foldingPane):
 
 
 from PYME.contrib import dispatch
-class foldPanel(wx.Panel):
+class foldPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, *args, **kwargs):
         try:
             self.orientation = kwargs.pop('orientation')
@@ -693,6 +693,7 @@ class foldPanel(wx.Panel):
 
         self.RegenSizer()
 
+
     def RegenSizer(self):
         self.sizer.Clear()
 
@@ -702,12 +703,13 @@ class foldPanel(wx.Panel):
         self._calc_min_max_sizes()
 
         if self._stretch_sizer:
-            self.sizer.AddStretchSpacer()
+            self.sizer.AddStretchSpacer(0)
 
         self.sizer.Layout()
 
     def cascading_layout(self, depth=0):
         #logger.info('cascade layout - %s' % self)
+        cascading_layout.CascadingLayoutMixin.cascading_layout(self, depth+1)
         self.fold1()
 
     def Clear(self):
@@ -761,7 +763,7 @@ class foldPanel(wx.Panel):
             self._collapse_all_other_frames(pan)
         else:
             if (self.GetBestSize()[1] > self.GetSize()[1]):
-                #print('collaping old panes')
+                #print('collaping old panes %s' % self)
                 self._collapse_old_frames(pan)
         
         
@@ -775,7 +777,7 @@ class foldPanel(wx.Panel):
 
         #print(candidates)
 
-        if len(candidates) > 0:
+        if (len(candidates) > 0):
             i = np.argmin([p._time_last_unfolded for p in candidates])
             #print i, candidates[i].caption
             candidates[i].Fold()

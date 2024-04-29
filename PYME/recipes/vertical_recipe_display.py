@@ -76,7 +76,7 @@ class RecipeDisplayPanel(wx.Panel):
         #wx.CallLater(10, self.Refresh)
         self.Layout()
         #print self.GetSizer().GetSize()
-        self.SetMinSize(self.GetSizer().GetSize())
+        #self.SetMinSize(self.GetSizer().GetSize())
         self.GetParent().Layout()
         self.GetParent().GetParent().Layout()
         self.Refresh()
