@@ -184,6 +184,7 @@ class XYZTCAcquisition(AcquisitionBase):
             self.storage.initialise()
 
             self._running = True
+            self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
 
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
