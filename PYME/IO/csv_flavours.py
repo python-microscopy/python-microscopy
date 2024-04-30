@@ -1,5 +1,6 @@
 import os
 from PYME.IO import MetaDataHandler
+from PYME import warnings
 
 import logging
 logger = logging.getLogger(__file__)
@@ -8,7 +9,7 @@ def isnumber(s):
     try:
         float(s)
         return True
-    except:
+    except ValueError:
         return False
 
 
@@ -99,7 +100,7 @@ def parse_csv_header(filename):
     n = 0
     commentLines = []
     dataLines = []
-    headerNameLines = []
+    # headerNameLines = []
 
     def is_header_candidate(line, delims):
         guessedDelim = guess_delim(line,delims)
@@ -202,7 +203,9 @@ def guess_flavour(colNames, delim=None, ext=None):
     for flavour in csv_flavours:
         if (not flavour == 'default') and all(idn in colNames for idn in csv_flavours[flavour]['idnames']):
             if fl is not None:
-                raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                warnings.warn('Ambiguous flavour database: file matches both %s and %s. Using default flavour.' % (fl, flavour))
+                fl = 'default'
+                break
             fl = flavour
 
     # If this failed, guess csv flavor by matching file type. This means it's a
@@ -211,7 +214,9 @@ def guess_flavour(colNames, delim=None, ext=None):
         for flavour in csv_flavours:
             if (not flavour == 'default') and ext in csv_flavours[flavour].get('ext',[]):
                 if fl is not None:
-                    raise RuntimeError('Ambiguous flavour database: file matches both %s and %s' % (fl, flavour))
+                    warnings.warn('Ambiguous flavour database: file matches both %s and %s. Using default flavour.' % (fl, flavour))
+                    fl = 'default'
+                    break
                 if not all(idn in colNames for idn in csv_flavours[flavour]['column_name_mappings'].keys()):
                     continue
                 fl = flavour
