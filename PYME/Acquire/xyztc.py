@@ -81,6 +81,9 @@ class XYZTCAcquisition(AcquisitionBase):
         else:
             self.shape_z = 1
 
+        #keep a reference to the stack settings so we can home the piezo appropriately
+        self._stack_settings = stack_settings
+
         self.shape_t = getattr(time_settings, 'num_timepoints', 1)
         self.shape_c = getattr(channel_settings, 'num_channels', 1)
         
@@ -184,7 +187,9 @@ class XYZTCAcquisition(AcquisitionBase):
             self.storage.initialise()
 
             self._running = True
-            self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
+
+            if self._stack_settings:
+                self._stack_settings.SetPrevPos(self._stack_settings._CurPos())
 
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
@@ -194,7 +199,10 @@ class XYZTCAcquisition(AcquisitionBase):
     def stop(self):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
-        self.scope.stackSettings.piezoGoHome()
+        
+        if self._stack_settings:
+            self._stack_settings.piezoGoHome()
+        
         self.scope.frameWrangler.start()
 
         try:
