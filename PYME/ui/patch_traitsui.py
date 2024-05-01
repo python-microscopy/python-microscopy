@@ -79,7 +79,8 @@ def GetBaseColour():
     if ((255-base_colour.Red()) +
         (255-base_colour.Green()) +
         (255-base_colour.Blue()) < 60):
-
+        # this import may not be needed on all wxpython / python versions (but is for 4.1 / 3.7)
+        from wx.lib.agw.aui import aui_utilities  
         base_colour = aui_utilities.StepColour(base_colour, 92)
 
     return base_colour
