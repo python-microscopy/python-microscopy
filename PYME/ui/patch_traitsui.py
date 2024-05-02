@@ -72,6 +72,9 @@ def StepColour(c, ialpha):
 aui_utilities.StepColour.__code__ = StepColour.__code__
 
 def GetBaseColour():
+    # this import may not be needed on all wxpython / python versions (but is for 4.1 / 3.7)
+    from wx.lib.agw.aui import aui_utilities
+    
     base_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
 
     # the base_colour is too pale to use as our base colour,
@@ -79,8 +82,7 @@ def GetBaseColour():
     if ((255-base_colour.Red()) +
         (255-base_colour.Green()) +
         (255-base_colour.Blue()) < 60):
-        # this import may not be needed on all wxpython / python versions (but is for 4.1 / 3.7)
-        from wx.lib.agw.aui import aui_utilities  
+
         base_colour = aui_utilities.StepColour(base_colour, 92)
 
     return base_colour
