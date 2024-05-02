@@ -101,7 +101,7 @@ class PcoSdkCam(Camera):
         self._buf_status_addr = []
         self._recording = False
         self._roi = None
-        self._timeout = 1000  # ms
+        #self._timeout = 1000  # ms
         self._n_buffered = 0
         self._n_queued = 0
         self._binning_x = 1
@@ -421,11 +421,15 @@ class PcoSdkCam(Camera):
                 if self._mode == self.MODE_CONTINUOUS:
                     self._buffers_to_queue.put(i)
 
-            self._timeout = int(max(2*100*self.GetCycleTime(), 100))
+            #self._timeout = int(max(2*100*self.GetCycleTime(), 100))
             pco_sdk.set_image_parameters(self._handle, lx, ly, pco_sdk.PCO_IMAGEPARAMETERS_READ_WHILE_RECORDING)
             pco_sdk.arm_camera(self._handle)
             pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_RUNNING)
 
+    @property
+    def _timeout(self):
+        return int(max(2*100*self.GetCycleTime(), 100))
+    
     def StartExposure(self):
         self._get_temps()
         if self._recording == False:
