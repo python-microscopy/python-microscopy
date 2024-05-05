@@ -5,7 +5,7 @@
 numpy>=1.14.* # we build and test against 1.14, but should work against any higher version. Try numpy==1.14.* if you run into issues.
 scipy
 matplotlib
-wxpython
+wxpython>=4.1
 tables #<=3.4.2
 pyopengl
 traits
