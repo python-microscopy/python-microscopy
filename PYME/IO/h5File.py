@@ -11,6 +11,9 @@ from PYME.IO import events
 
 #openLock = threading.Lock()
 
+import logging
+logger = logging.getLogger(__name__)
+
 def openH5(filename, mode='r'):
     key = (filename, mode)
     if (mode == 'r'):
@@ -123,12 +126,14 @@ class H5File(h5rFile.H5RFile):
         
         
     def put_file(self, filename, data):
+        logger.debug('put_file(%s, ...)' % (filename, ))
         if filename in ['metadata.json', 'MetaData']:
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
             evts = json.loads(data)
             events_array = events.EventLogger.list_to_array(evts)
                 
+            logger.debug('Adding events')
             self.addEvents(events_array)
         
         elif filename.startswith('frame'):

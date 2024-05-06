@@ -86,7 +86,7 @@ class Stream(object):
         """
         connection = b'keep-alive'
         
-        while self._alive:
+        while (self._alive or not self._put_queue.empty()):
             try:
                 filename, data = self._put_queue.get(timeout=.1)
 
