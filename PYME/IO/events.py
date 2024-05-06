@@ -117,7 +117,7 @@ class HDFEventLogger(EventLogger):
                 ev['Time'] = timestamp
             
             ev.append()
-            print(ev, (eventName, eventDescr, timestamp))
+            #print(ev, (eventName, eventDescr, timestamp))
             self.evts.flush()
 
 class MemoryEventLogger(EventLogger):
