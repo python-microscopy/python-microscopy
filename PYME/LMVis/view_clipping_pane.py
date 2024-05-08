@@ -164,13 +164,14 @@ class ClippingPanel(wx.Panel):
         dc.Clear()
         
         x0p, wp, x0vp, xmvp, w, x0 = self._get_coords()
-            
+        x0vpi,xmvpi = (int(x0vp),int(xmvp))
+        
         dc.DrawRectangle(x0p, 5, wp, maxy-5)
     
         dc.SetPen(wx.BLACK_PEN)
         dc.SetBrush(wx.BLACK_BRUSH)
 
-        dc.DrawRectangle(x0vp, 5, xmvp - x0vp, maxy-5)
+        dc.DrawRectangle(x0vpi, 5, xmvpi - x0vpi, maxy-5)
 
         #draw lines
         #lower
@@ -179,10 +180,10 @@ class ClippingPanel(wx.Panel):
         else:
             dc.SetPen(wx.Pen(wx.RED, 2))
         
-        dc.DrawLine(x0vp, 5, x0vp, maxy)
+        dc.DrawLine(x0vpi, 5, x0vpi, maxy)
         lab = '%d' % self.view_limits[0]
         labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, max(x0vp - labSize[0] / 2, 0), maxy + 2)
+        dc.DrawText(lab, max(x0vpi - labSize[0] // 2, 0), maxy + 2)
     
         
         #upper
@@ -191,10 +192,10 @@ class ClippingPanel(wx.Panel):
         else:
             dc.SetPen(wx.Pen(wx.RED, 2))
     
-        dc.DrawLine(xmvp, 5, xmvp, maxy)
+        dc.DrawLine(xmvpi, 5, xmvpi, maxy)
         lab = '%d' % self.view_limits[1]
         labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, min(xmvp - labSize[0] / 2, self.Size[0] - labSize[0]), maxy + 2)
+        dc.DrawText(lab, min(xmvpi - labSize[0] // 2, self.Size[0] - labSize[0]), maxy + 2)
     
         dc.SetPen(wx.NullPen)
         dc.SetBrush(wx.NullBrush)

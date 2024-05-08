@@ -136,7 +136,7 @@ class PlayPanel(wx.Panel):
 
     def OnPlay(self, event):
         if not self.tPlay.IsRunning():
-            self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
+            self.tPlay.Start(int(1000./self.slPlaySpeed.GetValue()))
             self.bPlay.SetBitmapLabel(self.bmPause)
         else:
             self.tPlay.Stop()
@@ -156,7 +156,7 @@ class PlayPanel(wx.Panel):
     def OnPlaySpeedChanged(self, event):
         if self.tPlay.IsRunning():
             self.tPlay.Stop()
-            self.tPlay.Start(1000./self.slPlaySpeed.GetValue())
+            self.tPlay.Start(int(1000./self.slPlaySpeed.GetValue()))
 
     def OnPlayPosChanged(self, event):
         self.moving = True #hide refreshes that we generate ourselves
@@ -187,7 +187,7 @@ class PlayPanel(wx.Panel):
             self.Show()
             
         if not self.moving:
-            self.slPlayPos.SetValue((100*self._get_pos())/max(1,self.do.ds.shape[self._shape_idx]-1))
+            self.slPlayPos.SetValue(int((100*self._get_pos())/max(1,self.do.ds.shape[self._shape_idx]-1)))
 
             if not self.tPlay.IsRunning():
                 self.dsviewer.optionspanel.RefreshHists()
