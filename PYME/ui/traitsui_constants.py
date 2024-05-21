@@ -20,7 +20,10 @@ from pyface.api import SystemMetrics
 
 #: Define platform and wx version constants:
 is_mac = sys.platform == "darwin"
-is_dark = wx.SystemSettings.GetAppearance().IsDark()
+try:
+    is_dark = wx.SystemSettings.GetAppearance().IsDark()
+except AttributeError:
+    is_dark = False
 
 #: Default dialog title
 DefaultTitle = "Edit properties"
