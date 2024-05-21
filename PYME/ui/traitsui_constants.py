@@ -40,10 +40,7 @@ else:
 ReadonlyColor = wx.Colour(244, 243, 238)
 
 #: Color for background of fields where objects can be dropped
-if is_dark:
-    DropColor = wx.Colour(94, 131, 167)
-else:
-    DropColor = wx.Colour(215, 242, 255)
+DropColor = wx.Colour(215, 242, 255)
 
 #: Color for an editable field
 EditableColor = OKColor
