@@ -20,6 +20,10 @@ from pyface.api import SystemMetrics
 
 #: Define platform and wx version constants:
 is_mac = sys.platform == "darwin"
+try:
+    is_dark = wx.SystemSettings.GetAppearance().IsDark()
+except AttributeError:
+    is_dark = False
 
 #: Default dialog title
 DefaultTitle = "Edit properties"
@@ -30,7 +34,10 @@ DefaultTitle = "Edit properties"
 OKColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)# wx.WHITE
 
 #: Color to highlight input errors
-ErrorColor = wx.Colour(255, 192, 192)
+if is_dark:
+    ErrorColor = wx.Colour(0xcf, 0x66, 0x79)
+else:
+    ErrorColor = wx.Colour(255, 192, 192)
 
 #: Color for background of read-only fields
 ReadonlyColor = wx.Colour(244, 243, 238)
@@ -43,7 +50,7 @@ EditableColor = OKColor
 
 #: Color for background of windows (like dialog background color)
 if is_mac:
-    WindowColor = wx.Colour(232, 232, 232)
+    WindowColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE)
     BorderedGroupColor = wx.Colour(224, 224, 224)
 else:
     WindowColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUBAR)
