@@ -76,6 +76,8 @@ except ImportError:
 import six
 from collections import namedtuple
 
+from PYME import config
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -549,7 +551,9 @@ class HDFMDHandler(MDHandlerBase):
 
         currGroup = self.h5file._get_or_create_path('/'.join(['', 'MetaData']+ ep), True)
         currGroup._f_setattr(en, value)
-        self.h5file.flush()
+
+        if config.get('HDF-ZealousFlush', False):
+            self.h5file.flush()
 
 
     def getEntry(self,entryName):
