@@ -509,6 +509,7 @@ class fitTask(taskDef.Task):
             fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
             fiducialSize = self.md.getOrDefault('Analysis.FiducalSize', 1000.)
             self._findFiducials(sfunc, debounce, fiducialSize)
+            #logger.debug('Found %d fiducials' % len(self.ofdDr))
                 
         
         #####################################################################

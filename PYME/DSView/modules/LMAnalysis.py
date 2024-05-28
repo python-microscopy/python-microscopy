@@ -960,6 +960,8 @@ class LMAnalyser2(Plugin):
             
         ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
+
+        #print(res.driftResults)
         
         if gui:
             plt.figure()
@@ -969,7 +971,7 @@ class LMAnalyser2(Plugin):
                 plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', clim=(np.median(d.ravel()), d.max()))
                 plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
-                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19)
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
@@ -996,6 +998,11 @@ class LMAnalyser2(Plugin):
                     plt.xticks([])
                     plt.yticks([])
                     plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+
+                try:
+                    plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
+                except AttributeError:
+                    pass
                     
                 #figure()
                 #imshow()
