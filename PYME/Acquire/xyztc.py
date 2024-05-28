@@ -171,6 +171,9 @@ class XYZTCAcquisition(AcquisitionBase):
         with self.scope.frameWrangler.spooling_stopped():
             # avoid stopping both here and in the SpoolController
             #self.scope.frameWrangler.stop()
+            if self._stack_settings:
+                self._stack_settings.SetPrevPos(self._stack_settings._CurPos())
+            
             self.frame_num = 0
             
             z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
@@ -187,9 +190,6 @@ class XYZTCAcquisition(AcquisitionBase):
             self.storage.initialise()
 
             self._running = True
-
-            if self._stack_settings:
-                self._stack_settings.SetPrevPos(self._stack_settings._CurPos())
 
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
