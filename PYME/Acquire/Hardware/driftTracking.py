@@ -106,12 +106,13 @@ class OIDICFrameSource(StandardFrameSource):
         super().__init__(frameWrangler)
 
         self._oidic = oidic_controller
-        self._target_orientation = oidic_orientation
+        #self._target_orientation = oidic_orientation
 
     def tick(self, *args, **kwargs):
         # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
         # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
         # registered with the frameWrangler?
+        self._target_orientation = self._oidic.home_channel()
         if self._oidic.current_channel == self._target_orientation:
             super().tick(*args, **kwargs)
         else:
