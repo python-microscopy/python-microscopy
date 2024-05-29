@@ -112,8 +112,9 @@ class OIDICFrameSource(StandardFrameSource):
         # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
         # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
         # registered with the frameWrangler?
-        self._target_orientation = self._oidic.home_channel()
-        if self._oidic.current_channel == self._target_orientation:
+        #self._target_orientation = self._oidic.home_channel()
+        #if self._oidic.current_channel == self._target_orientation:
+        if self._oidic.current_channel == self._oidic.home_channel():
             super().tick(*args, **kwargs)
         else:
             # clobber all frames coming from camera when not in the correct DIC orientation
