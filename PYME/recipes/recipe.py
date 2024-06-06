@@ -526,6 +526,11 @@ class Recipe(HasTraits):
         finally:
             self.recipe_changed.send_robust(self)
     
+    def remove_module(self, m):
+        self.prune_dependencies_from_namespace(m.outputs)
+        self.modules.remove(m)
+        self.recipe_changed.send_robust(self)
+        
     @property
     def inputs(self):
         ip = set()
