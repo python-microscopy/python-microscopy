@@ -648,7 +648,7 @@ class RecipeView(wx.Panel):
                 
             elif event.mouseevent.button == MouseButton.RIGHT:
                 menu = ModulePopup(self, self.recipes.activeRecipe, k)
-                self.recipePlot.PopupMenu(menu,  event.mouseevent.x, event.mouseevent.y)
+                self.recipePlot.PopupMenu(menu,  event.mouseevent.x, self.recipePlot.GetSize()[1] - event.mouseevent.y)
         else:
             if event.mouseevent.button == MouseButton.LEFT:
                 outp = self.recipes.activeRecipe.namespace[k]
