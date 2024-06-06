@@ -3,6 +3,8 @@ import numpy as np
 import tables
 import time
 
+from PYME import config
+
 # numpy/pytables event representation
 EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', '<f8')])
 
@@ -118,7 +120,13 @@ class HDFEventLogger(EventLogger):
             
             ev.append()
             #print(ev, (eventName, eventDescr, timestamp))
-            self.evts.flush()
+            
+            if config.get('HDF-ZealousFlush', False):
+                # flush after every event - this is slow, but ensures that data is written to disk
+                # and that all events which were logged prior to a crash are preserved.
+                # It probably only makes sense to do this for very critical data (hence the default of False).
+                self.evts.flush()
+            
 
 class MemoryEventLogger(EventLogger):
     """ Event backend which records events to memory, to be saved at a later time"""

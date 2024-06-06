@@ -238,6 +238,7 @@ class ActionManager(object):
             try:
                 self.currentTask.finalise(self.scope())
                 self.currentTask = None
+                self.isLastTaskDone = None # prevent us from continuing to poll the last task if it's done
             except AttributeError:
                 pass
 
