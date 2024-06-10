@@ -162,7 +162,7 @@ class LayerPane(afp.foldingPane):
         #logger.debug('Layer panel update done')
 
     def add_layer(self, evt):
-        dlg = wx.SingleChoiceDialog(self, 'Choose type of layer to add:', 'Add Layer', ['points', 'mesh', 'image', 'tracks', 'quiver'])
+        dlg = wx.SingleChoiceDialog(self, 'Choose type of layer to add:', 'Add Layer', ['points', 'mesh', 'image', 'tracks', 'quiver', 'oriented points'])
         if dlg.ShowModal() == wx.ID_OK:
             type = dlg.GetStringSelection()
             if type == 'points':        
@@ -171,6 +171,8 @@ class LayerPane(afp.foldingPane):
                 self.visFr.add_mesh_layer()
             elif type == 'quiver':
                 self.visFr.add_quiver_layer()
+            elif type == 'oriented points':
+                self.visFr.add_point_quiver_layer()
             else:
                 raise NotImplementedError('Layer type "%s" not supported yet' % type)
         
