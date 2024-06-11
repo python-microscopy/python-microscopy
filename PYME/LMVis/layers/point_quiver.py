@@ -37,16 +37,12 @@ class PointQuiverEngine(BaseEngine):
             vec_buffer[1::2,:] = vertices + layer.scaling*vecs
             
             glVertexPointerf(vec_buffer)
-            # sc = np.array([1, 1, 1, 1])
+            colors = np.repeat(layer.get_colors(), 2, axis=0)
 
-            colors = layer.get_colors()
-            glColorPointerf(colors)
-            # glColorPointerf(np.ones((vec_buffer.shape[0],4),dtype='f4')*sc[None,:])  # white normals
             glNormalPointerf(np.ones((vec_buffer.shape[0],3),dtype='f4'))
-            # glColorPointerf(colors)
+            glColorPointerf(colors)
             glLineWidth(3)  # slightly thick
-            # glDrawArrays(GL_LINES, 0, 2*n_vertices)
-            glDrawArrays(GL_LINES, 0, n_vertices)
+            glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
 ENGINES = {
     'shader_quiver' : PointQuiverEngine,
