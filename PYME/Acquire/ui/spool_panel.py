@@ -177,7 +177,7 @@ class ProtocolAcquisitionPane(cascading_layout.CascadingLayoutPanel):
         #print 'Protocol choice: ', ret, wx.ID_OK
         if ret == wx.ID_OK:
             pname = pDlg.GetStringSelection()
-            self.spoolController.protocol_settings.SetProtocol(pname)
+            self.spoolController.protocol_settings.set_protocol(pname)
             # do this after setProtocol so that an error in SetProtocol avoids setting the new name
             self.stAqProtocol.SetLabel(pname)
             self._seq_panel.UpdateDisp()  # update display of e.g. z_dwell
