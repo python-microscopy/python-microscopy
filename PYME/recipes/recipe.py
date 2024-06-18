@@ -3,6 +3,7 @@ from PYME.contrib import dispatch
 from .base import ModuleBase, OutputModule
 from PYME.recipes import base
 from PYME.IO.image import ImageStack
+from PYME.IO import tabular, csv_flavours
 import time
 
 import logging
@@ -728,9 +729,11 @@ class Recipe(HasTraits):
                 logger.exception('Error reading HDF file: %s' % filename)
                 raise IOError('Error reading %s' % filename)
         
-        elif extension == '.csv':
-            logger.error('loading .csv not supported yet')
-            raise NotImplementedError
+        elif extension in csv_flavours.text_extensions:
+            logger.info('Guess text file format ...')
+            text_options = csv_flavours.guess_text_options(filename)
+            ds = tabular.TextfileSource(filename, **text_options)
+            self.namespace[key] = ds
         elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
