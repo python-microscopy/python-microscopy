@@ -232,8 +232,8 @@ def guess_flavour(colNames, delim=None, ext=None):
 
     return fl
 
-
-
+text_extensions = ['.csv', '.txt'] + [e for e in [csv_flavours[flavour].get('ext',None) for flavour in csv_flavours] if e is not None]
+text_extensions = list(set(text_extensions))
 
 def gen_mdh(self): # generate some metaData that will be passed up the chain
                     # to record some bits of this import
