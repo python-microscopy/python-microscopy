@@ -196,7 +196,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
                     #self.recipeView.SetRecipe(self.pipeline.recipe)
-                    self.update_datasource_panel()
+                
+                if len(cmd_args.load) > 0:
+                    self.pipeline.load_extra_datasources(**dict(cmd_args.load))
+                
+                self.update_datasource_panel()
 
                 self._recipe_editor.update_recipe_text()
             
@@ -452,6 +456,7 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
+    parser.add_argument('-l', '--load', nargs=2, action='append', default=[], dest='load', metavar=('KEY', 'FILENAME'), help='Load one (or more) additional files into the recipe namespace.')
     args = parser.parse_args()
     return args
     

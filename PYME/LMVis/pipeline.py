@@ -856,6 +856,20 @@ class Pipeline(object):
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         
         #self._process_colour()
+
+    def load_extra_datasources(self, **kwargs):
+        ''' Load additional input data files into the pipeline.
+        
+       Takes keyword arguments with the following format:
+       namespace_key=filename
+
+       e.g.
+       load_extra_datadources(fitResults='fitResults.mat', drift='drift.mat')        
+       '''
+        
+        for k, v in kwargs.items():
+            self.recipe.loadInput(filename=v, key=k)
+
         
     @property
     def colour_mapper(self):
