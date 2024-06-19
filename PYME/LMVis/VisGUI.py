@@ -190,15 +190,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         if not filename is None:
             def _recipe_callback():
+                if len(cmd_args.load) > 0:
+                    self.pipeline.load_extra_datasources(**dict(cmd_args.load))
+
                 recipe = getattr(self.cmd_args, 'recipe', None)
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
-                    #self.recipeView.SetRecipe(self.pipeline.recipe)
-                
-                if len(cmd_args.load) > 0:
-                    self.pipeline.load_extra_datasources(**dict(cmd_args.load))
+                    #self.recipeView.SetRecipe(self.pipeline.recipe)  
                 
                 self.update_datasource_panel()
 
