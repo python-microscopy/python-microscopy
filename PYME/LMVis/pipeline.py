@@ -651,31 +651,34 @@ class Pipeline(object):
         """
         mdh = MetaDataHandler.NestedClassMDHandler()
         events = None
-        if os.path.splitext(filename)[1] == '.h5r':
+
+        fn, query = filename.split('?', 1) if '?' in filename else (filename, '')
+        ext = os.path.splitext(fn)[1]
+
+        if ext == '.h5r':
             import tables
             h5f = tables.open_file(filename)
             self.filesToClose.append(h5f)
-            
+
+            h5r_tables = self.recipe._get_tables_from_hdf5(filename, h5f=h5f)
+
             try:
-                ds = tabular.H5RSource(h5f)
-
-                if 'DriftResults' in h5f.root:
-                    driftDS = tabular.H5RDSource(h5f)
-                    self.driftInputMapping = tabular.MappingFilter(driftDS)
-                    #self.dataSources['Fiducials'] = self.driftInputMapping
-                    self.addDataSource('Fiducials', self.driftInputMapping)
-
-                    if len(ds['x']) == 0:
-                        self.selectDataSource('Fiducials')
-
-            except: #fallback to catch series that only have drift data
-                logger.exception('No fitResults table found')
-                ds = tabular.H5RDSource(h5f)
-
-                self.driftInputMapping = tabular.MappingFilter(ds)
-                #self.dataSources['Fiducials'] = self.driftInputMapping
+                driftDS = h5r_tables['DriftResults']
+                self.driftInputMapping = tabular.MappingFilter(driftDS)
                 self.addDataSource('Fiducials', self.driftInputMapping)
-                #self.selectDataSource('Fiducials')
+            except KeyError:
+                logger.debug('No drift data found')
+                driftDS = None
+
+            try:
+                ds = h5r_tables['FitResults']
+            except KeyError:
+                logger.exception('No FitResults table found')
+                if driftDS is not None:
+                    ds = driftDS
+                    logger.debug('Using fiducial data as localisations')
+                else:
+                    raise
 
             # really old files might not have metadata, so test for it before assuming
             if 'MetaData' in h5f.root:
@@ -684,7 +687,7 @@ class Pipeline(object):
             if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
                 events = h5f.root.Events[:]
 
-        elif filename.endswith('.hdf'):
+        elif ext == '.hdf':
             #recipe output - handles generically formatted .h5
             import tables
             h5f = tables.open_file(filename)
@@ -692,6 +695,7 @@ class Pipeline(object):
             
             #defer our IO to the recipe IO method - TODO - do this for other file types as well
             self.recipe._inject_tables_from_hdf5('', h5f, filename, '.hdf')
+            #self.recipe.load_inputs({'':)
 
             for dsname, ds_ in self.dataSources.items():
                 #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
@@ -702,38 +706,10 @@ class Pipeline(object):
                     mdh = getattr(ds, 'mdh', mdh)
                     events = getattr(ds, 'events', events)
                     break
-                    
 
-        elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            if 'VarName' in kwargs.keys():
-                #old style matlab import
-                ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
-            else:
-                if kwargs.get('Multichannel', False):
-                    ds = tabular.MatfileMultiColumnSource(filename)
-                else:
-                    ds = tabular.MatfileColumnSource(filename)
-                
-                # check for column name mapping
-                field_names = kwargs.get('FieldNames', None)
-                if field_names:
-                    if kwargs.get('Multichannel', False):
-                        field_names.append('probe')  # don't forget to copy this field over
-                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
-
-        elif os.path.splitext(filename)[1] == '.h5ad':
-            ds = tabular.AnndataSource(filename)
-            
-        else: #assume it's a delimited (tab or csv) text file
-            # use provided `text_options` argument to Open(), or guess using csv_flavours
-            text_options = kwargs.get('text_options', None)
-            if text_options is None:
-                # we didn't get any info about how to interpret the text file, guess
-                logger.info('No text file format info provided, guessing ...')
-                from PYME.IO import csv_flavours
-                text_options = csv_flavours.guess_text_options(filename)
-
-            ds = tabular.TextfileSource(filename, **text_options)
+        else: 
+            self.recipe._load_input(filename, 'FitResults', default_to_image=False, args=kwargs)
+            ds = self.dataSources['FitResults']
             
         
         # make sure mdh is writable (file-based might not be)
@@ -867,8 +843,7 @@ class Pipeline(object):
        load_extra_datadources(fitResults='fitResults.mat', drift='drift.mat')        
        '''
         
-        for k, v in kwargs.items():
-            self.recipe.loadInput(filename=v, key=k)
+        self.recipe.load_inputs(kwargs)
 
         
     @property

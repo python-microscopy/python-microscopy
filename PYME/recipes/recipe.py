@@ -597,7 +597,52 @@ class Recipe(HasTraits):
         
         return outputs
     
-    def _inject_tables_from_hdf5(self, key, h5f, filename, extension):
+    def _get_tables_from_hdf5(self, filename, extension=None, h5f=None, cache={}):
+        try:
+            return cache[filename]
+        except KeyError:
+            if h5f:
+                output = self.__get_tables_from_hdf5(h5f, filename, extension)
+            else:
+                import tables
+                from PYME.IO import h5rFile
+                from PYME.IO import unifiedIO
+                try:
+                    with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r') as h5f:
+                        output = self.__get_tables_from_hdf5(h5f._h5file, fn, extension)
+                except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
+                    if unifiedIO.is_cluster_uri(filename):
+                        # try again, this time forcing access through the dataserver
+                        # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
+                        # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
+                        # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
+                        # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
+                        # scenario would match what has been observed with old style spooling analysis where copying a file
+                        # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
+                        # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
+                        # TODO - consider whether h5r_part might be a better choice.
+                        # FIXME: (DB) I'm not comfortable with having this kind of special case retry logic here, and would
+                        # much prefer if we could find an alternative workaround, refactor into something like h5rFile.open_robust(),
+                        # or just let this fail). Leaving it for the meantime to get chained recipes working, but we should revisit.
+                        from PYME.IO import clusterIO
+                        relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
+                        file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter,
+                                                        local_short_circuit=False)
+                        with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes,
+                                            driver_core_backing_store=0) as h5f:
+                            self.__get_tables_from_hdf5(h5f, filename, extension)
+                    else:
+                        #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
+                        raise
+                except:
+                    logger.exception('Error reading HDF file: %s' % filename)
+                    raise IOError('Error reading %s' % filename)
+
+            cache[filename] = output
+            return output
+        
+    
+    def __get_tables_from_hdf5(self, h5f, filename, extension=None):
         """
         Search through hdf5 file nodes and add them to the recipe namespace
 
@@ -615,8 +660,14 @@ class Recipe(HasTraits):
         """
         import tables
         from PYME.IO import MetaDataHandler, tabular
+        import os
+
+        if extension is None:
+            extension = os.path.splitext(filename)[1]
         
-        key_prefix = '' if key == 'input' else key + '_'
+        output={}
+        
+        #key_prefix = '' if key == 'input' else key + '_'
         
         # Handle a 'MetaData' group as a special case
         # TODO - find/implement a more portable way of handling metadata in HDF (e.g. as .json in a blob) so that
@@ -668,16 +719,25 @@ class Recipe(HasTraits):
                 if events is not None:
                     rag.events = events
                 
-                self.namespace[key_prefix + t.name] = rag
+                #self.namespace[key_prefix + t.name] = rag
+                output[t.name] = rag
             
             elif isinstance(t, tables.table.Table):
                 #  pipe our table into h5r or hdf source depending on the extension
-                tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
+                if extension == '.h5r':
+                    if t.name == 'DriftResults':
+                        tab = tabular.H5RDriftResults(h5f, t.name)
+                    else:
+                        tab = tabular.H5RSource(h5f, t.name)
+                else:
+                    tab = tabular.HDFSource(h5f, t.name)
+                
                 tab.mdh = mdh
                 if events is not None:
                     tab.events = events
                 
-                self.namespace[key_prefix + t.name] = tab
+                #self.namespace[key_prefix + t.name] = tab
+                output[t.name] = tab
             
             elif isinstance(t, tables.EArray):
                 # load using ImageStack._loadh5
@@ -685,59 +745,95 @@ class Recipe(HasTraits):
                 # sending file over clusterIO inside of a context manager -> force it through since we already found it
                 im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
                 # assume image is the main table in the file and give it the named key
-                self.namespace[key] = im
+                #self.namespace[key] = im
+                output[t.name] = im
+        
+        
+        return output
+
+    def _inject_tables_from_hdf5(self, key, filename, extension, cache={}, h5f=None):
+        key_prefix = '' if key == 'input' else key + '_'  # prefix for keys in the namespace
+
+        tables = self._get_tables_from_hdf5(filename, extension, cache, h5f=h5f)
+        self.namespace.update({key_prefix + k: v for k, v in tables.items()})
+
     
-    def loadInput(self, filename, key='input', metadata_defaults={}):
+    def load_inputs(self, inputs, metadata_defaults={}):
+        """
+        load inputs from a dictionary mapping keys to filenames
+        """
+        cache={} #cache hdf5 files so we don't have to re-open them when we have multiple manually specified tables
+
+        for k, v in inputs.items():
+            if k == '__sim':
+                # skip the simulation flag
+                continue
+
+            self._load_input(v, key=k, metadata_defaults=metadata_defaults, cache=cache)
+    
+    def _load_input(self, filename, key='input', metadata_defaults={}, cache={}, default_to_image=True, args={}):
         """
         Load input data from a file and inject into namespace
         """
         from PYME.IO import unifiedIO
         import os
+
+        args = dict(args) # make a copy so we don't modify the original
+
+        if '?' in filename:
+            from urllib.parse import parse_qs
+            filename, query = filename.split('?')
+            args.update(parse_qs(query))
+        else:
+            query=None
         
         extension = os.path.splitext(filename)[1]
         if extension in ['.h5r', '.hdf']:
-            import tables
-            from PYME.IO import h5rFile
-            try:
-                with unifiedIO.local_or_temp_filename(filename) as fn, h5rFile.openH5R(fn, mode='r') as h5f:
-                    self._inject_tables_from_hdf5(key, h5f._h5file, fn, extension)
-            except tables.exceptions.HDF5ExtError:  # access issue likely due to multiple processes
-                if unifiedIO.is_cluster_uri(filename):
-                    # try again, this time forcing access through the dataserver
-                    # NOTE: it is unclear why this should work when local_or_temp_filename() doesn't
-                    # as this still opens / copies the file independently, albeit in the same process as is doing the writing.
-                    # The fact that this works is relying on one of a quirk of the GIL, a quirk in HDF5 locking, or the fact
-                    # that copying the file to a stream is much faster than opening it with pytables. The copy vs pytables open
-                    # scenario would match what has been observed with old style spooling analysis where copying a file
-                    # prior to opening in VisGUI would work more reliably than opening directly. This retains, however,
-                    # an inherent race condition so we risk replacing a predictable failure with a less frequent one.
-                    # TODO - consider whether h5r_part might be a better choice.
-                    # FIXME: (DB) I'm not comfortable with having this kind of special case retry logic here, and would
-                    # much prefer if we could find an alternative workaround, refactor into something like h5rFile.open_robust(),
-                    # or just let this fail). Leaving it for the meantime to get chained recipes working, but we should revisit.
-                    from PYME.IO import clusterIO
-                    relative_filename, server_filter = unifiedIO.split_cluster_url(filename)
-                    file_as_bytes = clusterIO.get_file(relative_filename, serverfilter=server_filter,
-                                                       local_short_circuit=False)
-                    with tables.open_file('in-memory.h5', driver='H5FD_CORE', driver_core_image=file_as_bytes,
-                                          driver_core_backing_store=0) as h5f:
-                        self._inject_tables_from_hdf5(key, h5f, filename, extension)
-                else:
-                    #not a cluster file, doesn't make sense to retry with cluster. Propagate exception to user.
-                    raise
-            except:
-                logger.exception('Error reading HDF file: %s' % filename)
-                raise IOError('Error reading %s' % filename)
+            if 'table' in args:
+                # we have specified a specific table to load from the hdf5 file
+                self.namespace[key] = self._get_tables_from_hdf5(filename, extension, cache=cache)[args['table']]
+            else:
+                self._inject_tables_from_hdf5(key, filename, extension, cache=cache) 
         
-        elif extension in csv_flavours.text_extensions:
-            logger.info('Guess text file format ...')
-            text_options = csv_flavours.guess_text_options(filename)
-            ds = tabular.TextfileSource(filename, **text_options)
-            self.namespace[key] = ds
         elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
-        else:
+        elif os.path.splitext(filename)[1] == '.mat': #matlab file
+            if 'VarName' in args.keys():
+                #old style matlab import
+                ds = tabular.MatfileSource(filename, args['FieldNames'], args['VarName'])
+            else:
+                if args.get('Multichannel', False):
+                    ds = tabular.MatfileMultiColumnSource(filename)
+                else:
+                    ds = tabular.MatfileColumnSource(filename)
+                
+                # check for column name mapping
+                field_names = args.get('FieldNames', None)
+                if field_names:
+                    if args.get('Multichannel', False):
+                        field_names.append('probe')  # don't forget to copy this field over
+                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
+
+            self.namespace[key] = ds
+
+        elif os.path.splitext(filename)[1] == '.h5ad':
+            ds = tabular.AnndataSource(filename)
+            self.namespace[key] = ds
+
+        elif (not default_to_image) or (extension in csv_flavours.text_extensions):
+            # tab or csv formatted text file
+            text_options = args.get('text_options', None)
+            if text_options is None:
+                logger.info('Guessing text file format ...')
+                text_options = csv_flavours.guess_text_options(filename)
+                text_options.update(args) #override with any user specified options (as query string)
+            
+            ds = tabular.TextfileSource(filename, **text_options)
+            self.namespace[key] = ds
+        else: # assume it's an image
+            if query:
+                filename = filename + '?' + query #reconstruct the filename with the query string as this is processed by some imaghe types
             im = ImageStack(filename=filename, haveGUI=False)
             if im.mdh.get('voxelize.x', None) is None:
                 logger.error('No voxelsize metadata found for image %s, using defaults' % filename)
