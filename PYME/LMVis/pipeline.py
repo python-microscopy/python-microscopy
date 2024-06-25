@@ -212,7 +212,7 @@ def _processEvents(ds, events, mdh):
     """Read data from events table and translate it into mappings for,
     e.g. z position"""
 
-    eventCharts = []
+    #eventCharts = []
     ev_mappings = {}
 
     if not events is None:
@@ -237,7 +237,7 @@ def _processEvents(ds, events, mdh):
                 
             # the z position we use for localizations gets the ontarget info if present
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            #eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
             
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
@@ -245,7 +245,7 @@ def _processEvents(ds, events, mdh):
                 x0 = mdh.getEntry('Positioning.Stage_X')
             xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
             ev_mappings['xm'] = xm
-            eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
+            #eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
         if b'ScannerYPos' in evKeyNames:
             y0 = 0
@@ -253,7 +253,7 @@ def _processEvents(ds, events, mdh):
                 y0 = mdh.getEntry('Positioning.Stage_Y')
             ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
             ev_mappings['ym'] = ym
-            eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
+            #eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
         if b'ShiftMeasure' in evKeyNames:
             driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
@@ -267,9 +267,9 @@ def _processEvents(ds, events, mdh):
             ev_mappings['drifty'] = drifty
             ev_mappings['driftz'] = driftz
 
-            eventCharts.append(('X Drift [px]', driftx, 'ShiftMeasure'))
-            eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
-            eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
+            #eventCharts.append(('X Drift [px]', driftx, 'ShiftMeasure'))
+            #eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
+            #eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
 
             # self.eventCharts = eventCharts
             # self.ev_mappings = ev_mappings
@@ -285,13 +285,13 @@ def _processEvents(ds, events, mdh):
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['z_command'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            #eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         except:
             # It doesn't really matter if this fails, print our traceback anyway
             logger.exception('Error trying to fudge focus positions')
 
-    return ev_mappings, eventCharts
+    return ev_mappings #, eventCharts
 
 class Pipeline(object):
     def __init__(self, filename=None, visFr=None, execute_on_invalidation=True):
@@ -322,8 +322,6 @@ class Pipeline(object):
         self._extra_chan_num = 0
         
         self.filesToClose = []
-
-        self.ev_mappings = {}
 
         #define a signal which a GUI can hook if the pipeline is rebuilt (i.e. the output changes)
         self.onRebuild = dispatch.Signal()
@@ -694,7 +692,7 @@ class Pipeline(object):
             self.filesToClose.append(h5f)
             
             #defer our IO to the recipe IO method - TODO - do this for other file types as well
-            self.recipe._inject_tables_from_hdf5('', h5f, filename, '.hdf')
+            self.recipe._inject_tables_from_hdf5('', filename, '.hdf', h5f=h5f)
             #self.recipe.load_inputs({'':)
 
             for dsname, ds_ in self.dataSources.items():
@@ -752,6 +750,7 @@ class Pipeline(object):
         
         if 'zm' in dir(self):
             del self.zm
+            
         self.filter = None
         self.mapping = None
         self.colourFilter = None
@@ -793,7 +792,8 @@ class Pipeline(object):
             add_pipeline_variables = Pipelineify(self.recipe,
                 inputFitResults='FitResults',
                 pixelSizeNM=kwargs.get('PixelSize', 1.),
-                outputLocalizations='Localizations')
+                outputLocalizations='Localizations',
+                outputEventMaps= 'event_maps')
             self.recipe.add_module(add_pipeline_variables)
           
             #self._get_dye_ratios_from_metadata()
@@ -817,9 +817,6 @@ class Pipeline(object):
             # as if opening with an existing recipe we would likely want to keep selectedDataSource constant as well.
             self.selectDataSource('FitResults')
 
-        # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
-        self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
-                                                            self.mdh)  # extract information from any events
         # Retrieve or estimate image bounds
         if False:  # 'imgBounds' in kwargs.keys():
             # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
@@ -832,6 +829,37 @@ class Pipeline(object):
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         
         #self._process_colour()
+
+    @property
+    def ev_mappings(self):
+        try:
+            return self.dataSources['event_maps']
+        except KeyError:
+            logger.exception('No event mappings found')
+            return {}
+    
+    @property
+    def eventCharts(self):
+        charts = []
+        if 'zm' in self.ev_mappings:
+            charts.append(('Focus [um]', self.ev_mappings['zm'], b'ProtocolFocus'))
+        elif 'z_command' in self.ev_mappings:
+            charts.append(('Focus [um]', self.ev_mappings['z_command'], b'ProtocolFocus'))
+
+        if 'xm' in self.ev_mappings:
+            charts.append(('XPos [um]', self.ev_mappings['xm'], 'ScannerXPos'))
+
+        if 'ym' in self.ev_mappings:
+            charts.append(('YPos [um]', self.ev_mappings['ym'], 'ScannerYPos'))
+
+        if 'driftx' in self.ev_mappings:
+            charts.append(('X Drift [px]', self.ev_mappings['driftx'], 'ShiftMeasure'))
+            charts.append(('Y Drift [px]', self.ev_mappings['drifty'], 'ShiftMeasure'))
+            charts.append(('Z Drift [px]', self.ev_mappings['driftz'], 'ShiftMeasure'))
+
+        
+        return charts
+
 
     def load_extra_datasources(self, **kwargs):
         ''' Load additional input data files into the pipeline.

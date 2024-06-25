@@ -752,13 +752,13 @@ class Recipe(HasTraits):
         return output
 
     def _inject_tables_from_hdf5(self, key, filename, extension, cache={}, h5f=None):
-        key_prefix = '' if key == 'input' else key + '_'  # prefix for keys in the namespace
+        key_prefix = '' if key in ['input', '', None] else key + '_'  # prefix for keys in the namespace
 
         tables = self._get_tables_from_hdf5(filename, extension, cache, h5f=h5f)
         self.namespace.update({key_prefix + k: v for k, v in tables.items()})
 
     
-    def load_inputs(self, inputs, metadata_defaults={}):
+    def load_inputs(self, inputs, metadata_defaults={}, raise_on_error=True):
         """
         load inputs from a dictionary mapping keys to filenames
         """
@@ -769,7 +769,13 @@ class Recipe(HasTraits):
                 # skip the simulation flag
                 continue
 
-            self._load_input(v, key=k, metadata_defaults=metadata_defaults, cache=cache)
+            try:
+                self._load_input(v, key=k, metadata_defaults=metadata_defaults, cache=cache)
+            except Exception as e:
+                if raise_on_error:
+                    raise RecipeError('Error loading input %s from %s' % (k, v)) from e
+                else:
+                    logger.exception('Error loading input %s from %s' % (k, v))
     
     def _load_input(self, filename, key='input', metadata_defaults={}, cache={}, default_to_image=True, args={}):
         """
@@ -799,38 +805,41 @@ class Recipe(HasTraits):
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            if 'VarName' in args.keys():
-                #old style matlab import
-                ds = tabular.MatfileSource(filename, args['FieldNames'], args['VarName'])
-            else:
-                if args.get('Multichannel', False):
-                    ds = tabular.MatfileMultiColumnSource(filename)
+            with unifiedIO.local_or_temp_filename(filename) as fn:
+                if 'VarName' in args.keys():
+                    #old style matlab import
+                    ds = tabular.MatfileSource(fn, args['FieldNames'], args['VarName'])
                 else:
-                    ds = tabular.MatfileColumnSource(filename)
-                
-                # check for column name mapping
-                field_names = args.get('FieldNames', None)
-                if field_names:
                     if args.get('Multichannel', False):
-                        field_names.append('probe')  # don't forget to copy this field over
-                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
+                        ds = tabular.MatfileMultiColumnSource(fn)
+                    else:
+                        ds = tabular.MatfileColumnSource(fn)
+                    
+                    # check for column name mapping
+                    field_names = args.get('FieldNames', None)
+                    if field_names:
+                        if args.get('Multichannel', False):
+                            field_names.append('probe')  # don't forget to copy this field over
+                        ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
             self.namespace[key] = ds
 
         elif os.path.splitext(filename)[1] == '.h5ad':
-            ds = tabular.AnndataSource(filename)
-            self.namespace[key] = ds
+            with unifiedIO.local_or_temp_filename(filename) as fn:
+                ds = tabular.AnndataSource(filename)
+                self.namespace[key] = ds
 
         elif (not default_to_image) or (extension in csv_flavours.text_extensions):
-            # tab or csv formatted text file
-            text_options = args.get('text_options', None)
-            if text_options is None:
-                logger.info('Guessing text file format ...')
-                text_options = csv_flavours.guess_text_options(filename)
-                text_options.update(args) #override with any user specified options (as query string)
-            
-            ds = tabular.TextfileSource(filename, **text_options)
-            self.namespace[key] = ds
+            with unifiedIO.local_or_temp_filename(filename) as fn:
+                # tab or csv formatted text file
+                text_options = args.get('text_options', None)
+                if text_options is None:
+                    logger.info('Guessing text file format ...')
+                    text_options = csv_flavours.guess_text_options(filename)
+                    text_options.update(args) #override with any user specified options (as query string)
+                
+                ds = tabular.TextfileSource(filename, **text_options)
+                self.namespace[key] = ds
         else: # assume it's an image
             if query:
                 filename = filename + '?' + query #reconstruct the filename with the query string as this is processed by some imaghe types

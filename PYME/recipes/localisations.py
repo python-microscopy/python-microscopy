@@ -171,6 +171,8 @@ class DensityMapping(ModuleBase):
                     ),
                 ]
 
+class DictWrapper(dict):
+    pass
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
     """
@@ -210,6 +212,7 @@ class Pipelineify(ModuleBase):
     foreshortening = Float(1.0, desc='scaling factor to correct for foreshortening in z')
 
     outputLocalizations = Output('Localizations')
+    outputEventMaps = Output('event_maps')
     
     # def execute(self, namespace):
     #     from PYME.LMVis import pipeline
@@ -286,7 +289,7 @@ class Pipelineify(ModuleBase):
         if isinstance(events, tabular.TabularBase):
             events = events.to_recarray()
 
-        ev_maps, ev_charts = pipeline._processEvents(mapped_ds, events, mdh)
+        ev_maps = pipeline._processEvents(mapped_ds, events, mdh)
         pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
         mapped_ds.set_variables(foreShort=self.foreshortening)
         
@@ -305,7 +308,7 @@ class Pipelineify(ModuleBase):
 
         mapped_ds.mdh = mdh
 
-        return mapped_ds
+        return {'outputLocalizations' : mapped_ds, 'outputEventMaps' : DictWrapper(ev_maps)}
         
 @register_module("ProcessColour")
 class ProcessColour(ModuleBase):
