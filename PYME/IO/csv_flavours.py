@@ -187,6 +187,9 @@ def guess_text_options(filename):
 
     return text_options
 
+def strict_options(text_options):
+    '''Remove all options from dictionary which aren't defined in our text_options definition'''
+    return {k: text_options[k] for k in text_options if k in ['columnnames', 'skiprows', 'delimiter', 'invalid_raise']}
 
 def check_required_names(self):
     reqNotDef = [name for name in self.requiredNames.keys() if not name in self.translatedNames]

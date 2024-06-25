@@ -647,69 +647,80 @@ class Pipeline(object):
             the datasource, complete with metadatahandler and events if found.
 
         """
+        from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
+
         mdh = MetaDataHandler.NestedClassMDHandler()
         events = None
+    
+        # load from file(/cluster, downloading a copy of the file if needed)
+        _original_filename = filename
+        #TODO - move unifiedIO call down into recipe IO
+        with unifiedIO.local_or_temp_filename(filename) as filename:
+            # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
+            # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
+            # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
+            # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
 
-        fn, query = filename.split('?', 1) if '?' in filename else (filename, '')
-        ext = os.path.splitext(fn)[1]
+            fn, query = filename.split('?', 1) if '?' in filename else (filename, '')
+            ext = os.path.splitext(fn)[1]
 
-        if ext == '.h5r':
-            import tables
-            h5f = tables.open_file(filename)
-            self.filesToClose.append(h5f)
+            if ext == '.h5r':
+                import tables
+                h5f = tables.open_file(filename)
+                self.filesToClose.append(h5f)
 
-            h5r_tables = self.recipe._get_tables_from_hdf5(filename, h5f=h5f)
+                h5r_tables = self.recipe._get_tables_from_hdf5(filename, h5f=h5f)
 
-            try:
-                driftDS = h5r_tables['DriftResults']
-                self.driftInputMapping = tabular.MappingFilter(driftDS)
-                self.addDataSource('Fiducials', self.driftInputMapping)
-            except KeyError:
-                logger.debug('No drift data found')
-                driftDS = None
+                try:
+                    driftDS = h5r_tables['DriftResults']
+                    self.driftInputMapping = tabular.MappingFilter(driftDS)
+                    self.addDataSource('Fiducials', self.driftInputMapping)
+                except KeyError:
+                    logger.debug('No drift data found')
+                    driftDS = None
 
-            try:
-                ds = h5r_tables['FitResults']
-            except KeyError:
-                logger.exception('No FitResults table found')
-                if driftDS is not None:
-                    ds = driftDS
-                    logger.debug('Using fiducial data as localisations')
-                else:
-                    raise
+                try:
+                    ds = h5r_tables['FitResults']
+                except KeyError:
+                    logger.exception('No FitResults table found')
+                    if driftDS is not None:
+                        ds = driftDS
+                        logger.debug('Using fiducial data as localisations')
+                    else:
+                        raise
 
-            # really old files might not have metadata, so test for it before assuming
-            if 'MetaData' in h5f.root:
-                mdh = MetaDataHandler.HDFMDHandler(h5f)
+                # really old files might not have metadata, so test for it before assuming
+                if 'MetaData' in h5f.root:
+                    mdh = MetaDataHandler.HDFMDHandler(h5f)
+                
+                if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
+                    events = h5f.root.Events[:]
+
+            elif ext == '.hdf':
+                #recipe output - handles generically formatted .h5
+                import tables
+                h5f = tables.open_file(filename)
+                self.filesToClose.append(h5f)
+                
+                #defer our IO to the recipe IO method - TODO - do this for other file types as well
+                self.recipe._inject_tables_from_hdf5('', filename, '.hdf', h5f=h5f)
+                #self.recipe.load_inputs({'':)
+
+                for dsname, ds_ in self.dataSources.items():
+                    #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
+                    #TODO make this logic better.
+                    ds = ds_
+                    if 'x' in ds.keys():
+                        # TODO - get rid of some of the grossness here
+                        mdh = getattr(ds, 'mdh', mdh)
+                        events = getattr(ds, 'events', events)
+                        break
+
+            else: 
+                self.recipe._load_input(filename, 'FitResults', default_to_image=False, args=kwargs)
+                ds = self.dataSources['FitResults']
+                
             
-            if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
-                events = h5f.root.Events[:]
-
-        elif ext == '.hdf':
-            #recipe output - handles generically formatted .h5
-            import tables
-            h5f = tables.open_file(filename)
-            self.filesToClose.append(h5f)
-            
-            #defer our IO to the recipe IO method - TODO - do this for other file types as well
-            self.recipe._inject_tables_from_hdf5('', filename, '.hdf', h5f=h5f)
-            #self.recipe.load_inputs({'':)
-
-            for dsname, ds_ in self.dataSources.items():
-                #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
-                #TODO make this logic better.
-                ds = ds_
-                if 'x' in ds.keys():
-                    # TODO - get rid of some of the grossness here
-                    mdh = getattr(ds, 'mdh', mdh)
-                    events = getattr(ds, 'events', events)
-                    break
-
-        else: 
-            self.recipe._load_input(filename, 'FitResults', default_to_image=False, args=kwargs)
-            ds = self.dataSources['FitResults']
-            
-        
         # make sure mdh is writable (file-based might not be)
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
@@ -717,6 +728,7 @@ class Pipeline(object):
             # ensure that events are sorted in increasing time order
             ds.events = events[np.argsort(events['Time'])]
             
+        ds.filename = _original_filename # store the original filename / URI so that we can use it for saving sessions later.
         return ds
 
     def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
@@ -732,8 +744,6 @@ class Pipeline(object):
             PixelSize:  Pixel size if not in nm
             
         """
-        
-
         #close any files we had open previously
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
@@ -750,7 +760,7 @@ class Pipeline(object):
         
         if 'zm' in dir(self):
             del self.zm
-            
+
         self.filter = None
         self.mapping = None
         self.colourFilter = None
@@ -759,17 +769,9 @@ class Pipeline(object):
         
         self.filename = filename
         
-        if ds is None:
-            from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
-            
-            # load from file(/cluster, downloading a copy of the file if needed)
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
-                # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
-                # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
-                # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
-                ds = self._ds_from_file(fn, **kwargs)
-                self.events = getattr(ds, 'events', None)
+        if ds is None:                
+            ds = self._ds_from_file(filename, **kwargs)
+            self.events = getattr(ds, 'events', None)
                 #self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is

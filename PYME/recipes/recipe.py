@@ -540,6 +540,43 @@ class Recipe(HasTraits):
         return ip
     
     @property
+    def inferred_inputs(self):
+        '''Return a set of inputs which are not outputs of any module'''
+        ops = self.module_outputs
+
+        ip = set()
+        for mod in self.modules:
+            ip.update({k for k in mod.inputs if not k in ops})
+
+        return ip
+    
+    @property
+    def inferred_data(self):
+        '''Return a set of recipe namespace residents which are not outputs of any module.
+        This reflects data which has been loaded from file, or otherwise injected into the namespace.
+
+        Used when serialising PYMEVis sessions.
+        '''
+        ops = self.module_outputs
+        data = {k for k in self.namespace.keys() if not k in ops}
+
+        return data
+    
+    @property
+    def has_insaved_injections(self):
+        '''Return true if the recipe has any data which has been injected into the namespace (rather than loaded from file)
+        
+        Indicates if a session can be serialised successfully.
+        #TODO - does this belong here on in session management/ the pipeline
+        '''
+
+        for d in self.inferred_data:
+            if not getattr(self.namespace[d], 'filename', None):
+                return True
+        
+        return False
+    
+    @property
     def outputs(self):
         op = set()
         for mod in self.modules:
@@ -720,6 +757,7 @@ class Recipe(HasTraits):
                     rag.events = events
                 
                 #self.namespace[key_prefix + t.name] = rag
+                rag.query = f'table={t.name}' # add a query string so we can reload it
                 output[t.name] = rag
             
             elif isinstance(t, tables.table.Table):
@@ -737,15 +775,18 @@ class Recipe(HasTraits):
                     tab.events = events
                 
                 #self.namespace[key_prefix + t.name] = tab
+                tab.query = f'table={t.name}' # add a query string so we can reload it
                 output[t.name] = tab
             
             elif isinstance(t, tables.EArray):
+                logger.warning('Image data found in .hdf, attempting to load (this may not work). In general, use .h5 for hdf image data')
                 # load using ImageStack._loadh5
                 # FIXME - ._loadh5 will load events lazily, which isn't great if we got here after
                 # sending file over clusterIO inside of a context manager -> force it through since we already found it
                 im = ImageStack(filename=filename, mdh=mdh, events=events, haveGUI=False)
                 # assume image is the main table in the file and give it the named key
                 #self.namespace[key] = im
+                im.query = f'table={t.name}' # add a query string so we can reload it
                 output[t.name] = im
         
         
@@ -809,14 +850,21 @@ class Recipe(HasTraits):
                 if 'VarName' in args.keys():
                     #old style matlab import
                     ds = tabular.MatfileSource(fn, args['FieldNames'], args['VarName'])
+                    ds.query = f'VarName={args["VarName"]}&FieldNames={args["FieldNames"]}'
                 else:
                     if args.get('Multichannel', False):
                         ds = tabular.MatfileMultiColumnSource(fn)
+                        ds.query = 'Multichannel=True'
                     else:
                         ds = tabular.MatfileColumnSource(fn)
+                        ds.query = ''
                     
                     # check for column name mapping
                     field_names = args.get('FieldNames', None)
+                    if field_names:
+                        if ds.query:
+                            ds.query += '&'
+                        ds.query += '&'.join([f'FieldNames={fn}' for fn in field_names])
                     if field_names:
                         if args.get('Multichannel', False):
                             field_names.append('probe')  # don't forget to copy this field over
@@ -839,6 +887,9 @@ class Recipe(HasTraits):
                     text_options.update(args) #override with any user specified options (as query string)
                 
                 ds = tabular.TextfileSource(filename, **text_options)
+                
+                from urllib.parse import urlencode
+                ds.query = urlencode(csv_flavours.strict_options(text_options), doseq=True)
                 self.namespace[key] = ds
         else: # assume it's an image
             if query:
