@@ -675,6 +675,9 @@ class Recipe(HasTraits):
                     logger.exception('Error reading HDF file: %s' % filename)
                     raise IOError('Error reading %s' % filename)
 
+            for o in output.values():
+                o.filename = filename
+
             cache[filename] = output
             return output
         

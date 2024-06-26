@@ -266,6 +266,7 @@ class VisGUICore(object):
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
             
         self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
+        self.AddMenuItem('File', 'Save Session', self.OnSaveSession)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -818,6 +819,14 @@ class VisGUICore(object):
     def save_session(self, filename):
         with open(filename, 'w') as f:
             f.write(self.get_session_yaml())
+
+    def OnSaveSession(self, event):
+        '''GUI callback to save session to a file, shows a file dialog'''
+        filename = wx.SaveFileSelector("Choose a file to save the session to", 
+                                   #nameUtils.genResultDirectoryPath(), 
+                                   extension='.pvs')
+        if not filename == '':
+            self.save_session(filename)
     
     def load_session(self, filename):
         import yaml

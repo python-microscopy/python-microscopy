@@ -508,6 +508,7 @@ class Pipeline(object):
         Return a dictionary of datasources which are suitable for listing in a session file
         
         """
+        from PYME import warnings
         out = {}
         for k in self.recipe.inferred_data:
             ds = self.dataSources[k]
@@ -520,8 +521,10 @@ class Pipeline(object):
                     fn += '?' + q
 
                 out[k] = fn
-            else:
-                logger.error('Data source %s has no filename, skipping. Session will be incomplete.' % k)
+            else:           
+                #logger.error('Data source %s has no filename, skipping. Session will be incomplete.' % k)
+                if not warnings.warn('Data source %s has no filename, skipping. Session will be incomplete.' % k, allow_cancel=True):
+                    raise RuntimeError('Session save cancelled')
         
         return out
     
