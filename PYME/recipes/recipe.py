@@ -798,7 +798,7 @@ class Recipe(HasTraits):
     def _inject_tables_from_hdf5(self, key, filename, extension, cache={}, h5f=None):
         key_prefix = '' if key in ['input', '', None] else key + '_'  # prefix for keys in the namespace
 
-        tables = self._get_tables_from_hdf5(filename, extension, cache, h5f=h5f)
+        tables = self._get_tables_from_hdf5(filename, extension=extension, cache=cache, h5f=h5f)
         self.namespace.update({key_prefix + k: v for k, v in tables.items()})
 
     
