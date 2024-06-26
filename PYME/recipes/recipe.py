@@ -831,6 +831,7 @@ class Recipe(HasTraits):
             from urllib.parse import parse_qs
             filename, query = filename.split('?')
             args.update(parse_qs(query))
+            args = {k: v if len(v)>1 else v[0] for k, v in args.items()}
         else:
             query=None
         

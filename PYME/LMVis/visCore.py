@@ -462,9 +462,15 @@ class VisGUICore(object):
         return l
 
     def add_layer(self, layer):
-        self.glCanvas.layers.append(layer)
+        self.add_layers([layer,])
+        
+
+    def add_layers(self, layers):
+        for layer in layers:
+            self.glCanvas.layers.append(layer)
+            layer.on_update.connect(self.glCanvas.refresh)
+
         self.glCanvas.recenter_bbox()
-        layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
         
         wx.CallAfter(self.layer_added.send, self)
@@ -799,15 +805,41 @@ class VisGUICore(object):
             
         return args
 
-    def get_session(self):
+    def get_session_yaml(self):
         import yaml
         from PYME.recipes.base import MyDumper
-        session = {}
+        session = {'format_version': 0.1,}
         session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
 
         # TODO - View and layer settings
+        session.update(self.glCanvas.get_session_info())
+        return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
+    
+    def save_session(self, filename):
+        with open(filename, 'w') as f:
+            f.write(self.get_session_yaml())
+    
+    def load_session(self, filename):
+        import yaml
+        with open(filename, 'r') as f:
+            session = yaml.safe_load(f)
 
-        return yaml.dump(session, Dumper=MyDumper)
+        self.pipeline.load_session(session)
+
+        # load layers
+        from PYME.LMVis.layers import layer_from_session_info
+        self.glCanvas.layers.clear()
+        layers = []
+        for l in session.get('layers', []):
+            layers.append(layer_from_session_info(self.pipeline, l))
+        
+        self.add_layers(layers)
+
+        # reload view
+        view = session.get('view', None)
+        if view:
+            from PYME.LMVis import views
+            self.glCanvas.set_view(views.View.decode_json(view))
     
     
     def OpenFile(self, filename, recipe_callback=None):

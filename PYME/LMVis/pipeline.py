@@ -531,7 +531,8 @@ class Pipeline(object):
         
         """
         return {'datasources': self._get_session_datasources(),
-                'recipe': self.recipe.get_cleaned_module_list()}
+                'recipe': self.recipe.get_cleaned_module_list(),
+                'selected_datasource': self.selectedDataSourceKey}
 
     def addColumn(self, name, values, default = 0):
         """
@@ -761,19 +762,7 @@ class Pipeline(object):
         ds.filename = _original_filename # store the original filename / URI so that we can use it for saving sessions later.
         return ds
 
-    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
-        """Open a file - accepts optional keyword arguments for use with files
-        saved as .txt and .mat. These are:
-            
-            FieldNames: a list of names for the fields in the text file or
-                        matlab variable.
-            VarName:    the name of the variable in the .mat file which 
-                        contains the data.
-            SkipRows:   Number of header rows to skip for txt file data
-            
-            PixelSize:  Pixel size if not in nm
-            
-        """
+    def _clear_session(self, clobber_recipe=True):
         #close any files we had open previously
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
@@ -795,7 +784,50 @@ class Pipeline(object):
         self.mapping = None
         self.colourFilter = None
         self.events = None
-        #self.mdh = MetaDataHandler.NestedClassMDHandler()
+
+    def load_session(self, session_info):
+        self._clear_session()
+
+        self.load_extra_datasources(**session_info['datasources'])
+        self.recipe._update_from_module_list(session_info['recipe'])
+        self.recipe.execute()
+
+        self.selectDataSource(session_info['selected_datasource'])
+
+        self.Rebuild()
+
+    def _create_default_recipe(self, pixel_size= 1.0, ds_keys = []):
+        from PYME.recipes.localisations import ProcessColour, Pipelineify
+        from PYME.recipes.tablefilters import FilterTable
+        
+        add_pipeline_variables = Pipelineify(self.recipe,
+            inputFitResults='FitResults',
+            pixelSizeNM=pixel_size, #kwargs.get('PixelSize', 1.),
+            outputLocalizations='Localizations',
+            outputEventMaps= 'event_maps')
+        self.recipe.add_module(add_pipeline_variables)
+        
+        #self._get_dye_ratios_from_metadata()
+                
+        colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        self.recipe.add_module(colour_mapper)
+        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds_keys}))
+
+
+    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
+        """Open a file - accepts optional keyword arguments for use with files
+        saved as .txt and .mat. These are:
+            
+            FieldNames: a list of names for the fields in the text file or
+                        matlab variable.
+            VarName:    the name of the variable in the .mat file which 
+                        contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
+            
+            PixelSize:  Pixel size if not in nm
+            
+        """
+        self._clear_session(clobber_recipe=clobber_recipe)
         
         self.filename = filename
         
@@ -818,21 +850,7 @@ class Pipeline(object):
                 self.filterKeys['fitError_dy'] = (0, 10)
 
         if clobber_recipe:
-            from PYME.recipes.localisations import ProcessColour, Pipelineify
-            from PYME.recipes.tablefilters import FilterTable
-            
-            add_pipeline_variables = Pipelineify(self.recipe,
-                inputFitResults='FitResults',
-                pixelSizeNM=kwargs.get('PixelSize', 1.),
-                outputLocalizations='Localizations',
-                outputEventMaps= 'event_maps')
-            self.recipe.add_module(add_pipeline_variables)
-          
-            #self._get_dye_ratios_from_metadata()
-                   
-            colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
-            self.recipe.add_module(colour_mapper)
-            self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds.keys()}))
+            self._create_default_recipe(pixel_size=kwargs.get('PixelSize', 1.0), ds_keys = ds.keys())
         else:
             logger.warn('Opening file without clobbering recipe, filter and ratiometric colour settings might not be handled properly')
             # FIXME - should we update filter keys and/or make the filter more robust
