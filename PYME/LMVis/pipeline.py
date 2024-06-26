@@ -502,6 +502,36 @@ class Pipeline(object):
             return name, count
             
         return name
+    
+    def _get_session_datasources(self):
+        """
+        Return a dictionary of datasources which are suitable for listing in a session file
+        
+        """
+        out = {}
+        for k in self.recipe.inferred_data:
+            ds = self.dataSources[k]
+
+            if hasattr(ds, 'filename'):
+                fn = ds.filename
+
+                q = getattr(ds, 'query', None)
+                if q:
+                    fn += '?' + q
+
+                out[k] = fn
+            else:
+                logger.error('Data source %s has no filename, skipping. Session will be incomplete.' % k)
+        
+        return out
+    
+    def get_session(self):
+        """
+        Return a dictionary of the current session
+        
+        """
+        return {'datasources': self._get_session_datasources(),
+                'recipe': self.recipe.get_cleaned_module_list()}
 
     def addColumn(self, name, values, default = 0):
         """

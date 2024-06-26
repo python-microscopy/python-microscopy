@@ -799,6 +799,17 @@ class VisGUICore(object):
             
         return args
 
+    def get_session(self):
+        import yaml
+        from PYME.recipes.base import MyDumper
+        session = {}
+        session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
+
+        # TODO - View and layer settings
+
+        return yaml.dump(session, Dumper=MyDumper)
+    
+    
     def OpenFile(self, filename, recipe_callback=None):
         # get rid of any old layers
         while len(self.layers) > 0:
