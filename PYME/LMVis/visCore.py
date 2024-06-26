@@ -842,10 +842,28 @@ class VisGUICore(object):
             self.glCanvas.set_view(views.View.decode_json(view))
     
     
+    def _update_title_and_tabs(self, filename):
+        self.recipeView.invalidate_layout()
+        self.update_datasource_panel()
+
+        if isinstance(self, wx.Frame):
+            #run this if only we are the main frame
+            self.SetTitle('PYME Visualise - ' + filename)
+            self._removeOldTabs()
+            self._createNewTabs()
+            
+            #self.CreateFoldPanel()
+            logger.debug('Gui stuff done')
+    
     def OpenFile(self, filename, recipe_callback=None):
         # get rid of any old layers
         while len(self.layers) > 0:
             self.layers.pop()
+
+        if filename.endswith('.pvs'):
+            self.load_session(filename)
+            self._update_title_and_tabs(filename)
+            return
         
         logger.debug('Creating Pipeline')
         if filename is None and not ds is None:
@@ -859,17 +877,9 @@ class VisGUICore(object):
         
         #############################
         #now do all the gui stuff
-        self.recipeView.invalidate_layout()
-        self.update_datasource_panel()
+
+        self._update_title_and_tabs(filename)
         
-        if isinstance(self, wx.Frame):
-            #run this if only we are the main frame
-            self.SetTitle('PYME Visualise - ' + filename)
-            self._removeOldTabs()
-            self._createNewTabs()
-            
-            #self.CreateFoldPanel()
-            logger.debug('Gui stuff done')
         
         try:
             if recipe_callback:
