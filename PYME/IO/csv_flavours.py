@@ -187,6 +187,9 @@ def guess_text_options(filename):
 
     return text_options
 
+def strict_options(text_options):
+    '''Remove all options from dictionary which aren't defined in our text_options definition'''
+    return {k: text_options[k] for k in text_options if k in ['columnnames', 'skiprows', 'delimiter', 'invalid_raise']}
 
 def check_required_names(self):
     reqNotDef = [name for name in self.requiredNames.keys() if not name in self.translatedNames]
@@ -232,8 +235,8 @@ def guess_flavour(colNames, delim=None, ext=None):
 
     return fl
 
-
-
+text_extensions = ['.csv', '.txt'] + [e for e in [csv_flavours[flavour].get('ext',None) for flavour in csv_flavours] if e is not None]
+text_extensions = list(set(text_extensions))
 
 def gen_mdh(self): # generate some metaData that will be passed up the chain
                     # to record some bits of this import

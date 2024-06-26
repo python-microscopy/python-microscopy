@@ -30,3 +30,21 @@ from .SelectionOverlayLayer import SelectionOverlayLayer
 #from .ShadedPointRenderLayer import ShadedPointRenderLayer
 #from .TetrahedraRenderLayer import TetrahedraRenderLayer
 from .base import BaseLayer
+
+from . import pointcloud, mesh, tracks, image_layer
+
+layer_types = {
+    'PointCloudRenderLayer' : pointcloud.PointCloudRenderLayer,
+    'TriangleRenderLayer' : mesh.TriangleRenderLayer,
+    'TrackRenderLayer' : tracks.TrackRenderLayer,
+    'ImageRenderLayer' : image_layer.ImageRenderLayer,
+}
+
+def layer_from_session_info(pipeline, layer_info):
+    '''Construct a layer from a dictionary of layer information. 
+    
+    Used for de-serialising PYMEVis sessions.
+    '''
+    layer_type = layer_info['type']
+    layer = layer_types[layer_type](pipeline, **layer_info['settings'])
+    return layer

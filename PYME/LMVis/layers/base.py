@@ -113,6 +113,23 @@ class BaseLayer(HasTraits):
 
         """
         pass
+
+    def settings_dict(self):
+        d =  self.get([n for n in self.class_trait_names() if not n.startswith('_')])
+        for k, v in d.items():
+            if isinstance(v, dict) and not type(v) == dict:
+                v = dict(v)
+            elif isinstance(v, list) and not type(v) == list:
+                v = list(v)
+            elif isinstance(v, set) and not type(v) == set:
+                v = set(v)
+
+            d[k] = v
+        return d
+    
+    def serialise(self):
+        return {'type': self.__class__.__name__,
+                'settings': self.settings_dict()}
     
 class EngineLayer(BaseLayer):
     """
@@ -124,6 +141,11 @@ class EngineLayer(BaseLayer):
     def render(self, gl_canvas):
         if self.visible:
             return self.engine.render(gl_canvas, self)
+        
+    def settings_dict(self):
+        r = BaseLayer.settings_dict(self)
+        r.pop('engine') # don't include the enginge in the dict represetation (this is set by `method`)
+        return r
         
     
     @abc.abstractmethod

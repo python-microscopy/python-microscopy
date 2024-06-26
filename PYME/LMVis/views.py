@@ -166,13 +166,13 @@ class View(object):
         return array / numpy.linalg.norm(array)
 
     def to_json(self):
-        ordered_dict = OrderedDict()
+        ordered_dict = dict()# OrderedDict()
         ordered_dict['view_id'] = self.view_id
         ordered_dict['vec_up'] = self.vec_up.tolist()
         ordered_dict['vec_back'] = self.vec_back.tolist()
         ordered_dict['vec_right'] = self.vec_right.tolist()
         ordered_dict['translation'] = self.translation.tolist()
-        ordered_dict['scale'] = self.scale
+        ordered_dict['scale'] = float(self.scale)
         ordered_dict['clipping'] = self.clipping.view('8f4').squeeze().tolist()
         #ordered_dict['clip_plane_orientation'] = self.clip_plane_orientation.view('4f8').squeeze().tolist()
         ordered_dict['clip_plane_position'] = self.clip_plane_position.tolist()
