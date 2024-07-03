@@ -849,7 +849,7 @@ class Recipe(HasTraits):
         elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
-        elif os.path.splitext(filename)[1] == '.mat': #matlab file
+        elif extension == '.mat': #matlab file
             with unifiedIO.local_or_temp_filename(filename) as fn:
                 if 'VarName' in args.keys():
                     #old style matlab import
@@ -874,12 +874,15 @@ class Recipe(HasTraits):
                             field_names.append('probe')  # don't forget to copy this field over
                         ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
 
+            ds.filename = filename
             self.namespace[key] = ds
 
-        elif os.path.splitext(filename)[1] == '.h5ad':
+        elif extension == '.h5ad':
             with unifiedIO.local_or_temp_filename(filename) as fn:
                 ds = tabular.AnndataSource(filename)
-                self.namespace[key] = ds
+                
+            ds.filename = filename
+            self.namespace[key] = ds
 
         elif (not default_to_image) or (extension in csv_flavours.text_extensions):
             with unifiedIO.local_or_temp_filename(filename) as fn:
@@ -893,8 +896,11 @@ class Recipe(HasTraits):
                 ds = tabular.TextfileSource(filename, **text_options)
                 
                 from urllib.parse import urlencode
-                ds.query = urlencode(csv_flavours.strict_options(text_options), doseq=True)
-                self.namespace[key] = ds
+
+            ds.query = urlencode(csv_flavours.strict_options(text_options), doseq=True)    
+            ds.filename = filename
+            self.namespace[key] = ds
+
         else: # assume it's an image
             if query:
                 filename = filename + '?' + query #reconstruct the filename with the query string as this is processed by some imaghe types
