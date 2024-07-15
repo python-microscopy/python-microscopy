@@ -21,13 +21,14 @@ class Text(BaseEngine):
     TODO - Shader. My first instinct here would be to make the text values (as derived from the array) control transparency.
            This should give an attractive anti-aliasing/blending effect, but we'd need to try it out in practice.
     """
-    def __init__(self, text='', pos=(0,0), color=None, **kwargs):
+    def __init__(self, text='', pos=(0,0), color=None, font_size=10, **kwargs):
         BaseEngine.__init__(self)
         self.set_shader_program(TextShaderProgram)
         
         self._texture_id = None
         self._img = None
         self._color = color
+        self._font_size = font_size
 
         self._im_key = None
         self._im = None
@@ -74,11 +75,11 @@ class Text(BaseEngine):
         return im
         
     def get_img_array(self, gl_canvas):
-        im_key = (self.text, gl_canvas.content_scale_factor)
+        im_key = (self.text, self._font_size, gl_canvas.content_scale_factor)
 
         if im_key != self._im_key:
             self._im_key = im_key
-            self._im = np.ascontiguousarray(self.gen_text_image(self.text, dip_scale=gl_canvas.content_scale_factor)[:, :, 0]/255.)
+            self._im = np.ascontiguousarray(self.gen_text_image(self.text, size=self._font_size, dip_scale=gl_canvas.content_scale_factor)[:, :, 0]/255.)
 
         h, w = self._im.shape
         return self._im, h, w 

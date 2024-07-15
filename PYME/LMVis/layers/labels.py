@@ -25,7 +25,7 @@ class LabelLayer(SimpleLayer):
     _datasource_choices = List()
 
     textColour = CStr('', desc='Name of variable used to colour our text')
-    font_size = Float(12, desc='font size in points')
+    font_size = Float(10, desc='font size in points')
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour text')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
 
@@ -52,10 +52,12 @@ class LabelLayer(SimpleLayer):
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'textColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, dsname, font_size')
+        self.on_trait_change(self.update, 'cmap, clim, dsname, font_size, format_string')
 
         # update any of our traits which were passed as command line arguments
         self.set(**kwargs)
+
+        self.update()
         
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
@@ -101,7 +103,7 @@ class LabelLayer(SimpleLayer):
         return cm[self.cmap]
     
     def update_from_datasource(self, ds):
-        print('pointcloud.update_from_datasource() - dsname=%s' % self.dsname)
+        print('labels.update_from_datasource() - dsname=%s' % self.dsname)
         x, y = ds[self.x_key], ds[self.y_key]
         try:
             z = ds[self.z_key]
