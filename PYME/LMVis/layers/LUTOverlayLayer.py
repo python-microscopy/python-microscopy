@@ -131,9 +131,12 @@ class LUTOverlayLayer(OverlayLayer):
                     tl.text = '%.3G' % cl
                     
                     xc = lb_ur_x - 0.5*lb_width
+
+                    _, hu, wu = tu.get_img_array(gl_canvas)
+                    _, hl, wl = tl.get_img_array(gl_canvas)
                     
-                    tu.pos = (xc - tu._w/2, lb_ur_y - tu._h)
-                    tl.pos = (xc - tl._w/2, lb_lr_y)
+                    tu.pos = (xc - wu/2, lb_ur_y - hu)
+                    tl.pos = (xc - wl/2, lb_lr_y)
                     
                     labels.extend([tl, tu])
                 

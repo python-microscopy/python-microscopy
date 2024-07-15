@@ -112,6 +112,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         ################################   
 
         self.MainWindow = self #so we can access from shell
+        self.pymevis = self # more memorable alias for the main window
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
@@ -130,7 +131,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.generatedImages = []
         
-        self.sh.Execute('from pylab import *')
+        #self.sh.Execute('from pylab import *')
+        self.sh.Execute('import numpy as np')
+        self.sh.Execute('import matplotlib.pyplot as plt')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
         
         import os

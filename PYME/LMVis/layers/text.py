@@ -21,12 +21,16 @@ class Text(BaseEngine):
     TODO - Shader. My first instinct here would be to make the text values (as derived from the array) control transparency.
            This should give an attractive anti-aliasing/blending effect, but we'd need to try it out in practice.
     """
-    def __init__(self, text='', pos=(0,0)):
+    def __init__(self, text='', pos=(0,0), color=None, **kwargs):
         BaseEngine.__init__(self)
         self.set_shader_program(TextShaderProgram)
         
         self._texture_id = None
         self._img = None
+        self._color = color
+
+        self._im_key = None
+        self._im = None
         
         self.text = text
         self.pos = pos
@@ -39,20 +43,25 @@ class Text(BaseEngine):
     @text.setter
     def text(self, val):
         self._text = val
+        self._im_key = None
         
         #just take red channel
-        self._im = np.ascontiguousarray(self.gen_text_image(self._text)[:, :, 0]/255.)
-        self._h, self._w = self._im.shape
+        #self._im = np.ascontiguousarray(self.gen_text_image(self._text)[:, :, 0]/255.)
+        #self._h, self._w = self._im.shape
     
     
     @classmethod
-    def gen_text_image(cls, text='', size=12, font='courier'):
+    def gen_text_image(cls, text='', size=10, dip_scale=1.0):
         # TODO - implement size, font, etc ...
         import wx
         
         dc = wx.MemoryDC()
+        # TODO - use CreateWithDIPSize to avoid manually scaling font size
+        dc.SetFont(wx.Font(wx.FontInfo(size*dip_scale)))
         w, h = dc.GetTextExtent(text)
         w, h = max(w, 1), max(h,1)
+        # TODO - use CreateWithDIPSize
+        #bmp = wx.Bitmap.CreateWithDIPSize(w, h, dip_scale)
         bmp = wx.Bitmap(w, h)
         dc.SelectObject(bmp)
         dc.SetTextForeground(wx.WHITE)
@@ -64,7 +73,15 @@ class Text(BaseEngine):
         
         return im
         
-        
+    def get_img_array(self, gl_canvas):
+        im_key = (self.text, gl_canvas.content_scale_factor)
+
+        if im_key != self._im_key:
+            self._im_key = im_key
+            self._im = np.ascontiguousarray(self.gen_text_image(self.text, dip_scale=gl_canvas.content_scale_factor)[:, :, 0]/255.)
+
+        h, w = self._im.shape
+        return self._im, h, w 
     
     def set_texture(self, image):
         if self._texture_id is None:
@@ -92,8 +109,9 @@ class Text(BaseEngine):
                          image.astype('f4'))
     
     def render(self, gl_canvas):
+        im, h, w = self.get_img_array(gl_canvas)
         with self.get_shader_program(gl_canvas) as sp:
-            self.set_texture(self._im)
+            self.set_texture(im)
 
             mv = glGetDoublev(GL_MODELVIEW_MATRIX)
             p = glGetDoublev(GL_PROJECTION_MATRIX)
@@ -128,8 +146,8 @@ class Text(BaseEngine):
                 # FIXME - choose appropriately for current viewport - want to make it so that the text renders real size
                 # (i.e. unwind any model-view / and projection stuff).
                 #x0, y0 = self.pos
-                x1 = x0 + self._w #*scale
-                y1 = y0 + self._h #*scale
+                x1 = x0 + w#*gl_canvas.content_scale_factor
+                y1 = y0 - h#*gl_canvas.content_scale_factor
             
                 glDisable(GL_TEXTURE_GEN_S)
                 glDisable(GL_TEXTURE_GEN_T)
