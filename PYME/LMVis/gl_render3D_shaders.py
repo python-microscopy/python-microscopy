@@ -384,6 +384,8 @@ class LMGLShaderCanvas(GLCanvas):
                 GL.glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
             GL.glMatrixMode(GL.GL_MODELVIEW)
+
+            #stereo offset
             GL.glTranslatef(eye, 0.0, 0.0)
 
             # move our object to be centred at -10
