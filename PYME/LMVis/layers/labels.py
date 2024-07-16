@@ -26,7 +26,7 @@ class LabelLayer(SimpleLayer):
 
     textColour = CStr('', desc='Name of variable used to colour our text')
     font_size = Float(10, desc='font size in points')
-    cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour text')
+    cmap = Enum('SolidWhite', cm.cmapnames, desc='Name of colourmap used to colour text')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
 
     format_string = CStr('P{idx}', desc='Format string for the text labels. This should be a python format string which can take column names (and the special idx name which is the index in the table)')

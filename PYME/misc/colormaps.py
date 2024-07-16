@@ -139,6 +139,11 @@ def Yellow(data):
     z = np.ones_like(data)
     return np.stack([z, z, 0*z, z], -1)
 
+@cm.register_cmap('SolidWhite', solid=True)
+def White(data):
+    z = np.ones_like(data)
+    return np.stack([z, z, z, z], -1)
+
 @cm.register_cmap('labeled')
 def labeled(data):
     return (data > 0).reshape(list(data.shape) +  [1])*cm.gist_rainbow(data % 1)

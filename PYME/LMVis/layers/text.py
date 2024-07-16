@@ -155,7 +155,11 @@ class Text(BaseEngine):
                 glDisable(GL_TEXTURE_GEN_R)
             
                 #glColor3f(1.,0.,0.)
-                glColor4f(1., 1., 1., 1.)
+                if self._color is not None:
+                    glColor4f(*self._color)
+                else:
+                    glColor4f(1., 1., 1., 1.)
+                    
                 glBegin(GL_QUADS)
                 glTexCoord2f(0., 0.) # lower left corner of image */
                 glVertex3f(x0, y0, 0.0)
