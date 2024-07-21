@@ -455,6 +455,7 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
+    parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=False)
     args = parser.parse_args()
     return args
     

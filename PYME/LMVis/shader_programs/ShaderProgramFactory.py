@@ -43,9 +43,12 @@ class ShaderProgramFactory(object):
         if existing_program:
             return existing_program
         else:
-            new_program = class_name()
             if context and window:
                 context.SetCurrent(window)
+            
+            #print("Creating new shader program - max glsl version: {}".format(window.glsl_version))
+            new_program = class_name(max_glsl_version=getattr(window,'glsl_version', '120'))
+            
             ShaderProgramFactory._programs[(class_name, context)] = new_program
             logger.debug("New shader program created: {}".format(class_name))
             return new_program

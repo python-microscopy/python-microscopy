@@ -36,8 +36,8 @@ class GouraudShaderProgram(GLProgram):
     
     shininess = 8
 
-    def __init__(self):
-        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_fs.glsl", **kwargs)
         
 
     def __enter__(self):
@@ -69,7 +69,10 @@ class GouraudShaderProgram(GLProgram):
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
         
-        glDisable(GL_POINT_SMOOTH)
+        try:
+            glDisable(GL_POINT_SMOOTH)
+        except:
+            pass
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         #glEnable(GL_BLEND)
@@ -84,27 +87,33 @@ class GouraudShaderProgram(GLProgram):
         
         
 class GouraudSphereShaderProgram(GouraudShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl", **kwargs)
 
     def __enter__(self):
         self.get_shader_program().use()
         GouraudShaderProgram.__enter__(self)
     
-        glEnable(GL_POINT_SPRITE)
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            pass
         glEnable(GL_PROGRAM_POINT_SIZE)
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
-        glDisable(GL_POINT_SPRITE)
+        try:
+            glDisable(GL_POINT_SPRITE)
+        except:
+            pass
         glDisable(GL_PROGRAM_POINT_SIZE)
         
 
 class OITGouraudShaderProgram(GouraudShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl", **kwargs)
     
     def __enter__(self):
         self.get_shader_program().use()

@@ -27,8 +27,9 @@ import os
 
 class GLProgram(object):
 
-    def __init__(self, vs_filename=None, fs_filename=None):
+    def __init__(self, vs_filename=None, fs_filename=None, max_glsl_version='120'):
         self._shader_program = None
+        self._max_glsl_version = max_glsl_version
 
         self.xmin, self.xmax = [-1e6, 1e6]
         self.ymin, self.ymax = [-1e6, 1e6]
@@ -40,6 +41,7 @@ class GLProgram(object):
             self.create_and_set_shader_program(vs_filename, fs_filename)
 
         self._old_prog = 0
+        
 
     @abc.abstractmethod
     def __enter__(self):
@@ -52,7 +54,7 @@ class GLProgram(object):
 
     def create_and_set_shader_program(self, vs_filename, fs_filename):
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
+        shader_program = ShaderProgram(shader_path, max_glsl_version=self._max_glsl_version)
         shader_program.add_shader(vs_filename, GL_VERTEX_SHADER)
         shader_program.add_shader(fs_filename, GL_FRAGMENT_SHADER)
         shader_program.link()
@@ -67,6 +69,15 @@ class GLProgram(object):
     def get_uniform_location(self, uniform_name):
         return self._shader_program.get_uniform_location(uniform_name)
 
+    def set_modelviewprojectionmatrix(self, mvp):
+        if self._shader_program._vs_glsl_version >= '140':
+            glUniformMatrix4fv(self.get_uniform_location('ModelViewProjectionMatrix'), 1, GL_FALSE, np.array(mvp, 'f4').T)
+
+    def set_point_size(self, point_size):
+        if self._shader_program._vs_glsl_version >= '140':
+            # for old-styyle code, use glPointSize
+            glUniform1f(self.get_uniform_location('point_size_px'), point_size)
+    
     def set_clipping_uniforms(self):
         glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
         glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))

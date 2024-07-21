@@ -79,7 +79,7 @@ class GaussTexture:
         if normalize_sum:
             data /= data.sum()
         glGenTextures(1, self._texture_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, size, size, 0, GL_RED, GL_FLOAT, np.float16(data))
 
         return size_correction_factor
 
@@ -100,12 +100,12 @@ class PointSpriteShaderProgram(GLProgram):
     #    This attribute holds an instance of a texture class
     _texture = None
     #    This is the uniform location to pass to the fragment shader to locate the texture
-    _uniform_tex_2d_id = 0
+    #_uniform_tex_2d_id = 0
 
-    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
-        GLProgram.__init__(self)
+    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}, **kwargs):
+        GLProgram.__init__(self, **kwargs)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
+        shader_program = ShaderProgram(shader_path, **kwargs)
         #shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
@@ -113,7 +113,7 @@ class PointSpriteShaderProgram(GLProgram):
         self._texture = GaussTexture()
         self.size_factor = self._texture.load_texture()
         self.set_shader_program(shader_program)
-        self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
+        #self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
 
         self.xmin, self.xmax = clipping['x']
         self.ymin, self.ymax = clipping['y']
@@ -137,13 +137,17 @@ class PointSpriteShaderProgram(GLProgram):
         glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
         glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
         glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
-        glEnable(GL_POINT_SPRITE)
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            # deprecated for core profile
+            pass
         glEnable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         #glBlendEquation(GL_FUNC_ADD)
-        self._texture.enable_texture_2d()
+        #self._texture.enable_texture_2d()
         self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
 
         return self
@@ -152,7 +156,11 @@ class PointSpriteShaderProgram(GLProgram):
         glUseProgram(self._old_prog)
         glDisable(GL_BLEND)
         glDisable(GL_PROGRAM_POINT_SIZE)
-        glDisable(GL_POINT_SPRITE)
+        try:
+            glDisable(GL_POINT_SPRITE)
+        except:
+            # deprecated for core profile
+            pass
         glEnable(GL_DEPTH_TEST)
 
     def __del__(self):

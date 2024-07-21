@@ -97,7 +97,17 @@ class VisGUICore(object):
             from PYME.LMVis import gl_render3D
             self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
-            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
+            #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
+            from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
+
+            try:
+                if self.cmd_args.opengl_core_profile:
+                    from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
+                else:
+                    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            except AttributeError:
+                from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            
             if self._new_layers:
                 #use stripped down version
                 self.glCanvas = LMGLShaderCanvas(gl_pan)

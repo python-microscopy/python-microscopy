@@ -24,7 +24,7 @@ import numpy as np
 from PYME.LMVis.shader_programs.GLProgram import GLProgram
 from OpenGL.GL import  GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
-    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
+    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, GL_PROGRAM_POINT_SIZE,\
     GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
     glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger
 
@@ -32,10 +32,10 @@ from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):
-    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
-        GLProgram.__init__(self)
+    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}, max_glsl_version='120'):
+        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
+        _shader_program = ShaderProgram(shader_path, max_glsl_version)
         _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
         _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
@@ -57,7 +57,11 @@ class DefaultShaderProgram(GLProgram):
         glDepthMask(GL_TRUE)
         glDisable(GL_DEPTH_TEST)
         #glDepthFunc(GL_LEQUAL)
-        glEnable(GL_POINT_SMOOTH)
+        try:
+            glEnable(GL_POINT_SMOOTH)
+        except:
+            # not supported in core profile
+            pass
         
         self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         
@@ -80,8 +84,14 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
         glDisable(GL_BLEND)
         glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
+
+        glEnable(GL_PROGRAM_POINT_SIZE)
         #glDepthFunc(GL_LEQUAL)
-        glEnable(GL_POINT_SMOOTH)
+        try:
+            glEnable(GL_POINT_SMOOTH)
+        except:
+            # not supported in core profile
+            pass
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
@@ -90,20 +100,20 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
 
 
 class ImageShaderProgram(DefaultShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self)
+    def __init__(self, max_glsl_version='120'):
+        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
+        _shader_program = ShaderProgram(shader_path, max_glsl_version=max_glsl_version)
         _shader_program.add_shader("image_vs.glsl", GL_VERTEX_SHADER)
         _shader_program.add_shader("image_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)
         
 class TextShaderProgram(DefaultShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self)
+    def __init__(self, max_glsl_version='120'):
+        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
+        _shader_program = ShaderProgram(shader_path, max_glsl_version=max_glsl_version)
         _shader_program.add_shader("text_vs.glsl", GL_VERTEX_SHADER)
         _shader_program.add_shader("text_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
