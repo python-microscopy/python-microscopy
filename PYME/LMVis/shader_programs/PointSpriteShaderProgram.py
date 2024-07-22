@@ -103,7 +103,7 @@ class PointSpriteShaderProgram(GLProgram):
     #_uniform_tex_2d_id = 0
 
     def __init__(self, **kwargs):
-        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='default_fs.glsl', **kwargs)
+        GLProgram.__init__(self, vs_filename='pointsprites_vs.glsl', fs_filename='pointsprites_fs.glsl', **kwargs)
         self._texture = GaussTexture()
         self.size_factor = self._texture.load_texture()
         

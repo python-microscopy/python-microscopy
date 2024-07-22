@@ -20,7 +20,7 @@ void main()
 
 uniform sampler2D tex2D;
 
-in vec4 FrontColor;
+in vec4 frontColor;
 in float vis;
 
 layout (location = 0) out vec4 fragColor;
@@ -28,6 +28,6 @@ layout (location = 0) out vec4 fragColor;
 void main()
 {
     if (vis <0.5) discard;
-    float alpha = FrontColor.a * texture(tex2D, gl_PointCoord).x;
-    fragColor = vec4(FrontColor.xyz, alpha);
+    float alpha = frontColor.a * texture(tex2D, gl_PointCoord).x;
+    fragColor = vec4(frontColor.xyz, alpha);
 }
