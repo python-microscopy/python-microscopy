@@ -42,8 +42,16 @@ class Points3DEngine(BaseEngine):
                     point_size = (layer.point_size*point_scale_correction / gl_canvas.pixelsize)
             else:
                 point_size(layer.point_size*point_scale_correction) 
+
+            point_size = point_size*gl_canvas.content_scale_factor # scale for high DPI displays
             
-            print(f'point size = {point_size}')
+            #print(f'point size = {point_size}')
+            #print('max point size', glGetFloatv(GL_POINT_SIZE_MAX))
+            #print('Point distance attenuation', glGetFloatv(GL_POINT_DISTANCE_ATTENUATION))
+
+            max_ps = glGetFloatv(GL_POINT_SIZE_RANGE)[1]
+            if point_size > max_ps:
+                logger.debug(f'Point size ({point_size}) larger than OpenGL maximum ({max_ps}), size scaling might not work as expected')
             
             self._bind_data('points', vertices, normals, colors, core_profile=core_profile)
             if core_profile:
