@@ -21,6 +21,7 @@
 #
 ##################
 from math import floor
+import time
 
 import numpy
 import numpy as np
@@ -350,6 +351,7 @@ class LMGLShaderCanvas(GLCanvas):
             return ['centre']
     
     def OnDraw(self):
+        t0 = time.time()
         self.SetCurrent(self.gl_context)
         self.interlace_stencil()
         GL.glEnable(GL.GL_DEPTH_TEST)
@@ -441,6 +443,8 @@ class LMGLShaderCanvas(GLCanvas):
         GL.glFlush()
 
         self.SwapBuffers()
+        
+        logger.debug('Frame rendered in: %3.4fs' % (time.time() - t0))
 
     def init_oit(self):
         self._fb = GL.glGenFramebuffers(1)
