@@ -81,7 +81,7 @@ class AxesOverlayLayer(OverlayLayer):
                                [.5, 1, .5, 1], [.5, 1, .5, 1], 
                                [.5, .5, 1, 1], [.5, .5, 1, 1]], 'f')
             
-            self._bind_data('axes', verts, 0*verts, colors)
+            self._bind_data('axes', verts, 0*verts, colors, core_profile=gl_canvas.core_profile)
             
             lw = min(3.0, glGetFloatv(GL_LINE_WIDTH_RANGE)[1])
             glLineWidth(lw)
