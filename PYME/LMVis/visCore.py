@@ -101,9 +101,10 @@ class VisGUICore(object):
             from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
 
             try:
-                if self.cmd_args.opengl_core_profile:
+                if PYME.config.get('VisGUI-opengl-core-profile', False):
                     from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
                 else:
+                    logger.debug('Using legacy GLCanvas')
                     from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
             except AttributeError:
                 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas

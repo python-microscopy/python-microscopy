@@ -29,7 +29,13 @@ import wx
 import os
 
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
-from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+
+import PYME.config
+
+if PYME.config.get('VisGUI-opengl-core-profile', False):
+    from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
+else:
+    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 
 from six.moves import xrange
 

@@ -468,6 +468,7 @@ def main():
     args = parse()
     
     PYME.config.config['VisGUI-new_layers'] = args.new_layers
+    PYME.config.config['VisGUI-opengl-core-profile'] = args.opengl_core_profile
     
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main_(args.file, use_shaders=args.use_shaders, args=args)
