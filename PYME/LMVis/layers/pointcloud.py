@@ -20,39 +20,17 @@ class Points3DEngine(BaseEngine):
         self.set_shader_program(OpaquePointShaderProgram)
         self.point_scale_correction = 1.0
 
-    def _bind_data(self, layer):
-        vertices = layer.get_vertices().astype('f')
-        if vertices is None:
+    def render(self, gl_canvas, layer):
+        core_profile = gl_canvas.core_profile
+        self._set_shader_clipping(gl_canvas)
+
+        vertices = layer.get_vertices()
+        n_vertices = vertices.shape[0]
+        if n_vertices == 0:
             return False
         
-        n_vertices = vertices.shape[0]
-        normals = layer.get_normals().astype('f')
-        colors = layer.get_colors().astype('f')
-
-        #print('vertices_dtype = ', vertices.dtype)
-        
-        self._vao = glGenVertexArrays(1)
-        self._vbo = glGenBuffers(3)
-        glBindVertexArray(self._vao)
-        glBindBuffer(GL_ARRAY_BUFFER, self._vbo[0])
-        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
-        glEnableVertexAttribArray(0)
-        glBindBuffer(GL_ARRAY_BUFFER, self._vbo[1])
-        glBufferData(GL_ARRAY_BUFFER, normals.nbytes, normals, GL_STATIC_DRAW)
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, None)
-        glEnableVertexAttribArray(1)
-        glBindBuffer(GL_ARRAY_BUFFER, self._vbo[2])
-        glBufferData(GL_ARRAY_BUFFER, colors.nbytes, colors, GL_STATIC_DRAW)
-        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, None)
-        glEnableVertexAttribArray(2)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-        return n_vertices
-
-
-    def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
+        normals = layer.get_normals()
+        colors = layer.get_colors()
     
         with self.get_shader_program(gl_canvas) as sp:
             point_scale_correction = self.point_scale_correction*getattr(sp, 'size_factor', 1.0)
@@ -63,31 +41,17 @@ class Points3DEngine(BaseEngine):
                 else:
                     point_size = (layer.point_size*point_scale_correction / gl_canvas.pixelsize)
             else:
-                point_size(layer.point_size*point_scale_correction)
-
+                point_size(layer.point_size*point_scale_correction) 
             
-            if getattr(gl_canvas, 'glsl_version', '0') >= '330':    
-                n_vertices = self._bind_data(layer)
-                if not n_vertices:
-                    return False
-
+            print(f'point size = {point_size}')
+            
+            self._bind_data('points', vertices, normals, colors, core_profile=core_profile)
+            if core_profile:
                 sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
                 sp.set_point_size(point_size)
-                glBindVertexArray(self._vao)
+                #glBindVertexArray(self._bound_data['points'][0])
 
             else:
-                vertices = layer.get_vertices()
-                n_vertices = vertices.shape[0]
-                if n_vertices == 0:
-                    return False
-                
-                normals = layer.get_normals()
-                colors = layer.get_colors()
-            
-                glVertexPointerf(vertices)
-                glNormalPointerf(normals)
-                glColorPointerf(colors)
-
                 glPointSize(point_size)
             
             glDrawArrays(GL_POINTS, 0, n_vertices)
@@ -101,10 +65,12 @@ class Points3DEngine(BaseEngine):
                 # assert(np.allclose(np.linalg.norm(normals,axis=1),1))
                 normal_buffer[1::2,:] += layer.normal_scaling*normals
                 
-                glVertexPointerf(normal_buffer)
                 sc = np.array([1, 1, 1, 1])
-                glColorPointerf(np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
-                glNormalPointerf(np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+                cols = (np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
+                norms = (np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+                
+                self._bind_data('normals', normal_buffer, norms, cols, core_profile=core_profile)
+
                 glLineWidth(3)  # slightly thick
                 glDrawArrays(GL_LINES, 0, 2*n_vertices)
             

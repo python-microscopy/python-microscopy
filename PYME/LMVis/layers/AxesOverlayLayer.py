@@ -20,7 +20,7 @@
 #
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
-
+import numpy as np
 
 class AxesOverlayLayer(OverlayLayer):
     """
@@ -50,35 +50,66 @@ class AxesOverlayLayer(OverlayLayer):
             return
         
         self._clear_shader_clipping(gl_canvas)
-        with self.get_shader_program(gl_canvas):
-            glDisable(GL_LIGHTING)
-            glPushMatrix()
-
+        with self.get_shader_program(gl_canvas) as sp:
             view_ratio = float(gl_canvas.Size[1])/float(gl_canvas.Size[0])
-            glTranslatef(.9, .9*view_ratio, 0)
-            glScalef(.1, .1, .1)
-            glLineWidth(3)
-            glMultMatrixf(gl_canvas.object_rotation_matrix)
 
-            glColor3fv([1, .5, .5])
-            glBegin(GL_LINES)
-            glVertex3f(0, 0, 0)
-            glVertex3f(self._size, 0, 0)
-            glEnd()
+            glEnable(GL_LINE_SMOOTH)
 
-            glColor3fv([.5, 1, .5])
-            glBegin(GL_LINES)
-            glVertex3f(0, 0, 0)
-            glVertex3f(0, self._size, 0)
-            glEnd()
+            #glDisable(GL_LIGHTING)
+            if gl_canvas.core_profile:
+                import glm
+                mv = glm.translate(gl_canvas.mv, glm.vec3(.9, -.9*view_ratio, 0))
+                mv = glm.scale(mv, glm.vec3(.1, .1, .1))
+                mv = mv*glm.mat4(gl_canvas.object_rotation_matrix)
 
-            glColor3fv([.5, .5, 1])
-            glBegin(GL_LINES)
-            glVertex3f(0, 0, 0)
-            glVertex3f(0, 0, self._size)
-            glEnd()
+                mvp = mv*gl_canvas.proj
 
-            glLineWidth(1)
+                sp.set_modelviewprojectionmatrix(np.array(mvp))
 
-            glPopMatrix()
-            glEnable(GL_LIGHTING)
+            else:
+                glPushMatrix()
+                glTranslatef(.9, .9*view_ratio, 0)
+                glScalef(.1, .1, .1)
+                
+                glMultMatrixf(gl_canvas.object_rotation_matrix)
+
+            verts = np.array([[0, 0, 0], [self._size, 0, 0], 
+                              [0,0,0], [0, self._size, 0], 
+                              [0,0,0], [0, 0, self._size]], 'f')
+            
+            colors = np.array([[1, .5, .5, 1], [1, .5, .5, 1], 
+                               [.5, 1, .5, 1], [.5, 1, .5, 1], 
+                               [.5, .5, 1, 1], [.5, .5, 1, 1]], 'f')
+            
+            self._bind_data('axes', verts, 0*verts, colors)
+            
+            lw = min(3.0, glGetFloatv(GL_LINE_WIDTH_RANGE)[1])
+            glLineWidth(lw)
+            
+            glDrawArrays(GL_LINES, 0, 6)
+            glLineWidth(1.0)
+
+            # glColor3fv([1, .5, .5])
+            # glBegin(GL_LINES)
+            # glVertex3f(0, 0, 0)
+            # glVertex3f(self._size, 0, 0)
+            # glEnd()
+
+            # glColor3fv([.5, 1, .5])
+            # glBegin(GL_LINES)
+            # glVertex3f(0, 0, 0)
+            # glVertex3f(0, self._size, 0)
+            # glEnd()
+
+            # glColor3fv([.5, .5, 1])
+            # glBegin(GL_LINES)
+            # glVertex3f(0, 0, 0)
+            # glVertex3f(0, 0, self._size)
+            # glEnd()
+
+            
+
+            if not gl_canvas.core_profile:
+                glPopMatrix()
+
+            #glEnable(GL_LIGHTING)

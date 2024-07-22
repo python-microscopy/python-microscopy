@@ -90,6 +90,8 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBoxOverlayLayer = None
     _is_initialized = False
 
+    core_profile=True
+
     def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, wx.glcanvas.WX_GL_CORE_PROFILE]
@@ -258,7 +260,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.LUTOverlayLayer = LUTOverlayLayer()
         self.AxesOverlayLayer = AxesOverlayLayer()
         
-        #self.overlays.append(SelectionOverlayLayer(self.selectionSettings,))
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
@@ -386,37 +388,39 @@ class LMGLShaderCanvas(GLCanvas):
                 proj = glm.ortho(-1, 1, ys, -ys, -1000, 1000)
                 #GL.glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
+            self.proj = proj
+
             #GL.glMatrixMode(GL.GL_MODELVIEW)
 
-            mv = glm.mat4(1.0)
+            self.mv = glm.mat4(1.0)
 
             #stereo offset
-            mv = glm.translate(mv, glm.vec3(eye, 0.0, 0.0))
+            self.mv = glm.translate(self.mv, glm.vec3(eye, 0.0, 0.0))
             #GL.glTranslatef(eye, 0.0, 0.0)
 
             # move our object to be centred at -10
             if self.displayMode == '3DPersp':
                 #GL.glTranslatef(0, 0, -10)
-                mv = glm.translate(mv, glm.vec3(0, 0, -10))
+                self.mv = glm.translate(self.mv, glm.vec3(0, 0, -10))
 
-            if False:#not self.displayMode == '2D':
+            if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)
 
             # scale object to fit a 2x2x2 box
             #GL.glScalef(self.view.scale, self.view.scale, self.view.scale)
-            mv = glm.scale(mv, glm.vec3(self.view.scale, self.view.scale, self.view.scale))
+            self.mv = glm.scale(self.mv, glm.vec3(self.view.scale, self.view.scale, self.view.scale))
 
-            _mv = mv
+            #GL.glPushMatrix()
+            _mv = self.mv
 
             try:
-                #GL.glPushMatrix()
                 # rotate object
                 #GL.glMultMatrixf(self.object_rotation_matrix)
-                mv = mv * glm.mat4(self.object_rotation_matrix)
+                self.mv = self.mv * glm.mat4(self.object_rotation_matrix)
                 #GL.glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
-                mv = glm.translate(mv, glm.vec3(-self.view.translation))
+                self.mv = glm.translate(self.mv, glm.vec3(-self.view.translation))
 
-                self.mvp = proj * mv
+                self.mvp = proj * self.mv
                 
                 for l in self.underlays:
                     l.render(self)
@@ -437,14 +441,14 @@ class LMGLShaderCanvas(GLCanvas):
                 for o in self.overlays:
                     o.render(self)
             finally:
-                mv = _mv
+                self.mv = _mv
                 #GL.glPopMatrix()
 
-            self.mvp = proj * mv
+            self.mvp = proj * self.mv
             #scale bar gets drawn without the rotation
-            #self.ScaleBarOverlayLayer.render(self)
+            self.ScaleBarOverlayLayer.render(self)
 
-            if False:#self.LUTDraw:
+            if self.LUTDraw:
                 # set us up to draw in pixel coordinates
                 #GL.glMatrixMode(GL.GL_PROJECTION)
                 #GL.glLoadIdentity()
@@ -460,6 +464,10 @@ class LMGLShaderCanvas(GLCanvas):
         GL.glFlush()
 
         self.SwapBuffers()
+
+    @property
+    def normal_matrix(self):
+        return np.linalg.inv(np.array(self.mv)[:3,:3].T)
 
     def init_oit(self):
         self._fb = GL.glGenFramebuffers(1)
@@ -589,13 +597,13 @@ class LMGLShaderCanvas(GLCanvas):
             # bind our pre-rendered textures
 
             GL.glActiveTexture(GL.GL_TEXTURE0)
-            GL.glEnable(GL.GL_TEXTURE_2D)
+            #GL.glEnable(GL.GL_TEXTURE_2D)
             GL.glBindTexture(GL.GL_TEXTURE_2D, self._accumT)
             self._acc_buf = GL.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, GL.GL_FLOAT)
             GL.glUniform1i(c.get_uniform_location('accum_t'), 0)
 
             GL.glActiveTexture(GL.GL_TEXTURE1)
-            GL.glEnable(GL.GL_TEXTURE_2D)
+            #GL.glEnable(GL.GL_TEXTURE_2D)
             GL.glBindTexture(GL.GL_TEXTURE_2D, self._revealT)
             self._reveal_buf = GL.glGetTexImage(GL.GL_TEXTURE_2D, 0, GL.GL_RED, GL.GL_FLOAT)
             GL.glUniform1i(c.get_uniform_location('reveal_t'), 1)
@@ -604,26 +612,52 @@ class LMGLShaderCanvas(GLCanvas):
             GL.glBlendFunc(GL.GL_ONE_MINUS_SRC_ALPHA, GL.GL_SRC_ALPHA)
 
             # Draw triangles to display texture on
-            GL.glColor4f(1., 1., 1., 1.)
-            GL.glBegin(GL.GL_QUADS)
-            GL.glTexCoord2f(0., 0.) # lower left corner of image */
-            GL.glVertex3f(-1, -1, 0.0)
-            GL.glTexCoord2f(1., 0.) # lower right corner of image */
-            GL.glVertex3f(1, -1, 0.0)
-            GL.glTexCoord2f(1.0, 1.0) # upper right corner of image */
-            GL.glVertex3f(1, 1, 0.0)
-            GL.glTexCoord2f(0.0, 1.0) # upper left corner of image */
-            GL.glVertex3f(-1, 1, 0.0)
-            GL.glEnd()
+            #GL.glColor4f(1., 1., 1., 1.)
+
+            vao = GL.glGenVertexArrays(1)
+            vbo = GL.glGenBuffers(1)
+            GL.glBindVertexArray(vao)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo)
+            # GL.glBufferData(GL.GL_ARRAY_BUFFER, numpy.array([-1, -1, 0,  
+            #                                                  1, -1, 0, 
+            #                                                  1, 1, 0, 
+            #                                                  -1, 1, 0], 'f'), GL.GL_STATIC_DRAW)
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, numpy.array([-1, -1, 0,  
+                                                             1, -1, 0, 
+                                                             1, 1, 0,
+                                                             1, 1, 0, 
+                                                             -1, 1, 0,
+                                                             -1, -1, 0], 'f'), GL.GL_STATIC_DRAW)
+            GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+            GL.glEnableVertexAttribArray(0)
+
+            #GL.glDrawArrays(GL.GL_TRIANGLE_STRIP, 0, 4)
+            GL.glDrawArrays(GL.GL_TRIANGLES, 0, 6)
+
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+            GL.glBindVertexArray(0)
+            GL.glDeleteBuffers(1, [vbo, ])
+            GL.glDeleteVertexArrays(1, [vao, ])
+
+            # GL.glBegin(GL.GL_QUADS)
+            # GL.glTexCoord2f(0., 0.) # lower left corner of image */
+            # GL.glVertex3f(-1, -1, 0.0)
+            # GL.glTexCoord2f(1., 0.) # lower right corner of image */
+            # GL.glVertex3f(1, -1, 0.0)
+            # GL.glTexCoord2f(1.0, 1.0) # upper right corner of image */
+            # GL.glVertex3f(1, 1, 0.0)
+            # GL.glTexCoord2f(0.0, 1.0) # upper left corner of image */
+            # GL.glVertex3f(-1, 1, 0.0)
+            # GL.glEnd()
 
             #unbind our textures
             GL.glActiveTexture(GL.GL_TEXTURE0)
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
-            GL.glDisable(GL.GL_TEXTURE_2D)
+            #GL.glDisable(GL.GL_TEXTURE_2D)
 
             GL.glActiveTexture(GL.GL_TEXTURE1)
             GL.glBindTexture(GL.GL_TEXTURE_2D, 0)
-            GL.glDisable(GL.GL_TEXTURE_2D)
+            #GL.glDisable(GL.GL_TEXTURE_2D)
                 
     @property
     def composite_shader(self):
@@ -1037,6 +1071,8 @@ class LMGLShaderCanvas(GLCanvas):
         bb = self.bbox
         if bb is None:
             return
+        
+        #print('recenter, bbox:', bb)
         
         centre = 0.5*(bb[:3] + bb[3:])
         

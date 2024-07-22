@@ -32,22 +32,8 @@ from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):
-    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}, max_glsl_version='120'):
-        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path, max_glsl_version)
-        _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
-        self._old_prog = 0
-        
-        
-        self.xmin, self.xmax = clipping['x']
-        self.ymin, self.ymax = clipping['y']
-        self.zmin, self.zmax = clipping['z']
-        self.vmin, self.vmax = clipping['v']
-        
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename = 'default_vs.glsl', fs_filename='default_fs.glsl', **kwargs)  
 
     def __enter__(self):
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -79,6 +65,9 @@ class DefaultShaderProgram(GLProgram):
 
 
 class OpaquePointShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='flatpoints_fs.glsl', **kwargs)
+
     def __enter__(self):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glDisable(GL_BLEND)
@@ -100,21 +89,9 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
 
 
 class ImageShaderProgram(DefaultShaderProgram):
-    def __init__(self, max_glsl_version='120'):
-        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path, max_glsl_version=max_glsl_version)
-        _shader_program.add_shader("image_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("image_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='image_vs.glsl', fs_filename='image_fs.glsl', **kwargs)
         
 class TextShaderProgram(DefaultShaderProgram):
-    def __init__(self, max_glsl_version='120'):
-        GLProgram.__init__(self, max_glsl_version=max_glsl_version)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path, max_glsl_version=max_glsl_version)
-        _shader_program.add_shader("text_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("text_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='text_vs.glsl', fs_filename='text_fs.glsl', **kwargs)

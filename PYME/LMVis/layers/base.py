@@ -30,6 +30,9 @@ from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 from PYME.recipes.traits import HasTraits, Bool, Instance
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     # Put this in a try-except clause as a) the quaternion module is not packaged yet and b) it has a dependency on a recent numpy version
     # so we might not want to make it a dependency yet.
@@ -39,9 +42,114 @@ except ImportError:
     print('quaternion module not found, disabling custom clip plane orientations')
     HAVE_QUATERNION = False
 
-class BaseEngine(object):
+
+class BindMixin(object):
+    """ Contains the core logic for binding data to OpenGL buffers """
+
+    def __init__(self) -> None:
+        self._bound_data = {}
+
+    def __del__(self):
+        for vao, vbo, sig in self._bound_data.values():
+            from OpenGL.GL import glDeleteVertexArrays, glDeleteBuffers
+            glDeleteVertexArrays(1, vao)
+            glDeleteBuffers(3, vbo)
+
+    def _bind_data_core(self, name, vertices, normals, colors):
+        from OpenGL.GL import glGenVertexArrays, glGenBuffers, glDeleteBuffers, glDeleteVertexArrays, glBindVertexArray, glBindBuffer, glBufferData, glVertexAttribPointer, glEnableVertexAttribArray, GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_FLOAT, GL_FALSE
+        
+        n_vertices = vertices.shape[0]
+        if n_vertices == 0:
+            return False
+        
+        sig = (id(vertices), id(normals), id(colors)) # signature for this data - do not rebind if the same data is already bound
+
+        # check to see if old vao and vbo if they exist, and if they point to the same data
+        # remove them if they exist byt are differeng      
+        old_vao, old_vbo, old_sig = self._bound_data.get(name, (None, None, None))
+        if old_sig == sig:
+            glBindVertexArray(old_vao) # rebind the old vao  - TODO should we defer this to client?
+            #logger.debug('Reusing existing VAO')
+            return n_vertices
+        elif old_vao is not None:
+            glBindVertexArray(0) # unbind the old vao
+            glBindBuffer(GL_ARRAY_BUFFER, 0) # unbind the old vbo
+            glDeleteVertexArrays(1, old_vao)
+            glDeleteBuffers(3, old_vbo)
+        
+        vertices = np.ascontiguousarray(vertices, 'f')
+        normals = np.ascontiguousarray(normals, 'f')
+        colors = np.ascontiguousarray(colors, 'f')
+
+        #print('vertices_dtype = ', vertices.dtype)
+        
+        vao = glGenVertexArrays(1)
+        vbo = glGenBuffers(3)
+        glBindVertexArray(vao)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[0])
+        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(0)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[1])
+        glBufferData(GL_ARRAY_BUFFER, normals.nbytes, normals, GL_STATIC_DRAW)
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(1)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[2])
+        glBufferData(GL_ARRAY_BUFFER, colors.nbytes, colors, GL_STATIC_DRAW)
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(2)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+        self._bound_data[name] = (vao, vbo, sig)
+
+        return n_vertices
+    
+    def _bind_data_legacy(self, vertices, normals, colors):
+        from OpenGL.GL import glVertexPointerf, glNormalPointerf, glColorPointerf
+        vertices = np.ascontiguousarray(vertices, 'f')
+        normals = np.ascontiguousarray(normals, 'f')
+        colors = np.ascontiguousarray(colors, 'f')
+
+        n_vertices = vertices.shape[0]
+
+        glVertexPointerf(vertices)
+        glNormalPointerf(normals)
+        glColorPointerf(colors)
+
+        return n_vertices
+    
+    def _bind_data(self, name, vertices, normals, colors, core_profile=True):
+        if core_profile:
+            return self._bind_data_core(name, vertices, normals, colors)
+        else:
+            return self._bind_data_legacy(vertices, normals, colors)
+        
+    @classmethod
+    def _gen_rect_triangles(cls, x0, y0, w, h, z=0.0):
+        # generate two triangles to make a rectangle (as a replacement for deprecated GL_QUADS)
+        # TODO - move this somewhere more sensible
+
+        return np.array([[x0, y0, z],  
+                         [x0+w, y0, z], 
+                         [x0+w, y0+h, z],
+                         [x0+w, y0 + h, z], 
+                         [x0, y0+h, z],
+                         [x0, y0, z]], 'f')
+    
+    @classmethod
+    def _gen_rect_texture_coords(cls):
+        return np.array([[0., 0.], 
+                         [1., 0.], 
+                         [1., 1.], 
+                         [1., 1.], 
+                         [0., 1.], 
+                         [0., 0.]], 'f')
+
+class BaseEngine(BindMixin):
     def __init__(self):
         self._shader_program_cls = None
+
+        BindMixin.__init__(self)
     
     def set_shader_program(self, shader_program):
         #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
@@ -57,7 +165,7 @@ class BaseEngine(object):
 
     @abc.abstractmethod
     def render(self, gl_canvas, layer):
-        pass
+        pass    
     
     def _set_shader_clipping(self, gl_canvas):
         sp = self.get_shader_program(gl_canvas)
@@ -113,6 +221,8 @@ class BaseLayer(HasTraits):
 
         """
         pass
+
+    
     
 class EngineLayer(BaseLayer):
     """

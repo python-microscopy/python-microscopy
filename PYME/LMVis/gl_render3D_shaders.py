@@ -89,6 +89,8 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBoxOverlayLayer = None
     _is_initialized = False
 
+    core_profile = False #legacy fixed function OpenGL pipeline (see glcanvas_core.py for modern core profile implementation)
+
     def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER]

@@ -53,6 +53,7 @@ uniform mat4 clip_rotation_matrix;
 
 uniform mat4 ModelViewProjectionMatrix;
 uniform float point_size_px;
+
 layout (location = 0) in vec3 Vertex;
 layout (location = 1) in vec3 Normal;
 layout (location = 2) in vec4 Color;

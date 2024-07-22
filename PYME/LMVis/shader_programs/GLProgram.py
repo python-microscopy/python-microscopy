@@ -27,14 +27,15 @@ import os
 
 class GLProgram(object):
 
-    def __init__(self, vs_filename=None, fs_filename=None, max_glsl_version='120'):
+    def __init__(self, vs_filename=None, fs_filename=None, max_glsl_version='120', clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
         self._shader_program = None
         self._max_glsl_version = max_glsl_version
 
-        self.xmin, self.xmax = [-1e6, 1e6]
-        self.ymin, self.ymax = [-1e6, 1e6]
-        self.zmin, self.zmax = [-1e6, 1e6]
-        self.vmin, self.vmax = [-1e6, 1e6]
+        self.xmin, self.xmax = clipping['x']
+        self.ymin, self.ymax = clipping['y']
+        self.zmin, self.zmax = clipping['z']
+        self.vmin, self.vmax = clipping['v']
+        
         self.v_matrix = np.eye(4, 4, dtype='f')
         
         if (vs_filename is not None) and (fs_filename is not None):
@@ -72,6 +73,14 @@ class GLProgram(object):
     def set_modelviewprojectionmatrix(self, mvp):
         if self._shader_program._vs_glsl_version >= '140':
             glUniformMatrix4fv(self.get_uniform_location('ModelViewProjectionMatrix'), 1, GL_FALSE, np.array(mvp, 'f4').T)
+
+    def set_modelviewmatrix(self, mv):
+        if self._shader_program._vs_glsl_version >= '140':
+            glUniformMatrix4fv(self.get_uniform_location('ModelViewMatrix'), 1, GL_FALSE, np.array(mv, 'f4').T)
+
+    def set_normalmatrix(self, normal_matrix):
+        if self._shader_program._vs_glsl_version >= '140':
+            glUniformMatrix3fv(self.get_uniform_location('NormalMatrix'), 1, GL_FALSE, np.array(normal_matrix, 'f4').T)
 
     def set_point_size(self, point_size):
         if self._shader_program._vs_glsl_version >= '140':
