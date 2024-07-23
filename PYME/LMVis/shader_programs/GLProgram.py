@@ -27,7 +27,7 @@ import os
 
 class GLProgram(object):
 
-    def __init__(self, vs_filename=None, fs_filename=None, max_glsl_version='120', clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
+    def __init__(self, vs_filename=None, fs_filename=None, gs_filename=None, max_glsl_version='120', clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
         self._shader_program = None
         self._max_glsl_version = max_glsl_version
 
@@ -35,11 +35,11 @@ class GLProgram(object):
         self.ymin, self.ymax = clipping['y']
         self.zmin, self.zmax = clipping['z']
         self.vmin, self.vmax = clipping['v']
-        
+
         self.v_matrix = np.eye(4, 4, dtype='f')
         
         if (vs_filename is not None) and (fs_filename is not None):
-            self.create_and_set_shader_program(vs_filename, fs_filename)
+            self.create_and_set_shader_program(vs_filename, fs_filename, gs_filename=gs_filename)
 
         self._old_prog = 0
         
@@ -53,11 +53,14 @@ class GLProgram(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(self._old_prog)
 
-    def create_and_set_shader_program(self, vs_filename, fs_filename):
+    def create_and_set_shader_program(self, vs_filename, fs_filename, gs_filename=None):
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path, max_glsl_version=self._max_glsl_version)
         shader_program.add_shader(vs_filename, GL_VERTEX_SHADER)
         shader_program.add_shader(fs_filename, GL_FRAGMENT_SHADER)
+        if gs_filename is not None:
+            shader_program.add_shader(gs_filename, GL_GEOMETRY_SHADER)
+
         shader_program.link()
         self.set_shader_program(shader_program)
         

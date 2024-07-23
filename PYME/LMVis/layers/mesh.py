@@ -39,7 +39,7 @@ class WireframeEngine(BaseEngine):
         colors = layer.get_colors()
 
         with self.get_shader_program(gl_canvas) as sp:
-            self._bind_data('mesh', vertices, normals, colors, core_profile=core_profile)
+            self._bind_data('mesh', vertices, normals, colors, sp, core_profile=core_profile)
             
             if core_profile:        
                 sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
@@ -54,7 +54,7 @@ class WireframeEngine(BaseEngine):
                 # TODO - move this to a shader uniform to avoid duplicating the data
                 sc = np.array([0.5, 0.5, 0.5, 1])
 
-                self._bind_data('outline', vertices, normals, sc*colors, core_profile=core_profile)
+                self._bind_data('outline', vertices, normals, sc*colors, sp, core_profile=core_profile)
 
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
@@ -76,7 +76,7 @@ class WireframeEngine(BaseEngine):
                 cols = (np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
                 norms = (np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
 
-                self._bind_data('normals', normal_buffer, norms, cols, core_profile=core_profile)
+                self._bind_data('normals', normal_buffer, norms, cols, sp, core_profile=core_profile)
                 
                 glLineWidth(3)  # slightly thick
                 glDrawArrays(GL_LINES, 0, 2*n_vertices)

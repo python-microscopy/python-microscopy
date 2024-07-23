@@ -1,5 +1,5 @@
 from .base import BaseEngine, EngineLayer
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram, BigOpaquePointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
@@ -20,9 +20,40 @@ class Points3DEngine(BaseEngine):
         self.set_shader_program(OpaquePointShaderProgram)
         self.point_scale_correction = 1.0
 
+    def point_size_px(self, gl_canvas, layer, sp):
+        point_scale_correction = self.point_scale_correction*getattr(sp, 'size_factor', 1.0)
+        
+        if gl_canvas:
+            if layer.point_size == 0:
+                point_size = (1 / gl_canvas.pixelsize)
+            else:
+                point_size = (layer.point_size*point_scale_correction / gl_canvas.pixelsize)
+        else:
+            point_size(layer.point_size*point_scale_correction) 
+
+        point_size = point_size*gl_canvas.content_scale_factor # scale for high DPI displays
+        
+        return point_size
+    
     def render(self, gl_canvas, layer):
         core_profile = gl_canvas.core_profile
-        self._set_shader_clipping(gl_canvas)
+        max_ps = glGetFloatv(GL_POINT_SIZE_RANGE)[1]
+
+        sp = self.get_shader_program(gl_canvas)
+        point_size = self.point_size_px(gl_canvas, layer, sp)
+
+        bigpoints = False
+        
+        if (point_size > max_ps) and core_profile:
+            logger.debug(f'Point size ({point_size}) larger than OpenGL maximum ({max_ps}), size scaling might not work as expected')
+            try:
+                sp = self.get_specific_shader_program(gl_canvas, self._big_point_shader_cls)
+
+                bigpoints = True
+            except AttributeError:
+                logger.debug('No big point shader class defined, using default shader - points will appear smaller than expected')
+
+        self._set_sp_shader_clipping(sp, gl_canvas)
 
         vertices = layer.get_vertices()
         n_vertices = vertices.shape[0]
@@ -30,34 +61,18 @@ class Points3DEngine(BaseEngine):
             return False
         
         normals = layer.get_normals()
-        colors = layer.get_colors()
+        colors = layer.get_colors()    
     
-        with self.get_shader_program(gl_canvas) as sp:
-            point_scale_correction = self.point_scale_correction*getattr(sp, 'size_factor', 1.0)
-        
-            if gl_canvas:
-                if layer.point_size == 0:
-                    point_size = (1 / gl_canvas.pixelsize)
-                else:
-                    point_size = (layer.point_size*point_scale_correction / gl_canvas.pixelsize)
-            else:
-                point_size(layer.point_size*point_scale_correction) 
-
-            point_size = point_size*gl_canvas.content_scale_factor # scale for high DPI displays
-            
-            #print(f'point size = {point_size}')
-            #print('max point size', glGetFloatv(GL_POINT_SIZE_MAX))
-            #print('Point distance attenuation', glGetFloatv(GL_POINT_DISTANCE_ATTENUATION))
-
-            max_ps = glGetFloatv(GL_POINT_SIZE_RANGE)[1]
-            if point_size > max_ps:
-                logger.debug(f'Point size ({point_size}) larger than OpenGL maximum ({max_ps}), size scaling might not work as expected')
-            
-            self._bind_data('points', vertices, normals, colors, core_profile=core_profile)
+        with sp:            
+            self._bind_data('points', vertices, normals, colors, sp, core_profile=core_profile)
             if core_profile:
                 sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
                 sp.set_point_size(point_size)
                 #glBindVertexArray(self._bound_data['points'][0])
+
+                if bigpoints:
+                    sx = glGetIntegerv(GL_VIEWPORT)[2]
+                    glUniform1f(sp.get_uniform_location('point_size_vp'), 2.0*point_size/float(sx))
 
             else:
                 glPointSize(point_size)
@@ -77,12 +92,18 @@ class Points3DEngine(BaseEngine):
                 cols = (np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
                 norms = (np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
                 
-                self._bind_data('normals', normal_buffer, norms, cols, core_profile=core_profile)
+                self._bind_data('normals', normal_buffer, norms, cols, sp, core_profile=core_profile)
 
                 glLineWidth(3)  # slightly thick
                 glDrawArrays(GL_LINES, 0, 2*n_vertices)
             
 
+class OpaquePointsEngine(Points3DEngine):
+    def __init__(self, *args, **kwargs):
+        BaseEngine.__init__(self, *args, **kwargs)
+        self.set_shader_program(OpaquePointShaderProgram)
+        self._big_point_shader_cls = BigOpaquePointShaderProgram
+        self.point_scale_correction = 1.0
 
 class PointSpritesEngine(Points3DEngine):
     def __init__(self, *args, **kwargs):
@@ -110,7 +131,7 @@ class SpheresEngine(Points3DEngine):
         
 
 ENGINES = {
-    'points' : Points3DEngine,
+    'points' : OpaquePointsEngine,
     'transparent_points' : TransparentPointsEngine,
     'pointsprites' : PointSpritesEngine,
     'shaded_points' : ShadedPointsEngine,

@@ -55,14 +55,14 @@ class BindMixin(object):
             glDeleteVertexArrays(1, vao)
             glDeleteBuffers(3, vbo)
 
-    def _bind_data_core(self, name, vertices, normals, colors):
+    def _bind_data_core(self, name, vertices, normals, colors, sp):
         from OpenGL.GL import glGenVertexArrays, glGenBuffers, glDeleteBuffers, glDeleteVertexArrays, glBindVertexArray, glBindBuffer, glBufferData, glVertexAttribPointer, glEnableVertexAttribArray, GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_FLOAT, GL_FALSE
         
         n_vertices = vertices.shape[0]
         if n_vertices == 0:
             return False
         
-        sig = (id(vertices), id(normals), id(colors)) # signature for this data - do not rebind if the same data is already bound
+        sig = (id(vertices), id(normals), id(colors), id(sp)) # signature for this data - do not rebind if the same data is already bound
 
         # check to see if old vao and vbo if they exist, and if they point to the same data
         # remove them if they exist byt are differeng      
@@ -118,9 +118,9 @@ class BindMixin(object):
 
         return n_vertices
     
-    def _bind_data(self, name, vertices, normals, colors, core_profile=True):
+    def _bind_data(self, name, vertices, normals, colors, sp, core_profile=True):
         if core_profile:
-            return self._bind_data_core(name, vertices, normals, colors)
+            return self._bind_data_core(name, vertices, normals, colors, sp)
         else:
             return self._bind_data_legacy(vertices, normals, colors)
         
@@ -162,13 +162,18 @@ class BaseEngine(BindMixin):
     
     def get_shader_program(self, canvas):
         return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
+    
+    def get_specific_shader_program(self, canvas, shader_program_cls):
+        '''Get a specific shader program instance for this engine. This is useful for engines that need to use multiple
+        different shaders. Added to allow points layers to switch between using points and using quads as the desired
+        point size exceeds the maximum point size supported by the hardware.'''
+        return ShaderProgramFactory.get_program(shader_program_cls, canvas.gl_context, canvas)
 
     @abc.abstractmethod
     def render(self, gl_canvas, layer):
         pass    
     
-    def _set_shader_clipping(self, gl_canvas):
-        sp = self.get_shader_program(gl_canvas)
+    def _set_sp_shader_clipping(self, sp, gl_canvas):
         sp.xmin, sp.xmax = gl_canvas.bounds['x'][0]
         sp.ymin, sp.ymax = gl_canvas.bounds['y'][0]
         sp.zmin, sp.zmax = gl_canvas.bounds['z'][0]
@@ -180,6 +185,10 @@ class BaseEngine(BindMixin):
             #use current view
             sp.v_matrix[:,:] = gl_canvas.object_rotation_matrix
             sp.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
+
+    def _set_shader_clipping(self, gl_canvas):
+        sp = self.get_shader_program(gl_canvas)
+        self._set_sp_shader_clipping(sp, gl_canvas)
         
 
 class BaseLayer(HasTraits):

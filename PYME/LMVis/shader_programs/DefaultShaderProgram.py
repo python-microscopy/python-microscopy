@@ -87,6 +87,21 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
 
         return self
 
+class BigOpaquePointShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='bigflatpoints_fs.glsl', gs_filename='bigpoints_gs.glsl', **kwargs)
+
+    def __enter__(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glDisable(GL_BLEND)
+        glDepthMask(GL_TRUE)
+        glEnable(GL_DEPTH_TEST)
+
+        self.get_shader_program().use()
+        self.set_clipping_uniforms()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self
 
 class ImageShaderProgram(DefaultShaderProgram):
     def __init__(self, **kwargs):

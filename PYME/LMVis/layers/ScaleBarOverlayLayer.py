@@ -90,7 +90,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
                 if core_profile:
                     sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
 
-                self._bind_data('scalebar', self._verts, 0*self._verts, self._cols, core_profile=core_profile)
+                self._bind_data('scalebar', self._verts, 0*self._verts, self._cols, sp, core_profile=core_profile)
 
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
                 glDrawArrays(GL_TRIANGLES, 0, 6)

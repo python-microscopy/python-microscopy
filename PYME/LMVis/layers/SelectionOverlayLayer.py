@@ -67,7 +67,7 @@ class SelectionOverlayLayer(OverlayLayer):
                     verts = np.array([[x0, y0, zc], [x1, y0, zc], [x1, y1, zc], [x0, y1, zc]], 'f')
                     cols = np.repeat(np.hstack([self._selection_settings.colour, 1.0])[None,:], 4, axis=0)
 
-                    self._bind_data('selection', verts, 0*verts, cols, core_profile=gl_canvas.core_profile)
+                    self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINE_LOOP, 0, 4)
 
                     # glColor3fv(self._selection_settings.colour)
@@ -88,7 +88,7 @@ class SelectionOverlayLayer(OverlayLayer):
 
                     verts = np.array([[x0, y0, zc], [x1, y1, zc]], 'f')
                     cols = np.repeat(np.hstack([self._selection_settings.colour, 1.0])[None, :], 2, axis=0)
-                    self._bind_data('selection', verts, 0*verts, cols, core_profile=gl_canvas.core_profile)
+                    self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINES, 0, 2)
 
                     # glColor3fv(self._selection_settings.colour)
@@ -118,6 +118,6 @@ class SelectionOverlayLayer(OverlayLayer):
                     # glVertexPointerf(vertices)
                     # glNormalPointerf(normals)
                     # glColorPointerf(c)
-                    self._bind_data('selection', vertices, normals, c, core_profile=gl_canvas.core_profile)
+                    self._bind_data('selection', vertices, normals, c, csp, ore_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINE_STRIP, 0, len(x))
 
