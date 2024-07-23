@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram, BigOpaquePointShaderProgram
-from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
+from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram, BigPointSpriteShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram, BigGouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
@@ -43,12 +43,11 @@ class Points3DEngine(BaseEngine):
         point_size = self.point_size_px(gl_canvas, layer, sp)
 
         bigpoints = False
-        
+
         if (point_size > max_ps) and core_profile:
-            logger.debug(f'Point size ({point_size}) larger than OpenGL maximum ({max_ps}), size scaling might not work as expected')
+            #logger.debug(f'Point size ({point_size}) larger than OpenGL maximum ({max_ps}), size scaling might not work as expected')
             try:
                 sp = self.get_specific_shader_program(gl_canvas, self._big_point_shader_cls)
-
                 bigpoints = True
             except AttributeError:
                 logger.debug('No big point shader class defined, using default shader - points will appear smaller than expected')
@@ -109,6 +108,7 @@ class PointSpritesEngine(Points3DEngine):
     def __init__(self, *args, **kwargs):
         BaseEngine.__init__(self, *args, **kwargs)
         self.set_shader_program(PointSpriteShaderProgram)
+        self._big_point_shader_cls = BigPointSpriteShaderProgram
         self.point_scale_correction = 1.0
         
 class ShadedPointsEngine(Points3DEngine):
@@ -127,6 +127,7 @@ class SpheresEngine(Points3DEngine):
     def __init__(self, *args, **kwargs):
         BaseEngine.__init__(self, *args, **kwargs)
         self.set_shader_program(GouraudSphereShaderProgram)
+        self._big_point_shader_cls = BigGouraudSphereShaderProgram
         self.point_scale_correction = 1.0
         
 

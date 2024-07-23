@@ -105,7 +105,10 @@ class GouraudSphereShaderProgram(GouraudShaderProgram):
         except:
             pass
         glDisable(GL_PROGRAM_POINT_SIZE)
-        
+
+class BigGouraudSphereShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "default_vs.glsl", "bigspheres_fs.glsl", gs_filename='bigpoints_gs.glsl', **kwargs)    
 
 class OITGouraudShaderProgram(GouraudShaderProgram):
     def __init__(self, **kwargs):
