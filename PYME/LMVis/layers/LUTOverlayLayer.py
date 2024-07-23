@@ -203,6 +203,9 @@ class LUTOverlayLayer(OverlayLayer):
             #glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
             #glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, image.shape[0], image.shape[1], 0, GL_RED, GL_FLOAT, image.astype('f4'))
+        else:
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self._texture_id)
 
     def set_lut(self, cmap):
         if self._lut_id is None:
