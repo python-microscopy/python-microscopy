@@ -24,7 +24,7 @@ class QuiverEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
-        with self.get_shader_program(gl_canvas):            
+        with self.get_shader_program(gl_canvas) as sp:            
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
             vecs = layer.get_vecs()
@@ -34,12 +34,21 @@ class QuiverEngine(BaseEngine):
             vec_buffer[1::2,:] = vertices
             
             vec_buffer[1::2,:] += layer.scaling*vecs
-            
-            glVertexPointerf(vec_buffer)
+
             sc = np.array([1, 1, 1, 1])
-            glColorPointerf(np.ones((vec_buffer.shape[0],4),dtype='f4')*sc[None,:])  # white normals
-            glNormalPointerf(np.ones((vec_buffer.shape[0],3),dtype='f4'))
+            cols = np.ones((vec_buffer.shape[0],4),dtype='f4')*sc[None,:]
+
+            # glVertexPointerf(vec_buffer)           
+            # glColorPointerf(cols)  # white normals
+            # glNormalPointerf(np.ones((vec_buffer.shape[0],3),dtype='f4'))
+
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojection_matrix(gl_canvas.mvp)
+
+            self._bind_data('quiver', vec_buffer, cols, np.ones((vec_buffer.shape[0],3),dtype='f4'), sp, core_profile=gl_canvas.core_profile)
+            
             glLineWidth(3)  # slightly thick
+            
             glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
 

@@ -23,18 +23,22 @@ class Track3DEngine(BaseEngine):
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
         
-        with self.get_shader_program(gl_canvas):
-            glDisable(GL_LIGHTING)
+        with self.get_shader_program(gl_canvas) as sp:
+            #glDisable(GL_LIGHTING)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
             glDisable(GL_DEPTH_TEST)
             
             vertices = layer.get_vertices()
             #n_vertices = vertices.shape[0]
-            
-            glVertexPointerf(vertices)
-            glNormalPointerf(layer.get_normals())
-            glColorPointerf(layer.get_colors())
 
+            self._bind_data('tracks', vertices, layer.get_normals(), layer.get_colors(), sp, core_profile=gl_canvas.core_profile)
+            
+            # glVertexPointerf(vertices)
+            # glNormalPointerf(layer.get_normals())
+            # glColorPointerf(layer.get_colors())
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
+                
             glLineWidth(layer.line_width)
 
             for i, cl in enumerate(layer.clumpSizes):
