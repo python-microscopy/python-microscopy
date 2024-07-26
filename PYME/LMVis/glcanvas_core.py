@@ -27,7 +27,7 @@ import numpy
 import numpy as np
 import wx
 import wx.glcanvas
-import glm
+import PYME.LMVis.mv_math as mm
 from OpenGL import GL, GLU
 #from OpenGL import GLU
 
@@ -385,32 +385,32 @@ class LMGLShaderCanvas(GLCanvas):
             if self.displayMode == '3DPersp':
                 # our object will be be scaled to fit a 2x2x2 box at z=10 - see translate and scale calls below
                 #GL.glFrustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
-                proj = glm.frustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
+                proj = mm.frustum(-1 + eye, 1 + eye, ys, -ys, 8.5, 11.5)
             else:
-                proj = glm.ortho(-1, 1, ys, -ys, -1000, 1000)
+                proj = mm.ortho(-1, 1, ys, -ys, -1000, 1000)
                 #GL.glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
             self.proj = proj
 
             #GL.glMatrixMode(GL.GL_MODELVIEW)
 
-            self.mv = glm.mat4(1.0)
+            self.mv = np.eye(4)#glm.mat4(1.0)
 
             #stereo offset
-            self.mv = glm.translate(self.mv, glm.vec3(eye, 0.0, 0.0))
+            self.mv = mm.translate(self.mv, eye, 0, 0) #glm.translate(self.mv, glm.vec3(eye, 0.0, 0.0))
             #GL.glTranslatef(eye, 0.0, 0.0)
 
             # move our object to be centred at -10
             if self.displayMode == '3DPersp':
                 #GL.glTranslatef(0, 0, -10)
-                self.mv = glm.translate(self.mv, glm.vec3(0, 0, -10))
+                self.mv = mm.translate(self.mv, 0, 0, -10)
 
             if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)
 
             # scale object to fit a 2x2x2 box
             #GL.glScalef(self.view.scale, self.view.scale, self.view.scale)
-            self.mv = glm.scale(self.mv, glm.vec3(self.view.scale, self.view.scale, self.view.scale))
+            self.mv = mm.scale(self.mv, self.view.scale, self.view.scale, self.view.scale)
 
             #GL.glPushMatrix()
             _mv = self.mv
@@ -418,11 +418,11 @@ class LMGLShaderCanvas(GLCanvas):
             try:
                 # rotate object
                 #GL.glMultMatrixf(self.object_rotation_matrix)
-                self.mv = self.mv * glm.mat4(self.object_rotation_matrix)
+                self.mv = np.dot(self.mv,  self.object_rotation_matrix)
                 #GL.glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
-                self.mv = glm.translate(self.mv, glm.vec3(-self.view.translation))
+                self.mv = mm.translate(self.mv, *(-self.view.translation))
 
-                self.mvp = proj * self.mv
+                self.mvp = np.dot(proj, self.mv)
                 
                 for l in self.underlays:
                     l.render(self)
@@ -446,7 +446,7 @@ class LMGLShaderCanvas(GLCanvas):
                 self.mv = _mv
                 #GL.glPopMatrix()
 
-            self.mvp = proj * self.mv
+            self.mvp = np.dot(proj, self.mv)
             #scale bar gets drawn without the rotation
             self.ScaleBarOverlayLayer.render(self)
 
@@ -455,7 +455,7 @@ class LMGLShaderCanvas(GLCanvas):
                 #GL.glMatrixMode(GL.GL_PROJECTION)
                 #GL.glLoadIdentity()
                 #GL.glOrtho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
-                proj = glm.ortho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
+                proj = mm.ortho(0, self.Size[0], self.Size[1], 0, -1000, 1000)
                 self.mvp = proj
 
                 #GL.glMatrixMode(GL.GL_MODELVIEW)

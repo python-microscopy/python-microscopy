@@ -57,12 +57,11 @@ class AxesOverlayLayer(OverlayLayer):
 
             #glDisable(GL_LIGHTING)
             if gl_canvas.core_profile:
-                import glm
-                mv = glm.translate(gl_canvas.mv, glm.vec3(.9, -.9*view_ratio, 0))
-                mv = glm.scale(mv, glm.vec3(.1, .1, .1))
-                mv = mv*glm.mat4(gl_canvas.object_rotation_matrix)
+                import PYME.LMVis.mv_math as mm
+                mv = mm.scale(mm.translate(gl_canvas.mv, .9, -.9*view_ratio, 0), 0.1, 0.1, 0.1)
+                mv = np.dot(mv, gl_canvas.object_rotation_matrix)
 
-                mvp = mv*gl_canvas.proj
+                mvp = np.dot(mv,gl_canvas.proj)
 
                 sp.set_modelviewprojectionmatrix(np.array(mvp))
 

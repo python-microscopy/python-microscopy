@@ -115,14 +115,15 @@ class Text(BaseEngine):
             self.set_texture(im)
             
             if gl_canvas.core_profile:
-                import glm
+                from PYME.LMVis import mv_math as mm
                 # find the on-screen position of our text
                 vp = glGetIntegerv(GL_VIEWPORT)
                 #print('vp:', vp)
 
-                pos = np.zeros(3)
+                pos = np.zeros(4)
                 pos[:len(self.pos)] = self.pos
-                x0, y0, _, _ = gl_canvas.mvp*glm.vec4(*pos, 1)
+                pos[3] = 1.0
+                x0, y0, _, _ = np.dot(gl_canvas.mvp, pos)
 
                 #print('textPos:', x0, y0)
                 # convert to screen pixel coordinates
@@ -140,7 +141,7 @@ class Text(BaseEngine):
                 else:
                     cols = np.repeat(self._color, 6, axis=0)
 
-                proj = glm.ortho(0, vp[2], 0, vp[3], -1000, 1000)
+                proj = mm.ortho(0, vp[2], 0, vp[3], -1000, 1000)
                 #print('proj:', proj)
                 sp.set_modelviewprojectionmatrix(np.array(proj))
 
