@@ -172,10 +172,17 @@ class LayerFoldingPane(manualFoldPanel.foldingPane):
         
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
-        if wx.SystemSettings.GetAppearance().IsDark():
-            return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=LAYER_CAPTION_STYLE_DARK)
-        else:
-            return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=LAYER_CAPTION_STYLE)
+        cbstyle = LAYER_CAPTION_STYLE
+        
+        try:
+            if wx.SystemSettings.GetAppearance().IsDark():
+                cbstyle=LAYER_CAPTION_STYLE_DARK
+        except AttributeError:
+            # wx < 4.1 doesn't have GetAppearance
+            pass
+        
+        
+        return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=cbstyle)
 
 
 class _ChannelLayer(object):

@@ -192,18 +192,22 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
         if not filename is None:
+            recipe = getattr(self.cmd_args, 'recipe', None)
+
             def _recipe_callback():
-                recipe = getattr(self.cmd_args, 'recipe', None)
+                if len(cmd_args.load) > 0:
+                    self.pipeline.load_extra_datasources(**dict(cmd_args.load))
+                
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
-                    #self.recipeView.SetRecipe(self.pipeline.recipe)
-                    self.update_datasource_panel()
-
+                    #self.recipeView.SetRecipe(self.pipeline.recipe)  
+                
+                self.update_datasource_panel()
                 self._recipe_editor.update_recipe_text()
             
-            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
+            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback, create_default_recipe=(not recipe))
             #self.refv = False
         
         wx.CallAfter(self.RefreshView)
@@ -456,6 +460,7 @@ def parse():
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
     parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=False)
+    parser.add_argument('-l', '--load', nargs=2, action='append', default=[], dest='load', metavar=('KEY', 'FILENAME'), help='Load one (or more) additional files into the recipe namespace.')
     args = parser.parse_args()
     return args
     

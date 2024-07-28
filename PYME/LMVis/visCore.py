@@ -277,6 +277,7 @@ class VisGUICore(object):
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
             
         self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
+        self.AddMenuItem('File', 'Save Session', self.OnSaveSession)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -473,9 +474,15 @@ class VisGUICore(object):
         return l
 
     def add_layer(self, layer):
-        self.glCanvas.layers.append(layer)
+        self.add_layers([layer,])
+        
+
+    def add_layers(self, layers):
+        for layer in layers:
+            self.glCanvas.layers.append(layer)
+            layer.on_update.connect(self.glCanvas.refresh)
+
         self.glCanvas.recenter_bbox()
-        layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
         
         wx.CallAfter(self.layer_added.send, self)
@@ -810,26 +817,55 @@ class VisGUICore(object):
             
         return args
 
-    def OpenFile(self, filename, recipe_callback=None):
-        # get rid of any old layers
-        while len(self.layers) > 0:
-            self.layers.pop()
+    def get_session_yaml(self):
+        import yaml
+        from PYME.recipes.base import MyDumper
+        session = {'format_version': 0.1,}
+        session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
+
+        # TODO - View and layer settings
+        session.update(self.glCanvas.get_session_info())
+        return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
+    
+    def save_session(self, filename):
+        with open(filename, 'w') as f:
+            f.write(self.get_session_yaml())
+
+    def OnSaveSession(self, event):
+        '''GUI callback to save session to a file, shows a file dialog'''
+        filename = wx.SaveFileSelector("Choose a file to save the session to", 
+                                   #nameUtils.genResultDirectoryPath(), 
+                                   extension='.pvs')
+        if not filename == '':
+            self.save_session(filename)
+    
+    def load_session(self, filename):
+        import yaml
+        with open(filename, 'r') as f:
+            session = yaml.safe_load(f)
+
+        self.pipeline.load_session(session)
+
+        # load layers
+        from PYME.LMVis.layers import layer_from_session_info
+        self.glCanvas.layers.clear()
+        layers = []
+        for l in session.get('layers', []):
+            layers.append(layer_from_session_info(self.pipeline, l))
         
-        logger.debug('Creating Pipeline')
-        if filename is None and not ds is None:
-            self.pipeline.OpenFile(ds=ds)
-        else:
-            args = self._populate_open_args(filename)
-            if args is None:
-                return
-            self.pipeline.OpenFile(filename, **args)
-        logger.debug('Pipeline Created')
-        
-        #############################
-        #now do all the gui stuff
+        self.add_layers(layers)
+
+        # reload view
+        view = session.get('view', None)
+        if view:
+            from PYME.LMVis import views
+            self.glCanvas.set_view(views.View.decode_json(view))
+    
+    
+    def _update_title_and_tabs(self, filename):
         self.recipeView.invalidate_layout()
         self.update_datasource_panel()
-        
+
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
@@ -838,6 +874,33 @@ class VisGUICore(object):
             
             #self.CreateFoldPanel()
             logger.debug('Gui stuff done')
+    
+    def OpenFile(self, filename, recipe_callback=None, create_default_recipe=True):
+        # get rid of any old layers
+        while len(self.layers) > 0:
+            self.layers.pop()
+
+        if filename.endswith('.pvs'):
+            self.load_session(filename)
+            self._update_title_and_tabs(filename)
+            return
+        
+        logger.debug('Creating Pipeline')
+        if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds, create_default_recipe=create_default_recipe)
+        else:
+            args = self._populate_open_args(filename)
+            if args is None:
+                return
+            
+            self.pipeline.OpenFile(filename, create_default_recipe=create_default_recipe, **args)
+        logger.debug('Pipeline Created')
+        
+        #############################
+        #now do all the gui stuff
+
+        self._update_title_and_tabs(filename)
+        
         
         try:
             if recipe_callback:

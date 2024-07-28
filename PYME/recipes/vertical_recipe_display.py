@@ -45,7 +45,14 @@ class RecipeDisplayPanel(wx.Panel):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
     def _col(self,node):
-        dark_mode = wx.SystemSettings.GetAppearance().IsDark()
+        dark_mode = False
+        
+        try:
+            dark_mode = wx.SystemSettings.GetAppearance().IsDark()
+        except AttributeError:
+            # wx < 4.1 doesn't have GetAppearance
+            pass
+        
         if dark_mode:
             factor = 1.0
         else:

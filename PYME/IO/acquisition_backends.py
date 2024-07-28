@@ -10,6 +10,9 @@ from PYME.IO.DataSources.ArrayDataSource import ArrayDataSource
 from PYME.IO import PZFFormat
 from PYME.IO.events import HDFEventLogger, MemoryEventLogger
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Backend(abc.ABC):
     """
     Base class for acquisition backends.
@@ -188,6 +191,8 @@ class ClusterBackend(Backend):
         # TODO - better events support - current assumption is that they are passed already formatted as json
         # TODO - use a binary format for saving events - they can be quite
         # numerous
+
+        logger.debug('Putting events')
         self._streamer.put(self._series_location + '/events.json', self.event_logger.to_JSON().encode()) 
         self._streamer.close()
 

@@ -103,17 +103,42 @@ class OIDICFrameSource(StandardFrameSource):
     """
 
     def __init__(self, frameWrangler, oidic_controller, oidic_orientation=0):
-        super().__init__(frameWrangler)
+        #super().__init__(frameWrangler)
+        self._fw = frameWrangler
+        self._on_frame = dispatch.Signal(['frameData'])
+        
+        # connect to onFrame rather than onFrameGroup so we get the
+        # current frame which as opposed to an older one.
+        # this is important as the OIDIC orientation is expected to change between frames.
+        # NOTE: we still assume that this connection happens before any of the acquisition
+        # classes connect to onFrame, so that we get the frame data (and microscope state)
+        # before the acquisition classes have had a chance to modify the state (e.g. by changing the DIC orientation).
+        # TODO: This should be pretty safe, as the FrameSource is usually created in the init script, 
+        # but can we make this robust agains the assumed ordering (execution of handlers in order of addition is an undocumented feature of dispatch)?
+        self._fw.onFrame.connect(self.tick)
 
         self._oidic = oidic_controller
-        self._target_orientation = oidic_orientation
 
-    def tick(self, *args, **kwargs):
-        # FIXME - check when onFrameGroup is emitted relative to when the OIDIC orientation is set.
-        # Is this predictable, or does it depend on the order in which OIDIC and drift tracking are
-        # registered with the frameWrangler?
-        if self._oidic.current_channel == self._target_orientation:
-            super().tick(*args, **kwargs)
+        self._last_tick_time = 0
+        # throttle to ensure 50 ms delay between completion of computation on one frame and start of computation on the next.
+        # the 50ms is emperical, but should (hopefully) be long enough to let anything else which is hooked to onFrame run. 
+        self._tick_throttle = 0.05 
+        #self._target_orientation = oidic_orientation
+
+    def tick(self, frameData, **kwargs):
+        # Because we are connected to onFrame rather than onFrameGroup (which is inherently throttled by the GUI loop),
+        # we need to throttle the signal ourselves to avoid overwhelming things
+        # when the frameWrangler is running at high speed (i.e. drift computation time
+        # is slower than or on the order of the camera integration time). 
+        if (time.time() - self._last_tick_time) < self._tick_throttle:
+            return
+        
+        #self._target_orientation = self._oidic.home_channel()
+        #if self._oidic.current_channel == self._target_orientation:
+        if self._oidic.current_channel == self._oidic.home_channel():
+            # send with the frame data of the frame which triggered the signal, rather than frameWrangler.currentFrame, which lags.
+            self._on_frame.send(sender=self, frameData=frameData)
+            self._last_tick_time = time.time() 
         else:
             # clobber all frames coming from camera when not in the correct DIC orientation
             pass

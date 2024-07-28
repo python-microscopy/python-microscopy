@@ -191,10 +191,14 @@ class CaptionBar(wx.Window):
                  foldIcons=None, cbstyle=None, pin_bits=pin_bits):
 
         if cbstyle is None:
-            if wx.SystemSettings().GetAppearance().IsDark():
-                cbstyle = DEFAULT_CAPTION_STYLE_DARK
-            else:
-                cbstyle = DEFAULT_CAPTION_STYLE
+            cbstyle = DEFAULT_CAPTION_STYLE
+            try:
+                if wx.SystemSettings().GetAppearance().IsDark():
+                    cbstyle = DEFAULT_CAPTION_STYLE_DARK
+            except AttributeError:
+                #no GetAppearance method (wx < 4.1)
+                pass
+            
         
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)

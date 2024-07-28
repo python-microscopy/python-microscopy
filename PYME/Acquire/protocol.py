@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 from PYME import config
 
 from sys import maxsize as maxint
+# more semantically explicit synonym for maxint
+# implying that tasks with a `when` property of maxint are excecuted upon finishing the protocol
+# e.g. after the stop button is pressed or an explicit stop task was executed
+on_finish = maxint
 
 #minimal protocol which does nothing
 class Protocol:
@@ -136,12 +140,20 @@ class TaskListProtocol(Protocol):
             self.listPos += 1
 
     def OnFinish(self):
+        skipped = 0
+        term_tasks = 0
         while not  self.listPos >= len(self.taskList):
             t = self.taskList[self.listPos]
             self.listPos += 1
+            if t.when < maxint-100: # we assume that all proper termination tasks have a when-time very close to or equal to maxint
+                skipped += 1
+                continue # discard all non-termination tasks
             t.what(*t.params)
+            term_tasks += 1
             eventLog.logEvent('ProtocolTask', '%s, ' % ( t.what.__name__,) + ', '.join([str(p) for p in t.params]))
-            
+
+        if skipped > 0:
+            logger.warning("Protocol terminating: skipped %d tasks, completed %d termination tasks" % (skipped,term_tasks))
 
 
 

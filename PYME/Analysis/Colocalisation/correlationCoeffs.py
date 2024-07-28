@@ -140,8 +140,13 @@ def fourier_ring_correlation(imA, imB, voxelsize=[1.0, 1.0], window=False):
     plt.figure()
 
     fig = plt.gcf()
-    fig.canvas.set_window_title('Fourier Ring Correlation')
-    
+    try:
+        fig.canvas.set_window_title('Fourier Ring Correlation')
+    except AttributeError:
+        # more recent version seem to have pushed this method into a manager sub-object
+        # see also: https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.4.0.html#backend-deprecations
+        fig.canvas.manager.set_window_title('Fourier Ring Correlation')
+
     ax = plt.gca()
     
     #FRC

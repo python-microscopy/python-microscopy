@@ -1356,6 +1356,10 @@ class ImageStack(object):
             self.saved = True
 
     def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
+        warnings.warn(DeprecationWarning('The "Save" method is deprecated, please use "save" instead'))
+        self.save(filename=filename, crop=crop, roi=roi, progressCallback=progressCallback)
+
+    def save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 

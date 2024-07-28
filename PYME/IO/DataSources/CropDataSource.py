@@ -201,25 +201,25 @@ def crop_image(image, xrange=None, yrange=None, zrange=None, trange=None):
     im.mdh['Origin.z'] = oz + vz*_offset(zrange)
 
     try:
-        im.mdh['cropping.xslice'] = _slice(xrange)
+        im.mdh['cropping.xslice'] = _slice(xrange).indices(image.data_xyztc.shape[0])
     except TypeError:
         #xrange is None
         pass
 
     try:
-        im.mdh['cropping.yslice'] = _slice(yrange)
+        im.mdh['cropping.yslice'] = _slice(yrange).indices(image.data_xyztc.shape[1])
     except TypeError:
         #yrange is None
         pass
 
     try:
-        im.mdh['cropping.zslice'] = _slice(zrange)
+        im.mdh['cropping.zslice'] = _slice(zrange).indices(image.data_xyztc.shape[2])
     except TypeError:
         #zrange is None
         pass
 
     try:
-        im.mdh['cropping.tslice'] = _slice(trange)
+        im.mdh['cropping.tslice'] = _slice(trange).indices(image.data_xyztc.shape[3])
     except TypeError:
         #trange is None
         pass

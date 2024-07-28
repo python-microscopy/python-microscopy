@@ -6,6 +6,7 @@ from PYME.contrib import dispatch
 from PYME.IO import MetaDataHandler
 from PYME.IO.acquisition_backends import MemoryBackend
 from PYME.Acquire.acquisition_base import AcquisitionBase
+from PYME.Acquire import eventLog
 
 
 class TimeSettings(object):
@@ -79,6 +80,9 @@ class XYZTCAcquisition(AcquisitionBase):
             self.shape_z = stack_settings.GetSeqLength()
         else:
             self.shape_z = 1
+
+        #keep a reference to the stack settings so we can home the piezo appropriately
+        self._stack_settings = stack_settings
 
         self.shape_t = getattr(time_settings, 'num_timepoints', 1)
         self.shape_c = getattr(channel_settings, 'num_channels', 1)
@@ -167,6 +171,9 @@ class XYZTCAcquisition(AcquisitionBase):
         with self.scope.frameWrangler.spooling_stopped():
             # avoid stopping both here and in the SpoolController
             #self.scope.frameWrangler.stop()
+            if self._stack_settings:
+                self._stack_settings.SetPrevPos(self._stack_settings._CurPos())
+            
             self.frame_num = 0
             
             z_idx, c_idx, t_idx = self._zct_indices(self.frame_num)
@@ -186,13 +193,22 @@ class XYZTCAcquisition(AcquisitionBase):
 
             self.dtStart = datetime.datetime.now() #for spooler compatibility - FIXME
             #self.scope.frameWrangler.start()
+        eventLog.register_event_handler(self.storage.event_logger)
 
         
     def stop(self):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
-        self.scope.stackSettings.piezoGoHome()
+        
+        if self._stack_settings:
+            self._stack_settings.piezoGoHome()
+        
         self.scope.frameWrangler.start()
+
+        try:
+            eventLog.remove_event_handler(self.storage.event_logger)
+        except ValueError:
+            pass
 
         self.storage.finalise()
         
