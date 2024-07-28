@@ -864,7 +864,7 @@ class VisGUICore(object):
             #self.CreateFoldPanel()
             logger.debug('Gui stuff done')
     
-    def OpenFile(self, filename, recipe_callback=None):
+    def OpenFile(self, filename, recipe_callback=None, create_default_recipe=True):
         # get rid of any old layers
         while len(self.layers) > 0:
             self.layers.pop()
@@ -876,12 +876,13 @@ class VisGUICore(object):
         
         logger.debug('Creating Pipeline')
         if filename is None and not ds is None:
-            self.pipeline.OpenFile(ds=ds)
+            self.pipeline.OpenFile(ds=ds, create_default_recipe=create_default_recipe)
         else:
             args = self._populate_open_args(filename)
             if args is None:
                 return
-            self.pipeline.OpenFile(filename, **args)
+            
+            self.pipeline.OpenFile(filename, create_default_recipe=create_default_recipe, **args)
         logger.debug('Pipeline Created')
         
         #############################

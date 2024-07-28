@@ -817,7 +817,7 @@ class Pipeline(object):
         self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds_keys}))
 
 
-    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
+    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, create_default_recipe=None, **kwargs):
         """Open a file - accepts optional keyword arguments for use with files
         saved as .txt and .mat. These are:
             
@@ -852,7 +852,10 @@ class Pipeline(object):
                 self.filterKeys['fitError_dx'] = (0, 10)
                 self.filterKeys['fitError_dy'] = (0, 10)
 
-        if clobber_recipe:
+        if create_default_recipe is None:
+            create_default_recipe = clobber_recipe
+
+        if create_default_recipe:
             self._create_default_recipe(pixel_size=kwargs.get('PixelSize', 1.0), ds_keys = ds.keys())
         else:
             logger.warn('Opening file without clobbering recipe, filter and ratiometric colour settings might not be handled properly')

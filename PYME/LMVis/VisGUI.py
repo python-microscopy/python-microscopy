@@ -189,11 +189,12 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
         if not filename is None:
+            recipe = getattr(self.cmd_args, 'recipe', None)
+
             def _recipe_callback():
                 if len(cmd_args.load) > 0:
                     self.pipeline.load_extra_datasources(**dict(cmd_args.load))
-
-                recipe = getattr(self.cmd_args, 'recipe', None)
+                
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
@@ -201,10 +202,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     #self.recipeView.SetRecipe(self.pipeline.recipe)  
                 
                 self.update_datasource_panel()
-
                 self._recipe_editor.update_recipe_text()
             
-            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
+            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback, create_default_recipe=(not recipe))
             #self.refv = False
         
         wx.CallAfter(self.RefreshView)
