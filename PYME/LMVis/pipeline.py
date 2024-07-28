@@ -212,7 +212,7 @@ def _processEvents(ds, events, mdh):
     """Read data from events table and translate it into mappings for,
     e.g. z position"""
 
-    eventCharts = []
+    #eventCharts = []
     ev_mappings = {}
 
     if not events is None:
@@ -237,7 +237,7 @@ def _processEvents(ds, events, mdh):
                 
             # the z position we use for localizations gets the ontarget info if present
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            #eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
             
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
@@ -245,7 +245,7 @@ def _processEvents(ds, events, mdh):
                 x0 = mdh.getEntry('Positioning.Stage_X')
             xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
             ev_mappings['xm'] = xm
-            eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
+            #eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
         if b'ScannerYPos' in evKeyNames:
             y0 = 0
@@ -253,7 +253,7 @@ def _processEvents(ds, events, mdh):
                 y0 = mdh.getEntry('Positioning.Stage_Y')
             ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
             ev_mappings['ym'] = ym
-            eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
+            #eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
         if b'ShiftMeasure' in evKeyNames:
             driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
@@ -267,9 +267,9 @@ def _processEvents(ds, events, mdh):
             ev_mappings['drifty'] = drifty
             ev_mappings['driftz'] = driftz
 
-            eventCharts.append(('X Drift [px]', driftx, 'ShiftMeasure'))
-            eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
-            eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
+            #eventCharts.append(('X Drift [px]', driftx, 'ShiftMeasure'))
+            #eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
+            #eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
 
             # self.eventCharts = eventCharts
             # self.ev_mappings = ev_mappings
@@ -285,13 +285,13 @@ def _processEvents(ds, events, mdh):
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['z_command'] = zm
-            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
+            #eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         except:
             # It doesn't really matter if this fails, print our traceback anyway
             logger.exception('Error trying to fudge focus positions')
 
-    return ev_mappings, eventCharts
+    return ev_mappings #, eventCharts
 
 class Pipeline(object):
     def __init__(self, filename=None, visFr=None, execute_on_invalidation=True):
@@ -322,8 +322,6 @@ class Pipeline(object):
         self._extra_chan_num = 0
         
         self.filesToClose = []
-
-        self.ev_mappings = {}
 
         #define a signal which a GUI can hook if the pipeline is rebuilt (i.e. the output changes)
         self.onRebuild = dispatch.Signal()
@@ -504,6 +502,40 @@ class Pipeline(object):
             return name, count
             
         return name
+    
+    def _get_session_datasources(self):
+        """
+        Return a dictionary of datasources which are suitable for listing in a session file
+        
+        """
+        from PYME import warnings
+        out = {}
+        for k in self.recipe.inferred_data:
+            ds = self.dataSources[k]
+
+            if hasattr(ds, 'filename'):
+                fn = ds.filename
+
+                q = getattr(ds, 'query', None)
+                if q:
+                    fn += '?' + q
+
+                out[k] = fn
+            else:           
+                #logger.error('Data source %s has no filename, skipping. Session will be incomplete.' % k)
+                if not warnings.warn('Data source %s has no filename, skipping. Session will be incomplete.' % k, allow_cancel=True):
+                    raise RuntimeError('Session save cancelled')
+        
+        return out
+    
+    def get_session(self):
+        """
+        Return a dictionary of the current session
+        
+        """
+        return {'datasources': self._get_session_datasources(),
+                'recipe': self.recipe.get_cleaned_module_list(),
+                'selected_datasource': self.selectedDataSourceKey}
 
     def addColumn(self, name, values, default = 0):
         """
@@ -649,93 +681,80 @@ class Pipeline(object):
             the datasource, complete with metadatahandler and events if found.
 
         """
+        from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
+
         mdh = MetaDataHandler.NestedClassMDHandler()
         events = None
-        if os.path.splitext(filename)[1] == '.h5r':
-            import tables
-            h5f = tables.open_file(filename)
-            self.filesToClose.append(h5f)
-            
-            try:
-                ds = tabular.H5RSource(h5f)
+    
+        # load from file(/cluster, downloading a copy of the file if needed)
+        _original_filename = filename
+        #TODO - move unifiedIO call down into recipe IO
+        with unifiedIO.local_or_temp_filename(filename) as filename:
+            # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
+            # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
+            # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
+            # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
 
-                if 'DriftResults' in h5f.root:
-                    driftDS = tabular.H5RDSource(h5f)
+            fn, query = filename.split('?', 1) if '?' in filename else (filename, '')
+            ext = os.path.splitext(fn)[1]
+
+            if ext == '.h5r':
+                import tables
+                h5f = tables.open_file(filename)
+                self.filesToClose.append(h5f)
+
+                h5r_tables = self.recipe._get_tables_from_hdf5(filename, h5f=h5f)
+
+                try:
+                    driftDS = h5r_tables['DriftResults']
                     self.driftInputMapping = tabular.MappingFilter(driftDS)
-                    #self.dataSources['Fiducials'] = self.driftInputMapping
                     self.addDataSource('Fiducials', self.driftInputMapping)
+                except KeyError:
+                    logger.debug('No drift data found')
+                    driftDS = None
 
-                    if len(ds['x']) == 0:
-                        self.selectDataSource('Fiducials')
+                try:
+                    ds = h5r_tables['FitResults']
+                except KeyError:
+                    logger.exception('No FitResults table found')
+                    if driftDS is not None:
+                        ds = driftDS
+                        logger.debug('Using fiducial data as localisations')
+                    else:
+                        raise
 
-            except: #fallback to catch series that only have drift data
-                logger.exception('No fitResults table found')
-                ds = tabular.H5RDSource(h5f)
-
-                self.driftInputMapping = tabular.MappingFilter(ds)
-                #self.dataSources['Fiducials'] = self.driftInputMapping
-                self.addDataSource('Fiducials', self.driftInputMapping)
-                #self.selectDataSource('Fiducials')
-
-            # really old files might not have metadata, so test for it before assuming
-            if 'MetaData' in h5f.root:
-                mdh = MetaDataHandler.HDFMDHandler(h5f)
-            
-            if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
-                events = h5f.root.Events[:]
-
-        elif filename.endswith('.hdf'):
-            #recipe output - handles generically formatted .h5
-            import tables
-            h5f = tables.open_file(filename)
-            self.filesToClose.append(h5f)
-            
-            #defer our IO to the recipe IO method - TODO - do this for other file types as well
-            self.recipe._inject_tables_from_hdf5('', h5f, filename, '.hdf')
-
-            for dsname, ds_ in self.dataSources.items():
-                #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
-                #TODO make this logic better.
-                ds = ds_
-                if 'x' in ds.keys():
-                    # TODO - get rid of some of the grossness here
-                    mdh = getattr(ds, 'mdh', mdh)
-                    events = getattr(ds, 'events', events)
-                    break
-                    
-
-        elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            if 'VarName' in kwargs.keys():
-                #old style matlab import
-                ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
-            else:
-                if kwargs.get('Multichannel', False):
-                    ds = tabular.MatfileMultiColumnSource(filename)
-                else:
-                    ds = tabular.MatfileColumnSource(filename)
+                # really old files might not have metadata, so test for it before assuming
+                if 'MetaData' in h5f.root:
+                    mdh = MetaDataHandler.HDFMDHandler(h5f)
                 
-                # check for column name mapping
-                field_names = kwargs.get('FieldNames', None)
-                if field_names:
-                    if kwargs.get('Multichannel', False):
-                        field_names.append('probe')  # don't forget to copy this field over
-                    ds = tabular.MappingFilter(ds, **{new_field : old_field for new_field, old_field in zip(field_names, ds.keys())})
+                if ('Events' in h5f.root) and ('StartTime' in mdh.keys()):
+                    events = h5f.root.Events[:]
 
-        elif os.path.splitext(filename)[1] == '.h5ad':
-            ds = tabular.AnndataSource(filename)
-            
-        else: #assume it's a delimited (tab or csv) text file
-            # use provided `text_options` argument to Open(), or guess using csv_flavours
-            text_options = kwargs.get('text_options', None)
-            if text_options is None:
-                # we didn't get any info about how to interpret the text file, guess
-                logger.info('No text file format info provided, guessing ...')
-                from PYME.IO import csv_flavours
-                text_options = csv_flavours.guess_text_options(filename)
+            elif ext == '.hdf':
+                #recipe output - handles generically formatted .h5
+                import tables
+                h5f = tables.open_file(filename)
+                self.filesToClose.append(h5f)
+                
+                #defer our IO to the recipe IO method - TODO - do this for other file types as well
+                self.recipe._inject_tables_from_hdf5('', filename, '.hdf', h5f=h5f)
+                #self.recipe.load_inputs({'':)
 
-            ds = tabular.TextfileSource(filename, **text_options)
+                for dsname, ds_ in self.dataSources.items():
+                    #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
+                    #TODO make this logic better.
+                    ds = ds_
+                    if 'x' in ds.keys():
+                        # TODO - get rid of some of the grossness here
+                        mdh = getattr(ds, 'mdh', mdh)
+                        events = getattr(ds, 'events', events)
+                        break
+
+            else: 
+                self.recipe._load_input(filename, 'FitResults', default_to_image=False, args=kwargs)
+                ds = self.dataSources['FitResults']
+                
             
-        
         # make sure mdh is writable (file-based might not be)
         ds.mdh = MetaDataHandler.NestedClassMDHandler(mdToCopy=mdh)
         if events is not None:
@@ -743,23 +762,10 @@ class Pipeline(object):
             # ensure that events are sorted in increasing time order
             ds.events = events[np.argsort(events['Time'])]
             
+        ds.filename = _original_filename # store the original filename / URI so that we can use it for saving sessions later.
         return ds
 
-    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, **kwargs):
-        """Open a file - accepts optional keyword arguments for use with files
-        saved as .txt and .mat. These are:
-            
-            FieldNames: a list of names for the fields in the text file or
-                        matlab variable.
-            VarName:    the name of the variable in the .mat file which 
-                        contains the data.
-            SkipRows:   Number of header rows to skip for txt file data
-            
-            PixelSize:  Pixel size if not in nm
-            
-        """
-        
-
+    def _clear_session(self, clobber_recipe=True):
         #close any files we had open previously
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
@@ -776,25 +782,61 @@ class Pipeline(object):
         
         if 'zm' in dir(self):
             del self.zm
+
         self.filter = None
         self.mapping = None
         self.colourFilter = None
         self.events = None
-        #self.mdh = MetaDataHandler.NestedClassMDHandler()
+
+    def load_session(self, session_info):
+        self._clear_session()
+
+        self.load_extra_datasources(**session_info['datasources'])
+        self.recipe._update_from_module_list(session_info['recipe'])
+        self.recipe.execute()
+
+        self.selectDataSource(session_info['selected_datasource'])
+
+        self.Rebuild()
+
+    def _create_default_recipe(self, pixel_size= 1.0, ds_keys = []):
+        from PYME.recipes.localisations import ProcessColour, Pipelineify
+        from PYME.recipes.tablefilters import FilterTable
+        
+        add_pipeline_variables = Pipelineify(self.recipe,
+            inputFitResults='FitResults',
+            pixelSizeNM=pixel_size, #kwargs.get('PixelSize', 1.),
+            outputLocalizations='Localizations',
+            outputEventMaps= 'event_maps')
+        self.recipe.add_module(add_pipeline_variables)
+        
+        #self._get_dye_ratios_from_metadata()
+                
+        colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        self.recipe.add_module(colour_mapper)
+        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds_keys}))
+
+
+    def OpenFile(self, filename= '', ds = None, clobber_recipe=True, create_default_recipe=None, **kwargs):
+        """Open a file - accepts optional keyword arguments for use with files
+        saved as .txt and .mat. These are:
+            
+            FieldNames: a list of names for the fields in the text file or
+                        matlab variable.
+            VarName:    the name of the variable in the .mat file which 
+                        contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
+            
+            PixelSize:  Pixel size if not in nm
+            
+        """
+        self._clear_session(clobber_recipe=clobber_recipe)
         
         self.filename = filename
         
-        if ds is None:
-            from PYME.IO import unifiedIO # TODO - what is the launch time penalty here for importing clusterUI and finding a nameserver?
-            
-            # load from file(/cluster, downloading a copy of the file if needed)
-            with unifiedIO.local_or_temp_filename(filename) as fn:
-                # TODO - check that loading isn't lazy (i.e. we need to make a copy of data in memory whilst in the
-                # context manager in order to be safe with unifiedIO and cluster data). From a quick look, it would seem
-                # that _ds_from_file() copies the data, but potentially keeps the file open which could be problematic.
-                # This won't effect local file loading even if loading is lazy (i.e. shouldn't cause a regression)
-                ds = self._ds_from_file(fn, **kwargs)
-                self.events = getattr(ds, 'events', None)
+        if ds is None:                
+            ds = self._ds_from_file(filename, **kwargs)
+            self.events = getattr(ds, 'events', None)
                 #self.mdh.copyEntriesFrom(ds.mdh)
 
         # skip the MappingFilter wrapping, etc. in self.addDataSource and add this datasource as-is
@@ -810,21 +852,11 @@ class Pipeline(object):
                 self.filterKeys['fitError_dx'] = (0, 10)
                 self.filterKeys['fitError_dy'] = (0, 10)
 
-        if clobber_recipe:
-            from PYME.recipes.localisations import ProcessColour, Pipelineify
-            from PYME.recipes.tablefilters import FilterTable
-            
-            add_pipeline_variables = Pipelineify(self.recipe,
-                inputFitResults='FitResults',
-                pixelSizeNM=kwargs.get('PixelSize', 1.),
-                outputLocalizations='Localizations')
-            self.recipe.add_module(add_pipeline_variables)
-          
-            #self._get_dye_ratios_from_metadata()
-                   
-            colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
-            self.recipe.add_module(colour_mapper)
-            self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in ds.keys()}))
+        if create_default_recipe is None:
+            create_default_recipe = clobber_recipe
+
+        if create_default_recipe:
+            self._create_default_recipe(pixel_size=kwargs.get('PixelSize', 1.0), ds_keys = ds.keys())
         else:
             logger.warn('Opening file without clobbering recipe, filter and ratiometric colour settings might not be handled properly')
             # FIXME - should we update filter keys and/or make the filter more robust
@@ -841,9 +873,6 @@ class Pipeline(object):
             # as if opening with an existing recipe we would likely want to keep selectedDataSource constant as well.
             self.selectDataSource('FitResults')
 
-        # FIXME - we do this already in pipelinify, maybe we can avoid doubling up?
-        self.ev_mappings, self.eventCharts = _processEvents(ds, self.events,
-                                                            self.mdh)  # extract information from any events
         # Retrieve or estimate image bounds
         if False:  # 'imgBounds' in kwargs.keys():
             # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
@@ -856,6 +885,50 @@ class Pipeline(object):
             self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         
         #self._process_colour()
+
+    @property
+    def ev_mappings(self):
+        try:
+            return self.dataSources['event_maps']
+        except KeyError:
+            logger.exception('No event mappings found')
+            return {}
+    
+    @property
+    def eventCharts(self):
+        charts = []
+        if 'zm' in self.ev_mappings:
+            charts.append(('Focus [um]', self.ev_mappings['zm'], b'ProtocolFocus'))
+        elif 'z_command' in self.ev_mappings:
+            charts.append(('Focus [um]', self.ev_mappings['z_command'], b'ProtocolFocus'))
+
+        if 'xm' in self.ev_mappings:
+            charts.append(('XPos [um]', self.ev_mappings['xm'], 'ScannerXPos'))
+
+        if 'ym' in self.ev_mappings:
+            charts.append(('YPos [um]', self.ev_mappings['ym'], 'ScannerYPos'))
+
+        if 'driftx' in self.ev_mappings:
+            charts.append(('X Drift [px]', self.ev_mappings['driftx'], 'ShiftMeasure'))
+            charts.append(('Y Drift [px]', self.ev_mappings['drifty'], 'ShiftMeasure'))
+            charts.append(('Z Drift [px]', self.ev_mappings['driftz'], 'ShiftMeasure'))
+
+        
+        return charts
+
+
+    def load_extra_datasources(self, **kwargs):
+        ''' Load additional input data files into the pipeline.
+        
+       Takes keyword arguments with the following format:
+       namespace_key=filename
+
+       e.g.
+       load_extra_datadources(fitResults='fitResults.mat', drift='drift.mat')        
+       '''
+        
+        self.recipe.load_inputs(kwargs)
+
         
     @property
     def colour_mapper(self):

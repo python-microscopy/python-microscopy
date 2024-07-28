@@ -56,6 +56,13 @@ def deprecated_name(name):
 
 class TabularBase(object):
     def toDataFrame(self, keys=None):
+        warnings.warn('toDataFrame is deprecated, use to_pandas instead', DeprecationWarning)
+        self.to_pandas(keys)
+
+    def to_pandas(self, keys=None):
+        """
+        Convert tabular data to a pandas DataFrame
+        """
         import pandas as pd
         if keys is None:
             keys = self.keys()

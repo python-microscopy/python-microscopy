@@ -298,8 +298,8 @@ class ModuleSelectionDialog(wx.Dialog):
         self.Layout()
 
     def OnSelect(self, evt):
-        from sphinx.util.docstrings import prepare_docstring
-
+        #from sphinx.util.docstrings import prepare_docstring
+        from sphinx.ext.napoleon import NumpyDocstring
 
         #print self.tree_list.GetSelection()
         mn = self.tree_list.GetPyData(self.tree_list.GetSelection())
@@ -310,7 +310,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
             doc = modules.base.all_modules[mn].__doc__
             if doc:
-                doc = [mn, '#'*len(mn), ''] + prepare_docstring(doc)
+                doc = [mn, '#'*len(mn), ''] + [str(NumpyDocstring(doc)),] #prepare_docstring(doc)
                 docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
                 #print docHTML
                 self.stModuleHelp.SetPage(docHTML)
@@ -345,6 +345,52 @@ class ModuleSelectionDialog(wx.Dialog):
         # force size recalculation by calling HideItem on the last item.
         self.tree_list.HideItem(item, not show)
 
+class EditModuleWithHelpDialog(wx.Dialog):
+    def __init__(self, parent, module):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, f"Edit {module.__class__.__name__}", size=(800, 500))
+        
+        self._module = module
+        self.pan = wx.Panel(self)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.p_module = module.edit_traits(parent=self.pan, kind='subpanel').control
+        hsizer.Add(self.p_module, 1, wx.EXPAND|wx.ALL, 2)
+
+        self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, 600))#wx.StaticText(self, -1, '', size=(400, -1))
+        self._set_help_text()
+        hsizer.Add(self.stModuleHelp, 1, wx.EXPAND|wx.ALL, 2)
+
+        vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
+        buttonSizer = wx.StdDialogButtonSizer()
+        buttonSizer.AddButton(wx.Button(self.pan, wx.ID_CANCEL, 'Cancel'))
+        buttonSizer.AddButton(wx.Button(self.pan, wx.ID_OK, 'OK'))
+        buttonSizer.Realize()
+        vsizer.Add(buttonSizer, 0, wx.EXPAND, 0)
+
+        self.pan.SetSizerAndFit(vsizer)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.pan, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+
+    def _set_help_text(self):
+        #from sphinx.util.docstrings import prepare_docstring
+        from sphinx.ext.napoleon import NumpyDocstring
+        doc = self._module.__doc__
+        if doc:
+            mn = self._module.__class__.__name__
+            doc = [mn, '#'*len(mn), ''] + [str(NumpyDocstring(doc)),]
+            docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
+            #print docHTML
+            self.stModuleHelp.SetPage(docHTML)
+        else:
+            self.stModuleHelp.SetPage('')
+
+        
 
 class ModulePopup(wx.Menu):
     def __init__(self, parent, recipe, module):
@@ -699,6 +745,7 @@ class RecipeView(wx.Panel):
                 wx.CallLater(10, p.update)
         
         k.edit_no_invalidate(handler=MControl())
+
         
         
 class RecipeManager(object):

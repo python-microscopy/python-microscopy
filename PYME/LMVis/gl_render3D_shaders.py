@@ -280,6 +280,10 @@ class LMGLShaderCanvas(GLCanvas):
             
         self.layer_added.send(self)
 
+    def get_session_info(self):
+        return {'layers': [l.serialise() for l in self.layers],
+                'view': self.view.to_json()}
+
     def setOverlayMessage(self, message=''):
         # self.messageOverlay.set_message(message)
         # if self._is_initialized:

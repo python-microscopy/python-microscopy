@@ -91,8 +91,7 @@ def runRecipe(recipe, inputs, outputs, context={}, metadata_defaults={}):
         recipe.namespace.clear()
 
         #load any necessary inputs and populate the recipes namespace
-        for key, filename in inputs.items():
-            recipe.loadInput(filename, key, metadata_defaults)
+        recipe.load_inputs(inputs, metadata_defaults=metadata_defaults)
 
         ### Run the recipe ###
         res = recipe.execute()
