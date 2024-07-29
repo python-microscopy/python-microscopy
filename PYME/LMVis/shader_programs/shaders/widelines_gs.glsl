@@ -8,7 +8,7 @@ layout (lines) in;
 layout (triangle_strip, max_vertices = 4) out;
 
 in vec4 FrontColor[];
-in vec2 normal[]; // this is not atually the normal, but a vector which is the average of the line perpendiculars for the current and previous/next line segments.
+in vec3 normal[]; // this is not atually the normal, but a vector which is the average of the line perpendiculars for the current and previous/next line segments.
 in float vis[];
 
 out vec4 frontColor;
@@ -20,14 +20,20 @@ void main(){
     vec4 pos0 = gl_in[0].gl_Position;
     vec4 pos1 = gl_in[1].gl_Position;
 
-    float aspect = viewport_size.x / viewport_size.y;
+    float aspect = 1.0;//viewport_size.x / viewport_size.y;
 
     vec2 dir = normalize(pos1.xy - pos0.xy);
 
     vec2 ortho = vec2(-dir.y, dir.x*aspect);
 
-    vec2 offset0 = normal[0] * half_size / dot(normal[0], ortho);
-    vec2 offset1 = normal[1] * half_size / dot(normal[1], ortho);
+    //vec2 norm0 = normalize(normal[0].xy);
+    //vec2 norm1 = normalize(normal[1].xy);
+
+    vec2 norm0 = ortho;
+    vec2 norm1 = ortho;
+
+    vec2 offset0 = norm0 * half_size;// / dot(norm0, ortho);
+    vec2 offset1 = norm1 * half_size;// / dot(norm1, ortho);
 
     // pass through colour and visibility
     frontColor = FrontColor[0];

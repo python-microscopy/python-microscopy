@@ -22,6 +22,8 @@ from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 import numpy as np
 
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, FatLineShaderProgram
+
 class AxesOverlayLayer(OverlayLayer):
     """
     This OverlayLayer produces axes and displays the orientation of the model.
@@ -50,10 +52,12 @@ class AxesOverlayLayer(OverlayLayer):
             return
         
         if gl_canvas.core_profile:
-            sp = self.get
+            sp = self.get_specific_shader_program(gl_canvas, FatLineShaderProgram)
+        else:
+            sp = self.get_specific_shader_program(gl_canvas, DefaultShaderProgram) 
 
 
-        with self.get_shader_program(gl_canvas) as sp:
+        with sp:
             sp.clear_shader_clipping()
 
             view_ratio = float(gl_canvas.Size[1])/float(gl_canvas.Size[0])
@@ -65,10 +69,13 @@ class AxesOverlayLayer(OverlayLayer):
                 import PYME.LMVis.mv_math as mm
                 mv = mm.translate(gl_canvas.mv, .88, .88*view_ratio, -0.5)
                 mv = np.dot(mv, gl_canvas.object_rotation_matrix)
-
                 mvp = np.dot(gl_canvas.proj, mv)
 
                 sp.set_modelviewprojectionmatrix(np.array(mvp))
+
+                glUniform1f(sp.get_uniform_location('line_width_px'), 3.0*gl_canvas.content_scale_factor)
+                vp = glGetIntegerv(GL_VIEWPORT)
+                glUniform2f(sp.get_uniform_location('viewport_size'), vp[2], vp[3])
 
             else:
                 glPushMatrix()

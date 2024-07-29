@@ -110,3 +110,14 @@ class ImageShaderProgram(DefaultShaderProgram):
 class TextShaderProgram(DefaultShaderProgram):
     def __init__(self, **kwargs):
         GLProgram.__init__(self, vs_filename='text_vs.glsl', fs_filename='text_fs.glsl', **kwargs)
+
+class FatLineShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='widelines_vs.glsl', fs_filename='widelines_fs.glsl', gs_filename='widelines_gs.glsl', **kwargs)
+
+    def __enter__(self):
+        self.get_shader_program().use()
+        self.set_clipping_uniforms()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self
