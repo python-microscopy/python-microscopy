@@ -467,7 +467,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.SwapBuffers()
 
-        logger.debug('Frame rendered in: %3.4fs' % (time.time() - t0))
+        #logger.debug('Frame rendered in: %3.4fs' % (time.time() - t0))
 
     @property
     def normal_matrix(self):

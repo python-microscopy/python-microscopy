@@ -27,7 +27,7 @@ class AxesOverlayLayer(OverlayLayer):
     This OverlayLayer produces axes and displays the orientation of the model.
     """
 
-    def __init__(self, offset=None, size=1, **kwargs):
+    def __init__(self, offset=None, size=0.1, **kwargs):
         if not offset:
             offset = [10, 10]
         super(AxesOverlayLayer, self).__init__(offset, **kwargs)
@@ -58,17 +58,17 @@ class AxesOverlayLayer(OverlayLayer):
             #glDisable(GL_LIGHTING)
             if gl_canvas.core_profile:
                 import PYME.LMVis.mv_math as mm
-                mv = mm.scale(mm.translate(gl_canvas.mv, .9, -.9*view_ratio, 0), 0.1, 0.1, 0.1)
+                mv = mm.translate(gl_canvas.mv, .88, .88*view_ratio, -0.5)
                 mv = np.dot(mv, gl_canvas.object_rotation_matrix)
 
-                mvp = np.dot(mv,gl_canvas.proj)
+                mvp = np.dot(gl_canvas.proj, mv)
 
                 sp.set_modelviewprojectionmatrix(np.array(mvp))
 
             else:
                 glPushMatrix()
-                glTranslatef(.9, .9*view_ratio, 0)
-                glScalef(.1, .1, .1)
+                glTranslatef(.9, .9*view_ratio,0)
+                #glScalef(.1, .1, .1)
                 
                 glMultMatrixf(gl_canvas.object_rotation_matrix)
 
