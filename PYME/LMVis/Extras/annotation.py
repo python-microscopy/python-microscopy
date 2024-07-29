@@ -26,8 +26,8 @@ class AnnotationOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping(gl_canvas)
-        with self.get_shader_program(gl_canvas):
+        with self.get_shader_program(gl_canvas) as sp:
+            sp.clear_shader_clipping()
             self._annotator.render(gl_canvas)
 
 class Annotator(ann.AnnotateBase):

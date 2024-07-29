@@ -22,9 +22,8 @@ class QuiverEngine(BaseEngine):
 
 
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
-
-        with self.get_shader_program(gl_canvas) as sp:            
+        with self.get_shader_program(gl_canvas) as sp: 
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)           
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
             vecs = layer.get_vecs()

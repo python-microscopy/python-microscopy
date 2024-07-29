@@ -40,8 +40,8 @@ class Points3DEngine(BaseEngine):
         max_ps = glGetFloatv(GL_POINT_SIZE_RANGE)[1]
 
         sp = self.get_shader_program(gl_canvas)
+        
         point_size = self.point_size_px(gl_canvas, layer, sp)
-
         bigpoints = False
 
         if (point_size > max_ps) and core_profile:
@@ -52,8 +52,6 @@ class Points3DEngine(BaseEngine):
             except AttributeError:
                 logger.debug('No big point shader class defined, using default shader - points will appear smaller than expected')
 
-        self._set_sp_shader_clipping(sp, gl_canvas)
-
         vertices = layer.get_vertices()
         n_vertices = vertices.shape[0]
         if n_vertices == 0:
@@ -62,7 +60,9 @@ class Points3DEngine(BaseEngine):
         normals = layer.get_normals()
         colors = layer.get_colors()    
     
-        with sp:            
+        with sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+
             self._bind_data('points', vertices, normals, colors, sp, core_profile=core_profile)
             if core_profile:
                 sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))

@@ -77,9 +77,9 @@ class ImageEngine(BaseEngine):
 
     
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
-
         with self.get_shader_program(gl_canvas) as sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+            
             if gl_canvas.core_profile:
                 sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
 

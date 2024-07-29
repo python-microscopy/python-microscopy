@@ -31,12 +31,7 @@ class GLProgram(object):
         self._shader_program = None
         self._max_glsl_version = max_glsl_version
 
-        self.xmin, self.xmax = clipping['x']
-        self.ymin, self.ymax = clipping['y']
-        self.zmin, self.zmax = clipping['z']
-        self.vmin, self.vmax = clipping['v']
-
-        self.v_matrix = np.eye(4, 4, dtype='f')
+        self.set_clipping(clipping, update_uniforms=False)
         
         if (vs_filename is not None) and (fs_filename is not None):
             self.create_and_set_shader_program(vs_filename, fs_filename, gs_filename=gs_filename)
@@ -100,3 +95,25 @@ class GLProgram(object):
         glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
         glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
         glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
+
+    def clear_shader_clipping(self):
+        self.xmin, self.xmax = -1e6, 1e6
+        self.ymin, self.ymax = -1e6, 1e6
+        self.zmin, self.zmax = -1e6, 1e6
+        self.vmin, self.vmax = -1e6, 1e6
+
+        self.set_clipping_uniforms()
+
+    def set_clipping(self, clipping, view_matrix=None, update_uniforms=True):
+        self.xmin, self.xmax = clipping['x']
+        self.ymin, self.ymax = clipping['y']
+        self.zmin, self.zmax = clipping['z']
+        self.vmin, self.vmax = clipping['v']
+
+        if view_matrix is not None:
+            self.v_matrix[:,:] = view_matrix
+        else:
+            self.v_matrix = np.eye(4, 4, dtype='f')
+
+        if update_uniforms:
+            self.set_clipping_uniforms()

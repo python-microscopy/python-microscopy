@@ -49,8 +49,13 @@ class AxesOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping(gl_canvas)
+        if gl_canvas.core_profile:
+            sp = self.get
+
+
         with self.get_shader_program(gl_canvas) as sp:
+            sp.clear_shader_clipping()
+
             view_ratio = float(gl_canvas.Size[1])/float(gl_canvas.Size[0])
 
             glEnable(GL_LINE_SMOOTH)

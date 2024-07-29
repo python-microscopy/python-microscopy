@@ -132,8 +132,8 @@ class ScaleBoxOverlayLayer(OverlayLayer):
             if bbox is None:
                 return
             
-            self._clear_shader_clipping(gl_canvas)
-            with self.get_shader_program(gl_canvas):
+            with self.get_shader_program(gl_canvas) as sp:
+                sp.clear_shader_clipping()
                 glDisable(GL_LIGHTING)
                 glColor4fv(self._color)
                 

@@ -26,7 +26,6 @@ class WireframeEngine(BaseEngine):
     
     def render(self, gl_canvas, layer):
         core_profile = gl_canvas.core_profile
-        self._set_shader_clipping(gl_canvas)
 
         vertices = layer.get_vertices()
         n_vertices = vertices.shape[0]
@@ -39,6 +38,8 @@ class WireframeEngine(BaseEngine):
         colors = layer.get_colors()
 
         with self.get_shader_program(gl_canvas) as sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+            
             self._bind_data('mesh', vertices, normals, colors, sp, core_profile=core_profile)
             
             if core_profile:        

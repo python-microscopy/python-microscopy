@@ -47,8 +47,9 @@ class SelectionOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping(gl_canvas)
         with self.get_shader_program(gl_canvas) as sp:
+            sp.clear_shader_clipping()
+
             if gl_canvas.core_profile:
                 sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
 

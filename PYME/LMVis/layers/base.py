@@ -144,12 +144,12 @@ class BindMixin(object):
                          [1., 1.], 
                          [0., 1.], 
                          [0., 0.]], 'f')
+    
+class ShaderMixin(object):
+    """ Contains the core logic for managing shaders """
 
-class BaseEngine(BindMixin):
     def __init__(self):
         self._shader_program_cls = None
-
-        BindMixin.__init__(self)
     
     def set_shader_program(self, shader_program):
         #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
@@ -168,28 +168,7 @@ class BaseEngine(BindMixin):
         different shaders. Added to allow points layers to switch between using points and using quads as the desired
         point size exceeds the maximum point size supported by the hardware.'''
         return ShaderProgramFactory.get_program(shader_program_cls, canvas.gl_context, canvas)
-
-    @abc.abstractmethod
-    def render(self, gl_canvas, layer):
-        pass    
-    
-    def _set_sp_shader_clipping(self, sp, gl_canvas):
-        sp.xmin, sp.xmax = gl_canvas.bounds['x'][0]
-        sp.ymin, sp.ymax = gl_canvas.bounds['y'][0]
-        sp.zmin, sp.zmax = gl_canvas.bounds['z'][0]
-        sp.vmin, sp.vmax = gl_canvas.bounds['v'][0]
-        if False:#HAVE_QUATERNION:
-            sp.v_matrix[:3, :3] = quaternion.as_rotation_matrix(gl_canvas.view.clip_plane_orientation)
-            sp.v_matrix[3, :3] = -gl_canvas.view.clip_plane_position
-        else:
-            #use current view
-            sp.v_matrix[:,:] = gl_canvas.object_rotation_matrix
-            sp.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
-
-    def _set_shader_clipping(self, gl_canvas):
-        sp = self.get_shader_program(gl_canvas)
-        self._set_sp_shader_clipping(sp, gl_canvas)
-        
+      
 
 class BaseLayer(HasTraits):
     """
@@ -248,6 +227,27 @@ class BaseLayer(HasTraits):
         return {'type': self.__class__.__name__,
                 'settings': self.settings_dict()}
     
+class SimpleLayer(BaseLayer, ShaderMixin):
+    """
+    Layer base class for layers which do their own rendering and manage their own shaders
+
+    Derived classes should implement the render method to draw to the canvas.
+    """
+    def __init__(self, **kwargs):
+        BaseLayer.__init__(self, **kwargs)
+        ShaderMixin.__init__(self)
+    
+
+class BaseEngine(BindMixin, ShaderMixin):
+    def __init__(self):
+        BindMixin.__init__(self)
+        ShaderMixin.__init__(self)
+
+    @abc.abstractmethod
+    def render(self, gl_canvas, layer):
+        pass    
+    
+
 class EngineLayer(BaseLayer):
     """
     Base class for layers who delegate their rendering to an engine.
@@ -302,29 +302,5 @@ class EngineLayer(BaseLayer):
         raise (NotImplementedError())
     
     
-class SimpleLayer(BaseLayer):
-    """
-    Layer base class for layers which do their own rendering and manage their own shaders
-    """
-    def __init__(self, **kwargs):
-        BaseLayer.__init__(self, **kwargs)
-        self._shader_program_cls = None
-    
-    def set_shader_program(self, shader_program):
-        #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
-        self._shader_program_cls = shader_program
 
-    @property
-    def shader_program(self):
-        warnings.warn(DeprecationWarning('Use get_shader_program(canvas) instead'))
-        return ShaderProgramFactory.get_program(self._shader_program_cls)
     
-    def get_shader_program(self, canvas):
-        return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
-    
-    def _clear_shader_clipping(self, canvas):
-        sp = self.get_shader_program(canvas)
-        sp.xmin, sp.xmax = [-1e6, 1e6]
-        sp.ymin, sp.ymax = [-1e6, 1e6]
-        sp.zmin, sp.zmax = [-1e6, 1e6]
-        sp.vmin, sp.vmax = [-1e6, 1e6]
