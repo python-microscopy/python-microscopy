@@ -38,6 +38,8 @@ from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, ScaleBarOverlay
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
 
+from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 from PYME import config
 from PYME.LMVis.views import View
@@ -90,6 +92,8 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBarOverlayLayer = None
     ScaleBoxOverlayLayer = None
     _is_initialized = False
+
+    _stencil_shader = None
 
     core_profile=True
 
@@ -272,7 +276,7 @@ class LMGLShaderCanvas(GLCanvas):
             self.OnDraw()
         self.Refresh()
 
-        # self.interlace_stencil()
+        #self.interlace_stencil()
 
     def OnMove(self, event):
         self.Refresh()
@@ -295,49 +299,61 @@ class LMGLShaderCanvas(GLCanvas):
         window_height = self.view_port_size[1]
 
         #high dpi screens
-        # fix scaling error
-        # TODO - should this check be on wx, or OpenGL (or potentially python)
-        # TODO - do we need to do anything differnt on win?
-        vmajor,vminor = wx.VERSION[:2]
-
         sc = self.content_scale_factor
 
         #print('scale factor:', sc)
 
         # setting screen-corresponding geometry
         GL.glViewport(0, 0, int(sc*window_width), int(sc*window_height))
-        GL.glMatrixMode(GL.GL_MODELVIEW)
-        GL.glLoadIdentity()
-        GL.glMatrixMode(GL.GL_PROJECTION)
-        GL.glLoadIdentity()
-        GLU.gluOrtho2D(0.0, window_width - 1, 0.0, window_height - 1)
-        GL.glMatrixMode(GL.GL_MODELVIEW)
-        GL.glLoadIdentity()
 
-        # clearing and configuring stencil drawing
-        if self.on_screen:
-            GL.glDrawBuffer(GL.GL_BACK)
-        GL.glEnable(GL.GL_STENCIL_TEST)
-        GL.glClearStencil(0)
-        GL.glClear(GL.GL_STENCIL_BUFFER_BIT)
-        GL.glStencilOp(GL.GL_REPLACE, GL.GL_REPLACE, GL.GL_REPLACE)  # colorbuffer is copied to stencil
-        GL.glDisable(GL.GL_DEPTH_TEST)
-        GL.glStencilFunc(GL.GL_ALWAYS, 1, 1)  # to avoid interaction with stencil content
+        with self.stencil_shader as sp:
+        
+            #mv = np.eye(4)
+            proj = mm.ortho(0, window_width -1, 0, window_height - 1, -1000, 1000)
 
-        # drawing stencil pattern
-        GL.glColor4f(1, 1, 1, 0)  # alfa is 0 not to interfere with alpha tests
+            sp.set_modelviewprojectionmatrix(proj)
+            
 
-        start = self.ScreenPosition[1] % 2
-        # print start
+            # clearing and configuring stencil drawing
+            if self.on_screen:
+                GL.glDrawBuffer(GL.GL_BACK)
 
-        for y in range(start, window_height, 2):
-            GL.glLineWidth(1)
-            GL.glBegin(GL.GL_LINES)
-            GL.glVertex2f(0, y)
-            GL.glVertex2f(window_width, y)
-            GL.glEnd()
+            GL.glEnable(GL.GL_STENCIL_TEST)
+            GL.glClearStencil(0)
+            GL.glClear(GL.GL_STENCIL_BUFFER_BIT)
+            GL.glStencilOp(GL.GL_REPLACE, GL.GL_REPLACE, GL.GL_REPLACE)  # colorbuffer is copied to stencil
+            GL.glDisable(GL.GL_DEPTH_TEST)
+            GL.glStencilFunc(GL.GL_ALWAYS, 1, 1)  # to avoid interaction with stencil content
 
-        GL.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP)  # // disabling changes in stencil buffer
+            # drawing stencil pattern
+            #GL.glColor4f(1, 1, 1, 0)  # alfa is 0 not to interfere with alpha tests
+
+            start = self.ScreenPosition[1] % 2
+
+            # TODO - cache for a given screen size???
+            verts = np.hstack([[0, y, 0, window_width, y, 0] for y in range(start, int(window_height), 2)]).astype('f')
+            # alfa is 0 not to interfere with alpha tests
+            cols = np.hstack([[1, 1, 1, 0] for y in range(start, int(window_height), 2)]).astype('f')
+            
+            vao = GL.glGenVertexArrays(1)
+            vbo = GL.glGenBuffers(3)
+            GL.glBindVertexArray(vao)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0])
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, verts, GL.GL_STATIC_DRAW)
+            GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+            GL.glEnableVertexAttribArray(0)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1])
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, 0*verts, GL.GL_STATIC_DRAW)
+            GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+            GL.glEnableVertexAttribArray(1)
+            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2])
+            GL.glBufferData(GL.GL_ARRAY_BUFFER, cols, GL.GL_STATIC_DRAW)
+            GL.glVertexAttribPointer(2, 4, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+            GL.glEnableVertexAttribArray(2)
+
+            GL.glDrawArrays(GL.GL_LINES, 0, len(verts)//3)
+
+            GL.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP)  # // disabling changes in stencil buffer
         GL.glFlush()
 
         # print 'is'
@@ -354,7 +370,7 @@ class LMGLShaderCanvas(GLCanvas):
     def OnDraw(self):
         t0 = time.time()
         self.SetCurrent(self.gl_context)
-        #self.interlace_stencil()
+        self.interlace_stencil()
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         GL.glClearColor(*self.clear_colour)
@@ -722,6 +738,12 @@ class LMGLShaderCanvas(GLCanvas):
         #GL.glEnable(GL.GL_POINT_SMOOTH)
 
         self.ResetView()
+
+    @property
+    def stencil_shader(self):
+        if self._stencil_shader is None:
+            self._stencil_shader =ShaderProgramFactory.get_program(DefaultShaderProgram, self.gl_context, self)
+        return self._stencil_shader
 
     def ResetView(self):
         self.view.vec_up = numpy.array([0, 1, 0])

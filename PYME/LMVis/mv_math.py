@@ -7,7 +7,10 @@ def ortho(left, right, bottom, top, near, far):
 
         m = np.eye(4)
         m[0, 0] = 2.0 / (right - left)
+        m[0, 3] = -(right + left) / (right - left)
         m[1, 1] = 2.0 / (top - bottom)
+        m[1, 3] = -(top + bottom) / (top - bottom)
+        
         m[2, 2] = -2.0 / (far - near)
 
         m[2, 3] = -(far + near) / (far - near)
