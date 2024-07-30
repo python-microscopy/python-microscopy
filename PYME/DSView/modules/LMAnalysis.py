@@ -999,10 +999,11 @@ class LMAnalyser2(Plugin):
                     plt.yticks([])
                     plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
 
-                try:
-                    plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
-                except AttributeError:
-                    pass
+                if ft.driftEst:
+                    try:
+                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
+                    except AttributeError:
+                        pass
                     
                 #figure()
                 #imshow()
