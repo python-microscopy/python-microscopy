@@ -171,6 +171,11 @@ class LMGLShaderCanvas(GLCanvas):
         self._old_bbox = None
 
         self.layer_added = dispatch.Signal()
+
+        self._stencil_vao = None
+        self._stencil_vbo = None
+
+        self._stencil_size = (None,None)
     
     @property
     def xc(self):
@@ -328,30 +333,38 @@ class LMGLShaderCanvas(GLCanvas):
             # drawing stencil pattern
             #GL.glColor4f(1, 1, 1, 0)  # alfa is 0 not to interfere with alpha tests
 
-            start = self.ScreenPosition[1] % 2
+            if self._stencil_size != (window_width, window_height):
+                self._stencil_size = (window_width, window_height)
+                start = self.ScreenPosition[1] % 2
 
-            # TODO - cache for a given screen size???
-            verts = np.hstack([[0, y, 0, window_width, y, 0] for y in range(start, int(window_height), 2)]).astype('f')
-            # alfa is 0 not to interfere with alpha tests
-            cols = np.hstack([[1, 1, 1, 0] for y in range(start, int(window_height), 2)]).astype('f')
-            
-            vao = GL.glGenVertexArrays(1)
-            vbo = GL.glGenBuffers(3)
-            GL.glBindVertexArray(vao)
-            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0])
-            GL.glBufferData(GL.GL_ARRAY_BUFFER, verts, GL.GL_STATIC_DRAW)
-            GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
-            GL.glEnableVertexAttribArray(0)
-            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1])
-            GL.glBufferData(GL.GL_ARRAY_BUFFER, 0*verts, GL.GL_STATIC_DRAW)
-            GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
-            GL.glEnableVertexAttribArray(1)
-            GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2])
-            GL.glBufferData(GL.GL_ARRAY_BUFFER, cols, GL.GL_STATIC_DRAW)
-            GL.glVertexAttribPointer(2, 4, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
-            GL.glEnableVertexAttribArray(2)
+                # TODO - cache for a given screen size???
+                verts = np.hstack([[0, y, 0, window_width, y, 0] for y in range(start, int(window_height), 2)]).astype('f')
+                # alfa is 0 not to interfere with alpha tests
+                cols = np.hstack([[1, 1, 1, 0] for y in range(start, int(window_height), 2)]).astype('f')
+                
+                if self._stencil_vao is None:
+                    self._stencil_vao = GL.glGenVertexArrays(1)
+                    self._stencil_vbo = GL.glGenBuffers(3)
 
-            GL.glDrawArrays(GL.GL_LINES, 0, len(verts)//3)
+                GL.glBindVertexArray(self._stencil_vao)
+                GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._stencil_vbo[0])
+                GL.glBufferData(GL.GL_ARRAY_BUFFER, verts, GL.GL_STATIC_DRAW)
+                GL.glVertexAttribPointer(0, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+                GL.glEnableVertexAttribArray(0)
+                GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._stencil_vbo[1])
+                GL.glBufferData(GL.GL_ARRAY_BUFFER, 0*verts, GL.GL_STATIC_DRAW)
+                GL.glVertexAttribPointer(1, 3, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+                GL.glEnableVertexAttribArray(1)
+                GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self._stencil_vbo[2])
+                GL.glBufferData(GL.GL_ARRAY_BUFFER, cols, GL.GL_STATIC_DRAW)
+                GL.glVertexAttribPointer(2, 4, GL.GL_FLOAT, GL.GL_FALSE, 0, None)
+                GL.glEnableVertexAttribArray(2)
+
+                self._stencil_count = len(verts)//3
+            else:
+                GL.glBindVertexArray(self._stencil_vao)
+
+            GL.glDrawArrays(GL.GL_LINES, 0, self._stencil_count)
 
             GL.glStencilOp(GL.GL_KEEP, GL.GL_KEEP, GL.GL_KEEP)  # // disabling changes in stencil buffer
         GL.glFlush()
