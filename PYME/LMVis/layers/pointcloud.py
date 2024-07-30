@@ -70,8 +70,10 @@ class Points3DEngine(BaseEngine):
                 #glBindVertexArray(self._bound_data['points'][0])
 
                 if bigpoints:
-                    sx = glGetIntegerv(GL_VIEWPORT)[2]
+                    vp = glGetIntegerv(GL_VIEWPORT)
+                    sx = vp[2]
                     glUniform1f(sp.get_uniform_location('point_size_vp'), 2.0*point_size/float(sx))
+                    glUniform2f(sp.get_uniform_location('viewport_size'), vp[2], vp[3])
 
             else:
                 glPointSize(point_size)
