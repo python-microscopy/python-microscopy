@@ -26,7 +26,7 @@ from OpenGL.GL import  GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
     glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, GL_PROGRAM_POINT_SIZE,\
     GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
-    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger
+    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger, GL_POINT_SPRITE
 
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
@@ -74,10 +74,13 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
         glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
 
+
         glEnable(GL_PROGRAM_POINT_SIZE)
+        
         #glDepthFunc(GL_LEQUAL)
         try:
             glEnable(GL_POINT_SMOOTH)
+            glEnable(GL_POINT_SPRITE)
         except:
             # not supported in core profile
             pass
@@ -96,6 +99,12 @@ class BigOpaquePointShaderProgram(DefaultShaderProgram):
         glDisable(GL_BLEND)
         glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
+
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            # not supported in core profile
+            pass
 
         self.get_shader_program().use()
         self.set_clipping_uniforms()
