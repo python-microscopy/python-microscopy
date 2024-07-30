@@ -91,14 +91,11 @@ class VisGUICore(object):
         gl_pan = wx.Panel(self._win)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-
-        
         if not use_shaders:
             from PYME.LMVis import gl_render3D
             self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
-            #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
-            from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
+            #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas        
 
             try:
                 if PYME.config.get('VisGUI-opengl-core-profile', False):
@@ -113,6 +110,7 @@ class VisGUICore(object):
                 #use stripped down version
                 self.glCanvas = LMGLShaderCanvas(gl_pan)
             else:
+                from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
                 self.glCanvas = LegacyGLCanvas(gl_pan)
 
         sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
