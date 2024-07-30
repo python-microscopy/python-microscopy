@@ -80,6 +80,9 @@ class GouraudShaderProgram(GLProgram):
         except:
             pass
         
+class PhongShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "phong_vs.glsl", "phong_fs.glsl", **kwargs)
         
         
 class GouraudSphereShaderProgram(GouraudShaderProgram):

@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram, PhongShaderProgram #, OITCompositorProgram,
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
@@ -98,7 +98,8 @@ class ShadedFaceEngine(WireframeEngine):
         BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
-        self.set_shader_program(GouraudShaderProgram)
+        #self.set_shader_program(GouraudShaderProgram)
+        self.set_shader_program(PhongShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
         
 class OITShadedFaceEngine(WireframeEngine):
@@ -132,7 +133,7 @@ class TesselEngine(WireframeEngine):
 ENGINES = {
     'wireframe' : WireframeEngine,
     'flat' : FlatFaceEngine,
-    #'shaded' : ShadedFaceEngine,
+    'phong' : ShadedFaceEngine,
     'tessel' : TesselEngine,
     'shaded' : OITShadedFaceEngine,
 }
