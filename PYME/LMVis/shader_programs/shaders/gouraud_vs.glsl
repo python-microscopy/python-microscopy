@@ -7,7 +7,7 @@ uniform vec4 light_position;
 uniform float shininess;
 uniform vec4 view_vector;
 
-varying vec4 vertexColor;
+varying vec4 FrontColor;
 
 varying float vis;
 varying float depth;
@@ -43,8 +43,8 @@ void main(void){
         vec4 spec = white * light_specular;
         specular = specLight * spec;
     }
-    vertexColor = ambient + diffuse + specular;
-    vertexColor.a = inputColor.a;
+    FrontColor = ambient + diffuse + specular;
+    FrontColor.a = inputColor.a;
 
     visible = gl_Vertex.x > x_min && gl_Vertex.x < x_max;
     visible = visible && gl_Vertex.y > y_min && gl_Vertex.y < y_max;
@@ -88,12 +88,14 @@ layout (location = 0) in vec3 Vertex;
 layout (location = 1) in vec3 Normal;
 layout (location = 2) in vec4 Color;
 
-out vec4 vertexColor;
+out vec4 FrontColor;
 out float vis;
 out float depth;
 
 void main(void){
     bool visible;
+
+    gl_PointSize = point_size_px;
 
     vec4 inputColor = Color;
     vec4 white = vec4(1.0, 1.0, 1.0, Color.a);
@@ -114,8 +116,8 @@ void main(void){
         vec4 spec = white * light_specular;
         specular = specLight * spec;
     }
-    vertexColor = ambient + diffuse + specular;
-    vertexColor.a = inputColor.a;
+    FrontColor = ambient + diffuse + specular;
+    FrontColor.a = inputColor.a;
 
     visible = Vertex.x > x_min && Vertex.x < x_max;
     visible = visible && Vertex.y > y_min && Vertex.y < y_max;

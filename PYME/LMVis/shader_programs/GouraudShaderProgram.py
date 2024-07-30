@@ -110,6 +110,27 @@ class BigGouraudSphereShaderProgram(GouraudShaderProgram):
     def __init__(self, **kwargs):
         GLProgram.__init__(self, "default_vs.glsl", "bigspheres_fs.glsl", gs_filename='bigpoints_gs.glsl', **kwargs)    
 
+class GouraudFlatpointsShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "flatpoints_fs.glsl", **kwargs)
+
+    def __enter__(self):
+        GouraudShaderProgram.__enter__(self)
+        self.get_shader_program().use()
+        
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            pass
+
+        return self
+    
+class BigGouraudFlatpointsShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "bigflatpoints_fs.glsl", gs_filename='bigpoints_gs.glsl', **kwargs)
+
+
 class OITGouraudShaderProgram(GouraudShaderProgram):
     def __init__(self, **kwargs):
         GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl", **kwargs)

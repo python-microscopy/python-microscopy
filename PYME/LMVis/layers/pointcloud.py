@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram, BigOpaquePointShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram, BigOpaquePointShaderProgram, TransparentPointShaderProgram, BigTransparentPointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram, BigPointSpriteShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram, BigGouraudSphereShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram, BigGouraudSphereShaderProgram, GouraudFlatpointsShaderProgram, BigGouraudFlatpointsShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
 # from pylab import cm
@@ -114,13 +114,15 @@ class PointSpritesEngine(Points3DEngine):
 class ShadedPointsEngine(Points3DEngine):
     def __init__(self, *args, **kwargs):
         BaseEngine.__init__(self, *args, **kwargs)
-        self.set_shader_program(GouraudShaderProgram)
+        self.set_shader_program(GouraudFlatpointsShaderProgram)
+        self._big_point_shader_cls = BigGouraudFlatpointsShaderProgram
         self.point_scale_correction = 1.0
         
 class TransparentPointsEngine(Points3DEngine):
     def __init__(self, *args, **kwargs):
         BaseEngine.__init__(self, *args, **kwargs)
-        self.set_shader_program(DefaultShaderProgram)
+        self.set_shader_program(TransparentPointShaderProgram)
+        self._big_point_shader_cls = BigTransparentPointShaderProgram
         self.point_scale_correction = 1.0
         
 class SpheresEngine(Points3DEngine):

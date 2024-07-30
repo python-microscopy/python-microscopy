@@ -89,6 +89,15 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         return self
+    
+class TransparentPointShaderProgram(OpaquePointShaderProgram):
+    def __enter__(self):
+        super().__enter__()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_DEPTH_TEST)
+        return self
+    
 
 class BigOpaquePointShaderProgram(DefaultShaderProgram):
     def __init__(self, **kwargs):
@@ -110,6 +119,14 @@ class BigOpaquePointShaderProgram(DefaultShaderProgram):
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
+        return self
+    
+class BigTransparentPointShaderProgram(BigOpaquePointShaderProgram):
+    def __enter__(self):
+        super().__enter__()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_DEPTH_TEST)
         return self
 
 class ImageShaderProgram(DefaultShaderProgram):
