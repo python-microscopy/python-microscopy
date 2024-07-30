@@ -18,6 +18,14 @@ import wx.lib.agw.aui as aui
 from PYME.IO.FileUtils import nameUtils
 
 import os
+import sys
+
+# hack for wayland on linux
+# TODO - we seem to need the egl platform on ubuntu 20.04 and 22.04 even when XDG_SESSION_TYPE is x11
+# This needs a bit more investigation - in the meantime, just use `export PYOPENGL_PLATFORM='egl'` 
+# in the terminal before trying to run PYMEVis`
+#if ('linux' in sys.platform) and ('wayland' in os.environ.get('XDG_SESSION_TYPE', '')):
+#    os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
 #from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
@@ -869,6 +877,11 @@ class VisGUICore(object):
             self.SetTitle('PYME Visualise - ' + filename)
             self._removeOldTabs()
             self._createNewTabs()
+
+            # hack for linux as the select=False logic when adding tabs doesn't seem to work
+            # TODO - find a cleaner solution
+            if sys.platform == 'linux':
+                wx.CallAfter(self._mgr.GetNotebooks()[0].SetSelection, 0)
             
             #self.CreateFoldPanel()
             logger.debug('Gui stuff done')
