@@ -459,7 +459,8 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
-    parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=False)
+    parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=True)
+    parser.add_argument('--opengl-compatibility-profile', dest='opengl_core_profile', action='store_false', default=True)
     parser.add_argument('-l', '--load', nargs=2, action='append', default=[], dest='load', metavar=('KEY', 'FILENAME'), help='Load one (or more) additional files into the recipe namespace.')
     args = parser.parse_args()
     return args

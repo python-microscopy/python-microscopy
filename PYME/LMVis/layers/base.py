@@ -110,6 +110,18 @@ class BindMixin(object):
         normals = np.ascontiguousarray(normals, 'f')
         colors = np.ascontiguousarray(colors, 'f')
 
+        #glVertexPointer expects an Nx3 array
+        #glNormalPointer expects an Nx3 array
+        #glColorPointer expects an Nx4 array
+        if vertices.ndim == 1:
+            vertices = vertices.reshape([-1, 3])
+
+        if colors.ndim == 1:
+            colors = colors.reshape([-1,4])
+
+        if normals.ndim == 1:
+            normals = normals.reshape([-1,3])
+
         n_vertices = vertices.shape[0]
 
         glVertexPointerf(vertices)
