@@ -139,7 +139,8 @@ class Text(BaseEngine):
                 if self._color is None:
                     cols = np.ones([6, 4], dtype='f4')
                 else:
-                    cols = np.repeat(self._color, 6, axis=0)
+                    cols = np.tile(self._color, 6).astype('f')
+                    #print(f'text cols: {cols}')
 
                 proj = mm.ortho(0, vp[2], 0, vp[3], -1000, 1000)
                 #print('proj:', proj)

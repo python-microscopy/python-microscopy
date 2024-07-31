@@ -85,7 +85,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
                 #print(self._verts.shape, self._verts.dtype)
                 col = np.ones(4, 'f')
                 col[:3] = self._color
-                self._cols =np.repeat(col[None, :], 6, axis=0)
+                self._cols =np.tile(col, 6)
 
                 if core_profile:
                     sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))

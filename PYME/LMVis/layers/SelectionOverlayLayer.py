@@ -66,7 +66,7 @@ class SelectionOverlayLayer(OverlayLayer):
                     glLineWidth(1)
 
                     verts = np.array([[x0, y0, zc], [x1, y0, zc], [x1, y1, zc], [x0, y1, zc]], 'f')
-                    cols = np.repeat(np.hstack([self._selection_settings.colour, 1.0])[None,:], 4, axis=0)
+                    cols = np.tile(np.hstack([self._selection_settings.colour, 1.0]), 4)
 
                     self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINE_LOOP, 0, 4)
@@ -88,7 +88,7 @@ class SelectionOverlayLayer(OverlayLayer):
                     glLineWidth(self._selection_settings.width)
 
                     verts = np.array([[x0, y0, zc], [x1, y1, zc]], 'f')
-                    cols = np.repeat(np.hstack([self._selection_settings.colour, 1.0])[None, :], 2, axis=0)
+                    cols = np.tile(np.hstack([self._selection_settings.colour, 1.0]), 2)
                     self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINES, 0, 2)
 
