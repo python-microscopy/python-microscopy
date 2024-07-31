@@ -5,7 +5,7 @@ Created on Sat May 14 14:54:52 2016
 @author: david
 """
 import wx
-import wx.py.shell
+
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
@@ -18,6 +18,14 @@ import wx.lib.agw.aui as aui
 from PYME.IO.FileUtils import nameUtils
 
 import os
+import sys
+
+# hack for wayland on linux
+# TODO - we seem to need the egl platform on ubuntu 20.04 and 22.04 even when XDG_SESSION_TYPE is x11
+# This needs a bit more investigation - in the meantime, just use `export PYOPENGL_PLATFORM='egl'` 
+# in the terminal before trying to run PYMEVis`
+#if ('linux' in sys.platform) and ('wayland' in os.environ.get('XDG_SESSION_TYPE', '')):
+#    os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
 #from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
@@ -91,17 +99,26 @@ class VisGUICore(object):
         gl_pan = wx.Panel(self._win)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-
-        
         if not use_shaders:
             from PYME.LMVis import gl_render3D
             self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
-            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
+            #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas        
+
+            try:
+                if PYME.config.get('VisGUI-opengl-core-profile', False):
+                    from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
+                else:
+                    logger.debug('Using legacy GLCanvas')
+                    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            except AttributeError:
+                from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            
             if self._new_layers:
                 #use stripped down version
                 self.glCanvas = LMGLShaderCanvas(gl_pan)
             else:
+                from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
                 self.glCanvas = LegacyGLCanvas(gl_pan)
 
         sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
@@ -860,6 +877,11 @@ class VisGUICore(object):
             self.SetTitle('PYME Visualise - ' + filename)
             self._removeOldTabs()
             self._createNewTabs()
+
+            # hack for linux as the select=False logic when adding tabs doesn't seem to work
+            # TODO - find a cleaner solution
+            if sys.platform == 'linux':
+                wx.CallAfter(self._mgr.GetNotebooks()[0].SetSelection, 0)
             
             #self.CreateFoldPanel()
             logger.debug('Gui stuff done')

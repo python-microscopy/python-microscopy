@@ -1,5 +1,5 @@
 from .base import BaseEngine, EngineLayer
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, FatLineShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
@@ -22,9 +22,14 @@ class QuiverEngine(BaseEngine):
 
 
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
+        if gl_canvas.core_profile:
+            sp = self.get_specific_shader_program(gl_canvas, FatLineShaderProgram)
+        else:
+            sp = self.get_specific_shader_program(gl_canvas, DefaultShaderProgram)
 
-        with self.get_shader_program(gl_canvas):            
+        with sp: 
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)           
+            
             vertices = layer.get_vertices()
             n_vertices = vertices.shape[0]
             vecs = layer.get_vecs()
@@ -34,12 +39,25 @@ class QuiverEngine(BaseEngine):
             vec_buffer[1::2,:] = vertices
             
             vec_buffer[1::2,:] += layer.scaling*vecs
-            
-            glVertexPointerf(vec_buffer)
+
             sc = np.array([1, 1, 1, 1])
-            glColorPointerf(np.ones((vec_buffer.shape[0],4),dtype='f4')*sc[None,:])  # white normals
-            glNormalPointerf(np.ones((vec_buffer.shape[0],3),dtype='f4'))
-            glLineWidth(3)  # slightly thick
+            cols = np.ones((vec_buffer.shape[0],4),dtype='f4')*sc[None,:]
+
+            # glVertexPointerf(vec_buffer)           
+            # glColorPointerf(cols)  # white normals
+            # glNormalPointerf(np.ones((vec_buffer.shape[0],3),dtype='f4'))
+
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
+                glUniform1f(sp.get_uniform_location('line_width_px'), 3.0*gl_canvas.content_scale_factor)
+                vp = glGetIntegerv(GL_VIEWPORT)
+                glUniform2f(sp.get_uniform_location('viewport_size'), vp[2], vp[3])
+
+
+            self._bind_data('quiver', vec_buffer, cols, np.ones((vec_buffer.shape[0],3),dtype='f4'), sp, core_profile=gl_canvas.core_profile)
+            
+            glLineWidth(min(3.0, glGetFloatv(GL_LINE_WIDTH_RANGE)[1]))  # slightly thick
+            
             glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
 

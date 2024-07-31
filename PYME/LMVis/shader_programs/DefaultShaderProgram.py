@@ -24,30 +24,16 @@ import numpy as np
 from PYME.LMVis.shader_programs.GLProgram import GLProgram
 from OpenGL.GL import  GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
-    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
+    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, GL_PROGRAM_POINT_SIZE,\
     GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
-    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger
+    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_CURRENT_PROGRAM, glGetInteger, GL_POINT_SPRITE
 
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):
-    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
-        _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
-        self._old_prog = 0
-        
-        
-        self.xmin, self.xmax = clipping['x']
-        self.ymin, self.ymax = clipping['y']
-        self.zmin, self.zmax = clipping['z']
-        self.vmin, self.vmax = clipping['v']
-        
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename = 'default_vs.glsl', fs_filename='default_fs.glsl', **kwargs)  
 
     def __enter__(self):
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -57,7 +43,11 @@ class DefaultShaderProgram(GLProgram):
         glDepthMask(GL_TRUE)
         glDisable(GL_DEPTH_TEST)
         #glDepthFunc(GL_LEQUAL)
-        glEnable(GL_POINT_SMOOTH)
+        try:
+            glEnable(GL_POINT_SMOOTH)
+        except:
+            # not supported in core profile
+            pass
         
         self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         
@@ -75,36 +65,85 @@ class DefaultShaderProgram(GLProgram):
 
 
 class OpaquePointShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='flatpoints_fs.glsl', **kwargs)
+
     def __enter__(self):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glDisable(GL_BLEND)
         glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
+
+
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        
         #glDepthFunc(GL_LEQUAL)
-        glEnable(GL_POINT_SMOOTH)
+        try:
+            glEnable(GL_POINT_SMOOTH)
+            glEnable(GL_POINT_SPRITE)
+        except:
+            # not supported in core profile
+            pass
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
         return self
+    
+class TransparentPointShaderProgram(OpaquePointShaderProgram):
+    def __enter__(self):
+        super().__enter__()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_DEPTH_TEST)
+        return self
+    
 
+class BigOpaquePointShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='bigflatpoints_fs.glsl', gs_filename='bigpoints_gs.glsl', **kwargs)
+
+    def __enter__(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glDisable(GL_BLEND)
+        glDepthMask(GL_TRUE)
+        glEnable(GL_DEPTH_TEST)
+
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            # not supported in core profile
+            pass
+
+        self.get_shader_program().use()
+        self.set_clipping_uniforms()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self
+    
+class BigTransparentPointShaderProgram(BigOpaquePointShaderProgram):
+    def __enter__(self):
+        super().__enter__()
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_DEPTH_TEST)
+        return self
 
 class ImageShaderProgram(DefaultShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
-        _shader_program.add_shader("image_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("image_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='image_vs.glsl', fs_filename='image_fs.glsl', **kwargs)
         
 class TextShaderProgram(DefaultShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
-        _shader_program.add_shader("text_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("text_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='text_vs.glsl', fs_filename='text_fs.glsl', **kwargs)
+
+class FatLineShaderProgram(DefaultShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='widelines_vs.glsl', fs_filename='widelines_fs.glsl', gs_filename='widelines_gs.glsl', **kwargs)
+
+    def __enter__(self):
+        self.get_shader_program().use()
+        self.set_clipping_uniforms()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+        return self

@@ -20,14 +20,15 @@
 #
 import abc
 
-from PYME.LMVis.layers.base import SimpleLayer
+from PYME.LMVis.layers.base import SimpleLayer, BindMixin
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
-class OverlayLayer(SimpleLayer):
-
+class OverlayLayer(SimpleLayer, BindMixin):
     def __init__(self, offset, **kwargs):
-        super(OverlayLayer, self).__init__(**kwargs)
+        SimpleLayer.__init__(self, **kwargs)
+        BindMixin.__init__(self)
+
         if offset:
             self._offset = offset
         else:

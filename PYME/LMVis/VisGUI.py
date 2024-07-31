@@ -27,7 +27,7 @@ os.environ['ETS_TOOLKIT'] = 'wx'
 import argparse
 
 import wx
-import wx.py.shell
+import PYME.ui.shell
 
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
@@ -112,7 +112,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         ################################   
 
         self.MainWindow = self #so we can access from shell
-        self.sh = wx.py.shell.Shell(id=-1,
+        self.pymevis = self # more memorable alias for the main window
+        self.sh = PYME.ui.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
               introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
@@ -130,7 +131,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.generatedImages = []
         
-        self.sh.Execute('from pylab import *')
+        #self.sh.Execute('from pylab import *')
+        self.sh.Execute('import numpy as np')
+        self.sh.Execute('import matplotlib.pyplot as plt')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
         
         import os
@@ -456,6 +459,8 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
+    parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=True)
+    parser.add_argument('--opengl-compatibility-profile', dest='opengl_core_profile', action='store_false', default=True)
     parser.add_argument('-l', '--load', nargs=2, action='append', default=[], dest='load', metavar=('KEY', 'FILENAME'), help='Load one (or more) additional files into the recipe namespace.')
     args = parser.parse_args()
     return args
@@ -469,6 +474,7 @@ def main():
     args = parse()
     
     PYME.config.config['VisGUI-new_layers'] = args.new_layers
+    PYME.config.config['VisGUI-opengl-core-profile'] = args.opengl_core_profile
     
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main_(args.file, use_shaders=args.use_shaders, args=args)

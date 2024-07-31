@@ -36,8 +36,8 @@ class GouraudShaderProgram(GLProgram):
     
     shininess = 8
 
-    def __init__(self):
-        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_fs.glsl", **kwargs)
         
 
     def __enter__(self):
@@ -51,14 +51,7 @@ class GouraudShaderProgram(GLProgram):
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
 
-        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
-        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
-        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
-        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
-        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
-        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
-        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
-        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        self.set_clipping_uniforms()
 
         #glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
         
@@ -69,7 +62,10 @@ class GouraudShaderProgram(GLProgram):
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
         
-        glDisable(GL_POINT_SMOOTH)
+        try:
+            glDisable(GL_POINT_SMOOTH)
+        except:
+            pass
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         #glEnable(GL_BLEND)
@@ -79,32 +75,68 @@ class GouraudShaderProgram(GLProgram):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(self._old_prog)
         glDisable(GL_DEPTH_TEST)
-        glDisable(GL_POINT_SMOOTH)
+        try:
+            glDisable(GL_POINT_SMOOTH)
+        except:
+            pass
         
+class PhongShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "phong_vs.glsl", "phong_fs.glsl", **kwargs)
         
         
 class GouraudSphereShaderProgram(GouraudShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "pointsprites_vs.glsl", "spheres_fs.glsl", **kwargs)
 
     def __enter__(self):
         self.get_shader_program().use()
         GouraudShaderProgram.__enter__(self)
     
-        glEnable(GL_POINT_SPRITE)
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            pass
         glEnable(GL_PROGRAM_POINT_SIZE)
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
-        glDisable(GL_POINT_SPRITE)
+        try:
+            glDisable(GL_POINT_SPRITE)
+        except:
+            pass
         glDisable(GL_PROGRAM_POINT_SIZE)
+
+class BigGouraudSphereShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "default_vs.glsl", "bigspheres_fs.glsl", gs_filename='bigpoints_gs.glsl', **kwargs)    
+
+class GouraudFlatpointsShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "flatpoints_fs.glsl", **kwargs)
+
+    def __enter__(self):
+        GouraudShaderProgram.__enter__(self)
+        self.get_shader_program().use()
         
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            pass
+
+        return self
+    
+class BigGouraudFlatpointsShaderProgram(GouraudShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "bigflatpoints_fs.glsl", gs_filename='bigpoints_gs.glsl', **kwargs)
+
 
 class OITGouraudShaderProgram(GouraudShaderProgram):
-    def __init__(self):
-        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl")
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, "gouraud_vs.glsl", "gouraud_oit_fs.glsl", **kwargs)
     
     def __enter__(self):
         self.get_shader_program().use()

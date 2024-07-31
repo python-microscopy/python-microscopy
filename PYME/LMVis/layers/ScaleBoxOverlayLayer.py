@@ -132,134 +132,50 @@ class ScaleBoxOverlayLayer(OverlayLayer):
             if bbox is None:
                 return
             
-            self._clear_shader_clipping(gl_canvas)
-            with self.get_shader_program(gl_canvas):
-                glDisable(GL_LIGHTING)
-                glColor4fv(self._color)
+            
+            with self.get_shader_program(gl_canvas) as sp:
+                sp.clear_shader_clipping()
+
+                if gl_canvas.core_profile:
+                    sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
                 
-               
-                
-                bb_0 = bbox[:3]
-                bb_1 = bbox[3:]
 
-                original_starts = np.copy(bb_0)
-                
-                bb_dims = bb_1 - bb_0
-                
-                delta_x, delta_y, delta_z = bb_dims
+                glLineWidth(1.0)
 
-                for i in np.arange(len(self._flips)):
-                    if self._flips[i]:
-                        original_starts[i] += bb_dims[i]
+                x0, y0, z0, x1, y1, z1 = bbox                  
+                delta_x, delta_y, delta_z = bbox[3:] - bbox[:3]
 
-                [start_x, start_y, start_z] = original_starts
-                [direction_x, direction_y, direction_z] = (np.array(self._flips) - 0.5) * -2
 
-                amount_of_lines_x = int(floor(delta_x / self._tick_distance)) + 1
-                amount_of_lines_y = int(floor(delta_y / self._tick_distance)) + 1
-                amount_of_lines_z = int(floor(delta_z / self._tick_distance)) + 1
+                n_lines_x = int(floor(delta_x / self._tick_distance)) + 1
+                n_lines_y = int(floor(delta_y / self._tick_distance)) + 1
+                n_lines_z = int(floor(delta_z / self._tick_distance)) + 1
 
-                # wall xy
-                glBegin(GL_LINES)
-                # top
-                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                         start_y,
-                         start_z)
-                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                         start_z)
-                # ticks
-                for step in np.arange(amount_of_lines_y + 1):
-                    glVertex(start_x,
-                             start_y + step * self._tick_distance * direction_y,
-                             start_z)
-                    glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                             start_y + step * self._tick_distance * direction_y,
-                             start_z)
+                #xy wall
+                zp = z0 if self._flips[2] else z1
+                #verticals
+                vertices = [(x0 + j*self._tick_distance, y0, zp, x0 + j*self._tick_distance, y1, zp) for j in range(n_lines_x)]
+                #horizontals
+                vertices += [(x0, y0 + j*self._tick_distance, zp, x1, y0 + j*self._tick_distance, zp) for j in range(n_lines_y)]
 
-                for step in np.arange(amount_of_lines_x + 1):
-                    glVertex(start_x + step * self._tick_distance * direction_x,
-                             start_y,
-                             start_z)
-                    glVertex(start_x + step * self._tick_distance * direction_x,
-                             start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                             start_z)
+                #xz wall
+                yp = y0 if self._flips[1] else y1
+                #verticals
+                vertices += [(x0 + j*self._tick_distance, yp, z0, x0 + j*self._tick_distance, yp, z1) for j in range(n_lines_x)]
+                #horizontals
+                vertices += [(x0, yp, z0 + j*self._tick_distance, x1, yp, z0 + j*self._tick_distance) for j in range(n_lines_z)]
 
-                # bottom
-                glVertex(start_x,
-                         start_y,
-                         start_z)
-                glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                         start_z)
-                glEnd()
+                #yz wall
+                xp = x0 if self._flips[1] else x1
+                #verticals
+                vertices += [(xp, y0 + j*self._tick_distance, z0, xp, y0 + j*self._tick_distance, z1) for j in range(n_lines_y)]
+                #horizontals
+                vertices += [(xp, y0, z0 + j*self._tick_distance, xp, y1, z0 + j*self._tick_distance) for j in range(n_lines_z)]
 
-                # wall xz
-                glBegin(GL_LINES)
-                # top
-                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                         start_y,
-                         start_z)
-                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                         start_y,
-                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
-                # ticks
-                for step in np.arange(amount_of_lines_z + 1):
-                    glVertex(start_x,
-                             start_y,
-                             start_z + step * self._tick_distance * direction_z)
-                    glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
-                             start_y,
-                             start_z + step * self._tick_distance * direction_z)
+                vertices = np.hstack(vertices).astype('f')
+                cols = np.tile(self._color, len(vertices)//3)
 
-                for step in np.arange(amount_of_lines_x + 1):
-                    glVertex(start_x + step * self._tick_distance * direction_x,
-                             start_y,
-                             start_z)
-                    glVertex(start_x + step * self._tick_distance * direction_x,
-                             start_y,
-                             start_z + amount_of_lines_z * self._tick_distance * direction_z)
+                #print('vertices.shape: ', vertices.shape, ', n_lines:', n_lines_x, n_lines_y, n_lines_z)
 
-                # bottom
-                glVertex(start_x,
-                         start_y,
-                         start_z)
-                glVertex(start_x,
-                         start_y,
-                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
-                glEnd()
+                self._bind_data('scalebox', vertices, 0*vertices, cols, sp, core_profile=gl_canvas.core_profile)
 
-                # wall yz
-                glBegin(GL_LINES)
-                # top
-                glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                         start_z)
-                glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
-                # ticks
-                for step in np.arange(amount_of_lines_z + 1):
-                    glVertex(start_x,
-                             start_y,
-                             start_z + step * self._tick_distance * direction_z)
-                    glVertex(start_x,
-                             start_y + amount_of_lines_y * self._tick_distance * direction_y,
-                             start_z + step * self._tick_distance * direction_z)
-
-                for step in np.arange(amount_of_lines_y + 1):
-                    glVertex(start_x,
-                             start_y + step * self._tick_distance * direction_y,
-                             start_z)
-                    glVertex(start_x,
-                             start_y + step * self._tick_distance * direction_y,
-                             start_z + amount_of_lines_z * self._tick_distance * direction_z)
-
-                # bottom
-                glVertex(start_x,
-                         start_y,
-                         start_z)
-                glVertex(start_x,
-                         start_y,
-                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
-                glEnd()
+                glDrawArrays(GL_LINES, 0, len(vertices))

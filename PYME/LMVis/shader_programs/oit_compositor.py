@@ -4,10 +4,10 @@ from OpenGL.GL import *
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 class OITCompositorProgram(GLProgram):
-    def __init__(self):
-        GLProgram.__init__(self)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, **kwargs)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
+        shader_program = ShaderProgram(shader_path, **kwargs)
         shader_program.add_shader("compose_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("compose_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()

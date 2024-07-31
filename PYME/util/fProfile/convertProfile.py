@@ -20,6 +20,7 @@ def build_call_tree_threads(df):
     """
     out = []
 
+
     gb = df.groupby('thread')
 
     #threadNames = gb.groups.keys()
@@ -102,6 +103,10 @@ def convert(infile='prof_spool.txt', outfile='prof_spool.json'):
     #except:
     #    df = pd.read_csv(infile, '\t', names=['time', 'thread', 'file', 'function', 'event'])
 
+    #catch absolute rather than relative times
+    if df['time'][0] > 10:
+        df['time'] = df['time']  - df['time'][0]
+    
     callstack = build_call_tree_threads(df)
 
     with open(outfile, 'w') as f:

@@ -458,7 +458,7 @@ class AnnotateBase(object):
     def render(self, gl_canvas):
         import  OpenGL.GL as gl
         
-        gl.glDisable(gl.GL_LIGHTING)
+        #gl.glDisable(gl.GL_LIGHTING)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
         gl.glDisable(gl.GL_DEPTH_TEST)
 

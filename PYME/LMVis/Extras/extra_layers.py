@@ -165,6 +165,7 @@ def open_surface(visFr):
             raise ValueError('Invalid file extension .' + str(ext))
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
         visFr.add_layer(layer)
+        visFr.update_datasource_panel()
         
 def save_surface(visFr):
     import wx

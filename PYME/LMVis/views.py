@@ -207,7 +207,16 @@ class View(object):
         """ set the view to right view"""
         self.vec_up = np.array([1, 0, 0])
         self.vec_back = np.array([0, -1,0])
-        self.vec_right = np.array([0,0,1])    
+        self.vec_right = np.array([0,0,1])  
+
+    @property
+    def clip_plane_matrix(self):
+        v_matrix = np.eye(4, dtype='f')  
+        if HAVE_QUATERNION:
+            v_matrix[:3,:3] = quaternion.as_rotation_matrix(self.clip_plane_orientation)
+            v_matrix[3, :3] = -self.clip_plane_position
+        
+        return v_matrix
 
 
 

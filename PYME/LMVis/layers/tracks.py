@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 from OpenGL.GL import *
 
 from .base import BaseEngine, EngineLayer
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, FatLineShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 # from pylab import cm
@@ -21,21 +21,36 @@ class Track3DEngine(BaseEngine):
         self.set_shader_program(DefaultShaderProgram)
     
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
-        
-        with self.get_shader_program(gl_canvas):
-            glDisable(GL_LIGHTING)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        if gl_canvas.core_profile:
+            sp = self.get_specific_shader_program(gl_canvas, FatLineShaderProgram)
+        else:
+            sp = self.get_specific_shader_program(gl_canvas, DefaultShaderProgram)
+
+
+        with sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+
+            #glDisable(GL_LIGHTING)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
             glDisable(GL_DEPTH_TEST)
             
             vertices = layer.get_vertices()
             #n_vertices = vertices.shape[0]
-            
-            glVertexPointerf(vertices)
-            glNormalPointerf(layer.get_normals())
-            glColorPointerf(layer.get_colors())
 
-            glLineWidth(layer.line_width)
+            self._bind_data('tracks', vertices, layer.get_normals(), layer.get_colors(), sp, core_profile=gl_canvas.core_profile)
+            
+            # glVertexPointerf(vertices)
+            # glNormalPointerf(layer.get_normals())
+            # glColorPointerf(layer.get_colors())
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
+
+                glUniform1f(sp.get_uniform_location('line_width_px'), layer.line_width)
+                vp = glGetIntegerv(GL_VIEWPORT)
+                glUniform2f(sp.get_uniform_location('viewport_size'), vp[2], vp[3])
+
+                
+            glLineWidth(min(layer.line_width, glGetFloatv(GL_LINE_WIDTH_RANGE)[1]))
 
             for i, cl in enumerate(layer.clumpSizes):
                 if cl > 0:

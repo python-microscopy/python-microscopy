@@ -30,6 +30,9 @@ from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 from PYME.recipes.traits import HasTraits, Bool, Instance
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     # Put this in a try-except clause as a) the quaternion module is not packaged yet and b) it has a dependency on a recent numpy version
     # so we might not want to make it a dependency yet.
@@ -39,7 +42,124 @@ except ImportError:
     print('quaternion module not found, disabling custom clip plane orientations')
     HAVE_QUATERNION = False
 
-class BaseEngine(object):
+
+class BindMixin(object):
+    """ Contains the core logic for binding data to OpenGL buffers """
+
+    def __init__(self) -> None:
+        self._bound_data = {}
+
+    def __del__(self):
+        for vao, vbo, sig in self._bound_data.values():
+            from OpenGL.GL import glDeleteVertexArrays, glDeleteBuffers
+            glDeleteVertexArrays(1, [vao,])
+            glDeleteBuffers(3, vbo)
+
+    def _bind_data_core(self, name, vertices, normals, colors, sp):
+        from OpenGL.GL import glGenVertexArrays, glGenBuffers, glDeleteBuffers, glDeleteVertexArrays, glBindVertexArray, glBindBuffer, glBufferData, glVertexAttribPointer, glEnableVertexAttribArray, GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_FLOAT, GL_FALSE
+        
+        n_vertices = vertices.shape[0]
+        if n_vertices == 0:
+            return False
+        
+        sig = (id(vertices), id(normals), id(colors), id(sp)) # signature for this data - do not rebind if the same data is already bound
+
+        # check to see if old vao and vbo if they exist, and if they point to the same data
+        # remove them if they exist byt are differeng      
+        old_vao, old_vbo, old_sig = self._bound_data.get(name, (None, None, None))
+        if old_sig == sig:
+            glBindVertexArray(old_vao) # rebind the old vao  - TODO should we defer this to client?
+            #logger.debug('Reusing existing VAO')
+            return n_vertices
+        elif old_vao is not None:
+            glBindVertexArray(0) # unbind the old vao
+            glBindBuffer(GL_ARRAY_BUFFER, 0) # unbind the old vbo
+            glDeleteVertexArrays(1, [old_vao,])
+            glDeleteBuffers(3, old_vbo)
+        
+        vertices = np.ascontiguousarray(vertices, 'f')
+        normals = np.ascontiguousarray(normals, 'f')
+        colors = np.ascontiguousarray(colors, 'f')
+
+        #print('vertices_dtype = ', vertices.dtype)
+        
+        vao = glGenVertexArrays(1)
+        vbo = glGenBuffers(3)
+        glBindVertexArray(vao)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[0])
+        glBufferData(GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL_STATIC_DRAW)
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(0)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[1])
+        glBufferData(GL_ARRAY_BUFFER, normals.nbytes, normals, GL_STATIC_DRAW)
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(1)
+        glBindBuffer(GL_ARRAY_BUFFER, vbo[2])
+        glBufferData(GL_ARRAY_BUFFER, colors.nbytes, colors, GL_STATIC_DRAW)
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, None)
+        glEnableVertexAttribArray(2)
+        glBindBuffer(GL_ARRAY_BUFFER, 0)
+
+        self._bound_data[name] = (vao, vbo, sig)
+
+        return n_vertices
+    
+    def _bind_data_legacy(self, vertices, normals, colors):
+        from OpenGL.GL import glVertexPointerf, glNormalPointerf, glColorPointerf
+        vertices = np.ascontiguousarray(vertices, 'f')
+        normals = np.ascontiguousarray(normals, 'f')
+        colors = np.ascontiguousarray(colors, 'f')
+
+        #glVertexPointer expects an Nx3 array
+        #glNormalPointer expects an Nx3 array
+        #glColorPointer expects an Nx4 array
+        if vertices.ndim == 1:
+            vertices = vertices.reshape([-1, 3])
+
+        if colors.ndim == 1:
+            colors = colors.reshape([-1,4])
+
+        if normals.ndim == 1:
+            normals = normals.reshape([-1,3])
+
+        n_vertices = vertices.shape[0]
+
+        glVertexPointerf(vertices)
+        glNormalPointerf(normals)
+        glColorPointerf(colors)
+
+        return n_vertices
+    
+    def _bind_data(self, name, vertices, normals, colors, sp, core_profile=True):
+        if core_profile:
+            return self._bind_data_core(name, vertices, normals, colors, sp)
+        else:
+            return self._bind_data_legacy(vertices, normals, colors)
+        
+    @classmethod
+    def _gen_rect_triangles(cls, x0, y0, w, h, z=0.0):
+        # generate two triangles to make a rectangle (as a replacement for deprecated GL_QUADS)
+        # TODO - move this somewhere more sensible
+
+        return np.array([[x0, y0, z],  
+                         [x0+w, y0, z], 
+                         [x0+w, y0+h, z],
+                         [x0+w, y0 + h, z], 
+                         [x0, y0+h, z],
+                         [x0, y0, z]], 'f')
+    
+    @classmethod
+    def _gen_rect_texture_coords(cls):
+        return np.array([[0., 0.], 
+                         [1., 0.], 
+                         [1., 1.], 
+                         [1., 1.], 
+                         [0., 1.], 
+                         [0., 0.]], 'f')
+    
+class ShaderMixin(object):
+    """ Contains the core logic for managing shaders """
+
     def __init__(self):
         self._shader_program_cls = None
     
@@ -54,25 +174,13 @@ class BaseEngine(object):
     
     def get_shader_program(self, canvas):
         return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
-
-    @abc.abstractmethod
-    def render(self, gl_canvas, layer):
-        pass
     
-    def _set_shader_clipping(self, gl_canvas):
-        sp = self.get_shader_program(gl_canvas)
-        sp.xmin, sp.xmax = gl_canvas.bounds['x'][0]
-        sp.ymin, sp.ymax = gl_canvas.bounds['y'][0]
-        sp.zmin, sp.zmax = gl_canvas.bounds['z'][0]
-        sp.vmin, sp.vmax = gl_canvas.bounds['v'][0]
-        if False:#HAVE_QUATERNION:
-            sp.v_matrix[:3, :3] = quaternion.as_rotation_matrix(gl_canvas.view.clip_plane_orientation)
-            sp.v_matrix[3, :3] = -gl_canvas.view.clip_plane_position
-        else:
-            #use current view
-            sp.v_matrix[:,:] = gl_canvas.object_rotation_matrix
-            sp.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation, rcond=None)[0]
-        
+    def get_specific_shader_program(self, canvas, shader_program_cls):
+        '''Get a specific shader program instance for this engine. This is useful for engines that need to use multiple
+        different shaders. Added to allow points layers to switch between using points and using quads as the desired
+        point size exceeds the maximum point size supported by the hardware.'''
+        return ShaderProgramFactory.get_program(shader_program_cls, canvas.gl_context, canvas)
+      
 
 class BaseLayer(HasTraits):
     """
@@ -131,6 +239,27 @@ class BaseLayer(HasTraits):
         return {'type': self.__class__.__name__,
                 'settings': self.settings_dict()}
     
+class SimpleLayer(BaseLayer, ShaderMixin):
+    """
+    Layer base class for layers which do their own rendering and manage their own shaders
+
+    Derived classes should implement the render method to draw to the canvas.
+    """
+    def __init__(self, **kwargs):
+        BaseLayer.__init__(self, **kwargs)
+        ShaderMixin.__init__(self)
+    
+
+class BaseEngine(BindMixin, ShaderMixin):
+    def __init__(self):
+        BindMixin.__init__(self)
+        ShaderMixin.__init__(self)
+
+    @abc.abstractmethod
+    def render(self, gl_canvas, layer):
+        pass    
+    
+
 class EngineLayer(BaseLayer):
     """
     Base class for layers who delegate their rendering to an engine.
@@ -185,29 +314,5 @@ class EngineLayer(BaseLayer):
         raise (NotImplementedError())
     
     
-class SimpleLayer(BaseLayer):
-    """
-    Layer base class for layers which do their own rendering and manage their own shaders
-    """
-    def __init__(self, **kwargs):
-        BaseLayer.__init__(self, **kwargs)
-        self._shader_program_cls = None
-    
-    def set_shader_program(self, shader_program):
-        #self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context, self._window)
-        self._shader_program_cls = shader_program
 
-    @property
-    def shader_program(self):
-        warnings.warn(DeprecationWarning('Use get_shader_program(canvas) instead'))
-        return ShaderProgramFactory.get_program(self._shader_program_cls)
     
-    def get_shader_program(self, canvas):
-        return ShaderProgramFactory.get_program(self._shader_program_cls, canvas.gl_context, canvas)
-    
-    def _clear_shader_clipping(self, canvas):
-        sp = self.get_shader_program(canvas)
-        sp.xmin, sp.xmax = [-1e6, 1e6]
-        sp.ymin, sp.ymax = [-1e6, 1e6]
-        sp.zmin, sp.zmax = [-1e6, 1e6]
-        sp.vmin, sp.vmax = [-1e6, 1e6]

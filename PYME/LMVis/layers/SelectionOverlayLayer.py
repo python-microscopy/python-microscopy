@@ -47,10 +47,16 @@ class SelectionOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping(gl_canvas)
-        with self.get_shader_program(gl_canvas):
+        with self.get_shader_program(gl_canvas) as sp:
+            sp.clear_shader_clipping()
+
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
+
+            #print('SelectionOverlayLayer.render() called')
+            
             if self._selection_settings.show:
-                glDisable(GL_LIGHTING)
+                #glDisable(GL_LIGHTING)
                 if self._selection_settings.mode == selection.SELECTION_RECTANGLE: 
                     x0, y0, _ = self._selection_settings.start
                     x1, y1, _ = self._selection_settings.finish
@@ -58,13 +64,20 @@ class SelectionOverlayLayer(OverlayLayer):
                     zc = gl_canvas.view.translation[2]
 
                     glLineWidth(1)
-                    glColor3fv(self._selection_settings.colour)
-                    glBegin(GL_LINE_LOOP)
-                    glVertex3f(x0, y0, zc)
-                    glVertex3f(x1, y0, zc)
-                    glVertex3f(x1, y1, zc)
-                    glVertex3f(x0, y1, zc)
-                    glEnd()
+
+                    verts = np.array([[x0, y0, zc], [x1, y0, zc], [x1, y1, zc], [x0, y1, zc]], 'f')
+                    cols = np.tile(np.hstack([self._selection_settings.colour, 1.0]), 4)
+
+                    self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
+                    glDrawArrays(GL_LINE_LOOP, 0, 4)
+
+                    # glColor3fv(self._selection_settings.colour)
+                    # glBegin(GL_LINE_LOOP)
+                    # glVertex3f(x0, y0, zc)
+                    # glVertex3f(x1, y0, zc)
+                    # glVertex3f(x1, y1, zc)
+                    # glVertex3f(x0, y1, zc)
+                    # glEnd()
 
                 elif self._selection_settings.mode == selection.SELECTION_LINE:
                     x0, y0, _ = self._selection_settings.start
@@ -73,11 +86,17 @@ class SelectionOverlayLayer(OverlayLayer):
                     zc = gl_canvas.view.translation[2]
 
                     glLineWidth(self._selection_settings.width)
-                    glColor3fv(self._selection_settings.colour)
-                    glBegin(GL_LINES)
-                    glVertex3f(x0, y0, zc)
-                    glVertex3f(x1, y1, zc)
-                    glEnd()
+
+                    verts = np.array([[x0, y0, zc], [x1, y1, zc]], 'f')
+                    cols = np.tile(np.hstack([self._selection_settings.colour, 1.0]), 2)
+                    self._bind_data('selection', verts, 0*verts, cols, sp, core_profile=gl_canvas.core_profile)
+                    glDrawArrays(GL_LINES, 0, 2)
+
+                    # glColor3fv(self._selection_settings.colour)
+                    # glBegin(GL_LINES)
+                    # glVertex3f(x0, y0, zc)
+                    # glVertex3f(x1, y1, zc)
+                    # glEnd()
 
                 elif self._selection_settings.mode == selection.SELECTION_SQUIGGLE:
                     if len(self._selection_settings.trace) == 0:
@@ -86,19 +105,20 @@ class SelectionOverlayLayer(OverlayLayer):
                     x, y = np.array(self._selection_settings.trace).T
                     z = np.ones_like(x)*gl_canvas.view.translation[2]
 
-                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
+                    vertices = np.vstack((x.ravel(), y.ravel(), z.ravel())).astype('f')
                     vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
                     normals = -0.69 * np.ones(vertices.shape)
                     c = np.ones(len(x))[:,None]*np.hstack([self._selection_settings.colour, 1.0])[None,:]
                     
-                    glDisable(GL_LIGHTING)
+                    #glDisable(GL_LIGHTING)
                     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                     glDisable(GL_DEPTH_TEST)
                     glLineWidth(self._selection_settings.width)
                     #glColor3fv(self._selection_settings.colour)
 
-                    glVertexPointerf(vertices)
-                    glNormalPointerf(normals)
-                    glColorPointerf(c)
+                    # glVertexPointerf(vertices)
+                    # glNormalPointerf(normals)
+                    # glColorPointerf(c)
+                    self._bind_data('selection', vertices, normals, c, csp, ore_profile=gl_canvas.core_profile)
                     glDrawArrays(GL_LINE_STRIP, 0, len(x))
 

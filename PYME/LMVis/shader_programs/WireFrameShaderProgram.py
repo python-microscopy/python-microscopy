@@ -45,11 +45,6 @@ class WireFrameShaderProgram(GLProgram):
 
         return self
 
-    def __init__(self):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        _shader_program = ShaderProgram(shader_path)
-        _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
-        _shader_program.link()
-        self.set_shader_program(_shader_program)
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='default_fs.glsl', **kwargs)
+        

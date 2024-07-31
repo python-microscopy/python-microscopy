@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram #, OITCompositorProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, OITGouraudShaderProgram, PhongShaderProgram #, OITCompositorProgram,
 from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Bool
@@ -23,8 +23,9 @@ class WireframeEngine(BaseEngine):
         self.set_shader_program(WireFrameShaderProgram)
 
 
+    
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
+        core_profile = gl_canvas.core_profile
 
         vertices = layer.get_vertices()
         n_vertices = vertices.shape[0]
@@ -36,20 +37,31 @@ class WireframeEngine(BaseEngine):
         normals = layer.get_normals()
         colors = layer.get_colors()
 
-        with self.get_shader_program(gl_canvas):
-            glVertexPointerf(vertices)
-            glNormalPointerf(normals)
-            glColorPointerf(colors)
+        with self.get_shader_program(gl_canvas) as sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+            
+            self._bind_data('mesh', vertices, normals, colors, sp, core_profile=core_profile)
+            
+            if core_profile:        
+                sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
+                sp.set_modelviewmatrix(np.array(gl_canvas.mv))
+                sp.set_normalmatrix(np.array(gl_canvas.normal_matrix))
+                #glBindVertexArray(self._bound_data['mesh'][0])
+            
 
             glDrawArrays(GL_TRIANGLES, 0, n_vertices)
             
             if self._outlines:
+                # TODO - move this to a shader uniform to avoid duplicating the data
                 sc = np.array([0.5, 0.5, 0.5, 1])
-                glColorPointerf(colors*sc[None,:])
+
+                self._bind_data('outline', vertices, normals, sc*colors, sp, core_profile=core_profile)
+
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
                 glDrawArrays(GL_TRIANGLES, 0, n_vertices)
 
             if layer.display_normals:
+                # TODO - do this using a geometry shader???
                 normal_buffer = np.empty((vertices.shape[0]+normals.shape[0],3), dtype=vertices.dtype)
                 if layer.normal_mode == 'Per vertex':
                     normal_buffer[0::2,:] = vertices
@@ -61,10 +73,12 @@ class WireframeEngine(BaseEngine):
                 assert(np.allclose(np.linalg.norm(normals,axis=1),1))
                 normal_buffer[1::2,:] += layer.normal_scaling*normals
                 
-                glVertexPointerf(normal_buffer)
                 sc = np.array([1, 1, 1, 1])
-                glColorPointerf(np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
-                glNormalPointerf(np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+                cols = (np.ones((normal_buffer.shape[0],4),dtype=colors.dtype)*sc[None,:])  # white normals
+                norms = (np.ones((normal_buffer.shape[0],3),dtype=normals.dtype))
+
+                self._bind_data('normals', normal_buffer, norms, cols, sp, core_profile=core_profile)
+                
                 glLineWidth(3)  # slightly thick
                 glDrawArrays(GL_LINES, 0, 2*n_vertices)
 
@@ -84,7 +98,8 @@ class ShadedFaceEngine(WireframeEngine):
         BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
-        self.set_shader_program(GouraudShaderProgram)
+        #self.set_shader_program(GouraudShaderProgram)
+        self.set_shader_program(PhongShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
         
 class OITShadedFaceEngine(WireframeEngine):
@@ -118,7 +133,7 @@ class TesselEngine(WireframeEngine):
 ENGINES = {
     'wireframe' : WireframeEngine,
     'flat' : FlatFaceEngine,
-    #'shaded' : ShadedFaceEngine,
+    'phong' : ShadedFaceEngine,
     'tessel' : TesselEngine,
     'shaded' : OITShadedFaceEngine,
 }
