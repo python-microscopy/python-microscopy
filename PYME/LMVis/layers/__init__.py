@@ -31,13 +31,16 @@ from .SelectionOverlayLayer import SelectionOverlayLayer
 #from .TetrahedraRenderLayer import TetrahedraRenderLayer
 from .base import BaseLayer
 
-from . import pointcloud, mesh, tracks, image_layer
+from . import pointcloud, mesh, tracks, image_layer, labels, quiver, octree
 
 layer_types = {
     'PointCloudRenderLayer' : pointcloud.PointCloudRenderLayer,
     'TriangleRenderLayer' : mesh.TriangleRenderLayer,
     'TrackRenderLayer' : tracks.TrackRenderLayer,
     'ImageRenderLayer' : image_layer.ImageRenderLayer,
+    'LabelLayer' : labels.LabelLayer,
+    'QuiverRenderLayer' : quiver.QuiverRenderLayer,
+    'OctreeRenderLayer' : octree.OctreeRenderLayer,
 }
 
 def layer_from_session_info(pipeline, layer_info):

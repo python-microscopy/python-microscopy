@@ -5,7 +5,7 @@ Created on Sat May 14 14:54:52 2016
 @author: david
 """
 import wx
-import wx.py.shell
+
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
