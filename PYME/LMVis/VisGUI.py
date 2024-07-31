@@ -27,7 +27,7 @@ os.environ['ETS_TOOLKIT'] = 'wx'
 import argparse
 
 import wx
-import wx.py.shell
+import PYME.ui.shell
 
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
@@ -113,7 +113,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.MainWindow = self #so we can access from shell
         self.pymevis = self # more memorable alias for the main window
-        self.sh = wx.py.shell.Shell(id=-1,
+        self.sh = PYME.ui.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
               introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
