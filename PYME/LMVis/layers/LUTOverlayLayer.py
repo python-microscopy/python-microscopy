@@ -313,7 +313,7 @@ class LUTOverlayLayer(OverlayLayer):
 
                 if gl_canvas.core_profile:
                     glBindVertexArray(0)
-                    glDeleteVertexArrays(1, vao)
+                    glDeleteVertexArrays(1, [vao,])
                     glDeleteBuffers(1, vbo)
                 else:
                     glDisableClientState(GL_TEXTURE_COORD_ARRAY)

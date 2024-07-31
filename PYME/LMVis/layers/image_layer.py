@@ -124,7 +124,7 @@ class ImageEngine(BaseEngine):
                 glDrawArrays(GL_TRIANGLES, 0, len(verts))
                 glBindBuffer(GL_ARRAY_BUFFER, 0)
                 glBindVertexArray(0)
-                glDeleteVertexArrays(1, vao)
+                glDeleteVertexArrays(1, [vao, ])
                 glDeleteBuffers(2, vbo)
 
             else:

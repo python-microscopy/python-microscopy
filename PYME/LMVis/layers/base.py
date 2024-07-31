@@ -52,7 +52,7 @@ class BindMixin(object):
     def __del__(self):
         for vao, vbo, sig in self._bound_data.values():
             from OpenGL.GL import glDeleteVertexArrays, glDeleteBuffers
-            glDeleteVertexArrays(1, vao)
+            glDeleteVertexArrays(1, [vao,])
             glDeleteBuffers(3, vbo)
 
     def _bind_data_core(self, name, vertices, normals, colors, sp):
@@ -74,7 +74,7 @@ class BindMixin(object):
         elif old_vao is not None:
             glBindVertexArray(0) # unbind the old vao
             glBindBuffer(GL_ARRAY_BUFFER, 0) # unbind the old vbo
-            glDeleteVertexArrays(1, old_vao)
+            glDeleteVertexArrays(1, [old_vao,])
             glDeleteBuffers(3, old_vbo)
         
         vertices = np.ascontiguousarray(vertices, 'f')

@@ -170,7 +170,7 @@ class Text(BaseEngine):
                 glDrawArrays(GL_TRIANGLES, 0, 6)
 
                 glBindVertexArray(0)
-                glDeleteVertexArrays(1, vao)
+                glDeleteVertexArrays(1, [vao,])
                 glDeleteBuffers(3, vbo)
 
             else:
