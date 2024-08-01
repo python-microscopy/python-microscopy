@@ -50,6 +50,7 @@ class Points3DEngine(BaseEngine):
                 sp = self.get_specific_shader_program(gl_canvas, self._big_point_shader_cls)
                 bigpoints = True
             except AttributeError:
+                logger.exception('error finding big point shader class')
                 logger.debug('No big point shader class defined, using default shader - points will appear smaller than expected')
 
         vertices = layer.get_vertices()

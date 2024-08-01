@@ -160,4 +160,4 @@ class BigPointSpriteShaderProgram(PointSpriteShaderProgram):
     def __init__(self, **kwargs):
         GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='bigpointsprites_fs.glsl', gs_filename='bigpoints_gs.glsl', **kwargs)
         self._texture = GaussTexture()
-        self.size_factor = self._texture.load_texture()
+        self.size_factor = self._texture.create_texture()
