@@ -68,7 +68,7 @@ class AxesOverlayLayer(OverlayLayer):
             if gl_canvas.core_profile:
                 import PYME.LMVis.mv_math as mm
                 mv = mm.translate(gl_canvas.mv, .88, .88*view_ratio, -0.5)
-                mv = np.dot(mv, gl_canvas.object_rotation_matrix)
+                mv = np.dot(mv, gl_canvas.object_rotation_matrix.T)
                 mvp = np.dot(gl_canvas.proj, mv)
 
                 sp.set_modelviewprojectionmatrix(np.array(mvp))

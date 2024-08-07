@@ -451,7 +451,7 @@ class LMGLShaderCanvas(GLCanvas):
             try:
                 # rotate object
                 #GL.glMultMatrixf(self.object_rotation_matrix)
-                self.mv = np.dot(self.mv,  self.object_rotation_matrix)
+                self.mv = np.dot(self.mv,  self.object_rotation_matrix.T)
                 #GL.glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
                 self.mv = mm.translate(self.mv, *(-self.view.translation))
 
