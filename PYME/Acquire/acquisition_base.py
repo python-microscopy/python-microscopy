@@ -127,3 +127,9 @@ class AcquisitionBase(abc.ABC):
         
         '''
         pass
+
+    def getURL(self):
+        # FIXME - _backend is only defined in protocol_acquisition and tiler
+        # but not in xyztc or this base class
+        # TODO - specify a common interface for the backend and implement across backends
+        return self._backend.getURL()
