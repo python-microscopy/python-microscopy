@@ -52,7 +52,10 @@ def detailed_version():
     if _detailed_version is None:
         from PYME.misc.check_for_updates import guess_install_type
 
-        fv = version + '[' + guess_install_type() + ']'
+        # the string interpolation below should be more robust than the previous string concatenation with `+`
+        # which fails when one of the variables/return values is None
+        # a None return can apparently happen for zip snapshots of the git repo downloaded from github
+        fv = "%s[%s]" % (version,guess_install_type())
         if changeset !=_release_changeset:
             # code has been modified since last release, append commit hash
             fv += changeset
