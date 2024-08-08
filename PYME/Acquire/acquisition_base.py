@@ -10,6 +10,8 @@ from PYME.contrib import dispatch
 
 
 class AcquisitionBase(abc.ABC):
+    _backend=None
+
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
         '''Create an Acquisition object'''
@@ -128,8 +130,19 @@ class AcquisitionBase(abc.ABC):
         '''
         pass
 
+    @property
+    def storage(self):
+        '''Return the storage object for the acquisition
+        
+        '''
+        return self._backend
+    
+    @storage.setter
+    def storage(self, storage):
+        '''Set the storage object for the acquisition
+        
+        '''
+        self._backend = storage
+
     def getURL(self):
-        # FIXME - _backend is only defined in protocol_acquisition and tiler
-        # but not in xyztc or this base class
-        # TODO - specify a common interface for the backend and implement across backends
-        return self._backend.getURL()
+        return self.storage.getURL()
