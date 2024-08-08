@@ -13,22 +13,30 @@ class Taiko(Laser):
         pdlm.open_device(self.id)
         self._min_power_cw, self._max_power_cw = pdlm.get_cw_power_limits(self.id)
         self._min_power_pulsed, self._max_power_pulsed = pdlm.get_pulsed_power_limits(self.id)
-        self.mode = self.GetEmissionMode()
+        self._mode = self.GetEmissionMode()
         Laser.__init__(self, name, turnOn, scopeState)
     
     @property
     def MAX_POWER(self):
-        if self.mode == 'cw':
+        if self._mode == 'cw':
             return self._max_power_cw
-        elif self.mode == 'pulsed':
+        elif self._mode == 'pulsed':
             return self._max_power_pulsed
     
     @property
     def MIN_POWER(self):
-        if self.mode == 'cw':
+        if self._mode == 'cw':
             return self._min_power_cw
-        elif self.mode == 'pulsed':
+        elif self._mode == 'pulsed':
             return self._min_power_pulsed
+    
+    @property
+    def mode(self):
+        return self._mode  # self.GetEmissionMode()
+    
+    @mode.setter
+    def mode(self, mode):
+        self.SetEmissionMode(mode)
 
     def IsOn(self):
         return not pdlm.get_lock_status(self.id)
@@ -54,15 +62,16 @@ class Taiko(Laser):
     def SetEmissionMode(self, mode='cw'):
         if mode == 'cw':
             pdlm.set_emission_mode(self.id, pdlm.PDLM_LASER_MODE_CW)
-            self.mode = 'cw'
+            self._mode = 'cw'
         elif mode == 'pulsed':
             pdlm.set_emission_mode(self.id, pdlm.PDLM_LASER_MODE_PULSE)
-            self.mode = 'pulsed'
+            self._mode = 'pulsed'
         else:
             raise RuntimeError('Supported modes: cw, pulsed. Burst mode not implemented')
     
     def GetEmissionMode(self):
-        return pdlm.get_emission_mode(self.id)
+        self._mode = pdlm.get_emission_mode(self.id)
+        return self._mode
 
     def register(self, scope):
         scope.lasers.append(self)
@@ -83,8 +92,8 @@ class Taiko(Laser):
     def GetPulseFreq(self):
         if self.mode == 'cw':
             return 0
-        mode = self.GetTriggerMode()
-        if 'INTERNAL' == pdlm.TRIGGER_MODE[mode]:
+        # we know it is pulsed:
+        if 'INTERNAL' == self.GetTriggerMode():
             return pdlm.get_frequency(self.id)
         else:
             # external trigger
@@ -95,10 +104,10 @@ class Taiko(Laser):
         
     def registerStateHandlers(self, scopeState):
         Laser.registerStateHandlers(self, scopeState)
-        scopeState.registerHandler('Lasers.%s.EmissionMode', self.name, lambda : self.GetEmissionMode)
-        scopeState.registerHandler('Lasers.%s.PulseStatus', self.name, lambda : self.GetPulseStatus)
-        scopeState.registerHandler('Lasers.%s.TriggerMode', self.name, lambda : self.GetTriggerMode)
-        scopeState.registerHandler('Lasers.%s.PulseFreqHz', self.name, lambda: self.GetPulseFreq)
+        scopeState.registerHandler('Lasers.%s.EmissionMode' % self.name, self.GetEmissionMode)
+        scopeState.registerHandler('Lasers.%s.PulseStatus' % self.name, self.GetPulseStatus)
+        scopeState.registerHandler('Lasers.%s.TriggerMode' % self.name, self.GetTriggerMode)
+        scopeState.registerHandler('Lasers.%s.PulseFreqHz' % self.name, self.GetPulseFreq)
     
     def GetPulseShape(self):
         return pdlm.get_pulse_shape(self.id)
