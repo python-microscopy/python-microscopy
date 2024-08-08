@@ -21,6 +21,7 @@
 ##################
 
 import PYME.ui.shell
+import wx
 from PYME import config
 
 def Plug(dsviewer):
