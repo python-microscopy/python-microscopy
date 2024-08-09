@@ -15,6 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import threading
 
+from PYME.IO.MetaDataHandler import DictMDHandler
+
 logger = logging.getLogger(__name__)
 
 POST_CHOICES = ['off', 'spool start', 'spool stop']
@@ -48,9 +50,6 @@ def get_rule_tile(rule_factory_class):
 
 
 class RuleChain(HasTraits):
-    post_on = Enum(POST_CHOICES)
-    protocol = CStr('')
-    
     def __init__(self, rule_factories=None, *args, **kwargs):
         if rule_factories is None:
             rule_factories = list()
@@ -76,6 +75,7 @@ class RuleDict(OrderedDict):
             have time to execute, by default 5. .. seealso:: modules :py:mod:`PYME.cluster.rules`
         """
         import queue
+        from PYME.cluster.rules import SpoolLocalLocalizationRuleFactory
 
         OrderedDict.__init__(self)
         self.active = True
@@ -85,71 +85,9 @@ class RuleDict(OrderedDict):
         self._updated.connect(self.update)
         
         self['default'] = RuleChain()
-
-        #self._spool_controller.onSpoolStart.connect(self.on_spool_start)
-        #self._spool_controller.on_stop.connect(self.on_spool_stop)
-    
-    # def on_spool_start(self, **kwargs):
-    #     self.on_spool_event('spool start')
-    
-    # def on_spool_stop(self, **kwargs):
-    #     self.on_spool_event('spool stop')
-    
-    def on_spool_event(self, event):
-        """
-        pipe input series name into rule chain and post them all
-        
-        Parameters
-        ----------
-        kwargs: dict
-            present here to allow us to call this method through a dispatch.Signal.send
-        """
-        if not self.active:
-            logger.info('inactive, check "active" to turn on auto analysis')
-            return
-        spooler = self._spool_controller.spooler
-        try:
-            spooler.getURL
-        except AttributeError:
-            logger.exception('Rule-based analysis chaining currently requires spooling to cluster, not to file')
-            raise 
-        prot_filename = spooler.protocol.filename
-        prot_filename = '' if prot_filename is None else prot_filename
-        protocol_name = os.path.splitext(os.path.split(prot_filename)[-1])[0]
-        logger.info('protocol name : %s' % protocol_name)
-
-        try:
-            rule_factory_chain = self[protocol_name]
-        except KeyError:
-            rule_factory_chain = self['default']
-        
-        if rule_factory_chain.post_on != event:
-            # not the right trigger for this protocol
-            return
-        
-        if len(rule_factory_chain.rule_factories) == 0:
-            logger.info('no rules in chain')
-            return
-        
-        # set the context based on the input series
-        series_uri = spooler.getURL()
-        spool_dir, series_stub = posixpath.split(series_uri)
-        series_stub = posixpath.splitext(series_stub)[0]
-        context = {
-            'spool_dir': spool_dir,  # do we need this? or typo in rule docs
-            'series_stub': series_stub,  # do we need this? or typo in rule docs
-            'seriesName': series_uri,  # Localization
-            'inputs': {'input': [series_uri]},  # Recipe
-            'output_dir': posixpath.join(spool_dir, 'analysis'), # Recipe
-            'spooler': spooler}  # SpoolLocalLocalization
-
-        # rule chain is already linked, add context and push
-        rule = rule_factory_chain.rule_factories[0].get_rule(context=context)
-        t = threading.Thread(target=rule.push)
-        t.start()
-        if self.posting_thread_queue.full():
-            self.posting_thread_queue.get_nowait().join()
-        self.posting_thread_queue.put_nowait(t)
+        # TODO - make the default rule chain a 2D Gaussian localization rule
+        #mdh = DictMDHandler(self._localization_panel.localization_settings.analysisMDH)
+        #loc_rule = get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)
         
     
     def update(self, *args, **kwargs):
@@ -181,9 +119,9 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
             self.canvas.draw()
             return
         width = 1  # size of tile to draw
-        height = 0.5
+        height = 1
         nodes_x = np.arange(0, len(rule_factories) * 1.5 * width, 1.5 * width)
-        nodes_y = np.ones_like(nodes_x)
+        nodes_y = 0.5*np.ones_like(nodes_x)
 
         
         axis_width = self.ax.get_window_extent().width
@@ -208,19 +146,34 @@ class RulePlotPanel(wxPlotPanel.PlotPanel):
         #plot the boxes and the labels
         for ind in range(len(rule_factories)):
             # draw a box
-            s = rule_factories[ind]._type
+            rule = rule_factories[ind]
+            s = rule.rule_type
             fc = [.8,.8, 1]
             
             rect = plt.Rectangle([nodes_x[ind], nodes_y[ind]], width, height,
                                  ec='k', lw=2, fc=fc, picker=True)
-            rect._data = rule_factories[ind]
+            rect._data = rule
             self.ax.add_patch(rect)
             
             s = TW2.wrap(s)
             if len(s) == 1:
-                self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .18 , s[0], size=font_size, weight='bold')
+                self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .68 , s[0], size=font_size, weight='bold')
             else:
                 self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .18 - .05*(len(s) - 1) , '\n'.join(s), size=font_size, weight='bold')
+
+            if rule.rule_type == 'localization':
+                try:
+                    s = TW.wrap(str(rule._rule_kwargs['analysisMetadata']['Analysis.FitModule']))
+                    self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .18 - .05*(len(s)) , '\n'.join(s), size=font_size, weight='normal')
+                except KeyError:
+                    pass
+            elif rule.rule_type == 'recipe':
+                try:
+                    r = str(rule._rule_kwargs['recipe'])
+                    s = TW.wrap(r.split('\n')[0] + ' ...')   
+                    self.ax.text(nodes_x[ind] + .05, nodes_y[ind] + .18 - .05*(len(s)) , '\n'.join(s), size=font_size, weight='normal')
+                except KeyError:
+                    pass
         
         self.ax.set_ylim(0, 2)
         self.ax.set_xlim(-0.5 * width, nodes_x[-1] + 1.5 * width)
@@ -484,135 +437,6 @@ class RuleRecipeView(RecipeView):
         return super().update(*args, **kwargs)
 
 
-class RuleRecipeManager(RecipeManager):
-    def __init__(self, chained_analysis_page=None):
-        RecipeManager.__init__(self)
-        self.chained_analysis_page = chained_analysis_page
-
-    def OnAddRecipeRule(self, wx_event=None):
-        from PYME.cluster.rules import RecipeRuleFactory
-        #from PYME.Acquire.htsms.rule_ui import get_rule_tile
-        if self.chained_analysis_page is None:
-            logger.error('chained_analysis_page attribute unset')
-
-        rec = get_rule_tile(RecipeRuleFactory)(recipe=self.activeRecipe.toYAML())
-        self.chained_analysis_page.add_tile(rec)
-
-class ChainedAnalysisPanel(wx.Panel):
-    def __init__(self, parent, protocol_rules, chained_analysis_page,
-                 default_pairings=None):
-        """
-
-        Parameters
-        ----------
-        parent : PYME.ui.AUIFrame.AUIFrame
-            should be the 'main frame'
-        protocol_rules : dict
-            [description]
-        recipe_manager : PYME.recipes.recipeGui.RecipeManager
-            [description]
-        default_pairings : dict
-            protocol keys with RuleChains as values to prepopulate
-            panel on start up
-        """
-        wx.Panel.__init__(self, parent, -1)
-        self.parent = parent
-        self._protocol_rules = protocol_rules
-        self._page = chained_analysis_page
-
-        v_sizer = wx.BoxSizer(wx.VERTICAL)
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.checkbox_active = wx.CheckBox(self, -1, 'active')
-        self.checkbox_active.SetValue(True)
-        self.checkbox_active.Bind(wx.EVT_CHECKBOX, self.OnToggleActive)
-        h_sizer.Add(self.checkbox_active, 0, wx.ALL, 2)
-        v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._protocol_rules_list = ProtocolRuleFactoryListCtrl(self._protocol_rules, self)
-        h_sizer.Add(self._protocol_rules_list)
-        v_sizer.Add(h_sizer, 0, wx.EXPAND|wx.TOP, 0)
-
-        h_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_del_chain = wx.Button(self, -1, 'Delete pair')
-        self.button_del_chain.Bind(wx.EVT_BUTTON, self.OnRemoveProtocolRule)
-        h_sizer.Add(self.button_del_chain, 0, wx.ALL, 2)
-
-        self.button_edit_chain = wx.Button(self, -1, 'Edit in tab')
-        self.button_edit_chain.Bind(wx.EVT_BUTTON, self.OnEditRuleChain)
-        h_sizer.Add(self.button_edit_chain, 0, wx.ALL, 2)
-        v_sizer.Add(h_sizer)
-
-        self.SetSizerAndFit(v_sizer)
-
-        if default_pairings is not None:
-            self._set_up_defaults(default_pairings)
-    
-    def _set_up_defaults(self, pairings):
-        for protocol_name, rule_chain in pairings.items():
-            # add them to the protocol rules dict
-            self._protocol_rules[protocol_name] = rule_chain
-        
-        self._protocol_rules._updated.send(self)
-
-    def OnRemoveProtocolRule(self, wx_event=None):
-        # make sure that we reset the chained analysis page just in case
-        # we deleted a rule which was active
-        self._page.c_protocol.SetStringSelection('default')
-        self._page.OnProtocolChoice()
-        self._protocol_rules_list.delete_rule_chains()
-    
-    def OnEditRuleChain(self, wx_event=None):
-        ind = self._protocol_rules_list.get_selected_items()[0]
-        protocol = self._protocol_rules_list.GetItemText(ind, col=0)
-        self._page.select_rule_chain(protocol)
-        self.parent._select_page_by_name('Chained Analysis')
-
-    def OnToggleActive(self, wx_event):
-        self._protocol_rules.active = self.checkbox_active.GetValue()
-
-    @staticmethod
-    def plug(main_frame, scope, default_pairings=None):
-        """
-        Adds a ChainedAnalysisPanel to a microscope gui during start-up
-        
-        Parameters
-        ----------
-        main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
-            microscope gui application
-        scope : PYME.Acquire.microscope.Microscope
-            the microscope itself
-        default_pairings : dict
-            [optional] protocol keys with lists of RuleFactorys as values to
-            prepopulate panel on start up. By default, None
-        
-        """
-
-        scope.protocol_rules = ProtocolRules(scope.spoolController)
-        scope._recipe_manager = RuleRecipeManager()
-
-        main_frame.chained_analysis_page = ChainedAnalysisPage(main_frame, 
-                                                               scope.protocol_rules,
-                                                               scope._recipe_manager,
-                                                               default_pairings)
-        
-        scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
-        main_frame.recipe_view = RuleRecipeView(main_frame, scope._recipe_manager)
-
-        main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
-        main_frame.AddPage(page=main_frame.chained_analysis_page, select=False,
-                           caption='Chained Analysis')
-
-        # add this panel
-        chained_analysis = ChainedAnalysisPanel(main_frame, 
-                                                scope.protocol_rules,
-                                                main_frame.chained_analysis_page,
-                                                default_pairings)
-        main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
-                                    True))
-
-
 from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettingsPanel, AnalysisDetailsPanel, manualFoldPanel
 class LocalizationSettingsPanel(wx.Panel):
     def __init__(self, wx_parent, localization_settings,
@@ -635,87 +459,34 @@ class LocalizationSettingsPanel(wx.Panel):
        
         self.SetSizerAndFit(vsizer)
 
-        
+    
+def plug(main_frame, scope, default_pairings=None):
+    """
+    Adds a ChainedAnalysisPane to a microscope gui during start-up
+    
+    Parameters
+    ----------
+    main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
+        microscope gui application
+    scope : PYME.Acquire.microscope.Microscope
+        the microscope itself
+    default_pairings : dict
+        [optional] protocol keys with RuleChains as values to
+        prepopulate panel on start up. By default, None
+    """
+    from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
 
-class SMLMChainedAnalysisPanel(ChainedAnalysisPanel):
-    def __init__(self, wx_parent, protocol_rules, chained_analysis_page,
-                 default_pairings=None):
-        """
-        Parameters
-        ----------
-        wx_parent
-        localization_settings: PYME.ui.AnalysisSettingsUI.AnalysisSettings
-        rule_list_ctrl: RuleChainListCtrl
-        default_pairings : dict
-            [optional] protocol keys with lists of RuleFactorys as values to
-            prepopulate panel on start up. By default, None
-        """
-        ChainedAnalysisPanel.__init__(self, wx_parent, protocol_rules, 
-                                      chained_analysis_page, default_pairings)
+    scope.analysis_rules = RuleDict()
+    _recipe_manager = RecipeManager()
+    _localization_settings = AnalysisSettings() #TODO - we should not need this to be global.
 
-    # def OnToggleLiveView(self, wx_event=None):
-    #     if self.checkbox_view_live.GetValue() and 0 in self._rule_list_ctrl.localization_rule_indices:
-    #         self._rule_list_ctrl._rule_chain.posted.connect(self._open_live_view)
-    #     else:
-    #         self._rule_list_ctrl._rule_chain.posted.disconnect(self._open_live_view)
+    main_frame.chained_analysis_page = ChainedAnalysisPage(main_frame, 
+                                                            scope.analysis_rules,
+                                                            _recipe_manager,
+                                                            None,
+                                                            default_pairings, localization_settings=_localization_settings)
+    
 
-    def _open_live_view(self, **kwargs):
-        """
-        Open PYMEVisualize on a freshly spooled series which is being localized
-        
-        Parameters
-        ----------
-        kwargs: dict
-            present here to allow us to call this method through a dispatch.Signal.send
-        """
-        import subprocess
-        # get the URL
-        uri = self._rule_list_ctrl._rule_chain[self._rule_list_ctrl.localization_rule_indices[0]].outputs[0]['input'] + '/live'
-        subprocess.Popen('visgui %s' % uri, shell=True)
-
-    @staticmethod
-    def plug(main_frame, scope, default_pairings=None):
-        """
-        Adds a SMLMChainedAnalysisPanel to a microscope gui during start-up
-        
-        Parameters
-        ----------
-        main_frame : PYME.Acquire.acquiremainframe.PYMEMainFrame
-            microscope gui application
-        scope : PYME.Acquire.microscope.Microscope
-            the microscope itself
-        default_pairings : dict
-            [optional] protocol keys with RuleChains as values to
-            prepopulate panel on start up. By default, None
-        """
-        from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
-
-        scope.analysis_rules = RuleDict()
-        scope._recipe_manager = RecipeManager()
-        scope._localization_settings = AnalysisSettings() #TODO - we should not need this to be global.
-
-        # localization_settings_pan = LocalizationSettingsPanel(main_frame,
-        #                                                              scope._localization_settings,
-        #                                                              scope._localization_settings.onMetadataChanged)
-
-        main_frame.chained_analysis_page = ChainedAnalysisPage(main_frame, 
-                                                                   scope.analysis_rules,
-                                                                   scope._recipe_manager,
-                                                                   None,
-                                                                   default_pairings, localization_settings=scope._localization_settings)
-        
-        #scope._recipe_manager.chained_analysis_page = main_frame.chained_analysis_page
-        #main_frame.recipe_view = RuleRecipeView(main_frame, scope._recipe_manager)
-        #main_frame.localization_settings.chained_analysis_page = main_frame.chained_analysis_page
-        #main_frame.AddPage(page=main_frame.recipe_view, select=False, caption='Recipe')
-        #main_frame.AddPage(page=main_frame.localization_settings, select=False, caption='Localization')
-        main_frame.AddPage(page=main_frame.chained_analysis_page, select=False,
-                           caption='Chained Analysis')
-        
-        # add this panel
-        # chained_analysis = SMLMChainedAnalysisPanel(main_frame, 
-        #                                             scope.protocol_rules,
-        #                                             main_frame.chained_analysis_page,
-        #                                             default_pairings)
-        # main_frame.anPanels.append((chained_analysis, 'Automatic Analysis', 
-        #                             False))
+    main_frame.AddPage(page=main_frame.chained_analysis_page, select=False,
+                    caption='Chained Analysis')
+    

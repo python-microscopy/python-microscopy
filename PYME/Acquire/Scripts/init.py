@@ -194,9 +194,9 @@ def action_manager(MainFrame, scope):
 
 @init_gui('Automated analysis')
 def chained_analysis(main_frame, scope):
-    from PYME.Acquire.htsms.rule_ui_v2 import SMLMChainedAnalysisPanel
+    from PYME.Acquire.htsms import rule_ui_v2
     
-    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+    rule_ui_v2.plug(main_frame, scope)
 
 
 

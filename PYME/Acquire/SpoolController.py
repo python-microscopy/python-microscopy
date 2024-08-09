@@ -185,6 +185,11 @@ class SpoolController(object):
         self.onSpoolStart = dispatch.Signal()
         self.on_stop = dispatch.Signal()
 
+        self.analysis_mode = 'interactive' # 'interactive' or 'rule-based'
+        self.analysis_rule_name = 'default'
+        self.analysis_launch_mode = 'triggered' # 'triggered' or 'series-end
+        
+
         self._analysis_launchers = queue.Queue(3)
         
         self._status_changed_condition = threading.Condition()
@@ -515,9 +520,10 @@ class SpoolController(object):
             
             raise IOError('A series with the same name already exists')
             
-          
-        
-            
+        # update launch analysis settings
+        self.analysis_mode = settings.get('analysis_mode', self.analysis_mode)
+        self.analysis_rule_name = settings.get('analysis_rule_name', self.analysis_rule_name)
+        self.analysis_launch_mode = settings.get('analysis_launch_mode', self.analysis_launch_mode)  
         
         if self.spoolType == 'Cluster':
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
@@ -701,6 +707,9 @@ class SpoolController(object):
         
         self.on_stop.send(self)
 
+        if self.analysis_launch_mode == 'series-end':
+            self.LaunchAnalysis()
+
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)
             self._ProgressUpate()
@@ -718,39 +727,73 @@ class SpoolController(object):
         
 
     def LaunchAnalysis(self):
+        from warnings import warn
+        warn('LaunchAnalysis is deprecated, use launch_analysis instead', DeprecationWarning)
+        self.launch_analysis()
+    
+    def launch_analysis(self):
         """Launch analysis
         """
-        #from PYME.IO import QueueSpooler
-        #from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+        import posixpath
+
+        try:
+            if not self.spoolType == 'Cluster':
+                from PYME import warnings
+                warnings.warn('Analysis is only supported for cluster spooling', category=RuntimeWarning)
         
-        dh5view_cmd = 'dh5view'
-        if sys.platform == 'win32':
-            dh5view_cmd = 'dh5view.exe'
-            
-        if self.autostart_analysis:
-            dh5view_cmd += ' -g'
-        
-        if self.spoolType == 'Cluster': #queue or not
-            if self.autostart_analysis:
-                # launch analysis in a separate thread
-                t = threading.Thread(target=self.launch_cluster_analysis)
+            if self.analysis_mode == 'interactive':
+                dh5view_cmd = 'dh5view'
+                if sys.platform == 'win32':
+                    dh5view_cmd = 'dh5view.exe'
+
+                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+
+            elif self.analysis_mode == 'rule-based':
+                seriesName = self.spooler.getURL()
+
+                try:
+                    # we have the chained analysis module loaded
+                    rule_factory = self.scope.analysis_rules[self.analysis_rule_name].rule_factories[0]
+
+                    context = {
+                        'seriesName': seriesName,
+                        'inputs': {'input': seriesName}, # needed for recipes
+                        'output_dir':  posixpath.split(seriesName)[0],
+                        'spooler': self.spooler, # for SpoolLocalLocalization rule completeness check
+                    }
+
+                    rule =  rule_factory.get_rule(context=context)
+                    # launch analysis in a separate thread    
+
+                except AttributeError:
+                    # we don't have the chained analysis module loaded
+                    from PYME.cluster import rules
+                    import warnings
+                    warnings.warn('using legacy automated localisation rule - please add the chained analysis module to your init and use this instead', category=RuntimeWarning)
+                    rule = rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH)
+
+                except KeyError:
+                    raise RuntimeError('Analysis rule %s not found' % self.analysis_rule_name)
+                
+                t = threading.Thread(target=rule.push)
                 t.start()
                 # keep track of a couple launching threads to make sure they have ample time to finish before joining
                 if self._analysis_launchers.full():
                     self._analysis_launchers.get().join()
                 self._analysis_launchers.put(t)
-            else:
-                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
-     
-    def launch_cluster_analysis(self):
-        from PYME.cluster import rules
-        
-        seriesName = self.spooler.getURL()
-        try:
-            #HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
-            rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH).push()
         except:
-            logger.exception('Error launching analysis for %s' % seriesName)
+            logger.exception('Error launching analysis')
+            
+     
+    # def launch_cluster_analysis(self):
+    #     from PYME.cluster import rules
+        
+    #     seriesName = self.spooler.getURL()
+    #     try:
+    #         #HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+    #         rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH).push()
+    #     except:
+    #         logger.exception('Error launching analysis for %s' % seriesName)
 
             
     def SetSpoolMethod(self, method):
