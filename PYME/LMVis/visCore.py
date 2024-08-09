@@ -61,7 +61,7 @@ import numpy as np
 
 #from PYME.DSView import eventLogViewer
 
-
+from PYME.LMVis.sessionpaths import make_session_relative, make_session_absolute
 
 from PYME.LMVis import statusLog
 #from PYME.recipes import recipeGui
@@ -823,7 +823,7 @@ class VisGUICore(object):
             
         return args
 
-    def get_session_yaml(self):
+    def get_session_yaml(self,sessionpath=None):
         import yaml
         from PYME.recipes.base import MyDumper
         session = {'format_version': 0.1,}
@@ -831,11 +831,13 @@ class VisGUICore(object):
 
         # TODO - View and layer settings
         session.update(self.glCanvas.get_session_info())
+        if sessionpath is not None:
+            session = make_session_relative(session,sessionpath)
         return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
     
     def save_session(self, filename):
         with open(filename, 'w') as f:
-            f.write(self.get_session_yaml())
+            f.write(self.get_session_yaml(sessionpath=filename))
 
     def OnSaveSession(self, event):
         '''GUI callback to save session to a file, shows a file dialog'''
@@ -850,6 +852,7 @@ class VisGUICore(object):
         with open(filename, 'r') as f:
             session = yaml.safe_load(f)
 
+        session = make_session_absolute(session,filename)
         self.pipeline.load_session(session)
 
         # load layers
