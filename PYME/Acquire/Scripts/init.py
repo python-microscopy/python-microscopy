@@ -192,6 +192,13 @@ def action_manager(MainFrame, scope):
     ap = tile_panel.TilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Tiling'))
 
+@init_gui('Automated analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.htsms.rule_ui_v2 import SMLMChainedAnalysisPanel
+    
+    SMLMChainedAnalysisPanel.plug(main_frame, scope)
+
+
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
