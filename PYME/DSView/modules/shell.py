@@ -22,6 +22,7 @@
 
 import PYME.ui.shell
 from PYME import config
+import wx
 
 def Plug(dsviewer):
     sh = PYME.ui.shell.Shell(id=-1,
