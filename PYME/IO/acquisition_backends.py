@@ -77,6 +77,13 @@ class Backend(abc.ABC):
             self._sequence_id = self.gen_sequence_id()
 
         return self._sequence_id
+    
+    def getURL(self):
+        '''Get URL for the series to pass to other processes so they can open it
+        
+        Implement in derived classes if appropriate.
+        '''
+        raise NotImplementedError('getURL() not implemented - this might not be a cluster-aware backend')
 
 
 class MemoryBackend(Backend):
@@ -124,6 +131,7 @@ class ClusterBackend(Backend):
         Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
 
         self.series_name = series_name
+        self.serverfilter = serverfilter
         self._cluster_h5 = cluster_h5
 
         if cluster_h5:
@@ -173,6 +181,10 @@ class ClusterBackend(Backend):
             return '__aggregate_h5/' + self.series_name
         else:
             return self.series_name
+        
+    def getURL(self):
+        '''Get URL for the series to pass to other processes so they can open it'''
+        return 'PYME-CLUSTER://%s/%s' % (self.serverfilter, self.series_name)
     
     def store_frame(self, n, frame_data):
         fn = '/'.join([self._series_location, 'frame%05d.pzf' % n])

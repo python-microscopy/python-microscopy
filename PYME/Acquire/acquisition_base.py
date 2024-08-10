@@ -10,6 +10,8 @@ from PYME.contrib import dispatch
 
 
 class AcquisitionBase(abc.ABC):
+    _backend=None
+
     @abc.abstractmethod
     def __init__(self, *args, **kwargs):
         '''Create an Acquisition object'''
@@ -127,3 +129,20 @@ class AcquisitionBase(abc.ABC):
         
         '''
         pass
+
+    @property
+    def storage(self):
+        '''Return the storage object for the acquisition
+        
+        '''
+        return self._backend
+    
+    @storage.setter
+    def storage(self, storage):
+        '''Set the storage object for the acquisition
+        
+        '''
+        self._backend = storage
+
+    def getURL(self):
+        return self.storage.getURL()
