@@ -642,6 +642,11 @@ class SpoolController(object):
         
         else:
             settings['acquisition_type'] = self.acquisition_type
+            
+            settings['analysis_mode'] = self.analysis_mode
+            settings['analysis_launch_mode'] = self.analysis_launch_mode
+            settings['analysis_rule_name'] = self.analysis_rule_name
+            
             settings.update(self.acquisition_types[self.acquisition_type].get_frozen_settings(self.scope, self)) 
             
             return settings
@@ -759,7 +764,7 @@ class SpoolController(object):
                         'seriesName': seriesName,
                         'inputs': {'input': seriesName}, # needed for recipes
                         'output_dir':  posixpath.split(seriesName)[0],
-                        'spooler': self.spooler, # for SpoolLocalLocalization rule completeness check
+                        'spooler': self.spooler.storage, # for SpoolLocalLocalization rule completeness check
                     }
 
                     rule =  rule_factory.get_rule(context=context)
@@ -781,8 +786,19 @@ class SpoolController(object):
                 if self._analysis_launchers.full():
                     self._analysis_launchers.get().join()
                 self._analysis_launchers.put(t)
+
+                self._rule_outputs = rule.output_files
         except:
             logger.exception('Error launching analysis')
+
+    def open_analysis(self):
+        """Open the currenly running analysis in PYMEVis"""
+        import subprocess
+        # get the URL
+        uri = self._rule_outputs['results'] + '?live'
+        subprocess.Popen('visgui %s' % uri, shell=True)
+
+
             
      
     # def launch_cluster_analysis(self):
