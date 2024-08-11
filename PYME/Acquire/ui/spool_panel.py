@@ -692,7 +692,9 @@ class SpoolingPane(afp.foldingPane):
             
     def OnSpoolingStarted(self, **kwargs):
         if self.spoolController.spoolType in ['Queue', 'Cluster']:
+            self.bAnalyse.SetLabel('Analyse')
             self.bAnalyse.Enable()
+            
 
         self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
@@ -736,7 +738,13 @@ class SpoolingPane(afp.foldingPane):
         #self.cascading_layout()
 
     def OnBAnalyse(self, event):
-        self.spoolController.LaunchAnalysis()
+        if self.bAnalyse.GetLabel() == 'Analyse':
+            self.spoolController.launch_analysis()
+            if self.spoolController.analysis_mode == 'rule-based':
+                self.bAnalyse.SetLabel('View')
+        else:
+            self.spoolController.open_analysis()
+
         
     
     def _tick(self, **kwargs):
