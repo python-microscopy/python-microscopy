@@ -173,10 +173,12 @@ class SpoolController(object):
         self.seriesCounter = 0
         self._series_name = None
 
-        self.acquisition_types = {'ZStackAcquisition': ZStackAcquisition,
+        self.acquisition_types = {
                                   'ProtocolAcquisition': ProtocolAcquisition,
                                  }
-
+        
+        if 'z' in scope.positioning.keys():
+            self.acquisition_types['ZStackAcquisition'] = ZStackAcquisition
         
         self.acquisition_type='ProtocolAcquisition'
         self.protocol_settings = ProtocolAcquisitionSettings()
