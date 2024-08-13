@@ -1,18 +1,20 @@
 import serial
 import time
 import threading
+from PYME.Acquire.Hardware.lasers import Laser
 
-class halogenlamp:
-    def __init__(self, name, portname='COM17', **kwargs):
+class OlympusIX81HalogenLamp(Laser):
+    def __init__(self, name, portname='COM17', turn_on=False, **kwargs):
         self.ser_port = serial.Serial(portname, 19200, parity='E',
                                       timeout=2, writeTimeout=2)
         self.lock = threading.Lock()
-        self.name= name
+        self.name = name
         self.powerControlable = False
-        self.isOn=True
-        self.TurnOn()
+        self.isOn = False
+        #self.TurnOn()
+        Laser.__init__(self, name, turn_on, **kwargs)
 
-    def query(self, command, lines_expected=1):
+    def _query(self, command, lines_expected=1):
         with self.lock:
             self.ser_port.reset_input_buffer()
             self.ser_port.write(command)
@@ -24,16 +26,24 @@ class halogenlamp:
         return self.isOn
         
     def TurnOn(self):
-        self.query(b'1LOG IN\r\n')
-        self.query(b'1LMPSW ON\r\n')
-        self.ser_port.flush()
+        # make sure serial is open
+        try:
+            self.ser_port.open()
+        except serial.SerialException:
+            pass
+
         self.isOn = True
 
+        # turn on the laser
+        self._query(b'1LOG IN\r\n', lines_expected=1)
+        self._query(b'1LMPSW ON\r\n', lines_expected=1)
+        self._query(b'1LOG OUT\r\n', lines_expected=1)
+        #self.ser_port.flush()
+
     def TurnOff(self):
-        self.query(b'1LMPSW OFF\r\n')
-        self.query(b'1LOG OUT\r\n')
-        self.ser_port.flush()
+        self._query(b'1LOG IN\r\n', lines_expected=1)
+        self._query(b'1LMPSW OFF\r\n', lines_expected=1)
+        self._query(b'1LOG OUT\r\n', lines_expected=1)
+        #self.ser_port.flush()
         self.isOn = False
 
-    def GetName(self):
-        return self.name
