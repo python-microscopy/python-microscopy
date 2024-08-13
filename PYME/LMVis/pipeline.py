@@ -509,12 +509,13 @@ class Pipeline(object):
         
         """
         from PYME import warnings
+        from pathlib import Path
         out = {}
         for k in self.recipe.inferred_data:
             ds = self.dataSources[k]
 
             if hasattr(ds, 'filename'):
-                fn = ds.filename
+                fn = str(Path(ds.filename).resolve()) # ensure we return an absolute path!
 
                 q = getattr(ds, 'query', None)
                 if q:
