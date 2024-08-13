@@ -61,10 +61,10 @@ import numpy as np
 
 #from PYME.DSView import eventLogViewer
 
-from PYME.LMVis.sessionpaths import make_session_relative, make_session_absolute
-
 from PYME.LMVis import statusLog
 #from PYME.recipes import recipeGui
+
+from PYME.LMVis.sessionpaths import make_session_paths_relative, make_session_paths_absolute
 
 class VisGUICore(object):
     @property
@@ -281,6 +281,7 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
+            self.AddMenuItem('File', "Load extra datasource into recipe namespace", self.OnLoadExtraDatasource)
             
         self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
         self.AddMenuItem('File', 'Save Session', self.OnSaveSession)
@@ -421,6 +422,26 @@ class VisGUICore(object):
         self.RefreshView()
         #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
+
+    def OnLoadExtraDatasource(self, event):
+
+        def ask(parent=None, message='', default_value=''):
+            with wx.TextEntryDialog(parent, message, value=default_value) as dlg:
+                dlg.ShowModal()
+                result = dlg.GetValue()
+            if result == '':
+                return None
+            else:
+                return result
+        
+        filename = wx.FileSelector("Choose a file to open", 
+                                   nameUtils.genResultDirectoryPath())
+        if filename == '':
+            return
+        dsname = ask(self,message='provide short name for datasource')
+        if dsname is None:
+            return
+        self.pipeline.load_extra_datasources(**{dsname:filename})
         
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
@@ -832,12 +853,17 @@ class VisGUICore(object):
         # TODO - View and layer settings
         session.update(self.glCanvas.get_session_info())
         if sessionpath is not None:
-            session = make_session_relative(session,sessionpath)
+            session = make_session_paths_relative(session,sessionpath)
         return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
     
     def save_session(self, filename):
+        if PYME.config.get('VisGUI-session_paths_relative',False):
+            sessionpath = filename
+        else:
+            sessionpath = None
+            
         with open(filename, 'w') as f:
-            f.write(self.get_session_yaml(sessionpath=filename))
+            f.write(self.get_session_yaml(sessionpath=sessionpath))
 
     def OnSaveSession(self, event):
         '''GUI callback to save session to a file, shows a file dialog'''
@@ -852,7 +878,7 @@ class VisGUICore(object):
         with open(filename, 'r') as f:
             session = yaml.safe_load(f)
 
-        session = make_session_absolute(session,filename)
+        session = make_session_paths_absolute(session,filename)
         self.pipeline.load_session(session)
 
         # load layers
