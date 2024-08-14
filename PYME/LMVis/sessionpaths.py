@@ -34,7 +34,10 @@ def fnq_string(fn,query):
 def fnstring_relative(fnstring,sessiondir):
     fnamep = Path(fnstring)
     if fnamep.is_absolute():
-        fnamerel = str(fnamep.relative_to(sessiondir)) # now make the filenames relative to the session dir path
+        try:
+            fnamerel = str(fnamep.relative_to(sessiondir)) # now make the filenames relative to the session dir path
+        except ValueError: # value error implies it is not possible to make a "clean" relative path
+            return None # signal via None, we do the further handling in the calling function
     else:
         fnamerel = fnstring
     return fnamerel
@@ -56,20 +59,30 @@ def get_session_dirP(sessionpath):
     
 # note that we do not touch any paths that are already relative
 # this means we can repeatedly call this on session objects without doing any damage
+from PYME import warnings
 def make_session_paths_relative(session,sessionpath):
     sessionrel = session.copy()
     sessiondir = get_session_dirP(sessionpath)
     for ds in session['datasources']:
         fname,query = parse_fnq(session['datasources'][ds])
-        sessionrel['datasources'][ds] = fnq_string(fnstring_relative(fname,sessiondir),query)
+        relstring = fnstring_relative(fname,sessiondir)
+        if relstring is None:
+            warnings.warn("cannot construct relative path from %s to %s, giving up and using absolute paths in session record"
+                          % (fname,sessiondir))
+            return session
+        sessionrel['datasources'][ds] = fnq_string(relstring,query)
     # users can request certain recipe module arguments to be also "path-translated" by registering the module/arguments
     for checkmod in checkmodules:
         for module in sessionrel['recipe']:
             if checkmod in module:
-                # print("PYMEcs.MBMcorrection in module")
                 for field in checkmodules[checkmod]:    
                     if field in module[checkmod]:
-                        module[checkmod][field] = fnstring_relative(module[checkmod][field],sessiondir)
+                        relstring = fnstring_relative(module[checkmod][field],sessiondir)
+                        if relstring is None:
+                            warnings.warn("cannot construct relative path from %s to %s, giving up and using absolute paths in session record"
+                                          % (module[checkmod][field],sessiondir))
+                            return session
+                        module[checkmod][field] = fnstring_relative(relstring,sessiondir)
     return sessionrel
 
 # note that we do not touch any paths that are already absolute
@@ -84,7 +97,6 @@ def make_session_paths_absolute(session,sessionpath):
     for checkmod in checkmodules:
         for module in sessionabs['recipe']:
             if checkmod in module:
-                # print("PYMEcs.MBMcorrection in module")
                 for field in checkmodules[checkmod]:    
                     if field in module[checkmod]:
                         module[checkmod][field] = fnstring_absolute(module[checkmod][field],sessiondir)
