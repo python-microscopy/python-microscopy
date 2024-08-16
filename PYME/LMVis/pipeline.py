@@ -799,6 +799,18 @@ class Pipeline(object):
 
         self.Rebuild()
 
+        # we need some way to calculate image bounds when loading a session
+        # - presumably this needs to happen after the Rebuild()?
+        # - there could also be an issue if the selectedDataSource only spans a subset of the image extent!
+        # - we therefore select 'FitResults' as datasource in the first attempt and fall back to the selected ds otherwise
+        if ('scanx' not in self.selectedDataSource.keys() or
+            'scany' not in self.selectedDataSource.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
+        elif 'FitResults' in self.dataSources.keys():
+            self.imageBounds = ImageBounds.estimateFromSource(self.dataSources['FitResults'])
+        else:
+            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+
     def _create_default_recipe(self, pixel_size= 1.0, ds_keys = []):
         from PYME.recipes.localisations import ProcessColour, Pipelineify
         from PYME.recipes.tablefilters import FilterTable
