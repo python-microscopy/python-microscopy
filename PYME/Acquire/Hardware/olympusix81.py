@@ -1,3 +1,13 @@
+"""
+Control the halogen lamp (transmitted light) on an Olympus IX81 stand.
+
+Uses the serial command set described at https://madhadron.com/science/olympus_ix81_commands.html
+
+TODO - move logic to an IX81 class which also allows control of other stand features and support more of the command set.
+TODO - some form of error handling
+TODO - consider re-writing the query function to try and match responses to commands (these are not guaranteed to be synchronous) 
+
+"""
 import serial
 import time
 import threading
