@@ -434,6 +434,9 @@ class ImageStack(object):
         self.mdh['ImageBounds.z0'] = value.z0
         self.mdh['ImageBounds.z1'] = value.z1
 
+    # PEP8 alias
+    image_bounds = imgBounds
+
     @property
     def metadata(self):
         return self.mdh

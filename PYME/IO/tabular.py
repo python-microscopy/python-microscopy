@@ -55,6 +55,8 @@ def deprecated_name(name):
     return _dec
 
 class TabularBase(object):
+    _image_bounds = False
+
     def toDataFrame(self, keys=None):
         warnings.warn('toDataFrame is deprecated, use to_pandas instead', DeprecationWarning)
         self.to_pandas(keys)
@@ -218,6 +220,22 @@ class TabularBase(object):
         for k in keys:
             d[k] = self[(k, return_slice)].tolist()
         return json.dumps(d)
+    
+    @property
+    def image_bounds(self):
+        if self._image_bounds is False:
+            from PYME.IO.image import ImageBounds
+
+            try:
+                if hasattr(self, 'mdh') and ('scanx' not in self.keys() or 'scany' not in self.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+                    self._image_bounds = ImageBounds.extractFromMetadata(self.mdh)
+                else:
+                    self._image_bounds = ImageBounds.estimateFromSource(self)
+            except:
+                logger.exception('Error estimating image bounds')
+                self._image_bounds = ImageBounds(0,0,0,0,0,0)
+
+        return self._image_bounds
 
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
