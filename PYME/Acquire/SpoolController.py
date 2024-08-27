@@ -173,10 +173,11 @@ class SpoolController(object):
         self.seriesCounter = 0
         self._series_name = None
 
-        self.acquisition_types = {'ZStackAcquisition': ZStackAcquisition,
+        self.acquisition_types = {
+                                  'ZStackAcquisition': ZStackAcquisition,
                                   'ProtocolAcquisition': ProtocolAcquisition,
                                  }
-
+        
         
         self.acquisition_type='ProtocolAcquisition'
         self.protocol_settings = ProtocolAcquisitionSettings()
