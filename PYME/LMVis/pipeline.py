@@ -309,7 +309,7 @@ class Pipeline(object):
         self.blobSettings = BlobSettings()
         self.objects = None
 
-        self.imageBounds = ImageBounds(0,0,0,0)
+        #self.imageBounds = ImageBounds(0,0,0,0)
         #self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.Triangles = None
@@ -342,7 +342,24 @@ class Pipeline(object):
     @property
     def mdh(self):
         return self.selectedDataSource.mdh
-            
+    
+    @property
+    def imageBounds(self):
+        x0, y0, x1, y1, z0, z1 = 0, 0, 0, 0, 0, 0
+        for ds in self.dataSources.values():
+            try:
+                ib = ds.image_bounds
+                x0 = min(x0, ib.x0)
+                y0 = min(y0, ib.y0)
+                x1 = max(x1, ib.x1)
+                y1 = max(y1, ib.y1)
+                z0 = min(z0, ib.z0)
+                z1 = max(z1, ib.z1)
+            except AttributeError:
+                pass
+
+        return ImageBounds(x0, y0, x1, y1, z0, z1)
+    
     @property
     def output(self):
         return self.colourFilter
@@ -874,15 +891,15 @@ class Pipeline(object):
             self.selectDataSource('FitResults')
 
         # Retrieve or estimate image bounds
-        if False:  # 'imgBounds' in kwargs.keys():
-            # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
-            # during real-time localization, to force image bounds to match raw data, but also potentially useful
-            # for other scenarios where metadata is not fully present.
-            self.imageBounds = kwargs['imgBounds']
-        elif ('scanx' not in self.selectedDataSource.keys() or 'scany' not in self.selectedDataSource.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
-            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
-        else:
-            self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
+        # if False:  # 'imgBounds' in kwargs.keys():
+        #     # TODO - why is this disabled? Current usage would appear to be when opening from LMAnalysis
+        #     # during real-time localization, to force image bounds to match raw data, but also potentially useful
+        #     # for other scenarios where metadata is not fully present.
+        #     self.imageBounds = kwargs['imgBounds']
+        # elif ('scanx' not in self.selectedDataSource.keys() or 'scany' not in self.selectedDataSource.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+        #     self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
+        # else:
+        #     self.imageBounds = ImageBounds.estimateFromSource(self.selectedDataSource)
         
         #self._process_colour()
 
