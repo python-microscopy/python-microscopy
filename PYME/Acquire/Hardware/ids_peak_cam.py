@@ -12,7 +12,9 @@ from PYME.Acquire import eventLog as event_log
 # The IDS Peak API supports uEye+ cameras (U3/GV models) as well as "almost all" uEye (UI models) 
 # to use this implementation, first install the IDS Peak SDK (our interface developed on version 2.6.2.0)
 # You'll have to download the IDS Peak SDK from the IDS website and install it.
-# install the ids_peak python package from their wheel in your IDS peak installation folder, e.g.:
+# IDS Peak 2.10 and on: install the ids_peak python package from pypi
+# https://pypi.org/project/ids-peak/
+# IDS Peak <2.10: install the ids_peak python package from their wheel in your IDS peak installation folder, e.g.:
 # C:\Program Files\IDS\ids_peak\sdk\api\binding\python\wheel\x86_[32|64]
 # pip install ids_peak-<version>-cp<version>-cp<version>[m]-[win32|win_amd64].whl
 # You can ignore the IPL / AFL wheels - these are for 'basic image processing' and 'auto features' libraries
