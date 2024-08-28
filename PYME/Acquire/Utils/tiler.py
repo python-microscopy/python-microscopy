@@ -13,11 +13,14 @@ from PYME.IO import acquisition_backends
 
 class Tiler(pointScanner.PointScanner, AcquisitionBase):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256, return_to_start=True, backend='file'):
+                 trigger='auto', base_tile_size=256, return_to_start=True, backend='file'):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
         """
+        
+        if trigger == 'auto':
+            trigger = scope.cam.supports_software_trigger
         
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
@@ -60,7 +63,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
                     dwelltime=settings.get('dwelltime', 1),
                     background=settings.get('background', 0),
                     evtLog=settings.get('evtLog', False),
-                    trigger=settings.get('software_trigger', False),
+                    trigger=settings.get('software_trigger', 'auto'),
                     base_tile_size=settings.get('base_tile_size', 256),
                     return_to_start=settings.get('return_to_start', True),
                     backend=backend)

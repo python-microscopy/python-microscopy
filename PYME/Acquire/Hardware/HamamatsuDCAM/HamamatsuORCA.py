@@ -106,6 +106,7 @@ class DCAMZeroBufferedException(Exception):
 
 class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
     numpy_frames = 1
+    supports_software_trigger = True
 
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)

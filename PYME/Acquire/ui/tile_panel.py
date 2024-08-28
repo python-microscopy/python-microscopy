@@ -80,12 +80,7 @@ class TilePanel(wx.Panel):
         
         self.SetSizerAndFit(vsizer)
         
-    def OnGo(self, event=None):
-        # run a triggered tile acquisition if the camera is capable
-        # FIXME - the hasattr test becomes problematic once we add FireSoftwareTrigger to our base camera class (to
-        # document API)
-        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
-        
+    def OnGo(self, event=None):        
         backend = 'file'
         if self.rbSpoolCluster.GetValue():
             backend = 'cluster'
@@ -101,7 +96,7 @@ class TilePanel(wx.Panel):
         
         self.scope.tiler = tiler.Tiler(self.scope, tile_dir = tile_dir,
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
-                                       trigger=trigger, backend=backend)
+                                       backend=backend)
         
         self.bStop.Enable()
         self.bGo.Disable()
