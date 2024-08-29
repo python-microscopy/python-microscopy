@@ -4,6 +4,7 @@ import numpy as np
 import time
 from PYME.IO import MetaDataHandler
 import os
+import datetime
 from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
@@ -12,8 +13,10 @@ from PYME.Acquire.acquisition_base import AcquisitionBase
 from PYME.IO import acquisition_backends
 
 class Tiler(pointScanner.PointScanner, AcquisitionBase):
+    FILE_EXTENSION = '.tiles' # TODO - make .zarr compatable and use .zarr instead
+    
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger='auto', base_tile_size=256, return_to_start=True, backend='file'):
+                 trigger='auto', base_tile_size=256, return_to_start=True, backend='file', backend_kwargs={}):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
@@ -53,20 +56,18 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
             backend='file'
         else:
             raise ValueError('Unknown backend')
+
+        tiling_settings = {
+            'tile_dir': series_name,
+        }
+
+        tiling_settings.update(settings.get('tiling_settings', scope.tile_settings))
         
-        tile_dir = settings.get('tile_dir', series_name)
-        
-        return cls(scope=scope, 
-                    tile_dir=tile_dir, 
-                    n_tiles=settings.get('n_tiles', 10), 
-                    tile_spacing=settings.get('tile_spacing', None),
-                    dwelltime=settings.get('dwelltime', 1),
-                    background=settings.get('background', 0),
-                    evtLog=settings.get('evtLog', False),
-                    trigger=settings.get('software_trigger', 'auto'),
-                    base_tile_size=settings.get('base_tile_size', 256),
-                    return_to_start=settings.get('return_to_start', True),
-                    backend=backend)
+        return cls(scope=scope, backend=backend, **tiling_settings)
+    
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        return {'tiling_settings': getattr(scope, 'tile_settings', {})}
         
     def start(self):
         #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()
@@ -104,6 +105,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
                                            pixel_size=self._pixel_size)
         
         pointScanner.PointScanner.start(self)
+
+        self.dtStart = datetime.datetime.now()
+        self.frame_num = 0
         
     def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
@@ -121,6 +125,8 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         #print(pos['x'], pos['y'], x_i, y_i, d.min(), d.max())
         
         self.P.update_base_tiles_from_frame(x_i, y_i, d)
+
+        self.frame_num += 1
         
         t = time.time()
         if t > (self._last_update_time + 1):
@@ -157,6 +163,35 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
 
     def md(self):
         return self.mdh
+    
+    def _launch_viewer(self):
+        # TODO - move to a UI module
+        import subprocess
+        import sys
+        import webbrowser
+        import time
+        import requests
+        import os
+
+        # abs path the tile dir
+        tiledir = self._tiledir
+        if not os.path.isabs(tiledir):
+            # TODO - should we be doing the `.isabs()` check on the parent directory instead?
+            from PYME.IO.FileUtils import nameUtils
+            tiledir = nameUtils.getFullFilename(tiledir)
+        
+        try:  # if we already have a tileviewer serving, change the directory
+            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % tiledir)
+        except requests.ConnectionError:  # start a new process
+            try:
+                pargs = {'creationflags': subprocess.CREATE_NEW_CONSOLE}
+            except AttributeError:  # not on windows
+                pargs = {'shell': True}
+            
+            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, tiledir), **pargs)
+            time.sleep(3)
+            
+        webbrowser.open('http://127.0.0.1:8979/')
 
 class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,

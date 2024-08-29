@@ -422,6 +422,10 @@ class SpoolController(object):
             self._status_changed_condition.notify_all()
             
         self.onSpoolProgress.send(self)
+
+    @property
+    def acquistion_cls(self):
+        return self.acquisition_types[self.acquisition_type]
         
     def _get_queue_name(self, fn, pcs=False, subdirectory=None):
         """ Get fully resolved uri to spool to
@@ -446,6 +450,9 @@ class SpoolController(object):
             ext = '.pcs'
         else:
             ext = '.h5'
+
+        # allow acquisition types (e.g. tiling) to specify their own extension
+        ext = getattr(self.acquistion_cls, 'FILE_EXTENSION', ext)
         
         return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
@@ -550,7 +557,7 @@ class SpoolController(object):
 
         
         try:
-            self.spooler = self.acquisition_types[acquisition_type].from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
+            self.spooler = self.acquisition_cls.from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
         except KeyError:
             raise RuntimeError('Unknown acquisition type %s' % acquisition_type)
         
