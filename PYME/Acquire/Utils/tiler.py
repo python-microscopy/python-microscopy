@@ -68,6 +68,16 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
     @classmethod
     def get_frozen_settings(cls, scope, spool_controller=None):
         return {'tiling_settings': getattr(scope, 'tile_settings', {})}
+    
+    @classmethod
+    def get_tiled_area(cls, scope, settings):
+        fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+        #calculate tile spacing such that there is 20% overlap.
+        tile_spacing = settings.get(0.8*fs*np.array(scope.GetPixelSize()))
+
+        nx, ny = settings.get('n_tiles', (10, 10))
+        return nx * fs[0] * tile_spacing[0], ny * fs[1] * tile_spacing[1]
+
         
     def start(self):
         #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()

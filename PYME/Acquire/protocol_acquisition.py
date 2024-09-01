@@ -108,7 +108,7 @@ class ProtocolAcquisition(AcquisitionBase):
             # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
             raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
         
-        protocol = spool_controller.protocol_settings.get_protocol_for_acquistion(settings=settings)
+        protocol = spool_controller.protocol_settings.get_protocol_for_acquisition(settings=settings)
         
         preflight_mode = settings.get('preflight_mode', 'interactive')
         if (preflight_mode != 'skip'):

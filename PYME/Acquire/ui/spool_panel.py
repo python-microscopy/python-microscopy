@@ -441,15 +441,20 @@ class SpoolingPane(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.bStartSpool = wx.Button(self.spoolProgPan, -1, 'Start', style=wx.BU_EXACTFIT)
-        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
+        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnStartStopButton)
         #self.bStartSpool.SetDefault()
         hsizer.Add(self.bStartSpool, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bView = wx.Button(self.spoolProgPan, -1, 'View', style=wx.BU_EXACTFIT)
+        self.bView.Bind(wx.EVT_BUTTON, self.OnViewButton)
+        hsizer.Add(self.bView, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bView.Enable(False)
     
-        self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop', style=wx.BU_EXACTFIT)
-        self.bStopSpooling.Enable(False)
-        self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
+        # self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop', style=wx.BU_EXACTFIT)
+        # self.bStopSpooling.Enable(False)
+        # self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
     
-        hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        # hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
         self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse', style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
@@ -686,10 +691,18 @@ class SpoolingPane(afp.foldingPane):
 
         try:
             self.spoolController.start_spooling(fn)
+            return True
         except IOError as e:
             logger.exception('IO error whilst spooling')
             ans = wx.MessageBox(str(e.strerror), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+            return False
+
+    def OnStartStopButton(self, event=None):
+        if self.bStartSpool.GetLabel() == 'Start':
+            self.OnBStartSpoolButton(event)
+        else:
+            self.OnBStopSpoolingButton(event)
             
     def update_ui(self):
         self.cbCompress.SetValue(self.spoolController.hdf_compression_level > 0)
@@ -700,23 +713,21 @@ class SpoolingPane(afp.foldingPane):
         if self.spoolController.spoolType in ['Queue', 'Cluster']:
             self.bAnalyse.SetLabel('Analyse')
             self.bAnalyse.Enable()
+            self.bView.Enable() # todo - does this make sense for tiling?
+        else:
+            self.bView.Enable(False)
             
 
-        self.bStartSpool.Enable(False)
+        #self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
-        self.bStopSpooling.Enable(True)
+        #self.bStopSpooling.Enable(True)
+        self.bStartSpool.SetLabel('Stop')
         #self.stSpoolingTo.Enable(True)
         #self.stNImages.Enable(True)
         self.stSpoolingTo.SetForegroundColour(None)
         self.stNImages.SetForegroundColour(None)
         self.stSpoolingTo.SetLabel('Spooling to ' + self.spoolController.seriesName)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
-        
-        
-
-    def OnBStartStackButton(self, event=None):
-        """GUI callback to start spooling with z-stepping."""
-        self.OnBStartSpoolButton(stack=True)
         
 
     def OnBStopSpoolingButton(self, event):
@@ -725,9 +736,11 @@ class SpoolingPane(afp.foldingPane):
         #self.OnSpoolingStopped()
         
     def OnSpoolingStopped(self, **kwargs):
-        self.bStartSpool.Enable(True)
+        self.bStartSpool.SetLabel('Start')
+        self.bView.Enable(True)
+        #self.bStartSpool.Enable(True)
         #self.bStartStack.Enable(True)
-        self.bStopSpooling.Enable(False)
+        #self.bStopSpooling.Enable(False)
         #self.stSpoolingTo.Enable(False)
         #self.stNImages.Enable(False)
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
@@ -747,9 +760,12 @@ class SpoolingPane(afp.foldingPane):
         if self.bAnalyse.GetLabel() == 'Analyse':
             self.spoolController.launch_analysis()
             if self.spoolController.analysis_mode == 'rule-based':
-                self.bAnalyse.SetLabel('View')
+                self.bAnalyse.SetLabel('View Results')
         else:
             self.spoolController.open_analysis()
+
+    def OnViewButton(self, event):
+        self.spoolController.open_view()
 
         
     

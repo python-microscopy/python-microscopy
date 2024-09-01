@@ -94,7 +94,7 @@ class ProtocolAcquisitionSettings(object):
             self.protocolZ.filename = protocolName
             self.z_dwell = self.protocolZ.dwellTime
 
-    def get_protocol_for_acquistion(self, settings={}):
+    def get_protocol_for_acquisition(self, settings={}):
         stack = settings.get('z_stepped', self.z_stepped)
         stack_settings = settings.get('stack_settings', None)
         
@@ -424,7 +424,7 @@ class SpoolController(object):
         self.onSpoolProgress.send(self)
 
     @property
-    def acquistion_cls(self):
+    def acquisition_cls(self):
         return self.acquisition_types[self.acquisition_type]
         
     def _get_queue_name(self, fn, pcs=False, subdirectory=None):
@@ -452,7 +452,7 @@ class SpoolController(object):
             ext = '.h5'
 
         # allow acquisition types (e.g. tiling) to specify their own extension
-        ext = getattr(self.acquistion_cls, 'FILE_EXTENSION', ext)
+        ext = getattr(self.acquisition_cls, 'FILE_EXTENSION', ext)
         
         return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
@@ -755,11 +755,7 @@ class SpoolController(object):
                 warnings.warn('Analysis is only supported for cluster spooling', category=RuntimeWarning)
         
             if self.analysis_mode == 'interactive':
-                dh5view_cmd = 'dh5view'
-                if sys.platform == 'win32':
-                    dh5view_cmd = 'dh5view.exe'
-
-                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+                subprocess.Popen('%s %s' % (self.dh5view_cmd, self.spooler.getURL()), shell=True)
 
             elif self.analysis_mode == 'rule-based':
                 seriesName = self.spooler.getURL()
@@ -799,12 +795,43 @@ class SpoolController(object):
         except:
             logger.exception('Error launching analysis')
 
+    # TODO - do these belong here?
+    @property
+    def pymevis_cmd(self):
+        if sys.platform == 'win32':
+            return 'PYMEVis.exe'
+        else:
+            return 'PYMEVis'
+        
+    @property
+    def pymeimage_cmd(self):
+        if sys.platform == 'win32':
+            return 'PYMEImage.exe'
+        else:
+            return 'PYMEImage'
+    
+    dh5view_cmd = pymeimage_cmd
+    
     def open_analysis(self):
         """Open the currenly running analysis in PYMEVis"""
         import subprocess
+        
+        output = self._rule_outputs.get('results')
+        
         # get the URL
-        uri = self._rule_outputs['results'] + '?live'
-        subprocess.Popen('visgui %s' % uri, shell=True)
+        if output.endswith('.h5r'):
+            uri = output + '?live'
+            subprocess.Popen('%s %s' % (self.pymevis_cmd, uri), shell=True)
+        elif output.endswith('.h5') or output.endswith('.tif'):
+            uri = output
+            subprocess.Popen('%s %s' % (self.pymeimage_cmd, uri), shell=True)
+
+    def open_view(self):
+        if hasattr(self.spooler, '_launch_viewer'):
+            # TODO - make less special case - maybe defer normal launch to the spooler as well
+            self.spooler._launch_viewer()
+        else:
+            subprocess.Popen('%s %s' % (self.pymeimage_cmd, self.spooler.getURL()), shell=True)
 
 
             
