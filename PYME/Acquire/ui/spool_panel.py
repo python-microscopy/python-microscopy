@@ -376,15 +376,18 @@ class SpoolingPane(afp.foldingPane):
         _settings_box_name = ''
 
         for i, aq_type in enumerate(self.spoolController.acquisition_types):
-            pane, name = self.acquisition_uis[aq_type]
-            btn = wx.RadioButton(pan, -1, name, style=(wx.RB_GROUP if i == 0 else 0))
-            btn.aq_type = aq_type
-            btn.SetValue(aq_type == self.spoolController.acquisition_type)
-            if aq_type == self.spoolController.acquisition_type:
-                _settings_box_name = f'{name} Settings'
-            btn.Bind(wx.EVT_RADIOBUTTON, self.OnAqTypeChanged)
-            vsizer.Add(btn, 0, wx.ALL | wx.EXPAND, 2)
-            self._aq_type_btns.append(btn)
+            try:
+                pane, name = self.acquisition_uis[aq_type]
+                btn = wx.RadioButton(pan, -1, name, style=(wx.RB_GROUP if i == 0 else 0))
+                btn.aq_type = aq_type
+                btn.SetValue(aq_type == self.spoolController.acquisition_type)
+                if aq_type == self.spoolController.acquisition_type:
+                    _settings_box_name = f'{name} Settings'
+                btn.Bind(wx.EVT_RADIOBUTTON, self.OnAqTypeChanged)
+                vsizer.Add(btn, 0, wx.ALL | wx.EXPAND, 2)
+                self._aq_type_btns.append(btn)
+            except KeyError:
+                logger.warn(f'No UI defined for acquisition type {aq_type}')
 
     
         v1.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
@@ -392,11 +395,14 @@ class SpoolingPane(afp.foldingPane):
         vsizer = wx.StaticBoxSizer(self.sbAqSettings, wx.VERTICAL)
 
         for i, aq_type in enumerate(self.spoolController.acquisition_types):
-            pane, name = self.acquisition_uis[aq_type]
+            try:
+                pane, name = self.acquisition_uis[aq_type]
 
-            pane.Reparent(pan)
-            vsizer.Add(pane, 1, wx.ALL | wx.EXPAND, 2)
-            pane.Show(aq_type == self.spoolController.acquisition_type)
+                pane.Reparent(pan)
+                vsizer.Add(pane, 1, wx.ALL | wx.EXPAND, 2)
+                pane.Show(aq_type == self.spoolController.acquisition_type)
+            except KeyError:
+                pass
         
         v1.Add(vsizer, 0, wx.ALL | wx.EXPAND, 0)
         pan.SetSizerAndFit(v1)
