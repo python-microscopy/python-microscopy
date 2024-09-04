@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # the idea of this module is to provide two functions to make paths either relative or absolute in session objects
 # typically this will be relative to the '.pvs' session file path
@@ -13,6 +14,8 @@ checkmodules = {}
 # can this possibly be autoregistered by modifying the FileOrURI object suitably?
 def register_path_modulechecks(module,*entries):
     checkmodules[module] = entries
+
+SESSIONDIR_TOKEN = '$session_dir$'
 
 def fnstring_absolute(fnstring,sessiondir):
     fnamep = Path(fnstring)
@@ -93,13 +96,13 @@ def process_recipe_paths(recipe,sessiondir):
             if param in checkmodules.get(modname,[]):
                 relstring = fnstring_relative(paramdict[param],sessiondir)
                 if relstring is not None:
-                    paramdict[param] = '$session_dir$/' + relstring
+                    paramdict[param] = os.path.join(SESSIONDIR_TOKEN,relstring)
 
 from PYME.IO.unifiedIO import is_cluster_uri
 def resolve_relative_session_paths(session):
     for ds in session['datasources']:
         fname,query = parse_fnq(session['datasources'][ds])
-        if not is_cluster_uri(fname) and not Path(fname).is_absolute() and not fname.startswith('$session_dir$'):
+        if not is_cluster_uri(fname) and not Path(fname).is_absolute() and not fname.startswith(SESSIONDIR_TOKEN):
             session['datasources'][ds] = fnq_string(Path(fname).resolve(),query)
 
 def check_session_paths(session,sessiondir):
@@ -108,7 +111,7 @@ def check_session_paths(session,sessiondir):
         session['relative_paths'] = True
         for ds in session['datasources']:
             fname,query = parse_fnq(session['datasources'][ds])
-            pathstring = '$session_dir$/' + fnstring_relative(fname,sessiondir)
+            pathstring = os.path.join(SESSIONDIR_TOKEN,fnstring_relative(fname,sessiondir))
             session['datasources'][ds] = fnq_string(pathstring,query)
         process_recipe_paths(session['recipe'],sessiondir)
     else:

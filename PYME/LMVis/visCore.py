@@ -871,10 +871,10 @@ class VisGUICore(object):
     def load_session(self, filename):
         import yaml
         from pathlib import Path
-        from PYME.LMVis.sessionpaths import make_session_paths_absolute_compat
+        from PYME.LMVis.sessionpaths import make_session_paths_absolute_compat, SESSIONDIR_TOKEN
         fpath = Path(filename)
         sessiondir = fpath.resolve().parent # note that filename could be relative, in that case need to resolve to obtain session dir
-        session = yaml.safe_load(fpath.read_text().replace('$session_dir$',str(sessiondir)))
+        session = yaml.safe_load(fpath.read_text().replace(SESSIONDIR_TOKEN,str(sessiondir)))
 
         session = make_session_paths_absolute_compat(session,filename) # keep only briefly for compatibility with few existing files
         self.pipeline.load_session(session)
