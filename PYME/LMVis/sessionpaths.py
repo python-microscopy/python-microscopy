@@ -10,9 +10,43 @@ checkmodules = {}
 
 # it seems best to request this directly in the python files in which the modules are defined
 # example:     register_modulecheck('PYMEcs.MBMcorrection','mbmfile','mbmsettings')
-# can this possibly be autoregistered by modifying the Traits.File object suitably?
+# can this possibly be autoregistered by modifying the FileOrURI object suitably?
 def register_path_modulechecks(module,*entries):
     checkmodules[module] = entries
+
+def fnstring_absolute(fnstring,sessiondir):
+    fnamep = Path(fnstring)
+    if fnamep.is_absolute():
+        fnameabs = fnstring
+    else:
+        fnameabs = str(sessiondir / fnamep) # now make the filenames relative to the session dir path
+    return fnameabs
+
+def get_session_dirP(sessionpath):
+    sessionpathp = Path(sessionpath)
+    abspath = sessionpathp.resolve()
+    sessiondir = abspath.parent # get the directory part of this absolute path
+
+    return sessiondir # return sessiondir as Path object
+    
+
+# note that we do not touch any paths that are already absolute
+# this means we can repeatedly call this on session objects without doing any damage
+# this function only briefly kept for compatibility until all pvs rewritten
+def make_session_paths_absolute_compat(session,sessionpath):
+    sessionabs = session.copy()
+    sessiondir = get_session_dirP(sessionpath)
+    for ds in session['datasources']:
+        fname,query = parse_fnq(session['datasources'][ds])
+        sessionabs['datasources'][ds] = fnq_string(fnstring_absolute(fname,sessiondir),query)
+    # users can request certain recipe module arguments to be also "path-translated" by registering the module/arguments
+    for checkmod in checkmodules:
+        for module in sessionabs['recipe']:
+            if checkmod in module:
+                for field in checkmodules[checkmod]:    
+                    if field in module[checkmod]:
+                        module[checkmod][field] = fnstring_absolute(module[checkmod][field],sessiondir)
+    return sessionabs
 
 # split filename?query type string in fname and query parts
 def parse_fnq(dsfnstr):
@@ -36,68 +70,47 @@ def fnstring_relative(fnstring,sessiondir):
     if fnamep.is_absolute():
         try:
             fnamerel = str(fnamep.relative_to(sessiondir)) # now make the filenames relative to the session dir path
-        except ValueError: # value error implies it is not possible to make a "clean" relative path
+        except ValueError: # value error implies it is not possible to make a "clean" relative path, i.e. that the file fnstring is not truely below sessiondir
             return None # signal via None, we do the further handling in the calling function
     else:
         fnamerel = fnstring
     return fnamerel
 
-def fnstring_absolute(fnstring,sessiondir):
-    fnamep = Path(fnstring)
-    if fnamep.is_absolute():
-        fnameabs = fnstring
+def allpaths_relative_to(session,sessiondir):
+    # currently we only check data sources, NOT recipe FileOrURI entries
+    for ds in session['datasources']:
+        fname,query = parse_fnq(session['datasources'][ds])
+        if not Path(fname).is_relative_to(sessiondir):
+            return False
+    return True
+
+# now a little nicer
+def process_recipe_paths(recipe,sessiondir):
+    # users can request certain recipe module arguments to be "path-translated" by registering the module/arguments
+    for module in recipe:
+        [(modname,paramdict)] = module.items()
+        for param in paramdict:
+            if param in checkmodules.get(modname,[]):
+                relstring = fnstring_relative(paramdict[param],sessiondir)
+                if relstring is not None:
+                    paramdict[param] = '$session_dir$/' + relstring
+
+from PYME.IO.unifiedIO import is_cluster_uri
+def resolve_relative_session_paths(session):
+    for ds in session['datasources']:
+        fname,query = parse_fnq(session['datasources'][ds])
+        if not is_cluster_uri(fname) and not Path(fname).is_absolute() and not fname.startswith('$session_dir$'):
+            session['datasources'][ds] = fnq_string(Path(fname).resolve(),query)
+
+def check_session_paths(session,sessiondir):
+    resolve_relative_session_paths(session) # if started from command line some ds paths may be relative
+    if allpaths_relative_to(session,sessiondir):
+        session['relative_paths'] = True
+        for ds in session['datasources']:
+            fname,query = parse_fnq(session['datasources'][ds])
+            pathstring = '$session_dir$/' + fnstring_relative(fname,sessiondir)
+            session['datasources'][ds] = fnq_string(pathstring,query)
+        process_recipe_paths(session['recipe'],sessiondir)
     else:
-        fnameabs = str(sessiondir / fnamep) # now make the filenames relative to the session dir path
-    return fnameabs
-
-def get_session_dirP(sessionpath):
-    sessionpathp = Path(sessionpath)
-    abspath = sessionpathp.resolve()
-    sessiondir = abspath.parent # get the directory part of this absolute path
-
-    return sessiondir # return sessiondir as Path object
-    
-# note that we do not touch any paths that are already relative
-# this means we can repeatedly call this on session objects without doing any damage
-from PYME import warnings
-def make_session_paths_relative(session,sessionpath):
-    sessionrel = session.copy()
-    sessiondir = get_session_dirP(sessionpath)
-    for ds in session['datasources']:
-        fname,query = parse_fnq(session['datasources'][ds])
-        relstring = fnstring_relative(fname,sessiondir)
-        if relstring is None:
-            warnings.warn("cannot construct relative path from %s to %s, giving up and using absolute paths in session record"
-                          % (fname,sessiondir))
-            return session
-        sessionrel['datasources'][ds] = fnq_string(relstring,query)
-    # users can request certain recipe module arguments to be also "path-translated" by registering the module/arguments
-    for checkmod in checkmodules:
-        for module in sessionrel['recipe']:
-            if checkmod in module:
-                for field in checkmodules[checkmod]:    
-                    if field in module[checkmod]:
-                        relstring = fnstring_relative(module[checkmod][field],sessiondir)
-                        if relstring is None:
-                            warnings.warn("cannot construct relative path from %s to %s, giving up and using absolute paths in session record"
-                                          % (module[checkmod][field],sessiondir))
-                            return session
-                        module[checkmod][field] = fnstring_relative(relstring,sessiondir)
-    return sessionrel
-
-# note that we do not touch any paths that are already absolute
-# this means we can repeatedly call this on session objects without doing any damage
-def make_session_paths_absolute(session,sessionpath):
-    sessionabs = session.copy()
-    sessiondir = get_session_dirP(sessionpath)
-    for ds in session['datasources']:
-        fname,query = parse_fnq(session['datasources'][ds])
-        sessionabs['datasources'][ds] = fnq_string(fnstring_absolute(fname,sessiondir),query)
-    # users can request certain recipe module arguments to be also "path-translated" by registering the module/arguments
-    for checkmod in checkmodules:
-        for module in sessionabs['recipe']:
-            if checkmod in module:
-                for field in checkmodules[checkmod]:    
-                    if field in module[checkmod]:
-                        module[checkmod][field] = fnstring_absolute(module[checkmod][field],sessiondir)
-    return sessionabs
+        session['relative_paths'] = False
+        

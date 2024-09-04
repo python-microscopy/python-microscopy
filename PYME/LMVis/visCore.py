@@ -64,8 +64,6 @@ import numpy as np
 from PYME.LMVis import statusLog
 #from PYME.recipes import recipeGui
 
-from PYME.LMVis.sessionpaths import make_session_paths_relative, make_session_paths_absolute
-
 class VisGUICore(object):
     @property
     def _win(self):
@@ -846,24 +844,21 @@ class VisGUICore(object):
 
     def get_session_yaml(self,sessionpath=None):
         import yaml
+        import os
         from PYME.recipes.base import MyDumper
-        session = {'format_version': 0.1,}
+        from PYME.LMVis.sessionpaths import check_session_paths
+        session = {'format_version': 0.1,} # increment?
         session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
 
         # TODO - View and layer settings
         session.update(self.glCanvas.get_session_info())
         if sessionpath is not None:
-            session = make_session_paths_relative(session,sessionpath)
+            check_session_paths(session,os.path.dirname(sessionpath))
         return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
     
-    def save_session(self, filename):
-        if PYME.config.get('VisGUI-session_paths_relative',False):
-            sessionpath = filename
-        else:
-            sessionpath = None
-            
+    def save_session(self, filename):           
         with open(filename, 'w') as f:
-            f.write(self.get_session_yaml(sessionpath=sessionpath))
+            f.write(self.get_session_yaml(sessionpath=filename))
 
     def OnSaveSession(self, event):
         '''GUI callback to save session to a file, shows a file dialog'''
@@ -875,10 +870,13 @@ class VisGUICore(object):
     
     def load_session(self, filename):
         import yaml
-        with open(filename, 'r') as f:
-            session = yaml.safe_load(f)
+        from pathlib import Path
+        from PYME.LMVis.sessionpaths import make_session_paths_absolute_compat
+        fpath = Path(filename)
+        sessiondir = fpath.resolve().parent # note that filename could be relative, in that case need to resolve to obtain session dir
+        session = yaml.safe_load(fpath.read_text().replace('$session_dir$',str(sessiondir)))
 
-        session = make_session_paths_absolute(session,filename)
+        session = make_session_paths_absolute_compat(session,filename) # keep only briefly for compatibility with few existing files
         self.pipeline.load_session(session)
 
         # load layers

@@ -508,14 +508,13 @@ class Pipeline(object):
         Return a dictionary of datasources which are suitable for listing in a session file
         
         """
-        from PYME import warnings
-        from pathlib import Path
+        from PYME import warning
         out = {}
         for k in self.recipe.inferred_data:
             ds = self.dataSources[k]
 
             if hasattr(ds, 'filename'):
-                fn = str(Path(ds.filename).resolve()) # ensure we return an absolute path!
+                fn = ds.filename
 
                 q = getattr(ds, 'query', None)
                 if q:
