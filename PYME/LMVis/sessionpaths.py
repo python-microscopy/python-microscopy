@@ -1,10 +1,14 @@
 from pathlib import Path
 import os
 from traits.trait_errors import TraitError
+
 # this module provides a function 'check_session_paths' to check session paths in session dictionaries
 # enabling using paths relative to a session directory (where the .pvs resides)
 # this is done IF and ONLY IF all datasource paths are below that session directory
 # in doing so it also carries out these path checks for traits parameters of the FileOrURI type in recipes
+
+import logging
+logger = logging.getLogger(__name__)
 
 # a dict of recipe module names with recipe parameters to check, contents populated at runtime
 checkmodules = {}
@@ -137,6 +141,7 @@ def resolve_relative_session_paths(session):
 def check_session_paths(session,sessiondir):
     resolve_relative_session_paths(session) # if started from command line some ds paths may be relative
     if allpaths_relative_to(session,sessiondir):
+        logger.debug('path are all below session dir, rewriting paths with SESSIONDIR_TOKEN')
         session['relative_paths'] = True
         for ds in session['datasources']:
             fname,query = parse_fnq(session['datasources'][ds])
@@ -144,5 +149,6 @@ def check_session_paths(session,sessiondir):
             session['datasources'][ds] = fnq_string(pathstring,query)
         process_recipe_paths(session['recipe'],sessiondir)
     else:
+        logger.debug('some paths not below session dir, leaving paths unchanged')
         session['relative_paths'] = False
         
