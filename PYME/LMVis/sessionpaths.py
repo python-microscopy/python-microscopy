@@ -48,6 +48,9 @@ def chk_fou_modules_registered():
     
 SESSIONDIR_TOKEN = '$session_dir$'
 
+####
+#### BEGIN BLOCK remaining functions for compatibility reading - REMOVE EVENTUALLY
+####
 def fnstring_absolute(fnstring,sessiondir):
     fnamep = Path(fnstring)
     if fnamep.is_absolute():
@@ -82,6 +85,10 @@ def make_session_paths_absolute_compat(session,sessionpath):
                     if field in module[checkmod]:
                         module[checkmod][field] = fnstring_absolute(module[checkmod][field],sessiondir)
     return sessionabs
+
+####
+#### END BLOCK remaining functions for compatibility reading - REMOVE EVENTUALLY
+####
 
 # split filename?query type string in fname and query parts
 def parse_fnq(dsfnstr):
