@@ -73,6 +73,7 @@ def calcCorrShift(im1, im2):
     y_ = np.arange(xct.shape[1]) - xct.shape[1]/2
 
     xc = xc - xc.min()
+    # TODO - subtract half max instead??
     xc = np.maximum(xc - xc.mean(), 0)
 
     s = xc.sum()
@@ -81,18 +82,6 @@ def calcCorrShift(im1, im2):
     dy = (xc*y_[None, :]).sum()/s
 
     return dx, dy, s
-
-    #figure(1)
-    #imshow(xct)
-
-    #dx, dy =  ndimage.measurements.center_of_mass(xct)
-
-    #print np.where(xct==xct.max())
-    #TODO - do COI based shift estimation, rather than just max
-
-    dx, dy = np.where(xct==xct.max())
-
-    return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2, xct.max()
 
 def genDark(ds, mdh, blur=2):
     df = mdh.getEntry('Protocol.DarkFrameRange')
