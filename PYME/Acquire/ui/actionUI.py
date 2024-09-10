@@ -640,7 +640,7 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         if delay > 0:
             execute_after = time.time() + delay
         else:
-            execute_after = 0
+            execute_after = time.time()
 
         #self.actionManager.QueueAction(functionName, args, nice, timeout,
         #                               max_duration, execute_after=execute_after)'
