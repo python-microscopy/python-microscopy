@@ -11,12 +11,13 @@ logger = logging.getLogger(__name__)
 
 from PYME.Acquire.acquisition_base import AcquisitionBase
 from PYME.IO import acquisition_backends
+from PYME.Acquire import eventLog
 
 class Tiler(pointScanner.PointScanner, AcquisitionBase):
     FILE_EXTENSION = '.tiles' # TODO - make .zarr compatable and use .zarr instead
     
-    def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger='auto', base_tile_size=256, return_to_start=True, backend='file', backend_kwargs={}):
+    def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=None,
+                 trigger='auto', base_tile_size=256, return_to_start=True, save_raw=False, backend='file', backend_kwargs={}):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
@@ -24,13 +25,22 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         
         if trigger == 'auto':
             trigger = scope.cam.supports_software_trigger
+
+        if evtLog is None:
+            if save_raw:
+                evtLog = True
+            else:
+                evtLog = False
+        
+        fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
         
         if tile_spacing is None:
-            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
             #calculate tile spacing such that there is 20% overlap.
-            tile_spacing = 0.8*fs*np.array(scope.GetPixelSize())
+            tile_spacing = 0.8
+        
+        tile_spacing_um = tile_spacing*fs*np.array(scope.GetPixelSize())
             
-        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,
+        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing_um,
                                            dwelltime=dwelltime, background=background, avg=False, evtLog=evtLog,
                                            trigger=trigger, stop_on_complete=True, return_to_start=return_to_start)
         
@@ -39,8 +49,27 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         self._flat = None #currently not used
         
         self._last_update_time = 0
+
+        if backend is acquisition_backends.ClusterBackend:
+            self._backend='cluster'
+        elif backend is acquisition_backends.HDFBackend:
+            self._backend='file'
+        else:
+            raise ValueError('Unknown backend')
+
+        # save the raw frames as well as the constructed pyramid - useful if we want to do something
+        # fancy like cross-correlation based alignment of raw frames before stitching
+        self._save_raw = save_raw
+        if save_raw:
+            if (self._backend == 'cluster') and not backend_kwargs.get('cluster_h5', False):
+                fn = 'raw_frames.pcs'
+            else:
+                fn = 'raw_frames.h5'
+
+            
+            os.makedirs(tile_dir, exist_ok=True)
+            self.storage = backend(os.path.join(tile_dir, fn), **backend_kwargs)
         
-        self._backend = backend
         
         #self.on_stop = dispatch.Signal()
         #self.on_progress = dispatch.Signal()
@@ -50,20 +79,13 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
     def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
         '''Create an Acquisition object from settings and a backend.'''
 
-        if backend is acquisition_backends.ClusterBackend:
-            backend='cluster'
-        elif backend is acquisition_backends.HDFBackend:
-            backend='file'
-        else:
-            raise ValueError('Unknown backend')
-
         tiling_settings = {
             'tile_dir': series_name,
         }
 
         tiling_settings.update(settings.get('tiling_settings', scope.tile_settings))
         
-        return cls(scope=scope, backend=backend, **tiling_settings)
+        return cls(scope=scope, backend=backend, backend_kwargs=backend_kwargs, **tiling_settings)
     
     @classmethod
     def get_frozen_settings(cls, scope, spool_controller=None):
@@ -114,6 +136,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
             self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
         
+        if self._save_raw:
+            eventLog.register_event_handler(self.storage.event_logger)
+        
         pointScanner.PointScanner.start(self)
 
         self.dtStart = datetime.datetime.now()
@@ -136,6 +161,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         
         self.P.update_base_tiles_from_frame(x_i, y_i, d)
 
+        if self._save_raw:
+            self.storage.store_frame(self.frame_num, frameData)
+
         self.frame_num += 1
         
         t = time.time()
@@ -147,6 +175,15 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         pointScanner.PointScanner._stop(self, send_stop=False)
         self.on_progress.send(self)
         t_ = time.time()
+
+        if self._save_raw:
+            try:
+                eventLog.remove_event_handler(self.storage.event_logger)
+            except ValueError:
+                pass
+
+            self.storage.mdh.update(self.mdh)
+            self.storage.finalise()
         
         logger.info('Finished tile acquisition')
         if self._backend == 'cluster':

@@ -112,8 +112,10 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
         nchans = 1
 
     #x & y positions of each frame
-    xps = xm(np.arange(numFrames))
-    yps = ym(np.arange(numFrames))
+    # FIXME!! - work out why we need to subtract 2 from the range and fix it properly
+    # FIXME!! - is the -2 simulator specific?
+    xps = xm(np.arange(numFrames)-2)
+    yps = ym(np.arange(numFrames)-2)
 
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
@@ -134,8 +136,8 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     #print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
     #work out how big our tiled image is going to be
-    imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
-    imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
+    imageSizeX = int(np.ceil(xdp.max() + frameSizeX + bufSize))
+    imageSizeY = int(np.ceil(ydp.max() + frameSizeY + bufSize))
 
     #print imageSizeX, imageSizeY
 
@@ -178,7 +180,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 #    yvs = list(set(ydp))
 #    yvs.sort()
 
-    for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
+    for i in range(mdh.get('Protocol.DataStartsAt', 0), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             d = ds[:,:,i].astype('f')
             if not dark is None:

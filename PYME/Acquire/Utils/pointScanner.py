@@ -182,9 +182,12 @@ class PointScanner(object):
                 callN = int((self.callNum+1)/self.dwellTime)
                 new_x, new_y = self._position_for_index(callN)
 
+                if not cam_trigger:
+                    self.scope.frameWrangler.stop()
+                
                 self.scope.state.setItems({'Positioning.x' : new_x,
                                            'Positioning.y' : new_y
-                                           }, stopCamera = not cam_trigger)
+                                           })#, stopCamera = not cam_trigger)
 
                 #print 'SetP'
 
@@ -193,6 +196,9 @@ class PointScanner(object):
                     #eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
                     eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
+
+                if not cam_trigger:
+                    self.scope.frameWrangler.start()
 
             if cam_trigger:
                 #logger.debug('Firing camera trigger')
