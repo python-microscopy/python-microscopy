@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from PYME.recipes import base
+from PYME.IO.unifiedIO import is_cluster_uri
 
 import logging
 logger = logging.getLogger(__name__)
@@ -10,12 +11,10 @@ SESSIONDIR_TOKEN = '$session_dir$'
 # split filename?query type string in fname and query parts
 def parse_fnq(dsfnstr):
     parts = dsfnstr.split('?')
-    parts0 = parts[0]
     if len(parts) > 1:
-        parts1 = parts[1] # we assume there are no further '?'s in the query string
+        return  (parts[0],parts[1])# we assume there are no further '?'s in the query string
     else:
-        parts1 = None
-    return (parts0,parts1)
+        return  (parts[0],None)
 
 # join filename and query to form the expected string for session loading
 def fnq_string(fn,query):
@@ -48,9 +47,12 @@ def allpaths_relative_to(session,sessiondir):
                     return False
     return True
 
-# now a little nicer
-def process_recipe_paths(recipe,sessiondir):
-    for module in recipe:
+def process_session_paths(session,sessiondir):
+    for ds in session['datasources']:
+            fname,query = parse_fnq(session['datasources'][ds])
+            pathstring = os.path.join(SESSIONDIR_TOKEN,fnstring_relative(fname,sessiondir))
+            session['datasources'][ds] = fnq_string(pathstring,query)
+    for module in session['recipe']:
         [(mn, mod_dict)] = module.items()
         for k in base.all_modules[mn].file_or_uri_traits():
             if k in mod_dict:
@@ -58,7 +60,6 @@ def process_recipe_paths(recipe,sessiondir):
                 if relstring is not None: # do not translate if path is not below sessiondir
                     mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
 
-from PYME.IO.unifiedIO import is_cluster_uri
 def resolve_relative_session_paths(session):
     for ds in session['datasources']:
         fname,query = parse_fnq(session['datasources'][ds])
@@ -70,11 +71,7 @@ def check_session_paths(session,sessiondir):
     if allpaths_relative_to(session,sessiondir):
         logger.debug('path are all below session dir, rewriting paths with SESSIONDIR_TOKEN')
         session['relative_paths'] = True
-        for ds in session['datasources']:
-            fname,query = parse_fnq(session['datasources'][ds])
-            pathstring = os.path.join(SESSIONDIR_TOKEN,fnstring_relative(fname,sessiondir))
-            session['datasources'][ds] = fnq_string(pathstring,query)
-        process_recipe_paths(session['recipe'],sessiondir)
+        process_session_paths(session,sessiondir)
     else:
         logger.debug('some paths not below session dir, leaving paths unchanged')
         session['relative_paths'] = False
