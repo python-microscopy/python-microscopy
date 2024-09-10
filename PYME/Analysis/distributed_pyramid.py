@@ -245,7 +245,7 @@ class DistributedImagePyramid(ImagePyramid):
             logger.debug("Topmost level: {}".format(inputLevel + 1))
     
             self.pyramid_valid = True
-            self.depth = inputLevel
+            self.depth = inputLevel +1
             self._imgs.flush()
 
 
