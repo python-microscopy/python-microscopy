@@ -373,12 +373,13 @@ class SpoolController(object):
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
             logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
-            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
+            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5') or HTTPSpooler.exists(pyme_cluster + '.tiles')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            local_h5 = os.sep.join([self.dirname, fn + '.h5'])
-            logger.debug('Looking for %s on local machine' % local_h5)
-            return os.path.exists(local_h5)
+            local_stub = os.sep.join([self.dirname, fn])
+            local_h5 = local_stub + '.h5'
+            logger.debug('Looking for %s on local machine' % local_stub)
+            return os.path.exists(local_h5) or os.path.exists(local_stub + '.pcs') or os.path.exists(local_stub + '.tiles')
         
     def get_free_space(self):
         """
