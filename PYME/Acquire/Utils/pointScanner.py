@@ -125,7 +125,7 @@ class PointScanner(object):
         #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
         self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
 
-        if self.trigger:
+        if self.trigger and self.scope.frameWrangler.isRunning():
             self.scope.cam.FireSoftwareTrigger()
         
         #if self.sync:
