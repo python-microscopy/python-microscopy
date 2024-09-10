@@ -248,7 +248,7 @@ class PanSpool(afp.foldingPane):
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
-        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNN images spooled in MM mins')
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
         self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     

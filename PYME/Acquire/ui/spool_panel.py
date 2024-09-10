@@ -235,7 +235,7 @@ class SpoolingPane(afp.foldingPane):
         spoolDirSizer.Add(self.stDiskSpace, 0, wx.ALL | wx.EXPAND, 2)
 
         ### Compression etc
-        clp = afp.collapsingPane(pan, caption='Compression and quantization ...', padding=2)
+        clp = afp.collapsingPane(pan, caption='Compression ...', padding=2)
         clp.AddNewElement(self._comp_pan(clp))
         spoolDirSizer.Add(clp, 0, wx.ALL | wx.EXPAND, 2)
 
@@ -354,7 +354,7 @@ class SpoolingPane(afp.foldingPane):
             self.stRuleChain = wx.StaticText(pan, -1, 'Rule chain:')
             hsizer.Add(self.stRuleChain, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
             choices = [r for r in self.scope.analysis_rules.keys()]
-            self.cRuleChain = wx.Choice(pan, -1, choices=choices)
+            self.cRuleChain = wx.Choice(pan, -1, choices=choices, size=(100, -1))
             self.cRuleChain.SetSelection(choices.index(self.spoolController.analysis_rule_name))
             self.cRuleChain.Bind(wx.EVT_CHOICE, self.OnRuleChainChanged)
             hsizer.Add(self.cRuleChain, 1, wx.ALL | wx.EXPAND, 2)
@@ -432,7 +432,7 @@ class SpoolingPane(afp.foldingPane):
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
-        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNN images spooled in MM mins')
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
         self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     
