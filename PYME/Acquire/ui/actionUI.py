@@ -37,6 +37,9 @@ class ActionList(wx.ListCtrl):
         self.SetColumnWidth(3, 60)
         self.SetColumnWidth(4, 200)
 
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+
+
 
     def OnGetItemText(self, item, col):
         if item < len(self._queueItems):
@@ -55,6 +58,38 @@ class ActionList(wx.ListCtrl):
             return time.strftime('%H:%M:%S', time.localtime(val))
         else:
             return repr(val)
+    
+        
+    def OnKeyDown(self, event):
+        #logger.info('Key down %d' % event.GetKeyCode())
+        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_BACK):
+            self.delete_selected()
+        else:
+            event.Skip()
+
+    def delete_selected(self):
+        logger.info('Deleting selected actions')
+        to_remove = []
+        to_deselect = []
+
+        idx = self.GetFirstSelected()
+
+        while idx != -1:
+            if idx < len(self._queueItems):
+                a =self._queueItems[idx]
+            else:
+                idx -= len(self._queueItems)
+                a = self._scheduledItems[idx]
+            
+            to_remove.append(a)
+            to_deselect.append(idx)
+            idx = self.GetNextSelected(idx)
+
+        for idx in to_deselect:
+            self.Select(idx, on=0)
+        
+        if to_remove:
+            self.actionManager.remove_actions(to_remove)
         
     def update(self, **kwargs):
         self._queueItems = list(self.actionManager.actionQueue.queue)
