@@ -30,8 +30,9 @@ class Tiler(Plugin):
         Plugin.__init__(self, dsviewer)
 
         dsviewer.AddMenuItem('Processing', "&Tiling", self.OnTile)
+        dsviewer.AddMenuItem('Processing', "&Tiling (with cross-correlation)", lambda e: self.OnTile(correlate=True))
 
-    def OnTile(self, event):
+    def OnTile(self, event=None, correlate=False):
         from PYME.Analysis import deTile
         from PYME.DSView import View3D
 
@@ -58,7 +59,7 @@ class Tiler(Plugin):
 
         split = False
 
-        dt = deTile.tile(self.image.data, xm, ym, self.image.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
+        dt = deTile.tile(self.image.data, xm, ym, self.image.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat, correlate=correlate)#, mixmatrix = [[.3, .7], [.7, .3]])
 
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)        
         

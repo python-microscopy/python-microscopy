@@ -67,7 +67,20 @@ def calcCorrShift(im1, im2):
     xc = np.abs(ifftshift(ifftn(fftn(im1)*ifftn(im2))))
 
     xct = (xc - xc.max()/1.1)*(xc > xc.max()/1.1)
-    print((xct.shape))
+    #print((xct.shape))
+
+    x_ = np.arange(xct.shape[0]) - xct.shape[0]/2
+    y_ = np.arange(xct.shape[1]) - xct.shape[1]/2
+
+    xc = xc - xc.min()
+    xc = np.maximum(xc - xc.mean(), 0)
+
+    s = xc.sum()
+
+    dx = (xc*x_[:, None]).sum()/s
+    dy = (xc*y_[None, :]).sum()/s
+
+    return dx, dy, s
 
     #figure(1)
     #imshow(xct)
@@ -75,10 +88,11 @@ def calcCorrShift(im1, im2):
     #dx, dy =  ndimage.measurements.center_of_mass(xct)
 
     #print np.where(xct==xct.max())
+    #TODO - do COI based shift estimation, rather than just max
 
     dx, dy = np.where(xct==xct.max())
 
-    return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2
+    return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2, xct.max()
 
 def genDark(ds, mdh, blur=2):
     df = mdh.getEntry('Protocol.DarkFrameRange')
@@ -232,16 +246,19 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                     dy = 0
                     rois = findRectangularROIs(alreadyThere)
 
+                    w = 0
+
                     for r in rois:
                         x0,y0,x1,y1 = r
                         #print r
-                        dx_, dy_ = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1])
+                        dx_, dy_, c_max = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1].squeeze())
                         print(('d_', dx_, dy_))
-                        dx += dx_
-                        dy += dy_
+                        dx += dx_*c_max
+                        dy += dy_*c_max
+                        w += c_max
                     
-                    dx = np.round(dx/len(rois))
-                    dy = np.round(dy/len(rois))
+                    dx = int(np.round(dx/w))
+                    dy = int(np.round(dy/w))
 
                     print((dx, dy))
 
@@ -249,7 +266,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     dx, dy = (0,0)
 
-                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d*rt[None, None, :]
+                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d#*rt[None, None, :]
                 occupancy[(xdp[i] + dx):(xdp[i]+frameSizeX + dx), (ydp[i]+dy):(ydp[i]+frameSizeY + dy), :] += weights
                 
             else:
