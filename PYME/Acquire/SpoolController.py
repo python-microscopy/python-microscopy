@@ -569,11 +569,8 @@ class SpoolController(object):
         if extra_metadata is not None:
             self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(extra_metadata))
 
-        # stop the frameWrangler before we start spooling
-        # this serves to ensure that a) we don't accidentally spool frames which were in the camera buffer when we hit start
-        # and b) we get a nice clean timestamp for when the actual frames start (after any protocol init tasks)
-        # it might also slightly improve performance.
-        self.scope.frameWrangler.stop()
+        # NOTE - stopping and starting the framewrangler has moved to the spooler .start() method
+        #self.scope.frameWrangler.stop()
         
         try:
             self.spooler.on_stop.connect(self.SpoolStopped)
@@ -583,8 +580,8 @@ class SpoolController(object):
             raise
 
         # restart frame wrangler
-        self.scope.frameWrangler.Prepare()
-        self.scope.frameWrangler.start()
+        #self.scope.frameWrangler.Prepare()
+        #self.scope.frameWrangler.start()
         
         self.onSpoolStart.send(self)
 
