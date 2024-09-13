@@ -34,17 +34,23 @@ def fnstring_relative(fnstring,sessiondir):
         fnamerel = fnstring
     return fnamerel
 
+def path_is_safe_and_relativeto(fpath,sessiondir):
+    is_safe = (not is_cluster_uri(fpath)) and (not fpath.startswith(SESSIONDIR_TOKEN)) and Path(fpath).is_relative_to(sessiondir)
+    return is_safe
+
 def allpaths_relative_to(session,sessiondir):
     for ds in session['datasources']:
         fname,query = parse_fnq(session['datasources'][ds])
-        if not Path(fname).is_relative_to(sessiondir):
+        if not path_is_safe_and_relativeto(fname,sessiondir):
             return False
     for module in session['recipe']:
         [(mn, mod_dict)] = module.items()
-        for k in base.all_modules[mn].file_or_uri_traits():
-            if k in mod_dict:
-                if is_cluster_uri(mod_dict[k]) or not Path(mod_dict[k]).is_relative_to(sessiondir):
-                    return False
+        # we only check registered modules - session loading will anyway fail with an unregistered module
+        if mn in base.all_modules: # it is possible that there is an unregistered module in the recipe
+            for k in base.all_modules[mn].file_or_uri_traits():
+                if k in mod_dict:
+                    if not path_is_safe_and_relativeto(mod_dict[k],sessiondir):
+                        return False
     return True
 
 def process_session_paths(session,sessiondir):
@@ -54,11 +60,13 @@ def process_session_paths(session,sessiondir):
             session['datasources'][ds] = fnq_string(pathstring,query)
     for module in session['recipe']:
         [(mn, mod_dict)] = module.items()
-        for k in base.all_modules[mn].file_or_uri_traits():
-            if k in mod_dict:
-                relstring = fnstring_relative(mod_dict[k],sessiondir)
-                if relstring is not None: # do not translate if path is not below sessiondir
-                    mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
+        # we only check registered modules - session loading will anyway fail with an unregistered module
+        if mn in base.all_modules: # it is possible that there is an unregistered module in the recipe
+            for k in base.all_modules[mn].file_or_uri_traits():
+                if k in mod_dict:
+                    relstring = fnstring_relative(mod_dict[k],sessiondir)
+                    if relstring is not None: # do not translate if path is not below sessiondir
+                        mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
 
 def resolve_relative_session_paths(session):
     for ds in session['datasources']:
