@@ -27,7 +27,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.backends.backend_wx import _load_bitmap, error_msg_wx, cursord
+from matplotlib.backends.backend_wx import _load_bitmap
 #from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
 from matplotlib.backend_bases import NavigationToolbar2
 from matplotlib.figure import Figure
