@@ -846,14 +846,18 @@ class VisGUICore(object):
         import yaml
         import os
         from PYME.recipes.base import MyDumper
-        from PYME.LMVis.sessionpaths import check_session_paths
+        from PYME.LMVis.sessionpaths import attempt_relative_session_paths
         session = {'format_version': 0.1,} # increment?
         session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
 
         # TODO - View and layer settings
         session.update(self.glCanvas.get_session_info())
+        
         if sessionpath is not None:
-            check_session_paths(session,os.path.dirname(sessionpath))
+            # if all files used in the session are relative to the path of the session file,
+            # re-write the paths using the SESSIONDIR_TOKEN to make the session file portable
+            attempt_relative_session_paths(session,os.path.dirname(sessionpath))
+        
         return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
     
     def save_session(self, filename):           
@@ -870,11 +874,12 @@ class VisGUICore(object):
     
     def load_session(self, filename):
         import yaml
-        from pathlib import Path
-        from PYME.LMVis.sessionpaths import SESSIONDIR_TOKEN
-        fpath = Path(filename)
-        sessiondir = fpath.resolve().parent # note that filename could be relative, in that case need to resolve to obtain session dir
-        session = yaml.safe_load(fpath.read_text().replace(SESSIONDIR_TOKEN,str(sessiondir))) # replace any possibly present SESSIONDIR_TOKEN
+        from PYME.LMVis.sessionpaths import substitute_sessiondir
+        
+        with open(filename, 'r') as f:
+            session_txt = f.read()
+        
+        session = yaml.safe_load(substitute_sessiondir(session_txt, filename)) # replace any possibly present SESSIONDIR_TOKEN
 
         self.pipeline.load_session(session)
 

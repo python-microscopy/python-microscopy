@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 SESSIONDIR_TOKEN = '$session_dir$'
 
 # split filename?query type string in fname and query parts
-def parse_fnq(dsfnstr):
+def _parse_fnq(dsfnstr):
     parts = dsfnstr.split('?')
     if len(parts) > 1:
         return  (parts[0],parts[1])# we assume there are no further '?'s in the query string
@@ -17,70 +17,119 @@ def parse_fnq(dsfnstr):
         return  (parts[0],None)
 
 # join filename and query to form the expected string for session loading
-def fnq_string(fn,query):
+def _join_fnq_string(fn,query):
     if query is None:
         return fn
     else:
         return fn + '?' + query
 
-def fnstring_relative(fnstring,sessiondir):
+def _get_relative_filename(fnstring,sessiondir):
     fnamep = Path(fnstring)
     if fnamep.is_absolute():
         try:
             fnamerel = str(fnamep.relative_to(sessiondir)) # now make the filenames relative to the session dir path
+            return fnamerel
         except ValueError: # value error implies it is not possible to make a "clean" relative path, i.e. that the file fnstring is not truely below sessiondir
             return None # signal via None, we do the further handling in the calling function
     else:
-        fnamerel = fnstring
-    return fnamerel
+        return None
 
-def path_is_safe_and_relativeto(fpath,sessiondir):
+
+def _path_is_safe_and_relativeto(fpath,sessiondir):
     is_safe = (not is_cluster_uri(fpath)) and (not fpath.startswith(SESSIONDIR_TOKEN)) and Path(fpath).is_relative_to(sessiondir)
     return is_safe
 
 def allpaths_relative_to(session,sessiondir):
+    """Check if all paths in session are below sessiondir"""
     for ds in session['datasources']:
-        fname,query = parse_fnq(session['datasources'][ds])
-        if not path_is_safe_and_relativeto(fname,sessiondir):
+        fname,query = _parse_fnq(session['datasources'][ds])
+        if not _path_is_safe_and_relativeto(fname,sessiondir):
             return False
+    
     for module in session['recipe']:
         [(mn, mod_dict)] = module.items()
-        # we only check registered modules - session loading will anyway fail with an unregistered module
-        if mn in base.all_modules: # it is possible that there is an unregistered module in the recipe
-            for k in base.all_modules[mn].file_or_uri_traits():
-                if k in mod_dict:
-                    if not path_is_safe_and_relativeto(mod_dict[k],sessiondir):
-                        return False
+        
+        for k in base.all_modules[mn].file_or_uri_traits():
+            if k in mod_dict:
+                if not _path_is_safe_and_relativeto(mod_dict[k],sessiondir):
+                    return False
+                    
     return True
 
-def process_session_paths(session,sessiondir):
+def _process_session_paths(session,sessiondir):
+    """Rewrite paths in session to replace sessiondir with SESSIONDIR_TOKEN"""
+
+    #TODO - if we really want to be portable, should we also be doing sep replacement?
+    # e.g. replace os.sep with '/' in paths?
+
     for ds in session['datasources']:
-            fname,query = parse_fnq(session['datasources'][ds])
-            pathstring = os.path.join(SESSIONDIR_TOKEN,fnstring_relative(fname,sessiondir))
-            session['datasources'][ds] = fnq_string(pathstring,query)
+            fname,query = _parse_fnq(session['datasources'][ds])
+            pathstring = os.path.join(SESSIONDIR_TOKEN,_get_relative_filename(fname,sessiondir))
+            session['datasources'][ds] = _join_fnq_string(pathstring,query)
+
     for module in session['recipe']:
         [(mn, mod_dict)] = module.items()
-        # we only check registered modules - session loading will anyway fail with an unregistered module
-        if mn in base.all_modules: # it is possible that there is an unregistered module in the recipe
-            for k in base.all_modules[mn].file_or_uri_traits():
-                if k in mod_dict:
-                    relstring = fnstring_relative(mod_dict[k],sessiondir)
-                    if relstring is not None: # do not translate if path is not below sessiondir
-                        mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
 
-def resolve_relative_session_paths(session):
+        for k in base.all_modules[mn].file_or_uri_traits():
+            if k in mod_dict:
+                relstring = _get_relative_filename(mod_dict[k],sessiondir)
+                if relstring is None:
+                    raise ValueError('Path %s is not below sessiondir %s' % (mod_dict[k],sessiondir))
+                
+                mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
+
+def _make_paths_absolute(session):
+    """Make all paths in session absolute - if started from command line some ds paths
+    may be relative to current working directory
+    
+    FIXME: Paths may also be relative to PYMEDATADIR, which is not handled here
+    """
     for ds in session['datasources']:
-        fname,query = parse_fnq(session['datasources'][ds])
+        fname,query = _parse_fnq(session['datasources'][ds])
         if not is_cluster_uri(fname) and not Path(fname).is_absolute() and not fname.startswith(SESSIONDIR_TOKEN):
-            session['datasources'][ds] = fnq_string(Path(fname).resolve(),query)
+            session['datasources'][ds] = _join_fnq_string(Path(fname).resolve(),query)
 
-def check_session_paths(session,sessiondir):
-    resolve_relative_session_paths(session) # if started from command line some ds paths may be relative
+def attempt_relative_session_paths(session,sessiondir):
+    """Re-write paths to be relative to sessiondir if possible, otherwise leave them unchanged
+
+    NOTE: undoing this operation on load is accomplished usin session_txt.replace(SESSIONDIR_TOKEN,sessiondir)
+    
+    Parameters
+    ----------
+    session : dict
+        session dictionary
+    sessiondir : str
+        path to the session directory (i.e. the directory containing the session file)
+
+    """
+
+    _make_paths_absolute(session) # if started from command line some ds paths may be relative to current working directory
+    
     if allpaths_relative_to(session,sessiondir):
         logger.debug('path are all below session dir, rewriting paths with SESSIONDIR_TOKEN')
         session['relative_paths'] = True
-        process_session_paths(session,sessiondir)
+        _process_session_paths(session,sessiondir)
     else:
         logger.debug('some paths not below session dir, leaving paths unchanged')
         session['relative_paths'] = False
+
+def substitute_sessiondir(session_txt, session_filename):
+    """Substitute SESSIONDIR_TOKEN with sessiondir in session_txt
+
+    Parameters
+    ----------
+    session_txt : str
+        session dictionary as a string
+    sessiondir : str
+        path to the session directory (i.e. the directory containing the session file)
+
+    Returns
+    -------
+    str
+        session_txt with SESSIONDIR_TOKEN replaced by sessiondir
+    """
+    from pathlib import Path
+    sessiondir = Path(session_filename).resolve().parent
+
+    return session_txt.replace(SESSIONDIR_TOKEN,sessiondir)
         
