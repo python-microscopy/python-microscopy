@@ -222,6 +222,12 @@ class ModuleBase(HasStrictTraits):
     def toYAML(self):
         return yaml.dump(self.cleaned_dict_repr(), Dumper=MyDumper)
 
+    @classmethod
+    def file_or_uri_traits(cls):
+        from PYME.recipes import traits
+        """Return a list of FileOrURI traits, as these can require special handling (potentially warn if this list is not empty)"""
+        return [k for k, v in cls.class_traits().items() if isinstance(v.trait_type, traits.FileOrURI)]
+
     def check_inputs(self, namespace):
         """
         Checks that module inputs are present in namespace, raising an exception if they are missing. Existing to simplify
