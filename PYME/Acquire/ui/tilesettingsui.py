@@ -72,5 +72,5 @@ class TileSettingsUI(cascading_layout.CascadingLayoutPanel):
         sp = self.scope.tile_settings.get('tile_spacing', 0.8)
         fs = np.array(self.scope.frameWrangler.currentFrame.shape[:2])*np.array(self.scope.GetPixelSize())
         #print(((n-1) * sp * fs + fs))
-        self.stRegionSize.SetLabel('Region size: %3.1f x %3.1f um' % tuple((n-1) * sp * fs + fs))
+        self.stRegionSize.SetLabel('Region size: %3.1f x %3.1f um' % tuple(n * sp * fs + fs))
         
