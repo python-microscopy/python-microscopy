@@ -2906,3 +2906,39 @@ class Offset(Filter):
             return data - self.offset_constant
         elif self.offset_selection == 'offset by minimum':
             return data - np.min(data)
+        
+
+@register_module('SetOriginMetadata')
+class SetOriginMetadata(ModuleBase):
+    """
+        Set the origin metadata
+
+        Parameters
+        ----------
+        Origin_x : the origin of x that the image will be set to, float in nm
+        Origin_y : the origin of y that the image will be set to, float in nm
+        Origin_z : the origin of z that the image will be set to, float in nm
+    """
+    inputImage = Input('input')
+    outputImage = Output('output')
+    Origin_x = Float(37281.0)
+    Origin_y = Float(33475.5)
+    Origin_z = Float(0.0)
+
+    def run(self, inputImage):
+        # create a new image, using the data from the old image
+        # this re-uses the reference to the unmodified image data so we don't need to allocate more memory
+        # but creates a new, empty, metadata
+        im = ImageStack(inputImage.data, titleStub=self.outputImage)
+        
+        # copy the metadata entries from the original image (note, this is not technically required, as the .execute()
+        # method will automatically copy (merge) the input metadata to the output, but it doesn't hurt to be explicit)
+        im.mdh.copyEntriesFrom(inputImage.mdh)
+        
+        # add any module-specific metadata to the output image
+        im.mdh['Origin.x'] = self.Origin_x
+        im.mdh['Origin.y'] = self.Origin_y
+        im.mdh['Origin.z'] = self.Origin_z
+
+        # return the new image.
+        return im
