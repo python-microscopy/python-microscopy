@@ -204,6 +204,8 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
                 f.write(self.P.mdh.to_JSON())
                 
         logger.info('Pyramid complete (dt = %3.2f)' % (time.time()-t_))
+
+        self.spool_complete = True
             
         self.on_stop.send(self)
         self.on_progress.send(self)
