@@ -9,6 +9,8 @@ import numpy as np
 import logging
 import time
 
+from wx.core import LIST_FORMAT_LEFT
+
 from PYME.Acquire import actions
 from PYME.ui import cascading_layout
 from PYME.ui import progress
@@ -216,18 +218,174 @@ class MoveToPanel(SingleActionPanel):
         y = float(self.tY.GetValue())
         return actions.MoveTo(x, y)
 
+#TODO - move somewhere more sensible
+from wx.lib.mixins import listctrl as listctrlMixins
+
+class VSChoice(wx.Choice):
+    def SetValue(self, val):
+        if isinstance(val, str):
+            self.SetStringSelection(val)
+        else:
+            self.SetSelection(val)
+
+    def GetValue(self):
+        return self.GetStringSelection()
+    
+class DictEditorListCtrl(wx.ListCtrl, listctrlMixins.TextEditMixin, listctrlMixins.ListCtrlAutoWidthMixin):
+    def __init__(self, *args, **kwargs):
+        self._keys= list(kwargs.pop('keys', []))
+        self._choice_cols = kwargs.pop('choice_columns', [])
+        wx.ListCtrl.__init__(self, *args, **kwargs)
+        listctrlMixins.TextEditMixin.__init__(self)
+        listctrlMixins.ListCtrlAutoWidthMixin.__init__(self)
+
+    def make_choice_editor(self, col_style=wx.LIST_FORMAT_LEFT):
+        style =wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB|wx.TE_RICH2
+        style |= {wx.LIST_FORMAT_LEFT: wx.TE_LEFT,
+                  wx.LIST_FORMAT_RIGHT: wx.TE_RIGHT,
+                  wx.LIST_FORMAT_CENTRE : wx.TE_CENTRE
+                  }[col_style]
+
+        editor = VSChoice(self, -1, style=style, choices = ['...', ] + self._keys)
+        editor.SetBackgroundColour(self.editorBgColour)
+        editor.SetForegroundColour(self.editorFgColour)
+        font = self.GetFont()
+        editor.SetFont(font)
+
+        self.curRow = 0
+        self.curCol = 0
+
+        editor.Hide()
+        if hasattr(self, 'editor'):
+            self.editor.Destroy()
+        self.editor = editor
+
+        self.col_style = col_style
+        self.editor.Bind(wx.EVT_CHAR, self.OnChar)
+        self.editor.Bind(wx.EVT_KILL_FOCUS, self.CloseEditor)
+
+    # def make_editor(self, col_style=wx.LIST_FORMAT_LEFT):
+    #     return self.make_choice_editor(col_style)
+    
+    def OpenEditor(self, col, row):
+        ''' Opens an editor at the current position. '''
+
+        # give the derived class a chance to Allow/Veto this edit.
+        evt = wx.ListEvent(wx.wxEVT_COMMAND_LIST_BEGIN_LABEL_EDIT, self.GetId())
+        evt.Index = row
+        evt.Column = col
+        item = self.GetItem(row, col)
+        evt.Item.SetId(item.GetId())
+        evt.Item.SetColumn(item.GetColumn())
+        evt.Item.SetData(item.GetData())
+        evt.Item.SetText(item.GetText())
+        ret = self.GetEventHandler().ProcessEvent(evt)
+        if ret and not evt.IsAllowed():
+            return   # user code doesn't allow the edit.
+
+        
+        if col in self._choice_cols:
+            self.make_choice_editor(self.GetColumn(col).Align)
+            choice_editor = True
+        else:
+            self.make_editor(self.GetColumn(col).Align)
+            choice_editor = False
+
+        # if self.GetColumn(col).Align != self.col_style:
+        #     self.make_editor(self.GetColumn(col).Align)
+
+        x0 = self.col_locs[col]
+        x1 = self.col_locs[col+1] - x0
+
+        scrolloffset = self.GetScrollPos(wx.HORIZONTAL)
+
+        # scroll forward
+        if x0+x1-scrolloffset > self.GetSize()[0]:
+            if wx.Platform == "__WXMSW__":
+                # don't start scrolling unless we really need to
+                offset = x0+x1-self.GetSize()[0]-scrolloffset
+                # scroll a bit more than what is minimum required
+                # so we don't have to scroll everytime the user presses TAB
+                # which is very tireing to the eye
+                addoffset = self.GetSize()[0]/4
+                # but be careful at the end of the list
+                if addoffset + scrolloffset < self.GetSize()[0]:
+                    offset += addoffset
+
+                self.ScrollList(offset, 0)
+                scrolloffset = self.GetScrollPos(wx.HORIZONTAL)
+            else:
+                # Since we can not programmatically scroll the ListCtrl
+                # close the editor so the user can scroll and open the editor
+                # again
+                self.editor.SetValue(self.GetItem(row, col).GetText())
+                self.curRow = row
+                self.curCol = col
+                self.CloseEditor()
+                return
+
+        y0 = self.GetItemRect(row)[1]
+
+        def _activate_editor(editor):
+            editor.SetSize(x0-scrolloffset,y0, x1,-1, wx.SIZE_USE_EXISTING)
+            editor.SetValue(self.GetItem(row, col).GetText())
+            editor.Show()
+            editor.Raise()
+            if not choice_editor:
+                editor.SetSelection(-1,-1)
+            editor.SetFocus()
+
+        wx.CallAfter(_activate_editor, self.editor)
+
+        self.curRow = row
+        self.curCol = col
+
 class UpdateStatePanel(SingleActionPanel):
     def _init_controls(self, sizer):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'State:'), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
-        self.tState = wx.TextCtrl(self, -1, '', size=(150, -1))
-        hsizer.Add(self.tState, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        #self.tState = wx.TextCtrl(self, -1, '', size=(150, -1))
+        #hsizer.Add(self.tState, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        self.lState = DictEditorListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_EDIT_LABELS,size=(-1, 100), 
+                                         keys=self.scope.state.keys(), choice_columns=[0,])
         
+        self.lState.InsertColumn(0, 'Key')
+        self.lState.SetColumnWidth(0, 300)
+        self.lState.InsertColumn(1, 'Value')
+        #self.lState.makeColumnEditable(0)
+        #self.lState.makeColumnEditable(1)
+
+        # start with a blank entry
+        self.lState.InsertItem(0, '...')
+        self.lState.SetItem(0, 1, '')
+
+        self.lState.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEndLabelEdit)
+        
+        hsizer.Add(self.lState, 1, wx.EXPAND|wx.ALL, 2)
         sizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+    def OnEndLabelEdit(self, event):
+        if event.GetText() not in ('', '...') and event.GetColumn() == 0:
+            row = event.GetIndex()
+            key = event.GetText()
+            if self.lState.GetItemText(row, 1) == '':
+                self.lState.SetItem(row, 1, str(self.scope.state.get(key, '')))
+            
+        if event.GetIndex() == (self.lState.GetItemCount() -1) and not event.GetText() in ('', '...'):
+            # add a new empty row
+            self.lState.InsertItem(self.lState.GetItemCount(), '...')
+            self.lState.SetItem(self.lState.GetItemCount()-1, 1, '')
 
     def _get_action(self, idx=0):
         # TODO - use a cleaner dictionary editor
-        state = eval('dict(%s)' % self.tState.GetValue())
+
+        state = {}
+        for i in range(self.lState.GetItemCount()):
+            key = self.lState.GetItemText(i, 0)
+            val = self.lState.GetItemText(i, 1)
+            if key not in ('', '...'):
+                state[key] = eval(val)
+        #state = eval('dict(%s)' % self.tState.GetValue())
         return actions.UpdateState(state)
 
 class CenterROIOnPanel(SingleActionPanel):
