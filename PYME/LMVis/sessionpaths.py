@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import os
 from PYME.recipes import base
 from PYME.IO.unifiedIO import is_cluster_uri
@@ -27,7 +27,7 @@ def _get_relative_filename(fnstring,sessiondir):
     fnamep = Path(fnstring)
     if fnamep.is_absolute():
         try:
-            fnamerel = str(fnamep.relative_to(sessiondir)) # now make the filenames relative to the session dir path
+            fnamerel = fnamep.relative_to(sessiondir).as_posix() # now make the filenames relative to the session dir path
             return fnamerel
         except ValueError: # value error implies it is not possible to make a "clean" relative path, i.e. that the file fnstring is not truely below sessiondir
             return None # signal via None, we do the further handling in the calling function
@@ -61,10 +61,11 @@ def _process_session_paths(session,sessiondir):
 
     #TODO - if we really want to be portable, should we also be doing sep replacement?
     # e.g. replace os.sep with '/' in paths?
+    #UPDATE - the as_posix() conversion here and in _get_relative_filename should now take care of this
 
     for ds in session['datasources']:
             fname,query = _parse_fnq(session['datasources'][ds])
-            pathstring = os.path.join(SESSIONDIR_TOKEN,_get_relative_filename(fname,sessiondir))
+            pathstring = PurePosixPath(SESSIONDIR_TOKEN).joinpath(_get_relative_filename(fname,sessiondir)).as_posix()
             session['datasources'][ds] = _join_fnq_string(pathstring,query)
 
     for module in session['recipe']:
@@ -120,8 +121,8 @@ def substitute_sessiondir(session_txt, session_filename):
     ----------
     session_txt : str
         session dictionary as a string
-    sessiondir : str
-        path to the session directory (i.e. the directory containing the session file)
+    session_filename : str
+        path to the session file
 
     Returns
     -------
@@ -129,7 +130,7 @@ def substitute_sessiondir(session_txt, session_filename):
         session_txt with SESSIONDIR_TOKEN replaced by sessiondir
     """
     from pathlib import Path
-    sessiondir = Path(session_filename).resolve().parent
+    sessiondir = Path(session_filename).resolve().parent.as_posix()
 
     return session_txt.replace(SESSIONDIR_TOKEN,sessiondir)
         
