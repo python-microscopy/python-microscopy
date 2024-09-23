@@ -46,7 +46,17 @@ def get_rule_tile(rule_factory_class):
         def __init__(self, **kwargs):
             RuleTile.__init__(self)
             rule_factory_class.__init__(self, **kwargs)
+
+            self._rule_factory_class_name = rule_factory_class.__name__
+
+        def serialise(self):
+            return(self._rule_factory_class_name, self._rule_kwargs)
+    
     return _RuleTile
+
+def get_rule_factory_class(name):
+    from PYME.cluster import rules
+    return getattr(rules, name)
 
 
 class RuleChain(HasTraits):
@@ -56,6 +66,16 @@ class RuleChain(HasTraits):
         self.rule_factories = rule_factories
         HasTraits.__init__(self, *args, **kwargs)
 
+    def to_yaml(self):
+        import yaml
+        from PYME.recipes.base import MyDumper
+        return yaml.dump([rf.serialise() for rf in self.rule_factories], Dumper=MyDumper)
+    
+    @classmethod
+    def from_yaml(cls, yaml_str):
+        import yaml
+        factories = yaml.safe_load(yaml_str)
+        return cls([get_rule_tile(get_rule_factory_class(cls))(**kwargs) for cls, kwargs in factories])
 
 class RuleDict(OrderedDict):
     """
