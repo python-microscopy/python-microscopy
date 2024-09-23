@@ -557,12 +557,20 @@ class SpoolSeriesPanel(SingleActionPanel):
         hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
         sizer.Add(hsizer, 0, wx.EXPAND, 0)
 
+        self._mf = self.GetTopLevelParent()
+        self._mf.time1.register_callback(self._update)
+
     def _get_action(self, idx=0):
         settings = self.scope.spoolController.get_settings()
         settings['max_frames']  = int(self.tNumFrames.GetValue())
         return actions.SpoolSeries(settings=settings, preflight_mode='warn', )  
 
     def _update(self, **kwargs):
+        if not self:
+            self._mf.time1.unregister_callback(self._update)
+            del self._mf # free the reference to the main frame
+            return
+
         aqType = self.scope.spoolController.acquisition_type
         if aqType == 'ProtocolAcquisition':
             self.stNumFramesLabel.Show()
@@ -571,9 +579,12 @@ class SpoolSeriesPanel(SingleActionPanel):
             self.stNumFramesLabel.Hide()
             self.tNumFrames.Hide()
 
-        self.stAqType.SetLabel(f'An {aqType} acquisition will be added with the following settings: {self.scope.spoolController.get_settings()}')
+        self.stAqType.SetLabel(f'{aqType} with the following settings:\n{self.scope.spoolController.get_settings()}')
+        self.stAqType.Wrap(self.GetSize()[0]-5)
 
         self.cascading_layout()
+
+    
 
 class RemoteSpoolSeriesPanel(SpoolSeriesPanel):
     supports_then = False
@@ -703,6 +714,8 @@ class ActionPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         self._pan_action_sizer = wx.BoxSizer(wx.VERTICAL)
         self._pan_action_sizer.Add(self._pan_action, 0, wx.EXPAND, 0)
         self.add_single_sizer.Add(self._pan_action_sizer, 0, wx.EXPAND|wx.LEFT, 20)
+
+        vsizer.Add(wx.StaticLine(self, -1, style=wx.LI_HORIZONTAL), 0, wx.EXPAND|wx.ALL, 5)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
