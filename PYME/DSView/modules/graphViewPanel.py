@@ -27,7 +27,7 @@ import matplotlib
 matplotlib.use('WXAgg')
 
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.backends.backend_wx import _load_bitmap, error_msg_wx, cursord
+from matplotlib.backends.backend_wx import _load_bitmap
 #from matplotlib.backends.backend_wxagg import NavigationToolbar2WxAgg
 from matplotlib.backend_bases import NavigationToolbar2
 from matplotlib.figure import Figure
@@ -39,15 +39,24 @@ logger = logging.getLogger(__file__)
 
         
 class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
+    """ This is a customised version of the matplotlib NavigationToolbar2WxAgg, with
+    the main difference being that it is an AUI toolbar, rather than a vanilla wx toolbar.
+    
+    This should ideally track changes in the matplotlib version of NavigationToolbar2WxAgg,
+    so if anything breaks with matplotlib updates, that's the first place to look.
+    """
     def __init__(self, canvas, wind):
         self.wind = wind
         #wx.ToolBar.__init__(self, canvas.GetParent(), -1)
         aui.AuiToolBar.__init__(self, wind, -1, wx.DefaultPosition, wx.DefaultSize, agwStyle=aui.AUI_TB_DEFAULT_STYLE | aui.AUI_TB_OVERFLOW | aui.AUI_TB_VERTICAL)
-        NavigationToolbar2.__init__(self, canvas)
+        
         self.canvas = canvas
         self._idle = True
         self.statbar = None
+        self._init_toolbar()
         
+        NavigationToolbar2.__init__(self, canvas)
+           
 
     def get_canvas(self, frame, fig):
         return FigureCanvas(frame, -1, fig)
@@ -102,26 +111,8 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         self.ToggleTool(self._NTB2_ZOOM, False)
         NavigationToolbar2.pan(self, *args)
 
-
-#    def configure_subplot(self, evt):
-#        frame = wx.Frame(None, -1, "Configure subplots")
-#
-#        toolfig = Figure((6,3))
-#        canvas = self.get_canvas(frame, toolfig)
-#
-#        # Create a figure manager to manage things
-#        figmgr = FigureManager(canvas, 1, frame)
-#
-#        # Now put all into a sizer
-#        sizer = wx.BoxSizer(wx.VERTICAL)
-#        # This way of adding to sizer allows resizing
-#        sizer.Add(canvas, 1, wx.LEFT|wx.TOP|wx.GROW)
-#        frame.SetSizer(sizer)
-#        frame.Fit()
-#        tool = SubplotTool(self.canvas.figure, toolfig)
-#        frame.Show()
-
     def save(self, evt):
+        # TODO - hijack save button to let us save graph data as well as the dispaled version???
         import os
         # Fetch the required filename and file type.
         filetypes, exts, filter_index = self.canvas._get_imagesave_wildcards()
@@ -148,79 +139,18 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
                     os.path.join(dirname, filename), format=format)
             except Exception as e:
                 #print str(e)
-                error_msg_wx(str(e))
-
-    def set_cursor(self, cursor):
-        cursor =wx.Cursor(cursord[cursor])
-        self.canvas.SetCursor( cursor )
-
-    def release(self, event):
-        try: del self.lastrect
-        except AttributeError: pass
-
-    def dynamic_update(self):
-        d = self._idle
-        self._idle = False
-        if d:
-            self.canvas.draw()
-            self._idle = True
+                logger.exception('Error saving figure')
+                # TODO - graphical error?
+                #error_msg_wx(str(e))
 
     def draw_rubberband(self, event, x0, y0, x1, y1):
-        'adapted from http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/189744'
-        canvas = self.canvas
-        dc =wx.ClientDC(canvas)
-
-        # Set logical function to XOR for rubberbanding
-        dc.SetLogicalFunction(wx.XOR)
-
-        # Set dc brush and pen
-        # Here I set brush and pen to white and grey respectively
-        # You can set it to your own choices
-
-        # The brush setting is not really needed since we
-        # dont do any filling of the dc. It is set just for
-        # the sake of completion.
-
-        wbrush =wx.Brush(wx.Colour(255,255,255), wx.TRANSPARENT)
-        wpen =wx.Pen(wx.Colour(200, 200, 200), 1, wx.SOLID)
-        dc.SetBrush(wbrush)
-        dc.SetPen(wpen)
-
-
-        dc.ResetBoundingBox()
-        #dc.BeginDrawing()
         height = self.canvas.figure.bbox.height
-        y1 = height - y1
-        y0 = height - y0
+        self.canvas._rubberband_rect = (x0, height - y0, x1, height - y1)
+        self.canvas.Refresh()
 
-        if y1<y0: y0, y1 = y1, y0
-        if x1<y0: x0, x1 = x1, x0
-
-        w = x1 - x0
-        h = y1 - y0
-
-        rect = int(x0), int(y0), int(w), int(h)
-        try: lastrect = self.lastrect
-        except AttributeError: pass
-        else: dc.DrawRectangle(*lastrect)  #erase last
-        self.lastrect = rect
-        dc.DrawRectangle(*rect)
-        #dc.EndDrawing()
-
-    def set_status_bar(self, statbar):
-        self.statbar = statbar
-
-    def set_message(self, s):
-        if self.statbar is not None: self.statbar.set_function(s)
-
-    def set_history_buttons(self):
-        try:
-            can_backward = (self._views._pos > 0)
-            can_forward = (self._views._pos < len(self._views._elements) - 1)
-            self.EnableTool(self._NTB2_BACK, can_backward)
-            self.EnableTool(self._NTB2_FORWARD, can_forward)
-        except:
-            logger.exception('Error setting history buttons')
+    def remove_rubberband(self):
+        self.canvas._rubberband_rect = None
+        self.canvas.Refresh()
         
 
 
