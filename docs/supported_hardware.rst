@@ -34,6 +34,7 @@ Filters / Shutters
 * AA Optoelectronics AOTF
 * Simple voltage controlled AOTF (via Arduino)
 * Thorlabs FW102B filter wheels
+* Thorlabs MFF101 filter flipper (kinesis)
 
 Miscellaneous
 =============
