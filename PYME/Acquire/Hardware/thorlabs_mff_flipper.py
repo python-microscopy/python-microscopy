@@ -9,6 +9,7 @@ import sys
 import ctypes
 import ctypes.wintypes
 from enum import IntEnum
+from PYME.Acquire.Hardware.FilterWheel import FilterWheelBase, WFilter
 
 CODING = 'ascii'
 
@@ -323,7 +324,7 @@ __dll.FF_MoveToPosition.restype = ctypes.c_int
 def FF_MoveToPosition(serial_number, pos):
     return __dll.FF_MoveToPosition(serial_number.encode(CODING), pos)
 
-class ThorlabsMFF(object):
+class ThorlabsMFF(FilterWheelBase):
     def __init__(self, serial_number, name='Flipper', position_names=None):
         """Thorlabs motorized filter flipper
 
@@ -358,12 +359,19 @@ class ThorlabsMFF(object):
         # start polling at 200 ms intervals
         FF_StartPolling(self.serial_number, 200)
         # TODO- check status here
+
+        _wfilters = []
+        for pos, name in zip(self.positions, self._position_names):
+            _wfilters.append(WFilter(pos, name, name))
+        FilterWheelBase.__init__(self, _wfilters)
     
-    def GetPos(self):
+    # def GetPos(self):
+    def _get_physical_position(self):
         pos = FF_GetPosition(self.serial_number)
         return pos
     
-    def SetPos(self, pos):
+    # def SetPos(self, pos):
+    def _set_physical_position(self, pos):
         # should be FF_Position.Position1 or FF_position.Position2
         ret_pos = FF_MoveToPosition(self.serial_number, int(pos))
         return ret_pos
@@ -381,8 +389,9 @@ class ThorlabsMFF(object):
         return self._position_names
     
     def GetPosName(self):
-        ind = self.positions.index(self.GetPos())
-        return self.position_names[ind]
+        # ind = self.positions.index(self.GetPos())
+        # return self.position_names[ind]
+        return self.GetFilterNames()[self.GetCurrentIndex()]
     
     def SetPosByName(self, position_name):
         ind = self.position_names.index(position_name)
@@ -390,6 +399,6 @@ class ThorlabsMFF(object):
     
     def register(self, scope_state):
         scope_state.registerHandler('Flippers.%s.Position' % self.name, 
-                                    self.GetPos, self.SetPos)
+                                    self._get_physical_position, self._set_physical_position)
         scope_state.registerHandler('Flippers.%s.PositionName' % self.name,
                                     self.GetPosName)
