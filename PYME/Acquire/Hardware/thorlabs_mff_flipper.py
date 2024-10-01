@@ -365,12 +365,10 @@ class ThorlabsMFF(FilterWheelBase):
             _wfilters.append(WFilter(pos, name, name))
         FilterWheelBase.__init__(self, _wfilters)
     
-    # def GetPos(self):
     def _get_physical_position(self):
         pos = FF_GetPosition(self.serial_number)
         return pos
     
-    # def SetPos(self, pos):
     def _set_physical_position(self, pos):
         # should be FF_Position.Position1 or FF_position.Position2
         ret_pos = FF_MoveToPosition(self.serial_number, int(pos))
@@ -389,8 +387,6 @@ class ThorlabsMFF(FilterWheelBase):
         return self._position_names
     
     def GetPosName(self):
-        # ind = self.positions.index(self.GetPos())
-        # return self.position_names[ind]
         return self.GetFilterNames()[self.GetCurrentIndex()]
     
     def SetPosByName(self, position_name):
