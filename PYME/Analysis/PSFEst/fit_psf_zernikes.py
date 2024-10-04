@@ -36,8 +36,15 @@ class ZernikePSFFitter(object):
             zernike_coeffs = self.zernike_coefficients
 
         zs = (np.arange(self.psf.shape[2]) - self.psf.shape[2]/2)*self.voxelsize_nm.z
+        
+        # pupil might be slightly undersampled at default PSF size,
+        # so we use a larger pupil to avoid out-of focus grid artifacts
+        # TODO - optimise the size here - doubling the pupil size
+        # may well be overkill (and slow)
+        X = np.arange(-64, 65)*self.voxelsize_nm.x
+        Y = np.arange(-64, 65)*self.voxelsize_nm.y
 
-        ps = fourierHNA.GenZernikePSF(zs, zernike_coeffs, dx=self.voxelsize_nm.x, lamb=self.wavelength, n=self.n, NA=self.NA, output_shape=self.psf.shape)
+        ps = fourierHNA.GenZernikePSF(zs, zernike_coeffs, X=X, Y=Y, dx=self.voxelsize_nm.x, lamb=self.wavelength, n=self.n, NA=self.NA, output_shape=self.psf.shape)
         
         # TODO - improve normalisation of PSF - maybe build into residual calculation
         return ps/ps.max()
@@ -90,7 +97,8 @@ class ZernikePSFFitter(object):
         """
         refined_coeffs = np.copy(zernike_coeffs)
         for i in range(1, len(zernike_coeffs)): # skip the piston term
-            d_i = self.refine_zernike(refined_coeffs, i, delta)
+            d_i = self.refine_zernike(refined_coeffs, i, delta) # progressive update
+            #d_i = self.refine_zernike(zernike_coeffs, i, delta) # update all at once (after all have been calculated) - this doesn't seem to be as good
             refined_coeffs[i] += np.clip(d_i, -delta, delta) # limit the step size to the range we are searching
         
         return refined_coeffs
