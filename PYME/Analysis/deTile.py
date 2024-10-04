@@ -67,18 +67,21 @@ def calcCorrShift(im1, im2):
     xc = np.abs(ifftshift(ifftn(fftn(im1)*ifftn(im2))))
 
     xct = (xc - xc.max()/1.1)*(xc > xc.max()/1.1)
-    print((xct.shape))
+    #print((xct.shape))
 
-    #figure(1)
-    #imshow(xct)
+    x_ = np.arange(xct.shape[0]) - xct.shape[0]/2
+    y_ = np.arange(xct.shape[1]) - xct.shape[1]/2
 
-    #dx, dy =  ndimage.measurements.center_of_mass(xct)
+    xc = xc - xc.min()
+    # TODO - subtract half max instead??
+    xc = np.maximum(xc - xc.mean(), 0)
 
-    #print np.where(xct==xct.max())
+    s = xc.sum()
 
-    dx, dy = np.where(xct==xct.max())
+    dx = (xc*x_[:, None]).sum()/s
+    dy = (xc*y_[None, :]).sum()/s
 
-    return dx[0] - im1.shape[0]/2, dy[0] - im1.shape[1]/2
+    return dx, dy, s
 
 def genDark(ds, mdh, blur=2):
     df = mdh.getEntry('Protocol.DarkFrameRange')
@@ -112,8 +115,10 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
         nchans = 1
 
     #x & y positions of each frame
-    xps = xm(np.arange(numFrames))
-    yps = ym(np.arange(numFrames))
+    # FIXME!! - work out why we need to subtract 2 from the range and fix it properly
+    # FIXME!! - is the -2 simulator specific?
+    xps = xm(np.arange(numFrames)-2)
+    yps = ym(np.arange(numFrames)-2)
 
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
@@ -134,8 +139,8 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     #print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
     #work out how big our tiled image is going to be
-    imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
-    imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
+    imageSizeX = int(np.ceil(xdp.max() + frameSizeX + bufSize))
+    imageSizeY = int(np.ceil(ydp.max() + frameSizeY + bufSize))
 
     #print imageSizeX, imageSizeY
 
@@ -178,7 +183,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
 #    yvs = list(set(ydp))
 #    yvs.sort()
 
-    for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
+    for i in range(mdh.get('Protocol.DataStartsAt', 0), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             d = ds[:,:,i].astype('f')
             if not dark is None:
@@ -230,16 +235,19 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                     dy = 0
                     rois = findRectangularROIs(alreadyThere)
 
+                    w = 0
+
                     for r in rois:
                         x0,y0,x1,y1 = r
                         #print r
-                        dx_, dy_ = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1])
+                        dx_, dy_, c_max = calcCorrShift(d.sum(2)[x0:x1, y0:y1], imr[x0:x1, y0:y1].squeeze())
                         print(('d_', dx_, dy_))
-                        dx += dx_
-                        dy += dy_
+                        dx += dx_*c_max
+                        dy += dy_*c_max
+                        w += c_max
                     
-                    dx = np.round(dx/len(rois))
-                    dy = np.round(dy/len(rois))
+                    dx = int(np.round(dx/w))
+                    dy = int(np.round(dy/w))
 
                     print((dx, dy))
 
@@ -247,7 +255,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
                 else:
                     dx, dy = (0,0)
 
-                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d*rt[None, None, :]
+                im[(xdp[i]+dx):(xdp[i]+frameSizeX + dx), (ydp[i] + dy):(ydp[i]+frameSizeY + dy), :] += weights*d#*rt[None, None, :]
                 occupancy[(xdp[i] + dx):(xdp[i]+frameSizeX + dx), (ydp[i]+dy):(ydp[i]+frameSizeY + dy), :] += weights
                 
             else:

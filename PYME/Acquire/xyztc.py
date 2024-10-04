@@ -169,7 +169,7 @@ class XYZTCAcquisition(AcquisitionBase):
         self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
 
         with self.scope.frameWrangler.spooling_stopped():
-            # avoid stopping both here and in the SpoolController
+            # stop frameWrangler wile we set things up
             #self.scope.frameWrangler.stop()
             if self._stack_settings:
                 self._stack_settings.SetPrevPos(self._stack_settings._CurPos())

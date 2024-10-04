@@ -821,6 +821,8 @@ def GenZernikePSF(zs, zernikeCoeffs = [], **kwargs):
         
     pupil = F.astype('d')*np.exp(-1j*ang)
 
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
     
     

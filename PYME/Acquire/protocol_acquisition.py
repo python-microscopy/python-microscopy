@@ -49,7 +49,7 @@ def getReducedFilename(filename):
 
 class ProtocolAcquisition(AcquisitionBase):
     """Spooler base class"""
-    def __init__(self, filename, frameSource, protocol = p.NullProtocol, 
+    def __init__(self, filename, frameSource, frame_wrangler, protocol = p.NullProtocol, 
                  fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
         """Create a new spooler.
         
@@ -63,6 +63,8 @@ class ProtocolAcquisition(AcquisitionBase):
             A source of frames we can subscribe to. It should implement a "connect"
             method allowing us to register a callback and then call the callback with
             the frame data in a "frameData" kwarg.
+        frame_wrangler : PYME.IO.FrameWrangler object
+            The frame wrangler object to use for spooling - used to stop and start while we update settings
         protocol : PYME.Acquire.protocol.TaskListProtocol object
             The acquisition protocol
         guiUpdateCallback : function
@@ -73,6 +75,7 @@ class ProtocolAcquisition(AcquisitionBase):
 
         self.filename=filename
         self.frameSource = frameSource
+        self._frame_wrangler = frame_wrangler
         self.seriesName = getReducedFilename(filename)
         
         self.protocol = protocol
@@ -108,7 +111,7 @@ class ProtocolAcquisition(AcquisitionBase):
             # TODO - make this softer and allow memory backend for fixed length protocol acquisitions???
             raise RuntimeError('Memory spooling not supported for protocol-based acquisitions')
         
-        protocol = spool_controller.protocol_settings.get_protocol_for_acquistion(settings=settings)
+        protocol = spool_controller.protocol_settings.get_protocol_for_acquisition(settings=settings)
         
         preflight_mode = settings.get('preflight_mode', 'interactive')
         if (preflight_mode != 'skip'):
@@ -126,6 +129,7 @@ class ProtocolAcquisition(AcquisitionBase):
         #logger.info('Creating spooler for %s' % series_name)
         return cls(filename=series_name,
                     frameSource=scope.frameWrangler.onFrame,
+                    frame_wrangler=scope.frameWrangler,
                     protocol=protocol,
                     fakeCamCycleTime=fakeCycleTime, 
                     maxFrames=settings.get('max_frames', sys.maxsize),
@@ -196,27 +200,32 @@ class ProtocolAcquisition(AcquisitionBase):
         """ Perform protocol 'frame -1' tasks, log start metadata, then connect
         to the frame source.
         """
-        self.watchingFrames = True
-        eventLog.register_event_handler(self._backend.event_logger)
+        with self._frame_wrangler.spooling_stopped():
+            # stop the frameWrangler before we start spooling
+            # this serves to ensure that a) we don't accidentally spool frames which were in the camera buffer when we hit start
+            # and b) we get a nice clean timestamp for when the actual frames start (after any protocol init tasks)
+            # it might also slightly improve performance.
+            self.watchingFrames = True
+            eventLog.register_event_handler(self._backend.event_logger)
 
-        self.frame_num = 0
-        
-        # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
-        # **after** protocol.Init() call
-        self.tStart = time.time()
+            self.frame_num = 0
+            
+            # set tStart here for simulator so that events in init phase get time stamps. Real start time is set below
+            # **after** protocol.Init() call
+            self.tStart = time.time()
 
-        self.protocol.Init(self)
-        
-        # record start time when we start receiving frames.
-        self.tStart = time.time()
-        self._collect_start_metadata()
-        self.frameSource.connect(self.on_frame, dispatch_uid=self._spooler_uuid)
-        
-        self.spoolOn = True
+            self.protocol.Init(self)
+            
+            # record start time when we start receiving frames.
+            self.tStart = time.time()
+            self._collect_start_metadata()
+            self.frameSource.connect(self.on_frame, dispatch_uid=self._spooler_uuid)
+            
+            self.spoolOn = True
 
-        logger.debug('Starting spooling: %s' %self.seriesName)
+            logger.debug('Starting spooling: %s' %self.seriesName)
 
-        self._backend.initialise()
+            self._backend.initialise()
        
     def stop(self):
         #try:

@@ -23,6 +23,17 @@ logger = logging.getLogger(__name__)
 
 from .actions import *
 
+class MutablePriorityQueue(Queue.PriorityQueue):
+    def __init__(self, *args, **kwargs):
+        Queue.PriorityQueue.__init__(self, *args,**kwargs)
+
+    def remove(self, item):
+        with self.mutex:
+            if item in self.queue:
+                self.queue.remove(item)
+                #self.queue.sort()
+                self.not_full.notify()
+
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
     
@@ -52,8 +63,8 @@ class ActionManager(object):
             calling eval('scope.functionName')
         
         """
-        self.actionQueue = Queue.PriorityQueue() # queue for immediate execution
-        self.scheduledQueue = Queue.PriorityQueue() # queue for scheduled execution
+        self.actionQueue = MutablePriorityQueue() # queue for immediate execution
+        self.scheduledQueue = MutablePriorityQueue() # queue for scheduled execution
         self.scope = weakref.ref(scope)
         
         #this will be assigned to a callback to indicate if the last task has completed        
@@ -211,6 +222,30 @@ class ActionManager(object):
                     #logger.debug('Queuing action %s for delayed execution (%s, %s)' % (functionName, curTime, execute_after))
                     self.scheduledQueue.put_nowait((after, (nice_, action, expiry, max_duration)))
             
+        self.onQueueChange.send(self)
+
+    def remove_actions(self, actions):
+        """Remove a specific action from the queue
+        
+        Parameters
+        ----------
+        action : Action
+            The action to remove
+        """
+        
+        #TODO - do we need to lock here?
+        
+        for action in actions:
+            # try and remove from both queues
+            try:
+                self.actionQueue.remove(action)
+            except ValueError:
+                pass
+            try:
+                self.scheduledQueue.remove(action)
+            except ValueError:
+                pass
+
         self.onQueueChange.send(self)
         
         

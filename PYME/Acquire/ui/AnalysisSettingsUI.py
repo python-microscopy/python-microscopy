@@ -16,11 +16,10 @@ from PYME.contrib import dispatch
 logger = logging.getLogger(__name__)
 
 class AnalysisSettingsPanel(wx.Panel):
-    def __init__(self, parent, analysisSettings, mdhChangedSignal=None):
+    def __init__(self, parent, analysisSettings, mdhChangedSignal=None, show_save_mdh=True):
         wx.Panel.__init__(self, parent, -1)
         
         self.analysisSettings = analysisSettings        
-        self.analysisMDH = analysisSettings.analysisMDH
         self.mdhChangedSignal = mdhChangedSignal
         
         self._inChange = False
@@ -39,16 +38,21 @@ class AnalysisSettingsPanel(wx.Panel):
         hsizer.Add(self.cFitType, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALL, 4)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.cbLogSettings = wx.CheckBox(self, -1, 'Save analysis settings to metadata')
-        self.cbLogSettings.SetValue(False)
-        self.cbLogSettings.Bind(wx.EVT_CHECKBOX, lambda e : self.analysisSettings.SetPropagate(e.IsChecked()))
-        hsizer.Add(self.cbLogSettings, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALL, 4)
+        if show_save_mdh:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.cbLogSettings = wx.CheckBox(self, -1, 'Save analysis settings to metadata')
+            self.cbLogSettings.SetValue(False)
+            self.cbLogSettings.Bind(wx.EVT_CHECKBOX, lambda e : self.analysisSettings.SetPropagate(e.IsChecked()))
+            hsizer.Add(self.cbLogSettings, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALL, 4)
         
         self.SetSizerAndFit(vsizer)
         
         self.update()
+
+    @property
+    def analysisMDH(self):
+        return self.analysisSettings.analysisMDH
         
     def OnFitModuleChanged(self, event):
         self._inChange = True
@@ -87,8 +91,8 @@ class AnalysisDetailsPanel(wx.Panel):
     def __init__(self, parent, analysisSettings, mdhChangedSignal=None):
         wx.Panel.__init__(self, parent, -1)
 
-        #self.analysisSettings = analysisSettings
-        self.analysisMDH = analysisSettings.analysisMDH
+        self.analysisSettings = analysisSettings
+        #self.analysisMDH = analysisSettings.analysisMDH
         self.mdhChangedSignal = mdhChangedSignal
         
         mdhChangedSignal.connect(self.OnMDChanged)
@@ -108,6 +112,10 @@ class AnalysisDetailsPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
     
 
+    @property
+    def analysisMDH(self):
+        return self.analysisSettings.analysisMDH
+    
     def _populateStdOptionsPanel(self, pan, vsizer):
         for param in self.DEFAULT_PARAMS:
             pg = param.createGUI(pan, self.analysisMDH, syncMdh=True, 

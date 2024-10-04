@@ -142,6 +142,15 @@ class StateManager(object):
         #    raise KeyError('No handler registered for %s' % key)
         #    
         #return handler.setState(value)
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            if default is not None:
+                return default
+            else:
+                raise
         
     def setItem(self, key, value, stopCamera=False, force=False):
         """ Set the value of one of our hardware components

@@ -220,6 +220,7 @@ class HDFBackend(Backend):
            
         self._complevel = complevel
         self._complib = complib
+        self.series_name = series_name
         
 
     def store_frame(self, n, frame_data):
@@ -248,3 +249,7 @@ class HDFBackend(Backend):
 
         self.h5File.flush()
         self.h5File.close()
+
+    def getURL(self):
+        '''Get URL for the series to pass to other processes so they can open it'''
+        return self.series_name

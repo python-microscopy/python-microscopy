@@ -117,6 +117,11 @@ class Camera(object):
     MODE_HARDWARE_TRIGGER = 3
     MODE_HARDWARE_START_TRIGGER = 4
 
+    # Does this camera support a software trigger?
+    # Should be overridden in derived classes if the camera supports software triggering,
+    # and the derived class should also implement the FireSoftwareTrigger method
+    supports_software_trigger = False
+
 
     def __init__(self, *args, **kwargs):
         """

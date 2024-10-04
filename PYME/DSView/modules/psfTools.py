@@ -222,6 +222,67 @@ class CRBViewPanel(wx.Panel):
         self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
                                      float( pixels[1] )/self.figure.get_dpi() )
 
+class PSFFitSettingsDialog(wx.Dialog):
+    '''Dialog to set the parameters for zernike PSF fitting'''
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Wavelength [nm]:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tWavelength = wx.TextCtrl(self, -1, '700')
+        hsizer.Add(self.tWavelength, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'NA:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tNA = wx.TextCtrl(self, -1, '1.49')
+        hsizer.Add(self.tNA, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Refractive index (n):'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tn = wx.TextCtrl(self, -1, '1.51')
+        hsizer.Add(self.tn, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Number of modes to fit:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tNumModes = wx.TextCtrl(self, -1, '16')
+        hsizer.Add(self.tNumModes, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Number of iterations:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tNumIterations = wx.TextCtrl(self, -1, '10')
+        hsizer.Add(self.tNumIterations, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Mode starting values:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tStartingZernikes = wx.TextCtrl(self, -1, '{}')
+        hsizer.Add(self.tStartingZernikes, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        vsizer.Add(hsizer)
+
+        btnsizer = self.CreateButtonSizer(wx.OK|wx.CANCEL)
+
+        vsizer.Add(btnsizer, 0, wx.ALL|wx.ALIGN_RIGHT, 5)
+
+        self.SetSizerAndFit(vsizer)
+
+    def get_params(self):
+        return {'wavelength': float(self.tWavelength.GetValue()),
+                'NA': float(self.tNA.GetValue()),
+                'n': float(self.tn.GetValue()),
+                'num_zernike_orders': int(self.tNumModes.GetValue()),
+                'num_iterations': int(self.tNumIterations.GetValue()),
+                'starting_zernikes': eval(self.tStartingZernikes.GetValue())}
+
+
+
+
+
 
 class PSFTools(HasTraits):
     wavelength = Float(700)
@@ -255,6 +316,7 @@ class PSFTools(HasTraits):
         dsviewer.AddMenuItem('Processing', "Cramer-Rao Bound vs Background ", self.OnCalcCRB3DvsBG)
         dsviewer.AddMenuItem('Processing', "PSF Background Correction", self.OnSubtractBackground)
         dsviewer.AddMenuItem('Processing', "Perform Astigmatic Calibration", self.OnCalibrateAstigmatism)
+        dsviewer.AddMenuItem('Processing', "Fit Zernike Model", self.OnFitModel)
         #wx.EVT_MENU(dsviewer, PROC_LABEL, self.OnLabel)
 
     def OnExtractPupil(self, event):
@@ -295,6 +357,28 @@ class PSFTools(HasTraits):
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
+    def OnFitModel(self, event):
+        from PYME.Analysis.PSFEst import fit_psf_zernikes
+        from PYME.IO.image import ImageStack
+        from PYME.DSView import ViewIm3D
+
+        settings_dlg = PSFFitSettingsDialog(self.dsviewer)
+        if settings_dlg.ShowModal() == wx.ID_OK:
+            params = settings_dlg.get_params()
+            fitter = fit_psf_zernikes.ZernikePSFFitter(self.image.data[:,:,:], self.image.voxelsize_nm, **params)
+            zs = fitter.approximate_zernikes(**params)
+
+            # create a new image stack with the resulting PSF approximation
+            psf = fitter.get_zernike_psf(zs)
+
+            im = ImageStack(psf, titleStub = 'Zernike approximated PSF')
+            im.mdh.copyEntriesFrom(self.image.mdh)
+            im.mdh['Parent'] = self.image.filename
+
+            dv = ViewIm3D(im, mode='psf', glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+
+    
     def OnCalibrateAstigmatism(self, event):
         #TODO - move all non-GUI logic for this out of this file?
         from PYME.recipes.measurement import FitPoints

@@ -26,6 +26,9 @@ import time
 
 from wx.core import TIMER_CONTINUOUS
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 
 class MultiTargetTimer(wx.Timer):
@@ -41,7 +44,10 @@ class MultiTargetTimer(wx.Timer):
     def Notify(self):
         for a in self.WantNotification:
             ts = time.time()
-            a()
+            try:
+                a()
+            except:
+                logger.exception('Error in timer callback')
             
             if self.PROFILE:
                 te = time.time() - ts
@@ -53,6 +59,9 @@ class MultiTargetTimer(wx.Timer):
                 
     def register_callback(self, callback):
         self.WantNotification.append(callback)
+
+    def unregister_callback(self, callback):
+        self.WantNotification.remove(callback)
 
     def start(self, delay_ms, single_shot=False):
         if single_shot:

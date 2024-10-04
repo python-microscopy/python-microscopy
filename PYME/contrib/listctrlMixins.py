@@ -425,6 +425,8 @@ class ListCtrlSelectionManagerMix(object):
 #----------------------------------------------------------------------------
 from bisect import bisect
 
+from wx.lib.mixins import listctrl as listmix
+
 
 class TextEditMixin(object):
     """    
@@ -572,13 +574,16 @@ class TextEditMixin(object):
 
         # give the derived class a chance to Allow/Veto this edit.
         evt = wx.ListEvent(wx.wxEVT_COMMAND_LIST_BEGIN_LABEL_EDIT, self.GetId())
-        evt.m_itemIndex = row
-        evt.m_col = col
+        #evt.m_itemIndex = row
+        #evt.m_col = col
+        evt.SetIndex(row)
+        evt.SetColumn(col)
         item = self.GetItem(row, col)
-        evt.m_item.SetId(item.GetId()) 
-        evt.m_item.SetColumn(item.GetColumn()) 
-        evt.m_item.SetData(item.GetData()) 
-        evt.m_item.SetText(item.GetText()) 
+        evt.SetItem(item)
+        #evt.m_item.SetId(item.GetId()) 
+        #evt.m_item.SetColumn(item.GetColumn()) 
+        #evt.m_item.SetData(item.GetData()) 
+        #evt.m_item.SetText(item.GetText()) 
         ret = self.GetEventHandler().ProcessEvent(evt)
         #print ret, evt.IsAllowed()
         if ret and not evt.IsAllowed():
