@@ -258,20 +258,38 @@ class IDS_Camera(Camera):
 
         event_log.logEvent('StartAq', '')
         try:
-            if self._cont_mode:
-                # continuous acq only for now:
-                self._data_stream.StartAcquisition(peak.AcquisitionStartMode_Default,
-                                                peak.DataStream.INFINITE_NUMBER)
+            
+            if self._acq_mode == self.MODE_CONTINUOUS:
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('Off')
+                
+            elif self._acq_mode == self.MODE_SOFTWARE_TRIGGER:
+                self._node_map.FindNode('TriggerSelector').SetCurrentEntry('ExposureStart')
+                self._node_map.FindNode('TriggerSource').SetCurrentEntry('Software')
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('On')
+                
 
-                self._node_map.FindNode('TLParamsLocked').SetValue(1)
-                self._node_map.FindNode('AcquisitionStart').Execute()
+            elif self._acq_mode == self.MODE_HARDWARE_TRIGGER:
+                self._node_map.FindNode('TriggerSelector').SetCurrentEntry('ExposureStart')
+                # line0 should be (trigger) input with optocoupler for all IDS
+                # cameras covered in IDS peak 2.10.0 with hardware triggering
+                self._node_map.FindNode('TriggerSource').SetCurrentEntry('Line0')
             else:
                 raise NotImplementedError('Single shot mode not implemented')
+            
+            self._node_map.FindNode('TLParamsLocked').SetValue(1)
+            self._data_stream.StartAcquisition(peak.AcquisitionStartMode_Default,
+                                                peak.DataStream.INFINITE_NUMBER)
+            self._node_map.FindNode('AcquisitionStart').Execute()
+
         except Exception as e:
             logger.error(f'Error starting acquisition: {e}')
             raise e
         self._poll = True
         return 0
+    
+    def FireSoftwareTrigger(self):
+        self._node_map.FindNode('TriggerSoftware').Execute()
+        # self._node_map.FineNode('TriggerSoftware').WaitUntilDone(1000)
     
     def GetIntegTime(self):
         """
@@ -426,18 +444,12 @@ class IDS_Camera(Camera):
         Parameters
         ----------
         mode : int
-            toggles between continuous and single shot mode
+            toggles between continuous and triggered modes
         """
-        if mode == self.MODE_SINGLE_SHOT:
-            self._cont_mode = False
-        else:
-            self._cont_mode = True
+        self._acq_mode = mode
             
     def GetAcquisitionMode(self):
-        if self._cont_mode:
-            return self.MODE_CONTINUOUS
-        else:
-            return self.MODE_SINGLE_SHOT
+        return self._acq_mode
     
     def GetFPS(self):
         """
