@@ -225,21 +225,36 @@ class ChainedAnalysisPage(wx.Panel):
         self._recipe_manager = recipe_manager
         self._localization_panel = localization_panel
 
+        self._displayed_rule_keys = None
+
         self._editor_panels = []
 
         v_sizer = wx.BoxSizer(wx.VERTICAL)
         vsizer = wx.BoxSizer(wx.VERTICAL)
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # # associated protocol choicebox (default / others on top, then rest)
+        # hsizer.Add(wx.StaticText(self, -1, 'Rule Chain:'), 0, 
+        #            wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        # self.c_rule_selection = wx.Choice(self, -1, choices=list(self._loaded_rules.keys()))
+        # self.c_rule_selection.SetSelection(0)
+        # self.c_rule_selection.Bind(wx.EVT_CHOICE, self.OnRuleChoice)
+        # hsizer.Add(self.c_rule_selection, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+
+        # vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        self.l_analysis_rules = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL)
+        self.l_analysis_rules.InsertColumn(0, 'Rule Name', width=150)
+        self.l_analysis_rules.InsertColumn(1, 'Summary', width=wx.LIST_AUTOSIZE)
+
+        self.l_analysis_rules.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectRule)
+
+
+        #hsizer.AddStretchSpacer()
+
+        vsizer.Add(self.l_analysis_rules, 1, wx.EXPAND, 0)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        # associated protocol choicebox (default / others on top, then rest)
-        hsizer.Add(wx.StaticText(self, -1, 'Rule Chain:'), 0, 
-                   wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.c_rule_selection = wx.Choice(self, -1, choices=list(self._loaded_rules.keys()))
-        self.c_rule_selection.SetSelection(0)
-        self.c_rule_selection.Bind(wx.EVT_CHOICE, self.OnRuleChoice)
-        hsizer.Add(self.c_rule_selection, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-
-        hsizer.AddStretchSpacer()
 
         self._b_add_rule_chain = wx.Button(self, -1, 'Add')
         hsizer.Add(self._b_add_rule_chain, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -297,7 +312,7 @@ class ChainedAnalysisPage(wx.Panel):
         self._rpan.Hide()
         self._editor_panels.append(self._rpan)
 
-
+        self.update()
         self.SetSizerAndFit(v_sizer)
         self._loaded_rules._updated.connect(self.update)
     
@@ -363,6 +378,13 @@ class ChainedAnalysisPage(wx.Panel):
 
     def OnRuleChoice(self, wx_event=None):
         self.select_rule_chain(self.c_rule_selection.GetStringSelection())
+
+    def OnSelectRule(self, wx_event=None):
+        selected = self.l_analysis_rules.GetFirstSelected()
+        if selected != -1:
+            self.select_rule_chain(self.l_analysis_rules.GetItemText(selected))
+
+        wx_event.Skip()
     
     def select_rule_chain(self, rule='default'):
         if rule not in self._loaded_rules.keys():
@@ -379,8 +401,31 @@ class ChainedAnalysisPage(wx.Panel):
         
         
     def update(self, *args, **kwargs):
-        self.c_rule_selection.SetItems(list(self._loaded_rules.keys()))
-        self.c_rule_selection.SetStringSelection(self._selected_rule)
+        rule_keys = list(self._loaded_rules.keys())
+        #self.c_rule_selection.SetItems(list(self._loaded_rules.keys()))
+        #self.c_rule_selection.SetStringSelection(self._selected_rule)
+
+        if not tuple(rule_keys) == self._displayed_rule_keys:
+            self.l_analysis_rules.DeleteAllItems()
+            for ind, rule in enumerate(rule_keys):
+                self.l_analysis_rules.InsertItem(ind, rule)
+                #self.l_analysis_rules.SetItem(ind, 1, str(self._loaded_rules[rule].rule_factories))
+            self._displayed_rule_keys = tuple(rule_keys)
+        
+        for ind, rule in enumerate(rule_keys):
+            #self.l_analysis_rules.InsertItem(ind, rule)
+            self.l_analysis_rules.SetItem(ind, 1, str(self._loaded_rules[rule].rule_factories))
+            if (rule == self._selected_rule) and not self.l_analysis_rules.IsSelected(ind):
+                self.l_analysis_rules.Select(ind)
+            elif (rule != self._selected_rule) and self.l_analysis_rules.IsSelected(ind):
+                self.l_analysis_rules.Select(ind, False)
+
+
+        self.l_analysis_rules.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.l_analysis_rules.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        
+        #self.l_analysis_rules.Select(rule_keys.index(self._selected_rule))
+
         self.rule_plot.draw()
         
     
