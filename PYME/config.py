@@ -50,6 +50,9 @@ overall template for a configuration directory is as follows: ::
       |     |- init_mymachine.py
       |     |- init_my_other_config.py
       |
+      |- chained_analyisis
+      |     |-analysis_rule_chain.yaml
+      |
       |- cameras
       |     |- bunch_of_cams.yaml
       |     |- single_cam.yaml
@@ -514,6 +517,18 @@ def get_custom_recipes():
         recip_glob = os.path.join(config_dir, 'customrecipes/[a-zA-Z]*.yaml')
         recipes.update({os.path.split(p)[-1] : p for p in glob.glob(recip_glob)})
     return recipes
+
+def get_analysis_rulechains():
+    """
+    Get a dictionary recording the locations of any custom analysis rule chains, as used by
+    PYMEAcquire chained analysis.
+    """
+    import glob
+    chains = {}
+    for config_dir in config_dirs:
+        chain_glob = os.path.join(config_dir, 'chained_analysis/*.yaml')
+        chains.update({os.path.split(p)[-1] : p for p in glob.glob(chain_glob)})
+    return chains
 
 def get_init_filename(filename, legacy_scripts_directory=None):
     """
