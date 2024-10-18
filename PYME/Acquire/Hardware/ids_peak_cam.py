@@ -30,6 +30,14 @@ def find_ids_peak_cameras():
     device_manager.Update()
     return device_manager.Devices()
 
+# at the moment, only support 'unpacked' types, i.e. 12 bit in 2 bytes, not 1.5 bytes
+PIXEL_FORMATS = {  
+    8: 'Mono8',
+    10: 'Mono10',
+    12: 'Mono12',
+    # 16: 'Mono16',  # Only supported by uEye cameras (UI models, not e.g. U3)
+}
+
 class IDS_Camera(Camera):
     """
 
@@ -40,6 +48,7 @@ class IDS_Camera(Camera):
     PYME.Acquire.Hardware.camera_noise.
     """
     def __init__(self, device_number=0, nbits=8):
+        import sys
         self.initialized = False
         super().__init__()
         self.device_number = device_number
@@ -99,6 +108,12 @@ class IDS_Camera(Camera):
 
         self._buffer_poll_wait_time_ms = 5000  # [ms]
 
+        # set pixel format
+        self._node_map.FindNode("PixelFormat").SetCurrentEntry(PIXEL_FORMATS[nbits])
+        # IDS sends all multi-byte little-endian, and we're going to copy in native computer order,
+        # throw an error unless we're matched.
+        assert sys.byteorder == 'little'
+
         self.Init()
         self.initialized = True
         
@@ -136,6 +151,7 @@ class IDS_Camera(Camera):
             buffer = self._data_stream.WaitForFinishedBuffer(self._buffer_poll_wait_time_ms)
             # copy over
             ctypes.memmove(self.transfer_buffer, int(buffer.BasePtr()), int(buffer.Size()))
+            # ctypes uses native byteorder, so we are OK if this is little-endian system 
             arr = np.frombuffer(self.transfer_buffer, dtype=self.transfer_buffer_dtype)
             # return camera buffer to queue
             self._data_stream.QueueBuffer(buffer)
@@ -223,6 +239,8 @@ class IDS_Camera(Camera):
         self.free_buffers = queue.Queue()
         self.full_buffers = queue.Queue()
         for ind in range(n_buffers):
+            # Note that it is essential to use zeros here to ensure
+            # compatibility with Mono8, Mono10, Mono12 written into uint16
             self.free_buffers.put(np.zeros((self.GetPicHeight(), self.GetPicWidth()), 
                                            dtype=np.uint16))
         self._poll = False
@@ -309,7 +327,7 @@ class IDS_Camera(Camera):
     
     def SetIntegTime(self, exposure_time):
         """
-        Set the exposure time.
+        Set the exposure time. Automatically adjusts frame rate
 
         Parameters
         ----------
@@ -320,18 +338,23 @@ class IDS_Camera(Camera):
         --------
         GetIntegTime
         """
-        fps_target = 1 / exposure_time  # [FPS]
-        lower = self._node_map.FindNode("AcquisitionFrameRate").Minimum()  # [FPS]
-        upper = self._node_map.FindNode("AcquisitionFrameRate").Maximum()  # [FPS]
-        fps = np.clip(fps_target, lower, upper)
-        self._node_map.FindNode("AcquisitionFrameRate").SetValue(fps)
-        self._node_map.FindNode("ExposureTime").Maximum()  # [us]
-        # get acceptable range, in units of microseconds
+        # note that setting exposure time will automatically increase decrease
+        # FPS if necessary, but setting exposure time lower will not 
+        # automatically increase FPS
+        
+        # Exposure time min/max will auto adjust given the current frame rate,
+        # so best to ignore it, and let frame rate adjust to what it can.
         # lower = self._node_map.FindNode("ExposureTime").Minimum()  # [us]
         # upper = self._node_map.FindNode("ExposureTime").Maximum()  # [us]
         # exp_time = np.clip(exposure_time * 1e6, lower, upper)  # [us]
         # logger.info(f'Setting exposure time to {exp_time} us')
         # self._node_map.FindNode("ExposureTime").SetValue(exp_time)
+        self._node_map.FindNode("ExposureTime").SetValue(exposure_time * 1e6)
+        fps_target = 1 / exposure_time  # [FPS]
+        lower = self._node_map.FindNode("AcquisitionFrameRate").Minimum()  # [FPS]
+        upper = self._node_map.FindNode("AcquisitionFrameRate").Maximum()  # [FPS]
+        fps = np.clip(fps_target, lower, upper)
+        self._node_map.FindNode("AcquisitionFrameRate").SetValue(fps)
     
     def GetPicWidth(self):
         """
@@ -450,7 +473,7 @@ class IDS_Camera(Camera):
         Parameters
         ----------
         mode : int
-            toggles between continuous and triggered modes
+            toggles between continuous and single shot mode
         """
         self._acq_mode = mode
             
