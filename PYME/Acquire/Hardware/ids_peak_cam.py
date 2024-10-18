@@ -320,12 +320,18 @@ class IDS_Camera(Camera):
         --------
         GetIntegTime
         """
+        fps_target = 1 / exposure_time  # [FPS]
+        lower = self._node_map.FindNode("AcquisitionFrameRate").Minimum()  # [FPS]
+        upper = self._node_map.FindNode("AcquisitionFrameRate").Maximum()  # [FPS]
+        fps = np.clip(fps_target, lower, upper)
+        self._node_map.FindNode("AcquisitionFrameRate").SetValue(fps)
+        self._node_map.FindNode("ExposureTime").Maximum()  # [us]
         # get acceptable range, in units of microseconds
-        lower = self._node_map.FindNode("ExposureTime").Minimum()  # [us]
-        upper = self._node_map.FindNode("ExposureTime").Maximum()  # [us]
-        exp_time = np.clip(exposure_time * 1e6, lower, upper)  # [us]
-        logger.info(f'Setting exposure time to {exp_time} us')
-        self._node_map.FindNode("ExposureTime").SetValue(exp_time)
+        # lower = self._node_map.FindNode("ExposureTime").Minimum()  # [us]
+        # upper = self._node_map.FindNode("ExposureTime").Maximum()  # [us]
+        # exp_time = np.clip(exposure_time * 1e6, lower, upper)  # [us]
+        # logger.info(f'Setting exposure time to {exp_time} us')
+        # self._node_map.FindNode("ExposureTime").SetValue(exp_time)
     
     def GetPicWidth(self):
         """
