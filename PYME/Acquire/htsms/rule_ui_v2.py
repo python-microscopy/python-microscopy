@@ -108,6 +108,21 @@ class RuleDict(OrderedDict):
         # TODO - make the default rule chain a 2D Gaussian localization rule
         #mdh = DictMDHandler(self._localization_panel.localization_settings.analysisMDH)
         #loc_rule = get_rule_tile(SpoolLocalLocalizationRuleFactory)(analysisMetadata=mdh)
+
+
+    def load_from_config(self):
+        """
+        Load rule chains stored in the analysis_rules subfolder of the PYME config directory
+        (typically ~/.PYME/analysis_rules)
+
+        """
+        from PYME import config
+
+        chains = config.get_analysis_rulechains()
+
+        for k, fn in chains.items():
+            with open(fn, 'r') as f:
+                self[os.path.splitext(k)[0]] = RuleChain.from_yaml(f.read())
         
     
     def update(self, *args, **kwargs):
@@ -542,6 +557,7 @@ def plug(main_frame, scope, default_pairings=None):
     from PYME.Acquire.ui.AnalysisSettingsUI import AnalysisSettings
 
     scope.analysis_rules = RuleDict()
+    scope.analysis_rules.load_from_config()
     _recipe_manager = RecipeManager()
     _localization_settings = AnalysisSettings() #TODO - we should not need this to be global.
 
