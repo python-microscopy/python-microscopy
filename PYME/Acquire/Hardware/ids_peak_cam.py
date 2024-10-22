@@ -291,6 +291,7 @@ class IDS_Camera(Camera):
                 # line0 should be (trigger) input with optocoupler for all IDS
                 # cameras covered in IDS peak 2.10.0 with hardware triggering
                 self._node_map.FindNode('TriggerSource').SetCurrentEntry('Line0')
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('On')
             else:
                 raise NotImplementedError('Single shot mode not implemented')
             
