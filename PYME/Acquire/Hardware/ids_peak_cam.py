@@ -8,6 +8,7 @@ import time
 import ctypes
 import queue
 from PYME.Acquire import eventLog as event_log
+from threading import Lock
 
 # The IDS Peak API supports uEye+ cameras (U3/GV models) as well as "almost all" uEye (UI models) 
 # to use this implementation, first install the IDS Peak SDK (our interface developed on version 2.6.2.0)
@@ -54,6 +55,7 @@ class IDS_Camera(Camera):
         self.device_number = device_number
         self.nbits = nbits
         self.n_full = 0
+        self._buffer_lock = Lock()  # use to avoid race conditions while polling buffers during their destruction
 
         devices = find_ids_peak_cameras()
         if len(devices) == 0:
@@ -127,7 +129,8 @@ class IDS_Camera(Camera):
         while self.poll_loop_active:
             if self._poll: # only poll if an acquisition is running
                 try:
-                    self._poll_buffer()
+                    with self._buffer_lock:
+                        self._poll_buffer()
                 except Exception as e:
                     logger.exception(str(e))
             else:
@@ -177,31 +180,32 @@ class IDS_Camera(Camera):
     
     def Close(self):
         self.StopAq()
-        self.DestroyBuffers()
+        # self.DestroyBuffers()  # already destroyed in StopAq
         peak.Library.Close()
     
     def DestroyBuffers(self):
-        self.n_full = 0
+        with self._buffer_lock:
+            self.n_full = 0
 
-        # remove camera-side buffers
-        for b in self._data_stream.AnnouncedBuffers():
-            try:
-                self._data_stream.RevokeBuffer(b)
-            except Exception as e:
-                logger.error(f'Error revoking buffer: {e}')
+            # remove camera-side buffers
+            for b in self._data_stream.AnnouncedBuffers():
+                try:
+                    self._data_stream.RevokeBuffer(b)
+                except Exception as e:
+                    logger.error(f'Error revoking buffer: {e}')
+                
+            # computer RAM: destroy free and full buffer queues
+            while not self.full_buffers.empty():
+                try:
+                    self.full_buffers.get_nowait()
+                except queue.Empty:
+                    pass
             
-        # computer RAM: destroy free and full buffer queues
-        while not self.full_buffers.empty():
-            try:
-                self.full_buffers.get_nowait()
-            except queue.Empty:
-                pass
-        
-        while not self.free_buffers.empty():
-            try:
-                self.free_buffers.get_nowait()
-            except queue.Empty:
-                pass
+            while not self.free_buffers.empty():
+                try:
+                    self.free_buffers.get_nowait()
+                except queue.Empty:
+                    pass
     
     def allocate_buffers(self, n_buffers=50):
         self._n_cam_buffers = n_buffers
