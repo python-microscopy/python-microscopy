@@ -315,12 +315,21 @@ class ImportMatlabDialog(ColumnMappingDialog):
     def _parse_header(self, file):
         import numpy as np
 
-        if isinstance(file, dict):
+        if not isinstance(file, str):
             # We've passed the loaded file (scipy.io.loadmat returns a dict)
             mf = file
         else:
-            from scipy.io import loadmat
-            mf = loadmat(file)
+            try:
+                from scipy.io import loadmat
+
+                mf = loadmat(file)
+            except NotImplementedError:
+                # we have most likely tried to open a MATLAB >7.2 file.
+                import h5py
+
+                # this is SMAP-specific
+                mf = h5py.File(file)['saveloc']['loc']
+                
 
         self.numCommentLines = 0
 
@@ -328,10 +337,12 @@ class ImportMatlabDialog(ColumnMappingDialog):
 
         dataLines = []
         for k in colNames:
-            if mf[k].shape[1] > mf[k].shape[0]:
+            if len(mf[k].shape) > 2 and (mf[k].shape[1] > mf[k].shape[0]):
                 # Multicolor
                 self.multichannel = True
                 dataLines.append(mf[k][0,0][:10].squeeze())
+            elif len(mf[k].shape) > 1:
+                dataLines.append(mf[k][0,:10].squeeze())
             else:
                 dataLines.append(mf[k][:10].squeeze())
         dataLines = np.array(dataLines).T.astype(str).tolist()
