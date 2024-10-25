@@ -71,6 +71,15 @@ import numpy as np
 from PYME.util import fProfile
 
 # class DCIMGSpooler(object):
+
+
+from contextlib import contextmanager
+class DummyFramewrangler(object):
+    # Dummy class to provide the spooling_stopped context manager
+    @contextmanager
+    def spooling_stopped(self):
+        yield
+
 class TestSpooler:
     def __init__(self, testFrameSize = TEST_FRAME_SIZE, serverfilter=''):
         
@@ -95,19 +104,19 @@ class TestSpooler:
         if hdf_spooler:
             if compression:
                 #self.spooler = HDFSpooler.Spooler(filename, self.onFrame, frameShape = frameShape, complevel=0)
-                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=0,backend='hdf')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=0,backend='hdf', frame_wrangler=DummyFramewrangler())
             else:
                 #self.spooler = HDFSpooler.Spooler(filename, self.onFrame,frameShape = frameShape, complevel=3)
-                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=3,backend='hdf')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=3,backend='hdf', frame_wrangler=DummyFramewrangler())
         else:
             if compression:
-                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter, backend='cluster')
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter, backend='cluster', frame_wrangler=DummyFramewrangler())
 
             else:
                 self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame,
                                                    frameShape = None, serverfilter=self.serverfilter,
                                                    compressionSettings={'compression': PZFFormat.DATA_COMP_RAW,
-                                                                        'quantization':PZFFormat.DATA_QUANT_NONE}, backend='cluster')
+                                                                        'quantization':PZFFormat.DATA_QUANT_NONE}, backend='cluster', frame_wrangler=DummyFramewrangler())
                 
         
         
