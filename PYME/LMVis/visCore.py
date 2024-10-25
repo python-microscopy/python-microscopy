@@ -770,9 +770,17 @@ class VisGUICore(object):
             pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
-            from scipy.io import loadmat
-        
-            mf = loadmat(filename)
+            try:
+                from scipy.io import loadmat
+            
+                mf = loadmat(filename)
+            except NotImplementedError:
+                # we have most likely tried to open a MATLAB >7.2 file.
+                import h5py
+
+                # this is SMAP-specific
+                mf = h5py.File(filename)['saveloc']['loc']
+
             if ('x' not in mf.keys()) or ('y' not in mf.keys()):
                 # This MATLAB file has some weird variable names
 

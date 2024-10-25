@@ -672,9 +672,18 @@ class MatfileSource(TabularBase):
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
 
-        import scipy.io
+        try:
+            import scipy.io
 
-        self.res = scipy.io.loadmat(filename)[varName].astype('f4')  # TODO: evaluate why these are cast as floats
+            mf = scipy.io.loadmat(filename)
+        except NotImplementedError:
+            # we have most likely tried to open a MATLAB >7.2 file.
+            import h5py
+
+            # this is SMAP-specific
+            mf = h5py.File(filename)['saveloc']['loc']
+
+        self.res = mf[varName].astype('f4')  # TODO: evaluate why these are cast as floats
         self.res = np.rec.fromarrays(self.res.T, dtype={'names' : columnnames,  'formats' :  ['f4' for i in range(len(columnnames))]})
 
         self._keys = list(columnnames)
@@ -704,9 +713,17 @@ class MatfileColumnSource(TabularBase):
         be present.
         """
         
-        import scipy.io
-        
-        self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
+        try:
+            import scipy.io
+            
+            self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
+        except NotImplementedError:
+            # we have most likely tried to open a MATLAB >7.2 file.
+            import h5py
+
+            # this is SMAP-specific
+            self.res = h5py.File(filename)['saveloc']['loc']
+
         
         self._keys = [k for k in self.res.keys() if not k.startswith('_')]
     
