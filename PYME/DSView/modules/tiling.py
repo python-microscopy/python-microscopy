@@ -30,16 +30,23 @@ class Tiler(Plugin):
         Plugin.__init__(self, dsviewer)
 
         dsviewer.AddMenuItem('Processing', "&Tiling", self.OnTile)
+        dsviewer.AddMenuItem('Processing', "&Tiling (with cross-correlation)", lambda e: self.OnTile(correlate=True))
 
-    def OnTile(self, event):
+    def OnTile(self, event=None, correlate=False):
         from PYME.Analysis import deTile
         from PYME.DSView import View3D
 
+        dlg = wx.TextEntryDialog(self.dsviewer, 'Please enter backlash correction parameters (x, y)', 'Backlash Correction Parameters', '0.0, 0.0')
+        if dlg.ShowModal():
+            x_corr, y_corr = [float(x) for x in dlg.GetValue().split(',')]
+        else:
+            return
+
         x0 = self.image.mdh.getEntry('Positioning.x')
-        xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh, self.image.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0, .0055)
+        xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh, self.image.mdh.getEntry('StartTime'), x0, b'ScannerXPos', 0, x_corr)
 
         y0 = self.image.mdh.getEntry('Positioning.y')
-        ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh, self.image.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0, .0035)
+        ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh, self.image.mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0, y_corr)
 
         #dark = deTile.genDark(self.vp.do.ds, self.image.mdh)
         dark = self.image.mdh.getEntry('Camera.ADOffset')
@@ -52,7 +59,7 @@ class Tiler(Plugin):
 
         split = False
 
-        dt = deTile.tile(self.image.data, xm, ym, self.image.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat)#, mixmatrix = [[.3, .7], [.7, .3]])
+        dt = deTile.tile(self.image.data, xm, ym, self.image.mdh, split=split, skipMoveFrames=False, dark=dark, flat=flat, correlate=correlate)#, mixmatrix = [[.3, .7], [.7, .3]])
 
         mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)        
         
@@ -69,12 +76,12 @@ class Tiler(Plugin):
         x0 = self.image.mdh.getEntry('Positioning.x')
         xm = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh,
                                                                   self.image.mdh.getEntry('StartTime'), x0,
-                                                                  'ScannerXPos', 0, .0055)
+                                                                  b'ScannerXPos', 0, .0055)
 
         y0 = self.image.mdh.getEntry('Positioning.y')
         ym = piecewiseMapping.GenerateBacklashCorrPMFromEventList(self.image.events, self.image.mdh,
                                                                   self.image.mdh.getEntry('StartTime'), y0,
-                                                                  'ScannerYPos', 0, .0035)
+                                                                  b'ScannerYPos', 0, .0035)
 
         #dark = deTile.genDark(self.vp.do.ds, self.image.mdh)
         dark = self.image.mdh.getEntry('Camera.ADOffset')

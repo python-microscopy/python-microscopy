@@ -184,13 +184,31 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
+@init_hardware('Tiling')
+def tiling(scope):
+    from PYME.Acquire.Utils import tiler
+    scope.spoolController.register_acquisition_type('Tiling', tiler.Tiler)
 
 @init_gui('Tiling')
-def action_manager(MainFrame, scope):
-    from PYME.Acquire.ui import tile_panel
+def tiling(MainFrame, scope):
+    from PYME.Acquire.ui import tilesettingsui
     
-    ap = tile_panel.TilePanel(MainFrame, scope)
-    MainFrame.aqPanels.append((ap, 'Tiling'))
+    ts = tilesettingsui.TileSettingsUI(MainFrame, scope)
+    MainFrame.register_acquisition_ui('Tiling', (ts, 'Tiling'))
+
+# @init_gui('Tiling')
+# def action_manager(MainFrame, scope):
+#     from PYME.Acquire.ui import tile_panel
+    
+#     ap = tile_panel.TilePanel(MainFrame, scope)
+#     MainFrame.aqPanels.append((ap, 'Tiling'))
+
+@init_gui('Automated analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.htsms import rule_ui_v2
+    
+    rule_ui_v2.plug(main_frame, scope)
+
 
 
 #must be here!!!

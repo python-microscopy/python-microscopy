@@ -38,6 +38,10 @@ import yaml
 class MyDumper(yaml.SafeDumper):
             def represent_mapping(self, tag, value, flow_style=None):
                 return super(MyDumper, self).represent_mapping(tag, value, False)
+            
+# make sure we can dump metadata to yaml
+from PYME.IO import MetaDataHandler
+MyDumper.add_multi_representer(MetaDataHandler.MDHandlerBase, yaml.representer.SafeRepresenter.represent_dict)
 
 # TODO - move to recipe.py?
 all_modules = {}

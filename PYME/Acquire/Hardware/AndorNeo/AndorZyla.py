@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 class AndorBase(SDK3Camera, CameraMapMixin):
     numpy_frames=1
+    supports_software_trigger = True
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
