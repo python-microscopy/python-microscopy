@@ -31,7 +31,7 @@ class Backend(abc.ABC):
         self.mdh['SizeT'] =  shape[3]
         self.mdh['SizeZ'] =  shape[2]
 
-        self.imNum = 0 # for event logger compatibility
+        self.imNum = -1 # for event logger compatibility
 
         if not hasattr(self, 'event_logger'):
             # if we haven't already defined an event logger in a derived class, create a memory logger
