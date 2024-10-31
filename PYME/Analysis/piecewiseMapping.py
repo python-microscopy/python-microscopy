@@ -119,6 +119,10 @@ def frames_to_times(fr, events, mdh):
     """
     Use events and metadata to convert frame numbers to seconds
 
+    2024/11/1 - This used to return the start time of the subsequent frame (i.e. approx but not 
+    exactly the end time of the frame). Changed to return the start time of the current frame, 
+    which should be more accurate with camera restarts
+
     Parameters
     ----------
     fr: ndarray
@@ -139,7 +143,7 @@ def frames_to_times(fr, events, mdh):
     #se = array([('0', 'start', startTime)], dtype=events.dtype)
     se = np.empty(1, dtype=events.dtype)
     se['EventName'] = 'start'
-    se['EventDescr'] = '0'
+    se['EventDescr'] = '-1'
     se['Time'] = startTime
 
     #get events corresponding to aquisition starts
@@ -149,8 +153,8 @@ def frames_to_times(fr, events, mdh):
 
     sfr = np.array([int(e['EventDescr'].decode()) for e in startEvents])
 
-    si = sfr.searchsorted(fr, side = 'right')
-    return startEvents['Time'][si-1] + (fr - sfr[si-1]) * cycTime
+    si = sfr.searchsorted(fr, side = 'left')
+    return startEvents['Time'][si-1] + (fr - (sfr[si-1]+1)) * cycTime
     
 
 class piecewiseMap:

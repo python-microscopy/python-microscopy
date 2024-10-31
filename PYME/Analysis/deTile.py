@@ -27,6 +27,9 @@ from PYME.Analysis import splitting
 # from pylab import ifftshift, ifftn, fftn, fftshift
 from numpy.fft import ifftshift, ifftn, fftn, fftshift
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
+import logging
+
+logger = logging.getLogger(__name__)
 
 def findRectangularROIs(mask):
     #break up any L shaped rois
@@ -104,8 +107,29 @@ def guessFlat(ds, mdh, dark):
 
 
 
-def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixmatrix=[[1.,0.],[0.,1.]], correlate=False, dark=None, flat=None):
+def assemble_tiles(ds, xps, yps, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixmatrix=[[1.,0.],[0.,1.]], correlate=False, dark=None, flat=None):
+    """
+    Assemble a tiled image from a dataset ds, given the x and y positions of each frame (xps, yps) and the metadata handler mdh.
+
+    Parameters:
+    -----------
+    ds : arraylike (3D - x, y, frame)
+        The dataset to assemble
+
+    xps : ndarray
+        The x position of each frame in nm
+    
+    yps : ndarray
+        The y position of each frame in nm
+
+    mdh : MetaDataHandler
+        The metadata handler for the dataset
+    
+    """
     frameSizeX, frameSizeY, numFrames = ds.shape[:3]
+
+    assert(len(xps) == numFrames)
+    assert(len(yps) == numFrames)
 
     if split:
         frameSizeY /=2
@@ -117,14 +141,21 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     #x & y positions of each frame
     # FIXME!! - work out why we need to subtract 2 from the range and fix it properly
     # FIXME!! - is the -2 simulator specific?
-    xps = xm(np.arange(numFrames)-2)
-    yps = ym(np.arange(numFrames)-2)
+    #xps = xm(np.arange(numFrames)-2)
+    #yps = ym(np.arange(numFrames)-2)
 
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
+        logger.warning('Flipping X axis, not well tested (and may invert image)\nIf possible, set stage multiplier instead')
+        # TODO - CameraOrientation.FlipX should only be used for a secondary camera (in order to match the orientation of the primary camera)
+        # If possible (i.e. primary camera, single camera), it is preferable to configure the stage motion so that it matches the camera using the `multiplier` parameter to `register_piezo()`
+        # For secondary cameras we should really flip the image date, not the stage positions here so that the image data is consistent with the primary camera, and so that anything we detect
+        # in the tiled image can be mapped back to a stage position.
 
     if mdh.getOrDefault('CameraOrientation.FlipY', False):
         yps = -yps
+        logger.warning('Flipping Y axis, not well tested (and may invert image)\nIf possible, set stage multiplier instead')
+        # See notes above for CameraOrientation.FlipX
 
 
     #give some room at the edges
