@@ -160,34 +160,15 @@ def frames_to_times(fr, events, mdh):
 class piecewiseMap:
     def __init__(self, y0, xvals, yvals, secsPerFrame=1, xIsSecs=True):
         self.y0 = y0
-
-        if xIsSecs: #store in frame numbers
-            self.xvals = xvals / secsPerFrame
-        else:
-            self.xvals = xvals
+        self.xvals = xvals  
         self.yvals = yvals
 
-        self.secsPerFrame = secsPerFrame
-        self.xIsSecs = xIsSecs
-
-    def __call__(self, xp, xpInFrames=True):
-        xp = xp.astype('f') #fast to float in case we get passed an int
+    def __call__(self, xp):
+        xp = xp.astype('d') #fast to float in case we get passed an int
         yp = 0 * xp
 
-        if not xpInFrames:
-            xp = xp / self.secsPerFrame
-        
-#        y0 = self.y0
-#        x0 = -inf
-#
-#        for x, y in zip(self.xvals, self.yvals):
-#            yp += y0 * (xp >= x0) * (xp < x)
-#            x0, y0 = x, y
-#
-#        x  = +inf
-#        yp += y0 * (xp >= x0) * (xp < x)
-
         inds = self.xvals.searchsorted(xp, side='right')
+        #print(xp, inds)
         yp  = self.yvals[np.maximum(inds-1, 0)]
         yp[inds == 0] = self.y0
 
@@ -296,11 +277,9 @@ def bool_map_between_events(events, metadata, trigger_high, trigger_low, default
 
     return piecewiseMap(default, times_to_frames(t[I], events, metadata), y[I], fps, xIsSecs=False)
 
-def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0):
+def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'ProtocolFocus', dataPos=1, backlash=0, in_frames= True):
     x = []
     y = []
-
-    secsPerFrame = metadata.getEntry('Camera.CycleTime')
 
     for e in events[events['EventName'] == eventName]:
         #if e['EventName'] == eventName:
@@ -318,6 +297,8 @@ def GenerateBacklashCorrPMFromEventList(events, metadata, x0, y0, eventName=b'Pr
 
     y += backlash*(dy < 0)
 
-
-    return piecewiseMap(y0, times_to_frames(x, events, metadata), y, secsPerFrame, xIsSecs=False)
+    if in_frames:
+        return piecewiseMap(y0, times_to_frames(x, events, metadata), y)
+    else:
+        return piecewiseMap(y0, x, y)
 
