@@ -153,6 +153,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         
     def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
+        
         pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
         
         d = frameData.astype('f').squeeze()
@@ -173,13 +174,23 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
 
         self.frame_num += 1
         
-        t = time.time()
-        if t > (self._last_update_time + 1):
-            self._last_update_time = t
-            self.on_progress.send(self)
+        if self.running:
+            t = time.time()
+            if t > (self._last_update_time + 1):
+                self._last_update_time = t
+                self.on_progress.send(self)
+
+        else:
+            self._finalise()
         
     def _stop(self):
         pointScanner.PointScanner._stop(self, send_stop=False)
+        
+    def _finalise(self):
+        # this does the finalisation steps that need to be done after the scan is complete.
+        # It is separate from _stop(), as _stop() is called by PointScanner.on_frame() **before** the final frame
+        # has been saved. We want to have the final frame saved before we do the finalisation steps.
+            
         self.on_progress.send(self)
         t_ = time.time()
 
