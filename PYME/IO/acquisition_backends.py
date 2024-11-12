@@ -56,7 +56,11 @@ class Backend(abc.ABC):
         """ Called before acquisition starts, may be overridden to e.g. save metadata.
         NOTE: We typically save metadata in advance of the data so that analysis can start while acquisition is underway.
         """
-        pass
+        
+        # set imNum to 0 (now handling the first frame)
+        # TODO - this is a hack to fix startAq event frame nums, and there has to be a better way of doing this.
+        self.imNum = 0
+        
     
     def finalise(self, events=None):
         """ Called after acquisition is complete, may be overridden to e.g. flush buffers, close files, , write events etc ...
@@ -193,6 +197,7 @@ class ClusterBackend(Backend):
         self.imNum = n+1
 
     def initialise(self):
+        super().initialise()
         self._streamer.put(self._series_location + '/metadata.json', self.mdh.to_JSON().encode())
     
     def finalise(self):

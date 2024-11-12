@@ -142,6 +142,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         pointScanner.PointScanner.start(self)
 
         self.dtStart = datetime.datetime.now()
+        self._backend.initialise()
         self.frame_num = 0
         
     def on_frame(self, frameData, **kwargs):
