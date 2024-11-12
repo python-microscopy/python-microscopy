@@ -85,6 +85,12 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
 
         tiling_settings.update(settings.get('tiling_settings', scope.tile_settings))
         
+        #fix timing when using fake camera
+        #TODO - move logic into backend?
+        if scope.cam.__class__.__name__ == 'FakeCamera':
+            backend_kwargs['spoof_timestamps'] = True
+            backend_kwargs['cycle_time'] = scope.cam.GetIntegTime()
+        
         return cls(scope=scope, backend=backend, backend_kwargs=backend_kwargs, **tiling_settings)
     
     @classmethod
