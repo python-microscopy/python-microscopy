@@ -376,7 +376,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
 
 
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000), single_active_pane=True)
+                                     wx.Size(240,1000), single_active_pane=True, constrain_children=True)
 
         if mode == 'compact':
             self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
