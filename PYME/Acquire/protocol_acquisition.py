@@ -169,12 +169,12 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
                                                                 shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
-                                                                evt_time_fcn=self._time_fcn)
+                                                                **kwargs)
             
         else: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.get('complevel', 6), complib=kwargs.get('complib','zlib'),
                             shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
-                            evt_time_fcn=self._time_fcn)
+                            **kwargs)
         
         
         self._stopping = False
