@@ -50,7 +50,7 @@ def getReducedFilename(filename):
 class ProtocolAcquisition(AcquisitionBase):
     """Spooler base class"""
     def __init__(self, filename, frameSource, frame_wrangler, protocol = p.NullProtocol, 
-                 fakeCamCycleTime=None, maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
+                 maxFrames = p.maxint, backend='hdf', backend_kwargs={}, **kwargs):
         """Create a new spooler.
         
         Parameters
@@ -95,8 +95,6 @@ class ProtocolAcquisition(AcquisitionBase):
         self.spool_complete = False
         
         self._spooler_uuid = uuid.uuid4()
-            
-        self._fakeCamCycleTime = fakeCamCycleTime
 
         self._last_gui_update = 0
 
@@ -121,17 +119,16 @@ class ProtocolAcquisition(AcquisitionBase):
                 return None #bail if we failed the pre flight check, and the user didn't choose to continue
         
         #fix timing when using fake camera
+        #TODO - move logic into backend?
         if scope.cam.__class__.__name__ == 'FakeCamera':
-            fakeCycleTime = scope.cam.GetIntegTime()
-        else:
-            fakeCycleTime = None
+            backend_kwargs['spoof_timestamps'] = True
+            backend_kwargs['cycle_time'] = scope.cam.GetIntegTime()
         
         #logger.info('Creating spooler for %s' % series_name)
         return cls(filename=series_name,
                     frameSource=scope.frameWrangler.onFrame,
                     frame_wrangler=scope.frameWrangler,
                     protocol=protocol,
-                    fakeCamCycleTime=fakeCycleTime, 
                     maxFrames=settings.get('max_frames', sys.maxsize),
                     stack_settings=settings.get('stack_settings', None),
                     backend=backend, backend_kwargs=backend_kwargs,) 
@@ -172,12 +169,12 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
                                                                 shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
-                                                                evt_time_fcn=self._time_fcn)
+                                                                **kwargs)
             
         else: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.get('complevel', 6), complib=kwargs.get('complib','zlib'),
                             shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
-                            evt_time_fcn=self._time_fcn)
+                            **kwargs)
         
         
         self._stopping = False
@@ -360,18 +357,18 @@ class ProtocolAcquisition(AcquisitionBase):
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
 
-    def _fake_time(self):
-        """Generate a fake timestamp for use with the simulator where the camera
-        cycle time does not match the actual time elapsed to generate the frame"""
-        #return self.tStart + self.frame_num*self.scope.cam.GetIntegTime()
-        return self.tStart + self.frame_num*self._fakeCamCycleTime
+    # def _fake_time(self):
+    #     """Generate a fake timestamp for use with the simulator where the camera
+    #     cycle time does not match the actual time elapsed to generate the frame"""
+    #     #return self.tStart + self.frame_num*self.scope.cam.GetIntegTime()
+    #     return self.tStart + self.frame_num*self._fakeCamCycleTime
     
-    @property
-    def _time_fcn(self):
-        if self._fakeCamCycleTime:
-            return self._fake_time
-        else:
-            return time.time
+    # @property
+    # def _time_fcn(self):
+    #     if self._fakeCamCycleTime:
+    #         return self._fake_time
+    #     else:
+    #         return time.time
 
     def FlushBuffer(self):
         pass

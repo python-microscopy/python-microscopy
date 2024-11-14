@@ -18,7 +18,7 @@ class Backend(abc.ABC):
     Base class for acquisition backends.
 
     """
-    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1], evt_time_fcn=time.time):
+    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1], spoof_timestamps=False, cycle_time=None, **kwargs):
         if not hasattr(self, 'mdh'):
             self.mdh = MetaDataHandler.DictMDHandler()
         self.mdh['imageID'] = self.sequence_id
@@ -31,11 +31,15 @@ class Backend(abc.ABC):
         self.mdh['SizeT'] =  shape[3]
         self.mdh['SizeZ'] =  shape[2]
 
-        self.imNum = 0 # for event logger compatibility
+        self.imNum = -1 # for event logger compatibility
+
+        self._spoof_timestamps = spoof_timestamps
+        self._fakeCamCycleTime = cycle_time
+        self._t_start = time.time() # record start time for fake timestamps
 
         if not hasattr(self, 'event_logger'):
             # if we haven't already defined an event logger in a derived class, create a memory logger
-            self.event_logger = MemoryEventLogger(spooler=self, time_fcn=evt_time_fcn)
+            self.event_logger = MemoryEventLogger(spooler=self, time_fcn=self._timestamp)
 
 
     @abc.abstractmethod
@@ -56,7 +60,12 @@ class Backend(abc.ABC):
         """ Called before acquisition starts, may be overridden to e.g. save metadata.
         NOTE: We typically save metadata in advance of the data so that analysis can start while acquisition is underway.
         """
-        pass
+        
+        # set imNum to 0 (now handling the first frame)
+        # TODO - this is a hack to fix startAq event frame nums, and there has to be a better way of doing this.
+        self.imNum = 0
+        self._t_start = time.time() # record start time for fake timestamps
+        
     
     def finalise(self, events=None):
         """ Called after acquisition is complete, may be overridden to e.g. flush buffers, close files, , write events etc ...
@@ -85,10 +94,22 @@ class Backend(abc.ABC):
         '''
         raise NotImplementedError('getURL() not implemented - this might not be a cluster-aware backend')
 
+    def _timestamp(self):
+        if self._spoof_timestamps:
+            return self._fake_time()
+        else:
+            return time.time()
+    
+    def _fake_time(self):
+        """Generate a fake timestamp for use with the simulator where the camera
+        cycle time does not match the actual time elapsed to generate the frame"""
+        #return self.tStart + self.frame_num*self.scope.cam.GetIntegTime()
+        return self._t_start + max(self.imNum, 0)*self._fakeCamCycleTime
+
 
 class MemoryBackend(Backend):
-    def __init__(self, size_x, size_y, n_frames, dtype='uint16', series_name=None, dim_order='XYCZT', shape=[-1, -1,1,1,1], evt_time_fcn=time.time, **kwargs):
-        Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
+    def __init__(self, size_x, size_y, n_frames, dtype='uint16', series_name=None, dim_order='XYCZT', shape=[-1, -1,1,1,1], **kwargs):
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
         self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
         
         # once we have proper xyztc support in the image viewer
@@ -124,11 +145,11 @@ class ClusterBackend(Backend):
     }
 
     def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], distribution_fcn=None, compression_settings={}, 
-                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, evt_time_fcn = time.time, **kwargs):
+                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, **kwargs):
         from PYME.IO import cluster_streaming
         from PYME.IO import PZFFormat
 
-        Backend.__init__(self, dim_order, shape, evt_time_fcn=evt_time_fcn)
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
 
         self.series_name = series_name
         self.serverfilter = serverfilter
@@ -193,6 +214,7 @@ class ClusterBackend(Backend):
         self.imNum = n+1
 
     def initialise(self):
+        super().initialise()
         self._streamer.put(self._series_location + '/metadata.json', self.mdh.to_JSON().encode())
     
     def finalise(self):
@@ -215,8 +237,8 @@ class HDFBackend(Backend):
 
         self.h5File = tables.open_file(series_name, 'w')
         self.mdh = MetaDataHandler.HDFMDHandler(self.h5File)
-        self.event_logger = HDFEventLogger(self, self.h5File, time_fcn=evt_time_fcn)
-        Backend.__init__(self, dim_order, shape)
+        self.event_logger = HDFEventLogger(self, self.h5File, time_fcn=self._timestamp)
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
            
         self._complevel = complevel
         self._complib = complib
