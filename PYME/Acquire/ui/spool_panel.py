@@ -364,7 +364,7 @@ class SpoolingPane(afp.foldingPane):
 
             
         else:
-            clp = afp.collapsingPane(self, caption='Real time analysis ...')
+            clp = afp.collapsingPane(pan, caption='Real time analysis ...')
 
             self.scope.analysisSettings = AnalysisSettingsUI.AnalysisSettings() #Move me???
 
