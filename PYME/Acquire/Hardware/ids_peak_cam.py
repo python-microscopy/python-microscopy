@@ -48,6 +48,9 @@ class IDS_Camera(Camera):
     which corresponds to the bit-depth for this class. See uEye example in
     PYME.Acquire.Hardware.camera_noise.
     """
+    
+    supports_software_trigger = True
+
     def __init__(self, device_number=0, nbits=8):
         import sys
         self.initialized = False
@@ -83,6 +86,8 @@ class IDS_Camera(Camera):
         self._offset_y_min = self._node_map.FindNode("OffsetY").Minimum()
         self._offset_x_max = self._node_map.FindNode("OffsetX").Maximum()
         self._offset_y_max = self._node_map.FindNode("OffsetY").Maximum()
+        self._offset_x_incr = self._node_map.FindNode("OffsetX").Increment()
+        self._offset_y_incr = self._node_map.FindNode("OffsetY").Increment()
         self._width_min = self._node_map.FindNode("Width").Minimum()
         self._height_min = self._node_map.FindNode("Height").Minimum()
         self._width_max = self._node_map.FindNode("Width").Maximum()
@@ -456,10 +461,15 @@ class IDS_Camera(Camera):
 
         """
         logger.debug('setting ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
+        # check offset increments
+        x1 -= x1 % self._offset_x_incr
+        y1 -= y1 % self._offset_y_incr
+        # clip to bounds
         x1 = int(np.clip(x1, self._offset_x_min, self._offset_x_max))
         y1 = int(np.clip(y1, self._offset_y_min, self._offset_y_max))
         x2 = int(np.clip(x2, x1 + self._width_min, self._width_max))
         y2 = int(np.clip(y2, y1 + self._height_min, self._height_max))
+        # double check width/height increments
         x2 -= (x2 - x1) % self._width_increment  # ROI must be a multiple of increment
         y2 -= (y2 - y1) % self._height_increment
         logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
