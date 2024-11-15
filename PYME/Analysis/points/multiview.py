@@ -308,6 +308,114 @@ def pair_molecules(t_index, x0, y0, which_chan, delta_x=[None], appear_in=np.ara
     else:
         return assigned
 
+def raw_shifts_by_frame(x0, y0, t0, x0err, y0err, x1, y1, t1, x1err, y1err,
+                        clump_distance=1000):
+    """Calculate raw shifts between points and uncertainty appropriate for
+    creating a shiftmap between two lists of points. Points are grouped only
+    if they share the same `t` and are within `clump_distance`
+
+    Parameters
+    ----------
+    x0 : ndarray
+        x positions in channel 0
+    y0 : ndarray
+        y positions in channel 0
+    t0 : ndarray
+        frame index for points in channel 0
+    x0err : ndarray
+        uncertainties for x positions in channel 0
+    y0err : ndarray
+        uncertainties for y positions in channel 0
+    x1 : ndarray
+        x positions in channel 1
+    y1 : ndarray
+        y positions in channel 1
+    t1 : ndarray
+        frame index for points in channel 1
+    x1err : ndarray
+        uncertainties for x positions in channel 1
+    y1err : ndarray
+        uncertainties for y positions in channel 1
+    clump_distance : int, ndarray, optional
+        distance to search, by default 1000
+
+    Returns
+    -------
+    xc : ndarray
+        x position (in channel 0) of grouped pairs
+    yc : ndarray
+        y position (in channel 0) of grouped pairs
+    dx : ndarray
+        shift in x, per pair of grouped points
+    dy : ndarray
+        shift in y, per pair of grouped points
+    dxerr : ndarray
+        uncertainty in `dx`
+    dyerr : ndarray
+        uncertainty in `dy`
+    """
+    from PYME.Analysis.points.DeClump import findClumps
+    # take out any large linear shifts for the sake of easier pairing
+    # x, y = correlative_shift(x0, y0, which_chan, clump_distance / 10)
+
+    x = np.concatenate([x0, x1])
+    y = np.concatenate([y0, y1])
+    t = np.concatenate([t0, t1])
+    xerr = np.concatenate([x0err, x1err])
+    yerr = np.concatenate([y0err, y1err])
+    channel = np.concatenate([np.zeros(len(t0)), np.ones(len(t1))])
+    
+    # sort by time for pyDeclump.findClumps
+    I = np.argsort(t)
+    x = x[I]
+    y = y[I]
+    t = t[I]
+    xerr = xerr[I]
+    yerr = yerr[I]
+    channel = channel[I]
+
+    if np.isscalar(clump_distance):
+        clump_distance = clump_distance*np.ones_like(x)
+    
+    assigned = findClumps(t.astype(np.int32), x, y, clump_distance, -1, True)
+    ids, count = np.unique(assigned, return_counts=True)
+
+    # reorder by id (is this already done actually?)
+    I = np.argsort(ids)
+    x = x[I]
+    y = y[I]
+    t = t[I]
+    xerr = xerr[I]
+    yerr = yerr[I]
+    channel = channel[I]
+
+    # iterate through and calculate shifts for clumps with both channels
+    xc, yc, dx, dy, dxerr, dyerr = [], [], [], [], [], []
+    start = 0
+    for ind, clump in enumerate(ids):
+        end = start + count[ind]
+        chan = channel[start:end]
+        # only look at pairings with exactly one localization from each channel
+        if (len(chan) == 2) and (0 in chan) and (1 in chan):
+            # grab the 0 and 1 channel indices for the full arrays
+            chan0 = start + np.argmin(chan)
+            chan1 = start + np.argmax(chan)
+            
+            xc.append(x[chan0])
+            yc.append(y[chan0])
+
+            # weirdly looks like we're supposed to do 0 - 1 instead of 1 - 0?
+            dx.append(x[chan0] - x[chan1])
+            dy.append(y[chan0] - y[chan1])
+            # add error in quadrature
+            dxerr.append(np.sqrt(xerr[chan0] ** 2 + xerr[chan1] ** 2))
+            dyerr.append(np.sqrt(yerr[chan0] ** 2 + yerr[chan1] ** 2))
+        
+        start = end
+    
+    return np.array(xc), np.array(yc), np.array(dx), np.array(dy), \
+           np.array(dxerr), np.array(dyerr)
+
 def calc_shifts_for_points(datasource, shiftWallet):
     import importlib
     model = shiftWallet['shiftModel'].split('.')[-1]
