@@ -452,7 +452,24 @@ class RecipeView(wx.Panel):
         self.bSaveRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnSaveRecipe)
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-        
+
+        if hasattr(self.recipes, 'OnSaveOutputs'):
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            self.b_toggle_exec_live = wx.CheckBox(self, -1, 'Live-Update')
+            self.b_toggle_exec_live.SetValue(self.recipes.pipeline.recipe.execute_on_invalidation)
+            self.b_toggle_exec_live.Bind(wx.EVT_CHECKBOX, self.recipes.OnToggleLiveRun)
+            hsizer.Add(self.b_toggle_exec_live)
+
+            self.b_run = wx.Button(self, -1, 'Run Recipe')
+            self.b_run.Bind(wx.EVT_BUTTON, self.recipes.OnRun)
+            hsizer.Add(self.b_run)
+
+            self.b_save_outputs = wx.Button(self, -1, 'Save Outputs')
+            hsizer.Add(self.b_save_outputs)
+            self.b_save_outputs.Bind(wx.EVT_BUTTON, self.recipes.OnSaveOutputs)
+
+            vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer1.Add(vsizer, 1, wx.EXPAND|wx.ALL, 2)
         
@@ -819,6 +836,36 @@ class PipelineRecipeManager(RecipeManager):
         
     def load_recipe_from_mdh(self, mdh):
         self.LoadRecipeText(mdh['Pipeline.Recipe'])
+    
+    def OnSaveOutputs(self, wx_event=None):
+        from PYME.ui import editList
+        import os
+
+        # get output context
+        context = {
+            'file_stub' : os.path.splitext(os.path.basename(self.pipeline.filename))[0]
+        }
+        
+        dlg = editList.DictCtrlDialog(base_dict=context, size=(300, 250),
+                                      title='Set OutputModule Context')
+
+        if dlg.ShowModal() == wx.ID_OK:
+            context = dlg.base_dict
+        
+        dlg.Destroy()
+
+        # make sure we've executed
+        if not self.pipeline.recipe.execute_on_invalidation:
+            self.pipeline.recipe.execute()
+        
+        self.pipeline.recipe.save(context)
+    
+    def OnRun(self, wx_event=None):
+        self.pipeline.recipe.execute()
+    
+    def OnToggleLiveRun(self, wx_event=None):
+        current = self.pipeline.recipe.execute_on_invalidation
+        self.pipeline.recipe.execute_on_invalidation = not current
 
 
 class dt(wx.FileDropTarget):
