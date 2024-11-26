@@ -165,7 +165,7 @@ class ProtocolAcquisition(AcquisitionBase):
             
             self._backend = acquisition_backends.ClusterBackend(self.seriesName, 
                                                                 distribution_fcn=dist_fcn, 
-                                                                compression_settings=kwargs.get('compression_settings', {}),
+                                                                compression_settings=kwargs.pop('compression_settings', {}),
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
                                                                 shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
