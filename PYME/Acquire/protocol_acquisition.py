@@ -146,11 +146,12 @@ class ProtocolAcquisition(AcquisitionBase):
 
     def _create_backend(self, backend_type=acquisition_backends.HDFBackend, **kwargs):
         logger.debug('Creating backend of type %s' % backend_type)
+        kwargs = kwargs.copy()
         
         if backend_type in  ['cluster', 'Cluster', acquisition_backends.ClusterBackend]:
-            self._aggregate_h5 = kwargs.get('cluster_h5', False)
+            self._aggregate_h5 = kwargs.pop('cluster_h5', False)
             
-            self.clusterFilter = kwargs.get('serverfilter', config.get('dataserver-filter', ''))
+            self.clusterFilter = kwargs.pop('serverfilter', config.get('dataserver-filter', ''))
             
             chunk_size = config.get('httpspooler-chunksize', 50)
             
@@ -172,7 +173,7 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 **kwargs)
             
         else: # assume hdf
-            self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.get('complevel', 6), complib=kwargs.get('complib','zlib'),
+            self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.pop('complevel', 6), complib=kwargs.pop('complib','zlib'),
                             shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
                             **kwargs)
         
