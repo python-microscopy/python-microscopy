@@ -51,9 +51,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         self._last_update_time = 0
 
         if backend is acquisition_backends.ClusterBackend:
-            self._backend='cluster'
+            self._backend_type='cluster'
         elif backend is acquisition_backends.HDFBackend:
-            self._backend='file'
+            self._backend_type='file'
         else:
             raise ValueError('Unknown backend')
 
@@ -61,7 +61,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         # fancy like cross-correlation based alignment of raw frames before stitching
         self._save_raw = save_raw
         if save_raw:
-            if (self._backend == 'cluster') and not backend_kwargs.get('cluster_h5', False):
+            if (self._backend_type == 'cluster') and not backend_kwargs.get('cluster_h5', False):
                 fn = 'raw_frames.pcs'
             else:
                 fn = 'raw_frames.h5'
@@ -134,7 +134,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         x0 = self._x0 + self._pixel_size*x0_cam  # offset in [um]
         y0 = self._y0 + self._pixel_size*y0_cam
         
-        if self._backend == 'cluster':
+        if self._backend_type == 'cluster':
             from PYME.Analysis import distributed_pyramid
             self.P = distributed_pyramid.DistributedImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
@@ -148,7 +148,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         pointScanner.PointScanner.start(self)
 
         self.dtStart = datetime.datetime.now()
-        self._backend.initialise()
+        if self._save_raw:
+            self.storage.initialise()
+
         self.frame_num = 0
         
     def on_frame(self, frameData, **kwargs):
@@ -204,17 +206,17 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
             self.storage.finalise()
         
         logger.info('Finished tile acquisition')
-        if self._backend == 'cluster':
+        if self._backend_type == 'cluster':
             logger.info('Waiting for spoolers to empty and for base levels to be built')
         self.P.finish_base_tiles()
         
-        if self._backend == 'cluster':
+        if self._backend_type == 'cluster':
             logger.info('Base tiles built')
 
         logger.info('Completing pyramid (dt = %3.2f)' % (time.time()-t_))
         self.P.update_pyramid()
 
-        if self._backend == 'cluster':
+        if self._backend_type == 'cluster':
             from PYME.IO import clusterIO
             clusterIO.put_file(self.P.base_dir + '/metadata.json', self.P.mdh.to_JSON().encode())
         else:
