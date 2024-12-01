@@ -231,7 +231,7 @@ class UEyeCamera(Camera):
         buffer_size = int(max(2 * self.GetFPS(), 50))
         self.InitBuffers(buffer_size, buffer_size)
 
-        event_log.logEvent('StartAq', '')
+        self._log_exposure_start()
         if self._cont_mode:
             self.check_success(ueye.is_CaptureVideo(self.h, ueye.IS_DONT_WAIT))
         else:

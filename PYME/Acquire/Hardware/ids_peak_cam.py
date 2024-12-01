@@ -283,7 +283,7 @@ class IDS_Camera(Camera):
         logger.info('Allocating {} buffers'.format(buffer_size))
         self.allocate_buffers(buffer_size)
 
-        event_log.logEvent('StartAq', '')
+        self._log_exposure_start()
         try:
             
             if self._acq_mode == self.MODE_CONTINUOUS:
@@ -317,6 +317,7 @@ class IDS_Camera(Camera):
     
     def FireSoftwareTrigger(self):
         self._node_map.FindNode('TriggerSoftware').Execute()
+        self._log_exposure_start()
         # self._node_map.FineNode('TriggerSoftware').WaitUntilDone(1000)
     
     def GetIntegTime(self):
