@@ -200,34 +200,18 @@ class PointScanner(Scanner):
             self.image = np.zeros((self.nx, self.ny))
             self.view = View3D(self.image)
 
-        self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
-
-        if self.trigger: # and self.scope.frameWrangler.isRunning():
-            self.scope.cam.FireSoftwareTrigger()
-        
-        #if self.sync:
-        #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
-
-
 
     def on_frame(self, frameData, **kwargs):
         with self._rlock:
             if not self.running:
                 return
 
-            try:
-                cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
-            except AttributeError:
-                cam_trigger = False
-
-            #logger.debug('Cam_trigger: %s' % repr(cam_trigger))
-
             #print self.callNum
             if (self.callNum % self.dwellTime) == 0:
                 #record pixel in overview
                 callN = int(self.callNum/self.dwellTime)
                 if self.avg:
-                    self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
+                    self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = frameData.mean() - self.background
                     self.view.Refresh()
             
             if self.callNum >= self.dwellTime * self.imsize - 1:
@@ -236,20 +220,17 @@ class PointScanner(Scanner):
                     self._stop()
                     return
 
+            
             if ((self.callNum +1) % self.dwellTime) == 0:
-                if not cam_trigger:
-                    self.scope.frameWrangler.stop()
-                
-                self.next_pos(callN)
+                with self.scope.frameWrangler.spooling_paused():
+                    self.next_pos(callN)
 
-                if not cam_trigger:
-                    self.scope.frameWrangler.start()
-
-            if cam_trigger:
+            elif self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER:
+                # make sure triggering still works when dwelltime > 1
+                # TODO - this is a bit hacky
                 #logger.debug('Firing camera trigger')
                 self.scope.cam.FireSoftwareTrigger()
-                if self.evtLog:
-                    eventLog.logEvent('StartAq',"")
+                
 #
         #
         #if self.sync:
