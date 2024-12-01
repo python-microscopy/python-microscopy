@@ -468,7 +468,7 @@ class FrameWrangler(object):
     
 
     @contextmanager
-    def spooling_stopped(self):
+    def spooling_stopped(self, auto_trigger=True):
         """ Context manager to ensure that spooling is stopped while performing a task,
         returning to the original state when the task is complete."""
 
@@ -480,6 +480,41 @@ class FrameWrangler(object):
         finally:
             if was_running:
                 self.start()
+
+                if auto_trigger and self.cam.GetAcquisitionMode() == self.cam.MODE_SOFTWARE_TRIGGERED:
+                    self.cam.FireSoftwareTrigger()
+
+    @contextmanager
+    def spooling_paused(self):
+        """ Context manager for use within on_frame handlers to ensure that spooling is paused while a task executes. 
+        The behavior depends on the camera acquisition mode: 
+        
+        - If the camera is in continuous mode, the camera will be stopped and restarted after the task is complete.
+        - If the camera is in single-shot mode, we do nothing (as we automatically restart when the frame handler completes).
+        - If the camera is in software-triggered mode, we fire a software trigger on completion.
+
+        TODO - single shot and triggered are currently a bit inconsistent - should we actually be always firing a software
+        trigger in triggered mode where we would restart in single shot mode?
+
+        TODO - Hardware triggers???
+
+        TODO - add keyword to disable firing the trigger for timelapse???
+        """
+        
+        was_running = self.aqOn
+        if was_running:
+            if self.cam.GetAcquisitionMode() == self.cam.MODE_CONTINUOUS:
+                self.stop()
+        try:
+            yield
+        finally:
+            if was_running:
+                cam_mode = self.cam.GetAcquisitionMode()
+
+                if cam_mode == self.cam.MODE_CONTINUOUS:
+                    self.start()
+                elif cam_mode == self.cam.MODE_SOFTWARE_TRIGGERED:
+                    self.cam.FireSoftwareTrigger()
 
 
     def isRunning(self):
