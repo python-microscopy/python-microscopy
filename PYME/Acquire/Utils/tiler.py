@@ -14,7 +14,7 @@ from PYME.Acquire.acquisition_base import AcquisitionBase
 from PYME.IO import acquisition_backends
 from PYME.Acquire import eventLog, microscope
 
-class Tiler(AcquisitionBase):
+class TileAcquisition(AcquisitionBase):
     FILE_EXTENSION = '.tiles' # TODO - make .zarr compatable and use .zarr instead
     
     def __init__(self, scope : microscope.Microscope, tile_dir : str, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=None,
@@ -298,6 +298,12 @@ class Tiler(AcquisitionBase):
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')
+
+
+def Tiler(*args, **kwargs):
+    logger.warning('Tiler is deprecated, please use TileAcquisition')
+    return TileAcquisition(*args, **kwargs)
+
 
 class CircularTiler(Tiler, pointScanner.CircularPointScanner):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,

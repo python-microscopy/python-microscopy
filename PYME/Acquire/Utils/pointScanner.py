@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scanner(object):
-    def __init__(self, scope, pixels = 10, pixelsize=0.1, evtLog=False, stop_on_complete=False):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, evtLog=False, stop_on_complete=False, **kwargs):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
@@ -78,7 +78,19 @@ class Scanner(object):
         #self.currPos = (self.xpiezo[0].GetPos(self.xpiezo[1]), self.ypiezo[0].GetPos(self.ypiezo[1]))
 
         self.imsize = self.nx*self.ny
+
+    @classmethod
+    def n_tiles(cls, pixels=10, **kwargs):
+        if np.isscalar(pixels):
+            return pixels**2
+        elif np.isscalar(pixels[0]):
+            return pixels[0] * pixels[1]
+        else:
+            return len(pixels[0]) * len(pixels[1])
         
+    @property
+    def num_tiles(self):
+        return self.n_tiles(self.pixels)
 
     def init_scan(self):
         self.running = True
@@ -274,7 +286,10 @@ class PointScanner(Scanner):
             self._stop()
             
 
-class CircularPointScanner(PointScanner):
+class CircularScanner(Scanner):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, evtLog=False, stop_on_complete=False):
+        Scanner.__init__(self, scope, pixels, pixelsize, evtLog, stop_on_complete)
+
     def genCoords(self):
         """
         Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
