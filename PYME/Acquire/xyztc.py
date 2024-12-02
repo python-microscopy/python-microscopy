@@ -319,7 +319,10 @@ class TiledXYZTCMixin(object):
 
 class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
     """
-    Class for a simple tiled acquisition. Uses the t dimension to step through tiles.
+    Class for tiled z stacks. Uses the t dimension to step through tiles.
+
+    NB - the mixin **MUST** be first in the inheritance list so that the _init_t and set_t
+    methods are overridden by the mixin.
     """
 
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, tile_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):

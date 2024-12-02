@@ -305,35 +305,35 @@ def Tiler(*args, **kwargs):
     return TileAcquisition(*args, **kwargs)
 
 
-class CircularTiler(Tiler, pointScanner.CircularPointScanner):
-    def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256, return_to_start=True):
-        """
-        :param return_to_start: bool
-            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
-        """
-        if tile_spacing is None:
-            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
-            # calculate tile spacing such that there is ~30% overlap.
-            tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
-        # take the pixel size to be the same or at least similar in both directions
-        pixel_radius = int(max_radius_um / tile_spacing.mean())
-        logger.debug('Circular tiler target radius in units of (overlapped) FOVs: %d' % pixel_radius)
+# class CircularTiler(Tiler, pointScanner.CircularPointScanner):
+#     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
+#                  trigger=False, base_tile_size=256, return_to_start=True):
+#         """
+#         :param return_to_start: bool
+#             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+#         """
+#         if tile_spacing is None:
+#             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+#             # calculate tile spacing such that there is ~30% overlap.
+#             tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
+#         # take the pixel size to be the same or at least similar in both directions
+#         pixel_radius = int(max_radius_um / tile_spacing.mean())
+#         logger.debug('Circular tiler target radius in units of (overlapped) FOVs: %d' % pixel_radius)
 
-        pointScanner.CircularPointScanner.__init__(self, scope, pixel_radius,
-                                          tile_spacing, dwelltime, background, 
-                                          False, evtLog, trigger=trigger, 
-                                          stop_on_complete=True,
-                                          return_to_start=return_to_start)
+#         pointScanner.CircularPointScanner.__init__(self, scope, pixel_radius,
+#                                           tile_spacing, dwelltime, background, 
+#                                           False, evtLog, trigger=trigger, 
+#                                           stop_on_complete=True,
+#                                           return_to_start=return_to_start)
         
-        self._tiledir = tile_dir
-        self._base_tile_size = base_tile_size
-        self._flat = None #currently not used
+#         self._tiledir = tile_dir
+#         self._base_tile_size = base_tile_size
+#         self._flat = None #currently not used
         
-        self._last_update_time = 0
+#         self._last_update_time = 0
         
-        self.on_stop = dispatch.Signal()
-        self.on_progress = dispatch.Signal()
+#         self.on_stop = dispatch.Signal()
+#         self.on_progress = dispatch.Signal()
 
 
 class MultiwellCircularTiler(object):
