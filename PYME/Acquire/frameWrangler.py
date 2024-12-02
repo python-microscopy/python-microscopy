@@ -481,7 +481,7 @@ class FrameWrangler(object):
             if was_running:
                 self.start()
 
-                if auto_trigger and self.cam.GetAcquisitionMode() == self.cam.MODE_SOFTWARE_TRIGGERED:
+                if auto_trigger and self.cam.GetAcquisitionMode() == self.cam.MODE_SOFTWARE_TRIGGER:
                     self.cam.FireSoftwareTrigger()
 
     @contextmanager
@@ -513,7 +513,7 @@ class FrameWrangler(object):
 
                 if cam_mode == self.cam.MODE_CONTINUOUS:
                     self.start()
-                elif cam_mode == self.cam.MODE_SOFTWARE_TRIGGERED:
+                elif cam_mode == self.cam.MODE_SOFTWARE_TRIGGER:
                     self.cam.FireSoftwareTrigger()
 
 
