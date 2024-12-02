@@ -314,6 +314,21 @@ class TiledXYZTCMixin(object):
         
     def _init_t(self, time_settings):
         self._scanner.init_scan()
+
+        # record tile positions to metadata (as xyztc is deterministic, we can do this rather
+        # than inferring from timestamps)
+        #
+        # TODO - is this actually wise? The advantage of using events and timestamps is that we record
+        # the actual positions of the stage, rather than the positions we asked for, which should be better.
+        #
+        # The advantage of putting tile positions in the metadata is that it becomes insensitive to future operations
+        # on the data which change the number of channels (e.g. splitter processing, OIDIC reconstruction) or z slices in
+        # the stack. Using the events instead would require us to compute the tile positions prior to any such operation, 
+        # and somehow propagate them.
+        positions = np.array([self._scanner._position_for_index(i) for i in range(self._scanner.num_tiles)])
+        self.storage.mdh['Tiling.XPositions'] = positions[:,0]
+        self.storage.mdh['Tiling.YPositions'] = positions[:,1]
+
         
     def set_t(self, t_idx):
         if self._scanner.pos_idx != t_idx:
