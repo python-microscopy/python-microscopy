@@ -296,8 +296,13 @@ class TiledXYZTCMixin(object):
         
         scan_type = tile_settings.get('scan_type', 'grid')
         if scan_type == 'grid':
+            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+        
+            tile_spacing = tile_settings.get('tile_spacing', 0.8) 
+            tile_spacing_um = tile_spacing*fs*np.array(scope.GetPixelSize())
+
             self._scanner = pointScanner.Scanner(scope, pixels=tile_settings['n_tiles'], 
-                                                 pixelsize=tile_settings['tile_spacing'],
+                                                 pixelsize=tile_spacing_um,
                                                  evtLog=True)
         elif scan_type == 'circular':
             #FIXME
@@ -311,8 +316,10 @@ class TiledXYZTCMixin(object):
         self._scanner.init_scan()
         
     def set_t(self, t_idx):
-        with self.scope.frameWrangler.spooling_stopped():
-            self._scanner.next_pos(t_idx)
+        if self._scanner.pos_idx != t_idx:
+            # set_t gets called on every frame, only move if we need to
+            with self.scope.frameWrangler.spooling_stopped():
+                self._scanner.next_pos(t_idx)
 
 
 
