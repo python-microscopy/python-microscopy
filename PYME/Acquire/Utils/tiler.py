@@ -4,6 +4,7 @@ import numpy as np
 import time
 from PYME.IO import MetaDataHandler
 import os
+import uuid
 import datetime
 from PYME.contrib import dispatch
 import logging
@@ -11,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 from PYME.Acquire.acquisition_base import AcquisitionBase
 from PYME.IO import acquisition_backends
-from PYME.Acquire import eventLog
+from PYME.Acquire import eventLog, microscope
 
-class Tiler(pointScanner.PointScanner, AcquisitionBase):
+class Tiler(AcquisitionBase):
     FILE_EXTENSION = '.tiles' # TODO - make .zarr compatable and use .zarr instead
     
-    def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=None,
+    def __init__(self, scope : microscope.Microscope, tile_dir : str, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=None,
                  trigger='auto', base_tile_size=256, return_to_start=True, save_raw=False, backend='file', backend_kwargs={}):
         """
         :param return_to_start: bool
@@ -25,6 +26,9 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         
         if trigger == 'auto':
             trigger = scope.cam.supports_software_trigger
+        self._trigger = trigger
+
+        self._return_to_start = return_to_start
 
         if evtLog is None:
             if save_raw:
@@ -40,13 +44,20 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         
         tile_spacing_um = tile_spacing*fs*np.array(scope.GetPixelSize())
             
-        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing_um,
-                                           dwelltime=dwelltime, background=background, avg=False, evtLog=evtLog,
-                                           trigger=trigger, stop_on_complete=True, return_to_start=return_to_start)
+        # pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing_um,
+        #                                    dwelltime=dwelltime, background=background, avg=False, evtLog=evtLog,
+        #                                    trigger=trigger, stop_on_complete=True, return_to_start=return_to_start)
+        
+        self._scanner = pointScanner.Scanner(scope, pixels=n_tiles, pixelsize=tile_spacing_um, evtLog=evtLog, stop_on_complete=True)
+        self.scope = scope
         
         self._tiledir = tile_dir
         self._base_tile_size = base_tile_size
+        
+        self._background = background
         self._flat = None #currently not used
+
+        self._uuid = uuid.uuid4() # for dispatch
         
         self._last_update_time = 0
 
@@ -110,7 +121,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
     def start(self):
         #self._weights =tile_pyramid.ImagePyramid.frame_weights(self.scope.frameWrangler.currentFrame.shape[:2]).squeeze()
         
-        self.genCoords()
+        self._scanner.genCoords()
 
         #metadata handling
         self.mdh = MetaDataHandler.NestedClassMDHandler()
@@ -121,11 +132,11 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(self.mdh)
 
-        self._x0 = np.min(self.xp)  # get the upper left corner of the scan, regardless of shape/fill/start
-        self._y0 = np.min(self.yp)
+        self._x0 = np.min(self._scanner.xp)  # get the upper left corner of the scan, regardless of shape/fill/start
+        self._y0 = np.min(self._scanner.yp)
         
         self._pixel_size = self.mdh.getEntry('voxelsize.x')
-        self.background = self.mdh.getOrDefault('Camera.ADOffset', self.background)
+        self._background = self.mdh.getOrDefault('Camera.ADOffset', self._background)
         
         # calculate origin independent of the camera ROI setting to store in
         # metadata for use in e.g. SupertileDatasource.DataSource.tile_coords_um
@@ -145,7 +156,13 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         if self._save_raw:
             eventLog.register_event_handler(self.storage.event_logger)
         
-        pointScanner.PointScanner.start(self)
+
+        with self.scope.frameWrangler.spooling_stopped():
+            if self._trigger:
+                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_SOFTWARE_TRIGGER)
+
+            self._scanner.init_scan()
+            self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
 
         self.dtStart = datetime.datetime.now()
         if self._save_raw:
@@ -156,11 +173,13 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
     def on_frame(self, frameData, **kwargs):
         pos = self.scope.GetPos()
         
-        pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
+        with self.scope.frameWrangler.spooling_paused():
+            #pointScanner.PointScanner.on_frame(self, frameData, **kwargs)
+            finished = self._scanner.next_pos()
         
         d = frameData.astype('f').squeeze()
-        if not self.background is None:
-            d = d - self.background
+        if not self._background is None:
+            d = d - self._background
     
         if not self._flat is None:
             d = d * self._flat
@@ -176,7 +195,7 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
 
         self.frame_num += 1
         
-        if self.running:
+        if self._scanner.running:
             t = time.time()
             if t > (self._last_update_time + 1):
                 self._last_update_time = t
@@ -185,14 +204,28 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
         else:
             self._finalise()
         
-    def _stop(self):
-        pointScanner.PointScanner._stop(self, send_stop=False)
         
     def _finalise(self):
         # this does the finalisation steps that need to be done after the scan is complete.
         # It is separate from _stop(), as _stop() is called by PointScanner.on_frame() **before** the final frame
         # has been saved. We want to have the final frame saved before we do the finalisation steps.
             
+        # disconnect the frame handler
+        try:
+            self.scope.frameWrangler.onFrame.disconnect(self.on_frame, dispatch_uid=self._uuid)
+        except:
+            logger.exception('Could not disconnect pointScanner tick from frameWrangler.onFrame')
+
+        with self.scope.frameWrangler.spooling_stopped():
+            if self._return_to_start:
+                self._scanner.return_home()
+            
+            self.scope.turnAllLasersOff()
+        
+            if self._trigger:
+                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_CONTINUOUS)            
+
+        
         self.on_progress.send(self)
         t_ = time.time()
 
@@ -229,6 +262,10 @@ class Tiler(pointScanner.PointScanner, AcquisitionBase):
             
         self.on_stop.send(self)
         self.on_progress.send(self)
+
+    def stop(self):
+        self._scanner.stop()
+        self._finalise() # TODO - abort?? (main differences are return home, and logging messages) )
 
     def md(self):
         return self.mdh
