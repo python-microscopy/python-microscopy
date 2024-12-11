@@ -1384,3 +1384,33 @@ class MapAstigZ(ModuleBase):
         mapped.mdh['Analysis.astigmatism_calibration_used'] = calibration_location
 
         namespace[self.output_name] = mapped
+
+@register_module('LocalizationOrientationAngles')
+class LocalizationOrientationAngles(ModuleBase):
+    input_name = Input('FitResults')
+    azimuth_key = CStr('azimuth')
+    zenith_key = CStr('zenith')
+    output_name = Output('oriented_points')
+
+    def run(self, input_name):
+        from PYME.Analysis.points import coordinate_tools
+        u_x, u_y, u_z = coordinate_tools.spherical_to_cartesian(input_name[self.azimuth_key],
+                                                                input_name[self.zenith_key],
+                                                                np.ones_like(input_name[self.zenith_key]))
+        input_name.orientation = np.array([u_x, u_y, u_z])
+        return input_name
+
+@register_module('LocalizationOrientationVectors')
+class LocalizationOrientationVectors(ModuleBase):
+    input_name = Input('FitResults')
+    vec_x_key = CStr('mu_x')
+    vec_y_key = CStr('mu_y')
+    vec_z_key = CStr('mu_z')
+    output_name = Output('oriented_points')
+
+    def run(self, input_name):
+        u_x, u_y, u_z = input_name[self.vec_x_key], input_name[self.vec_y_key], input_name[self.vec_z_key]
+        # normalize to a unit vector
+        norm = np.sqrt(u_x**2 + u_y**2 + u_z**2)
+        input_name.orientation = np.array([u_x/norm, u_y/norm, u_z/norm])
+        return input_name
