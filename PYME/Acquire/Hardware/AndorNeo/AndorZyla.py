@@ -450,6 +450,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     
     def FireSoftwareTrigger(self):
         self.SoftwareTrigger()
+        self._log_exposure_start()
     
     @property
     def contMode(self):
@@ -564,7 +565,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         self.hardware_overflowed = False
         self._n_timeouts = 0
         #logger.debug('StartAq')
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._flush()
         self.InitBuffers()
         self.AcquisitionStart()

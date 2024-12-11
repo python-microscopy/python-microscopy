@@ -440,7 +440,7 @@ class PcoSdkCam(Camera):
         if self._recording == False:
             self._init_buffers()
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._recording = True
 
         if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):

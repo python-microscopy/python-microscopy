@@ -187,7 +187,10 @@ def action_manager(MainFrame, scope):
 @init_hardware('Tiling')
 def tiling(scope):
     from PYME.Acquire.Utils import tiler
-    scope.spoolController.register_acquisition_type('Tiling', tiler.Tiler)
+    scope.spoolController.register_acquisition_type('Tiling', tiler.TileAcquisition)
+
+    from PYME.Acquire import xyztc
+    scope.spoolController.register_acquisition_type('ZTiling', xyztc.TiledZStackAcquisition)
 
 @init_gui('Tiling')
 def tiling(MainFrame, scope):
@@ -195,6 +198,9 @@ def tiling(MainFrame, scope):
     
     ts = tilesettingsui.TileSettingsUI(MainFrame, scope)
     MainFrame.register_acquisition_ui('Tiling', (ts, 'Tiling'))
+
+    ts2 = tilesettingsui.ZTileSettingsUI(MainFrame, scope)
+    MainFrame.register_acquisition_ui('ZTiling', (ts2, 'Tiled Z Stack'))
 
 # @init_gui('Tiling')
 # def action_manager(MainFrame, scope):

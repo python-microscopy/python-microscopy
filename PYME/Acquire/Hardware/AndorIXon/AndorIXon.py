@@ -456,7 +456,7 @@ class iXonCamera(Camera):
         self._GetAcqTimings()
         self._GetBufferSize()
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         ret = ac.StartAcquisition()
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error starting acquisition: %s' % ac.errorCodes[ret])

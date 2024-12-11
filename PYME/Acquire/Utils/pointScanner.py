@@ -31,38 +31,29 @@ from PYME.contrib import dispatch
 import logging
 logger = logging.getLogger(__name__)
 
-class PointScanner(object):
-    def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False,
-                 trigger=False, stop_on_complete=False, return_to_start=True):
+
+class Scanner(object):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, evtLog=False, stop_on_complete=False, **kwargs):
         """
         :param return_to_start: bool
             Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
         """
         self.scope = scope
-        #self.xpiezo = xpiezo
-        #self.ypiezo = ypiezo
-
-        self.trigger = trigger
-
-        self.dwellTime = dwelltime
-        self.background = background
-        self.avg = avg
+        
         self.pixels = pixels
         self.pixelsize = pixelsize
+
         self._stop_on_complete = stop_on_complete
-        self._return_to_start = return_to_start
+
 
         if np.isscalar(pixelsize):
             self.pixelsize = np.array([pixelsize, pixelsize])
 
         self.evtLog = evtLog
-        self.sync = sync
 
-        self._rlock = threading.Lock()
-        
+
+        self._rlock = threading.RLock()
         self.running = False
-        self._uuid = uuid.uuid4()
-        self.on_stop = dispatch.Signal()
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
@@ -87,49 +78,34 @@ class PointScanner(object):
         #self.currPos = (self.xpiezo[0].GetPos(self.xpiezo[1]), self.ypiezo[0].GetPos(self.ypiezo[1]))
 
         self.imsize = self.nx*self.ny
-        
 
-    def start(self):
+    @classmethod
+    def n_tiles(cls, pixels=10, **kwargs):
+        if np.isscalar(pixels):
+            return pixels**2
+        elif np.isscalar(pixels[0]):
+            return pixels[0] * pixels[1]
+        else:
+            return len(pixels[0]) * len(pixels[1])
+        
+    @property
+    def num_tiles(self):
+        return self.n_tiles(self.pixels)
+
+    def init_scan(self):
         self.running = True
         
         self.genCoords()
 
-        self.callNum = 0
+        self.pos_idx = 0
 
-        if self.avg:
-            self.image = np.zeros((self.nx, self.ny))
-
-            #self.ds = scope.frameWrangler.currentFrame
-
-            self.view = View3D(self.image)
-
-        #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[0])
-        #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[0])
-
-        #self.scope.SetPos(x=self.xp[0], y = self.yp[0])
         with self.scope.frameWrangler.spooling_stopped():
             self.scope.state.setItems({'Positioning.x' : self.xp[0], 'Positioning.y' : self.yp[0]}, stopCamera = True)
-            if self.trigger:
-                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_SOFTWARE_TRIGGER)
-            #self.scope.frameWrangler.start()
-
-        #if self.sync:
-        #    while not self.xpiezo[0].IsOnTarget(): #wait for stage to move
-        #        time.sleep(.05)
         
         if self.evtLog:
-                eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[0])
-                eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[0])
-
-
-        #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
-        self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
-
-        if self.trigger: # and self.scope.frameWrangler.isRunning():
-            self.scope.cam.FireSoftwareTrigger()
+            eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[0])
+            eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[0])   
         
-        #if self.sync:
-        #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
         #FIXME
@@ -151,24 +127,103 @@ class PointScanner(object):
         
         return new_x, new_y
 
+    def next_pos(self, idx=None, **kwargs):
+        with self._rlock:
+            if not self.running:
+                return False
+            
+            if idx is None:
+               idx = self.pos_idx + 1
+
+            if idx >= self.imsize:
+                # we've acquired the last frame
+                if self._stop_on_complete:
+                    self._stop()
+                    return False
+
+            #move piezo
+            new_x, new_y = self._position_for_index(idx)
+            
+            self.scope.state.setItems({'Positioning.x' : new_x,
+                                        'Positioning.y' : new_y
+                                        })#, stopCamera = not cam_trigger)
+
+            if self.evtLog:
+                eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
+                eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
+
+        self.pos_idx += 1
+        return True
+        
+    def _stop(self):
+        self.running = False
+
+    def return_home(self):
+        logger.debug('Returning home : %s' % self.currPos)
+        self.scope.state.setItems({'Positioning.x': self.currPos['x'],
+                                    'Positioning.y': self.currPos['y'],
+                                    }, stopCamera=True)
+
+
+    def stop(self):
+        with self._rlock:
+            self._stop()
+
+
+class PointScanner(Scanner):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False,
+                 trigger=False, stop_on_complete=False, return_to_start=True):
+        """
+        :param return_to_start: bool
+            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+        """
+        Scanner.__init__(self, scope, pixels, pixelsize, evtLog, stop_on_complete)
+        
+        self.trigger = trigger
+
+        self.dwellTime = dwelltime
+        self.background = background
+        self.avg = avg
+
+        self._return_to_start = return_to_start
+
+
+        self.evtLog = evtLog
+        self.sync = sync
+
+        #self._rlock = threading.Lock()
+        
+        #self.running = False
+        self._uuid = uuid.uuid4()
+        self.on_stop = dispatch.Signal()
+        
+
+    def start(self):
+        with self.scope.frameWrangler.spooling_stopped():
+            if self.trigger:
+                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_SOFTWARE_TRIGGER)
+
+            self.init_scan()
+            self.scope.frameWrangler.onFrame.connect(self.on_frame, dispatch_uid=self._uuid)
+
+        self.callNum = 0
+
+        if self.avg:
+            self.image = np.zeros((self.nx, self.ny))
+            self.view = View3D(self.image)
+
+
     def on_frame(self, frameData, **kwargs):
         with self._rlock:
             if not self.running:
                 return
-
-            try:
-                cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
-            except AttributeError:
-                cam_trigger = False
-
-            #logger.debug('Cam_trigger: %s' % repr(cam_trigger))
 
             #print self.callNum
             if (self.callNum % self.dwellTime) == 0:
                 #record pixel in overview
                 callN = int(self.callNum/self.dwellTime)
                 if self.avg:
-                    self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
+                    self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = frameData.mean() - self.background
                     self.view.Refresh()
             
             if self.callNum >= self.dwellTime * self.imsize - 1:
@@ -177,34 +232,17 @@ class PointScanner(object):
                     self._stop()
                     return
 
+            
             if ((self.callNum +1) % self.dwellTime) == 0:
-                #move piezo
-                callN = int((self.callNum+1)/self.dwellTime)
-                new_x, new_y = self._position_for_index(callN)
+                with self.scope.frameWrangler.spooling_paused():
+                    self.next_pos(callN)
 
-                if not cam_trigger:
-                    self.scope.frameWrangler.stop()
-                
-                self.scope.state.setItems({'Positioning.x' : new_x,
-                                           'Positioning.y' : new_y
-                                           })#, stopCamera = not cam_trigger)
-
-                #print 'SetP'
-
-                if self.evtLog:
-                    #eventLog.logEvent('ScannerXPos', '%3.6f' % self.xp[callN % self.nx])
-                    #eventLog.logEvent('ScannerYPos', '%3.6f' % self.yp[(callN % (self.imsize))/self.nx])
-                    eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
-                    eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
-
-                if not cam_trigger:
-                    self.scope.frameWrangler.start()
-
-            if cam_trigger:
+            elif self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER:
+                # make sure triggering still works when dwelltime > 1
+                # TODO - this is a bit hacky
                 #logger.debug('Firing camera trigger')
                 self.scope.cam.FireSoftwareTrigger()
-                if self.evtLog:
-                    eventLog.logEvent('StartAq',"")
+                
 #
         #
         #if self.sync:
@@ -215,10 +253,7 @@ class PointScanner(object):
         
     def _stop(self, send_stop=True):
         self.running = False
-        #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
-        #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
-    
-        #self.scope.SetPos(**self.currPos)
+
         try:
             #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
             self.scope.frameWrangler.onFrame.disconnect(self.on_frame, dispatch_uid=self._uuid)
@@ -235,10 +270,7 @@ class PointScanner(object):
             self.on_stop.send(self)
         
         if self._return_to_start:
-            logger.debug('Returning home : %s' % self.currPos)
-            self.scope.state.setItems({'Positioning.x': self.currPos['x'],
-                                       'Positioning.y': self.currPos['y'],
-                                       }, stopCamera=True)
+            self.return_home()
         
         self.scope.turnAllLasersOff()
     
@@ -254,7 +286,10 @@ class PointScanner(object):
             self._stop()
             
 
-class CircularPointScanner(PointScanner):
+class CircularScanner(Scanner):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, evtLog=False, stop_on_complete=False):
+        Scanner.__init__(self, scope, pixels, pixelsize, evtLog, stop_on_complete)
+
     def genCoords(self):
         """
         Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then

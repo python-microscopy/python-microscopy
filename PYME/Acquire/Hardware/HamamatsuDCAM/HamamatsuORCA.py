@@ -199,6 +199,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
     def FireSoftwareTrigger(self):
         self.checkStatus(dcam.dcamcap_firetrigger(self.handle, 0), 'dcamcap_firetrigger')
+        self._log_exposure_start()
 
     def StartExposure(self):
         self.nReadOut = 0
@@ -243,7 +244,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
                                                 DCAMCAP_START_SEQUENCE),
                                                 "dcamcap_start")
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
 
         # Start the capture
         #print str(self.getCamPropValue('SENSOR MODE'))

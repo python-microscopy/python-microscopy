@@ -33,7 +33,7 @@ class Tiler(Plugin):
         dsviewer.AddMenuItem('Processing', "&Tiling", self.OnTile)
         dsviewer.AddMenuItem('Processing', "&Tiling (with cross-correlation)", lambda e: self.OnTile(correlate=True))
 
-    def OnTile(self, event=None, correlate=False):
+    def reconstruct_tiles_events(self, event=None, correlate=False):
         from PYME.Analysis import deTile
         from PYME.DSView import View3D
 
@@ -84,6 +84,22 @@ class Tiler(Plugin):
             View3D([dt[:,:,0][:,:,None], dt[:,:,1][:,:,None]], 'Tiled Image', mdh = mdh,parent=wx.GetTopLevelParent(self.dsviewer))
         else:
             View3D(dt, 'Tiled Image', mdh = mdh, parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def reconstruct_tiles_deterministic(self, correlate=False):
+        from PYME.Analysis import deTile
+        from PYME.DSView import View3D
+
+        dark = self.image.mdh.getEntry('Camera.ADOffset')
+        out = deTile.assemble_tiles_xyztc(self.image.data_xyztc, self.image.mdh, dark=dark, correlate=correlate)
+
+        mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+        View3D(out, 'Tiled Image', mdh=mdh, parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def OnTile(self, event=None, correlate=False):
+        if 'Tiling.XPositions' in self.image.mdh:
+            self.reconstruct_tiles_deterministic(correlate)
+        else:
+            self.reconstruct_tiles_events(event, correlate)
 
 
     def OnTilePyramid(self, event=None):

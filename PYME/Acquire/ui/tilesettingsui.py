@@ -74,3 +74,18 @@ class TileSettingsUI(cascading_layout.CascadingLayoutPanel):
         #print(((n-1) * sp * fs + fs))
         self.stRegionSize.SetLabel('Region size: %3.1f x %3.1f um' % tuple(n * sp * fs + fs))
         
+
+class ZTileSettingsUI(cascading_layout.CascadingLayoutPanel):
+    def __init__(self, parent, scope, **kwargs):
+        from PYME.Acquire.ui.seqdialog import seqPanel
+        cascading_layout.CascadingLayoutPanel.__init__(self, parent, **kwargs)
+        
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        z_panel = seqPanel(self, scope, mode='compact')
+        vsizer.Add(z_panel, 0, wx.EXPAND)
+
+        tile_panel = TileSettingsUI(self, scope)
+        vsizer.Add(tile_panel, 0, wx.EXPAND)
+
+        self.SetSizerAndFit(vsizer)

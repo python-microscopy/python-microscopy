@@ -297,7 +297,7 @@ class PcoCam(Camera):
             self.cam.record(number_of_images=self.buffer_size, mode='ring buffer')
         self.recording = True
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
 
         return 0
 
