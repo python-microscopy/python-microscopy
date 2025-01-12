@@ -87,12 +87,14 @@ class XYZTCAcquisition(AcquisitionBase):
         if time_settings is None:
             self.shape_t = 1
         else:
-            self.shape_t = time_settings.get('num_timepoints', 1)
+            #self.shape_t = time_settings.get('num_timepoints', 1)
+            self.shape_t = getattr(time_settings, 'num_timepoints', 1)
 
         if channel_settings is None:
             self.shape_c = 1
         else:
-            self.shape_c = channel_settings.get('num_channels', 1)
+            #self.shape_c = channel_settings.get('num_channels', 1)
+            self.shape_c = getattr(channel_settings, 'num_channels', 1)
         
         # note shape_t can be negative if we want to run until explicitly stopped
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
