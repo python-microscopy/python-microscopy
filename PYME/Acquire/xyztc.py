@@ -87,8 +87,7 @@ class XYZTCAcquisition(AcquisitionBase):
         if time_settings is None:
             self.shape_t = 1
         else:
-            #self.shape_t = time_settings.get('num_timepoints', 1)
-            self.shape_t = getattr(time_settings, 'num_timepoints', 1)
+            self.shape_t = time_settings.get('num_timepoints', 1)
 
         if channel_settings is None:
             self.shape_c = 1
