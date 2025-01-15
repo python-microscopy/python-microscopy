@@ -9,27 +9,45 @@ from PYME.Acquire.acquisition_base import AcquisitionBase
 from PYME.Acquire import eventLog
 
 
-class TimeSettings(object):
-    '''
-    Class to hold settings for time acquisition
+# class TimeSettings(object):
+#     '''
+#     Class to hold settings for time acquisition
 
-    This class pricipally exists to document the interface of the time_settings parameter to XYZTCAcquisition.
+#     This class pricipally exists to document the interface of the time_settings parameter to XYZTCAcquisition.
     
-    Parameters
-    ----------
+#     Parameters
+#     ----------
     
-    num_timepoints : int
-        Number of timepoints to acquire.
+#     num_timepoints : int
+#         Number of timepoints to acquire.
 
-    time_interval : float (or None)
-        Time interval between timepoints. If None, the acquisition will be continuous. NOTE: the logic for non-none values 
-        is not yet implemented, and this parameter will be ignored.
+#     time_interval : float (or None)
+#         Time interval between timepoints. If None, the acquisition will be continuous. NOTE: the logic for non-none values 
+#         is not yet implemented, and this parameter will be ignored.
     
     
+#     '''
+#     def __init__(self, num_timepoints=1, time_interval=None):
+#         self.num_timepoints = num_timepoints
+#         self.time_interval = time_interval
+
+def TimeSettings(num_timepoints=1, time_interval=None):
     '''
-    def __init__(self, num_timepoints=1, time_interval=None):
-        self.num_timepoints = num_timepoints
-        self.time_interval = time_interval
+#     Class to hold settings for time acquisition
+
+#     This class pricipally exists to document the interface of the time_settings parameter to XYZTCAcquisition.
+    
+#     Parameters
+#     ----------
+    
+#     num_timepoints : int
+#         Number of timepoints to acquire.
+
+#     time_interval : float (or None)
+#         Time interval between timepoints. If None, the acquisition will be continuous. NOTE: the logic for non-none values 
+#         is not yet implemented, and this parameter will be ignored.
+#   '''
+    return dict(num_timepoints=num_timepoints, time_interval=time_interval)
 
 class XYZTCAcquisition(AcquisitionBase):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
