@@ -208,9 +208,10 @@ class XYZTCAcquisition(AcquisitionBase):
         self.scope.frameWrangler.stop()
         self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         
-        if self._stack_settings:
-            self._stack_settings.piezoGoHome()
-        
+        self.finalize_z()
+        self.finalize_c()
+        self.finalize_t()
+
         self.scope.frameWrangler.start()
 
         try:
@@ -224,10 +225,6 @@ class XYZTCAcquisition(AcquisitionBase):
         self._running = False
         self.spool_complete = True
 
-        if hasattr(self, '_return_to_start'):
-            with self.scope.frameWrangler.spooling_stopped():
-                if self._return_to_start:
-                    self._scanner.return_home()
 
     def abort(self):
         self.stop()
@@ -245,6 +242,14 @@ class XYZTCAcquisition(AcquisitionBase):
 
         self._z_initial_pos = self.scope.GetPos()[self._z_chan]
         
+    def finalize_z(self):
+        if self._stack_settings:
+            self._stack_settings.piezoGoHome()
+
+    def finalize_c(self):
+        pass
+    def finalize_t(self):
+        pass
     
     def set_z(self, z_idx):
         self.scope.SetPos(**{self._z_chan: self._z_poss[z_idx]})
@@ -294,8 +299,9 @@ class ZStackAcquisition(XYZTCAcquisition):
 
 
 class TiledXYZTCMixin(object):
-    def __init__(self, scope, tile_settings, **kwargs):
+    def __init__(self, scope, tile_settings, return_to_start=True, **kwargs):
         from PYME.Acquire.Utils import pointScanner
+        self._return_to_start = return_to_start
 
         if tile_settings is None:
             raise ValueError('tile_settings must be provided')
@@ -342,6 +348,9 @@ class TiledXYZTCMixin(object):
             with self.scope.frameWrangler.spooling_stopped():
                 self._scanner.next_pos(t_idx)
 
+    def finalize_t(self):
+        if self._return_to_start:
+            self._scanner.return_home()
 
 
 
@@ -353,7 +362,7 @@ class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
     methods are overridden by the mixin.
     """
 
-    def __init__(self, scope, dim_order='XYCZT', stack_settings=None, tile_settings=None, channel_settings=None, return_to_start=True, backend=MemoryBackend, backend_kwargs={}):
+    def __init__(self, scope, dim_order='XYCZT', stack_settings=None, tile_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
         """
         """
         
@@ -361,7 +370,7 @@ class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
         XYZTCAcquisition.__init__(self, scope, dim_order=dim_order, stack_settings=stack_settings, 
                                   time_settings={'num_timepoints' : self._scanner.num_tiles}, channel_settings=channel_settings, 
                                   backend=backend, backend_kwargs=backend_kwargs)
-        self._return_to_start = return_to_start
+
     @classmethod
     def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
         '''Create an XYZTCAcquisition object from a spool_controller settings object'''
