@@ -132,5 +132,5 @@ def substitute_sessiondir(session_txt, session_filename):
     from pathlib import Path
     sessiondir = Path(session_filename).resolve().parent.as_posix()
 
-    return session_txt.replace(SESSIONDIR_TOKEN,sessiondir)
-        
+    return session_txt.replace(SESSIONDIR_TOKEN+"\\",SESSIONDIR_TOKEN+'/').replace(SESSIONDIR_TOKEN,sessiondir)
+
