@@ -76,7 +76,7 @@ class SizeReportCtrl(wx.PyControl):
         dc.SetPen(wx.LIGHT_GREY_PEN)
         dc.DrawLine(0, 0, size.x, size.y)
         dc.DrawLine(0, size.y, size.x, 0)
-        dc.DrawText(s, (size.x-w)/2, (size.y-height*5)/2)
+        dc.DrawText(s, int((size.x-w)/2), int((size.y-height*5)/2))
 
         if self._mgr:
         
@@ -84,19 +84,19 @@ class SizeReportCtrl(wx.PyControl):
 
             s = "Layer: %d"%pi.dock_layer
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*1))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*1)))
 
             s = "Dock: %d Row: %d"%(pi.dock_direction, pi.dock_row)
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*2))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*2)))
 
             s = "Position: %d"%pi.dock_pos
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*3))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*3)))
 
             s = "Proportion: %d"%pi.dock_proportion
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*4))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*4)))
 
         
     def OnEraseBackground(self, event):
@@ -270,7 +270,7 @@ class CaptionBar(wx.Window):
         w,h = gc.GetTextExtent(self.caption)
 
         y0 = self.style['HEIGHT']/2. - h/2.
-        gc.DrawText(self.caption, icon_width + self.style['CAPTION_INDENT'], y0)
+        gc.DrawText(self.caption, icon_width + self.style['CAPTION_INDENT'], int(y0))
 
 
         # h = self._active_pin_bitmap.GetHeight()

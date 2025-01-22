@@ -153,7 +153,7 @@ class LayerCaptionBar(manualFoldPanel.CaptionBar):
         else:
             w, h = self._icon.GetWidth(), self._icon.GetHeight()
             y0 = self.style['HEIGHT'] / 2. - h / 2.
-            gc.DrawBitmap(self._icon, 0, y0, w, h)
+            gc.DrawBitmap(self._icon, 0, int(y0), w, h)
             
             return w
         
