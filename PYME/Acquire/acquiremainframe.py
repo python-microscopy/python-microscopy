@@ -263,6 +263,13 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
             self.register_acquisition_ui('ZStackAcquisition', (self.seq_d, 'Z-Stack'))
             #self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
+
+        # TODO - this is done in the init script for now - should this be automatic?
+        # if 'x' in self.scope.positioning.keys() and 'y' in self.scope.positioning.keys():
+        #     # we can tile, register the tiling UI
+        #     from PYME.Acquire.ui import tilesettingsui
+        #     self.tileUI = tilesettingsui.TileSettingsUI(self, self.scope)
+        #     self.register_acquisition_ui('TileAcquisition', (self.tileUI, 'Tile Settings'))
         
         for t in self.toolPanels:
             #print(t)
@@ -369,7 +376,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
 
 
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000), single_active_pane=True)
+                                     wx.Size(240,1000), single_active_pane=True, constrain_children=True)
 
         if mode == 'compact':
             self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().

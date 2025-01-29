@@ -460,7 +460,7 @@ class AndorBase(SDK3Camera):
         self._frameRate = self.FrameRate.getValue()
         self.tKin = 1.0 / self._frameRate
         
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._flush()
         self.InitBuffers()
         self.AcquisitionStart()

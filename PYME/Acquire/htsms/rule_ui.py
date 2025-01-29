@@ -118,7 +118,7 @@ class ProtocolRules(OrderedDict):
         spooler = self._spool_controller.spooler
         try:
             spooler.getURL
-        except AtrributeError:
+        except AttributeError:
             logger.exception('Rule-based analysis chaining currently requires spooling to cluster, not to file')
             raise 
         prot_filename = spooler.protocol.filename

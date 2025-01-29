@@ -49,10 +49,10 @@ class XYZTCAcquisition(AcquisitionBase):
         stack_settings : PYME.Acquire.stackSettings.StackSettings instance
             The settings for the Z-stack acquisition. If None, the settings from scope.stackSettings will be used.
 
-        time_settings : an object with a num_timepoints attribute
+        time_settings : a dict-like with a num_timepoints entry
             The settings for the time acquisition. If None, only one timepoint will be acquired.
 
-        channel_settings : an object with a num_channels attribute
+        channel_settings : a dict-like with a num_channels entry
             The settings for the channel acquisition. If None, only one channel will be acquired.  
 
         backend : class
@@ -84,8 +84,15 @@ class XYZTCAcquisition(AcquisitionBase):
         #keep a reference to the stack settings so we can home the piezo appropriately
         self._stack_settings = stack_settings
 
-        self.shape_t = getattr(time_settings, 'num_timepoints', 1)
-        self.shape_c = getattr(channel_settings, 'num_channels', 1)
+        if time_settings is None:
+            self.shape_t = 1
+        else:
+            self.shape_t = time_settings.get('num_timepoints', 1)
+
+        if channel_settings is None:
+            self.shape_c = 1
+        else:
+            self.shape_c = channel_settings.get('num_channels', 1)
         
         # note shape_t can be negative if we want to run until explicitly stopped
         self.n_frames = self.shape_z*self.shape_c*self.shape_t
@@ -169,7 +176,7 @@ class XYZTCAcquisition(AcquisitionBase):
         self.scope.stackSettings.SetPrevPos(self.scope.stackSettings._CurPos())
 
         with self.scope.frameWrangler.spooling_stopped():
-            # avoid stopping both here and in the SpoolController
+            # stop frameWrangler wile we set things up
             #self.scope.frameWrangler.stop()
             if self._stack_settings:
                 self._stack_settings.SetPrevPos(self._stack_settings._CurPos())
@@ -277,3 +284,101 @@ class ZStackAcquisition(XYZTCAcquisition):
     @classmethod
     def get_frozen_settings(cls, scope, spool_controller=None):
         return {'stack_settings' : scope.stackSettings.settings(),}
+    
+
+
+class TiledXYZTCMixin(object):
+    def __init__(self, scope, tile_settings, **kwargs):
+        from PYME.Acquire.Utils import pointScanner
+
+        if tile_settings is None:
+            raise ValueError('tile_settings must be provided')
+        
+        scan_type = tile_settings.get('scan_type', 'grid')
+        if scan_type == 'grid':
+            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+        
+            tile_spacing = tile_settings.get('tile_spacing', 0.8) 
+            tile_spacing_um = tile_spacing*fs*np.array(scope.GetPixelSize())
+
+            self._scanner = pointScanner.Scanner(scope, pixels=tile_settings['n_tiles'], 
+                                                 pixelsize=tile_spacing_um,
+                                                 evtLog=True)
+        elif scan_type == 'circular':
+            #FIXME
+            self._scanner = pointScanner.CircularScanner(scope, pixels=tile_settings['n_tiles'], 
+                                                 pixelsize=tile_settings['tile_spacing'],
+                                                 evtLog=True)
+
+        
+        
+    def _init_t(self, time_settings):
+        self._scanner.init_scan()
+
+        # record tile positions to metadata (as xyztc is deterministic, we can do this rather
+        # than inferring from timestamps)
+        #
+        # TODO - is this actually wise? The advantage of using events and timestamps is that we record
+        # the actual positions of the stage, rather than the positions we asked for, which should be better.
+        #
+        # The advantage of putting tile positions in the metadata is that it becomes insensitive to future operations
+        # on the data which change the number of channels (e.g. splitter processing, OIDIC reconstruction) or z slices in
+        # the stack. Using the events instead would require us to compute the tile positions prior to any such operation, 
+        # and somehow propagate them.
+        positions = np.array([self._scanner._position_for_index(i) for i in range(self._scanner.num_tiles)])
+        self.storage.mdh['Tiling.XPositions'] = positions[:,0]
+        self.storage.mdh['Tiling.YPositions'] = positions[:,1]
+
+        
+    def set_t(self, t_idx):
+        if self._scanner.pos_idx != t_idx:
+            # set_t gets called on every frame, only move if we need to
+            with self.scope.frameWrangler.spooling_stopped():
+                self._scanner.next_pos(t_idx)
+
+
+
+
+class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
+    """
+    Class for tiled z stacks. Uses the t dimension to step through tiles.
+
+    NB - the mixin **MUST** be first in the inheritance list so that the _init_t and set_t
+    methods are overridden by the mixin.
+    """
+
+    def __init__(self, scope, dim_order='XYCZT', stack_settings=None, tile_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
+        """
+        """
+        
+        TiledXYZTCMixin.__init__(self, scope, tile_settings)        
+        XYZTCAcquisition.__init__(self, scope, dim_order=dim_order, stack_settings=stack_settings, 
+                                  time_settings={'num_timepoints' : self._scanner.num_tiles}, channel_settings=channel_settings, 
+                                  backend=backend, backend_kwargs=backend_kwargs)
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+    
+        backend_kwargs['series_name'] = series_name
+
+        #fix timing when using fake camera
+        #TODO - move logic into backend?
+        if scope.cam.__class__.__name__ == 'FakeCamera':
+            backend_kwargs['spoof_timestamps'] = True
+            backend_kwargs['cycle_time'] = scope.cam.GetIntegTime()
+
+        tiling_settings = settings.get('tiling_settings', scope.tile_settings)
+    
+        return cls(scope=scope, 
+                    #dim_order=settings.dim_order, 
+                    stack_settings=settings.get('stack_settings', scope.stackSettings), 
+                    tile_settings=tiling_settings, 
+                    channel_settings=settings.get('channel_settings', None), 
+                    backend=backend, backend_kwargs=backend_kwargs)
+    
+    
+    @classmethod
+    def get_frozen_settings(cls, scope, spool_controller=None):
+        return {'stack_settings' : scope.stackSettings.settings(),
+            'tiling_settings': getattr(scope, 'tile_settings', {})}
+    

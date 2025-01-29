@@ -8,6 +8,7 @@ import time
 import ctypes
 import queue
 from PYME.Acquire import eventLog as event_log
+from threading import Lock
 
 # The IDS Peak API supports uEye+ cameras (U3/GV models) as well as "almost all" uEye (UI models) 
 # to use this implementation, first install the IDS Peak SDK (our interface developed on version 2.6.2.0)
@@ -30,6 +31,14 @@ def find_ids_peak_cameras():
     device_manager.Update()
     return device_manager.Devices()
 
+# at the moment, only support 'unpacked' types, i.e. 12 bit in 2 bytes, not 1.5 bytes
+PIXEL_FORMATS = {  
+    8: 'Mono8',
+    10: 'Mono10',
+    12: 'Mono12',
+    # 16: 'Mono16',  # Only supported by uEye cameras (UI models, not e.g. U3)
+}
+
 class IDS_Camera(Camera):
     """
 
@@ -39,12 +48,17 @@ class IDS_Camera(Camera):
     which corresponds to the bit-depth for this class. See uEye example in
     PYME.Acquire.Hardware.camera_noise.
     """
+    
+    supports_software_trigger = True
+
     def __init__(self, device_number=0, nbits=8):
+        import sys
         self.initialized = False
         super().__init__()
         self.device_number = device_number
         self.nbits = nbits
         self.n_full = 0
+        self._buffer_lock = Lock()  # use to avoid race conditions while polling buffers during their destruction
 
         devices = find_ids_peak_cameras()
         if len(devices) == 0:
@@ -72,6 +86,8 @@ class IDS_Camera(Camera):
         self._offset_y_min = self._node_map.FindNode("OffsetY").Minimum()
         self._offset_x_max = self._node_map.FindNode("OffsetX").Maximum()
         self._offset_y_max = self._node_map.FindNode("OffsetY").Maximum()
+        self._offset_x_incr = self._node_map.FindNode("OffsetX").Increment()
+        self._offset_y_incr = self._node_map.FindNode("OffsetY").Increment()
         self._width_min = self._node_map.FindNode("Width").Minimum()
         self._height_min = self._node_map.FindNode("Height").Minimum()
         self._width_max = self._node_map.FindNode("Width").Maximum()
@@ -99,6 +115,12 @@ class IDS_Camera(Camera):
 
         self._buffer_poll_wait_time_ms = 5000  # [ms]
 
+        # set pixel format
+        self._node_map.FindNode("PixelFormat").SetCurrentEntry(PIXEL_FORMATS[nbits])
+        # IDS sends all multi-byte little-endian, and we're going to copy in native computer order,
+        # throw an error unless we're matched.
+        assert sys.byteorder == 'little'
+
         self.Init()
         self.initialized = True
         
@@ -112,7 +134,8 @@ class IDS_Camera(Camera):
         while self.poll_loop_active:
             if self._poll: # only poll if an acquisition is running
                 try:
-                    self._poll_buffer()
+                    with self._buffer_lock:
+                        self._poll_buffer()
                 except Exception as e:
                     logger.exception(str(e))
             else:
@@ -136,6 +159,7 @@ class IDS_Camera(Camera):
             buffer = self._data_stream.WaitForFinishedBuffer(self._buffer_poll_wait_time_ms)
             # copy over
             ctypes.memmove(self.transfer_buffer, int(buffer.BasePtr()), int(buffer.Size()))
+            # ctypes uses native byteorder, so we are OK if this is little-endian system 
             arr = np.frombuffer(self.transfer_buffer, dtype=self.transfer_buffer_dtype)
             # return camera buffer to queue
             self._data_stream.QueueBuffer(buffer)
@@ -161,31 +185,32 @@ class IDS_Camera(Camera):
     
     def Close(self):
         self.StopAq()
-        self.DestroyBuffers()
+        # self.DestroyBuffers()  # already destroyed in StopAq
         peak.Library.Close()
     
     def DestroyBuffers(self):
-        self.n_full = 0
+        with self._buffer_lock:
+            self.n_full = 0
 
-        # remove camera-side buffers
-        for b in self._data_stream.AnnouncedBuffers():
-            try:
-                self._data_stream.RevokeBuffer(b)
-            except Exception as e:
-                logger.error(f'Error revoking buffer: {e}')
+            # remove camera-side buffers
+            for b in self._data_stream.AnnouncedBuffers():
+                try:
+                    self._data_stream.RevokeBuffer(b)
+                except Exception as e:
+                    logger.error(f'Error revoking buffer: {e}')
+                
+            # computer RAM: destroy free and full buffer queues
+            while not self.full_buffers.empty():
+                try:
+                    self.full_buffers.get_nowait()
+                except queue.Empty:
+                    pass
             
-        # computer RAM: destroy free and full buffer queues
-        while not self.full_buffers.empty():
-            try:
-                self.full_buffers.get_nowait()
-            except queue.Empty:
-                pass
-        
-        while not self.free_buffers.empty():
-            try:
-                self.free_buffers.get_nowait()
-            except queue.Empty:
-                pass
+            while not self.free_buffers.empty():
+                try:
+                    self.free_buffers.get_nowait()
+                except queue.Empty:
+                    pass
     
     def allocate_buffers(self, n_buffers=50):
         self._n_cam_buffers = n_buffers
@@ -223,6 +248,8 @@ class IDS_Camera(Camera):
         self.free_buffers = queue.Queue()
         self.full_buffers = queue.Queue()
         for ind in range(n_buffers):
+            # Note that it is essential to use zeros here to ensure
+            # compatibility with Mono8, Mono10, Mono12 written into uint16
             self.free_buffers.put(np.zeros((self.GetPicHeight(), self.GetPicWidth()), 
                                            dtype=np.uint16))
         self._poll = False
@@ -256,22 +283,42 @@ class IDS_Camera(Camera):
         logger.info('Allocating {} buffers'.format(buffer_size))
         self.allocate_buffers(buffer_size)
 
-        event_log.logEvent('StartAq', '')
+        self._log_exposure_start()
         try:
-            if self._cont_mode:
-                # continuous acq only for now:
-                self._data_stream.StartAcquisition(peak.AcquisitionStartMode_Default,
-                                                peak.DataStream.INFINITE_NUMBER)
+            
+            if self._acq_mode == self.MODE_CONTINUOUS:
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('Off')
+                
+            elif self._acq_mode == self.MODE_SOFTWARE_TRIGGER:
+                self._node_map.FindNode('TriggerSelector').SetCurrentEntry('ExposureStart')
+                self._node_map.FindNode('TriggerSource').SetCurrentEntry('Software')
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('On')
+                
 
-                self._node_map.FindNode('TLParamsLocked').SetValue(1)
-                self._node_map.FindNode('AcquisitionStart').Execute()
+            elif self._acq_mode == self.MODE_HARDWARE_TRIGGER:
+                self._node_map.FindNode('TriggerSelector').SetCurrentEntry('ExposureStart')
+                # line0 should be (trigger) input with optocoupler for all IDS
+                # cameras covered in IDS peak 2.10.0 with hardware triggering
+                self._node_map.FindNode('TriggerSource').SetCurrentEntry('Line0')
+                self._node_map.FindNode('TriggerMode').SetCurrentEntry('On')
             else:
                 raise NotImplementedError('Single shot mode not implemented')
+            
+            self._node_map.FindNode('TLParamsLocked').SetValue(1)
+            self._data_stream.StartAcquisition(peak.AcquisitionStartMode_Default,
+                                                peak.DataStream.INFINITE_NUMBER)
+            self._node_map.FindNode('AcquisitionStart').Execute()
+
         except Exception as e:
             logger.error(f'Error starting acquisition: {e}')
             raise e
         self._poll = True
         return 0
+    
+    def FireSoftwareTrigger(self):
+        self._node_map.FindNode('TriggerSoftware').Execute()
+        self._log_exposure_start()
+        # self._node_map.FineNode('TriggerSoftware').WaitUntilDone(1000)
     
     def GetIntegTime(self):
         """
@@ -291,7 +338,7 @@ class IDS_Camera(Camera):
     
     def SetIntegTime(self, exposure_time):
         """
-        Set the exposure time.
+        Set the exposure time. Automatically adjusts frame rate
 
         Parameters
         ----------
@@ -302,12 +349,23 @@ class IDS_Camera(Camera):
         --------
         GetIntegTime
         """
-        # get acceptable range, in units of microseconds
-        lower = self._node_map.FindNode("ExposureTime").Minimum()  # [us]
-        upper = self._node_map.FindNode("ExposureTime").Maximum()  # [us]
-        exp_time = np.clip(exposure_time * 1e6, lower, upper)  # [us]
-        logger.info(f'Setting exposure time to {exp_time} us')
-        self._node_map.FindNode("ExposureTime").SetValue(exp_time)
+        # note that setting exposure time will automatically increase decrease
+        # FPS if necessary, but setting exposure time lower will not 
+        # automatically increase FPS
+        
+        # Exposure time min/max will auto adjust given the current frame rate,
+        # so best to ignore it, and let frame rate adjust to what it can.
+        # lower = self._node_map.FindNode("ExposureTime").Minimum()  # [us]
+        # upper = self._node_map.FindNode("ExposureTime").Maximum()  # [us]
+        # exp_time = np.clip(exposure_time * 1e6, lower, upper)  # [us]
+        # logger.info(f'Setting exposure time to {exp_time} us')
+        # self._node_map.FindNode("ExposureTime").SetValue(exp_time)
+        self._node_map.FindNode("ExposureTime").SetValue(exposure_time * 1e6)
+        fps_target = 1 / exposure_time  # [FPS]
+        lower = self._node_map.FindNode("AcquisitionFrameRate").Minimum()  # [FPS]
+        upper = self._node_map.FindNode("AcquisitionFrameRate").Maximum()  # [FPS]
+        fps = np.clip(fps_target, lower, upper)
+        self._node_map.FindNode("AcquisitionFrameRate").SetValue(fps)
     
     def GetPicWidth(self):
         """
@@ -404,10 +462,15 @@ class IDS_Camera(Camera):
 
         """
         logger.debug('setting ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
+        # check offset increments
+        x1 -= x1 % self._offset_x_incr
+        y1 -= y1 % self._offset_y_incr
+        # clip to bounds
         x1 = int(np.clip(x1, self._offset_x_min, self._offset_x_max))
         y1 = int(np.clip(y1, self._offset_y_min, self._offset_y_max))
         x2 = int(np.clip(x2, x1 + self._width_min, self._width_max))
         y2 = int(np.clip(y2, y1 + self._height_min, self._height_max))
+        # double check width/height increments
         x2 -= (x2 - x1) % self._width_increment  # ROI must be a multiple of increment
         y2 -= (y2 - y1) % self._height_increment
         logger.debug('adjusted ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
@@ -428,16 +491,10 @@ class IDS_Camera(Camera):
         mode : int
             toggles between continuous and single shot mode
         """
-        if mode == self.MODE_SINGLE_SHOT:
-            self._cont_mode = False
-        else:
-            self._cont_mode = True
+        self._acq_mode = mode
             
     def GetAcquisitionMode(self):
-        if self._cont_mode:
-            return self.MODE_CONTINUOUS
-        else:
-            return self.MODE_SINGLE_SHOT
+        return self._acq_mode
     
     def GetFPS(self):
         """

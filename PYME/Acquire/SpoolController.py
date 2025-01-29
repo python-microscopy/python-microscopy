@@ -94,7 +94,7 @@ class ProtocolAcquisitionSettings(object):
             self.protocolZ.filename = protocolName
             self.z_dwell = self.protocolZ.dwellTime
 
-    def get_protocol_for_acquistion(self, settings={}):
+    def get_protocol_for_acquisition(self, settings={}):
         stack = settings.get('z_stepped', self.z_stepped)
         stack_settings = settings.get('stack_settings', None)
         
@@ -185,6 +185,11 @@ class SpoolController(object):
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
         self.on_stop = dispatch.Signal()
+
+        self.analysis_mode = 'interactive' # 'interactive' or 'rule-based'
+        self.analysis_rule_name = 'default'
+        self.analysis_launch_mode = 'triggered' # 'triggered' or 'series-end
+        
 
         self._analysis_launchers = queue.Queue(3)
         
@@ -368,12 +373,13 @@ class SpoolController(object):
             # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
             pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
             logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
-            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
+            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5') or HTTPSpooler.exists(pyme_cluster + '.tiles')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            local_h5 = os.sep.join([self.dirname, fn + '.h5'])
-            logger.debug('Looking for %s on local machine' % local_h5)
-            return os.path.exists(local_h5)
+            local_stub = os.sep.join([self.dirname, fn])
+            local_h5 = local_stub + '.h5'
+            logger.debug('Looking for %s on local machine' % local_stub)
+            return os.path.exists(local_h5) or os.path.exists(local_stub + '.pcs') or os.path.exists(local_stub + '.tiles')
         
     def get_free_space(self):
         """
@@ -417,6 +423,10 @@ class SpoolController(object):
             self._status_changed_condition.notify_all()
             
         self.onSpoolProgress.send(self)
+
+    @property
+    def acquisition_cls(self):
+        return self.acquisition_types[self.acquisition_type]
         
     def _get_queue_name(self, fn, pcs=False, subdirectory=None):
         """ Get fully resolved uri to spool to
@@ -441,6 +451,9 @@ class SpoolController(object):
             ext = '.pcs'
         else:
             ext = '.h5'
+
+        # allow acquisition types (e.g. tiling) to specify their own extension
+        ext = getattr(self.acquisition_cls, 'FILE_EXTENSION', ext)
         
         return self._sep.join([self.get_dirname(subdirectory), fn + ext])
 
@@ -516,9 +529,10 @@ class SpoolController(object):
             
             raise IOError('A series with the same name already exists')
             
-          
-        
-            
+        # update launch analysis settings
+        self.analysis_mode = settings.get('analysis_mode', self.analysis_mode)
+        self.analysis_rule_name = settings.get('analysis_rule_name', self.analysis_rule_name)
+        self.analysis_launch_mode = settings.get('analysis_launch_mode', self.analysis_launch_mode)  
         
         if self.spoolType == 'Cluster':
             self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5), 
@@ -544,7 +558,7 @@ class SpoolController(object):
 
         
         try:
-            self.spooler = self.acquisition_types[acquisition_type].from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
+            self.spooler = self.acquisition_cls.from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
         except KeyError:
             raise RuntimeError('Unknown acquisition type %s' % acquisition_type)
         
@@ -555,11 +569,8 @@ class SpoolController(object):
         if extra_metadata is not None:
             self.spooler.md.mergeEntriesFrom(MetaDataHandler.DictMDHandler(extra_metadata))
 
-        # stop the frameWrangler before we start spooling
-        # this serves to ensure that a) we don't accidentally spool frames which were in the camera buffer when we hit start
-        # and b) we get a nice clean timestamp for when the actual frames start (after any protocol init tasks)
-        # it might also slightly improve performance.
-        self.scope.frameWrangler.stop()
+        # NOTE - stopping and starting the framewrangler has moved to the spooler .start() method
+        #self.scope.frameWrangler.stop()
         
         try:
             self.spooler.on_stop.connect(self.SpoolStopped)
@@ -569,8 +580,8 @@ class SpoolController(object):
             raise
 
         # restart frame wrangler
-        self.scope.frameWrangler.Prepare()
-        self.scope.frameWrangler.start()
+        #self.scope.frameWrangler.Prepare()
+        #self.scope.frameWrangler.start()
         
         self.onSpoolStart.send(self)
 
@@ -637,6 +648,11 @@ class SpoolController(object):
         
         else:
             settings['acquisition_type'] = self.acquisition_type
+            
+            settings['analysis_mode'] = self.analysis_mode
+            settings['analysis_launch_mode'] = self.analysis_launch_mode
+            settings['analysis_rule_name'] = self.analysis_rule_name
+            
             settings.update(self.acquisition_types[self.acquisition_type].get_frozen_settings(self.scope, self)) 
             
             return settings
@@ -702,6 +718,9 @@ class SpoolController(object):
         
         self.on_stop.send(self)
 
+        if self.analysis_launch_mode == 'series-end':
+            self.LaunchAnalysis()
+
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)
             self._ProgressUpate()
@@ -719,39 +738,111 @@ class SpoolController(object):
         
 
     def LaunchAnalysis(self):
+        from warnings import warn
+        warn('LaunchAnalysis is deprecated, use launch_analysis instead', DeprecationWarning)
+        self.launch_analysis()
+    
+    def launch_analysis(self):
         """Launch analysis
         """
-        #from PYME.IO import QueueSpooler
-        #from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+        import posixpath
+
+        try:
+            if not self.spoolType == 'Cluster':
+                from PYME import warnings
+                warnings.warn('Analysis is only supported for cluster spooling', category=RuntimeWarning)
         
-        dh5view_cmd = 'dh5view'
-        if sys.platform == 'win32':
-            dh5view_cmd = 'dh5view.exe'
-            
-        if self.autostart_analysis:
-            dh5view_cmd += ' -g'
-        
-        if self.spoolType == 'Cluster': #queue or not
-            if self.autostart_analysis:
-                # launch analysis in a separate thread
-                t = threading.Thread(target=self.launch_cluster_analysis)
+            if self.analysis_mode == 'interactive':
+                subprocess.Popen('%s %s' % (self.dh5view_cmd, self.spooler.getURL()), shell=True)
+
+            elif self.analysis_mode == 'rule-based':
+                seriesName = self.spooler.getURL()
+
+                try:
+                    # we have the chained analysis module loaded
+                    rule_factory = self.scope.analysis_rules[self.analysis_rule_name].rule_factories[0]
+
+                    context = {
+                        'seriesName': seriesName,
+                        'inputs': {'input': seriesName}, # needed for recipes
+                        'output_dir':  posixpath.split(seriesName)[0],
+                        'spooler': self.spooler.storage, # for SpoolLocalLocalization rule completeness check
+                    }
+
+                    rule =  rule_factory.get_rule(context=context)
+                    # launch analysis in a separate thread    
+
+                except AttributeError:
+                    # we don't have the chained analysis module loaded
+                    from PYME.cluster import rules
+                    import warnings
+                    warnings.warn('using legacy automated localisation rule - please add the chained analysis module to your init and use this instead', category=RuntimeWarning)
+                    rule = rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH)
+
+                except KeyError:
+                    raise RuntimeError('Analysis rule %s not found' % self.analysis_rule_name)
+                
+                t = threading.Thread(target=rule.push)
                 t.start()
                 # keep track of a couple launching threads to make sure they have ample time to finish before joining
                 if self._analysis_launchers.full():
                     self._analysis_launchers.get().join()
                 self._analysis_launchers.put(t)
-            else:
-                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
-     
-    def launch_cluster_analysis(self):
-        from PYME.cluster import rules
-        
-        seriesName = self.spooler.getURL()
-        try:
-            #HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
-            rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH).push()
+
+                self._rule_outputs = rule.output_files
         except:
-            logger.exception('Error launching analysis for %s' % seriesName)
+            logger.exception('Error launching analysis')
+
+    # TODO - do these belong here?
+    @property
+    def pymevis_cmd(self):
+        if sys.platform == 'win32':
+            return 'PYMEVis.exe'
+        else:
+            return 'PYMEVis'
+        
+    @property
+    def pymeimage_cmd(self):
+        if sys.platform == 'win32':
+            return 'PYMEImage.exe'
+        else:
+            return 'PYMEImage'
+    
+    dh5view_cmd = pymeimage_cmd
+    
+    def open_analysis(self):
+        """Open the currenly running analysis in PYMEVis"""
+        import subprocess
+        
+        output = self._rule_outputs.get('results')
+        
+        # get the URL
+        if output.endswith('.h5r'):
+            uri = output + '?live'
+            subprocess.Popen('%s %s' % (self.pymevis_cmd, uri), shell=True)
+        elif output.endswith('.h5') or output.endswith('.tif'):
+            uri = output
+            subprocess.Popen('%s %s' % (self.pymeimage_cmd, uri), shell=True)
+
+    def open_view(self):
+        if hasattr(self.spooler, '_launch_viewer'):
+            # TODO - make less special case - maybe defer normal launch to the spooler as well
+            self.spooler._launch_viewer()
+        else:
+            subprocess.Popen('%s %s' % (self.pymeimage_cmd, self.spooler.getURL()), shell=True)
+
+
+            
+     
+    # def launch_cluster_analysis(self):
+    #     from PYME.cluster import rules
+        
+    #     seriesName = self.spooler.getURL()
+    #     try:
+    #         #HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+    #         rules.LocalisationRule(seriesName=seriesName, analysisMetadata=self.scope.analysisSettings.analysisMDH).push()
+    #     except:
+    #         logger.exception('Error launching analysis for %s' % seriesName)
 
             
     def SetSpoolMethod(self, method):

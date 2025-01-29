@@ -315,8 +315,15 @@ def infer_tileio_backend(base_directory):
                 return TILEIO_EXT[file_extension]
     raise IOError("No files found for loading ImagePyramid.")
 
+def atleast_nd(a, n):
+    while a.ndim < n:
+        a = np.expand_dims(a, a.ndim)
+    
+    return a
+
 class ImagePyramid(object):
     _weight_cache = {}
+    ndim=2 # 2D only for now
     
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, 
                  n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, 
@@ -334,7 +341,7 @@ class ImagePyramid(object):
             storage_directory, _ = unifiedIO.split_cluster_url(storage_directory)
         
         self.base_dir = storage_directory
-        self.tile_size = pyramid_tile_size
+        self.tile_size = int(pyramid_tile_size)
         
         self.pyramid_valid = False
         
@@ -454,6 +461,12 @@ class ImagePyramid(object):
                     
         return new_tile
         logger.debug('Making layer %d' % (inputLevel+1))
+
+    
+    @property
+    def layers(self):
+        return [PyramidLayer(self, i) for i in range(self.depth + 1)]
+
     
     def get_layer_tile_coords(self, level):
         return self._imgs.get_layer_tile_coords(level)
@@ -525,7 +538,8 @@ class ImagePyramid(object):
             inputLevel += 1
         
         self.pyramid_valid = True
-        self.depth = inputLevel
+        logger.debug('Pyramid built to level %d' % inputLevel)
+        self.depth = inputLevel + 1
         self._imgs.flush()
 
     def _clean_tiles(self, x, y):
@@ -641,6 +655,100 @@ class ImagePyramid(object):
 
         self._clean_tiles(tile_x, tile_y)
 
+class PyramidLayer(object):
+    """A layer of and ImagePyramid, implements an array-like interface to the tiles within the layer"""
+    def __init__(self, pyramid, layer):
+        self.pyramid = pyramid
+        self.layer = layer
+
+    dtype=np.float32
+    ndim=5
+
+    @property
+    def shape(self):
+        n_tiles_x, n_tiles_y = self._tile_nums
+        return (int(n_tiles_x * self.pyramid.tile_size),int(n_tiles_y * self.pyramid.tile_size))
+    
+    @property
+    def _tile_nums(self):
+        return self.pyramid.n_tiles_x/(2**self.layer), self.pyramid.n_tiles_y/(2**self.layer)
+        
+    def __getitem__(self, keys):
+        keys = list(keys)
+        #print keys
+        for i in range(len(keys)):
+            if not isinstance(keys[i], slice):
+                keys[i] = slice(int(keys[i]), int(keys[i]) + 1)
+        
+        #if keys == self.oldSlice:
+        #    return self.oldData
+        
+        self.oldSlice = keys
+        
+        #keys = [keys[j] for j in self._slice_order]
+        keys = keys[:self.pyramid.ndim]
+
+        xslice, yslice = keys[:2]
+
+        n_tiles_x, n_tiles_y = self._tile_nums
+
+        x0 = xslice.start
+        if x0 is None:
+            x0 = 0
+
+        x1 = xslice.stop
+        if x1 is None:
+            x1 = int(n_tiles_x * self.pyramid.tile_size)
+        x1 = min(x1, int(n_tiles_x * self.pyramid.tile_size))
+
+        y0 = yslice.start
+        if y0 is None:
+            y0 = 0
+
+        y1 = yslice.stop
+        if y1 is None:
+            y1 = int(n_tiles_y * self.pyramid.tile_size)
+
+        y1 = min(y1, int(n_tiles_y * self.pyramid.tile_size))
+
+        assert(x0 >= 0)
+        assert(y0 >= 0)
+        assert(x1 <= n_tiles_x * self.pyramid.tile_size)
+        assert(y1 <= n_tiles_y * self.pyramid.tile_size)
+        #assert((xslice.step is None) or (xslice.step == 1))
+        #assert((yslice.step is None) or (yslice.step == 1))
+
+        out = np.zeros([int(x1 - x0), int(y1 - y0)], 'f4') # TODO - strides?
+
+        for x in range(x0, x1, self.pyramid.tile_size):
+            for y in range(y0, y1, self.pyramid.tile_size):
+                tile_x = int(x / self.pyramid.tile_size)
+                tile_y = int(y / self.pyramid.tile_size)
+
+                xi = tile_x * self.pyramid.tile_size
+                yi = tile_y * self.pyramid.tile_size
+
+                xo = xi - x0 
+                yo = yi - y0
+                
+                tile = self.pyramid.get_tile(self.layer, tile_x, tile_y)
+                if not tile is None:
+                    out[max(xo, 0):min(xo+self.pyramid.tile_size, out.shape[0]), 
+                        max(yo, 0):min(yo+self.pyramid.tile_size, out.shape[1])] = tile[max(-xo, 0):min(self.pyramid.tile_size, out.shape[0]-xo),
+                                                                                        max(-yo, 0):min(self.pyramid.tile_size, out.shape[1]-yo)]
+
+        
+        #print keys
+        
+        #if self.type == 'Array':
+        r = atleast_nd(out[::xslice.step, ::yslice.step], 5)
+        
+        self.oldData = r
+        
+        return r
+        return self.pyramid.get_tile(self.layer, x, y)
+    
+    
 
 def get_position_from_events(events, mdh):
     """Use acquisition events to create a mapping between frame number and

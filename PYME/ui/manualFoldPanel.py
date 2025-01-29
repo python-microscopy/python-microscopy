@@ -660,6 +660,8 @@ class foldPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
         except KeyError:
             self.padding = 5
 
+        self._constrain_children = kwargs.pop('constrain_children', False)
+
         self._stretch_sizer = kwargs.pop('bottom_spacer', True)
         self._one_pane_active = kwargs.pop('single_active_pane', False)
 
@@ -713,7 +715,11 @@ class foldPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
 
     def cascading_layout(self, depth=0):
         #logger.info('cascade layout - %s' % self)
-        cascading_layout.CascadingLayoutMixin.cascading_layout(self, depth+1)
+        if not self._constrain_children:
+            cascading_layout.CascadingLayoutMixin.cascading_layout(self, depth+1)
+        else:
+            self.Layout()
+
         self.fold1()
 
     def Clear(self):

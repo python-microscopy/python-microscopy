@@ -113,20 +113,10 @@ class ProtocolAcquisitionPane(cascading_layout.CascadingLayoutPanel):
             #self.AddNewElement(clp, priority=1)
             self.seq_pan = clp
 
-        #analysis settings
-        clp = afp.collapsingPane(self, caption='Real time analysis ...')
-
-        self.scope.analysisSettings = AnalysisSettingsUI.AnalysisSettings() #Move me???
-
-        clp.AddNewElement(AnalysisSettingsUI.AnalysisSettingsPanel(clp, self.scope.analysisSettings,
-                                                                   self.scope.analysisSettings.onMetadataChanged))
-        clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, self.scope.analysisSettings,
-                                                                  self.scope.analysisSettings.onMetadataChanged))
-        #self.AddNewElement(clp)
-        vsizer.Add(clp, 0, wx.ALL | wx.EXPAND, 0)
+        
         self.SetSizerAndFit(vsizer)
         #end analysis settings
-        
+
 
     def __init__(self, parent, scope, **kwargs):
         """Initialise the spooling panel.
@@ -245,7 +235,7 @@ class SpoolingPane(afp.foldingPane):
         spoolDirSizer.Add(self.stDiskSpace, 0, wx.ALL | wx.EXPAND, 2)
 
         ### Compression etc
-        clp = afp.collapsingPane(pan, caption='Compression and quantization ...', padding=2)
+        clp = afp.collapsingPane(pan, caption='Compression ...', padding=2)
         clp.AddNewElement(self._comp_pan(clp))
         spoolDirSizer.Add(clp, 0, wx.ALL | wx.EXPAND, 2)
 
@@ -312,6 +302,118 @@ class SpoolingPane(afp.foldingPane):
         
         return pan
     
+    
+    def _analysis_pan(self):
+        pan = cascading_layout.CascadingLayoutPanel(parent=self, style=wx.TAB_TRAVERSAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+    
+        ###Spool directory
+        sbAnalysis = wx.StaticBox(pan, -1, 'Analysis:')
+        analysisSizer = wx.StaticBoxSizer(sbAnalysis, wx.VERTICAL)
+
+        #analysis settings
+        if hasattr(self.scope, 'analysis_rules'):
+            # new style analysis rules
+            # analysis mode
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            #hsizer.Add(wx.StaticText(pan, -1, 'Analysis:'), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.rbInteractiveAnalysis = wx.RadioButton(pan, -1, 'Interactive', style=wx.RB_GROUP)
+            self.rbInteractiveAnalysis.Bind(wx.EVT_RADIOBUTTON, self.OnToggleAnalysis)
+            self.rbInteractiveAnalysis.SetToolTip('Interactive analysis launches PYMEImage and allows you to test analysis parameters etc ... before running the analysis. It also shows a real-time update of localisations as they come in.')
+            hsizer.Add(self.rbInteractiveAnalysis, 1, wx.ALL | wx.EXPAND, 2)
+            self.rbAutomaticAnalysis = wx.RadioButton(pan, -1, 'Automatic')
+            self.rbAutomaticAnalysis.Bind(wx.EVT_RADIOBUTTON, self.OnToggleAnalysis)
+            self.rbAutomaticAnalysis.SetToolTip('Automatic analysis will runs analysis rules on the data with no user interaction. This is useful for high-throughput applications, but does not show progress updates.')
+            hsizer.Add(self.rbAutomaticAnalysis, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+            if self.spoolController.analysis_mode == 'interactive':
+                self.rbInteractiveAnalysis.SetValue(True)
+            else:
+                self.rbAutomaticAnalysis.SetValue(True)
+            analysisSizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 0)
+
+            
+            #analysis trigger
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(pan, -1, 'Start:'), 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.rbOnTrigger = wx.RadioButton(pan, -1, 'Trigger', style=wx.RB_GROUP)
+            self.rbOnTrigger.Bind(wx.EVT_RADIOBUTTON, self.OnToggleAnalysisTrigger)
+            self.rbOnTrigger.SetToolTip('Analysis is triggered by the protocol, or by manually clicking the `Analyse` button. Should be used if analysis should start before the series is complete.')
+            hsizer.Add(self.rbOnTrigger, 1, wx.ALL | wx.EXPAND, 2)
+            self.rbOnEnd = wx.RadioButton(pan, -1, 'Series end')
+            self.rbOnEnd.Bind(wx.EVT_RADIOBUTTON, self.OnToggleAnalysisTrigger)
+            self.rbOnEnd.SetToolTip('Analysis is triggered when the series is complete. Should be used if analysis should only start once all data is available.')
+            hsizer.Add(self.rbOnEnd, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+            if self.spoolController.analysis_launch_mode == 'triggered':
+                self.rbOnTrigger.SetValue(True)
+            else:
+                self.rbOnEnd.SetValue(True)
+            analysisSizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 0)
+
+            #analysis rule name
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.stRuleChain = wx.StaticText(pan, -1, 'Rule chain:')
+            hsizer.Add(self.stRuleChain, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+            choices = [r for r in self.scope.analysis_rules.keys()]
+            self.cRuleChain = wx.Choice(pan, -1, choices=choices, size=(100, -1))
+            self.cRuleChain.SetSelection(choices.index(self.spoolController.analysis_rule_name))
+            self.cRuleChain.Bind(wx.EVT_CHOICE, self.OnRuleChainChanged)
+            hsizer.Add(self.cRuleChain, 1, wx.ALL | wx.EXPAND, 2)
+            analysisSizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 0)
+
+            self._update_analysis_controls()
+
+            
+        else:
+            clp = afp.collapsingPane(pan, caption='Real time analysis ...')
+
+            self.scope.analysisSettings = AnalysisSettingsUI.AnalysisSettings() #Move me???
+
+            clp.AddNewElement(AnalysisSettingsUI.AnalysisSettingsPanel(clp, self.scope.analysisSettings,
+                                                                    self.scope.analysisSettings.onMetadataChanged))
+            clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, self.scope.analysisSettings,
+                                                                    self.scope.analysisSettings.onMetadataChanged))
+            #self.AddNewElement(clp)
+            analysisSizer.Add(clp, 0, wx.ALL | wx.EXPAND, 0)
+
+        vsizer.Add(analysisSizer, 0, wx.ALL | wx.EXPAND, 0)
+        pan.SetSizerAndFit(vsizer)
+        return pan
+        
+
+    def OnToggleAnalysis(self, event):
+        self.spoolController.analysis_mode = 'interactive' if self.rbInteractiveAnalysis.GetValue() else 'rule-based'
+        self._update_analysis_controls()
+
+    def OnToggleAnalysisTrigger(self, event):
+        self.spoolController.analysis_launch_mode = 'triggered' if self.rbOnTrigger.GetValue() else 'series-end'
+
+    def OnRuleChainChanged(self, event):
+        self.spoolController.analysis_rule_name = self.cRuleChain.GetStringSelection()
+
+    def _update_analysis_controls(self):
+        self.rbOnTrigger.SetValue(self.spoolController.analysis_launch_mode == 'triggered')
+        self.rbInteractiveAnalysis.SetValue(self.spoolController.analysis_mode == 'interactive')
+
+        if hasattr(self.scope, 'analysis_rules'):
+            choices = [r for r in self.scope.analysis_rules.keys()]
+            self.cRuleChain.SetItems(choices)
+            self.cRuleChain.SetSelection(choices.index(self.spoolController.analysis_rule_name))
+
+            if self.spoolController.analysis_mode == 'interactive':
+                #self.stRuleChain.Hide()
+                #self.cRuleChain.Hide()
+                self.cRuleChain.Disable()
+            else:
+                #self.stRuleChain.Show()
+                #self.cRuleChain.Show()
+                self.cRuleChain.Enable()
+
+        else:
+            self.cRuleChain.Disable()
+            #self.stRuleChain.Hide()
+            #self.cRuleChain.Hide()
+
+        #self.cascading_layout()
         
     def _spool_pan(self):
         pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
@@ -330,7 +432,7 @@ class SpoolingPane(afp.foldingPane):
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
-        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNN images spooled in MM mins')
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
         self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     
@@ -339,15 +441,20 @@ class SpoolingPane(afp.foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.bStartSpool = wx.Button(self.spoolProgPan, -1, 'Start', style=wx.BU_EXACTFIT)
-        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
+        self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnStartStopButton)
         #self.bStartSpool.SetDefault()
         hsizer.Add(self.bStartSpool, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bView = wx.Button(self.spoolProgPan, -1, 'View', style=wx.BU_EXACTFIT)
+        self.bView.Bind(wx.EVT_BUTTON, self.OnViewButton)
+        hsizer.Add(self.bView, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bView.Enable(False)
     
-        self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop', style=wx.BU_EXACTFIT)
-        self.bStopSpooling.Enable(False)
-        self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
+        # self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop', style=wx.BU_EXACTFIT)
+        # self.bStopSpooling.Enable(False)
+        # self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
     
-        hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        # hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
         self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse', style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
@@ -433,6 +540,7 @@ class SpoolingPane(afp.foldingPane):
         self.AddNewElement(self._aq_settings_pan(), priority=1, foldable=False)
         self._pan_spool_to = self._spool_to_pan()
         self.AddNewElement(self._pan_spool_to)
+        self.AddNewElement(self._analysis_pan())
 
         self.AddNewElement(self._spool_pan())
 
@@ -583,10 +691,18 @@ class SpoolingPane(afp.foldingPane):
 
         try:
             self.spoolController.start_spooling(fn)
+            return True
         except IOError as e:
             logger.exception('IO error whilst spooling')
             ans = wx.MessageBox(str(e.strerror), 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+            return False
+
+    def OnStartStopButton(self, event=None):
+        if self.bStartSpool.GetLabel() == 'Start':
+            self.OnBStartSpoolButton(event)
+        else:
+            self.OnBStopSpoolingButton(event)
             
     def update_ui(self):
         self.cbCompress.SetValue(self.spoolController.hdf_compression_level > 0)
@@ -595,23 +711,23 @@ class SpoolingPane(afp.foldingPane):
             
     def OnSpoolingStarted(self, **kwargs):
         if self.spoolController.spoolType in ['Queue', 'Cluster']:
+            self.bAnalyse.SetLabel('Analyse')
             self.bAnalyse.Enable()
+            self.bView.Enable() # todo - does this make sense for tiling?
+        else:
+            self.bView.Enable(False)
+            
 
-        self.bStartSpool.Enable(False)
+        #self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
-        self.bStopSpooling.Enable(True)
+        #self.bStopSpooling.Enable(True)
+        self.bStartSpool.SetLabel('Stop')
         #self.stSpoolingTo.Enable(True)
         #self.stNImages.Enable(True)
         self.stSpoolingTo.SetForegroundColour(None)
         self.stNImages.SetForegroundColour(None)
         self.stSpoolingTo.SetLabel('Spooling to ' + self.spoolController.seriesName)
         self.stNImages.SetLabel('0 images spooled in 0 minutes')
-        
-        
-
-    def OnBStartStackButton(self, event=None):
-        """GUI callback to start spooling with z-stepping."""
-        self.OnBStartSpoolButton(stack=True)
         
 
     def OnBStopSpoolingButton(self, event):
@@ -620,9 +736,11 @@ class SpoolingPane(afp.foldingPane):
         #self.OnSpoolingStopped()
         
     def OnSpoolingStopped(self, **kwargs):
-        self.bStartSpool.Enable(True)
+        self.bStartSpool.SetLabel('Start')
+        self.bView.Enable(True)
+        #self.bStartSpool.Enable(True)
         #self.bStartStack.Enable(True)
-        self.bStopSpooling.Enable(False)
+        #self.bStopSpooling.Enable(False)
         #self.stSpoolingTo.Enable(False)
         #self.stNImages.Enable(False)
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
@@ -639,7 +757,16 @@ class SpoolingPane(afp.foldingPane):
         #self.cascading_layout()
 
     def OnBAnalyse(self, event):
-        self.spoolController.LaunchAnalysis()
+        if self.bAnalyse.GetLabel() == 'Analyse':
+            self.spoolController.launch_analysis()
+            if self.spoolController.analysis_mode == 'rule-based':
+                self.bAnalyse.SetLabel('View Results')
+        else:
+            self.spoolController.open_analysis()
+
+    def OnViewButton(self, event):
+        self.spoolController.open_view()
+
         
     
     def _tick(self, **kwargs):

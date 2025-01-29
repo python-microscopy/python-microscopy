@@ -152,17 +152,22 @@ class PcoSdkCam(Camera):
                     if self._n_queued > 0:
                         _curr_buf = self._queued_buffers.get()
                         self._n_queued -= 1
+                        
                         # wait for the buffer
                         wait_status = k32_dll.WaitForSingleObject(self._buf_event[_curr_buf], self._timeout)
                         if wait_status:
-                            self._n_timeouts += 1
-                            if self._n_timeouts >= MAX_TIMEOUTS:
-                                raise TimeoutError(f"Waited too long for buffer ({self._timeout} ms).")
+                            logger.warning(f"Waited too long for buffer ({self._timeout} ms).") 
+                            
+                            #TODO: we currently continue as if we got the buffer - is this the right thing to do?
+                            # Presumably the status will be non-zero and we will drop the buffer?, but then what 
+                            # happens to those buffers? do they just dissapear?
+                        
                         k32_dll.ResetEvent(self._buf_event[_curr_buf])
                         # make sure this buffer is safe to use
                         status = self._buffer_status[_curr_buf]
                         if status:
                             logger.warning(f"Error {status} during check of buffer {_curr_buf}.")
+                            #DB: Do you see a lot of these warnings? IE - do we get one every time we have a timeout?
                             # drop this buffer
                         else:
                             # use it
@@ -435,7 +440,7 @@ class PcoSdkCam(Camera):
         if self._recording == False:
             self._init_buffers()
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._recording = True
 
         if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):

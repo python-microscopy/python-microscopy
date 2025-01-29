@@ -208,13 +208,17 @@ class DistributedImagePyramid(ImagePyramid):
         self._spooler.put_stream(server_idx, fn,PZFFormat.dumps(data))
              
     
+    @property
+    def servers(self):
+        return self._spooler.servers
+    
     def finish_base_tiles(self):
         """
         Notifies all cluster servers that all frames have been processed on the
         microscope end. Blocks until the servers have finished constructing their partial pyramids
         """
         
-        for ts in self._spooler.servers:
+        for ts in self._spooler._streams:
             ts.finalize('__pyramid_finish/' + self.base_dir.lstrip('/'))
             
         # put this in a separate loop to the above as .close() joins the pushing threads, which
@@ -245,7 +249,7 @@ class DistributedImagePyramid(ImagePyramid):
             logger.debug("Topmost level: {}".format(inputLevel + 1))
     
             self.pyramid_valid = True
-            self.depth = inputLevel
+            self.depth = inputLevel +1
             self._imgs.flush()
 
 

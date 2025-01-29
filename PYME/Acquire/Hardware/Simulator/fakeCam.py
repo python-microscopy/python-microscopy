@@ -521,7 +521,7 @@ class FakeCamera(Camera):
         #pass
 
     def StartExposure(self):
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self.compT.StartExp()
         return 0
 

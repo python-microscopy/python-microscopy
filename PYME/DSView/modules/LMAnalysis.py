@@ -733,9 +733,10 @@ class LMAnalyser2(Plugin):
                 self.ds = tabular.FitResultsSource(self.fitResults)
                 self.ds.mdh = self.resultsMdh
                 self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
-                self.dsviewer.pipeline.mdh = self.resultsMdh
+                #self.dsviewer.pipeline.mdh = self.resultsMdh
                 try:
                     self.dsviewer.LMDisplay.SetFit()
+                    self.dsviewer.LMDisplay._create_base_layer()
                 except:
                     pass
             else:
