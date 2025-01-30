@@ -168,7 +168,7 @@ class FastGraphPanel(wx.Panel):
         #dc.DrawLine(llx, 0, llx, maxy)
         lab = '%1.3G' % self.limit_lower
         labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, max(llx - labSize[0]/2 + self.left_margin, 0), maxy + 2)
+        dc.DrawText(lab, max(int(llx - labSize[0]/2 + self.left_margin), 0), maxy + 2)
 
 
         if not self.threshMode:
@@ -181,7 +181,7 @@ class FastGraphPanel(wx.Panel):
             #dc.DrawLine(ulx, 0, ulx, maxy)
             lab = '%1.3G' % self.limit_upper
             labSize = dc.GetTextExtent(lab)
-            dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
+            dc.DrawText(lab, min(int(ulx - labSize[0]/2), self.Size[0] - labSize[0]), maxy + 2)
             
         lly = 0 #self.h.min()
         #dc.DrawLine(llx, 0, llx, maxy)
