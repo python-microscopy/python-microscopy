@@ -434,7 +434,7 @@ class BlobObject(object):
                 x0_, y0_ = view.pixel_to_screen_coordinates(x0, y0)
                 x1_, y1_ = view.pixel_to_screen_coordinates(x1, y1)
                 
-                dc.DrawLine(x0_, y0_, x1_, y1_)
+                dc.DrawLine(int(x0_), int(y0_), int(x1_), int(y1_))
                 
                 l = mc.geom_width/(2*mc.voxelsize[0])
                 x0, y0, z0 = mc.centroid
@@ -443,7 +443,7 @@ class BlobObject(object):
                 x0_, y0_ = view.pixel_to_screen_coordinates(x0, y0)
                 x1_, y1_ = view.pixel_to_screen_coordinates(x1, y1)
                 
-                dc.DrawLine(x0_, y0_, x1_, y1_)
+                dc.DrawLine(int(x0_), int(y0_), int(x1_), int(y1_))
             except ValueError:
                 pass
             

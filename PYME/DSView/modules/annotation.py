@@ -450,7 +450,7 @@ class AnnotateBase(object):
                 
                 if (c['type'] == 'polygon'):
                     dc.SetBrush(wx.TheBrushList.FindOrCreateBrush(self.brushColsA[c['labelID'] % 16], wx.BRUSHSTYLE_CROSS_HATCH))
-                    dc.DrawPolygon(pFoc)
+                    dc.DrawPolygon(pFoc.astype(int))
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                 else:
                     dc.DrawLines(pFoc)

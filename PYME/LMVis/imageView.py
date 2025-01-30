@@ -137,8 +137,8 @@ class ImageViewPanel(wx.Panel):
             print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 
-            dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])
-            dc.DrawLine(0, .5*self.Size[1], self.Size[0], .5*self.Size[1])
+            dc.DrawLine(int(.5*self.Size[0]), 0, int(.5*self.Size[0]), int(self.Size[1]))
+            dc.DrawLine(0, int(.5*self.Size[1]), int(self.Size[0]), int(.5*self.Size[1]))
 
             dc.SetPen(wx.NullPen)
 
@@ -155,16 +155,16 @@ class ImageViewPanel(wx.Panel):
 
 
             if self.do.selection.mode == selection.SELECTION_RECTANGLE:
-                dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
+                dc.DrawRectangle(int(lx), int(ly), int(hx-lx),int(hy-ly))
                 
             elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
                 if len(self.do.selection.trace) > 2:
                     x, y = numpy.array(self.do.selection.trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
                     print((pts.shape))
-                    dc.DrawSpline(pts)
+                    dc.DrawSpline(pts.astype(int))
             elif self.do.selection.width == 1:
-                dc.DrawLine(lx,ly, hx,hy)
+                dc.DrawLine(int(lx), int(ly), int(hx), int(hy))
             else:
                 dx = hx - lx
                 dy = hy - ly
@@ -184,8 +184,8 @@ class ImageViewPanel(wx.Panel):
                 x_2 = hx
                 y_2 = hy
 
-                dc.DrawLine(lx,ly, hx,hy)
-                dc.DrawPolygon([(x_1 +d_x, y_1-d_y), (x_1 - d_x, y_1 + d_y), (x_2-d_x, y_2+d_y), (x_2 + d_x, y_2 - d_y)])
+                dc.DrawLine(int(lx), int(ly), int(hx), int(hy))
+                dc.DrawPolygon([(int(x_1 +d_x), int(y_1-d_y)), (int(x_1 - d_x), int(y_1 + d_y)), (int(x_2-d_x), int(y_2+d_y)), (int(x_2 + d_x), int(y_2 - d_y))])
 
 
             dc.SetPen(wx.NullPen)
@@ -454,8 +454,8 @@ class ColourImageViewPanel(ImageViewPanel):
             print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 
-            dc.DrawLine(.5*self.Size[0], 0, .5*self.Size[0], self.Size[1])
-            dc.DrawLine(0, .5*self.Size[1], self.Size[0], .5*self.Size[1])
+            dc.DrawLine(int(.5*self.Size[0]), 0, int(.5*self.Size[0]), int(self.Size[1]))
+            dc.DrawLine(0, int(.5*self.Size[1]), int(self.Size[0]), int(.5*self.Size[1]))
 
             dc.SetPen(wx.NullPen)
         

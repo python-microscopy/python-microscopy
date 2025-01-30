@@ -545,6 +545,9 @@ class SpoolSeriesPanel(SingleActionPanel):
     def __init__(self, parent, actionManager, scope):
         super().__init__(parent, actionManager, scope)
 
+        self._disp_aqType = None
+        self._aq_settings_string = None
+
         #scope.spoolController.onSettingsChange.connect(self._update)
 
     def _init_controls(self, sizer):
@@ -572,17 +575,24 @@ class SpoolSeriesPanel(SingleActionPanel):
             return
 
         aqType = self.scope.spoolController.acquisition_type
-        if aqType == 'ProtocolAcquisition':
-            self.stNumFramesLabel.Show()
-            self.tNumFrames.Show()
-        else:
-            self.stNumFramesLabel.Hide()
-            self.tNumFrames.Hide()
+        aq_string = f'{aqType} with the following settings:\n{self.scope.spoolController.get_settings()}'
 
-        self.stAqType.SetLabel(f'{aqType} with the following settings:\n{self.scope.spoolController.get_settings()}')
-        self.stAqType.Wrap(self.GetSize()[0]-5)
+        if (self._disp_aqType != aqType) or (self._aq_settings_string != aq_string):
+            # only update if the settings have changed
+            if aqType == 'ProtocolAcquisition':
+                self.stNumFramesLabel.Show()
+                self.tNumFrames.Show()
+            else:
+                self.stNumFramesLabel.Hide()
+                self.tNumFrames.Hide()
 
-        self.cascading_layout()
+            self.stAqType.SetLabel(aq_string)
+            self.stAqType.Wrap(self.GetSize()[0]-5)
+
+            self.cascading_layout()
+
+            self._disp_aqType = aqType
+            self._aq_settings_string = aq_string
 
     
 
