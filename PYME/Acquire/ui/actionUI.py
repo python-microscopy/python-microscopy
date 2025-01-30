@@ -548,7 +548,7 @@ class SpoolSeriesPanel(SingleActionPanel):
         self._disp_aqType = None
         self._aq_settings_string = None
 
-        scope.spoolController.onSettingsChange.connect(self._update)
+        #scope.spoolController.onSettingsChange.connect(self._update)
 
     def _init_controls(self, sizer):
         self.stAqType = wx.StaticText(self, -1, 'Add an acquisition using the currently selected type and settings')
