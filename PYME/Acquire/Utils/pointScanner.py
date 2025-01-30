@@ -82,11 +82,11 @@ class Scanner(object):
     @classmethod
     def n_tiles(cls, pixels=10, **kwargs):
         if np.isscalar(pixels):
-            return pixels**2
+            return (pixels+1)**2
         elif np.isscalar(pixels[0]):
-            return pixels[0] * pixels[1]
+            return (pixels[0]+1) * (pixels[1]+1)
         else:
-            return len(pixels[0]) * len(pixels[1])
+            return (len(pixels[0])+1) * (len(pixels[1])+1)   # +1 to match the number of tiles due to np.arrange
         
     @property
     def num_tiles(self):
