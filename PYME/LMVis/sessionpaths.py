@@ -10,7 +10,7 @@ SESSIONDIR_TOKEN = '$session_dir$'
 
 # split filename?query type string in fname and query parts
 def _parse_fnq(dsfnstr):
-    parts = dsfnstr.split('?')
+    parts = str(dsfnstr).split('?')
     if len(parts) > 1:
         return  (parts[0],parts[1])# we assume there are no further '?'s in the query string
     else:
@@ -19,9 +19,9 @@ def _parse_fnq(dsfnstr):
 # join filename and query to form the expected string for session loading
 def _join_fnq_string(fn,query):
     if query is None:
-        return fn
+        return str(fn)
     else:
-        return fn + '?' + query
+        return str(fn) + '?' + query
 
 def _get_relative_filename(fnstring,sessiondir):
     fnamep = Path(fnstring)
@@ -77,7 +77,7 @@ def _process_session_paths(session,sessiondir):
                 if relstring is None:
                     raise ValueError('Path %s is not below sessiondir %s' % (mod_dict[k],sessiondir))
                 
-                mod_dict[k]  = os.path.join(SESSIONDIR_TOKEN,relstring)
+                mod_dict[k]  = PurePosixPath(SESSIONDIR_TOKEN).joinpath(relstring).as_posix()
 
 def _make_paths_absolute(session):
     """Make all paths in session absolute - if started from command line some ds paths
@@ -132,5 +132,5 @@ def substitute_sessiondir(session_txt, session_filename):
     from pathlib import Path
     sessiondir = Path(session_filename).resolve().parent.as_posix()
 
-    return session_txt.replace(SESSIONDIR_TOKEN,sessiondir)
-        
+    return session_txt.replace(SESSIONDIR_TOKEN+"\\",SESSIONDIR_TOKEN+'/').replace(SESSIONDIR_TOKEN,sessiondir)
+
