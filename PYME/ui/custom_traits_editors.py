@@ -361,6 +361,9 @@ class DictFloatEditList(editList.EditListCtrl):
         self.InsertColumn(1, 'Value')
 
         try:
+            # Temporary workaround for makeColumnEditible dissappearing in recent wx
+            # TODO - find a permanent fix
+            # TODO - prevent editing in column 0
             self.makeColumnEditable(1)
         except AttributeError:
             pass
