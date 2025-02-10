@@ -290,6 +290,10 @@ def assemble_tiles_xyztc(data, mdh, correlate=False, dark=None, flat=None):
 
     Assumes tiles are along the time axis.
 
+    NOTE: This is the most naive and simple implementation, and will put the entire tiled reconstruction and
+    a similarly sized occupancy matrix into RAM. There is a good chance that it will blow up on large datasets. 
+    TODO - create a pyramid instead.
+
     Parameters:
     -----------
     ds : arraylike (5D - x, y, z, t, c)
