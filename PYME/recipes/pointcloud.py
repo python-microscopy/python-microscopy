@@ -608,7 +608,7 @@ class IterativeClosestPoint(ModuleBase):
                 reference_weights = np.vstack([1/reference[self.sigma_x][idxs_reference], 
                                                 1/reference[self.sigma_y][idxs_reference], 
                                                 1/reference[self.sigma_z][idxs_reference]])
-                rescmp = reference_weights.sum()
+                rescmp = ((1/reference_weights)**2).sum()
                 reference_weights /= reference_weights.sum(1)[:,None]
             except KeyError:
                 reference_weights = None
