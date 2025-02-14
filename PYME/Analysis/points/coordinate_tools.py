@@ -276,3 +276,96 @@ def distance_to_image_mask(mask, points):
 
     return distances
 
+def unit_quaternion_to_rotation_matrix(q):
+    """
+    Convert a unit quaternion to a rotation matrix. Helper function for 
+    absolute_orientation(). Section 3E of reference.
+
+    Parameters
+    ----------
+    q : np.typing.ArrayLike
+        (4,) vector representing the unit quaternion q0 + iqx + jqy + kqz
+
+    References
+    ----------
+    Berthold K. P. Horn, "Closed-form solution of absolute orientation using unit 
+    quaternions," J. Opt. Soc. Am. A 4, 629-642 (1987) 
+
+    """
+    q0, qx, qy, qz = q
+    q02, qx2, qy2, qz2 = q*q
+
+    return np.array([[q02+qx2-qy2-qz2, 2*(qx*qy-q0*qz), 2*(qx*qz+q0*qy)],
+                    [2*(qy*qx+q0*qz), q02-qx2+qy2-qz2, 2*(qy*qz-q0*qx)],
+                    [2*(qz*qx-q0*qy), 2*(qz*qy+q0*qz), q02-qx2-qy2+qz2]])
+
+def absolute_orientation(reference, target, weights_reference=None, weights_target=None):
+    """
+    Compute the rotation and shift from target to reference point cloud.
+
+    Parameters
+    ----------
+    reference : np.typing.ArrayLike
+        (3, N) matrix of points
+    target : np.typing.ArrayLike
+        (3, N) matrix of points
+    weights_reference : np.typing.ArrayLike
+        (3, N) matrix of weights. Should sum to 1 along axis 1.
+    weights_target : np.typing.ArrayLike
+        (3, N) matrix of weights. Should sum to 1 along axis 1.
+
+    References
+    ----------
+    Berthold K. P. Horn, "Closed-form solution of absolute orientation using unit 
+    quaternions," J. Opt. Soc. Am. A 4, 629-642 (1987) 
+
+    """
+    # Map target coordinates to reference.
+    # Note we do not use any scaling
+
+    if weights_reference is None:
+        weights_reference = np.ones(reference.shape, dtype=target.dtype)
+    if weights_target is None:
+        weights_target = np.ones(target.shape, dtype=target.dtype)
+
+    # Move to operating w.r.t centroid
+    reference_cent = (weights_reference*reference).mean(1)
+    target_cent = (weights_target*target).mean(1)
+    r = reference - reference_cent[:,None]
+    t = target - target_cent[:,None]
+
+    # Compute pairwise sums
+    S_txrx = (weights_target[0,:]*weights_reference[0,:]*t[0,:]*r[0,:]).sum()
+    S_txry = (weights_target[0,:]*weights_reference[1,:]*t[0,:]*r[1,:]).sum()
+    S_txrz = (weights_target[0,:]*weights_reference[2,:]*t[0,:]*r[2,:]).sum()
+    S_tyrx = (weights_target[1,:]*weights_reference[0,:]*t[1,:]*r[0,:]).sum()
+    S_tyry = (weights_target[1,:]*weights_reference[1,:]*t[1,:]*r[1,:]).sum()
+    S_tyrz = (weights_target[1,:]*weights_reference[2,:]*t[1,:]*r[2,:]).sum()
+    S_tzrx = (weights_target[2,:]*weights_reference[0,:]*t[2,:]*r[0,:]).sum()
+    S_tzry = (weights_target[2,:]*weights_reference[1,:]*t[2,:]*r[1,:]).sum()
+    S_tzrz = (weights_target[2,:]*weights_reference[2,:]*t[2,:]*r[2,:]).sum()
+
+    # Compute quaternion matrix
+    N = np.array([[(S_txrx+S_tyry+S_tzrz), S_tyrz-S_tzry, S_tzrx-S_txrz, S_txry-S_tyrx],
+                [S_tyrz-S_tzry, (S_txrx-S_tyry-S_tzrz), S_txry+S_tyrx, S_tzrx+S_txrz],
+                [S_tzrx-S_txrz, S_txry+S_tyrx, (-S_txrx+S_tyry-S_tzrz), S_tyrz+S_tzry],
+                [S_txry-S_tyrx, S_tzrx+S_txrz, S_tyrz+S_tzry, (-S_txrx-S_tyry+S_tzrz)]])
+
+    # Get the eigenvalues/eigenvectors. They are sorted high to low, and we only
+    # need the largest one (vec[:,0]), so we don't have to check the values.
+    _, vec = np.linalg.eig(N)
+
+    # Convert quaternion to rotation
+    rotm = unit_quaternion_to_rotation_matrix(vec[:,0])
+
+    # Apply rotation
+    target_rotm = np.dot(rotm,target)
+
+    # Compute and apply shift
+    target_rotm_cent = (weights_target*target_rotm).mean(1)
+    shift = reference_cent - target_rotm_cent
+    target_rotm += shift[:,None]
+
+    res = np.sum((target_rotm - reference)**2)
+
+    return target_rotm, rotm, shift, res
