@@ -608,10 +608,12 @@ class IterativeClosestPoint(ModuleBase):
                 reference_weights = np.vstack([1/reference[self.sigma_x][idxs_reference], 
                                                 1/reference[self.sigma_y][idxs_reference], 
                                                 1/reference[self.sigma_z][idxs_reference]])
+                
+                # The error has to be less than the localization precision of the dataset
                 rescmp = ((1/reference_weights)**2).sum()
-                reference_weights /= reference_weights.sum(1)[:,None]
             except KeyError:
                 reference_weights = None
+                # No error? Then we should be able to register the points exactly.
                 rescmp = 1  # TODO: What if target_weights finds the sigma keys?
             
             target_pts_sm = np.vstack([target['x'][idxs_target], 
@@ -622,7 +624,6 @@ class IterativeClosestPoint(ModuleBase):
                 target_weights = np.vstack([1/target[self.sigma_x][idxs_target], 
                                             1/target[self.sigma_y][idxs_target], 
                                             1/target[self.sigma_z][idxs_target]])
-                target_weights /= target_weights.sum(1)[:,None]
             except KeyError:
                 target_weights = None
 

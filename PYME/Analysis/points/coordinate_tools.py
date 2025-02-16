@@ -329,21 +329,21 @@ def absolute_orientation(reference, target, weights_reference=None, weights_targ
         weights_target = np.ones(target.shape, dtype=target.dtype)
 
     # Move to operating w.r.t centroid
-    reference_cent = (weights_reference*reference).mean(1)
-    target_cent = (weights_target*target).mean(1)
+    reference_cent = ((weights_reference/weights_reference.sum(1)[:,None])*reference).mean(1)
+    target_cent = ((weights_target/weights_target.sum(1)[:,None])*target).mean(1)
     r = reference - reference_cent[:,None]
     t = target - target_cent[:,None]
 
     # Compute pairwise sums
-    S_txrx = (weights_target[0,:]*weights_reference[0,:]*t[0,:]*r[0,:]).sum()
-    S_txry = (weights_target[0,:]*weights_reference[1,:]*t[0,:]*r[1,:]).sum()
-    S_txrz = (weights_target[0,:]*weights_reference[2,:]*t[0,:]*r[2,:]).sum()
-    S_tyrx = (weights_target[1,:]*weights_reference[0,:]*t[1,:]*r[0,:]).sum()
-    S_tyry = (weights_target[1,:]*weights_reference[1,:]*t[1,:]*r[1,:]).sum()
-    S_tyrz = (weights_target[1,:]*weights_reference[2,:]*t[1,:]*r[2,:]).sum()
-    S_tzrx = (weights_target[2,:]*weights_reference[0,:]*t[2,:]*r[0,:]).sum()
-    S_tzry = (weights_target[2,:]*weights_reference[1,:]*t[2,:]*r[1,:]).sum()
-    S_tzrz = (weights_target[2,:]*weights_reference[2,:]*t[2,:]*r[2,:]).sum()
+    S_txrx = ((weights_target[0,:]*weights_reference[0,:]/np.sum(weights_target[0,:]*weights_reference[0,:]))*t[0,:]*r[0,:]).sum()
+    S_txry = ((weights_target[0,:]*weights_reference[1,:]/np.sum(weights_target[0,:]*weights_reference[1,:]))*t[0,:]*r[1,:]).sum()
+    S_txrz = ((weights_target[0,:]*weights_reference[2,:]/np.sum(weights_target[0,:]*weights_reference[2,:]))*t[0,:]*r[2,:]).sum()
+    S_tyrx = ((weights_target[1,:]*weights_reference[0,:]/np.sum(weights_target[1,:]*weights_reference[0,:]))*t[1,:]*r[0,:]).sum()
+    S_tyry = ((weights_target[1,:]*weights_reference[1,:]/np.sum(weights_target[1,:]*weights_reference[1,:]))*t[1,:]*r[1,:]).sum()
+    S_tyrz = ((weights_target[1,:]*weights_reference[2,:]/np.sum(weights_target[1,:]*weights_reference[2,:]))*t[1,:]*r[2,:]).sum()
+    S_tzrx = ((weights_target[2,:]*weights_reference[0,:]/np.sum(weights_target[2,:]*weights_reference[0,:]))*t[2,:]*r[0,:]).sum()
+    S_tzry = ((weights_target[2,:]*weights_reference[1,:]/np.sum(weights_target[2,:]*weights_reference[1,:]))*t[2,:]*r[1,:]).sum()
+    S_tzrz = ((weights_target[2,:]*weights_reference[2,:]/np.sum(weights_target[2,:]*weights_reference[2,:]))*t[2,:]*r[2,:]).sum()
 
     # Compute quaternion matrix
     N = np.array([[(S_txrx+S_tyry+S_tzrz), S_tyrz-S_tzry, S_tzrx-S_txrz, S_txry-S_tyrx],
@@ -362,7 +362,7 @@ def absolute_orientation(reference, target, weights_reference=None, weights_targ
     target_rotm = np.dot(rotm,target)
 
     # Compute and apply shift
-    target_rotm_cent = (weights_target*target_rotm).mean(1)
+    target_rotm_cent = ((weights_target/weights_target.sum(1)[:,None])*target_rotm).mean(1)
     shift = reference_cent - target_rotm_cent
     target_rotm += shift[:,None]
 
