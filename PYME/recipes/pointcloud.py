@@ -573,8 +573,10 @@ class IterativeClosestPoint(ModuleBase):
         
         target_pts = np.vstack([target['x'], target['y'], target['z']])
 
-        rot_tot = np.eye(3, dtype=float)
-        shift_tot = np.zeros((3,), dtype=float)
+        # rot_tot = np.eye(3, dtype=float)
+        # shift_tot = np.zeros((3,), dtype=float)
+        rot_tot = []
+        shift_tot = []
 
         for k in range(self.max_iters):
             # Get the 1 nearest neighbor of each target point in reference
@@ -606,8 +608,8 @@ class IterativeClosestPoint(ModuleBase):
                                        reference['z'][idxs_reference]])
             try:
                 reference_weights = np.vstack([1/reference[self.sigma_x][idxs_reference], 
-                                                1/reference[self.sigma_y][idxs_reference], 
-                                                1/reference[self.sigma_z][idxs_reference]])
+                                               1/reference[self.sigma_y][idxs_reference], 
+                                               1/reference[self.sigma_z][idxs_reference]])
                 
                 # The error has to be less than the localization precision of the dataset
                 rescmp = ((1/reference_weights)**2).sum()
@@ -616,9 +618,7 @@ class IterativeClosestPoint(ModuleBase):
                 # No error? Then we should be able to register the points exactly.
                 rescmp = 1  # TODO: What if target_weights finds the sigma keys?
             
-            target_pts_sm = np.vstack([target['x'][idxs_target], 
-                                       target['y'][idxs_target], 
-                                       target['z'][idxs_target]])
+            target_pts_sm = target_pts[:, idxs_target]
             
             try:
                 target_weights = np.vstack([1/target[self.sigma_x][idxs_target], 
@@ -633,8 +633,10 @@ class IterativeClosestPoint(ModuleBase):
                                                        target_weights)
             
             # Keep track
-            rot_tot = rotm @ rot_tot 
-            shift_tot += shift
+            # rot_tot = rotm @ rot_tot
+            # shift_tot += shift
+            rot_tot.append(rotm)
+            shift_tot.append(shift)
 
             logger.debug(f"Iteration {k} res: {res} rscmp: {rescmp}")
 
@@ -643,14 +645,23 @@ class IterativeClosestPoint(ModuleBase):
                 break
 
             # Update the full set of points to see which moved closer
-            target_pts = np.dot(rotm,target_pts) + shift[:,None]
-            
+            target_pts = np.dot(rotm, target_pts) + shift[:,None]
+        
+        # Create mapping strings
+        xstr, ystr, zstr = "x", "y", "z"
+        for r, s in zip(rot_tot, shift_tot):
+            xstr=f"{r[0,0]}*({xstr})+{r[0,1]}*({ystr})+{r[0,2]}*({zstr})+{s[0]}"
+            ystr=f"{r[1,0]}*({xstr})+{r[1,1]}*({ystr})+{r[1,2]}*({zstr})+{s[1]}"
+            zstr=f"{r[2,0]}*({xstr})+{r[2,1]}*({ystr})+{r[2,2]}*({zstr})+{s[2]}"
+
         # Now create a mapping filter based on the result
-        out = tabular.MappingFilter(target, 
-                                    x=f"{rot_tot[0,0]}*x+{rot_tot[0,1]}*y+{rot_tot[0,2]}*z+{shift_tot[0]}",
-                                    y=f"{rot_tot[1,0]}*x+{rot_tot[1,1]}*y+{rot_tot[1,2]}*z+{shift_tot[1]}",
-                                    z=f"{rot_tot[2,0]}*x+{rot_tot[2,1]}*y+{rot_tot[2,2]}*z+{shift_tot[2]}",
-                                    )
+        # out = tabular.MappingFilter(target, 
+        #                             x=f"{rot_tot[0,0]}*x+{rot_tot[0,1]}*y+{rot_tot[0,2]}*z+{shift_tot[0]}",
+        #                             y=f"{rot_tot[1,0]}*x+{rot_tot[1,1]}*y+{rot_tot[1,2]}*z+{shift_tot[1]}",
+        #                             z=f"{rot_tot[2,0]}*x+{rot_tot[2,1]}*y+{rot_tot[2,2]}*z+{shift_tot[2]}",
+        #                             )
+        out = tabular.MappingFilter(target, x=xstr, y=ystr, z=zstr)
+            
         try:
             out.mdh = MetaDataHandler.DictMDHandler(target.mdh)
         except AttributeError:
