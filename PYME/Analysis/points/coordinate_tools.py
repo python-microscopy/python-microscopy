@@ -368,7 +368,7 @@ def absolute_orientation(reference, target, weights_reference=None, weights_targ
     rotm = unit_quaternion_to_rotation_matrix(vec[:,0])
 
     # Apply rotation
-    target_rotm = np.dot(rotm, target)
+    target_rotm = np.matmul(rotm, target)
 
     # Compute and apply shift
     # shift0 = reference_cent - (weights_target*target_rotm).sum(1)/weights_target.sum(1)
@@ -377,5 +377,8 @@ def absolute_orientation(reference, target, weights_reference=None, weights_targ
     target_rotm += shift[:,None]
 
     res = np.sum((target_rotm - reference)**2)
+
+    print(rotm)
+    print(shift)
 
     return target_rotm, rotm, shift, res

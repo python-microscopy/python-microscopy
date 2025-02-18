@@ -168,3 +168,13 @@ def test_absolute_orientation():
 
     np.testing.assert_allclose(cube0, target_rotm)
     assert res < 1e-6
+
+    weights_reference = np.random.rand(*cube0.shape)
+    weights_target = np.random.rand(*cube1.shape)
+
+    target_rotm, rotm, shift, res = coordinate_tools.absolute_orientation(cube0, 
+                                                                          cube1, 
+                                                                          weights_reference=weights_reference, 
+                                                                          weights_target=weights_target)
+    
+    np.testing.assert_array_less(np.abs(cube0-target_rotm), 1/weights_reference)

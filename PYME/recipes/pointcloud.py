@@ -40,7 +40,7 @@ class Octree(ModuleBase):
         
 @register_module('LocalPointDensity')
 class LocalPointDensity(ModuleBase):
-    """
+    r"""
     Estimate the local density around a localization by fitting a scaling function to the number of
     Neigbours vs distance. The expected scaling function for a uniform density is used ($N \propto r^2$
     for 2D, $N\propto r^3$ for 3D.
@@ -568,19 +568,23 @@ class IterativeClosestPoint(ModuleBase):
         reference = namespace[self.reference]
         target = namespace[self.to_register]
 
-        reference_pts = np.vstack([reference['x'], reference['y'], reference['z']]).T
-        reference_tree = KDTree(reference_pts)
+        reference_pts0 = np.vstack([reference['x'], reference['y'], reference['z']]).T
+        reference_tree = KDTree(reference_pts0)
         
         target_pts = np.vstack([target['x'], target['y'], target['z']])
+        # print(reference_pts0.shape, target_pts.shape)
 
-        # rot_tot = np.eye(3, dtype=float)
-        # shift_tot = np.zeros((3,), dtype=float)
+        # print("reference x:", reference['x'][:10])
+        # print("referencepts0 x:", reference_pts0[:10,0])
+
         rot_tot = []
         shift_tot = []
 
         for k in range(self.max_iters):
             # Get the 1 nearest neighbor of each target point in reference
             dist, idxs_reference = reference_tree.query(target_pts.T)
+
+            # print("idxs_reference: ", idxs_reference[:10])
 
             # Reject pairs further apart than self.distance_threshold 
             if self.distance_threshold  < 0:
@@ -601,6 +605,7 @@ class IterativeClosestPoint(ModuleBase):
                 idxs_dist = np.random.choice(idxs_dist, size=self.max_points)
             # Now grab the points on which to iterate
             idxs_reference = idxs_reference[idxs_dist]
+            # print("idxs_reference: ", idxs_reference[:10])
             idxs_target = np.arange(target_pts.shape[1])[idxs_dist]
 
             reference_pts = np.vstack([reference['x'][idxs_reference], 
@@ -627,40 +632,42 @@ class IterativeClosestPoint(ModuleBase):
             except KeyError:
                 target_weights = None
 
+            # print(reference_pts.shape, target_pts_sm.shape, reference_weights, target_weights)
+
+            # print("reference_pts x: ", reference_pts[0,:10])
+            # print("target_pts_sm x: ", target_pts_sm[0,:10])
+
             _, rotm, shift, res = absolute_orientation(reference_pts, 
                                                        target_pts_sm, 
                                                        reference_weights, 
                                                        target_weights)
             
             # Keep track
-            # rot_tot = rotm @ rot_tot
-            # shift_tot += shift
             rot_tot.append(rotm)
             shift_tot.append(shift)
 
             logger.debug(f"Iteration {k} res: {res} rscmp: {rescmp}")
+            # print(f"Iteration {k} res: {res} rscmp: {rescmp}")
 
             if res <= rescmp:
                 # Residuals less than the sum of the error on the reference data set
                 break
 
             # Update the full set of points to see which moved closer
-            target_pts = np.dot(rotm, target_pts) + shift[:,None]
+            target_pts = np.matmul(rotm, target_pts) + shift[:,None]
         
         # Create mapping strings
         xstr, ystr, zstr = "x", "y", "z"
         for r, s in zip(rot_tot, shift_tot):
-            xstr=f"{r[0,0]}*({xstr})+{r[0,1]}*({ystr})+{r[0,2]}*({zstr})+{s[0]}"
-            ystr=f"{r[1,0]}*({xstr})+{r[1,1]}*({ystr})+{r[1,2]}*({zstr})+{s[1]}"
-            zstr=f"{r[2,0]}*({xstr})+{r[2,1]}*({ystr})+{r[2,2]}*({zstr})+{s[2]}"
+            xstrp=f"{r[0,0]}*({xstr})+{r[0,1]}*({ystr})+{r[0,2]}*({zstr})+{s[0]}"
+            ystrp=f"{r[1,0]}*({xstr})+{r[1,1]}*({ystr})+{r[1,2]}*({zstr})+{s[1]}"
+            zstrp=f"{r[2,0]}*({xstr})+{r[2,1]}*({ystr})+{r[2,2]}*({zstr})+{s[2]}"
+            xstr, ystr, zstr = xstrp, ystrp, zstrp
 
-        # Now create a mapping filter based on the result
-        # out = tabular.MappingFilter(target, 
-        #                             x=f"{rot_tot[0,0]}*x+{rot_tot[0,1]}*y+{rot_tot[0,2]}*z+{shift_tot[0]}",
-        #                             y=f"{rot_tot[1,0]}*x+{rot_tot[1,1]}*y+{rot_tot[1,2]}*z+{shift_tot[1]}",
-        #                             z=f"{rot_tot[2,0]}*x+{rot_tot[2,1]}*y+{rot_tot[2,2]}*z+{shift_tot[2]}",
-        #                             )
         out = tabular.MappingFilter(target, x=xstr, y=ystr, z=zstr)
+        # out.addColumn('xp', target_pts[0,...])
+        # out.addColumn('yp', target_pts[1,...])
+        # out.addColumn('zp', target_pts[2,...])
             
         try:
             out.mdh = MetaDataHandler.DictMDHandler(target.mdh)
