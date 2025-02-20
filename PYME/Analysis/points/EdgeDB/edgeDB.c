@@ -707,15 +707,15 @@ fail:
 
 
 static PyMethodDef edgeDBMethods[] = {
-    {"addEdges",  addEdges, METH_VARARGS | METH_KEYWORDS,
+    {"addEdges",  (PyCFunction) addEdges, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"segment",  segment, METH_VARARGS | METH_KEYWORDS,
+    {"segment",  (PyCFunction) segment, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"calcEdgeLengths",  calcEdgeLengths, METH_VARARGS | METH_KEYWORDS,
+    {"calcEdgeLengths",  (PyCFunction) calcEdgeLengths, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"getVertexEdgeLengths",  getVertexEdgeLengths, METH_VARARGS | METH_KEYWORDS,
+    {"getVertexEdgeLengths",  (PyCFunction) getVertexEdgeLengths, METH_VARARGS | METH_KEYWORDS,
     ""},
-    {"getVertexNeighbours",  getVertexNeighbours, METH_VARARGS | METH_KEYWORDS,
+    {"getVertexNeighbours",  (PyCFunction) getVertexNeighbours, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
