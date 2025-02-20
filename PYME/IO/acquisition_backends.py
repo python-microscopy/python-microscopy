@@ -12,6 +12,7 @@ from PYME.IO.events import HDFEventLogger, MemoryEventLogger
 
 import logging
 logger = logging.getLogger(__name__)
+import warnings
 
 class Backend(abc.ABC):
     """
@@ -25,6 +26,7 @@ class Backend(abc.ABC):
         
         self._dim_order=dim_order
         self._shape=shape
+        self._finished = False
         
         self.mdh['DimOrder'] = dim_order
         self.mdh['SizeC'] =  shape[4]
@@ -70,6 +72,7 @@ class Backend(abc.ABC):
     def finalise(self, events=None):
         """ Called after acquisition is complete, may be overridden to e.g. flush buffers, close files, , write events etc ...
         """
+        self._finished = True
         pass
 
     @classmethod
@@ -105,6 +108,18 @@ class Backend(abc.ABC):
         cycle time does not match the actual time elapsed to generate the frame"""
         #return self.tStart + self.frame_num*self.scope.cam.GetIntegTime()
         return self._t_start + max(self.imNum, 0)*self._fakeCamCycleTime
+    
+    @property
+    def md(self):
+        warnings.warn(DeprecationWarning('.md property is deprecated, use .mdh instead'))
+        return self.mdh
+    
+    def get_n_frames(self):
+        # FIXME?? 
+        return self.imNum
+    
+    def finished(self):
+        return self._finished
 
 
 class MemoryBackend(Backend):
@@ -122,6 +137,9 @@ class MemoryBackend(Backend):
 
     def finalise(self):
         self.image.events = self.event_logger.events
+        super().finalise()
+
+
 
 
 def distfcn_oidic(n_servers, i=None):
@@ -229,6 +247,7 @@ class ClusterBackend(Backend):
         logger.debug('Putting events')
         self._streamer.put(self._series_location + '/events.json', self.event_logger.to_JSON().encode()) 
         self._streamer.close()
+        super().finalise()
 
 
 class HDFBackend(Backend):
@@ -271,6 +290,8 @@ class HDFBackend(Backend):
 
         self.h5File.flush()
         self.h5File.close()
+
+        super().finalise()
 
     def getURL(self):
         '''Get URL for the series to pass to other processes so they can open it'''
