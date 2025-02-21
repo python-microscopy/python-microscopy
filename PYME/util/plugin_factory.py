@@ -36,7 +36,7 @@ def DoSomethingNeat(vis_frame):
     
     pipeline = vis_frame.pipeline # the PYME.LMVis.pipeline.Pipeline object associated with the window
     recipe = pipeline.recipe # the current recipe
-    canvas = vis_frame.gl_canvas # the open GL canvas - an instance of PYME.LMVis.gl_render3D_shaders.LMGLShaderCanvas
+    # canvas = vis_frame.gl_canvas # the open GL canvas - an instance of PYME.LMVis.gl_render3D_shaders.LMGLShaderCanvas
 
     # Add your code here
     pass
@@ -280,16 +280,19 @@ from PYME import config
 import os
 import sys
 import shutil
+from pathlib import Path
 
 def install_plugin(dist=False):
     this_dir = os.path.dirname(__file__)
 
     if dist:
+        Path(os.path.join(config.dist_config_directory, 'plugins')).mkdir(parents=True,exist_ok=True)
         shutil.copyfile(os.path.join(this_dir, '{package_name}.yaml'), 
-                        os.path.join(config.dist_config_directory, 'plugins', {package_name}.yaml'))
+                        os.path.join(config.dist_config_directory, 'plugins', '{package_name}.yaml'))
     else:  #default to user config directory
+        Path(os.path.join(this_dir, 'plugins')).mkdir(parents=True,exist_ok=True
         shutil.copyfile(os.path.join(this_dir, '{package_name}.yaml'), 
-                        os.path.join(config.user_config_dir, 'plugins', {package_name}.yaml'))
+                        os.path.join(config.user_config_dir, 'plugins', '{package_name}.yaml'))
 
 if __name__ == '__main__':
     import sys
@@ -323,7 +326,8 @@ PACKAGE_VERSION = '00.00.00'
 # Include a short description of your package. This might eventually get
 # displayed in e.g. Anaconda cloud if you build/upload packages, etc.
 PACKAGE_DESCRIPTION = 'What your plugin does'
-
+# choose if installing in 'dist' mode (global python environment) or at user config path
+install_dist=False
 # -------- If you filled in everything up to here you should be set ------------
 
 from setuptools import setup, find_packages
@@ -331,28 +335,32 @@ from setuptools.command.develop import develop
 from setuptools.command.install import install
 
 
-def install_pyme_plugin():
+def install_pyme_plugin(dist=False):
     import sys
     import subprocess
     import os
     plugin_install_path = os.path.join(os.path.dirname(__file__),
                                        'install_plugin.py')
-    subprocess.Popen('%s %s' % (sys.executable, plugin_install_path), 
-                        shell=True)
+    if dist:
+        subprocess.Popen('%s %s dist' % (sys.executable, plugin_install_path), 
+                         shell=True)
+    else:
+        subprocess.Popen('%s %s' % (sys.executable, plugin_install_path), 
+                         shell=True)
 
 
 class DevelopModuleAndInstallPlugin(develop):
     """Post-installation for development mode."""
     def run(self):
         develop.run(self)
-        install_pyme_plugin()
+        install_pyme_plugin(dist=install_dist)
         
 
 class InstallModuleAndInstallPlugin(install):
     """Post-installation for installation mode."""
     def run(self):
         install.run(self)
-        install_pyme_plugin()
+        install_pyme_plugin(dist=install_dist)
 
 
 setup(
