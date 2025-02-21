@@ -458,15 +458,23 @@ def create_pyme_plugin_template(output_dir, package_name, pymeimage=True, pymevi
 if __name__ == '__main__':
     import argparse
 
+    # we switch to using argparse.BooleanOptionalAction which requires Python 3.9+
+    # but really no current installs should use earlier Python versions at this point
     parser = argparse.ArgumentParser(description='Create a template for a PYME plugin')
     parser.add_argument('output_dir', help='Directory to write the plugin template to')
     parser.add_argument('package_name', help='Name of the package')
-    parser.add_argument('--pymeimage', help='Create a PYMEImage plugin with the given name', default=True)
-    parser.add_argument('--pymevis', help='Create a PYMEVisualize plugin with the given name', default=True)
-    parser.add_argument('--recipe', help='Create a recipe module with the given name', default=True)
-    parser.add_argument('--fit_factories', help='Create a fit factory with the given name', default=True)
-    parser.add_argument('--reports', help='Create a reports module with the given name', default=False)
-    parser.add_argument('--dist', help='setup to install plugins in dist mode (for other users)', default=False)
+    parser.add_argument('--pymeimage', help='Create a PYMEImage plugin with the given name',
+                        default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--pymevis', help='Create a PYMEVisualize plugin with the given name',
+                        default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--recipe', help='Create a recipe module with the given name',
+                        default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--fit_factories', help='Create a fit factory with the given name',
+                        default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--reports', help='Create a reports module with the given name',
+                        default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--dist', help='setup to install plugins in dist mode (for other users)',
+                        default=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     create_pyme_plugin_template(args.output_dir, args.package_name, args.pymeimage, args.pymevis, args.recipe,
