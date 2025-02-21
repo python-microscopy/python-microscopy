@@ -151,6 +151,7 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
+    # TODO save some compute by using a single call for + and - m modes
     for (m, n), c in zip(modes, coeffs):
         r += (c * (r_sph_harm(m, n, azimuth, zenith))).astype(azimuth.dtype)
 
@@ -445,6 +446,10 @@ class ScaledShell(object):
 
     def get_fitted_shell(self, azimuth, zenith):
         r_scaled = reconstruct_shell(self.modes, self.coefficients, azimuth, zenith)
+
+        return self._to_cartesian(azimuth, zenith, r_scaled)
+    
+    def _to_cartesian(self, azimuth, zenith, r_scaled):
         x_scaled, y_scaled, z_scaled = coordinate_tools.spherical_to_cartesian(azimuth, zenith, r_scaled)
         # need to scale things "down" since they were scaled "up" in the fit
         # scaling_factors = 1. / self.scaling_factors
@@ -459,6 +464,7 @@ class ScaledShell(object):
 
         return x.reshape(x_scaled.shape) + self.x0, y.reshape(y_scaled.shape) + self.y0, z.reshape(
             z_scaled.shape) + self.z0
+
 
     def fit_shell(self, max_n_mode=3, max_iterations=2, tol_init=0.3):
         modes, coefficients, summed_residuals = sphere_expansion_clean(self.x_cs, self.y_cs, self.z_cs, max_n_mode,
@@ -590,8 +596,7 @@ class ScaledShell(object):
 
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
-
-        pts = self.get_fitted_shell(azimuth_qs, zenith_qs)
+        pts = self._to_cartesian(azimuth_qs, zenith_qs, r_shell)
 
         #print(r_qs - r_shell)
 
