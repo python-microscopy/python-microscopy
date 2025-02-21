@@ -591,8 +591,18 @@ class ScaledShell(object):
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
 
+        pts = self.get_fitted_shell(azimuth_qs, zenith_qs)
+
+        #print(r_qs - r_shell)
+
         # return the (scaled space) difference
-        d = r_qs - r_shell
+        #d = r_qs - r_shell
+        d_ = pts - points
+
+        s = 2.0*(r_qs> r_shell) - 1.0
+        #print(s)
+
+        d = s*np.sqrt((d_*d_).sum(0))
         
         #scale distance TODO - actually scale to make slightly closer to being euclidean
         return d
