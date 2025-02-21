@@ -152,8 +152,22 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
     # TODO save some compute by using a single call for + and - m modes
+    cache = {}
     for (m, n), c in zip(modes, coeffs):
-        r += (c * (r_sph_harm(m, n, azimuth, zenith))).astype(azimuth.dtype)
+        if m == 0:
+            r += c*sph_harm(m, n, azimuth, zenith).real
+        else:
+            k = (abs(m), n) # sph_harm returns both +m and -m as real and imag parts, make sure we don't evaluate twice
+            try:
+                s = cache[k]
+            except KeyError:
+                s = sph_harm(m,n,azimuth, zenith)
+                cache[k] = s
+
+            if m > 0:
+                r += (c * ((1. / np.sqrt(2) * (-1) ** m) *s.real)).astype(azimuth.dtype)
+            else:
+                r += (c * ((1. / np.sqrt(2) * (-1) ** m) *s.imag)).astype(azimuth.dtype)
 
     return r
 

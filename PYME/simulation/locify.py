@@ -115,7 +115,7 @@ def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
         #contains_points = np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 9
         # for some reason the sign test doesn't seem to work properly. Use a generous
         # distance based test instead
-        contains_points = np.min([np.abs(c) for c in corner_dists], axis=0) < ( dx)
+        contains_points = np.min([np.abs(c) for c in corner_dists], axis=0) < ( 1.5*dx)
         #print(dx, np.min([np.abs(c) for c in corner_dists], axis=0), contains_points)
         
         verts = verts[:, contains_points]
