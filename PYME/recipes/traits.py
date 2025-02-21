@@ -10,6 +10,21 @@ try:
 except ImportError:
     from traits.api import *
 
+# definitions below have been adapted based on https://docs.enthought.com/traits-futures/0.2/_modules/traits/trait_types.html
+# these Dict have been deprecated for a while and need to be defined here for newer traits.api modules
+DictStrAny = Dict(str, Any)
+DictStrStr = Dict(str, str)
+DictStrList = Dict(str, list)
+DictStrFloat = Dict(str, float)
+DictStrBool = Dict(str, bool)
+
+# -- List Traits ------- same as dict traits; we define only a subset of all possible List traits here
+ListInt = List(int)
+ListFloat = List(float)
+ListStr = List(str)
+ListUnicode = List(str)
+ListComplex = List(complex)
+ListBool = List(bool)
 
 #Monkey-patch traits so that editors need enter / focus change to update by default
 from traits import trait_types
