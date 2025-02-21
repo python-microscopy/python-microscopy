@@ -290,7 +290,7 @@ def install_plugin(dist=False):
         shutil.copyfile(os.path.join(this_dir, '{package_name}.yaml'), 
                         os.path.join(config.dist_config_directory, 'plugins', '{package_name}.yaml'))
     else:  #default to user config directory
-        Path(os.path.join(this_dir, 'plugins')).mkdir(parents=True,exist_ok=True
+        Path(os.path.join(this_dir, 'plugins')).mkdir(parents=True,exist_ok=True)
         shutil.copyfile(os.path.join(this_dir, '{package_name}.yaml'), 
                         os.path.join(config.user_config_dir, 'plugins', '{package_name}.yaml'))
 
@@ -305,7 +305,7 @@ if __name__ == '__main__':
 '''
     return install_script
 
-def create_setup_script(package_name):
+def create_setup_script(package_name,dist=False):
     setup_script = f'''\
 #!/usr/bin/env python
 
@@ -327,7 +327,7 @@ PACKAGE_VERSION = '00.00.00'
 # displayed in e.g. Anaconda cloud if you build/upload packages, etc.
 PACKAGE_DESCRIPTION = 'What your plugin does'
 # choose if installing in 'dist' mode (global python environment) or at user config path
-install_dist=False
+install_dist={dist}
 # -------- If you filled in everything up to here you should be set ------------
 
 from setuptools import setup, find_packages
@@ -376,7 +376,8 @@ setup(
 '''
     return setup_script   
 
-def create_pyme_plugin_template(output_dir, package_name, pymeimage=True, pymevis=True, recipe=True, fit_factories=False, reports=False):
+def create_pyme_plugin_template(output_dir, package_name, pymeimage=True, pymevis=True, recipe=True, fit_factories=False,
+                                reports=False, dist=False):
     import os
     from pathlib import Path
     
@@ -449,7 +450,7 @@ def create_pyme_plugin_template(output_dir, package_name, pymeimage=True, pymevi
         f.write(create_install_script(package_name))
 
     with open(os.path.join(output_dir, 'setup.py'), 'w') as f:
-        f.write(create_setup_script(package_name))
+        f.write(create_setup_script(package_name,dist=dist))
 
     
 
@@ -465,9 +466,11 @@ if __name__ == '__main__':
     parser.add_argument('--recipe', help='Create a recipe module with the given name', default=True)
     parser.add_argument('--fit_factories', help='Create a fit factory with the given name', default=True)
     parser.add_argument('--reports', help='Create a reports module with the given name', default=False)
+    parser.add_argument('--dist', help='setup to install plugins in dist mode (for other users)', default=False)
     args = parser.parse_args()
 
-    create_pyme_plugin_template(args.output_dir, args.package_name, args.pymeimage, args.pymevis, args.recipe, args.fit_factories, args.reports)
+    create_pyme_plugin_template(args.output_dir, args.package_name, args.pymeimage, args.pymevis, args.recipe,
+                                args.fit_factories, args.reports, args.dist)
 
     
     
