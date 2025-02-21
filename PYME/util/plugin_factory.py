@@ -68,7 +68,7 @@ class MyCoolGenericModule(ModuleBase):
     
     # Define the inputs and outputs for the module
     input = Input('input')
-    optional_input = Input('optional_input'))
+    optional_input = Input('optional_input')
     output = Output('output')
     
     # Define the parameters for the module
@@ -117,8 +117,8 @@ class MyCoolImageFilter(Filter):
     # Define the parameters for the module
     param1 = Float(1.0, description='A parameter')
 
-    #redifine the dimensionality trait to only handle 2D and 3D data
-    dimensionality = Enum(['XY', 'XYZ'], default_value='XY')
+    #redefine the dimensionality trait to only handle 2D and 3D data
+    dimensionality = Enum(['XY', 'XYZ'])
 
     def apply_filter(self, data, voxelsize):
         """Implement an apply_filter() method to perform the module's operation.
@@ -296,7 +296,7 @@ def install_plugin(dist=False):
 
 if __name__ == '__main__':
     import sys
-    if (len(sys.argv) >= 1) and (sys.argv[1] == 'dist'):
+    if (len(sys.argv) > 1) and (sys.argv[1] == 'dist'):
         dist = True
     else:
         dist = False
@@ -421,7 +421,7 @@ def create_pyme_plugin_template(output_dir, package_name, pymeimage=True, pymevi
         with open(os.path.join(recipe_mod_dir, f'{package_name}.py'), 'w') as f:
             f.write(create_recipe_plugin())
 
-        plugin_conf['recipe_modules'] = [f'{package_name}.recipe_modules.{package_name}',]
+        plugin_conf['recipes'] = [f'{package_name}.recipe_modules.{package_name}',]
 
     if fit_factories:
         os.makedirs(os.path.join(mod_dir, 'fit_factories'), exist_ok=True)
@@ -460,6 +460,7 @@ if __name__ == '__main__':
 
     # we switch to using argparse.BooleanOptionalAction which requires Python 3.9+
     # but really no current installs should use earlier Python versions at this point
+    # see also https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
     parser = argparse.ArgumentParser(description='Create a template for a PYME plugin')
     parser.add_argument('output_dir', help='Directory to write the plugin template to')
     parser.add_argument('package_name', help='Name of the package')
