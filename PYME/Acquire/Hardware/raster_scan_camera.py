@@ -241,5 +241,21 @@ class RasterscanCameraShim(Camera):
               * self._scan_params['n_pixels_z'] / self.signal_provider.pixel_dwell_time
     
     def GetIntegTime(self):
-        return self.scanner.frame_rate()
-        
+        return 1 / self.frame_rate()
+    
+    # stuff needed so as not to brick GenStartMetadata:
+    def GetSerialNumber(self):
+        return '0'
+    
+    def GetCCDTemp(self):
+        return 0
+    
+    def GetCCDHeight(self):
+        return self._scan_params['n_pixels_y']
+    
+    def GetCCDWidth(self):
+        return self._scan_params['n_pixels_x']
+    
+    def GetROI(self):
+        return (0, 0, self._scan_params['n_pixels_x'], self._scan_params['n_pixels_y'])
+    
