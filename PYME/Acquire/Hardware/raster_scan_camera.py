@@ -101,11 +101,9 @@ class StageScanner(object):
                 assert (scan_params[n_pixels_key] % 2 == 1)
                 half_roi = scan_params[n_pixels_key] // 2
                 pixel_size = scan_params[f'{axis}_step_size']
-                self._axis_positions[axis] = np.concatenate([
-                    np.arange(-half_roi * pixel_size, 0, pixel_size), # negative direction
-                    np.array([0]),  # zero offset position
-                    np.arange(pixel_size, half_roi * pixel_size + pixel_size, pixel_size)  # positive direction
-                ])
+                self._axis_positions[axis] = np.linspace(
+                    -half_roi * pixel_size, half_roi * pixel_size,
+                     scan_params[n_pixels_key], endpoint=True)
         
         # note, dicts remember insertion order for Python>=3.6
         meshgrid_scan_positions = np.meshgrid(*self._axis_positions.values())
