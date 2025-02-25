@@ -147,6 +147,7 @@ class VoxelSignalProvider(object):
 
 
 class TestSignalProvider(VoxelSignalProvider):
+    data_len=None
     dtype=float
     def __init__(self, scanner):
         super().__init__()
