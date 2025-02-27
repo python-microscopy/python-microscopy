@@ -172,10 +172,17 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.InsertColumn(3, 'dx')
         self.lFluorSpecies.InsertColumn(4, 'dy')
         self.lFluorSpecies.InsertColumn(5, 'dz')
-        self.lFluorSpecies.makeColumnEditable(1)
-        self.lFluorSpecies.makeColumnEditable(3)
-        self.lFluorSpecies.makeColumnEditable(4)
-        self.lFluorSpecies.makeColumnEditable(5)
+
+        try:
+            # in newer versions of wxPython this method is gone (all columns are editable)
+            # TODO - find which version this changed in (can we drop this completely?)
+            # TODO - find a way to make some of the columns not editable (i.e. columns 0 and 2)
+            self.lFluorSpecies.makeColumnEditable(1)
+            self.lFluorSpecies.makeColumnEditable(3)
+            self.lFluorSpecies.makeColumnEditable(4)
+            self.lFluorSpecies.makeColumnEditable(5)
+        except AttributeError:
+            pass
 
         for key, value in self.pipeline.colour_mapper.species_ratios.items():
             ind = self.lFluorSpecies.InsertItem(UI_MAXSIZE, key)

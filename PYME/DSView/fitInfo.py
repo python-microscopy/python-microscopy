@@ -209,7 +209,7 @@ class FitInfoPanel(wx.Panel):
                 px0, py0 = vp.pixel_to_screen_coordinates(x0, y0)
                 px1, py1 = vp.pixel_to_screen_coordinates(x1, y1)
                 
-                dc.DrawRectangle(px0,py0, px1 - px0,py1 - py0)
+                dc.DrawRectangle(int(px0), int(py0), int(px1 - px0), int(py1 - py0))
                 
                 #draw start pos
                 xs = res['startParams']['x0']/vx
@@ -219,8 +219,8 @@ class FitInfoPanel(wx.Panel):
                 
                 #print xs, ys, pxs, pys
                 
-                dc.DrawLine(pxs-3, pys, pxs+3, pys)
-                dc.DrawLine(pxs, pys-3, pxs, pys+3)
+                dc.DrawLine(int(pxs-3), int(pys), int(pxs+3), int(pys))
+                dc.DrawLine(int(pxs), int(pys-3), int(pxs), int(pys+3))
                 
                 #draw fitted position
                 xs = res['fitResults']['x0']/vx
@@ -228,8 +228,8 @@ class FitInfoPanel(wx.Panel):
                 
                 pxs, pys = vp.pixel_to_screen_coordinates(xs, ys)
                 
-                dc.DrawLine(pxs-3, pys-3, pxs+3, pys+3)
-                dc.DrawLine(pxs-3, pys+3, pxs+3, pys-3)
+                dc.DrawLine(int(pxs-3), int(pys-3), int(pxs+3), int(pys+3))
+                dc.DrawLine(int(pxs-3), int(pys+3), int(pxs+3), int(pys-3))
         logger.debug('running DrawOverlays')
 
 
