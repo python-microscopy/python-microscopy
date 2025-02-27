@@ -205,7 +205,11 @@ class ModuleBase(HasStrictTraits):
         ct = self.class_traits()
             
         mod_traits_cleaned = {}
-        for k, v in self.get().items():
+        try:
+            params = self.get().items()
+        except AttributeError:
+            params = self.trait_get().items()
+        for k, v in params:
             if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
                 try:
                     if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')) or isinstance(ct[k], (Input, Output)):
