@@ -84,16 +84,26 @@ class IDS_Camera(Camera):
         # get min offsets. Note that some IDS cameras do not use the full chip.
         self._offset_x_min = self._node_map.FindNode("OffsetX").Minimum()
         self._offset_y_min = self._node_map.FindNode("OffsetY").Minimum()
-        self._offset_x_max = self._node_map.FindNode("OffsetX").Maximum()
-        self._offset_y_max = self._node_map.FindNode("OffsetY").Maximum()
-        self._offset_x_incr = self._node_map.FindNode("OffsetX").Increment()
-        self._offset_y_incr = self._node_map.FindNode("OffsetY").Increment()
         self._width_min = self._node_map.FindNode("Width").Minimum()
         self._height_min = self._node_map.FindNode("Height").Minimum()
+        
+        # set the minimum, to remove size restrictions due to current settings
+        self._node_map.FindNode("OffsetX").SetValue(self._offset_x_min)
+        self._node_map.FindNode("OffsetY").SetValue(self._offset_y_min)
+        self._node_map.FindNode("Width").SetValue(self._width_min)
+        self._node_map.FindNode("Height").SetValue(self._height_min)
+
+        # now query max values
+        self._offset_x_max = self._node_map.FindNode("OffsetX").Maximum()
+        self._offset_y_max = self._node_map.FindNode("OffsetY").Maximum()
         self._width_max = self._node_map.FindNode("Width").Maximum()
         self._height_max = self._node_map.FindNode("Height").Maximum()
+        # get increments
+        self._offset_x_incr = self._node_map.FindNode("OffsetX").Increment()
+        self._offset_y_incr = self._node_map.FindNode("OffsetY").Increment()
         self._width_increment = self._node_map.FindNode("Width").Increment()
         self._height_increment = self._node_map.FindNode("Height").Increment()
+
         # set ROI to full sensor size:
         self._node_map.FindNode("OffsetX").SetValue(self._offset_x_min)
         self._node_map.FindNode("OffsetY").SetValue(self._offset_y_min)
@@ -462,6 +472,13 @@ class IDS_Camera(Camera):
 
         """
         logger.debug('setting ROI: %d, %d, %d, %d' % (x1, y1, x2, y2))
+
+        # set the minimum, to remove size restrictions due to current settings
+        self._node_map.FindNode("OffsetX").SetValue(self._offset_x_min)
+        self._node_map.FindNode("OffsetY").SetValue(self._offset_y_min)
+        self._node_map.FindNode("Width").SetValue(self._width_min)
+        self._node_map.FindNode("Height").SetValue(self._height_min)
+
         # check offset increments
         x1 -= x1 % self._offset_x_incr
         y1 -= y1 % self._offset_y_incr
