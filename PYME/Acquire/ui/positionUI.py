@@ -329,5 +329,191 @@ class PositionPanel(wx.Panel):
         
         self.updating = False
 
+class GOTODialog(wx.Dialog):
+    def __init__(self, scope, parent, *args, **kw):
+        super().__init__(parent, *args, title='GOTO position', **kw)
+
+        poss = scope.GetPos()
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        self._ctrls = {}
+
+        for k, v in poss.items():
+            if not '_target' in k:
+                hsizer = wx.BoxSizer(wx.HORIZONTAL)
+                hsizer.Add(wx.StaticText(self, -1, '%s:' % k), 0, wx.ALIGN_CENTER_VERTICAL)
+                tc = wx.TextCtrl(self, -1, str(v))
+                self._ctrls[k] = tc
+                hsizer.Add(tc, 1, wx.ALIGN_CENTER_VERTICAL)
+                hsizer.Add(wx.StaticText(self, -1, '\u03BCm'), 0, wx.ALIGN_CENTER_VERTICAL)
+                vsizer.Add(hsizer, 0, wx.EXPAND)
+
+        sizer.Add(vsizer, 1, wx.EXPAND|wx.ALL, 5)
+
+        hsizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
+
+        sizer.Add(hsizer, 0, wx.EXPAND)
+
+        self.SetSizerAndFit(sizer)
+
+    def GetValues(self):
+        return {k: float(v.GetValue()) for k, v in self._ctrls.items()}
 
 
+class PositionPanelV2(PositionPanel):
+    def __init__(self, scope, parent, joystick=None, id=-1):
+        # begin wxGlade: MyFrame1.__init__
+        #kwds["style"] = wx.DEFAULT_FRAME_STYLE
+        wx.Panel.__init__(self, parent, id)
+        
+        self.updating = False
+        
+        self.scope = scope
+        self.joystick = joystick
+        #self.panel_1 = wx.Panel(self, -1)
+        self.sliders = []
+        self.sliderLabels = []
+        self.piezoNames = list(self.scope.positioning.keys())
+        self.stageNames = []
+
+        if 'x' in self.piezoNames and 'y' in self.piezoNames:
+            #Special case for x and y
+    
+            self.piezoNames.remove('x')
+            self.piezoNames.remove('y')
+    
+            self.stageNames = ['x', 'y']
+        
+        
+        
+        self.ranges = self.scope.GetPosRange()
+        poss = self.scope.GetPos()
+
+        sizer_ = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_2 = wx.BoxSizer(wx.VERTICAL)
+        
+        if len(self.stageNames) > 0:
+            #hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            
+            gsizer = wx.GridBagSizer(3,2)#, vgap=0, hgap=0)
+            gsizer.AddGrowableCol(0)
+            
+            self.stX = wx.StaticText(self, -1, u"x - 0 \u03BCm")
+            gsizer.Add(self.stX, (0,0), flag=wx.ALIGN_CENTRE_VERTICAL|wx.ALL|wx.EXPAND, border=0)
+
+            self.stY = wx.StaticText(self, -1, u"y - 0 \u03BCm")
+            gsizer.Add(self.stY, (1, 0), flag=wx.ALIGN_CENTRE_VERTICAL | wx.ALL | wx.EXPAND, border=0)
+            
+            #gsizer = wx.GridBagSizer(2, 2)
+            self.bLeft = wx.Button(self, -1, '<', style=wx.BU_EXACTFIT)
+            gsizer.Add(self.bLeft, (0, 1))
+            self.bRight = wx.Button(self, -1, '>', style=wx.BU_EXACTFIT)
+            gsizer.Add(self.bRight, (0, 2))
+            self.bUp = wx.Button(self, -1, '>', style=wx.BU_EXACTFIT)
+            gsizer.Add(self.bUp, (1, 2))
+            self.bDown = wx.Button(self, -1, '<', style=wx.BU_EXACTFIT)
+            gsizer.Add(self.bDown, (1, 1))
+            
+            self.bLeft.Bind(wx.EVT_BUTTON, lambda e : self.nudge('x', -1))
+            self.bRight.Bind(wx.EVT_BUTTON, lambda e: self.nudge('x', 1))
+            self.bUp.Bind(wx.EVT_BUTTON, lambda e: self.nudge('y', 1))
+            self.bDown.Bind(wx.EVT_BUTTON, lambda e: self.nudge('y', -1))
+
+            
+            sizer_2.Add(gsizer, 0, wx.EXPAND|wx.ALL, 2)
+
+            sizer_2.AddSpacer(10)
+        
+        for pName in self.piezoNames:
+            #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
+            rmin, rmax = self.ranges[pName]
+            #print rmin, rmax
+            pos = poss[pName]
+            sl = wx.Slider(self, -1, int(100 * pos), int(100 * rmin), int(100 * rmax), size=wx.Size(100, -1),
+                           style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #else:
+            #    sl = wx.Slider(self.panel_1, -1, 100*p[0].GetPos(p[1]), 100*p[0].GetMin(p[1]), 100*p[0].GetMax(p[1]), size=wx.Size(300,-1), style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #sl.SetSize((800,20))
+            #if 'units' in dir(p[0]):
+            #    unit = p[0].units
+            #else:
+            unit = u'\u03BCm'
+            
+            sLab = wx.StaticBox(self, -1, u'%s - %2.3f %s' % (pName, pos, unit))
+            
+            #            if 'minorTick' in dir(p):
+            #                sl.SetTickFreq(100, p.minorTick)
+            #            else:
+            #                sl.SetTickFreq(100, 1)
+            sz = wx.StaticBoxSizer(sLab, wx.HORIZONTAL)
+            sz.Add(sl, 1, wx.ALL | wx.EXPAND, 0)
+            #sz.Add(sLab, 0, wx.ALL|wx.EXPAND, 2)
+            sizer_2.Add(sz, 1, wx.EXPAND, 0)
+            
+            self.sliders.append(sl)
+            self.sliderLabels.append(sLab)
+
+        
+        hsizer.Add(sizer_2, 1, wx.EXPAND, 0)
+
+        self.bGo = wx.Button(self, -1, "G\nO\nT\nO", size=(30, -1))
+        #self.bGo.SetSize((25, 200))
+        self.bGo.Bind(wx.EVT_BUTTON, self.on_moveto)
+        #vsizer = wx.BoxSizer(wx.VERTICAL)
+        #vsizer.Add(self.bGo, 1, wx.EXPAND, 0)
+        hsizer.Add(self.bGo, 0, wx.EXPAND,0)
+
+        sizer_.Add(hsizer, 1, wx.EXPAND, 0)
+        
+        if not joystick is None:
+            self.cbJoystick = wx.CheckBox(self, -1, 'Enable Joystick')
+            sizer_.Add(self.cbJoystick, 0, wx.TOP | wx.BOTTOM, 2)
+            self.cbJoystick.Bind(wx.EVT_CHECKBOX, self.OnJoystickEnable)
+        
+        #sizer_2.AddSpacer(1)
+        
+        self.Bind(wx.EVT_SCROLL, self.onSlide)
+        
+        #self.SetAutoLayout(1)
+        self.SetSizer(sizer_)
+        sizer_.Fit(self)
+
+
+    def update(self):
+        poss = self.scope.GetPos()
+        self.ranges = self.scope.GetPosRange()
+        
+        self.updating = True
+        
+        for ind in range(len(self.piezoNames)):
+            pName = self.piezoNames[ind]
+            
+            unit = u'\u03BCm'
+            
+            pos = poss[pName]
+            self.sliders[ind].SetValue(int(100 * pos))
+            self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName, pos, unit))
+            
+            self.sliders[ind].SetMin(int(100 * self.ranges[pName][0]))
+            self.sliders[ind].SetMax(int(100 * self.ranges[pName][1]))
+            
+        if len(self.stageNames) > 0:
+            #if not self.tX.HasFocus():
+            self.stX.SetLabel('x - %2.3f \u03BCm' % poss['x'])
+            
+            #if not self.tY.HasFocus():
+            self.stY.SetLabel('y - %2.3f \u03BCm' % poss['y'])
+        
+        if not self.joystick is None:
+            self.cbJoystick.SetValue(self.joystick.IsEnabled())
+        
+        self.updating = False
+
+    def on_moveto(self, event):
+        d = GOTODialog(self.scope, self, pos=self.bGo.GetScreenPosition(), style=wx.CAPTION)
+        if d.ShowModal() == wx.ID_OK:
+            self.scope.SetPos(**d.GetValues())
