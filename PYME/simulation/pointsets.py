@@ -114,10 +114,10 @@ class SHNucleusSource(PointSource):
         print('axis_scales:', axis_scales)
         r_max = 1.5*np.max(axis_scales)
 
-        #pts = locify.points_from_sdf(shell.radial_distance_to_shell, r_max=r_max, dx_min=0.1*self.point_spacing)
+        pts = locify.points_from_sdf(shell.radial_distance_to_shell, r_max=r_max, dx_min=0.1*self.point_spacing)
 
-        #print('pts.shape:', pts.shape)
-        #return pts
+        print('pts.shape:', pts.shape)
+        return pts
 
         
         zenith = []

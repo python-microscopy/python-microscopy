@@ -345,7 +345,7 @@ class Pipeline(object):
     
     @property
     def imageBounds(self):
-        x0, y0, x1, y1, z0, z1 = 0, 0, 0, 0, 0, 0
+        x0, y0, x1, y1, z0, z1 = 1e9, 1e9, -1e9, -1e9, 1e9, -1e9
         for ds in self.dataSources.values():
             try:
                 ib = ds.image_bounds

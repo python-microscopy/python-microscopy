@@ -35,7 +35,7 @@ except ImportError:
 
 
 clipping_dtype = [('x', '<f4', (2,)), ('y', '<f4', (2,)), ('z', '<f4', (2,)), ('v', '<f4', (2,))]
-dummy_clipping = np.array([-1e6, 1e6, -1e6, 1e6, -1e6, 1e6, -1e6, 1e6], 'f4').view(clipping_dtype)
+dummy_clipping = np.array([-1e9, 1e9, -1e9, 1e9, -1e9, 1e9, -1e9, 1e9], 'f4').view(clipping_dtype)
 
 def_clip_plane_orientation = np.array([1,0,0,0], 'f8')#np.eye(4,4,dtype='f')
 

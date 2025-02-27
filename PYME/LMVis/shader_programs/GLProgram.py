@@ -27,7 +27,7 @@ import os
 
 class GLProgram(object):
 
-    def __init__(self, vs_filename=None, fs_filename=None, gs_filename=None, max_glsl_version='120', clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
+    def __init__(self, vs_filename=None, fs_filename=None, gs_filename=None, max_glsl_version='120', clipping={'x':[-1e9, 1e9], 'y' : [-1e9, 1e9], 'z': [-1e9, 1e9], 'v' : [-1e9, 1e9]}):
         self._shader_program = None
         self._max_glsl_version = max_glsl_version
 
@@ -97,10 +97,10 @@ class GLProgram(object):
         glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
 
     def clear_shader_clipping(self):
-        self.xmin, self.xmax = -1e6, 1e6
-        self.ymin, self.ymax = -1e6, 1e6
-        self.zmin, self.zmax = -1e6, 1e6
-        self.vmin, self.vmax = -1e6, 1e6
+        self.xmin, self.xmax = -1e9, 1e9
+        self.ymin, self.ymax = -1e9, 1e9
+        self.zmin, self.zmax = -1e9, 1e9
+        self.vmin, self.vmax = -1e9, 1e9
 
         self.set_clipping_uniforms()
 
