@@ -2906,3 +2906,58 @@ class Offset(Filter):
             return data - self.offset_constant
         elif self.offset_selection == 'offset by minimum':
             return data - np.min(data)
+
+
+@register_module('SubPixelDriftCorrect')
+class SubPixelDriftCorrect(ModuleBase):
+    """
+    Sub-pixel lateral drift correction based on the drift tracking events
+    in the transmitted-light channel
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.ImageStack
+    drift_tracking_channel_pixel_size_x : Float
+        Pixel value of the drift tracking channel in x, in nm unit
+    drift_tracking_channel_pixel_size_y : Float
+        Pixel value of the drift tracking channel in y, in nm unit
+    relative_rotation : Float
+        relative rotation degree from the drift tracking channel to the channel to be corrected, in degree
+
+    Returns
+    -------
+    output = Output
+        PYME.IO.ImageStack
+
+    """
+
+    input = Input('input')
+    drift_tracking_channel_pixel_size_x = Float(64.5)
+    drift_tracking_channel_pixel_size_y = Float(64.5)
+    relative_rotation = Float(0.0)
+    output = Output('sub_pixel_drift_corrected')
+
+    def run(self, input):
+        from PYME.IO.image import ImageStack
+        #from PYME.DSView import ViewIm3D
+        from PYME.LMVis import pipeline
+        from PYME.IO.DataSources import DriftCorrectDataSource
+
+        # read lateral drift values from events
+        ev_mappings, _ = pipeline._processEvents(input.data_xyztc, input.events, input.mdh)
+        driftx = ev_mappings['driftx']
+        drifty = ev_mappings['drifty']
+
+        px0 = self.drift_tracking_channel_pixel_size_x
+        py0 = self.drift_tracking_channel_pixel_size_y
+        px1 = input.mdh.voxelsize.x * 1e3
+        py1 = input.mdh.voxelsize.y * 1e3
+        theta = self.relative_rotation * np.pi/180
+    
+        ds = DriftCorrectDataSource.XYZTCDriftCorrectSource(input.data_xyztc, driftx, drifty, px0, py0, px1, py1, theta)
+        im = ImageStack(ds[:,:,:,:,:], mdh=input.mdh)
+        #ViewIm3D(im, mode=self.dsviewer.mode, glCanvas=self.dsviewer.glCanvas)
+
+        return im
+
