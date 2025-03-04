@@ -552,7 +552,10 @@ class SpoolController(object):
             backend_kwargs['compression_settings'] = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         elif self.spoolType == 'File':
             backend_kwargs['complevel'] = settings.get('hdf_compression_level', self.hdf_compression_level)
-        
+        # set dimensions and shape
+        if hasattr(self.scope.cam, 'n_channels'):
+            backend_kwargs['dim_order'] = 'XYCZT'  
+            backend_kwargs['shape'] = [-1, -1, 1, -1, self.scope.cam.n_channels]  # NOTE - shape doesn't care about dim_order? C hardcoded to 4th??
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
 

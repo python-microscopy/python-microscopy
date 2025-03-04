@@ -169,12 +169,14 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 compression_settings=kwargs.pop('compression_settings', {}),
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
-                                                                shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
+                                                                # shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
+                                                                shape=kwargs.pop('shape', [-1,-1,1,-1,1]),
                                                                 **kwargs)
             
         else: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.pop('complevel', 6), complib=kwargs.pop('complib','zlib'),
-                            shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
+                            # shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
+                            shape=kwargs.pop('shape', [-1,-1,1,-1,1]),
                             **kwargs)
         
         
