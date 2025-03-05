@@ -10,45 +10,70 @@ logger = logging.getLogger(__name__)
 class BaseScanner(object):
     """The scanner class handles stage/mirror/etc scanning and signal acquisition
     In short, it mimics the hardware-side of a camera, with frame buffering, etc.
+
+    Attributes
+    ----------
+    n_channels : int
+        the dimension of the signal recorded at each scan position. Default is 1.
+        This will set the color (C) dimension of the final saved image.
+    dtype : type
+        the data type of the signal. Default is int.
+    
     """
     n_channels = 1
     dtype = int
-    def __init__(self, scan_params=None, axes_order=('x', 'y')):#, 'z')):
+    def __init__(self, scan_params=None, axes_order=('x', 'y')):
         self._axes_order = axes_order
         self._scan_params = {
             'n_x': 1,  # [px]
             'n_y': 1,  # [px]
-            # 'n_z': 1,  # [px]
             'voxelsize.x': 1,  # [nm]
             'voxelsize.y': 1,  # [nm]
-            # 'voxelsize.z': 0.0,  # [nm]
             'voxel_integration_time': 1,  # [s]
             'voxel_dwell_time': 1,  # [s]
         }
-        # self.image_buffer = self._make_buffer()
-        # self.buffer_lock = threading.Lock()  # not currently necessary
         self.full_buffer_lock = threading.Lock()
         self.full_buffers = None
         self.free_buffers = None
         self.n_full = 0
         if scan_params is not None:
             self.set_scan_params(scan_params)
-        # self.prepare()
 
     def set_scan_params(self, scan_params):
         self._scan_params.update(scan_params)
 
     @property
     def axes_order(self):
+        """order to scan the axes during image acquisition.
+        Does not currently support making Z the fast-axis.
+
+        Returns
+        -------
+        tuple
+            str identifying axes in the order they should be scanned
+        """
         return self._axes_order
     
     @property
     def frame_rate(self):
+        """ calculates a proxy for framerate based on voxel dwell time and number of pixels. Override in subclass if needed.
+
+        Returns
+        -------
+        FPS : float
+            frame rate in frames per second, or [Hz]
+        """
         return 1 / (self._scan_params['n_x'] * self._scan_params['n_y'] * self._scan_params['voxel_dwell_time'])
     
     @property
     def frame_cycle_time(self):
-        # if frame integration time and cycle time differ, modify this in subclass
+        """frame cycle time in seconds
+
+        Returns
+        -------
+        cycle_time : float
+            time to acquire a single frame in seconds
+        """
         return 1 / self.frame_rate
     
     @property
@@ -83,20 +108,6 @@ class BaseScanner(object):
         """
         raise NotImplementedError
     
-    # def allocate_buffers(self, n_buffers):
-    #     """queue up a number of single-frame buffers
-    #     Note that each channel will be slotted into the queue as a separate frame (for now)
-    #     Parameters
-    #     ----------
-    #     n_buffers : int
-    #         number of single-frame (XY) buffers to allocate
-        
-    #     """
-    #     self.free_buffers = queue.Queue()
-    #     self.full_buffers = queue.Queue()
-    #     self.n_full = 0
-    #     raise NotImplementedError
-    
     def allocate_buffers(self, n_buffers):
             """queue up a number of single-frame buffers
             Note that each channel will be slotted into the queue as a separate frame (for now)
@@ -124,8 +135,6 @@ class BaseScanner(object):
     
     def stop(self):
         raise NotImplementedError
-
-
 
 
 class PointscanCameraShim(Camera):
@@ -284,7 +293,7 @@ class PointscanCameraShim(Camera):
 
             # remove scanner-side buffers
             self.scanner.destroy_buffers()
-                
+            
             # computer RAM: destroy free and full buffer queues
             while not self.full_buffers.empty():
                 try:
@@ -318,8 +327,6 @@ class PointscanCameraShim(Camera):
         try:
             # tell the scanner to stop
             self.scanner.stop()
-            # unlock parameters
-            # self.scanner.unlock_params()
         except Exception as e:
             logger.error(f'Error stopping acquisition: {e}')
             raise e
