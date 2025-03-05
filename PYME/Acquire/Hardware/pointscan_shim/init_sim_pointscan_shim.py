@@ -55,30 +55,30 @@ def pointscan_cam(scope):
             t = threading.Thread(target=self._scan)
             t.start()
         
-        def allocate_buffers(self, n_buffers):
-            """queue up a number of single-frame buffers
-            Note that each channel will be slotted into the queue as a separate frame (for now)
-            Parameters
-            ----------
-            n_buffers : int
-                number of single-frame (XY) buffers to allocate
+        # def allocate_buffers(self, n_buffers):
+        #     """queue up a number of single-frame buffers
+        #     Note that each channel will be slotted into the queue as a separate frame (for now)
+        #     Parameters
+        #     ----------
+        #     n_buffers : int
+        #         number of single-frame (XY) buffers to allocate
             
-            """
-            self.free_buffers = queue.Queue()
-            self.full_buffers = queue.Queue()
-            self.n_full = 0
-            for ind in range(n_buffers):
-                self.free_buffers.put(np.zeros((self.width, self.height), 
-                                            dtype=self.dtype))
+        #     """
+        #     self.free_buffers = queue.Queue()
+        #     self.full_buffers = queue.Queue()
+        #     self.n_full = 0
+        #     for ind in range(n_buffers):
+        #         self.free_buffers.put(np.zeros((self.width, self.height), 
+        #                                     dtype=self.dtype))
         
-        def destroy_buffers(self):
-            with self.full_buffer_lock:
-                self.n_full = 0
-                while not self.full_buffers.empty():
-                    try:
-                        self.full_buffers.get_nowait()
-                    except queue.Empty:
-                        pass
+        # def destroy_buffers(self):
+        #     with self.full_buffer_lock:
+        #         self.n_full = 0
+        #         while not self.full_buffers.empty():
+        #             try:
+        #                 self.full_buffers.get_nowait()
+        #             except queue.Empty:
+        #                 pass
 
 
     cam = pointscan_camera.PointscanCameraShim(position_scanner=TestScanner(scan_params={
