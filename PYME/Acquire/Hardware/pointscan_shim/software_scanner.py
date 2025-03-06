@@ -60,7 +60,7 @@ class LockInSignalProvider(VoxelSignalProvider):
         return self.lockin.time_constant * self.n_tc_delay
 
 class SoftwareStageScanner(pointscan_camera.BaseScanner):
-    def __init__(self, x_positioner, y_positioner, signal_provider, kwargs):
+    def __init__(self, x_positioner, y_positioner, signal_provider, kwargs=None):
         """
 
         Parameters
@@ -105,15 +105,6 @@ class SoftwareStageScanner(pointscan_camera.BaseScanner):
             for ind in range(n_buffers):
                 self.free_buffers.put(np.zeros((self.width, self.height), 
                                             dtype=self.dtype))
-    
-    def wait_for_finished_buffer(self, timeout):
-            t0 = time.time()
-            while time.time() - t0 < timeout:
-                if self.n_full > 0:
-                    with self.full_buffer_lock:
-                        return self.full_buffers.get()
-                time.sleep(0.05)
-            raise TimeoutError('Timed out waiting for scanner buffer')
     
     def _scan(self):
             # note current center position
