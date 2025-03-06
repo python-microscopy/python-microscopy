@@ -104,12 +104,12 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
 
         if self.axes_order[0] == 'x':
             # make x scan faster
-            self._axes_voltages['x'] = self.x_volt_from_um(np.repeat(x_pos, self.height))
-            self._axes_voltages['y'] = self.y_volt_from_um(np.tile(y_pos, self.width))
+            self._axes_voltages['x'] = self.x_volt_from_um(np.tile(x_pos, self.height))
+            self._axes_voltages['y'] = self.y_volt_from_um(np.repeat(y_pos, self.width))
         else:
             # make y fast axis
-            self._axes_voltages['y'] = self.y_volt_from_um(np.repeat(y_pos, self.width))
-            self._axes_voltages['x'] = self.x_volt_from_um(np.tile(x_pos, self.height))
+            self._axes_voltages['y'] = self.y_volt_from_um(np.tile(y_pos, self.width))
+            self._axes_voltages['x'] = self.x_volt_from_um(np.repeat(x_pos, self.height))
         
         self.n_steps = len(self._axes_voltages['x'])
 
