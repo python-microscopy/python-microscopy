@@ -109,10 +109,7 @@ class QuiverRenderLayer(EngineLayer):
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments
-        try:
-            self.set(**kwargs)
-        except AttributeError:
-            self.trait_set(**kwargs)
+        self.trait_set(**kwargs)
 
         # update datasource and method
         self.dsname = dsname

@@ -205,10 +205,7 @@ class ModuleBase(HasStrictTraits):
         ct = self.class_traits()
             
         mod_traits_cleaned = {}
-        try:
-            params = self.get().items()
-        except AttributeError:
-            params = self.trait_get().items()
+        params = self.trait_get().items()
         for k, v in params:
             if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
                 try:
