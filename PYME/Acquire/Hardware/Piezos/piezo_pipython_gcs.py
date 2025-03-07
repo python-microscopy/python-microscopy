@@ -397,6 +397,7 @@ class GCSPiezoThreaded(PiezoBase):
                     self._on_target = np.asarray([on_targets[axis] for axis in self.axes])
                     if not np.all(self._on_target == old_on_target):
                         # FIXME - something to log which axis would be cool?
+                        # FIXME - analog control of even 1 axis will essentially break this
                         logEvent('PiezoOnTarget', '%s' % self.positions, time.time())
                         self._all_on_target = np.all(self._on_target)
                     targets_matched = np.isclose(self.target_positions, self._last_target_positions,
@@ -444,6 +445,9 @@ class GCSPiezoThreaded(PiezoBase):
         
         Notes
         -----
+        OnTarget events are not aware of analog control, and will not
+        generally fire if even one axis is under analog control.
+
         Requires command level 1. which can be enabled with 
         self.pi.gcsdevice.CCL(1, password)
 
