@@ -216,13 +216,19 @@ class GCSPiezoThreaded(PiezoBase):
 
         joystick: should be a joystick object or None if no joystick; needs to support a few standard methods
 
+        target_tol: float, optional
+            tolerance [um] for on-target position, default is 0.001 um. Applied to
+            all axes. Does not change servo settings in the controller, but flags
+            when a move is considered complete and re-sends a move command durring polling
+            if target position is not reached within tolerance. 
+        
         adc_channels: list, optional
-            list of ADC channels to use for each axis in `axes`. You will need
+            list of ADC channels to use for axes in `axes`. You will need
             to consult the manual for your controller, as the available ADC 
             channels may be offset from the axis number and/or flexibly configurable.
             You will also need to set the command level to 1 (in your init script)
-            with e.,g. stage.pi.gcsdevice.CCL(1, 'password')
-            The password should also be in your controller manual.
+            with e.,g. stage.pi.gcsdevice.CCL(1, 'password') before using the `set_analog_control`
+            method. The password should also be in your controller manual.
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
