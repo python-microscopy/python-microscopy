@@ -32,6 +32,11 @@ PILogger.setLevel(WARNING)
 logger = logging.getLogger(__name__)
 
 
+ADC_CHANNEL_FOR_TARGET = 0x06000500
+OFFSET = 0x02000200  # sensor mech correction 1, analog drive offset
+GAIN = 0x02000300  # sensor mech correction 2, analog drive gain
+
+
 def get_gcs_usb():
     """
     returns list of PI devices connected by USB and their serial numbers. Use
@@ -169,7 +174,8 @@ from PYME.Acquire.eventLog import logEvent
 class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
     def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
-                 stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None):
+                 stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None,
+                 adc_channels=None):
         """
         Parameters
         ----------
@@ -209,6 +215,14 @@ class GCSPiezoThreaded(PiezoBase):
                          If 'controlmodes' is set (not 'None') the parameter 'servostates' is ignored.
 
         joystick: should be a joystick object or None if no joystick; needs to support a few standard methods
+
+        adc_channels: list, optional
+            list of ADC channels to use for each axis in `axes`. You will need
+            to consult the manual for your controller, as the available ADC 
+            channels may be offset from the axis number and/or flexibly configurable.
+            You will also need to set the command level to 1 (in your init script)
+            with e.,g. stage.pi.gcsdevice.CCL(1, 'password')
+            The password should also be in your controller manual.
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
@@ -221,6 +235,10 @@ class GCSPiezoThreaded(PiezoBase):
             self.axes = pitools.getaxeslist(self.pi, None)
         else:
             self.axes = axes
+        
+        self.adc_channels = adc_channels
+        if self.adc_channels is None:
+            logger.debug('No analog control channels specified')
 
         # startup device with supplied per axes parameters
         if startup:
@@ -391,7 +409,75 @@ class GCSPiezoThreaded(PiezoBase):
                     logger.error(str(e))
                 
         logger.debug('exiting')
-   
+    
+    def set_analog_control(self, channel, adc_channel=None, vmin=-10, vmax=10):
+        """ Configure and enable analog control for a given axis
+
+        Parameters
+        ----------
+        channel : int
+            index into self.axes for the axis to configure
+        adc_channel : int, optional
+            if `self.adc_channels` is set, the ADC channel specified for
+            `channel` axis will be configured and enabled. Can also pass 0 here
+            which will DISABLE analog control for the axis.
+        vmin : float, optional
+            minimum control voltage, and the voltage which will correspond to
+            the minimum of the movement range for this axis. Default is -10V.
+        vmax : float, optional
+            maximum control voltage, and the voltage which will correspond to
+            the maximum of the movement range for this axis. Default is 10V.
+
+        Raises
+        ------
+        NotImplementedError
+            if no ADC channel is specified and `self.adc_channels` is not
+            configured.
+        
+        Notes
+        -----
+        Requires command level 1. which can be enabled with 
+        self.pi.gcsdevice.CCL(1, password)
+
+        Not sure why qSGA is an 'unknown command' to query the gain.
+        Note also that the qAOS command for querying analog input offset only
+        works for the axes present, not the ADC channels which is what we need
+        to query.
+        
+        """
+        # voltage is assigned to a normalized range. For E-727, -100 to 100 [norm. units] corresponds to -10 to 10 [V]
+        min_norm, max_norm = min([10*vmin, -100]), max([10*vmax, 100])
+        gain = (self._max[channel] - self._min[channel]) / (max_norm - min_norm)
+        offset = self._max[channel] - gain * max_norm
+        # scaled_value = offset + gain * norm_value
+        if adc_channel is None:
+            try:
+                adc_channel = self.adc_channels[channel]
+            except:
+                raise NotImplementedError('No ADC channel configured for analog control of axis %s' % channel)
+        elif adc_channel == 0:
+            # disable analog control
+            self.pi.SPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET, 0)
+            return
+        
+        # set parameters in RAM/temporary settings
+        self.pi.SPA(adc_channel, OFFSET, offset)
+        self.pi.SPA(adc_channel, GAIN, gain)
+        # and finally hook up the analog control
+        self.pi.SPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET, adc_channel)
+        # note qSGA is an 'unknown command' to query the gain
+        # note qAOS does not work for querying the ADC channels
+    
+    def disable_analog_control(self, channel):
+        self.set_analog_control(channel, adc_channel=0)
+
+    def get_analog_control_settings(self, channel):
+        adc_channel = self.pi.qSPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET)[self.axes[channel]][int(ADC_CHANNEL_FOR_TARGET)]
+        enabled = adc_channel != 0
+        offset = self.pi.qSPA(adc_channel, OFFSET)[adc_channel][int(OFFSET)]
+        gain = self.pi.qSPA(adc_channel, GAIN)[adc_channel][int(GAIN)]
+        return enabled, adc_channel, offset, gain
+    
 
 # a piezo_pipython_gcs compatible joystick class
 # - provides Enable() and IsEnabled() methods for use by PYME position ui and scope object
