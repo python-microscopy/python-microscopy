@@ -16,12 +16,12 @@ class BaseScanner(object):
     n_channels : int
         the dimension of the signal recorded at each scan position. Default is 1.
         This will set the color (C) dimension of the final saved image.
-    dtype : type
-        the data type of the signal. Default is int.
+    dtype : str
+        the data type of the signal. Default is 'uint16'.
     
     """
     n_channels = 1
-    dtype = int
+    dtype = 'uint16'
     def __init__(self, scan_params=None, axes_order=('x', 'y')):
         self._axes_order = axes_order
         self._scan_params = {
@@ -168,6 +168,10 @@ class PointscanCameraShim(Camera):
     @property
     def n_channels(self):
         return self.scanner.n_channels
+    
+    @property
+    def dtype(self):
+        return self.scanner.dtype
     
     def Init(self):        
         self._poll = False

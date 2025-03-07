@@ -15,7 +15,7 @@ class VoxelSignalProvider(object):
         recorded at each scan position
     """
     n_channels = 1
-    dtype = float
+    dtype = 'float64'
     def read(*args, **kwargs):
         raise NotImplementedError
     
@@ -28,7 +28,7 @@ class TestSignalProvider(VoxelSignalProvider):
     """uses the software scanner position to generate a 'signal'
     """
     n_channels=2  # set up for x, y scanner
-    dtype=float
+    dtype = 'float64'
     def __init__(self, x_positioner, y_positioner):
         super().__init__()
         self.x_positioner = x_positioner
@@ -44,7 +44,7 @@ class TestSignalProvider(VoxelSignalProvider):
 
 class LockInSignalProvider(VoxelSignalProvider):
     n_channels = 2
-    dtype = float
+    dtype = 'float64'
     def __init__(self, lockin, n_tc_delay=3):
         super().__init__()
         self.lockin = lockin
