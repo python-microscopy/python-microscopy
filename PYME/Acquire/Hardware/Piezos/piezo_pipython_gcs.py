@@ -175,7 +175,7 @@ class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
     def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
                  stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None,
-                 adc_channels=None):
+                 target_tol=0.001, adc_channels=None):
         """
         Parameters
         ----------
@@ -252,6 +252,7 @@ class GCSPiezoThreaded(PiezoBase):
 
         # before the loop is active, need to query positions explicitly to make self.positions valid
         self.positions = np.array([self.pi.qPOS([axis])[axis] for axis in self.axes])
+        self._ontarget_tol = target_tol
         self.joystick = joystick
         if self.joystick is not None:
             self.joystick.init(self) # the joystick object should have an init method
@@ -392,7 +393,8 @@ class GCSPiezoThreaded(PiezoBase):
                         # FIXME - something to log which axis would be cool?
                         logEvent('PiezoOnTarget', '%s' % self.positions, time.time())
                         self._all_on_target = np.all(self._on_target)
-                    targets_matched = np.isclose(self.target_positions, self._last_target_positions)
+                    targets_matched = np.isclose(self.target_positions, self._last_target_positions,
+                                                 atol=self._ontarget_tol)
                     if all(targets_matched):
                         self._all_on_target = True
                     else:
