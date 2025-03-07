@@ -401,7 +401,7 @@ class GCSPiezoThreaded(PiezoBase):
                         logEvent('PiezoOnTarget', '%s' % self.positions, time.time())
                         self._all_on_target = np.all(self._on_target)
                     targets_matched = np.isclose(self.target_positions, self._last_target_positions,
-                                                 atol=self._ontarget_tol)
+                                                 rtol=0, atol=self._ontarget_tol)
                     if all(targets_matched):
                         self._all_on_target = True
                     else:
