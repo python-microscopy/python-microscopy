@@ -114,7 +114,11 @@ class Camera(object):
     # what data type is returned by the camera? For full support it is recommended to use 
     # a format supported in `PYME.IO.PZFFormat`
     dtype = 'uint16'  # uint16 is the default for PYME, and historically the only supported dtype of PYMEAcquire
-
+    
+    # number of channels in the camera output. This should be 1 for monochrome cameras, which should use splitter or 
+    # multiview approaches for implementing multi-color imaging.
+    n_channels = 1
+    
     # Acquisition modes
     MODE_SINGLE_SHOT = 0
     MODE_CONTINUOUS = 1
