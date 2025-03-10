@@ -124,6 +124,10 @@ class ProtocolAcquisition(AcquisitionBase):
             backend_kwargs['spoof_timestamps'] = True
             backend_kwargs['cycle_time'] = scope.cam.GetIntegTime()
         
+        if hasattr(scope.cam, 'n_channels'):  # handle multichannel cameras
+            backend_kwargs['dim_order'] = 'XYCZT'
+            backend_kwargs['shape'] = [-1, -1, 1, -1, scope.cam.n_channels]  # shape doesn't care about dim_order, C hardcoded to 4th
+        
         #logger.info('Creating spooler for %s' % series_name)
         return cls(filename=series_name,
                     frameSource=scope.frameWrangler.onFrame,
@@ -169,14 +173,12 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 compression_settings=kwargs.pop('compression_settings', {}),
                                                                 cluster_h5=self._aggregate_h5,
                                                                 serverfilter=self.clusterFilter,
-                                                                # shape=[-1,-1,1,-1,1], #spooled aquisitions are time series (for now)
-                                                                shape=kwargs.pop('shape', [-1,-1,1,-1,1]),
+                                                                shape=kwargs.pop('shape', [-1,-1,1,-1,1]),  # spooled aquisitions are time series (for now)
                                                                 **kwargs)
             
         else: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.pop('complevel', 6), complib=kwargs.pop('complib','zlib'),
-                            # shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
-                            shape=kwargs.pop('shape', [-1,-1,1,-1,1]),
+                            shape=kwargs.pop('shape', [-1,-1,1,-1,1]),  # spooled aquisitions are time series (for now)
                             **kwargs)
         
         
