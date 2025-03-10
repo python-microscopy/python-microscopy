@@ -556,6 +556,8 @@ class SpoolController(object):
         if hasattr(self.scope.cam, 'n_channels'):
             backend_kwargs['dim_order'] = 'XYCZT'  
             backend_kwargs['shape'] = [-1, -1, 1, -1, self.scope.cam.n_channels]  # NOTE - shape doesn't care about dim_order? C hardcoded to 4th??
+        # set backend dtype to camera dtype
+        backend_kwargs['dtype'] = self.scope.cam.dtype
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
 
