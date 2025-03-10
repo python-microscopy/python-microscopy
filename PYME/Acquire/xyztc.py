@@ -415,4 +415,26 @@ class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
     def get_frozen_settings(cls, scope, spool_controller=None):
         return {'stack_settings' : scope.stackSettings.settings(),
             'tiling_settings': getattr(scope, 'tile_settings', {})}
+
+
+class MultichannelZStackAcquisition(XYZTCAcquisition):
+    """
+    Class for a (multi-channel) Z-Stack acquisition
+    """
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+         '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+        
+         backend_kwargs['series_name'] = series_name
+         default_channel_settings = {
+             'num_channels' : scope.cam.n_channels
+         }
+         channel_settings = settings.get('channel_settings', default_channel_settings)
     
+         return cls(scope=scope, 
+                    #dim_order=settings.dim_order, 
+                    stack_settings=settings.get('stack_settings', scope.stackSettings), 
+                    time_settings=settings.get('time_settings', None), 
+                    channel_settings=channel_settings,
+                    backend=backend, backend_kwargs=backend_kwargs)
+

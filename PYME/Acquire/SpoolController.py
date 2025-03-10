@@ -23,7 +23,7 @@ from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFi
 from PYME.IO import unifiedIO, MetaDataHandler
 
 from PYME.Acquire.protocol_acquisition import ProtocolAcquisition
-from PYME.Acquire.xyztc import XYZTCAcquisition, ZStackAcquisition
+from PYME.Acquire.xyztc import MultichannelZStackAcquisition  # XYZTCAcquisition, ZStackAcquisition
 
 
 #import PYME.Acquire.Protocols
@@ -174,7 +174,7 @@ class SpoolController(object):
         self._series_name = None
 
         self.acquisition_types = {
-                                  'ZStackAcquisition': ZStackAcquisition,
+                                  'ZStackAcquisition': MultichannelZStackAcquisition,  # ZStackAcquisition,
                                   'ProtocolAcquisition': ProtocolAcquisition,
                                  }
         
