@@ -38,16 +38,17 @@ import threading
 
 class NIDAQScanner(pointscan_camera.BaseScanner):
     dtype = float
-    def __init__(self, drive_channels, signal_channels, 
-                 counter_channel='Dev1/ctr0', kwargs=None):
+    def __init__(self, drive_channels, signal_channels, counter_channel='Dev1/ctr0',
+                 duty_cycle=0.9, pixel_clock_rate=1000, return_to_start=True, kwargs=None):
         super().__init__(**kwargs)
         self._scanning_lock = threading.Lock()
         self._drive_channels = drive_channels
         self._signal_channels = signal_channels
         self._counter_channel = counter_channel
 
-        self._duty_cycle = kwargs.pop('duty_cycle', 0.8)  # (0, 1]
-        self._pixel_clock_rate = kwargs.pop('pixel_clock_rate', 1000)  # [Hz]
+        self._duty_cycle = duty_cycle  # (0, 1]
+        self._pixel_clock_rate = pixel_clock_rate  # [Hz]
+        self._return_to_start = return_to_start
 
         self.map_drive_voltages_to_positions()
         self._x_c = self._drive_channels['x']['min_position'] + self._x_pos_range / 2
@@ -78,6 +79,10 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
     @scan_center.setter
     def scan_center(self, center):
         self._x_c, self._y_c = center
+    
+    @property
+    def return_to_start(self):
+        return self._return_to_start
     
     @property
     def n_channels(self):
@@ -176,6 +181,26 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
             with self.full_buffer_lock:
                 self.full_buffers.put(buf)
                 self.n_full += 1
+        
+        if self.return_to_start:
+            x0, y0 = self.scan_center
+            self.move_to_position(x0, y0)
+    
+    def move_to_position(self, x, y, wait_until_done=True):
+        with ni.Task() as ao_task:
+            ao_task.ao_channels.add_ao_voltage_chan(self._drive_channels['x']['channel'],
+                                                    min_val=self._drive_channels['x']['min_val'], 
+                                                    max_val=self._drive_channels['x']['max_val'], 
+                                                    units=self._drive_channels['x']['units'])
+            ao_task.ao_channels.add_ao_voltage_chan(self._drive_channels['y']['channel'],
+                                                    min_val=self._drive_channels['y']['min_val'], 
+                                                    max_val=self._drive_channels['y']['max_val'], 
+                                                    units=self._drive_channels['y']['units'])
+            ao_task.write([self.x_volt_from_um(x),
+                        self.y_volt_from_um(y)], auto_start=True)
+            if wait_until_done:
+                ao_task.wait_until_done()
+        
     
     def get_serial_number(self):
         return self._serial
