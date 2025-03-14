@@ -30,7 +30,7 @@ import threading
 #         'min_val': -1,
 #         'max_val': 1,
 #         'units': VoltageUnits.VOLTS,
-#         'terminal_config': TerminalConfiguration.NRSE
+#         'terminal_config': TerminalConfiguration.RSE
 #     },
 # }
 
@@ -168,7 +168,7 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
             # start counter task (which should actually kick this whole thing off)
             ctr_task.start()
             # wait until we're done
-            ctr_task.wait_until_done()
+            ctr_task.wait_until_done(timeout=2 * self.n_steps / self._pixel_clock_rate)
             # read data from AI task
             data = ai_task.read(number_of_samples_per_channel=self.n_steps)
             # print(data)
@@ -176,8 +176,11 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         # write the scan buffer to the full frame buffer
         for ind in range(self.n_channels):
             buf = self.free_buffers.get_nowait()
-            # thought data should be (n_channels, n_steps), but comes as list of lists
-            buf[:] = np.asarray(data[ind]).reshape(self.width, self.height)
+            if self.n_channels > 1:
+                # thought data should be (n_channels, n_steps), but comes as list of lists
+                buf[:] = np.asarray(data[ind]).reshape(self.width, self.height)
+            else:
+                buf[:] = np.asarray(data).reshape(self.width, self.height)
             with self.full_buffer_lock:
                 self.full_buffers.put(buf)
                 self.n_full += 1
