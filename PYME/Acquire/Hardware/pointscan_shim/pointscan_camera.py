@@ -27,8 +27,8 @@ class BaseScanner(object):
         self._scan_params = {
             'n_x': 1,  # [px]
             'n_y': 1,  # [px]
-            'voxelsize.x': 1,  # [nm]
-            'voxelsize.y': 1,  # [nm]
+            'voxelsize.x': 1,  # [um]
+            'voxelsize.y': 1,  # [um]
             'voxel_integration_time': 1,  # [s]
             'voxel_dwell_time': 1,  # [s]
         }
@@ -41,6 +41,14 @@ class BaseScanner(object):
 
     def set_scan_params(self, scan_params):
         self._scan_params.update(scan_params)
+    
+    @property
+    def voxelsize_x_nm(self):
+        return self._scan_params['voxelsize.x'] * 1e3
+    
+    @property
+    def voxelsize_y_nm(self):
+        return self._scan_params['voxelsize.y'] * 1e3
 
     @property
     def axes_order(self):
@@ -435,4 +443,15 @@ class PointscanCameraShim(Camera):
     def GetROI(self):
         return (0, 0,  self.scanner.width, self.scanner.height)
     
+    @property
+    def XVals(self):
+        # FIXME - this is a hack so microscope.Microscope.GetPixelSize
+        # dynamically grabs the current pixel size without using the
+        # currVoxelSizeID database. Should likely handle this directly in
+        # GetPixelSize by checking for a voxelsize attribute of the camera
+        return np.array([0, 1]) * self.scanner.voxelsize_x_nm
+    
+    @property
+    def YVals(self):
+        return np.array([0, 1]) * self.scanner.voxelsize_y_nm
 
