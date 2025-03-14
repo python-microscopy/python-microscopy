@@ -37,7 +37,7 @@ import threading
 # counter_channel = 'Dev1/ctr0'
 
 class NIDAQScanner(pointscan_camera.BaseScanner):
-    dtype = float
+    dtype = 'float64'
     def __init__(self, drive_channels, signal_channels, counter_channel='Dev1/ctr0',
                  duty_cycle=0.9, pixel_clock_rate=1000, return_to_start=True, kwargs=None):
         super().__init__(**kwargs)
