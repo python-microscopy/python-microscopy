@@ -39,7 +39,8 @@ import threading
 class NIDAQScanner(pointscan_camera.BaseScanner):
     dtype = 'float64'
     def __init__(self, drive_channels, signal_channels, counter_channel='Dev1/ctr0',
-                 duty_cycle=0.9, pixel_clock_rate=1000, return_to_start=True, kwargs=None):
+                 duty_cycle=0.9, pixel_clock_rate=1000, bidirectional=True, 
+                 return_to_start=True, kwargs=None):
         super().__init__(**kwargs)
         self._scanning_lock = threading.Lock()
         self._drive_channels = drive_channels
@@ -49,6 +50,7 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         self._duty_cycle = duty_cycle  # (0, 1]
         self._pixel_clock_rate = pixel_clock_rate  # [Hz]
         self._return_to_start = return_to_start
+        self._bidirectional = bidirectional
 
         self.map_drive_voltages_to_positions()
         self._x_c = self._drive_channels['x']['min_position'] + self._x_pos_range / 2
@@ -109,11 +111,22 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
 
         if self.axes_order[0] == 'x':
             # make x scan faster
-            self._axes_voltages['x'] = self.x_volt_from_um(np.tile(x_pos, self.height))
+            if not self._bidirectional:
+                self._axes_voltages['x'] = self.x_volt_from_um(np.tile(x_pos, self.height))
+            else: # bi-directional on fast axis
+                self._axes_voltages['x'] = self.x_volt_from_um(x_pos)  # 0th iteration
+                for h_ind in range(1, self.height):  # 1-thru
+                    self._axes_voltages['x'] = np.concatenate([self._axes_voltages['x'], self.x_volt_from_um(x_pos[::-1]) if h_ind % 2 else self.x_volt_from_um(x_pos)])
+            # slow axis
             self._axes_voltages['y'] = self.y_volt_from_um(np.repeat(y_pos, self.width))
-        else:
-            # make y fast axis
-            self._axes_voltages['y'] = self.y_volt_from_um(np.tile(y_pos, self.width))
+        else: # make y fast axis
+            if not self._bidirectional:
+                self._axes_voltages['y'] = self.y_volt_from_um(np.tile(y_pos, self.width))  # 0th iteration
+            else:  # bi-directional on fast axis
+                self._axes_voltages['y'] = self.y_volt_from_um(y_pos)
+                for w_ind in range(1, self.width):  # 1-thru
+                    self._axes_voltages['y'] = np.concatenate([self._axes_voltages['y'], self.y_volt_from_um(y_pos[::-1]) if w_ind % 2 else self.y_volt_from_um(y_pos)])
+            # slow axis
             self._axes_voltages['x'] = self.x_volt_from_um(np.repeat(x_pos, self.height))
         
         self.n_steps = len(self._axes_voltages['x'])
