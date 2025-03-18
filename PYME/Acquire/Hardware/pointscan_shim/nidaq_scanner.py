@@ -194,6 +194,11 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
                 buf[:] = np.asarray(data[ind]).reshape(self.width, self.height)
             else:
                 buf[:] = np.asarray(data).reshape(self.width, self.height)
+            if self._bidirectional:  # have to unwrap the bi-directional scan
+                if self.axes_order[0] == 'x':
+                    buf[1::2, :] = buf[1::2, ::-1]
+                else:
+                    buf[:, 1::2] = buf[::-1, 1::2]
             with self.full_buffer_lock:
                 self.full_buffers.put(buf)
                 self.n_full += 1
