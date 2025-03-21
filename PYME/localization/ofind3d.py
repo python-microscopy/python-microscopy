@@ -38,6 +38,9 @@ import scipy.ndimage as ndimage
 import numpy as np
 #from PYME.DSView import View3D
 
+import logging
+logger = logging.getLogger(__name__)
+
 class OfindPoint:
     def __init__(self, x, y, z=None, detectionThreshold=None):
         """Creates a point object, potentially with an undefined z-value."""
@@ -227,7 +230,7 @@ class ObjectIdentifier(list):
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
             #self.thresholdRange = np.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
             self.thresholdRange = np.logspace(np.log10(self.upperThreshold), np.log10(self.lowerThreshold), self.numThresholdSteps)
-            print(('Thresholds:', self.thresholdRange))
+            logger.debug(('Thresholds:', self.thresholdRange))
 
             #get a working copy of the filtered data
             im = maskedFilteredData.copy()
@@ -295,7 +298,7 @@ class ObjectIdentifier(list):
                     im[-5:, -5:] = 0
                     im[-5:, 0:5] = 0
 
-                print((len(self)))
+                logger.debug((len(self)))
 
         #create pseudo lists to allow indexing along the lines of self.x[i]
         self.x = PseudoPointList(self, 'x')
