@@ -198,12 +198,12 @@ class ObjectIdentifier(list):
             
         else:
             if self.estSN:
-                self.lowerThreshold = self.thresholdFactor*scipy.sqrt(scipy.median(self.data.ravel()))
+                self.lowerThreshold = self.thresholdFactor*np.sqrt(np.median(self.data.ravel()))
             else:
                 self.lowerThreshold = self.thresholdFactor
 
         
-        X,Y,Z = scipy.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1],0:maskedFilteredData.shape[2]]
+        X,Y,Z = np.mgrid[0:maskedFilteredData.shape[0], 0:maskedFilteredData.shape[1],0:maskedFilteredData.shape[2]]
     
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
@@ -225,8 +225,8 @@ class ObjectIdentifier(list):
         else: #do threshold scan (default)
 
             #generate threshold range - note slightly awkard specification of lowwer and upper bounds as the stop bound is excluded from arange
-            #self.thresholdRange = scipy.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
-            self.thresholdRange = scipy.logspace(np.log10(self.upperThreshold), np.log10(self.lowerThreshold), self.numThresholdSteps)
+            #self.thresholdRange = np.arange(self.upperThreshold, self.lowerThreshold - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps -1), - (self.upperThreshold - self.lowerThreshold)/(self.numThresholdSteps))
+            self.thresholdRange = np.logspace(np.log10(self.upperThreshold), np.log10(self.lowerThreshold), self.numThresholdSteps)
             print(('Thresholds:', self.thresholdRange))
 
             #get a working copy of the filtered data
@@ -235,7 +235,7 @@ class ObjectIdentifier(list):
         
 
             #use for quickly deterimining the number of pixels in a slice (there must be a better way)
-            corrWeightRef = scipy.ones(im.shape)
+            corrWeightRef = np.ones(im.shape)
             
 
         
@@ -245,7 +245,7 @@ class ObjectIdentifier(list):
                 (labeledPoints, nLabeled) = ndimage.label(im > threshold)
 
                 #initialise correction weighting mask
-                corrWeights = scipy.zeros(im.shape, 'f')
+                corrWeights = np.zeros(im.shape, 'f')
             
                 #get 'adress' of each object
                 objSlices = ndimage.find_objects(labeledPoints)
@@ -263,7 +263,7 @@ class ObjectIdentifier(list):
                     self.append(OfindPoint(x,y,z,detectionThreshold=threshold))
 
                     #now work out weights for correction image (N.B. this is somewhat emperical)
-                    corrWeights[objSlices[i]] = 1.0/scipy.sqrt(nPixels)
+                    corrWeights[objSlices[i]] = 1.0/np.sqrt(nPixels)
 
                 #calculate correction matrix
                 corr = ndimage.gaussian_filter(((2*self.blurRadius)**2)*(2*self.blurRadiusZ)*1.5*im*corrWeights, [self.blurRadius, self.blurRadius, self.blurRadiusZ])
