@@ -218,7 +218,7 @@ class PointscanCameraShim(Camera):
         self.initialized = False
         super().__init__()
         self.scanner = position_scanner
-        self._mode = self.MODE_SINGLE_SHOT
+        self._mode = self.MODE_SOFTWARE_TRIGGER
 
         self._buffer_lock = threading.Lock()
         self.full_buffers = None
@@ -354,8 +354,10 @@ class PointscanCameraShim(Camera):
             if self._mode == self.MODE_CONTINUOUS:
                 raise NotImplementedError
             elif self._mode == self.MODE_SINGLE_SHOT:
-                # self.FireSoftwareTrigger()
-                pass
+                # spoof single shot mode by staritng that exposure now
+                self.FireSoftwareTrigger()
+            elif self._mode == self.MODE_SOFTWARE_TRIGGER:
+                pass # let user fire that on their own time
         except Exception as e:
             logger.error(f'Error starting acquisition: {e}')
             raise e
