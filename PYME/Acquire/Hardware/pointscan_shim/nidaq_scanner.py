@@ -48,7 +48,7 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         self._counter_channel = counter_channel
 
         self._duty_cycle = duty_cycle  # (0, 1]
-        self._pixel_clock_rate = pixel_clock_rate  # [Hz]
+        self.pixel_clock_rate = pixel_clock_rate  # [Hz]
         self._return_to_start = return_to_start
         self._bidirectional = bidirectional
 

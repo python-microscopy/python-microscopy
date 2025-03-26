@@ -32,6 +32,7 @@ class BaseScanner(object):
             'voxel_integration_time': 1,  # [s]
             'voxel_dwell_time': 1,  # [s]
         }
+        self._duty_cycle = 1  # fraction of pixel clock used for integration
         self.full_buffer_lock = threading.Lock()
         self.full_buffers = None
         self.free_buffers = None
@@ -105,6 +106,59 @@ class BaseScanner(object):
     @property
     def voxel_dwell_time(self):
         return self._scan_params['voxel_dwell_time']
+    
+    @property
+    def voxel_integration_time(self):
+        """Delay time at each voxel before reading in analog signal
+
+        Returns
+        -------
+        integ_time: float
+            pixel dwell time in seconds
+        Notes
+        -----
+        "Integration" might be a misnomer depending on the DAQ settings / config
+        of the electronics in use. All the scanner currently does is wait this
+        duration before reading the analog signal. This is really a settling
+        time, and integration must be performed using lowpass filters.
+        """
+        return self._scan_params['voxel_integration_time']  #(1.0 / self._pixel_clock_rate) * self._duty_cycle
+    
+    @voxel_integration_time.setter
+    def voxel_integration_time(self, integ_time):
+        """Set the delay time at each voxel before reading in analog signal
+
+        Parameters
+        ----------
+        integ_time: float
+            pixel dwell time in seconds
+        """
+        if integ_time <= 0:
+            raise ValueError('Integration time must be > 0')
+        self._pixel_clock_rate = 1.0 / (integ_time / self._duty_cycle)
+        # update the voxel integration time and voxel dwell time in scan params
+        self._scan_params['voxel_integration_time'] = integ_time * self._duty_cycle
+        self._scan_params['voxel_dwell_time'] = integ_time
+    
+    @property
+    def pixel_clock_rate(self):
+        """Pixel clock rate in Hz"""
+        return self._pixel_clock_rate
+    
+    @pixel_clock_rate.setter
+    def pixel_clock_rate(self, pixel_clock_rate):
+        """Set the pixel clock rate in Hz
+
+        Parameters
+        ----------
+        pixel_clock_rate: float
+            pixel clock rate in Hz
+        """
+        if pixel_clock_rate <= 0:
+            raise ValueError('Pixel clock rate must be > 0')
+        self._pixel_clock_rate = pixel_clock_rate
+        # update the voxel integration time
+        self.voxel_integration_time = (1.0 / pixel_clock_rate) * self._duty_cycle
     
     def get_serial_number(self):
         raise NotImplementedError
