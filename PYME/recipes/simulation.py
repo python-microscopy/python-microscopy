@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase,Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, Dict, DictStrFloat, DictStrBool, on_trait_change
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, Dict, on_trait_change
 
 import numpy as np
 

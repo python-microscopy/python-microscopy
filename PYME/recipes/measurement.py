@@ -7,7 +7,7 @@ Created on Mon May 25 17:10:02 2015
 @author: david
 """
 from .base import ModuleBase, register_module, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrAny, observe
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, Dict, Any, observe
 import numpy as np
 #import pandas as pd
 from PYME.IO import tabular
@@ -214,7 +214,7 @@ class FitPoints(ModuleBase):
     fitModule = CStr('LatGaussFitFR')
     roiHalfSize = Int(7)
     channel = Int(0)
-    parameters = DictStrAny() #fit parameters ('Analysis' metadata entries)
+    parameters = Dict(str, Any) #fit parameters ('Analysis' metadata entries)
 
     @observe('fitModule')
     def _on_fit_module_change(self, event=None):

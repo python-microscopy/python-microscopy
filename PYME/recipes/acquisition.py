@@ -1,6 +1,6 @@
 
 from .base import register_module, OutputModule
-from .traits import Input, Output, CStr, DictStrAny, Bool, Float, Int
+from .traits import Input, Output, CStr, Bool, Float, Int, Any, Dict
 import requests
 import json
 import numpy as np
@@ -77,7 +77,7 @@ class QueueAcquisitions(OutputModule):
     """
     input_positions = Input('input')
     action_server_url = CStr('http://127.0.0.1:9393')
-    spool_settings = DictStrAny()
+    spool_settings = Dict(str, Any)
     lifo = Bool(True)
     optimize_path = Bool(True)
     timeout = Float(np.finfo(float).max)

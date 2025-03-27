@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, OutputModule
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr, Dict, Str
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, Dict, Str
 
 import numpy as np
 #import pandas as pd
@@ -328,7 +328,7 @@ class HDFOutput(OutputModule):
     source files. If subsequent identification of the source file, or e.g. metadata on sample conditions, this information
     should be added as a column to the tabular data before savine. See also `recipes.measurement.AddMetadataToMeasurements`.
     """
-    inputVariables = DictStrStr()
+    inputVariables = Dict(str, str)
     filePattern = '{output_dir}/{file_stub}.hdf'
     extraMetadata = Dict(Str)
 

@@ -1,5 +1,5 @@
 from .base import register_module, register_legacy_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt, observe
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, Dict, List, observe
 
 import numpy as np
 #import pandas as pd
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class Mapping(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('measurements')
-    mappings = DictStrStr()
+    mappings = Dict(str, str)
     outputName = Output('mapped')
 
     # def execute(self, namespace):
@@ -34,7 +34,7 @@ class Mapping(ModuleBase):
 class FilterTable(ModuleBase):
     """Filter a table by specifying valid ranges for table columns"""
     inputName = Input('measurements')
-    filters = DictStrList()
+    filters = Dict(str, List(float))
     outputName = Output('filtered')
 
     # def execute(self, namespace):
@@ -73,7 +73,7 @@ class FilterTableByIDs(ModuleBase):
     """Filter a table by specifying valid ranges for table columns"""
     inputName = Input('measurements')
     idColumnName = CStr('clumpID')
-    ids = ListInt()
+    ids = List(int)
     outputName = Output('filtered')
 
     # def execute(self, namespace):
