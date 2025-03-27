@@ -132,12 +132,12 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         self.n_steps = len(self._axes_voltages['x'])
 
     def scan(self):
-        with self._scanning_lock:
-            self.prepare()
-            self._scan()
+        threading.Thread(target=self._scan).start()
     
     def _scan(self):
-        with ni.Task() as ctr_task, ni.Task() as ai_task, ni.Task() as ao_task:
+        with self._scanning_lock, ni.Task() as ctr_task, ni.Task() as ai_task, ni.Task() as ao_task:
+            self.prepare()
+
             # set up counter / pixel clock task
             ctr_task.co_channels.add_co_pulse_chan_freq(
                 counter=self._counter_channel, 
