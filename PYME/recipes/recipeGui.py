@@ -154,8 +154,9 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 else:
                     self.ax.text(v[0]+.05, v[1]+.18 - .05*(len(s) - 1) , '\n'.join(s), size=fontSize, weight='bold')
                 #print repr(k)
-                
-                params = k.get().items()
+
+                params = k.trait_get().items()
+
                 s2 = []
                 for i in params:
                     pn, p = i

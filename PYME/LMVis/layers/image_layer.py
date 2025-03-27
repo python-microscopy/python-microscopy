@@ -191,7 +191,7 @@ class ImageRenderLayer(EngineLayer):
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments
-        self.set(**kwargs)
+        self.trait_set(**kwargs)
 
         # update datasource and method
         self.dsname = dsname
@@ -273,8 +273,8 @@ class ImageRenderLayer(EngineLayer):
 
         cmap = do.cmaps[self.channel].name
         visible = do.show[self.channel]
-        
-        self.set(clim=clim, cmap=cmap, visible=visible, z_pos=do.zp, t_pos=do.tp)
+
+        self.trait_set(clim=clim, cmap=cmap, visible=visible, z_pos=do.zp, t_pos=do.tp)     
         
 
     def update_from_datasource(self, ds):

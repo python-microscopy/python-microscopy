@@ -223,7 +223,8 @@ class BaseLayer(HasTraits):
         pass
 
     def settings_dict(self):
-        d =  self.get([n for n in self.class_trait_names() if not n.startswith('_')])
+        params = [n for n in self.class_trait_names() if not n.startswith('_')]
+        d = self.trait_get(params)
         for k, v in d.items():
             if isinstance(v, dict) and not type(v) == dict:
                 v = dict(v)
