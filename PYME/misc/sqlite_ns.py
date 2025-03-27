@@ -35,8 +35,9 @@ class SQLiteNS(object):
         self._protocol = protocol
         self._dbname = os.path.join(tempfile.gettempdir(), '%s.sqlite' %self._protocol)
         with sqlite3.connect(self._dbname) as conn:
-
-            tableNames = [a[0] for a in conn.execute('SELECT name FROM sqlite_master WHERE type="table"').fetchall()]
+            # sqlite wants single quotes around literal strings and the sqlite package just became pickier about this
+            # see also https://www.reddit.com/r/freebsd/comments/1chb82b/sqlite3_pkg_just_became_stricter_with_quoting/
+            tableNames = [a[0] for a in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             if not 'dns' in tableNames:
                 try:
                     conn.execute("CREATE TABLE dns (name TEXT, address TEXT, port INTEGER, creation_time FLOAT, URI TEXT)")
