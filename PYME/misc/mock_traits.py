@@ -34,6 +34,8 @@ ListFloat = CStr
 ListStr = CStr
 ListInt = CStr
 BaseFloat = CStr
+Any = CStr
+Dict = CStr
 
 Property = CStr
 WeakRef = CStr

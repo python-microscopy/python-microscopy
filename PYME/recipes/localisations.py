@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Str, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr, FileOrURI
+from .traits import Input, Output, Float, Enum, CStr, Str, Bool, Int, List, FileOrURI, Dict
 
 import numpy as np
 from PYME.IO import tabular
@@ -320,8 +320,8 @@ class ProcessColour(ModuleBase):
     # is saved. If you want a generic recipe, you will need to manually remove the dye entries from the .yaml file
     # TODO - do this automatically somehow?
     # TODO - default is to override saved values with those from metadata. Change this?
-    species_ratios = DictStrFloat()
-    species_dyes = DictStrStr()
+    species_ratios = Dict(str, float)
+    species_dyes = Dict(str, str)
     
     ratios_from_metadata = Bool(True)
 
@@ -610,7 +610,7 @@ class DBSCANClustering(ModuleBase):
     import multiprocessing
     inputName = Input('filtered')
 
-    columns = ListStr(['x', 'y', 'z'])
+    columns = List(str, ['x', 'y', 'z'])
     searchRadius = Float(10)
     minClumpSize = Int(1)
     
@@ -675,7 +675,7 @@ class DBSCANClustering(ModuleBase):
         
     def _view_items(self, params=None):
         from traitsui.api import Item, TextEditor
-        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=ListStr)),
+        return [Item('columns', editor=TextEditor(auto_set=False, enter_set=True, evaluate=List(str))),
                     Item('searchRadius'),
                     Item('minClumpSize'),
                     Item('multithreaded'),
