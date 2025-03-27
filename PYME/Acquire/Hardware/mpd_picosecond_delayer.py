@@ -22,7 +22,7 @@ mpd_psd_errors = {
 
 def check_success(resp):
         if b'ERR' in resp:
-            err_no = int((resp.split(b'ERR')[-1]).decode())
+            err_no = int((resp.split(b'ERR')[-1]).rstrip(b'#').decode())
             try:
                 raise RuntimeError(mpd_psd_errors[err_no])
             except KeyError:
@@ -235,7 +235,7 @@ class PicosecondDelayer(object):
             significant edge for trigger input. False: falling edge, True:
             rising edge.
         """
-        self._divide_by = bool(self.send_command(b'SE%d#' % rising))
+        self._edge = bool(self.send_command(b'SE%d#' % rising))
 
     @property
     def io(self):
@@ -380,7 +380,7 @@ class PicosecondDelayer(object):
             frequency divider factor. Possible values are integers from 1 to
             999.
         """
-        self._divide_by = int(self.send_command(b'RO#'))
+        self._divide_by = int(self.send_command(b'RV#'))
         return self._divide_by
     
     def GetMaxDelay(self):

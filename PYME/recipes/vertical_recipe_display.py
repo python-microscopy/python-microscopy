@@ -45,9 +45,22 @@ class RecipeDisplayPanel(wx.Panel):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
     def _col(self,node):
+        dark_mode = False
+        
+        try:
+            dark_mode = wx.SystemSettings.GetAppearance().IsDark()
+        except AttributeError:
+            # wx < 4.1 doesn't have GetAppearance
+            pass
+        
+        if dark_mode:
+            factor = 1.0
+        else:
+            factor = 0.7
+
         import matplotlib.pyplot as plt
         if not node in self.cols.keys():
-            self.cols[node] = 0.7 * np.array(plt.cm.hsv(np.random.rand()))
+            self.cols[node] = factor*np.array(plt.cm.hsv(np.random.rand()))
             #cols[node] = 0.7 * np.array(plt.cm.hsv((_col.n_col % len(data_nodes)) / float(len(data_nodes))))
         #return self.cols[node]
 
@@ -70,7 +83,7 @@ class RecipeDisplayPanel(wx.Panel):
         #wx.CallLater(10, self.Refresh)
         self.Layout()
         #print self.GetSizer().GetSize()
-        self.SetMinSize(self.GetSizer().GetSize())
+        #self.SetMinSize(self.GetSizer().GetSize())
         self.GetParent().Layout()
         self.GetParent().GetParent().Layout()
         self.Refresh()

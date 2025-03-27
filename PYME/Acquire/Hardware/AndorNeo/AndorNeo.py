@@ -454,13 +454,13 @@ class AndorBase(SDK3Camera):
         pass
 
     def StartExposure(self):
-        #make sure no acquisiton is running
+        #make sure no acquisition is running
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
         self.tKin = 1.0 / self._frameRate
         
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._flush()
         self.InitBuffers()
         self.AcquisitionStart()

@@ -24,9 +24,14 @@
 import wx
 import time
 
+from wx.core import TIMER_CONTINUOUS
+
+import logging
+logger = logging.getLogger(__name__)
 
 
-class MultiTimer(wx.Timer):
+
+class MultiTargetTimer(wx.Timer):
     """
     Timer which calls multiple handlers
     """
@@ -39,7 +44,10 @@ class MultiTimer(wx.Timer):
     def Notify(self):
         for a in self.WantNotification:
             ts = time.time()
-            a()
+            try:
+                a()
+            except:
+                logger.exception('Error in timer callback')
             
             if self.PROFILE:
                 te = time.time() - ts
@@ -52,7 +60,16 @@ class MultiTimer(wx.Timer):
     def register_callback(self, callback):
         self.WantNotification.append(callback)
 
-mytimer=MultiTimer #alias for backwards compatibility
+    def unregister_callback(self, callback):
+        self.WantNotification.remove(callback)
+
+    def start(self, delay_ms, single_shot=False):
+        if single_shot:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
+        else:
+            wx.CallAfter(self.Start, delay_ms, wx.TIMER_CONTINUOUS)
+
+mytimer=MultiTargetTimer #alias for backwards compatibility
 
 class SingleTargetTimer(wx.Timer):
     """
@@ -68,7 +85,7 @@ class SingleTargetTimer(wx.Timer):
     def Notify(self):
         self._target()
         
-    def start(self, delay_ms, single_shot=True):
+    def start(self, delay_ms, single_shot=False):
         if single_shot:
             wx.CallAfter(self.Start, delay_ms, wx.TIMER_ONE_SHOT)
         else:
@@ -92,3 +109,8 @@ def call_in_main_thread(callable, *args, **kwargs):
 
     """
     wx.CallAfter(callable, *args, **kwargs)
+
+def loop_forever():
+    '''Dummy loop forever (real event loop is in wx)'''
+    while (wx.GetApp().IsMainLoopRunning()):
+        time.sleep(1)

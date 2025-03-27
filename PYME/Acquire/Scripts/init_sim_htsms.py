@@ -155,7 +155,7 @@ def multiview_selection(MainFrame, scope):
     from PYME.Acquire.ui import multiview_select
 
     ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
-    MainFrame.time1.WantNotification.append(ms.update)
+    MainFrame.time1.register_callback(ms.update)
     MainFrame.camPanels.append((ms, 'Multiview Selection'))
 
 @init_hardware('Lasers')
@@ -172,11 +172,11 @@ def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
     #lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    #MainFrame.time1.WantNotification.append(lcf.update)
+    #MainFrame.time1.register_callback(lcf.update)
     #MainFrame.camPanels.append((lcf, 'Laser Control'))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.time1.register_callback(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Control'))
 
 @init_gui('Focus Keys')

@@ -36,3 +36,44 @@ void main() {
 
     //gl_FrontColor.a = gl_FrontColor.a*(float(visible));
 }
+
+#version 330
+
+uniform float x_min;
+uniform float x_max;
+uniform float y_min;
+uniform float y_max;
+uniform float z_min;
+uniform float z_max;
+uniform float v_min;
+uniform float v_max;
+uniform mat4 clip_rotation_matrix;
+
+uniform mat4 ModelViewProjectionMatrix;
+
+layout(location = 0) in vec3 Vertex;
+layout(location = 1) in vec2 aTexCoord;
+
+out float vis;
+out vec2 tex_coords;
+
+void main() {
+    bool visible;
+    vec4 v_position;
+    //gl_PointSize = gl_Point.size;
+    //gl_FrontColor = gl_Color;
+
+    visible = Vertex.x > x_min && Vertex.x < x_max;
+    visible = visible && Vertex.y > y_min && Vertex.y < y_max;
+    visible = visible && Vertex.z > z_min && Vertex.z < z_max;
+
+    //v_position = clip_rotation_matrix*gl_Vertex;
+    //visible = visible && v_position.z > v_min && v_position.z < v_max;
+
+    gl_Position = ModelViewProjectionMatrix * vec4(Vertex, 1.0);
+
+    vis = float(visible);
+    tex_coords = aTexCoord; //gl_MultiTexCoord0.xy;
+
+    //gl_FrontColor.a = gl_FrontColor.a*(float(visible));
+}

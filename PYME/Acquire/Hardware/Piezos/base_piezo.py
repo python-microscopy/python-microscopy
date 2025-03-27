@@ -62,6 +62,12 @@ class PiezoBase(object):
     def OnTarget(self):
         raise NotImplementedError
     
+    @property
+    def effective_pos(self):
+        """ Return the effective position of the piezo. This is exclusively for use in simulation,
+        and allows for derived classes to simulate drifty piezos, etc. """
+        return self.GetPos()
+    
 
 class SingleAxisWrapper(PiezoBase):
     """

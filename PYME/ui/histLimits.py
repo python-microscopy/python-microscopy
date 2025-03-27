@@ -241,7 +241,9 @@ class HistLimitPanel(wx.Panel):
         h = (self.Size[1] - self.textSize - 2)*(1.0-(self.h/(1.0*self.h[1:-1].max()+1e-9))) + 2
 
         maxy = self.Size[1] - self.textSize
-        pointlist = [(i,h_i) for i, h_i in zip(range(len(h)), h)]
+        # note: for python 3.10 and up we need explicit casts to int for any point coordinate that could be float
+        # otherwise we get rubbish
+        pointlist = [(i,int(h_i)) for i, h_i in zip(range(len(h)), h)]
         pointlist = [(0,maxy)] + pointlist + [(self.Size[0], maxy)]
 
         #self.SetBackgroundMode(wx.SOLID)
@@ -277,11 +279,12 @@ class HistLimitPanel(wx.Panel):
 
         #print self.limit_lower
 
-        llx = (self.limit_lower - self.hmin)/self.hstep
+        # int casts below to ensure any dc coordinates are guranteed integers; otherwise issues with Python 3.10+
+        llx = int((self.limit_lower - self.hmin)/self.hstep)
         dc.DrawLine(llx, 0, llx, maxy)
         lab = '%1.3G' % self.limit_lower
         labSize = dc.GetTextExtent(lab)
-        dc.DrawText(lab, max(llx - labSize[0]/2, 0), maxy + 2)
+        dc.DrawText(lab, int(max(llx - labSize[0]/2, 0)), maxy + 2)
 
 
         if not self.threshMode:
@@ -290,11 +293,11 @@ class HistLimitPanel(wx.Panel):
             else:
                 dc.SetPen(wx.Pen(wx.RED, 2))
 
-            ulx = (self.limit_upper - self.hmin)/self.hstep
+            ulx = int((self.limit_upper - self.hmin)/self.hstep)
             dc.DrawLine(ulx, 0, ulx, maxy)
             lab = '%1.3G' % self.limit_upper
             labSize = dc.GetTextExtent(lab)
-            dc.DrawText(lab, min(ulx - labSize[0]/2, self.Size[0] - labSize[0]), maxy + 2)
+            dc.DrawText(lab, int(min(ulx - labSize[0]/2, self.Size[0] - labSize[0])), maxy + 2)
 
 
         dc.SetPen(wx.NullPen)

@@ -252,6 +252,9 @@ class ImportTextDialog(ColumnMappingDialog):
         self.change_text_flavour(self.chFlavour.GetStringSelection())
         self.CheckColNames()
 
+        # Update the GUI selection
+        for ci, cn in enumerate(self.colNames):
+            self.combos[ci].SetValue(cn)
 
 class ImportMatDialog(wx.Dialog):
     # Old-style MATLAB importer

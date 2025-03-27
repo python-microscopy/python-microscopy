@@ -2674,7 +2674,7 @@ class StatisticsByFrame(ModuleBase):
             var[si] = np.var(slice_data)
             mean[si] = np.mean(slice_data)
             median[si] = np.median(slice_data)
-            mode[si] = stats.mode(slice_data, axis=None)[0][0]
+            mode[si] = stats.mode(slice_data, axis=None)[0].squeeze()
 
         # package up and ship-out results
         return tabular.DictSource({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
@@ -2848,3 +2848,61 @@ class RawADUToElectronsPerSecond(ModuleBase):
         series_epers.mdh['Camera.ADOffset'] = 0
 
         return series_epers
+    
+
+@register_module('Rotate180')
+class Rotate180(Filter):
+    """
+    Rotate the image 180 degrees in x-y 
+
+    Parameters
+    ----------
+    input_name : PYME.IO.ImageStack
+    output_name : PYME.IO.ImageStack
+    """
+    
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?') # our code only works in 2D, so restrict dimensionality choices
+    
+    def apply_filter(self, data, voxelsize):
+        return data[::-1,::-1]
+    
+
+@register_module('SplineFitBackgroundEstimate')
+class SplineFitBackgroundEstimate(Filter):
+    """
+    Background subtraction using a 2D smoothing spline fit
+
+    Parameters
+    ----------
+    smooth : Positive smoothing factor defined for estimation
+    """
+    smooth = Float(1e7)
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+    
+    def apply_filter(self, data, voxelsize):
+        from scipy.interpolate import RectBivariateSpline
+        x = np.arange(data.shape[0])
+        y = np.arange(data.shape[1])
+        fit = RectBivariateSpline(x, y, data, s=self.smooth)
+        return fit(x, y)
+    
+
+@register_module('Offset')
+class Offset(Filter):
+    """
+    Offset the grayscale value by a certain number
+
+    Parameters
+    ----------
+    offset_constant : a constant that the image will subtract, float
+    offset_selection : which kind of image offset is set to process
+    """
+    offset_constant = Float(0.0)
+    offset_selection = Enum('offset by a constant', 'offset by minimum')
+    dimensionality = Enum('XY', desc='Which image dimensions should the filter be applied to?')
+
+    def applyFilter(self, data, chanNum, i, image0):
+        if self.offset_selection == 'offset by a constant':
+            return data - self.offset_constant
+        elif self.offset_selection == 'offset by minimum':
+            return data - np.min(data)

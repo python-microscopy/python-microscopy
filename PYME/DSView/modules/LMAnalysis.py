@@ -214,7 +214,7 @@ class AnalysisSettingsView(object):
 
         #find out what fit factories we have
         self.fitFactories = PYME.localization.FitFactories.resFitFactories
-        logger.debug("registered FitFactories: ",(self.fitFactories))
+        logger.debug("registered FitFactories: %s" % (self.fitFactories))
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -518,7 +518,7 @@ class FitDefaults(object):
         from PYME.IO.FileUtils.nameUtils import getCalibrationDir
         
         caldir = getCalibrationDir(self.analysisMDH['Camera.SerialNumber'])
-        itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
+        itime = round(1000*self.analysisMDH['Camera.IntegrationTime'])
         darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
         varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
         flatpath = os.path.join(caldir,'flatfield.tif')
@@ -591,10 +591,8 @@ class LMAnalyser2(Plugin):
     def toggle_new_style(self, event=None):
         self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
-    def SetFitInfo(self):
-        # TODO - use filter / raw fit results rather than creating a points array.
-        # TODO - de-duplicate with method of same name in  LMDisplay
-
+    def _update_points_overlay(self):
+        ''' Make sure the points overlay is up to date with the current analysis progress'''
         mdh = self.analysisController.analysisMDH
 
         if not hasattr(self, '_ovl') or not hasattr(self._ovl, 'filter'):
@@ -606,6 +604,14 @@ class LMAnalyser2(Plugin):
             self.view.add_overlay(self._ovl)
         else:
             self._ovl.filter.setResults(self.fitResults)
+
+    def SetFitInfo(self):
+        # TODO - use filter / raw fit results rather than creating a points array.
+        # TODO - de-duplicate with method of same name in  LMDisplay
+
+        # ensure points overlay is up to date with the current analysis progress
+        # (we need this for hit-testing to work correctly)
+        self._update_points_overlay()
             
         if not 'fitInf' in dir(self):
             self.fitInf = fitInfo.FitInfoPanel(self.dsviewer, self.fitResults, self.resultsMdh, self.do.ds)
@@ -727,9 +733,10 @@ class LMAnalyser2(Plugin):
                 self.ds = tabular.FitResultsSource(self.fitResults)
                 self.ds.mdh = self.resultsMdh
                 self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds=self.dsviewer.image.imgBounds)
-                self.dsviewer.pipeline.mdh = self.resultsMdh
+                #self.dsviewer.pipeline.mdh = self.resultsMdh
                 try:
                     self.dsviewer.LMDisplay.SetFit()
+                    self.dsviewer.LMDisplay._create_base_layer()
                 except:
                     pass
             else:
@@ -741,7 +748,8 @@ class LMAnalyser2(Plugin):
             self.progPan.fitResults = self.fitResults
             # self._ovl.points = np.vstack(
             #    (self.fitResults['fitResults']['x0'], self.fitResults['fitResults']['y0'], self.fitResults['tIndex'])).T
-            self._ovl.filter.setResults(self.fitResults)
+            #self._ovl.filter.setResults(self.fitResults)
+            self._update_points_overlay()
             self.numEvents = len(self.fitResults)
         
             try:
@@ -953,6 +961,8 @@ class LMAnalyser2(Plugin):
             
         ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=mdh, dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
+
+        #print(res.driftResults)
         
         if gui:
             plt.figure()
@@ -962,7 +972,7 @@ class LMAnalyser2(Plugin):
                 plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', clim=(np.median(d.ravel()), d.max()))
                 plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
-                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=19)
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
@@ -989,6 +999,12 @@ class LMAnalyser2(Plugin):
                     plt.xticks([])
                     plt.yticks([])
                     plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+
+                if ft.driftEst:
+                    try:
+                        plt.plot(res.driftResults['fitResults']['x0']/vx, res.driftResults['fitResults']['y0']/vy, '*y', mew=2)
+                    except AttributeError:
+                        pass
                     
                 #figure()
                 #imshow()

@@ -44,7 +44,7 @@ def _meanvards(dataSource, start=0, end=-1):
 
 def map_filename(mdh, type):
     if type != 'flatfield':
-        itime = int(1000*mdh['Camera.IntegrationTime'])
+        itime = round(1000*mdh['Camera.IntegrationTime'])
         return '%s_%dms.tif' % (type,itime)
     else:
         return '%s.tif' % (type)

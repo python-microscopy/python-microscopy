@@ -5,7 +5,7 @@ Created on Sat May 14 14:54:52 2016
 @author: david
 """
 import wx
-import wx.py.shell
+
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
@@ -18,6 +18,14 @@ import wx.lib.agw.aui as aui
 from PYME.IO.FileUtils import nameUtils
 
 import os
+import sys
+
+# hack for wayland on linux
+# TODO - we seem to need the egl platform on ubuntu 20.04 and 22.04 even when XDG_SESSION_TYPE is x11
+# This needs a bit more investigation - in the meantime, just use `export PYOPENGL_PLATFORM='egl'` 
+# in the terminal before trying to run PYMEVis`
+#if ('linux' in sys.platform) and ('wayland' in os.environ.get('XDG_SESSION_TYPE', '')):
+#    os.environ['PYOPENGL_PLATFORM'] = 'egl'
 
 #from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
@@ -52,8 +60,6 @@ import numpy as np
 #import scipy.special
 
 #from PYME.DSView import eventLogViewer
-
-
 
 from PYME.LMVis import statusLog
 #from PYME.recipes import recipeGui
@@ -91,17 +97,26 @@ class VisGUICore(object):
         gl_pan = wx.Panel(self._win)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-
-        
         if not use_shaders:
             from PYME.LMVis import gl_render3D
             self.glCanvas = gl_render3D.LMGLCanvas(gl_pan)
         else:
-            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
+            #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas        
+
+            try:
+                if PYME.config.get('VisGUI-opengl-core-profile', False):
+                    from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
+                else:
+                    logger.debug('Using legacy GLCanvas')
+                    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            except AttributeError:
+                from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            
             if self._new_layers:
                 #use stripped down version
                 self.glCanvas = LMGLShaderCanvas(gl_pan)
             else:
+                from PYME.LMVis.gl_render3D_shaders import LegacyGLCanvas
                 self.glCanvas = LegacyGLCanvas(gl_pan)
 
         sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
@@ -215,9 +230,9 @@ class VisGUICore(object):
 
         self.recipeView = RecipeDisplayPanel(item)
         self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView, priority=20, foldable=False)
+        item.AddNewElement(self.recipeView, priority=1, foldable=False)
 
-        pnl.AddPane(item, 20)
+        pnl.AddPane(item, 1)
         
     def update_datasource_panel(self, event=None, **kwargs):
         dss = list(self.pipeline.dataSources.keys())
@@ -264,8 +279,10 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
+            self.AddMenuItem('File', "Load extra datasource into recipe namespace", self.OnLoadExtraDatasource)
             
         self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
+        self.AddMenuItem('File', 'Save Session', self.OnSaveSession)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -403,6 +420,26 @@ class VisGUICore(object):
         self.RefreshView()
         #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
+
+    def OnLoadExtraDatasource(self, event):
+
+        def ask(parent=None, message='', default_value=''):
+            with wx.TextEntryDialog(parent, message, value=default_value) as dlg:
+                dlg.ShowModal()
+                result = dlg.GetValue()
+            if result == '':
+                return None
+            else:
+                return result
+        
+        filename = wx.FileSelector("Choose a file to open", 
+                                   nameUtils.genResultDirectoryPath())
+        if filename == '':
+            return
+        dsname = ask(self,message='provide short name for datasource')
+        if dsname is None:
+            return
+        self.pipeline.load_extra_datasources(**{dsname:filename})
         
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
@@ -462,9 +499,15 @@ class VisGUICore(object):
         return l
 
     def add_layer(self, layer):
-        self.glCanvas.layers.append(layer)
+        self.add_layers([layer,])
+        
+
+    def add_layers(self, layers):
+        for layer in layers:
+            self.glCanvas.layers.append(layer)
+            layer.on_update.connect(self.glCanvas.refresh)
+
         self.glCanvas.recenter_bbox()
-        layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
         
         wx.CallAfter(self.layer_added.send, self)
@@ -799,34 +842,107 @@ class VisGUICore(object):
             
         return args
 
-    def OpenFile(self, filename, recipe_callback=None):
-        # get rid of any old layers
-        while len(self.layers) > 0:
-            self.layers.pop()
+    def get_session_yaml(self,sessionpath=None):
+        import yaml
+        import os
+        from PYME.recipes.base import MyDumper
+        from PYME.LMVis.sessionpaths import attempt_relative_session_paths
+        session = {'format_version': 0.1,} # increment?
+        session.update(self.pipeline.get_session()) # get the pipeline session info (data sources, recipe, outputfilter?? etc)
+
+        # TODO - View and layer settings
+        session.update(self.glCanvas.get_session_info())
         
-        logger.debug('Creating Pipeline')
-        if filename is None and not ds is None:
-            self.pipeline.OpenFile(ds=ds)
-        else:
-            args = self._populate_open_args(filename)
-            if args is None:
-                return
-            self.pipeline.OpenFile(filename, **args)
-        logger.debug('Pipeline Created')
+        if sessionpath is not None:
+            # if all files used in the session are relative to the path of the session file,
+            # re-write the paths using the SESSIONDIR_TOKEN to make the session file portable
+            attempt_relative_session_paths(session,os.path.dirname(sessionpath))
         
-        #############################
-        #now do all the gui stuff
+        return '# PYMEVis saved session\n' + yaml.dump(session, Dumper=MyDumper)
+    
+    def save_session(self, filename):           
+        with open(filename, 'w') as f:
+            f.write(self.get_session_yaml(sessionpath=filename))
+
+    def OnSaveSession(self, event):
+        '''GUI callback to save session to a file, shows a file dialog'''
+        filename = wx.SaveFileSelector("Choose a file to save the session to", 
+                                   #nameUtils.genResultDirectoryPath(), 
+                                   extension='.pvs')
+        if not filename == '':
+            self.save_session(filename)
+    
+    def load_session(self, filename):
+        import yaml
+        from PYME.LMVis.sessionpaths import substitute_sessiondir
+        
+        with open(filename, 'r') as f:
+            session_txt = f.read()
+        
+        session = yaml.safe_load(substitute_sessiondir(session_txt, filename)) # replace any possibly present SESSIONDIR_TOKEN
+
+        self.pipeline.load_session(session)
+
+        # load layers
+        from PYME.LMVis.layers import layer_from_session_info
+        self.glCanvas.layers.clear()
+        layers = []
+        for l in session.get('layers', []):
+            layers.append(layer_from_session_info(self.pipeline, l))
+        
+        self.add_layers(layers)
+
+        # reload view
+        view = session.get('view', None)
+        if view:
+            from PYME.LMVis import views
+            self.glCanvas.set_view(views.View.decode_json(view))
+    
+    
+    def _update_title_and_tabs(self, filename):
         self.recipeView.invalidate_layout()
         self.update_datasource_panel()
-        
+
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
             self._removeOldTabs()
             self._createNewTabs()
+
+            # hack for linux as the select=False logic when adding tabs doesn't seem to work
+            # TODO - find a cleaner solution
+            if sys.platform == 'linux':
+                wx.CallAfter(self._mgr.GetNotebooks()[0].SetSelection, 0)
             
             #self.CreateFoldPanel()
             logger.debug('Gui stuff done')
+    
+    def OpenFile(self, filename, recipe_callback=None, create_default_recipe=True):
+        # get rid of any old layers
+        while len(self.layers) > 0:
+            self.layers.pop()
+
+        if filename.endswith('.pvs'):
+            self.load_session(filename)
+            self._update_title_and_tabs(filename)
+            return
+        
+        logger.debug('Creating Pipeline')
+        if filename is None and not ds is None:
+            self.pipeline.OpenFile(ds=ds, create_default_recipe=create_default_recipe)
+        else:
+            args = self._populate_open_args(filename)
+            if args is None:
+                return
+            
+            self.pipeline.OpenFile(filename, create_default_recipe=create_default_recipe, **args)
+        logger.debug('Pipeline Created')
+        
+        #############################
+        #now do all the gui stuff
+
+        self._update_title_and_tabs(filename)
+        
         
         try:
             if recipe_callback:

@@ -52,7 +52,7 @@ class Spooler(object):
         
         Parameters
         ----------
-        scope : PYME.Acquire.microscope.microscope object
+        scope : PYME.Acquire.microscope.Microscope object
             The microscope providing the data
         filename : string
             The file into which to spool
@@ -80,7 +80,7 @@ class Spooler(object):
             # if not provided / None)
             self.stack_settings = stack_settings
         
-        self.onSpoolStop = dispatch.Signal()
+        self.on_stop = dispatch.Signal()
 
         self._last_gui_update = 0
         self.spoolOn = False
@@ -144,7 +144,7 @@ class Spooler(object):
             self.guiUpdateCallback()
         
         self.finalise()
-        self.onSpoolStop.send(self)
+        self.on_stop.send(self)
         self.spool_complete = True
         
     def finalise(self):
@@ -176,7 +176,7 @@ class Spooler(object):
             pass
 
         self.spoolOn = False
-        self.onSpoolStop.send(self)
+        self.on_stop.send(self)
         
 
     def OnFrame(self, **kwargs):

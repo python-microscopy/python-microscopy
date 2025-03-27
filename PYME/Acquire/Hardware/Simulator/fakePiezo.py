@@ -22,6 +22,9 @@
 ##################
 
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
+import threading
+import numpy as np
+import time
 
 class FakePiezo(PiezoBase):
     gui_description = 'Fake %s-piezo'
@@ -64,4 +67,29 @@ class FakePiezo(PiezoBase):
     def __getattr__(self, name):
         if name == 'lastPos':
             return self.curpos
-        else: raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
+        else: 
+            raise AttributeError(name)  # <<< DON'T FORGET THIS LINE !!
+        
+class DriftyFakePiezo(FakePiezo):
+    """Fake piezo that drifts over time using a random-walk model. Drift rate is specified in um/s^2.
+    
+    We use a 100ms time step.
+    """
+    def __init__(self, maxtravel = 100.00, drift_rate = 0.01):
+        FakePiezo.__init__(self, maxtravel)
+        self._100ms_drift_rate = drift_rate*np.sqrt(0.1)
+
+        self.drift = 0.0 # initial drift
+
+        self._drift_thread = threading.Thread(target=self._drift)
+        self._drift_thread.setDaemon(True)
+        self._drift_thread.start()
+
+    def _drift(self):
+        while True:
+            self.drift += self._100ms_drift_rate*np.random.randn()
+            time.sleep(0.1)
+
+    @property
+    def effective_pos(self):
+        return self.curpos + self.drift

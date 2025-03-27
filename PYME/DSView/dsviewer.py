@@ -20,6 +20,7 @@
 #
 ##################
 from PYME.misc import big_sur_fix
+from PYME.ui import patch_traitsui
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
@@ -280,7 +281,10 @@ class DSViewFrame(AUIFrame):
                 statusText = 'z: (%d/%d)    x: %d    y: %d    t:(%d/%d)' % (self.do.zp, self.do.nz, self.do.xp, self.do.yp, self.do.tp, self.do.nt)
                 
                 #intensity at current cursor
-                statusText += '    I: (%s)' % ', '.join(['%3.3f' % self.do.ds[self.do.xp, self.do.yp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]) 
+                I = [self.do.ds[self.do.xp, self.do.yp, self.do.zp, self.do.tp, c] for c in range(self.do.ds.shape[4])]
+
+                #statusText += '    I: (%s)' % ', '.join(['%3.3f' % ]) 
+                statusText += f'    I: ({", ".join([f"{c:3.3f}" for c in I] ) })'
                 
                 #grab status from modules which supply it
                 for sCallback in self.statusHooks:

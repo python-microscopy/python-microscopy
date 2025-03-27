@@ -85,16 +85,16 @@ class ImageViewPanel(wx.Panel):
 
 
             if self.do.selection.mode == selection.SELECTION_RECTANGLE:
-                dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
+                dc.DrawRectangle(int(lx),int(ly), int(hx-lx),int(hy-ly))
                 
             elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
                 if len(self.do.selection.trace) > 2:
                     x, y = numpy.array(self.do.selection.trace).T
                     pts = numpy.vstack(self._PixelToScreenCoordinates(x, y)).T
-                    print((pts.shape))
-                    dc.DrawSpline(pts)
+                    # print((pts.shape))
+                    dc.DrawSpline(pts.astype('i'))
             elif self.do.selection.width == 1:
-                dc.DrawLine(lx,ly, hx,hy)
+                dc.DrawLine(int(lx),int(ly),int(hx),int(hy))
             else:
                 dx = hx - lx
                 dy = hy - ly
@@ -113,8 +113,8 @@ class ImageViewPanel(wx.Panel):
                 x_2 = hx
                 y_2 = hy
 
-                dc.DrawLine(lx,ly, hx,hy)
-                dc.DrawPolygon([(x_1 +d_x, y_1-d_y), (x_1 - d_x, y_1 + d_y), (x_2-d_x, y_2+d_y), (x_2 + d_x, y_2 - d_y)])
+                dc.DrawLine(int(lx),int(ly), int(hx),int(hy))
+                dc.DrawPolygon([(int(x_1 +d_x), int(y_1-d_y)), (int(x_1 - d_x), int(y_1 + d_y)), (int(x_2-d_x), int(y_2+d_y)), (int(x_2 + d_x), int(y_2 - d_y))])
 
 
             dc.SetPen(wx.NullPen)
@@ -323,12 +323,12 @@ class ImageViewPanel(wx.Panel):
         im = self._map_image(im, self.chan)
     
         imw = wx_compat.ImageFromData(im.shape[1], im.shape[0], im.ravel())
-        imw.Rescale(imw.GetWidth() * sc, imw.GetHeight() * sc)
+        imw.Rescale(int(imw.GetWidth() * sc), int(imw.GetHeight() * sc))
         self.curIm = imw
     
         dc.Clear()
-        dc.DrawBitmap(wx_compat.BitmapFromImage(imw), (-self.centreX + x0 + width / 2) / pixelsize,
-                      (-self.centreY + y0 + height / 2) / pixelsize)
+        dc.DrawBitmap(wx_compat.BitmapFromImage(imw), int((-self.centreX + x0 + width / 2) / pixelsize),
+                      int((-self.centreY + y0 + height / 2) / pixelsize))
 
 
 class ColourImageViewPanel(ImageViewPanel):

@@ -196,8 +196,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         self.ax.axis('off')
         self.ax.grid()
         
-        self.canvas.draw()
-
+        self.canvas.draw() 
 
 class ModuleSelectionDialog(wx.Dialog):
     def __init__(self, parent):
@@ -299,8 +298,8 @@ class ModuleSelectionDialog(wx.Dialog):
         self.Layout()
 
     def OnSelect(self, evt):
-        from sphinx.util.docstrings import prepare_docstring
-
+        #from sphinx.util.docstrings import prepare_docstring
+        from sphinx.ext.napoleon import NumpyDocstring
 
         #print self.tree_list.GetSelection()
         mn = self.tree_list.GetPyData(self.tree_list.GetSelection())
@@ -311,7 +310,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
             doc = modules.base.all_modules[mn].__doc__
             if doc:
-                doc = [mn, '#'*len(mn), ''] + prepare_docstring(doc)
+                doc = [mn, '#'*len(mn), ''] + [str(NumpyDocstring(doc)),] #prepare_docstring(doc)
                 docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
                 #print docHTML
                 self.stModuleHelp.SetPage(docHTML)
@@ -346,6 +345,74 @@ class ModuleSelectionDialog(wx.Dialog):
         # force size recalculation by calling HideItem on the last item.
         self.tree_list.HideItem(item, not show)
 
+class EditModuleWithHelpDialog(wx.Dialog):
+    def __init__(self, parent, module):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, f"Edit {module.__class__.__name__}", size=(800, 500))
+        
+        self._module = module
+        self.pan = wx.Panel(self)
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.p_module = module.edit_traits(parent=self.pan, kind='subpanel').control
+        hsizer.Add(self.p_module, 1, wx.EXPAND|wx.ALL, 2)
+
+        self.stModuleHelp = wx.html.HtmlWindow(self.pan, -1, size=(400, 600))#wx.StaticText(self, -1, '', size=(400, -1))
+        self._set_help_text()
+        hsizer.Add(self.stModuleHelp, 1, wx.EXPAND|wx.ALL, 2)
+
+        vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
+        buttonSizer = wx.StdDialogButtonSizer()
+        buttonSizer.AddButton(wx.Button(self.pan, wx.ID_CANCEL, 'Cancel'))
+        buttonSizer.AddButton(wx.Button(self.pan, wx.ID_OK, 'OK'))
+        buttonSizer.Realize()
+        vsizer.Add(buttonSizer, 0, wx.EXPAND, 0)
+
+        self.pan.SetSizerAndFit(vsizer)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.pan, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+
+    def _set_help_text(self):
+        #from sphinx.util.docstrings import prepare_docstring
+        from sphinx.ext.napoleon import NumpyDocstring
+        doc = self._module.__doc__
+        if doc:
+            mn = self._module.__class__.__name__
+            doc = [mn, '#'*len(mn), ''] + [str(NumpyDocstring(doc)),]
+            docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
+            #print docHTML
+            self.stModuleHelp.SetPage(docHTML)
+        else:
+            self.stModuleHelp.SetPage('')
+
+        
+
+class ModulePopup(wx.Menu):
+    def __init__(self, parent, recipe, module):
+        wx.Menu.__init__(self)
+        
+        self.recipe = recipe
+        self.module = module
+        self.parent = parent
+        
+        _id_delete = wx.NewId()
+        _id_edit = wx.NewId()
+        self.Append(_id_edit, 'Edit')
+        self.Append(_id_delete, 'Delete')
+        
+        self.Bind(wx.EVT_MENU, self.OnEdit, id=_id_edit)
+        self.Bind(wx.EVT_MENU, self.OnDelete, id=_id_delete)
+        
+    def OnEdit(self, evt):
+        self.parent.edit_module(self.module)
+        
+    def OnDelete(self, evt):
+        self.recipe.remove_module(self.module)
 
 class RecipeView(wx.Panel):
     def __init__(self, parent, recipes):
@@ -608,54 +675,65 @@ class RecipeView(wx.Panel):
         dlg.Destroy()
         
         
+    def edit_module(self, module):
+        if not self._editing:
+            self._editing = True
+            self.configureModule(module)
+            self._editing = False
+    
     def OnPick(self, event):
         from PYME.IO import tabular
         from PYME.recipes import graphing
+        from matplotlib.backend_bases import MouseButton
         from PYME.experimental._triangle_mesh import TrianglesBase
         k = event.artist._data
+
         if not (isinstance(k, six.string_types)):
-            if not self._editing:
-                self._editing = True
-                self.configureModule(k)
-                self._editing = False
-        else:
-            outp = self.recipes.activeRecipe.namespace[k]
-            if isinstance(outp, ImageStack):
-                if not 'dsviewer' in dir(self.recipes):
-                    dv = ViewIm3D(outp, mode='lite')
-                else:
-                    if self.recipes.dsviewer.mode == 'visGUI':
-                        mode = 'visGUI'
-                    else:
-                        mode = 'lite'
-                                   
-                    dv = ViewIm3D(outp, mode=mode, glCanvas=self.recipes.dsviewer.glCanvas)
-                    
-            elif isinstance(outp, tabular.TabularBase):
-                from PYME.ui import recArrayView
-                f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
-                f.Show()
-            elif isinstance(outp, graphing.Plot):
-                outp.plot()
-            elif isinstance(outp, TrianglesBase):
-                from PYME.DSView.modules.vis3D import new_mesh_viewer
-                from PYME.LMVis.layers.mesh import TriangleRenderLayer
-                from PYME.misc.colormaps import cm
-
-                i = 0
-
-                glcanvas = new_mesh_viewer()#glrender.showGLFrame()
-                layer = TriangleRenderLayer(self.recipes.activeRecipe.namespace, dsname=k, method='shaded', context=glcanvas.gl_context, window = glcanvas,
-                                            cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)],
-                                            #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
-                                            )
-                glcanvas.add_layer(layer)
-                layer.show_lut=False
-
+            if event.mouseevent.button == MouseButton.LEFT:
+                self.edit_module(k)
                 
-                glcanvas.displayMode = '3D'
-                glcanvas.fit_bbox()
-                glcanvas.Refresh()
+            elif event.mouseevent.button == MouseButton.RIGHT:
+                menu = ModulePopup(self, self.recipes.activeRecipe, k)
+                self.recipePlot.PopupMenu(menu,  event.mouseevent.x, self.recipePlot.GetSize()[1] - event.mouseevent.y)
+        else:
+            if event.mouseevent.button == MouseButton.LEFT:
+                outp = self.recipes.activeRecipe.namespace[k]
+                if isinstance(outp, ImageStack):
+                    if not 'dsviewer' in dir(self.recipes):
+                        dv = ViewIm3D(outp, mode='lite')
+                    else:
+                        if self.recipes.dsviewer.mode == 'visGUI':
+                            mode = 'visGUI'
+                        else:
+                            mode = 'lite'
+                                    
+                        dv = ViewIm3D(outp, mode=mode, glCanvas=self.recipes.dsviewer.glCanvas)
+                        
+                elif isinstance(outp, tabular.TabularBase):
+                    from PYME.ui import recArrayView
+                    f = recArrayView.ArrayFrame(outp, parent=self, title='Data table - %s' % k)
+                    f.Show()
+                elif isinstance(outp, graphing.Plot):
+                    outp.plot()
+                elif isinstance(outp, TrianglesBase):
+                    from PYME.DSView.modules.vis3D import new_mesh_viewer
+                    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+                    from PYME.misc.colormaps import cm
+
+                    i = 0
+
+                    glcanvas = new_mesh_viewer()#glrender.showGLFrame()
+                    layer = TriangleRenderLayer(self.recipes.activeRecipe.namespace, dsname=k, method='shaded', context=glcanvas.gl_context, window = glcanvas,
+                                                cmap=cm.solid_cmaps[i % len(cm.solid_cmaps)],
+                                                #normal_mode='Per face', #use face normals rather than vertex normals, as there is currently a bug in computation of vertex normals
+                                                )
+                    glcanvas.add_layer(layer)
+                    layer.show_lut=False
+
+                    
+                    glcanvas.displayMode = '3D'
+                    glcanvas.fit_bbox()
+                    glcanvas.Refresh()
 
     
     
@@ -667,6 +745,7 @@ class RecipeView(wx.Panel):
                 wx.CallLater(10, p.update)
         
         k.edit_no_invalidate(handler=MControl())
+
         
         
 class RecipeManager(object):

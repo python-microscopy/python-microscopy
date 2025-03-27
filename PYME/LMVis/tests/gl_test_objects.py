@@ -30,7 +30,7 @@ from numpy import random
 from PYME.Analysis.points.spherical_harmonics import reconstruct_from_modes
 from PYME.Analysis.points.coordinate_tools import cart2sph
 from PYME.IO.tabular import HDFSource
-from PYME.simulation.wormlike2 import wormlikeChain
+from PYME.simulation.wormlike2 import WormlikeChain
 
 
 class TestObject(object):
@@ -400,7 +400,7 @@ class Ellipsoid(TestObject):
 
 class Worm(TestObject):
     def __init__(self, kbp=100, length_per_kbp=10.0, step_length=20.0, persist_length=50, probe=0):
-        chain = wormlikeChain(kbp, steplength=step_length, lengthPerKbp=length_per_kbp, persistLength=persist_length)
+        chain = WormlikeChain(kbp, steplength=step_length, lengthPerKbp=length_per_kbp, persistLength=persist_length)
         self.kbp = kbp
         self.length_per_kbp = length_per_kbp
         self.step_length = step_length

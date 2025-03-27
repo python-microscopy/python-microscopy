@@ -20,120 +20,51 @@
 #
 ##################
 from __future__ import print_function
-import numpy
+import numpy as np
 from .BaseDataSource import XYTCDataSource
 
-from PYME.localization import splitting
+from PYME.Analysis import splitting
+
+#from PYME.localization import splitting
 
 class DataSource(XYTCDataSource):
     moduleName = 'UnsplitDataSource'
-    def __init__(self,dataSource, ROI, chan=0, flip=True, shiftfield=None, voxelsize=(70., 70., 200.), chanROIs=None):
+    def __init__(self,dataSource, splitting_info : splitting.SplittingInfo, chan=0, shiftfield=None, voxelsize=(70., 70., 200.)):
         #self.unmixer = unmixer
         self.dataSource = dataSource
+        self.splitting_info = splitting_info
+
         self.sliceShape = list(self.dataSource.shape[:-1])
         
         self._raw_w, self._raw_h = self.dataSource.shape[:2]
-        
-        self.sliceShape[1] = int(self.sliceShape[1] / 2)
-        
-        if not chanROIs is None:
-            x, y, w, h = chanROIs[0]
-            #self.sliceShape = [min(self.dataSource.shape[0], w), min(self.dataSource.shape[1], h)]
-            
-            for x_, y_, w_, h_ in chanROIs:
-                w = min(self._raw_w - x_, w)
-                h = min(self._raw_h - y_, h)
-                
-            self.sliceShape = [w, h]
-        
-        self.ROI = ROI
+
+        self.sliceShape[:2] = self.splitting_info.channel_shape
+    
         self.chan = chan
 
-        #self.pixelsize = pixelsize
-        self.flip = flip
         self.voxelsize = voxelsize
         if shiftfield and chan == 1:
+            # FIXME for nChans >= 2 
             self.SetShiftField(shiftfield)
 
-        self.chanROIs = chanROIs
 
     def SetShiftField(self, shiftField):
-        #self.shiftField = shiftField
-        #self.shiftFieldName = sfname
-        x1, y1, x2, y2 = self.ROI
-        x1 = x1 - 1
-        y1 = y1 - 1
-        
-        X, Y = numpy.ogrid[:self.sliceShape[0], :self.sliceShape[1]]
-        X += x1
-        Y += y1
-
-        Xn = numpy.round(X - x1 - shiftField[0](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[0]).astype('i')
-        Yn = numpy.round(Y - y1 - shiftField[1](X*self.voxelsize[0], Y*self.voxelsize[1])/self.voxelsize[1]).astype('i')
-        
-        #Xn = numpy.clip(Xn, 0, )
-
-        #x1, y1, x2, y2 = self.ROI
-        #x1 = x1 - 1
-        #x2 = self.scope.cam.GetROIX2()
-        #y1 = y1 - 1
-
-        #print self.X2.shape
-
-        #Xn = self.X2[x1:x2, y1:(y1 + self.sliceShape[1])] - x1
-        #Yn = self.Y2[x1:x2, y1:(y1 + self.sliceShape[1])] - y1
-
-        #print Xn.shape
-        print(self.sliceShape)
-
-        self.Xn = numpy.maximum(numpy.minimum(Xn, self.sliceShape[0]-1), 0)
-        self.Yn = numpy.maximum(numpy.minimum(Yn, self.sliceShape[1]-1), 0)
+       self.shift_corr = splitting.ShiftCorrector(shiftField)
 
     def getSlice(self,ind):
         sl = self.dataSource.getSlice(ind)
-        
-        #sl = self.unmixer.Unmix(sl, self.mixmatrix, self.offset, self.ROI)
-
-        #print self.chan, sl.shape
-
-        #print sl.shape
-
         dsa = sl.squeeze()
 
-        #if self.chan == 0:
-        if self.chanROIs:
-            x, y, w, h = self.chanROIs[self.chan]
-            x1 = x -(self.ROI[0] - 1)
-            y1 = y -(self.ROI[1] - 1)
-            
-            x = max(x1, 0)
-            y = max(y1, 0)
-            
-            if self.flip and (self.chan == 0):
-                #print y, h + min(y1, 0), self.sliceShape
-                y = y + h + min(y1, 0) - self.sliceShape[1]
-            
-            #w += min(x1, 0)
-            #h += min(y1, 0)
-            
-            w, h = self.sliceShape
-        else:
-            if self.chan == 0:
-                x, y, w, h = 0,0, dsa.shape[0], int(dsa.shape[1] / 2)
-            else:
-                x, y, w, h = 0, int(dsa.shape[1] / 2), dsa.shape[0], int(dsa.shape[1] / 2)
-                #print x, y
-                return dsa[x:(x+w), y:(y+h)]
-        
-        c = dsa[x:(x+w), y:(y+h)]
-                
+        flip = False
         if self.chan > 0:
-            if self.flip:
-                c = numpy.fliplr(c)
+            if self.flip: #FIXME - change the flip parameter to the data source to be consistent with splitting.get_channel
+                flip='up_down'
 
-            if 'Xn' in dir(self):
-                #print sl.shape, c.shape
-                c = c[self.Xn, self.Yn]
+        c = splitting.get_channel(dsa, self.splitting_info, chan=self.chan)
+
+        if hasattr(self, 'shift_corr'):
+            # do shift correction
+            return self.shift_corr.correct(c, self.voxelsize, origin_nm=self.voxelsize*np.array(self.ROI[:2]))
 
         return c
 

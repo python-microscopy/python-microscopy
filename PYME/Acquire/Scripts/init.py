@@ -38,8 +38,14 @@ scope.microscope_name = 'PYMESimulator'
 @init_hardware('Fake Piezos')
 def pz(scope):
     from PYME.Acquire.Hardware.Simulator import fakePiezo
-    scope.fakePiezo = fakePiezo.FakePiezo(100)
+    from PYME.Acquire.Hardware.Piezos import offsetPiezoREST
+
+    scope._fakePiezo = fakePiezo.FakePiezo(100)
+    #scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+
+    scope.fakePiezo = offsetPiezoREST.server_class()(scope._fakePiezo)
     scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+
     
     scope.fakeXPiezo = fakePiezo.FakePiezo(10000)
     scope.register_piezo(scope.fakeXPiezo, 'x')
@@ -48,6 +54,7 @@ def pz(scope):
     scope.register_piezo(scope.fakeYPiezo, 'y')
 
 pz.join() #piezo must be there before we start camera
+
 
 @init_hardware('Fake Camera')
 def cm(scope):
@@ -117,7 +124,8 @@ def samp_db(MainFrame, scope):
 
 @init_gui('Fake DMD')
 def fake_dmd(MainFrame, scope):
-    from PYMEnf.Hardware import FakeDMD, DMDGui
+    from PYMEnf.Hardware import FakeDMD
+    from PYME.Acquire.Hardware import DMDGui
     scope.LC = FakeDMD.FakeDMD(scope)
     
     LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
@@ -132,7 +140,7 @@ def fake_dmd(MainFrame, scope):
 #notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
 ##camPanels.append((snrPan, 'SNR etc ...'))
 ##f.Show()
-##time1.WantNotification.append(snrPan.ccdPan.draw)
+##time1.register_callback(snrPan.ccdPan.draw)
 #""")
 
 cm.join()
@@ -151,11 +159,11 @@ def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
     #lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    #MainFrame.time1.WantNotification.append(lcf.update)
+    #MainFrame.time1.register_callback(lcf.update)
     #MainFrame.camPanels.append((lcf, 'Laser Control'))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.time1.register_callback(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Control'))
 
 @init_gui('Focus Keys')
@@ -176,13 +184,37 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
+@init_hardware('Tiling')
+def tiling(scope):
+    from PYME.Acquire.Utils import tiler
+    scope.spoolController.register_acquisition_type('Tiling', tiler.TileAcquisition)
+
+    from PYME.Acquire import xyztc
+    scope.spoolController.register_acquisition_type('ZTiling', xyztc.TiledZStackAcquisition)
 
 @init_gui('Tiling')
-def action_manager(MainFrame, scope):
-    from PYME.Acquire.ui import tile_panel
+def tiling(MainFrame, scope):
+    from PYME.Acquire.ui import tilesettingsui
     
-    ap = tile_panel.TilePanel(MainFrame, scope)
-    MainFrame.aqPanels.append((ap, 'Tiling'))
+    ts = tilesettingsui.TileSettingsUI(MainFrame, scope)
+    MainFrame.register_acquisition_ui('Tiling', (ts, 'Tiling'))
+
+    ts2 = tilesettingsui.ZTileSettingsUI(MainFrame, scope)
+    MainFrame.register_acquisition_ui('ZTiling', (ts2, 'Tiled Z Stack'))
+
+# @init_gui('Tiling')
+# def action_manager(MainFrame, scope):
+#     from PYME.Acquire.ui import tile_panel
+    
+#     ap = tile_panel.TilePanel(MainFrame, scope)
+#     MainFrame.aqPanels.append((ap, 'Tiling'))
+
+@init_gui('Automated analysis')
+def chained_analysis(main_frame, scope):
+    from PYME.Acquire.htsms import rule_ui_v2
+    
+    rule_ui_v2.plug(main_frame, scope)
+
 
 
 #must be here!!!

@@ -29,6 +29,8 @@
 from threading import Lock
 
 from PYME.IO import MetaDataHandler
+from PYME.Acquire import eventLog
+
 from PYME import config
 from . import camera_noise
 import warnings
@@ -116,6 +118,11 @@ class Camera(object):
     MODE_SOFTWARE_TRIGGER = 2
     MODE_HARDWARE_TRIGGER = 3
     MODE_HARDWARE_START_TRIGGER = 4
+
+    # Does this camera support a software trigger?
+    # Should be overridden in derived classes if the camera supports software triggering,
+    # and the derived class should also implement the FireSoftwareTrigger method
+    supports_software_trigger = False
 
 
     def __init__(self, *args, **kwargs):
@@ -689,9 +696,18 @@ class Camera(object):
 
         self.active = bool(active)
     
+    def _log_exposure_start(self):
+        """
+        Log a StartAq event to the event log to facilitate timestamping of acquisition frames.
+        This should be called in the StartExposure and FireSoftwareTrigger methods of derived camera classes.
+        """
+        eventLog.logEvent('StartAq', '')
+    
     def StartExposure(self):
         """
         Starts an acquisition.
+
+        Must call _log_exposure_start to log the start of the acquisition.
 
         Returns
         -------
@@ -699,6 +715,7 @@ class Camera(object):
             Success (0) or failure (-1) of initialization.
         """
         raise NotImplementedError('Implemented in derived class.')
+    
 
     def StopAq(self):
         """

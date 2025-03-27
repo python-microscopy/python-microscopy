@@ -393,6 +393,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator
               mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none']),
               mde.BoolParam('Analysis.FitBackground', 'Fit Background', True),
               #mde.FloatListParam('chroma.ChannelRatios', 'Channel Ratios', [0.7]),
+              mde.IntParam('Analysis.ROISize', u'ROI half size', 7),
               ]
               
 DESCRIPTION = 'Ratiometric multi-colour 3D PSF fit (large shifts).'

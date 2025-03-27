@@ -228,7 +228,8 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator
               #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none']),
-              mde.BoolParam('Analysis.FitBackground', 'Fit Background', True),]
+              mde.BoolParam('Analysis.FitBackground', 'Fit Background', True),
+              mde.IntParam('Analysis.ROISize', u'ROI half size', 7),]
               
 DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF.'
 LONG_DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF. Should work for any 3D engineered PSF, with the default parameterisation optimised for astigmatism.'

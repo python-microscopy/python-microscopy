@@ -301,7 +301,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             xs, ys = self.pixel_to_screen_coordinates(y,z)
             ws, hs = (h*self.scale, d*self.scale*self.aspect)
             
-        dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
+        dc.DrawRectangle(int(xs - 0.5*ws),int( ys - 0.5*hs),int( ws),int(hs))
         
     def draw_cross_pixel_coords(self, dc, x, y, z, w, h, d):
         """Draws a cross on a given device contect (dc) given 3D co-ordinates
@@ -322,8 +322,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             ws, hs = (h*self.scale, d*self.scale*self.aspect)
             
         #dc.DrawRectangle(xs - 0.5*ws, ys - 0.5*hs, ws,hs)
-        dc.DrawLine(xs - 0.5*ws, ys-0.5*hs, xs + 0.5*ws, ys+0.5*hs)
-        dc.DrawLine(xs - 0.5*ws, ys+0.5*hs, xs + 0.5*ws, ys-0.5*hs)
+        dc.DrawLine(int(xs - 0.5*ws),int( ys-0.5*hs),int( xs + 0.5*ws),int( ys+0.5*hs))
+        dc.DrawLine(int(xs - 0.5*ws),int( ys+0.5*hs),int( xs + 0.5*ws),int( ys-0.5*hs))
         
 
     @property
@@ -347,15 +347,15 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             hx, hy = self.pixel_to_screen_coordinates(hx, hy)
             
             if self.do.selection.mode == selection.SELECTION_RECTANGLE:
-                dc.DrawRectangle(lx,ly, (hx-lx),(hy-ly))
+                dc.DrawRectangle(int(lx),int(ly),int( (hx-lx)),int((hy-ly)))
                 
             elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
                 if len(self.do.selection.trace) > 2:
                     x, y = numpy.array(self.do.selection.trace).T
                     pts = numpy.vstack(self.pixel_to_screen_coordinates(x, y)).T
-                    dc.DrawSpline(pts)
+                    dc.DrawSpline(pts.astype('i'))
             elif self.do.selection.width == 1:
-                dc.DrawLine(lx,ly, hx,hy)
+                dc.DrawLine(int(lx),int(ly),int( hx),int(hy))
             else:
                 lx, ly, hx, hy = self.do.GetSliceSelection()
                 dx = hx - lx
@@ -377,9 +377,9 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 hx, hy = self.pixel_to_screen_coordinates(hx, hy)
                
 
-                dc.DrawLine(lx, ly, hx, hy)
-                dc.DrawPolygon([(x_0, y_0), (x_1, y_1), (x_2, y_2), (x_3, y_3)])
-                    
+                dc.DrawLine(int(lx),int( ly),int( hx),int( hy))
+                dc.DrawPolygon([(int(x_0), int(y_0)), (int(x_1), int(y_1)), (int(x_2), int(y_2)), (int(x_3), int(y_3))])
+                
             dc.SetPen(wx.NullPen)
             dc.SetBrush(wx.NullBrush)
                 
@@ -408,7 +408,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             for c, colI in zip(contours, colInds):
                 xc, yc = c.T
                 dc.SetPen(self.labelPens[int(colI)])
-                dc.DrawSpline(numpy.vstack(self.pixel_to_screen_coordinates(xc, yc)).T)
+                dc.DrawSpline(numpy.vstack(self.pixel_to_screen_coordinates(xc, yc)).T.astype('i'))
                 
 
     @property
@@ -454,7 +454,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         
         im2 = wx_compat.BitmapFromImage(im)
-        dc.DrawBitmap(im2,-sc2/2,-sc2/2)
+        dc.DrawBitmap(im2,int(-sc2/2),int(-sc2/2))
         
         self._draw_selection(self, dc) 
         self._draw_contours(self, dc)
@@ -629,7 +629,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
             sc = pow(2.0,(self.do.scale))
             s = self._calc_im_size()
-            self.SetVirtualSize(wx.Size(s[0]*sc,s[1]*sc))
+            self.SetVirtualSize(wx.Size(int(s[0]*sc),int(s[1]*sc)))
 
             if (self._slice != self.do.slice) or (self._sc != sc):
                 #print('recentering')
@@ -996,7 +996,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             self._map_colour(seg, gain, offset, cmap, ima)
 #        
         img = wx_compat.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
-        img.Rescale(img.GetWidth()*sc2,img.GetHeight()*sc2*self.aspect)
+        img.Rescale(int(img.GetWidth()*sc2),int(img.GetHeight()*sc2*self.aspect))
         self._oldIm = img
         self._oldImSig = sig
         return img

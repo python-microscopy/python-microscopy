@@ -24,12 +24,12 @@
 import numpy as np
 
 def bareDNA(kbp, steplength=10):
-    return wormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75)
+    return WormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75)
 
 def fibre30nm(kbp, steplength=10):
-    return wormlikeChain(kbp, steplength, lengthPerKbp=10, persistLength=150)
+    return WormlikeChain(kbp, steplength, lengthPerKbp=10, persistLength=150)
 
-class wormlikeChain:   
+class WormlikeChain:   
       
     def __init__(self, kbp, steplength=10, lengthPerKbp=10, persistLength=150):
         numsteps = round(lengthPerKbp*kbp/steplength)

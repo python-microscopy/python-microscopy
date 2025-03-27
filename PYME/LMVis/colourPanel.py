@@ -172,15 +172,22 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.InsertColumn(3, 'dx')
         self.lFluorSpecies.InsertColumn(4, 'dy')
         self.lFluorSpecies.InsertColumn(5, 'dz')
-        self.lFluorSpecies.makeColumnEditable(1)
-        self.lFluorSpecies.makeColumnEditable(3)
-        self.lFluorSpecies.makeColumnEditable(4)
-        self.lFluorSpecies.makeColumnEditable(5)
+
+        try:
+            # in newer versions of wxPython this method is gone (all columns are editable)
+            # TODO - find which version this changed in (can we drop this completely?)
+            # TODO - find a way to make some of the columns not editable (i.e. columns 0 and 2)
+            self.lFluorSpecies.makeColumnEditable(1)
+            self.lFluorSpecies.makeColumnEditable(3)
+            self.lFluorSpecies.makeColumnEditable(4)
+            self.lFluorSpecies.makeColumnEditable(5)
+        except AttributeError:
+            pass
 
         for key, value in self.pipeline.colour_mapper.species_ratios.items():
             ind = self.lFluorSpecies.InsertItem(UI_MAXSIZE, key)
             self.lFluorSpecies.SetItem(ind,1, '%3.2f' % value)
-            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value))).astype('i')[:3])))
             
             
 
@@ -427,7 +434,7 @@ class colourPanel(wx.Panel):
 
             ratio = self.pipeline.colour_mapper.species_ratios[key]
             self.lFluorSpecies.SetStringItem(ind, 1, '%3.3f' % ratio)
-            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128 * numpy.array(cm.jet_r(ratio)))[:3])))
+            self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128 * numpy.array(cm.jet_r(ratio))).astype('i')[:3])))
             
             num_dyes = sum(self.pipeline.colourFilter._index(key))
 
@@ -460,7 +467,7 @@ class specAddDialog(wx.Dialog):
 
         sizer2.Add(self.tVal, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(sizer2, 0, wx.ALL, 5)
 
 
         btSizer = wx.StdDialogButtonSizer()
@@ -476,7 +483,7 @@ class specAddDialog(wx.Dialog):
 
         btSizer.Realize()
 
-        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)

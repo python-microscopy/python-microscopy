@@ -25,8 +25,8 @@ def rps(img):
         img = img / np.median(abs(img - img.mean())) # intensity invariant
     mag = abs(fft2(img - np.mean(img)))
     power = mag**2
-    radii = np.floor(np.sqrt(radii2)).astype(np.int) + 1
-    labels = np.arange(2, np.floor(maxwidth)).astype(np.int).tolist() # skip DC component
+    radii = np.floor(np.sqrt(radii2)).astype(int) + 1
+    labels = np.arange(2, np.floor(maxwidth)).astype(int).tolist() # skip DC component
     if len(labels) > 0:
         magsum = nd_sum(mag, radii, labels)
         powersum = nd_sum(power, radii, labels)

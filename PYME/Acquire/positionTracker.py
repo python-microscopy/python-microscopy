@@ -107,7 +107,7 @@ class PositionTracker:
         self.im = np.zeros([nPixels, nPixels])
         self.ps = viewsize/nPixels
 
-        time1.WantNotification.append(self.Tick)
+        time1.register_callback(self.Tick)
 
     def Tick(self):
         positions  = np.zeros(len(self.scope.piezos) + 2)

@@ -8,3 +8,16 @@ void main() {
     if (vis < .5) discard;
     gl_FragColor = gl_Color*gl_Color*gl_Color;
 }
+
+#version 330 core
+
+in float vis;
+in vec4 FrontColor;
+
+layout(location = 0) out vec4 FragColor;
+
+void main() {
+    if (vis < .5) discard;
+
+    FragColor = FrontColor*FrontColor*FrontColor;
+}

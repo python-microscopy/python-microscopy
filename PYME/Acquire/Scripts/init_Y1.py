@@ -142,7 +142,7 @@ from PYME.Acquire import positionTracker
 pt = positionTracker.PositionTracker(scope, time1)
 pv = positionTracker.TrackerPanel(MainFrame, pt)
 MainFrame.AddPage(page=pv, select=False, caption='Track')
-time1.WantNotification.append(pv.draw)
+time1.register_callback(pv.draw)
 """, 'Position Tracker')
 
 #splitter
@@ -162,9 +162,9 @@ scope.lightpath = NikonTi.LightPath()
 
 TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
 toolPanels.append((TiPanel, 'Nikon Ti'))
-#time1.WantNotification.append(TiPanel.SetSelections)
-time1.WantNotification.append(scope.dichroic.Poll)
-time1.WantNotification.append(scope.lightpath.Poll)
+#time1.register_callback(TiPanel.SetSelections)
+time1.register_callback(scope.dichroic.Poll)
+time1.register_callback(scope.lightpath.Poll)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
@@ -216,13 +216,13 @@ scope.lasers.append(scope.arclamp)
 InitGUI("""
 from PYME.Acquire.ui import lasersliders
 lsf = lasersliders.LaserSliders(toolPanel, scope.state)
-time1.WantNotification.append(lsf.update)
+time1.register_callback(lsf.update)
 #lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
 
 if 'lasers' in dir(scope):
     lcf = lasersliders.LaserToggles(toolPanel, scope.state)
-    time1.WantNotification.append(lcf.update)
+    time1.register_callback(lcf.update)
     camPanels.append((lcf, 'Laser Control'))
 """, 'Laser Sliders')
 

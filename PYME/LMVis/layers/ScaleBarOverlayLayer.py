@@ -21,6 +21,7 @@
 from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+import numpy as np
 
 
 class ScaleBarOverlayLayer(OverlayLayer):
@@ -43,6 +44,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
     def set_scale_bar_depth(self, depth):
         self._scale_bar_depth = depth
 
+
     def render(self, gl_canvas):
         """
 
@@ -61,8 +63,10 @@ class ScaleBarOverlayLayer(OverlayLayer):
         if not self.visible:
             return
         
-        self._clear_shader_clipping(gl_canvas)
-        with self.get_shader_program(gl_canvas):
+        core_profile = gl_canvas.core_profile
+        
+        with self.get_shader_program(gl_canvas) as sp:
+            sp.clear_shader_clipping()
             if self._scale_bar_length:
                 view_size_x = gl_canvas.xmax - gl_canvas.xmin
                 view_size_y = gl_canvas.ymax - gl_canvas.ymin
@@ -72,12 +76,22 @@ class ScaleBarOverlayLayer(OverlayLayer):
                 sb_ur_y = -gl_canvas.view.translation[1] + gl_canvas.ymin + self.get_offset()[1] * view_size_y / gl_canvas.Size[1]
                 sb_depth = self._scale_bar_depth * view_size_y / gl_canvas.Size[1]
 
-                glDisable(GL_LIGHTING)
+                #glDisable(GL_LIGHTING)
 
-                glColor3fv(self._color)
-                glBegin(GL_POLYGON)
-                glVertex3f(sb_ur_x, sb_ur_y, 0)
-                glVertex3f(sb_ur_x, sb_ur_y + sb_depth, 0)
-                glVertex3f(sb_ur_x - self._scale_bar_length, sb_ur_y + sb_depth, 0)
-                glVertex3f(sb_ur_x - self._scale_bar_length, sb_ur_y, 0)
-                glEnd()
+                self._verts = self._gen_rect_triangles(sb_ur_x - self._scale_bar_length, sb_ur_y, self._scale_bar_length, sb_depth)
+
+                #v = np.hstack([self._verts, np.ones((6, 1), 'f')])
+                #print(self._verts, np.dot(np.array(gl_canvas.mvp), v.T))
+                #print(self._verts.shape, self._verts.dtype)
+                col = np.ones(4, 'f')
+                col[:3] = self._color
+                self._cols =np.tile(col, 6)
+
+                if core_profile:
+                    sp.set_modelviewprojectionmatrix(np.array(gl_canvas.mvp))
+
+                self._bind_data('scalebar', self._verts, 0*self._verts, self._cols, sp, core_profile=core_profile)
+
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+                glDrawArrays(GL_TRIANGLES, 0, 6)
+

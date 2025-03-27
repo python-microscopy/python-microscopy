@@ -52,7 +52,7 @@ def pifoc(scope):
 #
 #         fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), scope.frameWrangler.currentFrame.sum(0))
 #
-#     MainFrame.time1.WantNotification.append(refr_profile)
+#     MainFrame.time1.register_callback(refr_profile)
 
 @init_gui('Focus Lock')
 def focus_lock(MainFrame, scope):
@@ -73,7 +73,7 @@ def focus_lock(MainFrame, scope):
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
-    MainFrame.time1.WantNotification.append(panel.refresh)
+    MainFrame.time1.register_callback(panel.refresh)
     # we don't benefit at all from multiple frames piling up in a polling interval, so try and match the camera cycle
     # Can't get frame rate higher than ~297 Hz for the current ROI, so default to just under that
     scope.state['Camera.IntegrationTime'] = 0.0035
@@ -88,7 +88,7 @@ def focus_lock(MainFrame, scope):
     #         profile = profile - scope.focus_lock.subtraction_profile
     #     fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), profile)
     #
-    # MainFrame.time1.WantNotification.append(refresh_profile)
+    # MainFrame.time1.register_callback(refresh_profile)
 
     # # display setpoint / error over time
     n = 500
@@ -107,7 +107,7 @@ def focus_lock(MainFrame, scope):
         # time[-1] = scope.focus_lock._last_time
         position_plot.SetData(time, position)
 
-    MainFrame.time1.WantNotification.append(refresh_position)
+    MainFrame.time1.register_callback(refresh_position)
 
     # panel to log focus to file at set intervals
     focus_logger = FocusLogger(scope.focus_lock.GetPeakPosition)

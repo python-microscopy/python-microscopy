@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 
 class AndorBase(SDK3Camera, CameraMapMixin):
     numpy_frames=1
+    supports_software_trigger = True
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
 
@@ -449,6 +450,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
     
     def FireSoftwareTrigger(self):
         self.SoftwareTrigger()
+        self._log_exposure_start()
     
     @property
     def contMode(self):
@@ -552,7 +554,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
 
 
     def StartExposure(self):
-        #make sure no acquisiton is running
+        #make sure no acquisition is running
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
@@ -563,7 +565,7 @@ class AndorBase(SDK3Camera, CameraMapMixin):
         self.hardware_overflowed = False
         self._n_timeouts = 0
         #logger.debug('StartAq')
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         self._flush()
         self.InitBuffers()
         self.AcquisitionStart()

@@ -256,7 +256,7 @@ class ScaleBarOverlay(Overlay):
             else:
                 s = u'%d nm' % int(self.length_nm)
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, x0 + (sbLen - w)/2, y1 + 7)
+            dc.DrawText(s, int(x0 + (sbLen - w)/2), int(y1 + 7))
 
 class CrosshairsOverlay(Overlay):
     def __call__(self, vp, dc):
@@ -276,8 +276,8 @@ class CrosshairsOverlay(Overlay):
         
             
             xc, yc = vp.pixel_to_screen_coordinates(lx, ly)            
-            dc.DrawLine(0, yc, sX, yc)
-            dc.DrawLine(xc, 0, xc, sY)
+            dc.DrawLine(0, int(yc), int(sX), int(yc))
+            dc.DrawLine(int(xc), 0, int(xc), int(sY))
             
             dc.SetPen(wx.NullPen)
 

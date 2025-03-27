@@ -39,13 +39,13 @@ class ImageEngine(BaseEngine):
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
             #glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
             #glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
+            #glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, image.shape[0], image.shape[1], 0, GL_RED, GL_FLOAT, image.astype('f4'))
 
     def set_lut(self, lut):
@@ -71,15 +71,18 @@ class ImageEngine(BaseEngine):
             glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
             glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
+            #glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
             glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, lut_array.shape[0], 0, GL_RGBA, GL_FLOAT,
                          lut_array.astype('f4'))
 
-
+    
     def render(self, gl_canvas, layer):
-        self._set_shader_clipping(gl_canvas)
-
         with self.get_shader_program(gl_canvas) as sp:
+            sp.set_clipping(gl_canvas.view.clipping.squeeze(), gl_canvas.view.clip_plane_matrix)
+            
+            if gl_canvas.core_profile:
+                sp.set_modelviewprojectionmatrix(gl_canvas.mvp)
+
             self.set_lut(layer.colour_map)
             glActiveTexture(GL_TEXTURE1)
             glBindTexture(GL_TEXTURE_1D, self._lut_id) # bind to our texture, has id of 1 */
@@ -88,31 +91,58 @@ class ImageEngine(BaseEngine):
             self.set_texture(layer._im)
             glUniform2f(sp.get_uniform_location("clim"), *layer.get_color_limit())
             
-            glEnable(GL_TEXTURE_2D) # enable texture mapping */
+            if not gl_canvas.core_profile:
+                glEnable(GL_TEXTURE_2D) # enable texture mapping */
+
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self._texture_id) # bind to our texture, has id of 1 */
             glUniform1i(sp.get_uniform_location("im_sampler"), 0)
             
             x0, y0, x1, y1 = layer._bounds
 
-            glDisable(GL_TEXTURE_GEN_S)
-            glDisable(GL_TEXTURE_GEN_T)
-            glDisable(GL_TEXTURE_GEN_R)
+            if not gl_canvas.core_profile:
+                glDisable(GL_TEXTURE_GEN_S)
+                glDisable(GL_TEXTURE_GEN_T)
+                glDisable(GL_TEXTURE_GEN_R)
+
+            if gl_canvas.core_profile:
+                verts = self._gen_rect_triangles(x0, y0, x1-x0, y1-y0, z=layer.z_nm)
+                tex_coords = self._gen_rect_texture_coords()
+
+                vao = glGenVertexArrays(1)
+                vbo = glGenBuffers(2)
+                glBindVertexArray(vao)
+                glBindBuffer(GL_ARRAY_BUFFER, vbo[0])
+                glBufferData(GL_ARRAY_BUFFER, verts.nbytes, verts, GL_STATIC_DRAW)
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, None)
+                glEnableVertexAttribArray(0)
+                glBindBuffer(GL_ARRAY_BUFFER, vbo[1])
+                glBufferData(GL_ARRAY_BUFFER, tex_coords.nbytes, tex_coords, GL_STATIC_DRAW)
+                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, None)
+                glEnableVertexAttribArray(1)
+
+                glDrawArrays(GL_TRIANGLES, 0, len(verts))
+                glBindBuffer(GL_ARRAY_BUFFER, 0)
+                glBindVertexArray(0)
+                glDeleteVertexArrays(1, [vao, ])
+                glDeleteBuffers(2, vbo)
+
+            else:
+                #glColor3f(1.,0.,0.)
+                glColor4f(1., 1., 1., 1.)
+                glBegin(GL_QUADS)
+                glTexCoord2f(0., 0.) # lower left corner of image */
+                glVertex3f(x0, y0, layer.z_nm)
+                glTexCoord2f(1., 0.) # lower right corner of image */
+                glVertex3f(x1, y0, layer.z_nm)
+                glTexCoord2f(1.0, 1.0) # upper right corner of image */
+                glVertex3f(x1, y1, layer.z_nm)
+                glTexCoord2f(0.0, 1.0) # upper left corner of image */
+                glVertex3f(x0, y1, layer.z_nm)
+                glEnd()
     
-            #glColor3f(1.,0.,0.)
-            glColor4f(1., 1., 1., 1.)
-            glBegin(GL_QUADS)
-            glTexCoord2f(0., 0.) # lower left corner of image */
-            glVertex3f(x0, y0, layer.z_nm)
-            glTexCoord2f(1., 0.) # lower right corner of image */
-            glVertex3f(x1, y0, layer.z_nm)
-            glTexCoord2f(1.0, 1.0) # upper right corner of image */
-            glVertex3f(x1, y1, layer.z_nm)
-            glTexCoord2f(0.0, 1.0) # upper left corner of image */
-            glVertex3f(x0, y1, layer.z_nm)
-            glEnd()
-    
-            glDisable(GL_TEXTURE_2D)
+            if not gl_canvas.core_profile:
+                glDisable(GL_TEXTURE_2D)
                 
 
 

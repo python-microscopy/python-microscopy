@@ -33,7 +33,7 @@ import warnings
 class GaussTexture:
 
     # specific texture id of this texture
-    _texture_id = 0
+    _texture_id = None
 
     def __init__(self):
         pass
@@ -50,14 +50,18 @@ class GaussTexture:
 
         """
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self._texture_id)
+        if self._texture_id is None:
+            self.load_texture()
+        else:
+            glBindTexture(GL_TEXTURE_2D, self._texture_id)
+
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glUniform1i(uniform_location, 0)
 
-    def load_texture(self, size=31, sigma=5, normalize_sum=False):
+    def create_texture(self, size=31, sigma=5, normalize_sum=False):
         """
         This method create a gauss kernel texture and stores it on the graphics card.
         The max amplitude of the kernel is 1.
@@ -78,10 +82,15 @@ class GaussTexture:
 
         if normalize_sum:
             data /= data.sum()
-        glGenTextures(1, self._texture_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
 
+        self._data = data
         return size_correction_factor
+
+    def load_texture(self):
+        size = self._data.shape[0]
+        self._texture_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, self._texture_id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, size, size, 0, GL_RED, GL_FLOAT, np.float16(self._data))
 
     def delete_texture(self):
         glDeleteTextures(1, self._texture_id)
@@ -100,25 +109,12 @@ class PointSpriteShaderProgram(GLProgram):
     #    This attribute holds an instance of a texture class
     _texture = None
     #    This is the uniform location to pass to the fragment shader to locate the texture
-    _uniform_tex_2d_id = 0
+    #_uniform_tex_2d_id = 0
 
-    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
-        GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
-        shader_program = ShaderProgram(shader_path)
-        #shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
-        shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
-        shader_program.link()
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='pointsprites_vs.glsl', fs_filename='pointsprites_fs.glsl', **kwargs)
         self._texture = GaussTexture()
-        self.size_factor = self._texture.load_texture()
-        self.set_shader_program(shader_program)
-        self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
-
-        self.xmin, self.xmax = clipping['x']
-        self.ymin, self.ymax = clipping['y']
-        self.zmin, self.zmax = clipping['z']
-        self.vmin, self.vmax = clipping['v']
+        self.size_factor = self._texture.create_texture()
         
 
     def get_size_factor(self):
@@ -128,22 +124,19 @@ class PointSpriteShaderProgram(GLProgram):
     def __enter__(self):
         self._old_prog = glGetInteger(GL_CURRENT_PROGRAM)
         self.get_shader_program().use()
-        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
-        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
-        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
-        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
-        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
-        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
-        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
-        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
-        glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
-        glEnable(GL_POINT_SPRITE)
+        self.set_clipping_uniforms()
+        
+        try:
+            glEnable(GL_POINT_SPRITE)
+        except:
+            # deprecated for core profile
+            pass
         glEnable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         #glBlendEquation(GL_FUNC_ADD)
-        self._texture.enable_texture_2d()
+        #self._texture.enable_texture_2d()
         self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
 
         return self
@@ -152,9 +145,19 @@ class PointSpriteShaderProgram(GLProgram):
         glUseProgram(self._old_prog)
         glDisable(GL_BLEND)
         glDisable(GL_PROGRAM_POINT_SIZE)
-        glDisable(GL_POINT_SPRITE)
+        try:
+            glDisable(GL_POINT_SPRITE)
+        except:
+            # deprecated for core profile
+            pass
         glEnable(GL_DEPTH_TEST)
 
     def __del__(self):
         # self._texture.delete_texture()
         pass
+
+class BigPointSpriteShaderProgram(PointSpriteShaderProgram):
+    def __init__(self, **kwargs):
+        GLProgram.__init__(self, vs_filename='default_vs.glsl', fs_filename='bigpointsprites_fs.glsl', gs_filename='bigpoints_gs.glsl', **kwargs)
+        self._texture = GaussTexture()
+        self.size_factor = self._texture.create_texture()

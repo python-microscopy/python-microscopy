@@ -26,125 +26,21 @@ This contains the bulk of the GUI code for the main window of PYMEAcquire.
 #import matplotlib #import before we start logging to avoid log messages in debug
 
 import os
-import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-from PYME.Acquire import microscope
-from PYME.Acquire import protocol
-
-from PYME.IO import MetaDataHandler
-import six
-
 from PYME.util import webframework
 import threading
 
-from PYME.Acquire import event_loop
 #from PYME.Acquire import webui
 
-class PYMEAcquireServer(event_loop.EventLoop):
-    def __init__(self, options = None):
-        event_loop.EventLoop.__init__(self)
-        self.options = options
+from PYME.Acquire.acquirebase import PYMEAcquireBase
 
-        self.snapNum = 0
-        
-        self.MainFrame = self #reference to this window for use in scripts etc...
-        protocol.MainFrame = self
-
-        self.initDone = False
-        self.postInit = [] #for protocol compat
-        
-        self.scope = microscope.microscope()
-
-        self.roi_on = False
-        self.bin_on = False
-        
-        #functions to call in each polling iteration
-        # Replaces time1 in GUI version
-        self._want_loop_notification = []
-        
-        self._is_running = False
-        
-        # variables to facilitate long-polling for frame updates
-        self._current_frame = None
-        self._new_frame_condition = threading.Condition()
-        
-        self._state_valid = False
-        self._state_updated_condition = threading.Condition()
-        
-        self.scope.state.stateChanged.connect(self._on_scope_state_change)
-        
-        
-        
-        
-    def main_loop(self):
-        """
-        Infinite loop which polls hardware
-        
-        Returns
-        -------
-
-        """
-        #self._is_running = True
-
-        logger.debug('Starting initialisation')
-        self._initialize_hardware()
-        #poll to see if the init script has run
-        self._wait_for_init_complete()
-        
-        
-        logger.debug('Starting post-init')
-
-        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
-            self._start_polling_camera()
-
-        self._want_loop_notification.append(self.scope.actions.Tick)
-        self.initDone = True
-
-        logger.debug('Finished post-init')
-        
-        try:
-            logger.debug('Starting event loop')
-            self.loop_forever()
-        except:
-            logger.exception('Exception in event loop')
-        finally:
-            logger.debug('Shutting down')
-            self._shutdown()
-
-
-    def _initialize_hardware(self):
-        """
-        Launch microscope hardware initialization and start polling for completion
-
-        """
-        #this spawns a new thread to run the initialization script
-        self.scope.initialize(self.options.initFile, self.__dict__)
-
-        logger.debug('Init run, waiting on background threads')
-
-    def _wait_for_init_complete(self):
-        self.scope.wait_for_init()
-        logger.debug('Backround initialization done')
-        
-    def _on_frame_group(self, *args, **kwargs):
-        #logger.debug('_on_frame_group')
-        with self._new_frame_condition:
-            self._current_frame = self.scope.frameWrangler.currentFrame
-            #logger.debug(repr(self.scope.frameWrangler.currentFrame))
-            self._new_frame_condition.notify()
-            
-    def _on_scope_state_change(self, *args, **kwargs):
-        with self._state_updated_condition:
-            self._state_valid = False
-            self._state_updated_condition.notify()
-    
-    def _start_polling_camera(self):
-        self.scope.startFrameWrangler(event_loop=self)
-        self.scope.frameWrangler.onFrameGroup.connect(self._on_frame_group)
+class PYMEAcquireServerMixin(object):
+    def __init__(self, *args, **kwargs):
+       pass
         
     @webframework.register_endpoint('/get_frame_pzf', mimetype='image/pzf')
     def get_frame_pzf(self):
@@ -286,46 +182,15 @@ class PYMEAcquireServer(event_loop.EventLoop):
         
         return 'OK' #TODO - check for errors
 
-    def OnMCamSetPixelSize(self, event):
-        from PYME.Acquire.ui import voxelSizeDialog
-
-        dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
-        dlg.ShowModal()
-
-
-
-    def _shutdown(self):
-        self.scope.frameWrangler.stop()
-        
-        if 'cameras' in dir(self.scope):
-            for c in self.scope.cameras.values():
-                c.Shutdown()
-        else:
-            self.scope.cam.Shutdown()
-            
-        for f in self.scope.CleanupFunctions:
-            f()
-            
-        logger.info('All cleanup functions called')
-        
-        time.sleep(1)
-        
-        import threading
-        msg = 'Remaining Threads:\n'
-        for t in threading.enumerate():
-            if six.PY3:
-                msg += '%s, %s\n' % (t.name, t._target)
-            else:
-                msg += '%s, %s\n' % (t, t._Thread__target)
-            
-        logger.info(msg)
-
 
 from PYME.Acquire import webui
 from PYME.Acquire import SpoolController
-class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
-    def __init__(self, options, port, bind_addr=''):
-        PYMEAcquireServer.__init__(self, options)
+class AcquireHTTPServerMixin(webframework.APIHTTPServer, PYMEAcquireServerMixin):
+    def __init__(self, port, bind_addr=None):
+        PYMEAcquireServerMixin.__init__(self)
+
+        if bind_addr is None:
+            bind_addr = 'localhost' # bind to localhost by default in an attempt to make this safer
         
         server_address = (bind_addr, port)
         webframework.APIHTTPServer.__init__(self, server_address)
@@ -380,11 +245,17 @@ class AcquireHTTPServer(webframework.APIHTTPServer, PYMEAcquireServer):
         try:
             self.serve_forever()
         finally:
-            self.stop()
+            self.evt_loop.stop()
             #logger.info('Shutting down ...')
             #self.distributor.shutdown()
             logger.info('Closing server ...')
             self.server_close()
+
+class AcquireHTTPServer(PYMEAcquireBase, AcquireHTTPServerMixin):
+    """Server without wx GUI"""
+    def __init__(self, options, port, bind_addr=None, evt_loop=None):
+        PYMEAcquireBase.__init__(self, options, evt_loop=evt_loop)
+        AcquireHTTPServerMixin.__init__(self, port, bind_addr)
 
 
 def main():

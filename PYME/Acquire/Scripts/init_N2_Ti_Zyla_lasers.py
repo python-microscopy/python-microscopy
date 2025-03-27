@@ -93,9 +93,9 @@ scope.lightpath = NikonTi.LightPath()
 
 TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
 toolPanels.append((TiPanel, 'Nikon Ti'))
-#time1.WantNotification.append(TiPanel.SetSelections)
-time1.WantNotification.append(scope.dichroic.Poll)
-time1.WantNotification.append(scope.lightpath.Poll)
+#time1.register_callback(TiPanel.SetSelections)
+time1.register_callback(scope.dichroic.Poll)
+time1.register_callback(scope.lightpath.Poll)
 
 MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
 MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
@@ -104,7 +104,7 @@ MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
 InitGUI('''
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0], scope=scope)
-time1.WantNotification.append(fk.refresh)
+time1.register_callback(fk.refresh)
 ''')
 
 #from PYME.Acquire.Hardware import frZStage
@@ -178,14 +178,14 @@ InitGUI('''
 if 'lasers'in dir(scope):
     from PYME.Acquire.Hardware import LaserControlFrame
     lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-    time1.WantNotification.append(lcf.refresh)
+    time1.register_callback(lcf.refresh)
     toolPanels.append((lcf, 'Laser Control'))
 ''')
 
 InitGUI('''
 from PYME.Acquire import lasersliders
 lsf = lasersliders.LaserSliders(toolPanel, scope.lasers)
-time1.WantNotification.append(lsf.update)
+time1.register_callback(lsf.update)
 #lsf.update()
 camPanels.append((lsf, 'Laser Powers'))
 ''')

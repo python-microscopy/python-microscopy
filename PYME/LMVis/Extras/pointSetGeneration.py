@@ -161,7 +161,7 @@ There should be no need to modify this from the default and it is accordingly no
         # import pylab
         import matplotlib.pyplot as plt
         
-        #wc = wormlike2.wormlikeChain(100)
+        #wc = wormlike2.WormlikeChain(100)
         
         pipeline = self.visFr.pipeline
         pipeline.filename='Simulation'
@@ -190,26 +190,26 @@ There should be no need to modify this from the default and it is accordingly no
             pipeline.imageBounds = self.source.get_bounds()
         except AttributeError:
             pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
+
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
+        ds.mdh = NestedClassMDHandler()
+        ds.mdh['Camera.ElectronsPerCount'] = 1
+        ds.mdh['Camera.TrueEMGain'] = 1
+        ds.mdh['Camera.CycleTime'] = 1
+        ds.mdh['voxelsize.x'] = .110
+        # some info about the parameters
+        ds.mdh['GeneratedPoints.MeanIntensity'] = self.meanIntensity
+        ds.mdh['GeneratedPoints.MeanDuration'] = self.meanDuration
+        ds.mdh['GeneratedPoints.MeanEventNumber'] = self.meanEventNumber
+        ds.mdh['GeneratedPoints.BackgroundIntensity'] = self.backgroundIntensity
+        ds.mdh['GeneratedPoints.ScaleFactor'] = self.scaleFactor
+        ds.mdh['GeneratedPoints.MeanTime'] = self.meanTime
+        ds.mdh['GeneratedPoints.Mode'] = self.mode
+        # the source info
+        self.source.genMetaData(ds.mdh)
             
         pipeline.addDataSource('Generated Points', ds)
         pipeline.selectDataSource('Generated Points')
-
-        from PYME.IO.MetaDataHandler import NestedClassMDHandler
-        pipeline.mdh = NestedClassMDHandler()
-        pipeline.mdh['Camera.ElectronsPerCount'] = 1
-        pipeline.mdh['Camera.TrueEMGain'] = 1
-        pipeline.mdh['Camera.CycleTime'] = 1
-        pipeline.mdh['voxelsize.x'] = .110
-        # some info about the parameters
-        pipeline.mdh['GeneratedPoints.MeanIntensity'] = self.meanIntensity
-        pipeline.mdh['GeneratedPoints.MeanDuration'] = self.meanDuration
-        pipeline.mdh['GeneratedPoints.MeanEventNumber'] = self.meanEventNumber
-        pipeline.mdh['GeneratedPoints.BackgroundIntensity'] = self.backgroundIntensity
-        pipeline.mdh['GeneratedPoints.ScaleFactor'] = self.scaleFactor
-        pipeline.mdh['GeneratedPoints.MeanTime'] = self.meanTime
-        pipeline.mdh['GeneratedPoints.Mode'] = self.mode
-        # the source info
-        self.source.genMetaData(pipeline.mdh)
 
         try:
             pipeline.filterKeys.pop('sig')

@@ -23,16 +23,16 @@
 import numpy as np
 
 def bareDNA(kbp, steplength=10):
-    return wormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75.0)
+    return WormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75.0)
 
 def fibre30nm(kbp, steplength=10):
-    return wormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
+    return WormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
 
 def fibre10nm(kbp, steplength=10):
-    return wormlikeChain(kbp, steplength, lengthPerKbp=57.0, persistLength=75.0)
+    return WormlikeChain(kbp, steplength, lengthPerKbp=57.0, persistLength=75.0)
     
 def wiglyFibre(length, persistLength, steplength=10):
-    return wormlikeChain(length, steplength, lengthPerKbp=1., persistLength=persistLength)
+    return WormlikeChain(length, steplength, lengthPerKbp=1., persistLength=persistLength)
 
 
 def _E(cos_theta, E0=1):
@@ -71,7 +71,7 @@ def get_k_for_exp_costheta(cos_theta):
     return np.interp(cos_theta, _e_ct_vals, _kvals)
         
 
-class wormlikeChain:         
+class WormlikeChain:         
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(np.round(lengthPerKbp*kbp/steplength))
 
@@ -123,7 +123,7 @@ class wormlikeChain:
         self.yp = np.cumsum(np.concatenate(([0], ys),0))
         self.zp = np.cumsum(np.concatenate(([0], zs),0))
 
-class wormlikeChain2D:
+class WormlikeChain2D:
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
         numsteps = int(np.round(lengthPerKbp * kbp / steplength))
 

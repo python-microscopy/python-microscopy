@@ -93,7 +93,7 @@ class PCO_Description(ctypes.Structure):
                 ("dwExtSyncFrequency", ctypes.wintypes.DWORD * 4),
                 ("dwGeneralCapsDESC3", ctypes.wintypes.DWORD),
                 ("dwGeneralCapsDESC4", ctypes.wintypes.DWORD),
-                ("ZzdwDummy", ctypes.wintypes.DWORD)]
+                ("ZzdwDummy", 40*ctypes.wintypes.DWORD)]
 class PCO_SC2_Hardware_DESC(ctypes.Structure):
     # _pack_ = 1
     _fields_ = [
@@ -1123,7 +1123,7 @@ def get_acquire_mode(handle):
     Returns
     -------
     mode : unsigned short int
-        Camera acquisiton mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
+        Camera acquisition mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
         PCO_ACQUIRE_EXTERNAL_MODULATE (2).
     """
     mode = ctypes.wintypes.WORD()
@@ -1144,7 +1144,7 @@ def set_acquire_mode(handle, mode):
     handle : ctypes.wintypes.HANDLE
         Unique pco. camera handle (pointer).
     mode : unsigned short int
-        Camera acquisiton mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
+        Camera acquisition mode. One of PCO_ACQUIRE_AUTO (0), PCO_ACQUIRE_EXTERNAL (1), 
         PCO_ACQUIRE_EXTERNAL_MODULATE (2).
     """
     check_status(sc2_cam.PCO_GetAcquireMode(handle, ctypes.wintypes.WORD(mode)))

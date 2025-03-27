@@ -151,8 +151,23 @@ AXES = np.stack([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], axis=1)
 
 def reconstruct_shell(modes, coeffs, azimuth, zenith):
     r = 0
+    # TODO save some compute by using a single call for + and - m modes
+    cache = {}
     for (m, n), c in zip(modes, coeffs):
-        r += (c * (r_sph_harm(m, n, azimuth, zenith))).astype(azimuth.dtype)
+        if m == 0:
+            r += c*sph_harm(m, n, azimuth, zenith).real
+        else:
+            k = (abs(m), n) # sph_harm returns both +m and -m as real and imag parts, make sure we don't evaluate twice
+            try:
+                s = cache[k]
+            except KeyError:
+                s = sph_harm(m,n,azimuth, zenith)
+                cache[k] = s
+
+            if m > 0:
+                r += (c * ((1. / np.sqrt(2) * (-1) ** m) *s.real)).astype(azimuth.dtype)
+            else:
+                r += (c * ((1. / np.sqrt(2) * (-1) ** m) *s.imag)).astype(azimuth.dtype)
 
     return r
 
@@ -211,7 +226,7 @@ def generate_icosahedron():
                         zip(np.zeros(5),idxs[::2],np.roll(idxs[::2],-1))])
     lower_cap = np.vstack([[v0,v2,v1] for v0,v1,v2 in 
                         zip(11*np.ones(5),np.roll(idxs[1::2],-1),idxs[1::2])])
-    faces = np.vstack([upper_cap, upper_middle_strip, lower_middle_strip, lower_cap]).astype(np.int)
+    faces = np.vstack([upper_cap, upper_middle_strip, lower_middle_strip, lower_cap]).astype(int)
     
     return azimuth, zenith, faces
 
@@ -270,7 +285,7 @@ def icosahedron_mesh(n_subdivision=1):
         f0 = np.vstack([faces[:,0], new_idxs[:,0], new_idxs[:,2]]).T
         f1 = np.vstack([faces[:,1], new_idxs[:,1], new_idxs[:,0]]).T
         f2 = np.vstack([faces[:,2], new_idxs[:,2], new_idxs[:,1]]).T
-        faces = np.vstack([f0,f1,f2,new_idxs]).astype(np.int)
+        faces = np.vstack([f0,f1,f2,new_idxs]).astype(int)
         
         # Append the new vertices to azimuth
         azimuth = np.hstack([azimuth, new_v[:,0]])
@@ -445,6 +460,10 @@ class ScaledShell(object):
 
     def get_fitted_shell(self, azimuth, zenith):
         r_scaled = reconstruct_shell(self.modes, self.coefficients, azimuth, zenith)
+
+        return self._to_cartesian(azimuth, zenith, r_scaled)
+    
+    def _to_cartesian(self, azimuth, zenith, r_scaled):
         x_scaled, y_scaled, z_scaled = coordinate_tools.spherical_to_cartesian(azimuth, zenith, r_scaled)
         # need to scale things "down" since they were scaled "up" in the fit
         # scaling_factors = 1. / self.scaling_factors
@@ -459,6 +478,7 @@ class ScaledShell(object):
 
         return x.reshape(x_scaled.shape) + self.x0, y.reshape(y_scaled.shape) + self.y0, z.reshape(
             z_scaled.shape) + self.z0
+
 
     def fit_shell(self, max_n_mode=3, max_iterations=2, tol_init=0.3):
         modes, coefficients, summed_residuals = sphere_expansion_clean(self.x_cs, self.y_cs, self.z_cs, max_n_mode,
@@ -590,9 +610,18 @@ class ScaledShell(object):
 
         # get scaled shell radius at those angles
         r_shell = reconstruct_shell(self.modes, self.coefficients, azimuth_qs, zenith_qs)
+        pts = self._to_cartesian(azimuth_qs, zenith_qs, r_shell)
+
+        #print(r_qs - r_shell)
 
         # return the (scaled space) difference
-        d = r_qs - r_shell
+        #d = r_qs - r_shell
+        d_ = pts - points
+
+        s = 2.0*(r_qs> r_shell) - 1.0
+        #print(s)
+
+        d = s*np.sqrt((d_*d_).sum(0))
         
         #scale distance TODO - actually scale to make slightly closer to being euclidean
         return d

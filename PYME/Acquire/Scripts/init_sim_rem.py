@@ -111,7 +111,7 @@ camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 #notebook1.AddPage(page=snrPan, select=False, caption='Image SNR')
 ##camPanels.append((snrPan, 'SNR etc ...'))
 ##f.Show()
-##time1.WantNotification.append(snrPan.ccdPan.draw)
+##time1.register_callback(snrPan.ccdPan.draw)
 #""")
 
 cm.join()
@@ -124,7 +124,7 @@ scope.lasers = [scope.l405, scope.l488]
 InitGUI("""
 from PYME.Acquire.Hardware import LaserControlFrame
 lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-time1.WantNotification.append(lcf.refresh)
+time1.register_callback(lcf.refresh)
 #lcf.Show()
 camPanels.append((lcf, 'Laser Control'))
 """)
@@ -142,7 +142,7 @@ ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
 InitGUI("""
 from PYME.Acquire.Hardware import focusKeys
 fk = focusKeys.FocusKeys(MainFrame, menuBar1, scope.piezos[0])
-time1.WantNotification.append(fk.refresh)
+time1.register_callback(fk.refresh)
 """)
 
 InitGUI("""

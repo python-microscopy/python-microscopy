@@ -80,12 +80,7 @@ class TilePanel(wx.Panel):
         
         self.SetSizerAndFit(vsizer)
         
-    def OnGo(self, event=None):
-        # run a triggered tile acquisition if the camera is capable
-        # FIXME - the hasattr test becomes problematic once we add FireSoftwareTrigger to our base camera class (to
-        # document API)
-        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
-        
+    def OnGo(self, event=None):        
         backend = 'file'
         if self.rbSpoolCluster.GetValue():
             backend = 'cluster'
@@ -101,13 +96,13 @@ class TilePanel(wx.Panel):
         
         self.scope.tiler = tiler.Tiler(self.scope, tile_dir = tile_dir,
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
-                                       trigger=trigger, backend=backend)
+                                       backend=backend)
         
         self.bStop.Enable()
         self.bGo.Disable()
         
         self.scope.tiler.on_stop.connect(self._on_stop)
-        self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.on_progress.connect(self._update)
         self.scope.tiler.start()
         
         
@@ -122,7 +117,7 @@ class TilePanel(wx.Panel):
         self.bGo.Enable()
         
         self.scope.tiler.on_stop.disconnect(self._on_stop)
-        self.scope.tiler.progress.disconnect(self._update)
+        self.scope.tiler.on_progress.disconnect(self._update)
         
         # FIXME - previous delay was 1e3, which seems more reasonable. Do we need a config option (or heuristic) here ?
         # assume this change was due to the time it takes to build a pyramid after tiling ends. Might ultimately be fixed when we revisit live tiling. 
@@ -221,7 +216,7 @@ class CircularTilePanel(TilePanel):
         self.bGo.Disable()
 
         self.scope.tiler.on_stop.connect(self._on_stop)
-        self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.on_progress.connect(self._update)
         self.scope.tiler.start()
 
 
@@ -301,7 +296,7 @@ class MultiwellTilePanel(TilePanel):
         self.bGo.Disable()
 
         # self.scope.tiler.on_stop.connect(self._on_stop)
-        # self.scope.tiler.progress.connect(self._update)
+        # self.scope.tiler.on_progress.connect(self._update)
         self.scope.tiler.start()
 
     def OnStop(self, event=None):

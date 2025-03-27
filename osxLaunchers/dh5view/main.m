@@ -7,17 +7,18 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <Python.h>
 
 int main(int argc, const char * argv[]) {
     printf("argc = %d\n", argc);
     for (int i = 0; i < argc; i++){
-        printf(argv[i]);
+        printf("%s", argv[i]);
         printf("\n");
     }
     
     if (false) { //(argc > 1){
         NSLog(@"launching Python interpreter");
-        printf(Py_GetPath());
+        printf("%s", Py_GetPath());
         NSLog([NSString stringWithCString: (Py_GetPath()) encoding:NSUTF8StringEncoding]);
         Py_SetProgramName("dh5view");
         Py_Initialize();

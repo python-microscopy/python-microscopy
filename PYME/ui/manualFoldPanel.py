@@ -29,6 +29,10 @@ import time
 import numpy as np
 
 import wx.lib.newevent
+from PYME.ui import cascading_layout
+
+import logging
+logger = logging.getLogger(__name__)
 
 PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
 
@@ -72,7 +76,7 @@ class SizeReportCtrl(wx.PyControl):
         dc.SetPen(wx.LIGHT_GREY_PEN)
         dc.DrawLine(0, 0, size.x, size.y)
         dc.DrawLine(0, size.y, size.x, 0)
-        dc.DrawText(s, (size.x-w)/2, (size.y-height*5)/2)
+        dc.DrawText(s, int((size.x-w)/2), int((size.y-height*5)/2))
 
         if self._mgr:
         
@@ -80,19 +84,19 @@ class SizeReportCtrl(wx.PyControl):
 
             s = "Layer: %d"%pi.dock_layer
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*1))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*1)))
 
             s = "Dock: %d Row: %d"%(pi.dock_direction, pi.dock_row)
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*2))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*2)))
 
             s = "Position: %d"%pi.dock_pos
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*3))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*3)))
 
             s = "Proportion: %d"%pi.dock_proportion
             w, h = dc.GetTextExtent(s)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2)+(height*4))
+            dc.DrawText(s, int((size.x-w)/2), int(((size.y-(height*5))/2)+(height*4)))
 
         
     def OnEraseBackground(self, event):
@@ -114,21 +118,37 @@ pin_bits     = b'\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xf
 
 
 
-DEFAULT_CAPTION_STYLE = {
-'HEIGHT'              : 20,
-'FONT_COLOUR'         : 'BLACK',
-#'FONT_WEIGHT' : wx.BOLD,
-#'FONT_SIZE'           : 12,
-'CAPTION_INDENT'      : 5,
-'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
-'BACKGROUND_COLOUR_2' : (226, 226, 226),
-'INACTIVE_PIN_COLOUR' : (170, 170, 170),
-'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
-'ELLIPSES_COLOUR'     : (170, 170, 170),
-'ELLIPSES_RADIUS'     : 2,
-'HAS_PIN' : True,
-}
+DEFAULT_CAPTION_STYLE_DARK = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'WHITE',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (38, 38, 38), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (82, 82, 82),
+    'INACTIVE_PIN_COLOUR' : (125, 125, 125),
+    'ACTIVE_PIN_COLOUR'   : (255, 255, 255),
+    'ELLIPSES_COLOUR'     : (125, 125, 125),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+   
 
+DEFAULT_CAPTION_STYLE = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'BLACK',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (198, 198, 198), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (226, 226, 226),
+    'INACTIVE_PIN_COLOUR' : (170, 170, 170),
+    'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
+    'ELLIPSES_COLOUR'     : (170, 170, 170),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+    
 class CaptionButton(object):
     def __init__(self, active_bitmap, inactive_bitmap=None, show_fcn=None, active_fcn = None, onclick=None):
         self._active_bitmap = active_bitmap
@@ -168,11 +188,23 @@ class CaptionButton(object):
 
 class CaptionBar(wx.Window):
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
-                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
+                 foldIcons=None, cbstyle=None, pin_bits=pin_bits):
 
+        if cbstyle is None:
+            cbstyle = DEFAULT_CAPTION_STYLE
+            try:
+                if wx.SystemSettings().GetAppearance().IsDark():
+                    cbstyle = DEFAULT_CAPTION_STYLE_DARK
+            except AttributeError:
+                #no GetAppearance method (wx < 4.1)
+                pass
+            
+        
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
 
+        
+        
         self.style = dict(cbstyle)
         self.parent = parent
         self.caption = caption
@@ -238,7 +270,7 @@ class CaptionBar(wx.Window):
         w,h = gc.GetTextExtent(self.caption)
 
         y0 = self.style['HEIGHT']/2. - h/2.
-        gc.DrawText(self.caption, icon_width + self.style['CAPTION_INDENT'], y0)
+        gc.DrawText(self.caption, icon_width + self.style['CAPTION_INDENT'], int(y0))
 
 
         # h = self._active_pin_bitmap.GetHeight()
@@ -280,7 +312,7 @@ class CaptionBar(wx.Window):
                 w, h = b.size
                 y0 = self.style['HEIGHT'] / 2. - h / 2.
                 x0 -= (w + (i>0)*5)
-                b._rect = (x0, y0, w,h)
+                b._rect = (int(x0), int(y0), int(w), int(h))
                 
                 if b.active:
                     gc.DrawBitmap(b._active_bitmap, *b._rect)
@@ -329,7 +361,7 @@ class CaptionBar(wx.Window):
 
 
 
-class foldElement:
+class foldElement(object):
     def __init__(self, window, foldable=True, foldedWindow=None):
         self.window = window
         self.foldable = foldable
@@ -339,7 +371,7 @@ class foldElement:
 #            self.foldedWindow = wx.StaticText(self.window.GetParent(), -1, '...')
 #            self.foldedWindow.Hide()
 
-class foldingPane(wx.Panel):
+class foldingPane(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, *args, **kwargs):
         # NOTE: If you are creating a foldingPane to encapsulate other 
         # foldingPanes, the top-level foldingPane must have the flag
@@ -401,7 +433,7 @@ class foldingPane(wx.Panel):
 
         self.SetSizer(self.sizer)
         
-        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #self.Bind(wx.EVT_SIZE, self.OnSize)
         
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
@@ -498,7 +530,7 @@ class foldingPane(wx.Panel):
                 pass
             self.Layout()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
-            self.fold1()
+            self.cascading_layout()
             return True
         else:
             return False
@@ -521,8 +553,8 @@ class foldingPane(wx.Panel):
                 self.stCaption.Refresh()
             except AttributeError:
                 pass
-            self.Layout()
-            self.fold1()
+
+            self.cascading_layout()
             wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
             return True
         else:
@@ -531,7 +563,9 @@ class foldingPane(wx.Panel):
             #self.Layout()
     
     def OnSize(self, event):
-        self.Layout()
+        print('foldPane size event - %s, %s - %s' % (self.__class__.__name__, hex(id(self)), event.GetSize()))
+        #self.Layout()
+        event.Skip()
 
 
 r_arrow = b'\xff\xff\xdf\xff\x9f\xff\x1f\xff\x5f\xfe\xdf\xfc\xdf\xf9\xdf\xf3\xdf' \
@@ -545,8 +579,8 @@ class foldButton(wx.Window):
     def __init__(self, parent, id=-1):
         wx.Window.__init__(self, parent, id, size=(16,16))
 
-        self.bmR = BitmapFromBits(r_arrow, 16, 16, ColourFromStyle('BLACK'))
-        self.bmD = BitmapFromBits(d_arrow, 16, 16, ColourFromStyle('BLACK'))
+        self.bmR = BitmapFromBits(r_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#ColourFromStyle('BLACK'))
+        self.bmD = BitmapFromBits(d_arrow, 16, 16, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))#)
 
         self.folded = True
 
@@ -608,13 +642,13 @@ class collapsingPane(foldingPane):
 
         #self.Layout()
         #self.Fit()
-        self.fold1()
+        self.cascading_layout()
 
 
 
 
 from PYME.contrib import dispatch
-class foldPanel(wx.Panel):
+class foldPanel(wx.Panel, cascading_layout.CascadingLayoutMixin):
     def __init__(self, *args, **kwargs):
         try:
             self.orientation = kwargs.pop('orientation')
@@ -625,6 +659,8 @@ class foldPanel(wx.Panel):
             self.padding = kwargs.pop('padding')
         except KeyError:
             self.padding = 5
+
+        self._constrain_children = kwargs.pop('constrain_children', False)
 
         self._stretch_sizer = kwargs.pop('bottom_spacer', True)
         self._one_pane_active = kwargs.pop('single_active_pane', False)
@@ -663,6 +699,7 @@ class foldPanel(wx.Panel):
 
         self.RegenSizer()
 
+
     def RegenSizer(self):
         self.sizer.Clear()
 
@@ -672,9 +709,18 @@ class foldPanel(wx.Panel):
         self._calc_min_max_sizes()
 
         if self._stretch_sizer:
-            self.sizer.AddStretchSpacer()
+            self.sizer.AddStretchSpacer(0)
 
         self.sizer.Layout()
+
+    def cascading_layout(self, depth=0):
+        #logger.info('cascade layout - %s' % self)
+        if not self._constrain_children:
+            cascading_layout.CascadingLayoutMixin.cascading_layout(self, depth+1)
+        else:
+            self.Layout()
+
+        self.fold1()
 
     def Clear(self):
         self.priorities = []
@@ -727,7 +773,7 @@ class foldPanel(wx.Panel):
             self._collapse_all_other_frames(pan)
         else:
             if (self.GetBestSize()[1] > self.GetSize()[1]):
-                #print('collaping old panes')
+                #print('collaping old panes %s' % self)
                 self._collapse_old_frames(pan)
         
         
@@ -741,7 +787,7 @@ class foldPanel(wx.Panel):
 
         #print(candidates)
 
-        if len(candidates) > 0:
+        if (len(candidates) > 0):
             i = np.argmin([p._time_last_unfolded for p in candidates])
             #print i, candidates[i].caption
             candidates[i].Fold()
@@ -761,6 +807,8 @@ class foldPanel(wx.Panel):
     def OnResize(self, event):
         if (not self._in_fold1) and self.IsShownOnScreen():
             self.fold1()
+
+        event.Skip()
 
     def _layout(self, *args, **kwargs):
         self.Layout()

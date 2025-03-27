@@ -35,7 +35,13 @@ if plat.startswith('Windows'):
     if arch == '32bit':
         _stdcall_libraries['ATMCD32D'] = WinDLL('ATMCD32D')
     else:
-        _stdcall_libraries['ATMCD32D'] = WinDLL('atmcd64d')
+        try:
+            _stdcall_libraries['ATMCD32D'] = WinDLL('atmcd64d')
+        except OSError:
+            # see https://stackoverflow.com/questions/59330863/cant-import-dll-module-in-python
+            # winmode=0 enforces windows default dll search mechanism including searching the path set
+            # necessary since python 3.8.x
+            _stdcall_libraries['ATMCD32D'] = WinDLL('atmcd64d',winmode=0)
     from ctypes.wintypes import ULONG, DWORD, BOOL, BYTE, WORD, UINT, HANDLE, HWND
 else:
     _stdcall_libraries['ATMCD32D'] = CDLL('libandor.so')

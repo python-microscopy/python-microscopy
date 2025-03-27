@@ -156,7 +156,7 @@ def adjacent(labels):
     """
     high = labels.max()+1
     if high > np.iinfo(labels.dtype).max:
-        labels = labels.astype(np.int)
+        labels = labels.astype(int)
     image_with_high_background = labels.copy()
     image_with_high_background[labels == 0] = high
     min_label = scind.minimum_filter(image_with_high_background,
@@ -773,8 +773,8 @@ def triangle_areas(p1,p2,p3):
     
     p1,p2,p3 - three Nx2 arrays of points
     """
-    v1 = (p2 - p1).astype(np.float)
-    v2 = (p3 - p1).astype(np.float)
+    v1 = (p2 - p1).astype(float)
+    v2 = (p3 - p1).astype(float)
     # Original:
     #   cross1 = v1[:,1] * v2[:,0]
     #   cross2 = v2[:,1] * v1[:,0]

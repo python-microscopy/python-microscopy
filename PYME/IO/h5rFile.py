@@ -17,7 +17,7 @@ file_cache = {}
 logger=logging.getLogger(__name__)
 openLock = threading.Lock()
 
-def openH5R(filename, mode='r', keep_alive_timeout=20.0):
+def openH5R(filename, mode='r', keep_alive_timeout=None):
     """
     Open an H5R file in a threadsafe and optimised way. Looks to see if the file is already open in our cache and
     returns the open file if present, otherwise opens the file and adds to the cache. Files are kept open for ``keep_alive_timeout``
@@ -54,14 +54,15 @@ def openH5R(filename, mode='r', keep_alive_timeout=20.0):
 
 
 class H5RFile(object):
-    #KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+    KEEP_ALIVE_TIMEOUT = 20.0 #keep the file open for 20s after the last time it was used
     FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
     
-    def __init__(self, filename, mode='r', keep_alive_timeout = 20.0):
+    def __init__(self, filename, mode='r', keep_alive_timeout = None):
         self.filename = filename
         self.mode = mode
         
-        self.KEEP_ALIVE_TIMEOUT = keep_alive_timeout
+        if keep_alive_timeout is not None:
+            self.KEEP_ALIVE_TIMEOUT = keep_alive_timeout
 
         logger.debug('pytables open call: %s' % filename)
         with tablesLock:
@@ -163,6 +164,13 @@ class H5RFile(object):
                 from PYME.IO import PZFFormat
                 #special case  for pzf data - also build an index table
                 frameNum = PZFFormat.load_header(data)['FrameNum']
+
+                # modern numpy (> ~1.24) gives us an array rather than a scalar for frameNum
+                # cast to an int to be safe ...
+                # FIXME - this appears to be an undocumented numpy regression / change - should we create an issue?
+                frameNum = int(frameNum)
+
+                #logger.debug('framenum: %s', frameNum)
                 
                 #record a mapping from frame number to the row we added
                 idx_entry = np.array([frameNum, table.nrows -1], dtype='i4').view(dtype=[('FrameNum', 'i4'), ('Position', 'i4')])

@@ -134,7 +134,7 @@ class FlowView(HasTraits):
                     xs, ys = view.pixel_to_screen_coordinates(x, y)
                     xs1, ys1 = view.pixel_to_screen_coordinates(x_1, y_1)
 
-                    dc.DrawLine(xs, ys, xs1, ys1)
+                    dc.DrawLine(int(xs), int(ys), int(xs1), int(ys1))
 
                     #now for the arrowhead - normal vectors in each direction
                     l = np.sqrt(fx*fx + fy*fy)
@@ -150,8 +150,8 @@ class FlowView(HasTraits):
                     xt1, yt1 = view.pixel_to_screen_coordinates(*t1)
                     xt2, yt2 = view.pixel_to_screen_coordinates(*t2)
 
-                    dc.DrawLine(xs1, ys1, xt1, yt1)
-                    dc.DrawLine(xs1, ys1, xt2, yt2)
+                    dc.DrawLine(int(xs1), int(ys1), int(xt1), int(yt1))
+                    dc.DrawLine(int(xs1), int(ys1), int(xt2), int(yt2))
         elif self.flowVectType == 'Bicolour':
             for x in np.arange(x0, min(x1, flow_x.shape[0]), step, dtype='i'):
                 for y in np.arange(y0, min(y1, flow_y.shape[1]), step, dtype='i'):
@@ -166,9 +166,9 @@ class FlowView(HasTraits):
                     xs2, ys2 = view.pixel_to_screen_coordinates(x_2, y_2)
 
                     dc.SetPen(self._vecPens[1])
-                    dc.DrawLine(xs, ys, xs1, ys1)
+                    dc.DrawLine(int(xs), int(ys), int(xs1), int(ys1))
                     dc.SetPen(self._vecPens[0])
-                    dc.DrawLine(xs1, ys1, xs2, ys2)
+                    dc.DrawLine(int(xs1), int(ys1), int(xs2), int(ys2))
                 
                 
                 
@@ -241,14 +241,14 @@ class FlowView(HasTraits):
             xt1, yt1 = view.pixel_to_screen_coordinates(*t1)
             xt2, yt2 = view.pixel_to_screen_coordinates(*t2)
 
-            dc.DrawLineList(np.array([xs1, ys1, xt1, yt1]).T)
-            dc.DrawLineList(np.array([xs1, ys1, xt2, yt2]).T)
+            dc.DrawLineList(np.array([xs1, ys1, xt1, yt1]).T.astype(int))
+            dc.DrawLineList(np.array([xs1, ys1, xt2, yt2]).T.astype(int))
 
         else:
             dc.SetPen(self._vecPens[1])
-            dc.DrawLineList(np.array([xs, ys, xs0, ys0]).T)
+            dc.DrawLineList(np.array([xs, ys, xs0, ys0]).T.astype(int))
             dc.SetPen(self._vecPens[0])
-            dc.DrawLineList(np.array([xs0, ys0, xs1, ys1]).T)
+            dc.DrawLineList(np.array([xs0, ys0, xs1, ys1]).T.astype(int))
 #                
                 
                 

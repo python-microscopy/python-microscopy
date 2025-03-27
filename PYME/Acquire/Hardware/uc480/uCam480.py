@@ -592,7 +592,7 @@ class uc480Camera(Camera):
         
         
 
-        eventLog.logEvent('StartAq', '')
+        self._log_exposure_start()
         if self._cont_mode:
             ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
         else:

@@ -54,8 +54,9 @@ from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
-from PYME.IO import HDFSpooler
-from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+#from PYME.IO import HDFSpooler
+#from PYME.IO import HTTPSpooler_v2 as HTTPSpooler
+from PYME.Acquire import protocol_acquisition
 from PYME.IO import PZFFormat
 
 import time
@@ -70,6 +71,15 @@ import numpy as np
 from PYME.util import fProfile
 
 # class DCIMGSpooler(object):
+
+
+from contextlib import contextmanager
+class DummyFramewrangler(object):
+    # Dummy class to provide the spooling_stopped context manager
+    @contextmanager
+    def spooling_stopped(self):
+        yield
+
 class TestSpooler:
     def __init__(self, testFrameSize = TEST_FRAME_SIZE, serverfilter=''):
         
@@ -93,17 +103,22 @@ class TestSpooler:
         #generate the spooler
         if hdf_spooler:
             if compression:
-                self.spooler = HDFSpooler.Spooler(filename, self.onFrame, frameShape = frameShape, complevel=0)
+                #self.spooler = HDFSpooler.Spooler(filename, self.onFrame, frameShape = frameShape, complevel=0)
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=0,backend='hdf', frame_wrangler=DummyFramewrangler())
             else:
-                self.spooler = HDFSpooler.Spooler(filename, self.onFrame,frameShape = frameShape, complevel=3)
+                #self.spooler = HDFSpooler.Spooler(filename, self.onFrame,frameShape = frameShape, complevel=3)
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = frameShape, complevel=3,backend='hdf', frame_wrangler=DummyFramewrangler())
         else:
             if compression:
-                self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter)
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter, backend='cluster', frame_wrangler=DummyFramewrangler())
+
             else:
-                self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
+                self.spooler = protocol_acquisition.ProtocolAcquisition(filename, self.onFrame,
                                                    frameShape = None, serverfilter=self.serverfilter,
                                                    compressionSettings={'compression': PZFFormat.DATA_COMP_RAW,
-                                                                        'quantization':PZFFormat.DATA_QUANT_NONE})
+                                                                        'quantization':PZFFormat.DATA_QUANT_NONE}, backend='cluster', frame_wrangler=DummyFramewrangler())
+                
+        
         
         try:
             #spool our data

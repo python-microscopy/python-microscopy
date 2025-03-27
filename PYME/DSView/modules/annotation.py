@@ -450,7 +450,7 @@ class AnnotateBase(object):
                 
                 if (c['type'] == 'polygon'):
                     dc.SetBrush(wx.TheBrushList.FindOrCreateBrush(self.brushColsA[c['labelID'] % 16], wx.BRUSHSTYLE_CROSS_HATCH))
-                    dc.DrawPolygon(pFoc)
+                    dc.DrawPolygon(pFoc.astype(int))
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                 else:
                     dc.DrawLines(pFoc)
@@ -458,7 +458,7 @@ class AnnotateBase(object):
     def render(self, gl_canvas):
         import  OpenGL.GL as gl
         
-        gl.glDisable(gl.GL_LIGHTING)
+        #gl.glDisable(gl.GL_LIGHTING)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
         gl.glDisable(gl.GL_DEPTH_TEST)
 
@@ -649,7 +649,7 @@ class Annotater(Plugin, AnnotateBase):
     
         #if not 'cf' in dir(self):
         self.cf = svmSegment.svmClassifier()
-        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze(), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
+        self.cf.train(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze().astype('f'), self._annotations.rasterize(self._zp(), self.do.ds.shape[:2]))
 
         self._mi_save.Enable(True)
         self._mi_run.Enable(True)
@@ -680,7 +680,7 @@ class Annotater(Plugin, AnnotateBase):
         from PYME.misc.colormaps import cm
         #sp = self.image.data.shape[:3]
         #if len(sp)
-        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze())#, self.image.labels[:,:,self.do.zp])
+        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self._zp(), 0].squeeze().astype('f'))#, self.image.labels[:,:,self.do.zp])
         #self.vmax = 0
         #self.image.labels = self.mask
     

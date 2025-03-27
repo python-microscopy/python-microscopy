@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class _Timer(object):
     def __init__(self):
         self._next_trigger = sys.float_info.max
-        self._single_shot = True
+        self._single_shot = False
         self._delay_s = -1
         
         logger.debug('Created timer')
@@ -36,8 +36,11 @@ class _Timer(object):
             finally:
                 if not self._single_shot:
                     self._next_trigger = t + self._delay_s
+                return True
+        else:
+            return False
     
-    def start(self, delay_ms, single_shot=True):
+    def start(self, delay_ms, single_shot=False):
         self._single_shot = single_shot
         self._delay_s = 0.001*delay_ms
         self._next_trigger = time.time() + self._delay_s
@@ -89,8 +92,13 @@ class EventLoop(object):
             except(queue.Empty):
                 #do timer stuff
                 t = time.time()
+                did_stuff = False
                 for tm in self._timers:
-                    tm.check(t)
+                    did_stuff = did_stuff or tm.check(t)
+
+                if not did_stuff:
+                    # sleep a bit (to limit CPU usage)
+                    time.sleep(0.001)
             
     def stop(self):
         self._loop_active = False

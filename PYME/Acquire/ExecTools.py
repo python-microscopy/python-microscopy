@@ -195,7 +195,7 @@ class GUIInitTask(object):
         Parameters
         ----------
         parent : PYME.Acquire.acquiremainframe.PYMEMainFrame, wx.Frame
-        scope : PYME.Acquire.microscope.microscope
+        scope : PYME.Acquire.microscope.Microscope
         
         """
         global defGlobals

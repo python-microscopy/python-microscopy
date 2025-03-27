@@ -20,13 +20,14 @@
 #
 ##################
 from PYME.misc import big_sur_fix
+from PYME.ui import patch_traitsui
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
 import argparse
 
 import wx
-import wx.py.shell
+import PYME.ui.shell
 
 #hacked so py2exe works
 #from PYME.DSView.dsviewer import View3D
@@ -111,7 +112,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         ################################   
 
         self.MainWindow = self #so we can access from shell
-        self.sh = wx.py.shell.Shell(id=-1,
+        self.pymevis = self # more memorable alias for the main window
+        self.sh = PYME.ui.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
                                     startupScript=config.get('VisGUI-console-startup-file', None),
               introText='PYMEVisualize - note that help, license, etc. below is for Python, not PYME\n\n')
@@ -129,7 +131,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.generatedImages = []
         
-        self.sh.Execute('from pylab import *')
+        #self.sh.Execute('from pylab import *')
+        self.sh.Execute('import numpy as np')
+        self.sh.Execute('import matplotlib.pyplot as plt')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
         
         import os
@@ -188,18 +192,22 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
         if not filename is None:
+            recipe = getattr(self.cmd_args, 'recipe', None)
+
             def _recipe_callback():
-                recipe = getattr(self.cmd_args, 'recipe', None)
+                if len(cmd_args.load) > 0:
+                    self.pipeline.load_extra_datasources(**dict(cmd_args.load))
+                
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
-                    #self.recipeView.SetRecipe(self.pipeline.recipe)
-                    self.update_datasource_panel()
-
+                    #self.recipeView.SetRecipe(self.pipeline.recipe)  
+                
+                self.update_datasource_panel()
                 self._recipe_editor.update_recipe_text()
             
-            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
+            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback, create_default_recipe=(not recipe))
             #self.refv = False
         
         wx.CallAfter(self.RefreshView)
@@ -451,6 +459,9 @@ def parse():
                         default=True, help='switch shaders off(default: off)')
     parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
     parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
+    parser.add_argument('--opengl-core-profile', dest='opengl_core_profile', action='store_true', default=True)
+    parser.add_argument('--opengl-compatibility-profile', dest='opengl_core_profile', action='store_false', default=True)
+    parser.add_argument('-l', '--load', nargs=2, action='append', default=[], dest='load', metavar=('KEY', 'FILENAME'), help='Load one (or more) additional files into the recipe namespace.')
     args = parser.parse_args()
     return args
     
@@ -463,6 +474,7 @@ def main():
     args = parse()
     
     PYME.config.config['VisGUI-new_layers'] = args.new_layers
+    PYME.config.config['VisGUI-opengl-core-profile'] = args.opengl_core_profile
     
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main_(args.file, use_shaders=args.use_shaders, args=args)

@@ -55,7 +55,16 @@ def deprecated_name(name):
     return _dec
 
 class TabularBase(object):
+    _image_bounds = False
+
     def toDataFrame(self, keys=None):
+        warnings.warn('toDataFrame is deprecated, use to_pandas instead', DeprecationWarning)
+        self.to_pandas(keys)
+
+    def to_pandas(self, keys=None):
+        """
+        Convert tabular data to a pandas DataFrame
+        """
         import pandas as pd
         if keys is None:
             keys = self.keys()
@@ -211,6 +220,27 @@ class TabularBase(object):
         for k in keys:
             d[k] = self[(k, return_slice)].tolist()
         return json.dumps(d)
+    
+    def _calc_image_bounds(self):
+        from PYME.IO.image import ImageBounds
+
+        try:
+            if hasattr(self, 'mdh') and ('scanx' not in self.keys() or 'scany' not in self.keys()) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+                bds = ImageBounds.extractFromMetadata(self.mdh)
+            else:
+                bds = ImageBounds.estimateFromSource(self)
+        except:
+            logger.exception('Error estimating image bounds')
+            bds = ImageBounds(0,0,0,0,0,0)
+
+        return bds
+    
+    @property
+    def image_bounds(self):
+        if self._image_bounds is False:
+            self._image_bounds = self._calc_image_bounds()
+
+        return self._image_bounds
 
 
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
@@ -835,7 +865,7 @@ class ResultsFilter(SelectionFilter):
 
         #by default select everything
         #self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
-        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
+        self.Index = np.ones(len(self.resultsSource), dtype=bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -952,7 +982,7 @@ class CachingResultsFilter(TabularBase):
         self.cache = {}
 
         #by default select everything
-        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
+        self.Index = np.ones(len(self.resultsSource), dtype=bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -994,11 +1024,18 @@ class MappingFilter(TabularBase):
         the mappings should either be code objects, strings (which will be compiled into code objects),
         or something else (which will be turned into a local variable - eg constants in above example)
 
+        MappingFilter has one optional keyword arguement, modifies_bounds, which is a boolean indicating
+        that the bounds implied by the metadata will no longer match up to the data after mapping - e.g. if
+        the mapping introduces position shifts. For now, this is un-used, but exists as a hook for potential
+        future use cases (see https://github.com/python-microscopy/python-microscopy/pull/1543#issuecomment-2298643266). 
+
         """
         
         if not isinstance(resultsSource, TabularBase):
             warnings.warn(VisibleDeprecationWarning('Mapping filter created with something that is not a tabular object. This will be unsupported in a future release. Consider DictSource or ColumnSource instead'))
 
+        self._modifies_bounds = kwargs.pop('modifies_bounds', False)
+        
         self.resultsSource = resultsSource
 
         self.mappings = {}
@@ -1010,6 +1047,14 @@ class MappingFilter(TabularBase):
             v = kwargs[k]
             self.setMapping(k,v)
 
+    def _calc_image_bounds(self):
+        if self._modifies_bounds and 'x' in self.keys():
+            # it is possible for a mapping to introduce large changes in x and y, hence modifying the image bounds
+            # from their metadata values. We need to estimate bounds from data in this case. 
+            from PYME.IO.image import ImageBounds
+            return ImageBounds.estimateFromSource(self)
+        else:
+            return super()._calc_image_bounds()
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)

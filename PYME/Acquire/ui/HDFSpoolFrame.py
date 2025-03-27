@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-"""The GUI controls for streaming acquisiton.
+"""The GUI controls for streaming acquisition.
 
 """
 
@@ -185,7 +185,7 @@ class PanSpool(afp.foldingPane):
         self.tQuantizeScale = wx.TextCtrl(pan, -1, '0.5')
         self.tQuantizeScale.SetToolTip(wx.ToolTip(
             'Quantization scale in units of sigma\n. The default of 0.5 will give a quantization interval that is half the std dev. of the expected Poisson noise in a pixel.'))
-        hsizer.Add(self.tQuantizeScale, 1.0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.tQuantizeScale, 1, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
     
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
     
@@ -248,7 +248,7 @@ class PanSpool(afp.foldingPane):
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
     
-        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
+        self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNN images spooled in MM mins')
         self.stSpoolingTo.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
         self.stNImages.SetForegroundColour(wx.TheColourDatabase.Find('GREY'))
     
@@ -343,7 +343,7 @@ class PanSpool(afp.foldingPane):
         
         self.spoolController.onSpoolProgress.connect(self._tick)
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
-        self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
+        self.spoolController.on_stop.connect(self.OnSpoolingStopped)
 
         self.stSpoolDirName.SetLabel(self.spoolController.display_dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)

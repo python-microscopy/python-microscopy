@@ -27,3 +27,34 @@ void main() {
 
     //gl_FragColor = vec4(I, I, I, 1.0);
 }
+
+#version 330
+
+in float vis;
+in vec2 tex_coords;
+
+uniform vec2 clim;
+
+uniform sampler2D im_sampler;
+uniform sampler1D lut;
+
+out vec4 fragColor;
+
+void main() {
+    //gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+    //if (vis < .5) discard;
+
+    float I;
+    float a = clim.x;
+    float b = clim.y;
+    vec4 c;
+
+    I = texture(im_sampler, tex_coords).r;
+    I = clamp((I-a)/(b-a), 0.0, 1.0);
+
+    c = texture(lut, I);
+
+    fragColor = c;
+
+    //gl_FragColor = vec4(I, I, I, 1.0);
+}

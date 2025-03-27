@@ -495,7 +495,7 @@ class OptionsPanel(wx.Panel):
         
     def OnDoChange(self):
         #print 'c'
-        self.cbScale.SetSelection(self.do.scale + self.scale_11)
+        self.cbScale.SetSelection(int(self.do.scale + self.scale_11))
 
     def OnChannelFold(self, **kwargs):
         self.Layout()

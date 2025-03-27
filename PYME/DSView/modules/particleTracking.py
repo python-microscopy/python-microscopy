@@ -309,12 +309,12 @@ class ParticleTrackingView(HasTraits, Plugin):
                     dc.SetPen(self.selectedPens[c.clumpID%16])
                 else:
                     dc.SetPen(self.trackPens[c.clumpID%16])
-                dc.DrawLines(pFoc)
+                dc.DrawLines(pFoc.astype(int))
                 
                 if self.showTrackIDs:
                     x0, y0 = pFoc[0]
                     dc.SetTextForeground(self.penCols[c.clumpID%16])
-                    dc.DrawText('%d' % c.clumpID, x0, y0 + 1)
+                    dc.DrawText('%d' % c.clumpID, int(x0), int(y0 + 1))
                     
                 
         if self.showSelectedTrack and not self.showTracks and (len(self.clumps) > 0):
@@ -330,7 +330,7 @@ class ParticleTrackingView(HasTraits, Plugin):
             
             dc.SetPen(self.selectedPens[c.clumpID%16])
             
-            dc.DrawLines(pFoc)
+            dc.DrawLines(pFoc.astype(int))
                 
         if self.showCandidates and not (self.tracker is None):
             if view.do.zp >=1:
@@ -372,11 +372,11 @@ class ParticleTrackingView(HasTraits, Plugin):
                             y0 = self.dsviewer.pipeline['y'][ls]/self.image.voxelsize[1]
                         
                         x0s, y0s = view.pixel_to_screen_coordinates(x0, y0)
-                        dc.DrawLine(x0s, y0s, x1s, y1s)
+                        dc.DrawLine(int(x0s), int(y0s), int(x1s), int(y1s))
                         
                         if ls == -1:
-                            dc.DrawText('N', x0s, y0s + 1)
-                        dc.DrawText('%1.1f'%lp, (x0s+x1s)/2 + 2, (y0s+y1s)/2 + 2)
+                            dc.DrawText('N', int(x0s), int(y0s + 1))
+                        dc.DrawText('%1.1f'%lp, int((x0s+x1s)/2 + 2), int((y0s+y1s)/2 + 2))
                         n += 1
                         
     def _visibletest(self, clump, bounds):

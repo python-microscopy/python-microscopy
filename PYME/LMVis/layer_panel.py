@@ -27,6 +27,7 @@ def CreateLayerPanel(visFr):
     pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Layers').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
     visFr._mgr.AddPane(pane, pinfo)
 
+from PYME.ui import cascading_layout
 class LayerPane(afp.foldingPane):
     def __init__(self, panel, visFr, caption="Layers", add_button=True):
         afp.foldingPane.__init__(self, panel, -1, caption=caption, pinned=True)
@@ -62,7 +63,7 @@ class LayerPane(afp.foldingPane):
             self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
 
         self.pan.SetSizerAndFit(self.vsizer)
-        self.AddNewElement(self.pan, priority=1)
+        self.AddNewElement(self.pan, priority=0)
         
         #print('Creating layer panel')
         
@@ -75,9 +76,11 @@ class LayerPane(afp.foldingPane):
 
     def _layout(self, *args, **kwargs):
         print('layout')
+        #self.cascading_layout()
         self.vsizer.Fit(self)
         self.Layout()
         self.GetParent().Layout()
+        
 
     def on_idle(self, evt=None):
         if self._needs_update:
@@ -145,6 +148,7 @@ class LayerPane(afp.foldingPane):
         #print self.pan.GetBestSize(), self.pan.GetSize(), self.GetBestSize(), self.GetSize()
         print('NB best size: ' + repr(self.fp.GetBestSize()))
     
+        #self.cascading_layout()
         try:
             self.GetParent().GetParent().Layout()
         except AttributeError:
@@ -152,6 +156,8 @@ class LayerPane(afp.foldingPane):
 
         if n_layers >= 1:
             item.Unfold()
+
+        
 
         #logger.debug('Layer panel update done')
 

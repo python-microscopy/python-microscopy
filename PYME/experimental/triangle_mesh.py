@@ -2276,7 +2276,7 @@ class TriangleMesh(TrianglesBase):
         # Construct a re-indexing for non-negative vertices
         live_vertices = np.flatnonzero(self._vertices['halfedge'] != -1)
         new_vertex_indices = np.arange(live_vertices.shape[0])
-        vertex_lookup = np.zeros(self._vertices.shape[0], dtype=np.int)
+        vertex_lookup = np.zeros(self._vertices.shape[0], dtype=int)
         
         vertex_lookup[live_vertices] = new_vertex_indices
 

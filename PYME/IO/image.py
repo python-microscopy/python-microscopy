@@ -434,6 +434,9 @@ class ImageStack(object):
         self.mdh['ImageBounds.z0'] = value.z0
         self.mdh['ImageBounds.z1'] = value.z1
 
+    # PEP8 alias
+    image_bounds = imgBounds
+
     @property
     def metadata(self):
         return self.mdh
@@ -639,18 +642,27 @@ class ImageStack(object):
 
         self.mode = 'default'
 
-    def _load_supertile(self, filename):
-        from PYME.IO.DataSources import SupertileDatasource
-        
+    def _load_supertile(self, filename):        
         #strip leading supertile schema
         if filename.upper().startswith('SUPERTILE:'):
             filename = filename[10:]
         
-        data = SupertileDatasource.DataSource(filename)
+        self._load_tiles(filename)
+
+    def _load_tiles(self, filename):
+        from PYME.IO.DataSources import TileDataSource
+
+        filename = filename.rstrip(os.path.sep)
+        
+        data = TileDataSource.DataSource(filename)
         self.SetData(data)
         self.mdh = data.mdh
         self.seriesName = filename
         self.mode = 'default'
+
+        # TODO - make this a property which refers to the datasource??
+        self.levels = data.levels
+
 
     def _load_concatenated(self, filename):
         from PYME.IO.DataSources import ConcatenatedDataSource
@@ -1296,6 +1308,8 @@ class ImageStack(object):
                 self._loadClusterPZF(filename)
             elif (filename.upper().startswith('SUPERTILE:')):
                 self._load_supertile(filename)
+            elif (filename.endswith('.tiles') or filename.endswith('.tiles/')):
+                self._load_tiles(filename)
             elif (filename.upper().startswith('CONCATENATED://')):
                 self._load_concatenated(filename)
             elif filename.endswith('.h5'):
@@ -1356,6 +1370,10 @@ class ImageStack(object):
             self.saved = True
 
     def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
+        warnings.warn(DeprecationWarning('The "Save" method is deprecated, please use "save" instead'))
+        self.save(filename=filename, crop=crop, roi=roi, progressCallback=progressCallback)
+
+    def save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 

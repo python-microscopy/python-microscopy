@@ -8,14 +8,14 @@ class fakescope(object):
 action_manager = None
 action_manager_server= None
 
-def setup():
+def setup_module():
     global action_manager, action_manager_server
     scope = fakescope()
     action_manager = ActionManager(scope)
     action_manager_server = ActionManagerServer(action_manager, 9393, '127.0.0.1')
     #return am, ams
     
-def teardown():
+def teardown_module():
     action_manager_server.shutdown()
     
 

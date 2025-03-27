@@ -431,15 +431,17 @@ class taskWorker(object):
                     
                     #load recipe inputs
                     logging.debug(taskDescr)
+                    recipe.load_inputs(taskDescr['inputs'])
+
                     for key, url in taskDescr['inputs'].items():
                         if key == '__sim':
                             # special case for no-input simulation recipes
                             # for now, essentially ignore `__sim` inputs, but propagate into context just in case
                             # TODO?? find a way of encoding simulation parameters?
                             context['sim_tag'] = url
-                        else:    
-                            logging.debug('RECIPE: loading %s as %s' % (url, key))
-                            recipe.loadInput(url, key)
+                        # else:    
+                        #     logging.debug('RECIPE: loading %s as %s' % (url, key))
+                        #     recipe.loadInput(url, key)
 
                     #print recipe.namespace
                     recipe.execute()

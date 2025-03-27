@@ -38,6 +38,10 @@ import yaml
 class MyDumper(yaml.SafeDumper):
             def represent_mapping(self, tag, value, flow_style=None):
                 return super(MyDumper, self).represent_mapping(tag, value, False)
+            
+# make sure we can dump metadata to yaml
+from PYME.IO import MetaDataHandler
+MyDumper.add_multi_representer(MetaDataHandler.MDHandlerBase, yaml.representer.SafeRepresenter.represent_dict)
 
 # TODO - move to recipe.py?
 all_modules = {}
@@ -221,6 +225,12 @@ class ModuleBase(HasStrictTraits):
 
     def toYAML(self):
         return yaml.dump(self.cleaned_dict_repr(), Dumper=MyDumper)
+
+    @classmethod
+    def file_or_uri_traits(cls):
+        from PYME.recipes import traits
+        """Return a list of FileOrURI traits, as these can require special handling (potentially warn if this list is not empty)"""
+        return [k for k, v in cls.class_traits().items() if isinstance(v.trait_type, traits.FileOrURI)]
 
     def check_inputs(self, namespace):
         """

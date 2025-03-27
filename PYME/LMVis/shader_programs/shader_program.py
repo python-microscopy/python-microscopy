@@ -23,7 +23,7 @@
 
 from OpenGL.GL import *
 
-from PYME.LMVis.shader_programs.shader_loader import *
+from PYME.LMVis.shader_programs.shader_loader import GLShaderLoadException
 
 
 class ShaderProgram(object):
@@ -42,7 +42,7 @@ class ShaderProgram(object):
 
     _shaders = set()
 
-    def __init__(self, shader_path="./shaders/"):
+    def __init__(self, shader_path="./shaders/", max_glsl_version='120'):
         """
 
         :param shader_path: the folder that contains the shader sources
@@ -53,7 +53,10 @@ class ShaderProgram(object):
         if not glUseProgram:
             raise GLProgramException('Missing Shader Objects!')
         self._shader_path = shader_path
+        self._max_glsl_version = max_glsl_version
         self._program = glCreateProgram()
+
+        self._vs_glsl_version = 'None'
         
         if self._program == 0:
             raise RuntimeError('glCreateProgram failed')
@@ -73,7 +76,7 @@ class ShaderProgram(object):
 
         """
         shader = glCreateShader(shader_type)
-        code = read_shader(shader_name, self._shader_path)
+        code, vers = read_shader(shader_name, self._shader_path, max_glsl_version=self._max_glsl_version)
         glShaderSource(shader, code)
         glCompileShader(shader)
         is_compiled = glGetShaderiv(shader, GL_COMPILE_STATUS)
@@ -83,6 +86,10 @@ class ShaderProgram(object):
             glDeleteShader(shader)
             raise exception
         glAttachShader(self._program, shader)
+        if shader_type == GL_VERTEX_SHADER:
+            # store the version of the vertex shader (so we can see if we need to set modelview matrix etc ...)
+            self._vs_glsl_version = vers
+
         self._shaders.add(shader)
 
     # def get_program(self):
@@ -112,8 +119,11 @@ class ShaderProgram(object):
         # glDeleteProgram(self._program)
         pass
 
+import re
+import os
+vers_re = re.compile('#version\s+(\d+)\s*')
 
-def read_shader(shader_name, path):
+def read_shader(shader_name, path, max_glsl_version='120'):
     """
     This method reads a given shader within a given file path
 
@@ -122,7 +132,31 @@ def read_shader(shader_name, path):
     :return: a string representing the shader
     :raises: GLShaderLoadException if the shader could not be loaded
     """
-    return ShaderLoader().read_file_with_path(path, shader_name)
+    import re
+    fn = os.path.join(path, shader_name)
+    with open(fn, 'r') as f:
+        code = f.read()
+
+    # we can store multiple versions of the same shader in one file
+    # demarcarted by their initial #version statements
+    shaders = ['#version' + s for s in code.split('#version') if not len(s) == 0]
+    #print(shaders)
+    #parse the version statements to get an actual version number for each shader
+    shader_versions = [vers_re.match(s.split('\n')[0]).group(1) for s in shaders]
+    #print(shader_versions)
+
+    #find the highest version number that is less than or equal to the max_glsl_version
+    max_version = '100'
+    max_shader = None
+    for s, v in zip(shaders, shader_versions):
+        if v <= max_glsl_version and v > max_version:
+            max_version = v
+            max_shader = s
+
+    if max_shader is None:
+        raise GLShaderLoadException(0, 'No shader found with version <= %s' % max_glsl_version, 'No shader found with version <= %s' % max_glsl_version)    
+    
+    return max_shader, max_version
 
 
 class GLProgramException(IOError):

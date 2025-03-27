@@ -32,7 +32,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.FileUtils import nameUtils
 from PYME.Analysis import splitting
 
-class Splitter:
+class Splitter(object):
     def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top',
                  constrain=True, flip = True, cam_name='', rois=None):
         self.dir = dir
@@ -40,9 +40,11 @@ class Splitter:
         self.cam = cam
         self.flipChan=flipChan
         self.parent = parent
-        self.unmixer = splitting.Unmixer(flip=flip, axis = dir)
         self.flip = flip
         self._rois=rois
+        pixelsize_nm = 1e3*(scope.GetPixelSize(cam)[0])
+        self.unmixer = splitting.Unmixer(flip=flip, axis = dir, chanROIs=self.rois, pixelsize=pixelsize_nm)
+
 
         #which dichroic mirror is installed
         self.dichroic = dichroic
@@ -188,7 +190,7 @@ class Splitter:
     def Unmix(self):
         dsa = self.scope.frameWrangler.currentFrame.squeeze()
 
-        return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=[self.scope.cam.GetROIX1(),self.scope.cam.GetROIY1(),self.scope.cam.GetROIX2(), self.scope.cam.GetROIY2()])
+        return self.unmixer.Unmix(dsa, self.mixMatrix, self.offset, ROI=self.scope.cam.GetROI())
 
 
 class UnMixSettingsPanel(wx.Panel):

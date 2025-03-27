@@ -68,7 +68,7 @@ class SplashPanel(wx.Panel):
         
         ts = dc.GetTextExtent('PYME Acquire')
         
-        dc.DrawText('PYME Acquire', self.Size[0]/2 - ts[0]/2, yp)
+        dc.DrawText('PYME Acquire', self.Size[0]//2 - ts[0]//2, yp)
 
         yp += ts[1]
         
@@ -112,7 +112,7 @@ class SplashPanel(wx.Panel):
         dc.DrawRectangle(x, y, width, height)
         
         dc.SetBrush(wx.Brush(wx.Colour(57, 76, 135)))
-        dc.DrawRectangle(x, y, width*frac, height)
+        dc.DrawRectangle(x, y, int(width*frac), height)
 
         dc.SetPen(pen)
         dc.SetBrush(brush)

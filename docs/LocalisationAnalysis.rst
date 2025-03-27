@@ -139,7 +139,7 @@ clicking the **Go** button. The results will automatically be saved as ``.h5r`` 
 ``PYMEDATADIR`` directory (if the environment variable was set earlier), or in a directory
 called ``PYMEData`` in the users home directory (``c:\\Users\\<username>\\`` under windows).
 
-The resulting ``.h5r`` files can be opened in :ref:`PYMEVisualise <visgui>`.
+The resulting ``.h5r`` files can be opened in :ref:`PYMEVisualize <visgui>`.
 
 
 Localizing directly from PYMEAcquire

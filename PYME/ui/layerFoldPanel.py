@@ -37,6 +37,22 @@ LAYER_CAPTION_STYLE = {
 'HAS_PIN' : True,
 }
 
+LAYER_CAPTION_STYLE_DARK = {
+    'HEIGHT'              : 20,
+    'FONT_COLOUR'         : 'WHITE',
+    #'FONT_WEIGHT' : wx.BOLD,
+    #'FONT_SIZE'           : 12,
+    'CAPTION_INDENT'      : 5,
+    'BACKGROUND_COLOUR_1' : (38, 38, 38), #default AUI caption colours
+    'BACKGROUND_COLOUR_2' : (82, 82, 82),
+    'INACTIVE_PIN_COLOUR' : (125, 125, 125),
+    'ACTIVE_PIN_COLOUR'   : (255, 255, 255),
+    'ACTIVE_EYE_COLOUR'   : (50, 50, 198),
+    'ELLIPSES_COLOUR'     : (125, 125, 125),
+    'ELLIPSES_RADIUS'     : 2,
+    'HAS_PIN' : True,
+    }
+
 
 #modified from https://www.iconfinder.com/icons/1608688/eye_icon
 eye_bits = b'\xff\xff\xff\xff\xff\xff\x3f\xfc\x0f\xf0\xc3\xc0\x29\x90\x2c\x30' \
@@ -137,7 +153,7 @@ class LayerCaptionBar(manualFoldPanel.CaptionBar):
         else:
             w, h = self._icon.GetWidth(), self._icon.GetHeight()
             y0 = self.style['HEIGHT'] / 2. - h / 2.
-            gc.DrawBitmap(self._icon, 0, y0, w, h)
+            gc.DrawBitmap(self._icon, 0, int(y0), w, h)
             
             return w
         
@@ -156,7 +172,17 @@ class LayerFoldingPane(manualFoldPanel.foldingPane):
         
     def _create_caption_bar(self):
         """ This is over-rideable in derived classes so that they can implement their own caption bars"""
-        return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=LAYER_CAPTION_STYLE)
+        cbstyle = LAYER_CAPTION_STYLE
+        
+        try:
+            if wx.SystemSettings.GetAppearance().IsDark():
+                cbstyle=LAYER_CAPTION_STYLE_DARK
+        except AttributeError:
+            # wx < 4.1 doesn't have GetAppearance
+            pass
+        
+        
+        return LayerCaptionBar(self, layer=self._layer, caption=self.caption, cbstyle=cbstyle)
 
 
 class _ChannelLayer(object):
