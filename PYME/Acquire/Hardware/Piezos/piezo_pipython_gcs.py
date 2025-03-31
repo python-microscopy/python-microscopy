@@ -32,9 +32,6 @@ PILogger.setLevel(WARNING)
 logger = logging.getLogger(__name__)
 
 
-ADC_CHANNEL_FOR_TARGET = 0x06000500
-OFFSET = 0x02000200  # sensor mech correction 1, analog drive offset
-GAIN = 0x02000300  # sensor mech correction 2, analog drive gain
 
 
 def get_gcs_usb():
@@ -175,7 +172,7 @@ class GCSPiezoThreaded(PiezoBase):
     units_um = 1  # assumes controllers is configured in units of um.
     def __init__(self, description=None, axes=None, update_rate=0.01, startup=True,
                  stages=None, refmodes=None, servostates=True, controlmodes=None, joystick=None,
-                 target_tol=0.001, adc_channels=None):
+                 target_tol=0.001, adc_channels=None, analog_drive_info=None):
         """
         Parameters
         ----------
@@ -229,6 +226,16 @@ class GCSPiezoThreaded(PiezoBase):
             You will also need to set the command level to 1 (in your init script)
             with e.,g. stage.pi.gcsdevice.CCL(1, 'password') before using the `set_analog_control`
             method. The password should also be in your controller manual.
+        
+        analog_drive_info: dict, optional
+            dictionary holding controller-specific information for setting up analog control, namely
+            the IDs for parameters which need to be set on the controller. Required keys are: 
+            'ADC_CHANNEL_FOR_TARGET', 'OFFSET', and 'GAIN'. See your controller manual for details.
+            Example:
+            analog_drive_info = {  # these values are for the E-727 controller
+                'ADC_CHANNEL_FOR_TARGET': 0x06000500,
+                'OFFSET': 0x02000200,  # sensor mech correction 1, analog drive offset
+                'GAIN': 0x02000300}  # sensor mech correction 2, analog drive gain
         """
         PiezoBase.__init__(self)
         self.pi = GCSDevice()
@@ -245,6 +252,11 @@ class GCSPiezoThreaded(PiezoBase):
         self.adc_channels = adc_channels
         if self.adc_channels is None:
             logger.debug('No analog control channels specified')
+        
+        self.analog_drive_info = analog_drive_info
+        if self.analog_drive_info is None:
+            logger.debug('No analog drive info specified')
+
 
         # startup device with supplied per axes parameters
         if startup:
@@ -469,14 +481,14 @@ class GCSPiezoThreaded(PiezoBase):
                 raise NotImplementedError('No ADC channel configured for analog control of axis %s' % channel)
         elif adc_channel == 0:
             # disable analog control
-            self.pi.SPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET, 0)
+            self.pi.SPA(self.axes[channel], self.analog_drive_info['ADC_CHANNEL_FOR_TARGET'], 0)
             return
         
         # set parameters in RAM/temporary settings
-        self.pi.SPA(adc_channel, OFFSET, offset)
-        self.pi.SPA(adc_channel, GAIN, gain)
+        self.pi.SPA(adc_channel, self.analog_drive_info['OFFSET'], offset)
+        self.pi.SPA(adc_channel, self.analog_drive_info['GAIN'], gain)
         # and finally hook up the analog control
-        self.pi.SPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET, adc_channel)
+        self.pi.SPA(self.axes[channel], self.analog_drive_info['ADC_CHANNEL_FOR_TARGET'], adc_channel)
         # note qSGA is an 'unknown command' to query the gain
         # note qAOS does not work for querying the ADC channels
     
@@ -484,10 +496,11 @@ class GCSPiezoThreaded(PiezoBase):
         self.set_analog_control(channel, adc_channel=0)
 
     def get_analog_control_settings(self, channel):
-        adc_channel = self.pi.qSPA(self.axes[channel], ADC_CHANNEL_FOR_TARGET)[self.axes[channel]][int(ADC_CHANNEL_FOR_TARGET)]
+        adc_channel = self.pi.qSPA(self.axes[channel], 
+                                   self.analog_drive_info['ADC_CHANNEL_FOR_TARGET'])[self.axes[channel]][int(self.analog_drive_info['ADC_CHANNEL_FOR_TARGET'])]
         enabled = adc_channel != 0
-        offset = self.pi.qSPA(adc_channel, OFFSET)[adc_channel][int(OFFSET)]
-        gain = self.pi.qSPA(adc_channel, GAIN)[adc_channel][int(GAIN)]
+        offset = self.pi.qSPA(adc_channel, self.analog_drive_info['OFFSET'])[adc_channel][int(self.analog_drive_info['OFFSET'])]
+        gain = self.pi.qSPA(adc_channel, self.analog_drive_info['GAIN'])[adc_channel][int(self.analog_drive_info['GAIN'])]
         return enabled, adc_channel, offset, gain
     
 
