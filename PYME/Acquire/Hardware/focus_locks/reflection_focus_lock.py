@@ -209,7 +209,7 @@ class ReflectedLinePIDFocusLock(PID):
         The servo is generally more robust to changing its setpoint when it is running than when you toggle it off, move
         off the setpoint, and then slam it on again. This just makes the slam small.
         """
-        
+
         # enable could be a string
         enable = enable and not (enable == 'False')
 
@@ -527,7 +527,7 @@ class RLPIDFocusLockClient(object):
 
     def EnableLock(self, enable=True):
         self._enabled = enable
-        return self._session.get(self.base_url + '/EnableLock&enable=%s' % enable)
+        return self._session.get(self.base_url + '/EnableLock?enable=%s' % enable)
     
     def EnableLockAndHome(self):
         self._enabled = True
