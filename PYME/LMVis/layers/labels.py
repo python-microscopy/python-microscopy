@@ -55,7 +55,7 @@ class LabelLayer(SimpleLayer):
         self.on_trait_change(self.update, 'cmap, clim, dsname, font_size, format_string')
 
         # update any of our traits which were passed as command line arguments
-        self.set(**kwargs)
+        self.trait_set(**kwargs)
 
         self.update()
         

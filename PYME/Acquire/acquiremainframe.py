@@ -254,7 +254,7 @@ class PYMEMainFrame(acquirebase.PYMEAcquireBase, AUIFrame):
             self.AddCamTool(*t)
         
         if len(self.scope.positioning.keys()) > 0.5:
-            self.pos_sl = positionUI.PositionPanel(self.scope, self, self.scope.joystick)
+            self.pos_sl = positionUI.PositionPanelV2(self.scope, self, self.scope.joystick)
             self.time1.register_callback(self.pos_sl.update)
 
             self.AddTool(self.pos_sl, 'Positioning')

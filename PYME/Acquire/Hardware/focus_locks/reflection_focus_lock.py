@@ -202,21 +202,32 @@ class ReflectedLinePIDFocusLock(PID):
         return self.auto_mode
 
     @webframework.register_endpoint('/EnableLock', output_is_json=False)
-    def EnableLock(self):
+    def EnableLock(self, enable=True):
         """
         Returns offset to last-known offset before enabling the lock.
 
         The servo is generally more robust to changing its setpoint when it is running than when you toggle it off, move
         off the setpoint, and then slam it on again. This just makes the slam small.
         """
-        # make sure piezo is ready
-        retry = 0
-        while not self.piezo.OnTarget() and retry < 3:
-            logger.debug('waiting for piezo to stop moving')
-            time.sleep(0.1)
-            retry += 1
-        logger.debug('Enabling focus lock')
-        self.set_auto_mode(True)
+
+        # enable could be a string
+        enable = enable and not (enable == 'False')
+
+        if enable:
+            # make sure piezo is ready
+            retry = 0
+            while not self.piezo.OnTarget() and retry < 3:
+                logger.debug('waiting for piezo to stop moving')
+                time.sleep(0.1)
+                retry += 1
+            logger.debug('Enabling focus lock')
+            self.set_auto_mode(True)
+        else: # disable
+            # take out the lock so we can log offset and disable 'at once'
+            with self._piezo_control_lock:
+                self.piezo.LogFocusCorrection(self.piezo.GetOffset())
+                self.set_auto_mode(False)
+                logger.debug('Disabling focus lock')
     
     @webframework.register_endpoint('/EnableLockAndHome', output_is_json=False)
     def EnableLockAndHome(self):
@@ -225,11 +236,7 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
-        # take out the lock so we can log offset and disable 'at once'
-        with self._piezo_control_lock:
-            self.piezo.LogFocusCorrection(self.piezo.GetOffset())
-            self.set_auto_mode(False)
-            logger.debug('Disabling focus lock')
+        self.EnableLock(False)
 
     def register(self):
         if self.mode == 'time':
@@ -518,9 +525,9 @@ class RLPIDFocusLockClient(object):
         response = self._session.get(self.base_url + '/LockOK')
         return bool(response.json())
 
-    def EnableLock(self):
-        self._enabled = True
-        return self._session.get(self.base_url + '/EnableLock')
+    def EnableLock(self, enable=True):
+        self._enabled = enable
+        return self._session.get(self.base_url + '/EnableLock?enable=%s' % enable)
     
     def EnableLockAndHome(self):
         self._enabled = True

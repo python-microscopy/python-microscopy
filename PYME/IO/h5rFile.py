@@ -164,6 +164,13 @@ class H5RFile(object):
                 from PYME.IO import PZFFormat
                 #special case  for pzf data - also build an index table
                 frameNum = PZFFormat.load_header(data)['FrameNum']
+
+                # modern numpy (> ~1.24) gives us an array rather than a scalar for frameNum
+                # cast to an int to be safe ...
+                # FIXME - this appears to be an undocumented numpy regression / change - should we create an issue?
+                frameNum = int(frameNum)
+
+                #logger.debug('framenum: %s', frameNum)
                 
                 #record a mapping from frame number to the row we added
                 idx_entry = np.array([frameNum, table.nrows -1], dtype='i4').view(dtype=[('FrameNum', 'i4'), ('Position', 'i4')])

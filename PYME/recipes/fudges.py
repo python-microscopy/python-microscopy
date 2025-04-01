@@ -7,7 +7,7 @@ TLDR - If you need to use modules from this file you're doing it wrong.
 """
 
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
 
 import numpy as np
 from PYME.IO import tabular

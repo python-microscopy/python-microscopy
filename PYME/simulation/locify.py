@@ -82,20 +82,32 @@ def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
 
     '''
     dx = 1.2 * r_max
+
+    dx = (2**np.ceil(np.log2(dx/dx_min)))*dx_min - 0.1
     
-    vx, vy, vz = [v.ravel() for v in np.mgrid[-1:2, -1:2, -1:2]]
+    #vx, vy, vz = [v.ravel() for v in np.mgrid[-1:2, -1:2, -1:2]]
+
+    #v_offs = np.vstack([vx, vy, vz])
+    #print(v_offs.shape)
     
-    verts = dx * np.vstack([vx, vy, vz]) + np.array(centre)[:,None]
+    #verts = dx * v_offs + np.array(centre)[:,None]
     #print(verts.shape)
+
+    verts = np.array(centre)[:,None]
     
     c_offs = np.array(
-        [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]])
+        [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]], 'f')
+    
     #test_offs =
+
+    #print(dx, verts.T)
     
     while dx > dx_min:
-        dx /= 2.0
+       
         #test and discard.
         corners = [verts + dx * c_offs[i][:, None] for i in range(8)]
+        #print(dx)
+        #print(np.array(corners).shape)
         corner_dists = [sdf(c) for c in corners] + [sdf(verts), ]
         
         #corner_dists = [sdf(verts),]
@@ -103,27 +115,32 @@ def points_from_sdf(sdf, r_max=1, centre=(0,0,0), dx_min=1, p=0.1):
         #contains_points = np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 9
         # for some reason the sign test doesn't seem to work properly. Use a generous
         # distance based test instead
-        contains_points = np.min([np.abs(c) for c in corner_dists], axis=0) < 2 * dx
+        contains_points = np.min([np.abs(c) for c in corner_dists], axis=0) < ( 1.5*dx)
+        #print(dx, np.min([np.abs(c) for c in corner_dists], axis=0), contains_points)
         
         verts = verts[:, contains_points]
         #print(verts.shape)
+        dx /= 2.0
         
         #subdivide
-        verts = np.concatenate([verts + dx * c_offs[i][:, None] for i in range(8)], axis=1)
+        verts = np.concatenate([verts + dx * c_offs[i, :][:, None] for i in range(8)], axis=1)
         #print(verts.shape)
+
     
     # because we use a fairly relaxed / conservative criterea for discarding above (which will
     # effectively match the cell containing the surface AND it's neighbours)
     # we perform a more stringent test on the final set of points.
-    corners = [verts + dx * c_offs[i][:, None] for i in range(8)]
-    corner_dists = [sdf(c) for c in corners]
+    #corners = [verts + dx * c_offs[i][:, None] for i in range(9)]
+    #corner_dists = [sdf(c) for c in corners]
+    #print(dx, corner_dists)
     
-    contains_points = (np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 8) & (sdf(verts) < dx)
+    #contains_points = (np.abs(np.sum([np.sign(c) for c in corner_dists], axis=0)) < 9) & (sdf(verts) < dx)
+    contains_points = (sdf(verts) < dx/2)
     verts = verts[:, contains_points]
     
     #print(verts.shape)
-    
-    return verts[:, np.random.rand(verts.shape[1]) < p]
+    #return verts
+    return verts[:, (np.random.rand(verts.shape[1]) < p)]
 
 def testPattern():
     '''generate a test pattern'''

@@ -5,7 +5,7 @@ Created on Tue Dec 29 19:59:15 2015
 @author: david
 """
 from .base import register_module, ModuleBase,Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrFloat, DictStrBool, on_trait_change
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, Dict, on_trait_change
 
 import numpy as np
 #import pandas as pd
@@ -325,8 +325,8 @@ class FitFusionTraces(ModuleBase):
     numLeadFrames = Int(10, desc='The number of frames which the profile extends before docking. This should be the same as in the LoadSpeckles module.')
     numFollowFrames = Int(50, desc='The number of frames the trace extends after fusion. This should be the same as in the LoadSpeckles module.')
     psfSigma = Float(1.5, desc='The std deviation of the microscope PSF, in pixels')
-    startParams = DictStrFloat(desc='a dictionary of parameters whose start value should be over-ridden')
-    paramsToFit = DictStrBool(desc='a dictionary of parameters whose fit status should be over-ridden. Use in conjunction with startParams to fix parameters at a given value')
+    startParams = Dict(str, float, desc='a dictionary of parameters whose start value should be over-ridden')
+    paramsToFit = Dict(str, bool, desc='a dictionary of parameters whose fit status should be over-ridden. Use in conjunction with startParams to fix parameters at a given value')
 
     def execute(self, namespace):
         from PYME.experimental import fusionRadial
