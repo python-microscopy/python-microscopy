@@ -273,6 +273,23 @@ def _processEvents(ds, events, mdh):
 
             # self.eventCharts = eventCharts
             # self.ev_mappings = ev_mappings
+
+        if b'PYME2ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'PYME2ShiftMeasure',
+                                                              0)
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'PYME2ShiftMeasure',
+                                                              1)
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'PYME2ShiftMeasure',
+                                                              2)
+
+            ev_mappings['driftx'] = driftx
+            ev_mappings['drifty'] = drifty
+            ev_mappings['driftz'] = driftz
+
+            eventCharts.append(('X Drift [px]', driftx, 'PYME2ShiftMeasure'))
+            eventCharts.append(('Y Drift [px]', drifty, 'PYME2ShiftMeasure'))
+            eventCharts.append(('Z Drift [px]', driftz, 'PYME2ShiftMeasure'))
+
     elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
                                        'StackSettings.NumSteps', 'StackSettings.NumCycles']):
         # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
