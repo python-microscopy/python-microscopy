@@ -115,6 +115,10 @@ class DataSource(XYZTCDataSource):
             size_t = sh['T']
             
             axisOrder = _axes[::-1]
+
+            if 'Q' in axisOrder:
+                logger.warning('Q axis detected - this is not supported by PYME')
+                axisOrder = axisOrder.replace('Q', '')
             
             axisOrder = axisOrder + ''.join([a for a in ['Z', 'T', 'C'] if not a in axisOrder])
             

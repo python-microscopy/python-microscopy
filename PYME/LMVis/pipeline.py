@@ -525,7 +525,7 @@ class Pipeline(object):
         Return a dictionary of datasources which are suitable for listing in a session file
         
         """
-        from PYME import warnings
+        from PYME import pyme_warnings as warnings
         out = {}
         for k in self.recipe.inferred_data:
             ds = self.dataSources[k]

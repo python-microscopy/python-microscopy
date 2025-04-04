@@ -1,6 +1,6 @@
 import os
 from PYME.IO import MetaDataHandler
-from PYME import warnings
+from PYME import pyme_warnings as warnings
 
 import logging
 logger = logging.getLogger(__file__)

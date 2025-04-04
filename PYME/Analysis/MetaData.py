@@ -23,7 +23,7 @@
 
 import numpy
 from PYME.IO.MetaDataHandler import NestedClassMDHandler, HDFMDHandler
-from PYME import warnings
+from PYME import pyme_warnings as warnings
 
 #class VoxelSize:
 #	def __init__(self, x, y, z, unit='um'):
@@ -248,7 +248,7 @@ def fillInBlanks(md, dataSource):
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, max(tLon - 1, 1))]).ravel()))
             else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, min(10, dataSource.getNumSlices()))]).ravel()))
-                warnings.warn("ADOffset fudged as %d and probably wrong\n\nTo change ADOffset, execute the following in the console: image.mdh['Camera.ADOffset'] = newValue\n\nOr use the Metadata pane in the GUI (right click on value to change)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature')
+                warnings.warn("ADOffset fudged as %d and probably wrong\n\nTo change ADOffset, execute the following in the console: image.mdh['Camera.ADOffset'] = newValue\n\nOr use the Metadata pane in the GUI (right click on value to change)" % md.getEntry('Camera.ADOffset'))#,'Did not find laser turn on signature')
 
 
                 #md.setEntry('Camera.ADOffset',numpy.median(numpy.array([dataSource.getSlice(i) for i in range(dataSource.getNumSlices()-5, dataSource.getNumSlices())]).ravel()))

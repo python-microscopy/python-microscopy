@@ -215,7 +215,7 @@ class SpoolController(object):
         if False:#self.acquisition_type == 'ProtocolAcquision':
             return ['File', 'Cluster']
         else:
-            return ['File', 'Cluster', 'Memory']
+            return ['File', 'Cluster', 'Memory', 'Tiff folder']
         
     def get_info(self):
         info =  {'settings' : self.get_settings(),
@@ -544,7 +544,8 @@ class SpoolController(object):
         from PYME.IO import acquisition_backends
         backends = {'File': acquisition_backends.HDFBackend,
                     'Cluster': acquisition_backends.ClusterBackend, 
-                    'Memory': acquisition_backends.MemoryBackend}
+                    'Memory': acquisition_backends.MemoryBackend,
+                    'Tiff folder': acquisition_backends.TiffFolderBackend,}
         
         backend_kwargs = {}
         if self.spoolType == 'Cluster':
@@ -749,7 +750,7 @@ class SpoolController(object):
 
         try:
             if not self.spoolType == 'Cluster':
-                from PYME import warnings
+                from PYME import pyme_warnings as warnings
                 warnings.warn('Analysis is only supported for cluster spooling', category=RuntimeWarning)
         
             if self.analysis_mode == 'interactive':
