@@ -470,7 +470,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         xs, ys = self._unscrolled_view_size()
         if fullImage:
-            from PYME import warnings
+            from PYME import pyme_warnings as warnings
             if (xs > 2e3 or ys > 2e3) and not warnings.warn('Captured image will be very large, continue?',allow_cancel=True):
                 return
         else:

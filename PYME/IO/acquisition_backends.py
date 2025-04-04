@@ -152,7 +152,10 @@ def distfcn_oidic(n_servers, i=None):
     # TODO - make a bit smarter and/or implement in derived class
     return int(i/6) % n_servers
 
-
+def distfcn_random(n_servers, i=None):
+        # distribute at random
+        import random
+        return random.randrange(n_servers)
 
 class ClusterBackend(Backend):
     default_compression_settings = {
@@ -180,6 +183,8 @@ class ClusterBackend(Backend):
                 return server_n
 
             distribution_fcn = dist_fcn_1_server
+        elif distribution_fcn is None:
+            distribution_fcn = distfcn_random
 
         
         def _pzfify(data):
@@ -296,3 +301,53 @@ class HDFBackend(Backend):
     def getURL(self):
         '''Get URL for the series to pass to other processes so they can open it'''
         return self.series_name
+    
+
+class TiffFolderBackend(Backend):
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1],  **kwargs):
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
+
+        self.series_name = series_name
+
+    @property
+    def _series_location(self):
+        return self.series_name 
+        
+    def getURL(self):
+        '''Get URL for the series to pass to other processes so they can open it'''
+        return 'PYME-CLUSTER://%s/%s' % (self.serverfilter, self.series_name)
+    
+    def store_frame(self, n, frame_data):
+        try:
+            import tifffile
+        except ImportError:
+            from PYME.contrib.gohlke import tifffile
+
+        fn = '/'.join([self._series_location, 'frame%05d.tif' % n])
+
+        tifffile.imsave(fn, frame_data)
+        
+        self.imNum = n+1
+
+    def initialise(self):
+        super().initialise()
+        import os
+        os.makedirs(self._series_location, exist_ok=True)
+        with open(self._series_location + '/metadata.json', 'w') as f:
+            f.write(self.mdh.to_JSON())
+    
+    def finalise(self):
+        #TODO - is this needeed
+        with open(self._series_location + '/final_metadata.json', 'w') as f:
+            f.write(self.mdh.to_JSON())
+
+        # events are used as a signal in the ClusterPZFDataSource that a series is complete.
+        # TODO - better events support - current assumption is that they are passed already formatted as json
+        # TODO - use a binary format for saving events - they can be quite
+        # numerous
+
+        logger.debug('Putting events')
+        with open(self._series_location + '/events.json', 'w') as f:
+            f.write(self.event_logger.to_JSON())
+        
+        super().finalise()

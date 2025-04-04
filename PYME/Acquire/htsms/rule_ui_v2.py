@@ -338,7 +338,7 @@ class ChainedAnalysisPage(wx.Panel):
     def OnAddRuleChain(self, wx_event=None):
         # display a text enty dialog to get the name of the new rule chain
         # then add it to the list of rule chains
-        from PYME import warnings
+        from PYME import pyme_warnings as warnings
 
         dlg = wx.TextEntryDialog(self, 'Enter name for new rule chain', 'New Rule Chain', '')
         if dlg.ShowModal() == wx.ID_OK:
@@ -357,7 +357,7 @@ class ChainedAnalysisPage(wx.Panel):
     def OnLoadRuleChain(self, wx_event=None):
         # display a dialog to select a rule file to load
         # then load it into the list of rule chains
-        from PYME import warnings
+        from PYME import pyme_warnings as warnings
 
         # TODO - specify the directory to start in
         # TODO - will this be YAML?
@@ -378,7 +378,7 @@ class ChainedAnalysisPage(wx.Panel):
     def OnSaveRuleChain(self, wx_event=None):
         # display a dialog to select a file to save the rule chain to
         # then save it
-        from PYME import warnings
+        from PYME import pyme_warnings as warnings
 
         # TODO - specify the directory to start in
         # TODO - will this be YAML?
