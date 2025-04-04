@@ -59,6 +59,12 @@ ROI_LIMITS = {
         'xstep' : 4,
         'ymin' : 4,
         'ystep' : 2
+    },
+    'UI124x' : {
+        'xmin' : 16,
+        'xstep' : 4,
+        'ymin' : 4,
+        'ystep' : 2
     }
 }
 
