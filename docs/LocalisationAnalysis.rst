@@ -13,7 +13,7 @@ Starting analysis infrastructure
 ================================
 
 To improve performance, PYME distributes localization analysis over multiple worker processes, with a server process
-used for communication. These can either all be on the same machine, or be distributed across a network/cluster. The
+used for communication. These can either all be on the same machine, or be distributed across a network/cluster (see :ref:`cluster setup <clusterinstall>`). The
 server and worker processes need to be running before starting the analysis. To launch all components on a single machine
 , launch ``PYME>PYMEClusterOfOne`` from the start menu (Windows), or run
 
@@ -32,9 +32,6 @@ python through the firewall, which you should accept.
    rather than a higher level analysis directory. We've done a reasonable ammount of testing, but if something doesn't
    work ``launchWorkers`` is still available (for now, python 2.7 only). Please also let us know so we can fix it.
 
-.. note::
-
-   To distribute analysis over a computer cluster, see :ref:`cluster setup <cluster_install>`.
 
 Loading data
 ============
@@ -156,8 +153,8 @@ you can either click the 'Analyse' button in spooling progress section, or your 
 Batching analysis
 =================
 
-To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI=True``.
-This will require the optional dependency django (See also :ref:`cluster setup <cluster_install>`).
+To batch-run analysis of multiple series, launch the full ``clusterUI`` webapp by running ``PYMEClusterOfOne --clusterUI``.
+This will require the optional dependency django (See also :ref:`cluster setup <clusterinstall>`).
 
 
 .. rubric:: Footnotes
@@ -169,7 +166,7 @@ This will require the optional dependency django (See also :ref:`cluster setup <
    cores available (e.g. 8),  better performance can be achieved by reserving a core for
    each of the Acquisition and Server processes (ie limiting the number of workers to 6 in our
    8 core case). This can be done by explicitly specifying the number of workers to launch as
-   an argument eg: ``launchWorkers 6``.
+   an argument eg: ``PYMEClusterOfOne -n 6``.
 
 .. [#lmmode] Instead of manually loading the LMAnalysis module every time you launch dh5view, you can force it to start
    in localisation mode with the ``-m LM`` command line switch - i.e. ``dh5view -m LM filename``
