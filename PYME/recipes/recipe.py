@@ -767,7 +767,7 @@ class Recipe(HasTraits):
                 #  pipe our table into h5r or hdf source depending on the extension
                 if extension == '.h5r':
                     if t.name == 'DriftResults':
-                        tab = tabular.H5RDSource(h5f, t.name)
+                        tab = tabular.H5RDSource(h5f)
                     else:
                         tab = tabular.H5RSource(h5f, t.name)
                 else:

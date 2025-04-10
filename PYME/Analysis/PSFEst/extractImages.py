@@ -27,7 +27,7 @@ import scipy.ndimage
 import logging
 logger = logging.getLogger(__name__)
 
-import PYME.warnings
+import PYME.pyme_warnings
 
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
@@ -265,7 +265,7 @@ def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True,
 
     print('dzs:', dzs)
     if np.any(np.abs(dzs) > pad[2]):
-        PYME.warnings.warn('Axial shift of PSF is greater than padding. PSF is likely to exhibit wrap-around artifacts. This is \
+        PYME.pyme_warnings.warn('Axial shift of PSF is greater than padding. PSF is likely to exhibit wrap-around artifacts. This is \
                            typically caused by insufficent z-extent in the requested PSF shape and/or the calibration z-stack.')
     
     # remove padding
