@@ -173,7 +173,7 @@ class ProtocolAcquisition(AcquisitionBase):
                                                                 **kwargs)
             
         
-        elif backend_type in ['file', 'File', acquisition_backends.HDFBackend]: # assume hdf
+        elif backend_type in ['file', 'File', 'hdf', acquisition_backends.HDFBackend]: # assume hdf
             self._backend = acquisition_backends.HDFBackend(self.filename, complevel=kwargs.pop('complevel', 6), complib=kwargs.pop('complib','zlib'),
                             shape=[-1,-1,1,-1,1], # spooled series are time-series (for now)
                             **kwargs)
