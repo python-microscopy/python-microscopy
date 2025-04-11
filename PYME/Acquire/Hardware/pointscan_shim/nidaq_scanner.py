@@ -131,8 +131,18 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         
         self.n_steps = len(self._axes_voltages['x'])
 
-    def scan(self):
-        threading.Thread(target=self._scan).start()
+    def scan(self, wait_until_done=False):
+        t = threading.Thread(target=self._scan)
+        t.start()
+        if wait_until_done:
+            t.join()
+    
+    def _scan_continuously(self):
+        while self.keep_scanning:
+            self.scan(wait_until_done=True)
+    
+    def scan_continuously(self):
+        threading.Thread(target=self._scan_continuously).start()
     
     def _scan(self):
         with self._scanning_lock, ni.Task() as ctr_task, ni.Task() as ai_task, ni.Task() as ao_task:
@@ -227,4 +237,4 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         return self._serial
     
     def stop(self):
-        pass
+        self.keep_scanning = False

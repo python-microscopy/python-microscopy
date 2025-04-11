@@ -37,6 +37,7 @@ class BaseScanner(object):
         self.full_buffers = None
         self.free_buffers = None
         self.n_full = 0
+        self.keep_scanning = False
         if scan_params is not None:
             self.set_scan_params(scan_params)
 
@@ -163,10 +164,17 @@ class BaseScanner(object):
     def get_serial_number(self):
         raise NotImplementedError
     
-    def scan(self):
+    def scan(self, wait_until_done=False):
         """raster-scan an image and add each channel as a separate frame to the full frame
         buffer
 
+        """
+        raise NotImplementedError
+    
+    def scan_continuously(self):
+        """
+        Continuously scan frames until stopped
+        Checks self.keep_scanning to determine whether to continue scanning or not.
         """
         raise NotImplementedError
     
@@ -334,9 +342,9 @@ class PointscanCameraShim(Camera):
         """
         self.scanner.set_frame_integ_time(iTime)
     
-    def FireSoftwareTrigger(self):
-        self.scanner.scan()
+    def FireSoftwareTrigger(self, wait_until_done=False):
         self._log_exposure_start()
+        self.scanner.scan(wait_until_done=wait_until_done)
     
     def StartExposure(self):
         logger.debug('StartAq')
@@ -352,10 +360,14 @@ class PointscanCameraShim(Camera):
         try:
             # if self._mode == self.MODE_SOFTWARE_TRIGGER:
             if self._mode == self.MODE_CONTINUOUS:
-                raise NotImplementedError
+                self.scanner.keep_scanning = True
+                self.scanner.scan_continuously()
             elif self._mode == self.MODE_SINGLE_SHOT:
-                # spoof single shot mode by staritng that exposure now
-                self.FireSoftwareTrigger()
+                # spoof single shot mode by starting that exposure now, and
+                # letting it finish - FIXME - bit superstitious at the moment
+                # to wait, because of concern over frameWrangler having time to pull multiple frames
+                # for the multichannel acq. fired from a 'single shot'
+                self.FireSoftwareTrigger(wait_until_done=True)
             elif self._mode == self.MODE_SOFTWARE_TRIGGER:
                 pass # let user fire that on their own time
         except Exception as e:
@@ -400,6 +412,7 @@ class PointscanCameraShim(Camera):
         self._poll = False
     
     def StopAq(self):
+        self.scanner.keep_scanning = False  # tell the scanner to stop scanning continuously if it was
         self._poll = False
         try:
             # tell the scanner to stop
