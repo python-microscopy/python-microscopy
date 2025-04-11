@@ -48,9 +48,17 @@ class BaseScanner(object):
     def voxelsize_x_nm(self):
         return self._scan_params['voxelsize.x'] * 1e3
     
+    @voxelsize_x_nm.setter
+    def voxelsize_x_nm(self, voxelsize_x_nm):
+        self._scan_params['voxelsize.x'] = voxelsize_x_nm * 1e-3
+    
     @property
     def voxelsize_y_nm(self):
         return self._scan_params['voxelsize.y'] * 1e3
+    
+    @voxelsize_y_nm.setter
+    def voxelsize_y_nm(self, voxelsize_y_nm):
+        self._scan_params['voxelsize.y'] = voxelsize_y_nm * 1e-3
 
     @property
     def axes_order(self):
@@ -100,9 +108,17 @@ class BaseScanner(object):
     def width(self):
         return self._scan_params['n_x']
     
+    @width.setter
+    def width(self, width):
+        self._scan_params['n_x'] = int(width)
+    
     @property
     def height(self):
         return self._scan_params['n_y']
+    
+    @height.setter
+    def height(self, height):
+        self._scan_params['n_y'] = int(height)
     
     @property
     def voxel_dwell_time(self):

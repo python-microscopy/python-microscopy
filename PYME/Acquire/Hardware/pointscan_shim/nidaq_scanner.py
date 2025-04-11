@@ -109,6 +109,12 @@ class NIDAQScanner(pointscan_camera.BaseScanner):
         y_pixelsize = self._scan_params['voxelsize.y']
         y_pos = np.linspace(-half_y, half_y, self.height, endpoint=True) * y_pixelsize + y0
 
+        # raise an error if the scan goes outside the drive range
+        if np.any(x_pos < self._drive_channels['x']['min_position']) or np.any(x_pos > self._drive_channels['x']['max_position']):
+            raise ValueError('X scan position out of range')
+        if np.any(y_pos < self._drive_channels['y']['min_position']) or np.any(y_pos > self._drive_channels['y']['max_position']):
+            raise ValueError('Y scan position out of range')
+
         if self.axes_order[0] == 'x':
             # make x scan faster
             if not self._bidirectional:
