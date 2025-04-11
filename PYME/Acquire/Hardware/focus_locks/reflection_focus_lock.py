@@ -111,7 +111,7 @@ class ReflectedLinePIDFocusLock(PID):
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, 
                  mode='frame', fit_roi_size=75, min_amp=0, 
                  max_sigma=np.finfo(float).max, min_lateral_sigma=0,
-                 trigger_failsafe=True):
+                 trigger_failsafe=True, multiplier=1):
         """
 
         Parameters
@@ -165,6 +165,7 @@ class ReflectedLinePIDFocusLock(PID):
 
         self._mode = mode
         self._polling = False
+        self.multiplier = multiplier
 
     @property
     def mode(self):
@@ -491,7 +492,7 @@ class ReflectedLinePIDFocusLock(PID):
             if self.auto_mode and elapsed_time > self.sample_time:
                 # logger.debug('Correction: %.2f' % correction)
                 # logger.debug('components %s' % (self.components,))
-                self.piezo.CorrectOffset(correction)
+                self.piezo.CorrectOffset(correction*self.multiplier)
 
 
 class RLPIDFocusLockClient(object):
