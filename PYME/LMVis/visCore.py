@@ -759,7 +759,7 @@ class VisGUICore(object):
                 self.add_pointcloud_layer(ds_name=('output.' + c), **layer_defaults.new_layer_settings('points_channel', i, overrides=dict(visible=False)))
                 
     def _populate_open_args(self, filename):
-        from PYME.warnings import warn
+        from PYME.pyme_warnings import warn
         args = {}
     
         if os.path.splitext(filename)[1] == '.h5r':
