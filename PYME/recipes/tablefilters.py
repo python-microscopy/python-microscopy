@@ -34,7 +34,7 @@ class Mapping(ModuleBase):
 class FilterTable(ModuleBase):
     """Filter a table by specifying valid ranges for table columns"""
     inputName = Input('measurements')
-    filters = Dict(str, List(float))
+    filters = Dict(str, list)
     outputName = Output('filtered')
 
     # def execute(self, namespace):
@@ -43,7 +43,7 @@ class FilterTable(ModuleBase):
     #     filtered = tabular.ResultsFilter(inp, **self.filters)
 
     #     if 'mdh' in dir(inp):
-    #         filtered.mdh = inp.mdh
+    #         filtered.mdh = inp.mdhs
 
     #     namespace[self.outputName] = filtered
 
