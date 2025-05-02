@@ -75,8 +75,12 @@ DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
 DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
 DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
+DCAMPROP_TRIGGER_MODE__NORMAL = 1
 DCAMPROP_TRIGGER_MODE__START = 6
 DCAMPROP_TRIGGERACTIVE__EDGE = 1
+DCAMPROP_TRIGGERACTIVE__SYNCREADOUT = 3
+DCAMPROP_TRIGGERPOLARITY__NEGATIVE = 1  # falling edge / low level
+DCAMPROP_TRIGGERPOLARITY__POSITIVE = 2  # rising edge / high level
 
 DCAMPROP_OUTPUTTRIGGER_SOURCE__EXPOSURE = 1
 DCAMPROP_OUTPUTTRIGGER_SOURCE__READOUTEND = 2
@@ -129,6 +133,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
         # initialize other properties needed
         self.external_shutter = None
+        self._external_trigger_rising = True  # True for rising, False for falling
 
     def Init(self):
         logger.debug('Initializing Hamamatsu Orca')
@@ -191,7 +196,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
     def SetAcquisitionMode(self, mode):
         if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER, 
-                    self.MODE_SINGLE_SHOT, self.MODE_HARDWARE_START_TRIGGER]:
+                    self.MODE_SINGLE_SHOT, self.MODE_HARDWARE_START_TRIGGER,
+                    self.MODE_HARDWARE_TRIGGER, self.MODE_HARDWARE_TRIGGER_SYNC]:
             self._mode = mode
         else:
             raise RuntimeError('Mode %d not supported' % mode)
@@ -240,6 +246,19 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         
         elif self._mode == self.MODE_HARDWARE_START_TRIGGER:
             self._set_trigger_start_mode()
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                                DCAMCAP_START_SEQUENCE),
+                                                "dcamcap_start")
+        
+        elif self._mode == self.MODE_HARDWARE_TRIGGER:
+            self._set_ext_trigger_mode('normal', self._external_trigger_rising)
+            self.checkStatus(dcam.dcamcap_start(self.handle,
+                                                DCAMCAP_START_SEQUENCE),
+                                                "dcamcap_start")
+        
+        elif self._mode == self.MODE_HARDWARE_TRIGGER_SYNC:
+            # sets hardware trigger with exposure active between external pulses
+            self._set_ext_trigger_mode('syncreadout', self._external_trigger_rising)
             self.checkStatus(dcam.dcamcap_start(self.handle,
                                                 DCAMCAP_START_SEQUENCE),
                                                 "dcamcap_start")
@@ -539,6 +558,58 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
             pass
         self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_EXTERNAL)
         self.setCamPropValue('TRIGGER MODE', DCAMPROP_TRIGGER_MODE__START)
+    
+    def _set_ext_trigger_mode(self, trigger_mode='normal', rising=True):
+        """Use to time acquisitions with external hardware triggers starting
+        each frame exposure. (currently hardcoded to edge)
+
+        Parameters
+        ----------
+        trigger_mode : str
+            Currently supports:
+                normal: trigger edge starts a frame exposure
+                readoutsync: exposure starts on edge and continues until next
+                    edge, at which point another exposure begins
+        rising : bool
+            toggles whether active edge is positive going (rising=True) or
+            falling
+        
+        """
+        if rising:
+            self.setCamPropValue('TRIGGER POLARITY',
+                                 DCAMPROP_TRIGGERPOLARITY__POSITIVE)
+        else:
+            self.setCamPropValue('TRIGGER POLARITY', 
+                                 DCAMPROP_TRIGGERPOLARITY__NEGATIVE)
+        if trigger_mode == 'syncreadout':
+            self.setCamPropValue('TRIGGER ACTIVE',
+                                 DCAMPROP_TRIGGERACTIVE__SYNCREADOUT)
+        else:
+            try:
+                self.setCamPropValue('TRIGGER ACTIVE', DCAMPROP_TRIGGERACTIVE__EDGE)
+            except:
+                # Sometimes TRIGGER ACTIVE is not writable
+                pass
+        self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_EXTERNAL)
+        self.setCamPropValue('TRIGGER MODE', DCAMPROP_TRIGGER_MODE__NORMAL)
+    
+    def SetTriggerDelay(self, delay):
+        """Set the delay between a received ext hardware or software trigger and
+        the camera response. 
+
+        Parameters
+        ----------
+        delay : float
+            delay before e.g. exposing a frame. [s]
+        
+        Notes
+        -----
+        That there there is a short delay from receiving a trigger to actioning on it
+        which will depend on the readout speed selected. This delay is in addition to
+        that and can be particularly useful when synchronizing the camera to another
+        clock such as an optical chopper, where there's some phase to be matched.
+        """
+        self.setCamPropValue('TRIGGER DELAY', float(delay))
     
     def _get_global_exposure_delay(self):
         """How long from the beginning of exposure does it take before
