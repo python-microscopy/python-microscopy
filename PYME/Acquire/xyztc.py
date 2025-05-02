@@ -49,6 +49,26 @@ def TimeSettings(num_timepoints=1, time_interval=None):
 #   '''
     return dict(num_timepoints=num_timepoints, time_interval=time_interval)
 
+
+class CameraChannelSettings(object):
+    """holds settings for multichannel / color cameras
+    """
+    def __init__(self, scope):
+        """
+
+        Parameters
+        ----------
+        scope : PYME.Acquire.microscope.Microscope instance
+            Used to get camera reference and access its channel information
+        """
+        import weakref
+        self.scope = weakref.proxy(scope)
+
+    @property
+    def num_channels(self):
+        return self.scope.cam.n_channels
+
+
 class XYZTCAcquisition(AcquisitionBase):
     def __init__(self, scope, dim_order='XYCZT', stack_settings=None, time_settings=None, channel_settings=None, backend=MemoryBackend, backend_kwargs={}):
         """
@@ -415,4 +435,24 @@ class TiledZStackAcquisition(TiledXYZTCMixin, XYZTCAcquisition):
     def get_frozen_settings(cls, scope, spool_controller=None):
         return {'stack_settings' : scope.stackSettings.settings(),
             'tiling_settings': getattr(scope, 'tile_settings', {})}
-    
+
+
+class MultichannelZStackAcquisition(XYZTCAcquisition):
+    """
+    Class for a (multi-channel) Z-Stack acquisition
+    """
+    @classmethod
+    def from_spool_settings(cls, scope, settings, backend, backend_kwargs={}, series_name=None, spool_controller=None):
+        '''Create an XYZTCAcquisition object from a spool_controller settings object'''
+
+        backend_kwargs['series_name'] = series_name
+        channel_settings = settings.get('channel_settings', 
+                                        CameraChannelSettings(scope))
+
+        return cls(scope=scope, 
+                   #dim_order=settings.dim_order, 
+                   stack_settings=settings.get('stack_settings', scope.stackSettings), 
+                   time_settings=settings.get('time_settings', None), 
+                   channel_settings=channel_settings,
+                   backend=backend, backend_kwargs=backend_kwargs)
+

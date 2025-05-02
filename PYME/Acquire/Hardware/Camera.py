@@ -111,7 +111,14 @@ class CameraMapMixin(object):
 class Camera(object):
     # Frame format - PYME previously supported frames in a custom format, but numpy_frames should always be true for current code
     numpy_frames = 1 #Frames are delivered as numpy arrays.
-
+    # what data type is returned by the camera? For full support it is recommended to use 
+    # a format supported in `PYME.IO.PZFFormat`
+    dtype = 'uint16'  # uint16 is the default for PYME, and historically the only supported dtype of PYMEAcquire
+    
+    # number of channels in the camera output. This should be 1 for monochrome cameras, which should use splitter or 
+    # multiview approaches for implementing multi-color imaging.
+    n_channels = 1
+    
     # Acquisition modes
     MODE_SINGLE_SHOT = 0
     MODE_CONTINUOUS = 1
