@@ -497,6 +497,20 @@ class VisGUICore(object):
 
         logger.debug('Added layer, datasouce=%s' % l.dsname)
         return l
+    
+    def add_point_quiver_layer(self, ds_name=None, **kwargs):
+        from PYME.LMVis.layers.point_quiver import PointQuiverRenderLayer
+        
+        if ds_name is None:
+            # from PYME.experimental.smolm import OrientedPoints
+            _ds = [k for k, d in self.pipeline.dataSources.items() if hasattr(d, 'orientation')]
+            ds_name = _ds[-1]
+        
+        l = PointQuiverRenderLayer(self.pipeline, dsname=ds_name)
+        self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
+        return l
 
     def add_layer(self, layer):
         self.add_layers([layer,])
