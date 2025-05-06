@@ -72,17 +72,31 @@ This assumes a basic familiarity with python and conda. We maintain a conda meta
 On OSX, use ``/path/to/conda/environment/python.app/Contents/MacOS/python setup.py develop`` instead  of ``python setup.py develop`` so that the PYME programs can access the screen. 
 
 Windows users who do not already have MSVC build tools need to install them. On some verisons of Python this can be done using conda, however a more general approach is to download Visual Studio (the free, community version - the installer is also used for downloading build tools). 
-Customize as needed, but for a 64 bit Windows 10 computer you will likely need the following individual components:
+Customize as needed, but for a 64 bit Windows 11 (or Windows 10) computer you will likely need the following individual components:
 
-* Windows 10 SDK
-* MSVC v142 - VS 2019 C++ x64/x86 build tools (latest)
-* C++/CLI support for v142 build tools (latest)
-* Windows Universal C runtime
-* C++ Universal Windows Platform runtime
-* C++ Build Tools core Features
-* C++ core features
-* .NET Framework 4.8 SDK
-* .NET Framework 4.6.1 targeting pack 
+.. tabularcolumns:: |p{7cm}|p{7cm}|
+
++---------------------------------------------------------+---------------------------------------------------------+
+| Windows 11                                              | Windows 10                                              |
++=========================================================+=========================================================+
+| Windows 11 SDK                                          | Windows 10 SDK                                          |
++---------------------------------------------------------+---------------------------------------------------------+
+| MSVC v143 - VS 2022 C++ x64/x86 build tools (latest)    | MSVC v142 - VS 2019 C++ x64/x86 build tools (latest)    |
++---------------------------------------------------------+---------------------------------------------------------+
+| C++/CLI support for v143 build tools (latest)           | C++/CLI support for v142 build tools (latest)           |
++---------------------------------------------------------+---------------------------------------------------------+
+| Windows Universal C runtime                             | Windows Universal C runtime                             |
++---------------------------------------------------------+---------------------------------------------------------+
+| Windows Performance Toolkit                             | C++ Universal Windows Platform runtime                  |
++---------------------------------------------------------+---------------------------------------------------------+
+| C++ Build Insights                                      | C++ Build Tools core Features                           |
++---------------------------------------------------------+---------------------------------------------------------+
+| C++ core features                                       | C++ core features                                       |
++---------------------------------------------------------+---------------------------------------------------------+
+| .NET Framework 4.8.1 SDK                                | .NET Framework 4.8 SDK                                  |
++---------------------------------------------------------+---------------------------------------------------------+
+| .NET Framework 4.8.1 targeting pack                     | .NET Framework 4.6.1 targeting pack                     |
++---------------------------------------------------------+---------------------------------------------------------+
 
 
 
