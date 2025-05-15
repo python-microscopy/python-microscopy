@@ -41,6 +41,26 @@ recipe_1= '''
 
 '''
 
+recipe_2='''
+- localisations.AddPipelineDerivedVars:
+    inputEvents: ''
+    inputFitResults: FitResults
+    outputEventMaps: event_maps
+    outputLocalizations: Localizations
+- localisations.ProcessColour:
+    input: Localizations
+    output: colour_mapped
+- tablefilters.FilterTable:
+    filters:
+      error_x:
+      - 0
+      - 30
+      error_y:
+      - 0
+      - 30
+    inputName: colour_mapped
+    outputName: filtered_localizations
+'''
 
 def test_recipe_1():
     rec = Recipe.fromYAML(recipe_1)
@@ -48,3 +68,8 @@ def test_recipe_1():
     
     rec.execute(input=im)
     assert(np.allclose(rec.namespace['zoomed'].data_xyztc.shape, (88, 80, 241, 1, 2)))
+
+def test_recipe_2():
+    rec = Recipe.fromYAML(recipe_2)
+    yaml_str = rec.toYAML()
+    assert(yaml_str != '')
