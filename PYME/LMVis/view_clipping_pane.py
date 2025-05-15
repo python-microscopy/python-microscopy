@@ -107,7 +107,7 @@ class ClippingPanel(wx.Panel):
         #print 'bbox: ' + repr(bb)
         
         if bb is None:
-            return [1e-9, 1e9]
+            return [-1e9, 1e9]
         
         
         if self.axis == 'x':
