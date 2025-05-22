@@ -55,7 +55,7 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, PyArray_FLOAT, 3, 3);
+    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, NPY_FLOAT, 3, 3);
     if (amod == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
@@ -76,7 +76,7 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 
     //printf("shp: %d, %d", nx, ny);
         
-    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_FLOAT);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,NPY_FLOAT);
     if (out == NULL)
     {
       Py_DECREF(amod);
@@ -204,7 +204,7 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
         return NULL; 
 
         
-    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, PyArray_FLOAT, 3, 3);
+    amod = (PyArrayObject *) PyArray_ContiguousFromObject(omod, NPY_FLOAT, 3, 3);
     if (amod == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
@@ -225,7 +225,7 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
 
     //printf("shp: %d, %d", nx, ny);
         
-    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_FLOAT);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,NPY_FLOAT);
     if (out == NULL)
     {
       Py_DECREF(amod);
@@ -365,13 +365,13 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
 
     /* Do the calculations */ 
         
-    if (PyArray_TYPE(amod) != PyArray_FLOAT)
+    if (PyArray_TYPE(amod) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
       return NULL;
     }
 
-    if (PyArray_TYPE(out) != PyArray_FLOAT)
+    if (PyArray_TYPE(out) != NPY_FLOAT)
     {
         PyErr_Format(PyExc_RuntimeError, "bad output array");
         return NULL;
@@ -488,19 +488,19 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 
     /* Do the calculations */ 
         
-    if (PyArray_TYPE(amod) != PyArray_FLOAT)
+    if (PyArray_TYPE(amod) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
       return NULL;
     }
 
-    if (PyArray_TYPE(out) != PyArray_FLOAT)
+    if (PyArray_TYPE(out) != NPY_FLOAT)
     {
         PyErr_Format(PyExc_RuntimeError, "bad output array");
         return NULL;
     }
 
-    if (PyArray_TYPE(xv) != PyArray_FLOAT)
+    if (PyArray_TYPE(xv) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x");
       return NULL;
@@ -509,25 +509,25 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     npts = PyArray_DIM(xv, 0);
     //printf("n: %d\n", npts);
 
-    if (PyArray_TYPE(yv) != PyArray_FLOAT || PyArray_DIM(yv, 0) != npts)
+    if (PyArray_TYPE(yv) != NPY_FLOAT || PyArray_DIM(yv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y");
       return NULL;
     }
 
-    if (PyArray_TYPE(zv) != PyArray_FLOAT || PyArray_DIM(zv, 0) != npts)
+    if (PyArray_TYPE(zv) != NPY_FLOAT || PyArray_DIM(zv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z");
       return NULL;
     }
 
-    if (PyArray_TYPE(Av) != PyArray_FLOAT || PyArray_DIM(Av, 0) != npts)
+    if (PyArray_TYPE(Av) != NPY_FLOAT || PyArray_DIM(Av, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad A");
       return NULL;
     }
 
-    if (PyArray_TYPE(nv) != PyArray_INT || PyArray_DIM(nv, 0) != npts)
+    if (PyArray_TYPE(nv) != NPY_INT || PyArray_DIM(nv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad nx");
       return NULL;

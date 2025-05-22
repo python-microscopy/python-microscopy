@@ -110,14 +110,14 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
 
     /* Do the calculations */
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -125,7 +125,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
         return NULL;
     }
 
-    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_DOUBLE, 0, 1);
+    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, NPY_DOUBLE, 0, 1);
     if (Zvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -134,7 +134,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
         return NULL;
     }
 
-    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 1, 1);
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_DOUBLE, 1, 1);
     if (Pvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -159,7 +159,7 @@ static PyObject * genWidefieldPSF(PyObject *self, PyObject *args, PyObject *keyw
 
     size_p = PyArray_Size((PyObject*)Pvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 3,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
     {
@@ -342,14 +342,14 @@ static PyObject * genWidefieldPSFW(PyObject *self, PyObject *args, PyObject *key
 
     /* Do the calculations */
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -357,7 +357,7 @@ static PyObject * genWidefieldPSFW(PyObject *self, PyObject *args, PyObject *key
         return NULL;
     }
 
-    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_DOUBLE, 0, 1);
+    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, NPY_DOUBLE, 0, 1);
     if (Zvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -366,7 +366,7 @@ static PyObject * genWidefieldPSFW(PyObject *self, PyObject *args, PyObject *key
         return NULL;
     }
 
-    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 1, 1);
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_DOUBLE, 1, 1);
     if (Pvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -376,7 +376,7 @@ static PyObject * genWidefieldPSFW(PyObject *self, PyObject *args, PyObject *key
         return NULL;
     }
 
-    Wvals = (PyArrayObject *) PyArray_ContiguousFromObject(oW, PyArray_DOUBLE, 1, 1);
+    Wvals = (PyArrayObject *) PyArray_ContiguousFromObject(oW, NPY_DOUBLE, 1, 1);
     if (Wvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -402,7 +402,7 @@ static PyObject * genWidefieldPSFW(PyObject *self, PyObject *args, PyObject *key
 
     size_p = PyArray_Size((PyObject*)Pvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 3,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
     {

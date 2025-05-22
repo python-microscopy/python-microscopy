@@ -76,14 +76,14 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
 
     /* Do the calculations */ 
         
-    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, NPY_DOUBLE, 0, 1);
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x1");
       return NULL;
     }
 
-    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, NPY_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       Py_DECREF(ax1);
@@ -91,7 +91,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
       return NULL;
     }
 
-    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
+    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, NPY_DOUBLE, 0, 1);
     if (ax2 == NULL)
     {
       Py_DECREF(ax1);
@@ -100,7 +100,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
       return NULL;
     }
 
-    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
+    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, NPY_DOUBLE, 0, 1);
     if (ay2 == NULL)
     {
       Py_DECREF(ax1);
@@ -124,7 +124,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
 
     outDimensions[0] = nBins;
         
-    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_DOUBLE);
     if (out == NULL)
     {
       Py_DECREF(ax1);
@@ -241,42 +241,42 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
 
     /* Do the calculations */
 
-    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, NPY_DOUBLE, 0, 1);
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x1");
       goto fail;
     }
 
-    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, NPY_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y1");
       goto fail;
     }
 
-    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
+    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, NPY_DOUBLE, 0, 1);
     if (ax2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x2");
       goto fail;
     }
 
-    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
+    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, NPY_DOUBLE, 0, 1);
     if (ay2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y2");
       goto fail;
     }
 
-    az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, PyArray_DOUBLE, 0, 1);
+    az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, NPY_DOUBLE, 0, 1);
     if (az1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z1");
       goto fail;
     }
 
-    az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, PyArray_DOUBLE, 0, 1);
+    az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, NPY_DOUBLE, 0, 1);
     if (az2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z2");
@@ -300,7 +300,7 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
 
     outDimensions[0] = nBins;
 
-    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_DOUBLE);
     if (out == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
@@ -435,42 +435,42 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
     rBinAngle = 1.0/bin_size_angle;
     /* Do the calculations */
 
-    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, NPY_DOUBLE, 0, 1);
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x1");
       goto fail_vd;
     }
 
-    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, NPY_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y1");
       goto fail_vd;
     }
 
-    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
+    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, NPY_DOUBLE, 0, 1);
     if (ax2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x2");
       goto fail_vd;
     }
 
-    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
+    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, NPY_DOUBLE, 0, 1);
     if (ay2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y2");
       goto fail_vd;
     }
 
-    az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, PyArray_DOUBLE, 0, 1);
+    az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, NPY_DOUBLE, 0, 1);
     if (az1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z1");
       goto fail_vd;
     }
 
-    az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, PyArray_DOUBLE, 0, 1);
+    az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, NPY_DOUBLE, 0, 1);
     if (az2 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z2");
@@ -503,7 +503,7 @@ static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObje
 
     //printf("x1_len: %d, x2_len: %d, od: [%d, %d, %d]\n", x1_len, x2_len, outDimensions[0], outDimensions[1], outDimensions[2]);
 
-    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_INT);
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,NPY_INT);
     if (out == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
@@ -618,14 +618,14 @@ static PyObject * distanceProduct(PyObject *self, PyObject *args, PyObject *keyw
 
     /* Do the calculations */
 
-    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, NPY_DOUBLE, 0, 1);
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x");
       return NULL;
     }
 
-    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, NPY_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       Py_DECREF(ax1);
@@ -730,14 +730,14 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
 
     /* Do the calculations */
 
-    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, NPY_DOUBLE, 0, 1);
     if (ax1 == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x1");
       return NULL;
     }
 
-    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, NPY_DOUBLE, 0, 1);
     if (ay1 == NULL)
     {
       Py_DECREF(ax1);
@@ -745,7 +745,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
       return NULL;
     }
 
-    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
+    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, NPY_DOUBLE, 0, 1);
     if (ax2 == NULL)
     {
       Py_DECREF(ax1);
@@ -754,7 +754,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
       return NULL;
     }
 
-    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
+    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, NPY_DOUBLE, 0, 1);
     if (ay2 == NULL)
     {
       Py_DECREF(ax1);
@@ -778,7 +778,7 @@ static PyObject * distanceHistogramRS(PyObject *self, PyObject *args, PyObject *
 
     outDimensions[0] = nBins;
 
-    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_DOUBLE);
     if (out == NULL)
     {
       Py_DECREF(ax1);
@@ -899,14 +899,14 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
 
     /* Do the calculations */
 
-    ax = (PyArrayObject *) PyArray_ContiguousFromObject(ox, PyArray_DOUBLE, 0, 1);
+    ax = (PyArrayObject *) PyArray_ContiguousFromObject(ox, NPY_DOUBLE, 0, 1);
     if (ax == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x");
       return NULL;
     }
 
-    ay = (PyArrayObject *) PyArray_ContiguousFromObject(oy, PyArray_DOUBLE, 0, 1);
+    ay = (PyArrayObject *) PyArray_ContiguousFromObject(oy, NPY_DOUBLE, 0, 1);
     if (ay == NULL)
     {
       Py_DECREF(ax);
@@ -914,7 +914,7 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
       return NULL;
     }
 
-    at = (PyArrayObject *) PyArray_ContiguousFromObject(ot, PyArray_DOUBLE, 0, 1);
+    at = (PyArrayObject *) PyArray_ContiguousFromObject(ot, NPY_DOUBLE, 0, 1);
     if (at == NULL)
     {
       Py_DECREF(ax);
@@ -943,7 +943,7 @@ static PyObject * meanSquareDistHist(PyObject *self, PyObject *args, PyObject *k
 
     outDimensions[0] = nBins;
 
-    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_DOUBLE);
     if (out == NULL)
     {
       Py_DECREF(ax);
