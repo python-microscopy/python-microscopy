@@ -29,6 +29,16 @@ class AcquireClient(object):
         t.daemon = True
         t.start()
 
+    def _check_response(self, response):
+        """
+        Handles the response from the server. Raises an exception if the response is not
+        successful.
+        """
+        if not response.ok:
+            raise Exception('Error: {}'.format(response.text))
+        
+        return response
+
     @property
     def state(self):
         """
@@ -46,20 +56,20 @@ class AcquireClient(object):
         """
         Returns the current state of the scope as a dictionary.
         """
-        return requests.get(self.base_url + '/get_scope_state').json()
+        return self._check_response(requests.get(self.base_url + '/get_scope_state')).json()
     
     def update_scope_state(self, state:dict):
         """
         Updates the scope state with the provided dictionary.
         """
-        requests.post(self.base_url + '/update_scope_state', json=state)
+        self._check_response(requests.post(self.base_url + '/update_scope_state', json=state))
 
     def start_spooling(self, filename='', preflight_mode='abort', settings={}):
         """
         Starts spooling images to disk. If filename is not provided, the default filename will be used.
         """
         
-        requests.post(self.base_url + f'/spool_controller/start_spooling?filename={filename}&preflight_mode={preflight_mode}', json=settings)
+        self._check_response(requests.post(self.base_url + f'/spool_controller/start_spooling?filename={filename}&preflight_mode={preflight_mode}', json=settings))
 
         return self.spooling_finished
 
@@ -69,7 +79,7 @@ class AcquireClient(object):
 
         TODO - Use the long-polling endpoint???
         """
-        return requests.get(self.base_url + '/spool_controller/info').json()
+        return self._check_response(requests.get(self.base_url + '/spool_controller/info')).json()
     
     def spooling_finished(self):
         """

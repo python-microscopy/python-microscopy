@@ -283,9 +283,15 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         
         try:
             resp = handler(**kwargs)
-        except Exception:
+        except Exception as e:
+            logger.exception('Exception in handler %s' % handler)
+            
             import traceback
-            self.send_error(500, 'Server Error\n %s' % traceback.format_exc())
+            explain = f''' {handler.__module__}.{handler.__name__}({', '.join(['%s=%s' % (k, repr(v)) for k, v in kwargs.items()])})
+            {e.__class__.__name__}: {e}
+            {traceback.format_exc()}
+            '''
+            self.send_error(500, message='Server Error', explain=explain)
             return
         
         if isinstance(resp, HTTPResponse):

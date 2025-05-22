@@ -48,6 +48,9 @@ warnings.simplefilter('once', wx.wxPyDeprecationWarning)
 import os
 import logging
 import logging.config
+import os
+
+import PYME.config as pyme_config
 
 def setup_logging(default_level=logging.DEBUG):
     """Setup logging configuration
@@ -64,6 +67,19 @@ def setup_logging(default_level=logging.DEBUG):
     if os.path.exists(path):
         with open(path, 'rt') as f:
             config = yaml.safe_load(f)
+
+        if pyme_config.get('Acquire-logging_include_pid', False):
+            # replace the filename in the file handler with a version that includes the PID
+            # this is useful for debugging multiple instances of PYMEAcquire
+            # The caveat is that each time you run the program you will get a new log file
+            # and these will accumulate until manually deleted / removed.
+            # To enable, add the following line to ~/.PYME/config.yaml
+            # Acquire-logging_include_pid: True
+            try:
+                config['handlers']['file']['filename'] = config['handlers']['file']['filename'].replace('.log', f'_{os.getpid()}.log')
+            except KeyError:
+                print('No file handler in logging config - skipping PID replacement')
+            
         logging.config.dictConfig(config)
     else:
         logging.basicConfig(level=default_level)
