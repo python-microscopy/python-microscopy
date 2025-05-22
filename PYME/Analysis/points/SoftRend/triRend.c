@@ -593,7 +593,7 @@ static PyObject * PyTetAndDraw(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    aPositions = (PyArrayObject *) PyArray_ContiguousFromObject(oPositions, PyArray_DOUBLE, 2, 2);
+    aPositions = (PyArrayObject *) PyArray_ContiguousFromObject(oPositions, NPY_DOUBLE, 2, 2);
     if (aPositions == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad position data");

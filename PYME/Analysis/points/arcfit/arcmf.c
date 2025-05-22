@@ -72,14 +72,14 @@ static PyObject * arcmf(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -87,7 +87,7 @@ static PyObject * arcmf(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    sXvals = (PyArrayObject *) PyArray_ContiguousFromObject(osX, PyArray_DOUBLE, 0, 1);
+    sXvals = (PyArrayObject *) PyArray_ContiguousFromObject(osX, NPY_DOUBLE, 0, 1);
     if (sXvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -96,7 +96,7 @@ static PyObject * arcmf(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    sYvals = (PyArrayObject *) PyArray_ContiguousFromObject(osY, PyArray_DOUBLE, 0, 1);
+    sYvals = (PyArrayObject *) PyArray_ContiguousFromObject(osY, NPY_DOUBLE, 0, 1);
     if (sYvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -239,20 +239,20 @@ static PyObject * arcmft(PyObject *self, PyObject *args, PyObject *keywds)
         goto FINALIZE_arcmft;\
         }
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) ABORT("Bad X")
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL) ABORT("Bad Y")
 
-    sXvals = (PyArrayObject *) PyArray_ContiguousFromObject(osX, PyArray_DOUBLE, 0, 1);
+    sXvals = (PyArrayObject *) PyArray_ContiguousFromObject(osX, NPY_DOUBLE, 0, 1);
     if (sXvals == NULL) ABORT("Bad sX")
 
 
-    sYvals = (PyArrayObject *) PyArray_ContiguousFromObject(osY, PyArray_DOUBLE, 0, 1);
+    sYvals = (PyArrayObject *) PyArray_ContiguousFromObject(osY, NPY_DOUBLE, 0, 1);
     if (sYvals == NULL) ABORT("Bad sY")
     
-    Tvals = (PyArrayObject *) PyArray_ContiguousFromObject(oT, PyArray_DOUBLE, 0, 1);
+    Tvals = (PyArrayObject *) PyArray_ContiguousFromObject(oT, NPY_DOUBLE, 0, 1);
     if (Tvals == NULL) ABORT("Bad T")
     
     pXvals = (double*)Xvals->data;
@@ -391,20 +391,20 @@ static PyObject * py_quad_surf_mf_pos_fixed(PyObject *self, PyObject *args, PyOb
         goto FINALIZE_py_quad_surf_mf_pos_fixed;\
         }
 
-    aX = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_FLOAT, 0, 1);
+    aX = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_FLOAT, 0, 1);
     if (aX == NULL) ABORT("Bad X")
 
-    aY = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_FLOAT, 0, 1);
+    aY = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_FLOAT, 0, 1);
     if (aY == NULL) ABORT("Bad Y")
 
-    aZ = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_FLOAT, 0, 1);
+    aZ = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, NPY_FLOAT, 0, 1);
     if (aZ == NULL) ABORT("Bad Z")
 
-    aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_FLOAT, 0, 1);
+    aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_FLOAT, 0, 1);
     printf("aP: %d, PyArray_Size(aP): %d\n", (int)aP, PyArray_Size((PyObject*)aP));
     if ((aP == NULL) || (PyArray_Size((PyObject*)aP) < 5)) ABORT("Bad P")
 
-    aPos = (PyArrayObject *) PyArray_ContiguousFromObject(oPos, PyArray_FLOAT, 0, 1);
+    aPos = (PyArrayObject *) PyArray_ContiguousFromObject(oPos, NPY_FLOAT, 0, 1);
     if ((aPos == NULL) || (PyArray_Size((PyObject*)aPos) != 3)) ABORT("Bad Pos")
 
     nPts = PyArray_Size((PyObject*)aX);
@@ -482,16 +482,16 @@ static PyObject * py_quad_surf_mf(PyObject *self, PyObject *args, PyObject *keyw
         goto FINALIZE_py_quad_surf_mf;\
         }
 
-    aX = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_FLOAT, 0, 1);
+    aX = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_FLOAT, 0, 1);
     if (aX == NULL) ABORT("Bad X")
 
-    aY = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_FLOAT, 0, 1);
+    aY = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_FLOAT, 0, 1);
     if (aY == NULL) ABORT("Bad Y")
 
-    aZ = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_FLOAT, 0, 1);
+    aZ = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, NPY_FLOAT, 0, 1);
     if (aZ == NULL) ABORT("Bad Z")
 
-    aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 0, 1);
+    aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_DOUBLE, 0, 1);
     if (aP == NULL) ABORT("Bad P")
     if (PyArray_Size((PyObject*)aP) != 8) ABORT("P is wrong size")
 
