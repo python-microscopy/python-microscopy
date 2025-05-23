@@ -23,7 +23,7 @@ from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFi
 from PYME.IO import unifiedIO, MetaDataHandler
 
 from PYME.Acquire.protocol_acquisition import ProtocolAcquisition
-from PYME.Acquire.xyztc import XYZTCAcquisition, ZStackAcquisition
+from PYME.Acquire.xyztc import MultichannelZStackAcquisition  # XYZTCAcquisition, ZStackAcquisition
 
 
 #import PYME.Acquire.Protocols
@@ -174,7 +174,7 @@ class SpoolController(object):
         self._series_name = None
 
         self.acquisition_types = {
-                                  'ZStackAcquisition': ZStackAcquisition,
+                                  'ZStackAcquisition': MultichannelZStackAcquisition,  # ZStackAcquisition,
                                   'ProtocolAcquisition': ProtocolAcquisition,
                                  }
         
@@ -553,7 +553,8 @@ class SpoolController(object):
             backend_kwargs['compression_settings'] = settings.get('pzf_compression_settings', self.pzf_compression_settings)
         elif self.spoolType == 'File':
             backend_kwargs['complevel'] = settings.get('hdf_compression_level', self.hdf_compression_level)
-        
+        # set backend dtype to camera dtype
+        backend_kwargs['dtype'] = self.scope.cam.dtype
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
 
