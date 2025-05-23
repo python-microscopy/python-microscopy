@@ -19,6 +19,8 @@ psutil
 ujson
 jinja2
 toposort
+setuptools < 60 # setuptools >= 60 has removed compiler support
+#distutils <
 pymecompress >=0.2
 zeroconf<=0.26.3
 
