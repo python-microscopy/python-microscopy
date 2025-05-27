@@ -117,7 +117,7 @@ class PcoSdkCam(Camera):
         self._cam_type = pco_sdk.get_camera_type(self._handle)
         self.SetHotPixelCorrectionMode(pco_sdk.PCO_HOTPIXELCORRECTION_OFF)
 
-        self._buffer_lock = threading.Lock()
+        self._buffer_lock = threading.RLock()
         
         self._polling = True
         self._poll_thread = threading.Thread(target=self._poll_loop)
@@ -436,12 +436,21 @@ class PcoSdkCam(Camera):
         return int(max(2*100*self.GetCycleTime(), 100))
     
     def StartExposure(self):
+        #logger.debug(f'PcoSdkCam: StartExposure called from thread {threading.current_thread().name} at {time.time()}')
         self._get_temps()
-        if self._recording == False:
-            self._init_buffers()
+
+        with self._buffer_lock:
+            # we need to lock around checking and setting the _recording flag
+            # use the _buffer_lock (I've made this re-entrant so that it can still be called
+            # from within _init_buffers, but we could just as well bring the lock out here
+            # as this is the only place we call _init_buffers)
+
+            if self._recording == False:
+                self._init_buffers()
+            self._recording = True
 
         self._log_exposure_start()
-        self._recording = True
+        
 
         if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):
             self.TriggerAq()
