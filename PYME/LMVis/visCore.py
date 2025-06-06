@@ -443,9 +443,14 @@ class VisGUICore(object):
         
     def OnOpenFile(self, event):
         filename = wx.FileSelector("Choose a file to open", 
-                                   nameUtils.genResultDirectoryPath(), 
-                                   wildcard='All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf;*.3d;*.3dlp|PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
-
+                                   nameUtils.genResultDirectoryPath(),
+                                   wildcard='|'.join(['All supported formats|*.h5r;*.txt;*.mat;*.csv;*.hdf;*.3d;*.3dlp;*.pvs',
+                                                      'PYME Results Files (*.h5r)|*.h5r',
+                                                      'Tab Formatted Text (*.txt)|*.txt',
+                                                      'Matlab data (*.mat)|*.mat',
+                                                      'Comma separated values (*.csv)|*.csv',
+                                                      'HDF Tabular (*.hdf)|*.hdf',
+                                                      'Session files (*.pvs)|*.pvs',]))
         #print filename
         if not filename == '':
             self.OpenFile(filename)
