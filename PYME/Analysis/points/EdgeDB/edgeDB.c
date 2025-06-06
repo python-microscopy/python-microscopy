@@ -203,7 +203,7 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
     }
 
 /*
-    delnEdgeArray = (PyArrayObject *) PyArray_ContiguousFromObject(deln_edges, PyArray_INT32, 0, 1);
+    delnEdgeArray = (PyArrayObject *) PyArray_ContiguousFromObject(deln_edges, NPY_INT32, 0, 1);
     if (delnEdgeArray == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad triangulation edges");
@@ -298,7 +298,7 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
     }
 
 /*
-    delnEdgeArray = (PyArrayObject *) PyArray_ContiguousFromObject(deln_edges, PyArray_INT32, 0, 1);
+    delnEdgeArray = (PyArrayObject *) PyArray_ContiguousFromObject(deln_edges, NPY_INT32, 0, 1);
     if (delnEdgeArray == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad triangulation edges");
@@ -451,10 +451,10 @@ static PyObject * getVertexEdgeLengths(PyObject *self, PyObject *args, PyObject 
 
     numEdges = edb.records[vertexNum].numIncidentEdges;
 
-    //printf("n: %d, %d\n", numEdges, PyArray_INT32);
+    //printf("n: %d, %d\n", numEdges, NPY_INT32);
 
     dims[0] = numEdges;
-    incEdgesA = PyArray_SimpleNew(1, dims, PyArray_FLOAT32);
+    incEdgesA = PyArray_SimpleNew(1, dims, NPY_FLOAT32);
     if (!incEdgesA)
     {
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for edges");
@@ -510,7 +510,7 @@ static PyObject * getVertexNeighbours(PyObject *self, PyObject *args, PyObject *
     //printf("n: %d\n", numEdges);
 
     dims[0] = numEdges;
-    neighbourA = PyArray_SimpleNew(1, dims, PyArray_INT32);
+    neighbourA = PyArray_SimpleNew(1, dims, NPY_INT32);
     if (!neighbourA)
     {
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for edges");
@@ -658,7 +658,7 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
 
 
     dims[0] = edb.numVertices;
-    objectsArray = PyArray_SimpleNew(1, dims, PyArray_INT32);
+    objectsArray = PyArray_SimpleNew(1, dims, NPY_INT32);
     if (!objectsArray)
     {
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for objects");

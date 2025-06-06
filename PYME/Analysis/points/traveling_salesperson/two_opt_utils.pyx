@@ -1,7 +1,7 @@
 
 cimport numpy as np
 
-ctypedef np.int_t DTYPE_it
+ctypedef np.int64_t DTYPE_it
 ctypedef np.float_t DTYPE_ft
 
 def two_opt_test(np.ndarray[DTYPE_it, ndim=1] route, int i, int k, np.ndarray[DTYPE_ft, ndim=2] distances, int k_max):

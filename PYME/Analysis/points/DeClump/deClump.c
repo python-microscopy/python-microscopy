@@ -178,7 +178,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
          &tO, &xO, &yO, &delta_xO, &nFrames))
         return NULL;
 
-    tA = (PyArrayObject *) PyArray_ContiguousFromObject(tO, PyArray_INT, 0, 1);
+    tA = (PyArrayObject *) PyArray_ContiguousFromObject(tO, NPY_INT, 0, 1);
     if (tA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad t");
@@ -187,7 +187,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
 
     nPts = PyArray_DIM(tA, 0);
 
-    xA = (PyArrayObject *) PyArray_ContiguousFromObject(xO, PyArray_FLOAT, 0, 1);
+    xA = (PyArrayObject *) PyArray_ContiguousFromObject(xO, NPY_FLOAT, 0, 1);
     if ((xA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -195,7 +195,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
       return NULL;
     }
 
-    yA = (PyArrayObject *) PyArray_ContiguousFromObject(yO, PyArray_FLOAT, 0, 1);
+    yA = (PyArrayObject *) PyArray_ContiguousFromObject(yO, NPY_FLOAT, 0, 1);
     if ((yA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -204,7 +204,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
       return NULL;
     }
 
-    delta_xA = (PyArrayObject *) PyArray_ContiguousFromObject(delta_xO, PyArray_FLOAT, 0, 1);
+    delta_xA = (PyArrayObject *) PyArray_ContiguousFromObject(delta_xO, NPY_FLOAT, 0, 1);
     if ((delta_xA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -223,7 +223,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
 
     dims[0] = nPts;
     printf("nPts = %d\n", nPts);
-    assignedA = PyArray_SimpleNew(1, dims, PyArray_INT32);
+    assignedA = PyArray_SimpleNew(1, dims, NPY_INT32);
     if (assignedA == NULL)
     {
         Py_DECREF(tA);
@@ -353,7 +353,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
 
     //printf("nFrames: %d\n", nFrames);
 
-    tA = (PyArrayObject *) PyArray_ContiguousFromObject(tO, PyArray_INT, 0, 1);
+    tA = (PyArrayObject *) PyArray_ContiguousFromObject(tO, NPY_INT, 0, 1);
     if (tA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad t");
@@ -362,7 +362,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
 
     nPts = PyArray_DIM(tA, 0);
 
-    xA = (PyArrayObject *) PyArray_ContiguousFromObject(xO, PyArray_FLOAT, 0, 1);
+    xA = (PyArrayObject *) PyArray_ContiguousFromObject(xO, NPY_FLOAT, 0, 1);
     if ((xA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -370,7 +370,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
       return NULL;
     }
 
-    yA = (PyArrayObject *) PyArray_ContiguousFromObject(yO, PyArray_FLOAT, 0, 1);
+    yA = (PyArrayObject *) PyArray_ContiguousFromObject(yO, NPY_FLOAT, 0, 1);
     if ((yA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -379,7 +379,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
       return NULL;
     }
 
-    delta_xA = (PyArrayObject *) PyArray_ContiguousFromObject(delta_xO, PyArray_FLOAT, 0, 1);
+    delta_xA = (PyArrayObject *) PyArray_ContiguousFromObject(delta_xO, NPY_FLOAT, 0, 1);
     if ((delta_xA == NULL) || (PyArray_DIM(xA, 0) != nPts))
     {
       Py_DECREF(tA);
@@ -398,7 +398,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
 
     dims[0] = nPts;
     printf("nPts = %d\n", nPts);
-    assignedA = PyArray_SimpleNew(1, dims, PyArray_INT32);
+    assignedA = PyArray_SimpleNew(1, dims, NPY_INT32);
     if (assignedA == NULL)
     {
         Py_DECREF(tA);
@@ -541,7 +541,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
          &nClumps, &clumpIDO, &varO, &sigmaO))
         return NULL;
 
-    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, PyArray_INT, 0, 1);
+    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, NPY_INT, 0, 1);
     if (clumpIDA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad clumpIDs");
@@ -550,7 +550,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
 
     nPts = PyArray_DIM(clumpIDA, 0);
 
-    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, PyArray_FLOAT, 0, 1);
+    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, NPY_FLOAT, 0, 1);
     if ((varA == NULL) || (PyArray_DIM(varA, 0) != nPts))
     {
       Py_DECREF(clumpIDA);
@@ -558,7 +558,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
       return NULL;
     }
 
-    sigmaA = (PyArrayObject *) PyArray_ContiguousFromObject(sigmaO, PyArray_FLOAT, 0, 1);
+    sigmaA = (PyArrayObject *) PyArray_ContiguousFromObject(sigmaO, NPY_FLOAT, 0, 1);
     if ((sigmaA == NULL) || (PyArray_DIM(sigmaA, 0) != nPts))
     {
       Py_DECREF(clumpIDA);
@@ -574,7 +574,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
 
     dims[0] = nClumps;
 
-    outVarA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    outVarA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outVarA == NULL)
     {
         Py_DECREF(clumpIDA);
@@ -584,7 +584,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
         return NULL;
     }
 
-    outSigA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    outSigA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outSigA == NULL)
     {
         Py_DECREF(clumpIDA);
@@ -719,7 +719,7 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
          &nClumps, &clumpIDO, &varO))
         return NULL;
 
-    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, PyArray_INT, 0, 1);
+    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, NPY_INT, 0, 1);
     if (clumpIDA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad clumpIDs");
@@ -728,7 +728,7 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
 
     nPts = PyArray_DIM(clumpIDA, 0);
 
-    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, PyArray_FLOAT, 0, 1);
+    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, NPY_FLOAT, 0, 1);
     if ((varA == NULL) || (PyArray_DIM(varA, 0) != nPts))
     {
       Py_DECREF(clumpIDA);
@@ -742,7 +742,7 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
 
     dims[0] = nClumps;
 
-    outVarA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    outVarA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outVarA == NULL)
     {
         Py_DECREF(clumpIDA);
@@ -857,7 +857,7 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
          &nClumps, &clumpIDO, &varO))
         return NULL;
 
-    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, PyArray_INT, 0, 1);
+    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, NPY_INT, 0, 1);
     if (clumpIDA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad clumpIDs");
@@ -866,7 +866,7 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
 
     nPts = PyArray_DIM(clumpIDA, 0);
 
-    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, PyArray_FLOAT, 0, 1);
+    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, NPY_FLOAT, 0, 1);
     if ((varA == NULL) || (PyArray_DIM(varA, 0) != nPts))
     {
       Py_DECREF(clumpIDA);
@@ -880,7 +880,7 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
 
     dims[0] = nClumps;
 
-    outVarA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    outVarA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outVarA == NULL)
     {
         Py_DECREF(clumpIDA);
@@ -987,7 +987,7 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
          &nClumps, &clumpIDO, &varO))
         return NULL;
 
-    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, PyArray_INT, 0, 1);
+    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, NPY_INT, 0, 1);
     if (clumpIDA == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad clumpIDs");
@@ -996,7 +996,7 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
 
     nPts = PyArray_DIM(clumpIDA, 0);
 
-    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, PyArray_FLOAT, 0, 1);
+    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, NPY_FLOAT, 0, 1);
     if ((varA == NULL) || (PyArray_DIM(varA, 0) != nPts))
     {
       Py_DECREF(clumpIDA);
@@ -1010,7 +1010,7 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
 
     dims[0] = nClumps;
 
-    outVarA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    outVarA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outVarA == NULL)
     {
         Py_DECREF(clumpIDA);
