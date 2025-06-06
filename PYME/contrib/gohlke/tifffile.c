@@ -66,6 +66,11 @@ setup(name='_tifffile', ext_modules=[Extension('_tifffile', ['tifffile.c'],
 #include "string.h"
 #include "numpy/arrayobject.h"
 
+/* NPY 1.X backwards compatibility */
+#if NPY_ABI_VERSION < 0x02000000
+  #define PyDataType_ELSIZE(descr) ((descr)->elsize)
+#endif
+
 /* little endian by default */
 #ifndef MSB
 #define MSB 1
@@ -397,7 +402,7 @@ py_unpackints(PyObject *obj, PyObject *args, PyObject *kwds)
          PyErr_Format(PyExc_ValueError, "data size out of range");
          goto _fail;
     }
-    if (dtype->elsize != storagesize) {
+    if (PyDataType_ELSIZE(dtype) != storagesize) {
          PyErr_Format(PyExc_TypeError, "dtype.elsize doesn't fit itemsize");
          goto _fail;
     }
@@ -436,7 +441,7 @@ py_unpackints(PyObject *obj, PyObject *args, PyObject *kwds)
     }
 
     if ((dtype->byteorder != BOC) && (itemsize % 8 == 0)) {
-        switch (dtype->elsize) {
+      switch (PyDataType_ELSIZE(dtype)) {
         case 2: {
             uint16_t *d = (uint16_t *)PyArray_DATA(result);
             for (i = 0; i < PyArray_SIZE(result); i++) {

@@ -54,14 +54,14 @@ static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
     outDimensions[0] = nPts;
 
     // Allocate output arrays
-    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_INT);
+    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_INT);
     if (out_z == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
       goto fail;
     }
 
-    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_FLOAT);
+    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_FLOAT);
     if (out_err == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
@@ -168,14 +168,14 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
     outDimensions[0] = nPts;
 
     // Allocate output arrays
-    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_INT);
+    out_z = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_INT);
     if (out_z == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
       goto fail;
     }
 
-    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,PyArray_FLOAT);
+    out_err = (PyArrayObject*) PyArray_SimpleNew(1,outDimensions,NPY_FLOAT);
     if (out_err == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
