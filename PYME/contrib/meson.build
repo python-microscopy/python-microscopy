@@ -23,20 +23,21 @@ py_sources = files(
     'pad/pad.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/contrib')
+py.install_sources(py_sources, subdir:'PYME/contrib/pad')
 
 subdir('gohlke')
+
 py_sources = files(
     'dispatch/dispatcher.py',
     'dispatch/__init__.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/contrib')
+py.install_sources(py_sources, subdir:'PYME/contrib/dispatch')
 
 py_sources = files(
     'aniso/aniso.py',
     'aniso/__init__.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/contrib')
+py.install_sources(py_sources, subdir:'PYME/contrib/aniso')
 

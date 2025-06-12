@@ -20,7 +20,7 @@ py.extension_module(
         'deClump.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/DeClump',
+    subdir: 'PYME/Analysis/points/DeClump',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

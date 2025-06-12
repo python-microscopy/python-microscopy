@@ -21,7 +21,7 @@ py.extension_module(
         'edgeDB.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/EdgeDB',
+    subdir: 'PYME/Analysis/points/EdgeDB',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

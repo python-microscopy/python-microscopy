@@ -39,5 +39,5 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/recipes')
 
-install_subdir('Recipes', install_dir: 'PYME/recipes/Recipes')
-install_subdir('templates', install_dir: 'PYME/recipes/templates')
+install_subdir('Recipes', install_dir: install_dir)
+install_subdir('templates', install_dir: install_dir)

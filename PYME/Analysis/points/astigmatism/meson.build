@@ -19,7 +19,7 @@ py.extension_module(
         'astiglookup.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/astigmatism',
+    subdir: 'PYME/Analysis/points/astigmatism',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

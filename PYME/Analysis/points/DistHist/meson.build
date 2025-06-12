@@ -20,7 +20,7 @@ py.extension_module(
         'distHist.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/DistHist',
+    subdir: 'PYME/Analysis/points/DistHist',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

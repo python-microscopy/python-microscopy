@@ -18,7 +18,7 @@ py.extension_module(
         'lut.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/DSView/LUT',
+    subdir: 'PYME/DSView/LUT',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

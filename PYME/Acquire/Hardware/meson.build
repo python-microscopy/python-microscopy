@@ -68,7 +68,7 @@ py_sources = files(
     'AndorIXon/AndorIXon.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/AndorIXon')
 
 py_sources = files(
     'AndorNeo/ZylaControlPanel.py',
@@ -83,7 +83,7 @@ py_sources = files(
     'AndorNeo/testNeo.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/AndorNeo')
 
 py_sources = files(
     'DigiData/RemoteDigiData.py',
@@ -93,16 +93,16 @@ py_sources = files(
     'DigiData/axDD132x.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/DigiData')
 
 subdir('Simulator')
-py_sources = files(
-    'Old/mc2000.py',
-    'Old/esp300.py',
-    'Old/lpttest.py',
-)
 
-py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware')
+# py_sources = files(
+#     'Old/mc2000.py',
+#     'Old/esp300.py',
+#     'Old/lpttest.py',
+# )
+# py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Old')
 
 py_sources = files(
     'Piezos/piezo_e816.py',
@@ -120,6 +120,5 @@ py_sources = files(
     'Piezos/piezo_e662.py',
     'Piezos/piezo_e816_corr.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Piezos')
 

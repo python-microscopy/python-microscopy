@@ -49,7 +49,7 @@ py_sources = files(
     'BleachProfile/fitRecover.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Analysis')
+py.install_sources(py_sources, subdir:'PYME/Analysis/BleachProfile')
 
 py_sources = files(
     'Colocalisation/__init__.py',
@@ -59,7 +59,7 @@ py_sources = files(
     'Colocalisation/distColoc.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Analysis')
+py.install_sources(py_sources, subdir:'PYME/Analysis/Colocalisation')
 
 py_sources = files(
     'Tracking/msd.py',
@@ -68,7 +68,7 @@ py_sources = files(
     'Tracking/tracking.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Analysis')
+py.install_sources(py_sources, subdir:'PYME/Analysis/Tracking')
 
 py_sources = files(
     'PSFEst/extractImages.py',
@@ -78,6 +78,6 @@ py_sources = files(
     'PSFEst/dec.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Analysis')
+py.install_sources(py_sources, subdir:'PYME/Analysis/PSFEst')
 
 subdir('PSFGen')

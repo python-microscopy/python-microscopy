@@ -24,13 +24,13 @@ qhullSources = ['qhull/user.c', 'qhull/global.c', 'qhull/stat.c', 'qhull/io.c', 
 
 srcs = ['triRend.c','drawTriang.c', 'triangRend.c']
 
-message('numpy include dir:', np_include_dir)
+#message('numpy include dir:', np_include_dir)
 
 py.extension_module(
     'triRend',
     srcs + qhullSources,
     include_directories: [np_include_dir, 'qhull'],
-    install_dir: 'PYME/Analysis/points/SoftRend',
+    subdir: 'PYME/Analysis/points/SoftRend',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

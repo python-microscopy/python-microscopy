@@ -19,22 +19,26 @@ py.install_sources(py_sources, subdir:'PYME')
 subdir('Analysis')
 subdir('Acquire')
 subdir('DSView')
-py_sources = files(
-    'ParallelTasks/fitMon.py',
-    'ParallelTasks/taskQueue.py',
-    'ParallelTasks/taskWorkerZC.py',
-    'ParallelTasks/setup_exe.py',
-    'ParallelTasks/__init__.py',
-    'ParallelTasks/launchWorkers.py',
-    'ParallelTasks/taskServerZC.py',
-    'ParallelTasks/fitMonP.py',
-    'ParallelTasks/HDFTaskQueue.py',
-    'ParallelTasks/DSTaskQueue.py',
-)
 
-py.install_sources(py_sources, subdir:'PYME')
+# ParallelTasks (should now be replaced by PYMECluster)
+# py_sources = files(
+#     'ParallelTasks/fitMon.py',
+#     'ParallelTasks/taskQueue.py',
+#     'ParallelTasks/taskWorkerZC.py',
+#     'ParallelTasks/setup_exe.py',
+#     'ParallelTasks/__init__.py',
+#     'ParallelTasks/launchWorkers.py',
+#     'ParallelTasks/taskServerZC.py',
+#     'ParallelTasks/fitMonP.py',
+#     'ParallelTasks/HDFTaskQueue.py',
+#     'ParallelTasks/DSTaskQueue.py',
+# )
+
+# py.install_sources(py_sources, subdir:'PYME/ParallelTasks')
 
 subdir('IO')
+
+#PYME.Deconv
 py_sources = files(
     'Deconv/wiener.py',
     'Deconv/richardsonLucyMV.py',
@@ -52,7 +56,7 @@ py_sources = files(
     'Deconv/richardsonLucyMVM.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/Deconv')
 
 py_sources = files(
     'simulation/__init__.py',
@@ -64,7 +68,7 @@ py_sources = files(
     'simulation/locify.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/simulation')
 
 py_sources = files(
     'misc/pyme_zeroconf.py',
@@ -118,9 +122,11 @@ py_sources = files(
     'misc/zemax.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/misc')
 
 subdir('LMVis')
+
+
 py_sources = files(
     'ui/patch_traitsui.py',
     'ui/MetadataTree.py',
@@ -146,8 +152,7 @@ py_sources = files(
     'ui/cascading_layout.py',
     'ui/about_dlg.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/ui')
 
 py_sources = files(
     'util/log_verbosity.py',
@@ -158,16 +163,14 @@ py_sources = files(
     'util/execfile.py',
     'util/authenticate.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/util')
 
 py_sources = files(
     'util/shmarray/shmarray.py',
     'util/shmarray/__init__.py',
     'util/shmarray/shmTest.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/util/shmarray')
 
 py_sources = files(
     'util/mProfile/__init__.py',
@@ -176,8 +179,7 @@ py_sources = files(
     'util/mProfile/p.py',
     'util/mProfile/mProfile.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/util/mProfile')
 
 py_sources = files(
     'util/fProfile/viewProfile.py',
@@ -185,11 +187,11 @@ py_sources = files(
     'util/fProfile/__init__.py',
     'util/fProfile/fProfile.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/util/fProfile')
 
 subdir('localization')
 subdir('recipes')
+
 py_sources = files(
     'cluster/rulenodeserver.py',
     'cluster/HTTPRulePusher.py',
@@ -207,25 +209,25 @@ py_sources = files(
     'cluster/PYMERuleNodeServer.py',
     'cluster/status.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME')
+py.install_sources(py_sources, subdir:'PYME/cluster')
 
 subdir('resources')
 subdir('contrib')
 subdir('experimental')
+
 py_sources = files(
     'tileviewer/__init__.py',
     'tileviewer/tileviewer.py',
 )
+py.install_sources(py_sources, subdir:'PYME/tileviewer')
 
-py.install_sources(py_sources, subdir:'PYME')
+install_subdir('util/fProfile/html', install_dir: install_dir / 'util/fProfile/html', strip_directory: true)
+install_subdir('recipes/Recipes', install_dir: install_dir / 'recipes/Recipes', strip_directory: true)
+install_subdir('cluster/clusterUI', install_dir: install_dir / 'cluster/clusterUI', strip_directory: true)
+install_subdir('tileviewer/templates', install_dir: install_dir / 'tileviewer/templates', strip_directory: true)
 
-install_subdir('util/fProfile/html', install_dir: 'PYME/util/fProfile/html')
-install_subdir('recipes/Recipes', install_dir: 'PYME/recipes/Recipes')
-install_subdir('cluster/clusterUI', install_dir: 'PYME/cluster/clusterUI')
-install_subdir('tileviewer/templates', install_dir: 'PYME/tileviewer/templates')
-data_files = files(
-    '__init__.pxd',
-)
+# data_files = files(
+#     '__init__.pxd',
+# )
 
-install_data(data_files, install_dir: 'PYME')
+# install_data(data_files, install_dir: install_dir)

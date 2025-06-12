@@ -19,7 +19,7 @@ py.extension_module(
         'cInterp.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/localization/cInterp',
+    subdir: 'PYME/localization/cInterp',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

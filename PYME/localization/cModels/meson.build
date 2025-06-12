@@ -17,7 +17,7 @@ py.extension_module(
         'gauss_ap.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/localization/cModels',
+    subdir: 'PYME/localization/cModels',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

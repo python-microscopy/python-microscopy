@@ -47,7 +47,7 @@ data_files = files(
     '_treap.pyx',
 )
 
-install_data(data_files, install_dir: 'PYME/experimental')
+install_data(data_files, install_dir: install_dir)
 
 #FIXME - Extension()
 #FIXME - Extension()
@@ -59,7 +59,7 @@ py.extension_module(
         '_triangle_mesh.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/experimental',
+    subdir: 'PYME/experimental',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
@@ -71,7 +71,7 @@ py.extension_module(
         '_octree.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/experimental',
+    subdir: 'PYME/experimental',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
@@ -82,7 +82,7 @@ py.extension_module(
         '_treap.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/experimental',
+    subdir: 'PYME/experimental',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
@@ -93,7 +93,7 @@ py.extension_module(
         'func_octree.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/experimental',
+    subdir: 'PYME/experimental',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
@@ -105,7 +105,7 @@ py.extension_module(
         'triangle_mesh_utils.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/experimental',
+    subdir: 'PYME/experimental',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

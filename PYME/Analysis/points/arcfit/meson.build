@@ -18,7 +18,7 @@ py.extension_module(
         'arcmf.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/arcfit',
+    subdir: 'PYME/Analysis/points/arcfit',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

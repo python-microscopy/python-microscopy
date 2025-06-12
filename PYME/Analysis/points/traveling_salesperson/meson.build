@@ -19,7 +19,7 @@ data_files = files(
     'two_opt_utils.pyx',
 )
 
-install_data(data_files, install_dir: 'PYME/Analysis/points/traveling_salesperson')
+install_data(data_files, install_dir: install_dir)
 
 #FIXME - Extension()
 
@@ -29,7 +29,7 @@ py.extension_module(
         'two_opt_utils.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/points/traveling_salesperson',
+    subdir: 'PYME/Analysis/points/traveling_salesperson',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

@@ -6,12 +6,11 @@ install_dir = py.get_install_dir() / 'PYME/resources'
 
 py_sources = files(
     '__init__.py',
-    'setup.py',
 )
 
 py.install_sources(py_sources, subdir:'PYME/resources')
 
-install_subdir('icons', install_dir: 'PYME/resources/icons')
-install_subdir('config_template', install_dir: 'PYME/resources/config_template')
-install_subdir('web', install_dir: 'PYME/resources/web')
-install_subdir('test_datasets', install_dir: 'PYME/resources/test_datasets')
+install_subdir('icons', install_dir: install_dir / 'icons', strip_directory: true)
+install_subdir('config_template', install_dir: install_dir  / 'config_template', strip_directory: true)
+install_subdir('web', install_dir: install_dir )
+install_subdir('test_datasets', install_dir: install_dir )

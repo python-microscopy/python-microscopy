@@ -82,6 +82,6 @@ py_sources = files(
     'modules/segmentation.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/DSView')
+py.install_sources(py_sources, subdir:'PYME/DSView/modules')
 
-install_subdir('modules/templates', install_dir: 'PYME/DSView/modules/templates')
+install_subdir('modules/templates', install_dir: install_dir / 'modules/templates', strip_directory: true)

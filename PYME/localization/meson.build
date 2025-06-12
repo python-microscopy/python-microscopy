@@ -2,7 +2,8 @@
 # Boilerplate  to make sure things go in the right place - TODO can we do some of this in the top-level meson.build?
 #py = import('python').find_installation(pure: false)
 #np_include_dir = run_command(py,  ['-c',  '"import numpy; print(numpy.get_include())"'], check: true).stdout().strip()
-install_dir = py.get_install_dir() / 'PYME/localization'
+install_dir = py.get_install_dir(pure:false) / 'PYME/localization'
+message('PYME/localization install dir: ', install_dir)
 
 py_sources = files(
     'ofind3d.py',
@@ -65,7 +66,7 @@ py_sources = files(
     'FitFactories/ConfocCOIR.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/localization')
+py.install_sources(py_sources, subdir:'PYME/localization/FitFactories')
 
 py_sources = files(
     'FitFactories/Interpolators/LinearInterpolator.py',
@@ -77,7 +78,7 @@ py_sources = files(
     'FitFactories/Interpolators/CubeSInterpolatorP.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/localization')
+py.install_sources(py_sources, subdir:'PYME/localization/FitFactories/Interpolators')
 
 py_sources = files(
     'FitFactories/zEstimators/biplaneEstimator.py',
@@ -88,7 +89,7 @@ py_sources = files(
     'FitFactories/zEstimators/priEstimator.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/localization')
+py.install_sources(py_sources, subdir:'PYME/localization/FitFactories/zEstimators')
 
 py_sources = files(
     'autopsf/autopsf.py',
@@ -96,5 +97,9 @@ py_sources = files(
     'autopsf/roifit.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/localization')
+py.install_sources(py_sources, subdir:'PYME/localization/autopsf')
 
+
+# Test folder
+install_subdir('Test', install_dir: install_dir, strip_directory: false)
+    

@@ -20,7 +20,7 @@ if not (host_machine.system() == 'windows')
             'countdir.c',
         ],
         include_directories: [np_include_dir],
-        install_dir: 'PYME/IO/countdir',
+        subdir: 'PYME/IO/countdir',
         dependencies: py.dependency(),
         c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
         install: true,

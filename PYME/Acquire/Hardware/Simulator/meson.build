@@ -24,7 +24,7 @@ data_files = files(
     'illuminate.pyx',
 )
 
-install_data(data_files, install_dir: 'PYME/Acquire/Hardware/Simulator')
+install_data(data_files, install_dir: install_dir)
 
 #FIXME - Extension()
 py.extension_module(
@@ -33,7 +33,7 @@ py.extension_module(
         'illuminate.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Acquire/Hardware/Simulator',
+    subdir: 'PYME/Acquire/Hardware/Simulator',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

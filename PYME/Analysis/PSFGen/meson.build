@@ -23,7 +23,7 @@ py.extension_module(
         'ps_app.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/Analysis/PSFGen',
+    subdir: 'PYME/Analysis/PSFGen',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

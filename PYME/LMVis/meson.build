@@ -78,7 +78,7 @@ py_sources = files(
     'Extras/snapshot.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/LMVis')
+py.install_sources(py_sources, subdir:'PYME/LMVis/Extras')
 
 py_sources = files(
     'layers/labels.py',
@@ -100,7 +100,7 @@ py_sources = files(
     'layers/base.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/LMVis')
+py.install_sources(py_sources, subdir:'PYME/LMVis/layers')
 
 py_sources = files(
     'shader_programs/shader_program.py',
@@ -116,6 +116,6 @@ py_sources = files(
     'shader_programs/ShaderProgramFactory.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/LMVis')
+py.install_sources(py_sources, subdir:'PYME/LMVis/shader_programs')
 
-install_subdir('shader_programs/shaders', install_dir: 'PYME/LMVis/shader_programs/shaders')
+install_subdir('shader_programs/shaders', install_dir: install_dir /'shader_programs/shaders', strip_directory: true)

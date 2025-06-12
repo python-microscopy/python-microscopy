@@ -33,10 +33,10 @@ py_sources = files(
     'acquirewx.py',
     'sampleInformationDjangoDirect.py',
 )
-
 py.install_sources(py_sources, subdir:'PYME/Acquire')
 
 subdir('Hardware')
+
 py_sources = files(
     'Protocols/tile.py',
     'Protocols/dual671_488.py',
@@ -86,8 +86,7 @@ py_sources = files(
     'Protocols/standard671_no532.py',
     'Protocols/standard470.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME/Acquire')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Protocols')
 
 py_sources = files(
     'ui/focus_lock_gui.py',
@@ -111,8 +110,7 @@ py_sources = files(
     'ui/preflight.py',
     'ui/scanner_panel.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME/Acquire')
+py.install_sources(py_sources, subdir:'PYME/Acquire/ui')
 
 py_sources = files(
     'Utils/pointScanner.py',
@@ -125,15 +123,13 @@ py_sources = files(
     'Utils/fastTiler.py',
     'Utils/sarcSpacing.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME/Acquire')
+py.install_sources(py_sources, subdir:'PYME/Acquire/Utils')
 
 py_sources = files(
     'webui/__init__.py',
     'webui/ipy.py',
 )
-
-py.install_sources(py_sources, subdir:'PYME/Acquire')
+py.install_sources(py_sources, subdir:'PYME/Acquire/webui')
 
 py_sources = files(
     'htsms/tweeter.py',
@@ -141,7 +137,6 @@ py_sources = files(
     'htsms/rule_ui_v2.py',
     'htsms/rule_ui.py',
 )
+py.install_sources(py_sources, subdir:'PYME/Acquire/htsms')
 
-py.install_sources(py_sources, subdir:'PYME/Acquire')
-
-install_subdir('Scripts', install_dir: 'PYME/Acquire/Scripts')
+install_subdir('Scripts', install_dir: install_dir )

@@ -76,9 +76,9 @@ int remesh_edge_flip(halfedge_t * halfedges, vertex_t *vertices, face_t * faces,
     int32_t twin_idx, _prev, _twin, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1;
     
     int locally_manifold, fast_collapse_bool, i;
-    int32_t * neighbours;
+    //int32_t * neighbours;
 
-    float f, p, flipped_dot;
+    //float f, p, flipped_dot;
     
     // do some sanity checking on the edge to be flipped
     if (idx == -1) return 0;

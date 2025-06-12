@@ -31,7 +31,7 @@ py.extension_module(
         'StateMonteCarlo.c',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/simulation/ChemDE',
+    subdir: 'PYME/simulation/ChemDE',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
@@ -45,7 +45,7 @@ py.extension_module(
     ],
     
     include_directories: [np_include_dir],
-    install_dir: 'PYME/simulation/ChemDE',
+    subdir: 'PYME/simulation/ChemDE',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,

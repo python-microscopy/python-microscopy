@@ -36,7 +36,7 @@ py_sources = files(
     'QuadTree/rendQT.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/Analysis/points')
+py.install_sources(py_sources, subdir:'PYME/Analysis/points/QuadTree')
 
 subdir('SoftRend')
 subdir('DistHist')

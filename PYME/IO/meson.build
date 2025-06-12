@@ -69,7 +69,7 @@ py_sources = files(
     'DataSources/TileDataSource.py',
 )
 
-py.install_sources(py_sources, subdir:'PYME/IO')
+py.install_sources(py_sources, subdir:'PYME/IO/DataSources')
 
 subdir('countdir')
 
@@ -77,7 +77,7 @@ data_files = files(
     'buffer_helpers.pyx',
 )
 
-install_data(data_files, install_dir: 'PYME/IO')
+install_data(data_files, install_dir: install_dir)
 #FIXME - Extension()
 
 py.extension_module(
@@ -86,7 +86,7 @@ py.extension_module(
         'buffer_helpers.pyx',
     ],
     include_directories: [np_include_dir],
-    install_dir: 'PYME/IO',
+    subdir: 'PYME/IO',
     dependencies: py.dependency(),
     c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
     install: true,
