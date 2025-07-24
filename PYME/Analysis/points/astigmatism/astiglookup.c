@@ -8,6 +8,8 @@
 #define MIN(a, b) ((a<b) ? a : b)
 #define MAX(a, b) ((a>b) ? a : b)
 
+
+
 #define MAX_DIMS 4
 static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
 {
@@ -29,12 +31,19 @@ static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
     float *p_out_err;
     int *p_out_z;
 
-    PyObject *owX =0;
-    PyObject *owY=0;
-    PyObject *osX =0;
-    PyObject *osY=0;
-    PyObject *os_calX =0;
-    PyObject *os_calY=0;
+    PyObject *_owX =0;
+    PyObject *_owY=0;
+    PyObject *_osX =0;
+    PyObject *_osY=0;
+    PyObject *_os_calX =0;
+    PyObject *_os_calY=0;
+
+    PyArrayObject * owX = NULL;
+    PyArrayObject * owY = NULL;
+    PyArrayObject * osX = NULL;
+    PyArrayObject * osY = NULL;
+    PyArrayObject * os_calX = NULL;
+    PyArrayObject * os_calY = NULL;
 
     PyArrayObject* out_z=NULL;
     PyArrayObject* out_err=NULL;
@@ -143,12 +152,12 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
     float *p_out_err;
     int *p_out_z;
 
-    PyObject *owX =0;
-    PyObject *owY=0;
-    PyObject *osX =0;
-    PyObject *osY=0;
-    PyObject *os_calX =0;
-    PyObject *os_calY=0;
+    PyArrayObject *owX =0;
+    PyArrayObject *owY=0;
+    PyArrayObject *osX =0;
+    PyArrayObject *osY=0;
+    PyArrayObject *os_calX =0;
+    PyArrayObject *os_calY=0;
 
     PyArrayObject* out_z=NULL;
     PyArrayObject* out_err=NULL;

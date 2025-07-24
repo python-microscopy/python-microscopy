@@ -35,7 +35,7 @@ int tetAndDraw(coordT *points, int numpoints, double *pImage, int sizeX, int siz
   int curlong, totlong;     /* memory remaining after qh_memfreeshort */
   
   exitcode= qh_new_qhull (dim, numpoints, points, False,
-                      flags, NULL, stderr);
+                      (char*)flags, NULL, stderr);
   if (!exitcode) {                  /* if no error */
     FORALLfacets {
        lsum = 0;

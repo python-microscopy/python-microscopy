@@ -237,13 +237,13 @@ static PyObject * drawTriang(PyObject *self, PyObject *args, PyObject *keywds)
     }
 */
 
-    if (!PyArray_Check(odata) | !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS((PyArrayObject *)odata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM((PyArrayObject *)odata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
         return NULL;
@@ -251,15 +251,15 @@ static PyObject * drawTriang(PyObject *self, PyObject *args, PyObject *keywds)
 
     //dims = PyArray_DIMS(odata);
 
-    sizeX = PyArray_DIM(odata, 0);
-    sizeY = PyArray_DIM(odata, 1);
+    sizeX = PyArray_DIM((PyArrayObject *)odata, 0);
+    sizeY = PyArray_DIM((PyArrayObject *)odata, 1);
     
     //fix strides
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
     //printf('Dims: %d, %d', dims[0], dims[1]);
     
-    data = (double*) PyArray_DATA(odata);
+    data = (double*) PyArray_DATA((PyArrayObject *)odata);
 
     drawTriangle(data, sizeX, sizeY, x0, y0, x1, y1, x2, y2, val);
     
@@ -314,26 +314,26 @@ static PyObject * drawTriangles(PyObject *self, PyObject *args, PyObject *keywds
     }
 */
 
-    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS(odata))
+    if (!PyArray_Check(odata) || !PyArray_ISCONTIGUOUS((PyArrayObject *)odata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array");
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 2)
+    if (PyArray_NDIM((PyArrayObject *)odata) != 2)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
         return NULL;
     }
 
-    axs = (PyArrayObject *)PyArray_FROM_OTF(oxs, NPY_DOUBLE, NPY_CONTIGUOUS);
+    axs = (PyArrayObject *)PyArray_FROM_OTF(oxs, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (axs == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad xs");
         return NULL;
     }
 
-    ays = (PyArrayObject *)PyArray_FROM_OTF(oys, NPY_DOUBLE, NPY_CONTIGUOUS);
+    ays = (PyArrayObject *)PyArray_FROM_OTF(oys, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (ays == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad ys");
@@ -341,7 +341,7 @@ static PyObject * drawTriangles(PyObject *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-    avals = (PyArrayObject *)PyArray_FROM_OTF(ovals, NPY_DOUBLE, NPY_CONTIGUOUS);
+    avals = (PyArrayObject *)PyArray_FROM_OTF(ovals, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (avals == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad vals");
@@ -352,8 +352,8 @@ static PyObject * drawTriangles(PyObject *self, PyObject *args, PyObject *keywds
 
     //dims = PyArray_DIMS(odata);
 
-    sizeX = PyArray_DIM(odata, 0);
-    sizeY = PyArray_DIM(odata, 1);
+    sizeX = PyArray_DIM((PyArrayObject *)odata, 0);
+    sizeY = PyArray_DIM((PyArrayObject *)odata, 1);
 
     N = PyArray_DIM(axs, 0);
 
@@ -364,7 +364,7 @@ static PyObject * drawTriangles(PyObject *self, PyObject *args, PyObject *keywds
     //out->strides[1] = sizeof(double)*size[0];
     //printf('Dims: %d, %d', dims[0], dims[1]);
 
-    data = (double*) PyArray_DATA(odata);
+    data = (double*) PyArray_DATA((PyArrayObject *)odata);
     xs = (double*) PyArray_DATA(axs);
     ys = (double*) PyArray_DATA(ays);
     vals = (double*) PyArray_DATA(avals);
@@ -457,26 +457,26 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
     }
 */
 
-    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN(odata))
+    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN((PyArrayObject *)odata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a fortran contiguous numpy array");
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 3)
+    if (PyArray_NDIM((PyArrayObject *)odata) != 3)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 3 dimensional array");
         return NULL;
     }
 
-    axs = (PyArrayObject *)PyArray_FROM_OTF(oxs, NPY_DOUBLE, NPY_CONTIGUOUS);
+    axs = (PyArrayObject *)PyArray_FROM_OTF(oxs, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (axs == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad xs");
         return NULL;
     }
 
-    ays = (PyArrayObject *)PyArray_FROM_OTF(oys, NPY_DOUBLE, NPY_CONTIGUOUS);
+    ays = (PyArrayObject *)PyArray_FROM_OTF(oys, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (ays == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad ys");
@@ -484,7 +484,7 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
         return NULL;
     }
 
-    azs = (PyArrayObject *)PyArray_FROM_OTF(ozs, NPY_DOUBLE, NPY_CONTIGUOUS);
+    azs = (PyArrayObject *)PyArray_FROM_OTF(ozs, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (azs == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad zs");
@@ -493,7 +493,7 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
         return NULL;
     }
 
-    avals = (PyArrayObject *)PyArray_FROM_OTF(ovals, NPY_DOUBLE, NPY_CONTIGUOUS);
+    avals = (PyArrayObject *)PyArray_FROM_OTF(ovals, NPY_DOUBLE, NPY_ARRAY_C_CONTIGUOUS);
     if (avals == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "bad vals");
@@ -505,9 +505,9 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
 
     //dims = PyArray_DIMS(odata);
 
-    sizeX = PyArray_DIM(odata, 1);
-    sizeY = PyArray_DIM(odata, 0);
-    sizeZ = PyArray_DIM(odata, 2);
+    sizeX = PyArray_DIM((PyArrayObject *)odata, 1);
+    sizeY = PyArray_DIM((PyArrayObject *)odata, 0);
+    sizeZ = PyArray_DIM((PyArrayObject *)odata, 2);
 
     N = PyArray_DIM(axs, 0);
 
@@ -518,7 +518,7 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
     //out->strides[1] = sizeof(double)*size[0];
     //printf('Dims: %d, %d', dims[0], dims[1]);
 
-    data = (double*) PyArray_DATA(odata);
+    data = (double*) PyArray_DATA((PyArrayObject *)odata);
     xs = (double*) PyArray_DATA(axs);
     ys = (double*) PyArray_DATA(ays);
     zs = (double*) PyArray_DATA(azs);
@@ -581,13 +581,13 @@ static PyObject * PyTetAndDraw(PyObject *self, PyObject *args, PyObject *keywds)
          &oPositions, &odata, &calc_area))
         return NULL;
 
-    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN(odata))
+    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN((PyArrayObject *)odata))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a fortran contiguous numpy array");
         return NULL;
     }
 
-    if (PyArray_NDIM(odata) != 3)
+    if (PyArray_NDIM((PyArrayObject *)odata) != 3)
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a 3 dimensional array");
         return NULL;
@@ -611,11 +611,11 @@ static PyObject * PyTetAndDraw(PyObject *self, PyObject *args, PyObject *keywds)
       return NULL;
     }
 
-    sizeX = PyArray_DIM(odata, 1);
-    sizeY = PyArray_DIM(odata, 0);
-    sizeZ = PyArray_DIM(odata, 2);
+    sizeX = PyArray_DIM((PyArrayObject *)odata, 1);
+    sizeY = PyArray_DIM((PyArrayObject *)odata, 0);
+    sizeZ = PyArray_DIM((PyArrayObject *)odata, 2);
 
-    data = (double*) PyArray_DATA(odata);
+    data = (double*) PyArray_DATA((PyArrayObject *)odata);
 
     iErr = tetAndDraw((coordT *)PyArray_DATA(aPositions), nPositions, data, sizeX, sizeY, sizeZ, calc_area);
     if (iErr)

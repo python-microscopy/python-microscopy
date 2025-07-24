@@ -196,7 +196,7 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS(edgeArray))
+    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -211,7 +211,7 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
     }
 */
 
-    if (!PyArray_Check(deln_edges) || !PyArray_ISCONTIGUOUS(deln_edges))
+    if (!PyArray_Check(deln_edges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)deln_edges))
     {
         PyErr_Format(PyExc_RuntimeError, "Bad triangulation edges");
         return NULL;
@@ -220,10 +220,10 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
     
 
     //delnEdges = (int*)PyArray_DATA(deln_edges);
-    numEdges = PyArray_DIM(deln_edges, 0);
+    numEdges = PyArray_DIM((PyArrayObject*)deln_edges, 0);
 
-    edb.records = (record*)PyArray_DATA(edgeArray);
-    edb.numRecords = PyArray_DIM(edgeArray, 0) - 1;
+    edb.records = (record*)PyArray_DATA((PyArrayObject*)edgeArray);
+    edb.numRecords = PyArray_DIM((PyArrayObject*)edgeArray, 0) - 1;
 
     //store free vertex info in last row (ugly)
     edb.nextFreeVertex = edb.records[edb.numRecords].nextRecordIndex;
@@ -234,8 +234,8 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
     for (i=startEdgeNum; i < (startEdgeNum + numEdges); i++)
     {
         //printf("i: %d, %d, %d\n", i,delnEdges[i].start, delnEdges[i].end);
-        eStart = *(int*)PyArray_GETPTR2(deln_edges, i, 0);
-        eEnd = *(int*)PyArray_GETPTR2(deln_edges, i, 1);
+        eStart = *(int*)PyArray_GETPTR2((PyArrayObject*)deln_edges, i, 0);
+        eEnd = *(int*)PyArray_GETPTR2((PyArrayObject*)deln_edges, i, 1);
         addEdge(&edb, eStart, eEnd, 0);
         addEdge(&edb, eEnd, eStart, 0);
     }
@@ -291,7 +291,7 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
     //printf("foo2\n");
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS(edgeArray))
+    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -360,8 +360,8 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
     }
 
 
-    edb.records = (record*)PyArray_DATA(edgeArray);
-    edb.numRecords = PyArray_DIM(edgeArray, 0) - 1;
+    edb.records = (record*)PyArray_DATA((PyArrayObject*)edgeArray);
+    edb.numRecords = PyArray_DIM((PyArrayObject*)edgeArray, 0) - 1;
 
     //printf("foo\n");
 
@@ -439,15 +439,15 @@ static PyObject * getVertexEdgeLengths(PyObject *self, PyObject *args, PyObject 
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS(edgeArray))
+    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
     }
 
 
-    edb.records = (record*)PyArray_DATA(edgeArray);
-    edb.numRecords = PyArray_DIM(edgeArray, 0) - 1;
+    edb.records = (record*)PyArray_DATA((PyArrayObject*)edgeArray);
+    edb.numRecords = PyArray_DIM((PyArrayObject*)edgeArray, 0) - 1;
 
     numEdges = edb.records[vertexNum].numIncidentEdges;
 
@@ -495,7 +495,7 @@ static PyObject * getVertexNeighbours(PyObject *self, PyObject *args, PyObject *
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS(edgeArray))
+    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -561,6 +561,8 @@ int collectConnected(edgeDB *edb, int vertexNum, int* objects, float lenThresh, 
         }
     }
 
+    return 0;
+
 }
 
 int collectConnectedNR(edgeDB *edb, int vertexNum, int* objects, float lenThresh, int objectNum, int *nVisited)
@@ -617,7 +619,7 @@ int collectConnectedNR(edgeDB *edb, int vertexNum, int* objects, float lenThresh
 static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
 {
     PyObject *edgeArray =0;
-    PyObject *objectsArray = 0;
+    PyArrayObject *objectsArray = 0;
 
     edgeDB edb;
 
@@ -629,9 +631,10 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
     int vertexNum = 0;
     int objectNum = 1;
     int nVisited = 0;
-    int dims[2];
+    npy_intp dims[2];
     int i = 0;
     int recDepth = 0;
+
 
 
     static char *kwlist[] = {"edgeArray", "lenThresh", NULL};
@@ -641,7 +644,7 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS(edgeArray))
+    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -650,8 +653,8 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
     //printf("foo\n");
 
 
-    edb.records = (record*)PyArray_DATA(edgeArray);
-    edb.numRecords = PyArray_DIM(edgeArray, 0) - 1;
+    edb.records = (record*)PyArray_DATA((PyArrayObject*)edgeArray);
+    edb.numRecords = PyArray_DIM((PyArrayObject*)edgeArray, 0) - 1;
     
     //store num vertex info in last row (ugly)
     edb.numVertices = edb.records[edb.numRecords].numIncidentEdges;
@@ -698,9 +701,6 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
 
 
     return (PyObject*) objectsArray;
-
-fail:
-    return NULL;
 }
 
 
