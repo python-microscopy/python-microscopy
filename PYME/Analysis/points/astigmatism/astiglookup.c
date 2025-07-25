@@ -15,7 +15,7 @@ static PyObject * astiglookup(PyObject *self, PyObject *args, PyObject *keywds)
 {
     npy_intp outDimensions[1];
     int nPts=0;
-    int nViews = 0;
+    int nViews=0;
     int nCalPts = 0;
 
     int i, j, k;

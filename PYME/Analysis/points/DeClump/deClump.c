@@ -234,7 +234,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    assigned = (int*)PyArray_DATA(assignedA);
+    assigned = (int*)PyArray_DATA((PyArrayObject*)assignedA);
 
     for (i=0; i < nPts; i++)
     {
@@ -409,7 +409,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    assigned = (int*)PyArray_DATA(assignedA);
+    assigned = (int*)PyArray_DATA((PyArrayObject*)assignedA);
 
     for (i=0; i < nPts; i++)
     {
@@ -596,11 +596,11 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
     }
 
     //initialise memory in output arrays
-    PyArray_FILLWBYTE(outVarA, 0);
-    PyArray_FILLWBYTE(outSigA, 0);
+    PyArray_FILLWBYTE((PyArrayObject*)outVarA, 0);
+    PyArray_FILLWBYTE((PyArrayObject*)outSigA, 0);
 
-    outVar = (float*)PyArray_DATA(outVarA);
-    outSig = (float*)PyArray_DATA(outSigA);
+    outVar = (float*)PyArray_DATA((PyArrayObject*)outVarA);
+    outSig = (float*)PyArray_DATA((PyArrayObject*)outSigA);
 
     /*
     for (i=0; i < nPts; i++)
@@ -751,10 +751,10 @@ static PyObject * aggregateMean(PyObject *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-    outVar = (float*)PyArray_DATA(outVarA);
+    outVar = (float*)PyArray_DATA((PyArrayObject*)outVarA);
 
     //initialise memory in output arrays
-    PyArray_FILLWBYTE(outVarA, 0);
+    PyArray_FILLWBYTE((PyArrayObject*)outVarA, 0);
     //PyArray_FILLWBYTE(outSigA, 0);
 
     /*
@@ -829,7 +829,7 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
     //float *sigs = 0;
 
 
-    PyObject * outVarA=0;
+    PyArrayObject * outVarA=0;
     //PyObject * outSigA=0;
 
 
@@ -880,7 +880,7 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
 
     dims[0] = nClumps;
 
-    outVarA = PyArray_SimpleNew(1, dims, NPY_FLOAT);
+    outVarA = (PyArrayObject*)PyArray_SimpleNew(1, dims, NPY_FLOAT);
     if (outVarA == NULL)
     {
         Py_DECREF(clumpIDA);
@@ -889,10 +889,10 @@ static PyObject * aggregateMin(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    outVar = (float*)PyArray_DATA(outVarA);
+    outVar = (float*)PyArray_DATA((PyArrayObject*)outVarA);
 
         //initialise memory in output arrays
-    PyArray_FILLWBYTE(outVarA, 0);
+    PyArray_FILLWBYTE((PyArrayObject*)outVarA, 0);
     //PyArray_FILLWBYTE(outSigA, 0);
 
     /*
@@ -1020,10 +1020,10 @@ static PyObject * aggregateSum(PyObject *self, PyObject *args, PyObject *keywds)
     }
 
         //initialise memory in output arrays
-    PyArray_FILLWBYTE(outVarA, 0);
+    PyArray_FILLWBYTE((PyArrayObject*)outVarA, 0);
     //PyArray_FILLWBYTE(outSigA, 0);
 
-    outVar = (float*)PyArray_DATA(outVarA);
+    outVar = (float*)PyArray_DATA((PyArrayObject*)outVarA);
 
     /*
     for (i=0; i < nPts; i++)

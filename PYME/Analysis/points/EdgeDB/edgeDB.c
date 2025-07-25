@@ -66,6 +66,7 @@ LISTNODE *pushNode(nodeList *list, int vertexNum)
     {
         printf("merror\n");
         PyErr_Format(PyExc_RuntimeError, "Error allocating memory for node list");
+        return NULL;
     } else
     {
         //printf("hnn\n");
@@ -81,6 +82,8 @@ LISTNODE *pushNode(nodeList *list, int vertexNum)
 
         if (list->head ==NULL)
             list->head = newNode;
+
+        return newNode;
         
     }
 }
@@ -211,7 +214,7 @@ static PyObject * addEdges(PyObject *self, PyObject *args, PyObject *keywds)
     }
 */
 
-    if (!PyArray_Check(deln_edges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)deln_edges))
+    if (!PyArray_Check((PyArrayObject*)deln_edges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)deln_edges))
     {
         PyErr_Format(PyExc_RuntimeError, "Bad triangulation edges");
         return NULL;
@@ -291,7 +294,7 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
     //printf("foo2\n");
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
+    if (!PyArray_Check((PyArrayObject*)edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -324,7 +327,7 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
     {
         coords[numC] = PySequence_GetItem(coordList, (Py_ssize_t) numC);
 
-        if (!PyArray_Check(coords[numC]) || (PyArray_NDIM(coords[numC]) != 1))
+        if (!PyArray_Check((PyArrayObject*)coords[numC]) || (PyArray_NDIM((PyArrayObject*)coords[numC]) != 1))
         {
             PyErr_Format(PyExc_RuntimeError, "coordinate should be a 1D numpy array");
             goto fail;
@@ -332,16 +335,16 @@ static PyObject * calcEdgeLengths(PyObject *self, PyObject *args, PyObject *keyw
 
         if (numC == 0) // the first dimension
         {
-            numVertices = PyArray_DIM(coords[numC], 0);
+            numVertices = PyArray_DIM((PyArrayObject*)coords[numC], 0);
         } else
         {
-            if (PyArray_DIM(coords[numC], 0) != numVertices)
+            if (PyArray_DIM((PyArrayObject*)coords[numC], 0) != numVertices)
             {
                 PyErr_Format(PyExc_RuntimeError, "coordinates should be the same length");
                 goto fail;
             }
         }
-        coordsF[numC] = PyArray_DATA(coords[numC]);
+        coordsF[numC] = PyArray_DATA((PyArrayObject*)coords[numC]);
     }
 
     if (stopVertexNum == -1)
@@ -429,7 +432,7 @@ static PyObject * getVertexEdgeLengths(PyObject *self, PyObject *args, PyObject 
     int vertexNum;
     int i;
     int numEdges;
-    int dims[2];
+    npy_intp dims[2];
 
 
     static char *kwlist[] = {"edgeArray", "vertexNum", NULL};
@@ -439,7 +442,7 @@ static PyObject * getVertexEdgeLengths(PyObject *self, PyObject *args, PyObject 
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
+    if (!PyArray_Check((PyArrayObject*)edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -461,7 +464,7 @@ static PyObject * getVertexEdgeLengths(PyObject *self, PyObject *args, PyObject 
         return NULL;
     }
 
-    incEdges = (float*)PyArray_DATA(incEdgesA);
+    incEdges = (float*)PyArray_DATA((PyArrayObject*)incEdgesA);
 
     for (i =0; i < numEdges; i++)
     {
@@ -485,7 +488,7 @@ static PyObject * getVertexNeighbours(PyObject *self, PyObject *args, PyObject *
     int vertexNum;
     int i;
     int numEdges;
-    int dims[2];
+    npy_intp dims[2];
 
 
     static char *kwlist[] = {"edgeArray", "vertexNum", NULL};
@@ -495,15 +498,15 @@ static PyObject * getVertexNeighbours(PyObject *self, PyObject *args, PyObject *
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
+    if (!PyArray_Check((PyArrayObject*)edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
     }
 
 
-    edb.records = (record*)PyArray_DATA(edgeArray);
-    edb.numRecords = PyArray_DIM(edgeArray, 0) - 1;
+    edb.records = (record*)PyArray_DATA((PyArrayObject*)edgeArray);
+    edb.numRecords = PyArray_DIM((PyArrayObject*)edgeArray, 0) - 1;
 
     numEdges = edb.records[vertexNum].numIncidentEdges;
 
@@ -517,7 +520,7 @@ static PyObject * getVertexNeighbours(PyObject *self, PyObject *args, PyObject *
         return NULL;
     }
 
-    neighbours = (int*)PyArray_DATA(neighbourA);
+    neighbours = (int*)PyArray_DATA((PyArrayObject*)neighbourA);
 
     for (i =0; i < numEdges; i++)
     {
@@ -644,7 +647,7 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
 
 
-    if (!PyArray_Check(edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
+    if (!PyArray_Check((PyArrayObject*)edgeArray) || !PyArray_ISCONTIGUOUS((PyArrayObject*)edgeArray))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data");
         return NULL;
@@ -661,14 +664,14 @@ static PyObject * segment(PyObject *self, PyObject *args, PyObject *keywds)
 
 
     dims[0] = edb.numVertices;
-    objectsArray = PyArray_SimpleNew(1, dims, NPY_INT32);
+    objectsArray = (PyArrayObject*)PyArray_SimpleNew(1, dims, NPY_INT32);
     if (!objectsArray)
     {
         PyErr_Format(PyExc_RuntimeError, "Error allocating array for objects");
         return NULL;
     }
 
-    objects = (int*)PyArray_DATA(objectsArray);
+    objects = (int*)PyArray_DATA((PyArrayObject*)objectsArray);
 
     for (i=0; i < edb.numVertices; i++)
         objects[i] = 0;

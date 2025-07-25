@@ -425,7 +425,7 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
         {
             yi = yo + cy;
             
-            res = (float*)PyArray_GETPTR2(out, xo,   yo); 
+            res = (float*)PyArray_GETPTR2((PyArrayObject*)out, xo,   yo); 
            
             *res += r000 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi,   fz);
             *res += r100 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi,   fz);
