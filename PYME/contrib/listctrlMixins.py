@@ -425,8 +425,6 @@ class ListCtrlSelectionManagerMix(object):
 #----------------------------------------------------------------------------
 from bisect import bisect
 
-from wx.lib.mixins import listctrl as listmix
-
 
 class TextEditMixin(object):
     """    
