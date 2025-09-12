@@ -39,5 +39,10 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/recipes')
 
-install_subdir('Recipes', install_dir: install_dir)
-install_subdir('templates', install_dir: install_dir)
+# #install_subdir('Recipes', install_dir: install_dir)
+# recipes_files = run_command(py, ['-c', '"import glob; print(glob.glob(\'Recipes/*.py\'))"'], check: true).stdout().strip().split('\n')
+# recipes_files = files(*recipes_files)
+# py.install_sources(recipes_files, subdir: 'PYME/recipes/Recipes')
+# #install_subdir('templates', install_dir: install_dir)
+# recipe_templates = run_command(py, ['-c', '"import glob; print(glob.glob(\'templates/*.py\'))"'], check: true).stdout().strip().split('\n')
+# py.install_sources(recipe_templates, subdir: 'PYME/recipes/templates')

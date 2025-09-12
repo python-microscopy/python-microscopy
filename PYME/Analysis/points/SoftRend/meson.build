@@ -32,7 +32,7 @@ py.extension_module(
     include_directories: [np_include_dir, 'qhull'],
     subdir: 'PYME/Analysis/points/SoftRend',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: ['-O3', '-fno-exceptions', '-ffast-math', '-Wno-unused-but-set-variable'],
     install: true,
     #cpp_args: ['-std=c++17'],
 )

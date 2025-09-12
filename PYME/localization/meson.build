@@ -101,5 +101,8 @@ py.install_sources(py_sources, subdir:'PYME/localization/autopsf')
 
 
 # Test folder
-install_subdir('Test', install_dir: install_dir, strip_directory: false)
-    
+# use a glob to find all test files - only way to install data files seems to be to pretend they are sources
+gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/localization/Test/*.*\'))"'], check: true)
+test_files = gl.stdout().strip().split()
+py.install_sources(test_files, subdir: 'PYME/localization/Test', pure:false, preserve_path: true)
+#install_subdir('Test', install_dir: install_dir, strip_directory:s false)

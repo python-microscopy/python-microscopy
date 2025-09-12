@@ -118,4 +118,7 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/LMVis/shader_programs')
 
-install_subdir('shader_programs/shaders', install_dir: install_dir /'shader_programs/shaders', strip_directory: true)
+#install_subdir('shader_programs/shaders', install_dir: install_dir /'shader_programs/shaders', strip_directory: true)
+gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/LMVis/shader_programs/shaders/*.*\'))"'], check: true)
+shaders_files = gl.stdout().strip().split()
+py.install_sources(shaders_files, subdir:'PYME/LMVis/shader_programs/shaders', pure: false, preserve_path: true)

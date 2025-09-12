@@ -84,4 +84,7 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/DSView/modules')
 
-install_subdir('modules/templates', install_dir: install_dir / 'modules/templates', strip_directory: true)
+#install_subdir('modules/templates', install_dir: install_dir / 'modules/templates', strip_directory: true)
+gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/DSView/modules/templates/*.*\'))"'], check: true)
+template_files = gl.stdout().strip().split()
+py.install_sources(template_files, subdir: 'PYME/DSView/modules/templates', pure: false, preserve_path: true)

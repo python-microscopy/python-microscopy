@@ -107,6 +107,6 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: ['-O3', '-ffast-math'],
     install: true,
 )
