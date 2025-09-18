@@ -351,6 +351,9 @@ class ImageRenderLayer(EngineLayer):
                      #Item('method'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'),
+                            Item('z_pos', label='Z'),
+                            Item('t_pos', label='T'),
+                            Item('channel', label='Channel'),
                             Item('alpha', visible_when='method in ["flat", "tessel"]')
                             ])
                      ], )

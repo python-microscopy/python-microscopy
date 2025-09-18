@@ -423,7 +423,13 @@ class ImageStack(object):
         try:
             return ImageBounds(self.mdh['ImageBounds.x0'],self.mdh['ImageBounds.y0'],self.mdh['ImageBounds.x1'],self.mdh['ImageBounds.y1'],self.mdh['ImageBounds.z0'],self.mdh['ImageBounds.z1'])
         except:
-            return ImageBounds(0, 0, self.pixelSize*self.voxels.shape[0], self.pixelSize*self.voxels.shape[1],0, self.sliceSize*self.voxels.shape[2])
+            # if we don't have ImageBounds in the metadata, use origin and voxelsize to estimate
+            x0 = self.mdh.get('Origin.x', 0)
+            y0 = self.mdh.get('Origin.y', 0)
+            z0 = self.mdh.get('Origin.z', 0)
+            
+            return ImageBounds(x0, y0, x0 + self.voxelsize_nm.x*self.voxels.shape[0], y0 + self.voxelsize_nm.y*self.voxels.shape[1],
+                               z0, z0 + self.voxelsize_nm.z*self.voxels.shape[2])
 
     @imgBounds.setter
     def imgBounds(self, value):
