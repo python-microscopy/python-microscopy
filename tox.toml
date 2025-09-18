@@ -9,7 +9,7 @@ deps = [
     "meson-python",
     "numpy",
     "cython",
-    "pytest",s
+    "pytest",
     "pytest-cov",
     "pytest-mock",
     "pytest-asyncio",
