@@ -191,18 +191,22 @@ class PsfExtractor(Plugin):
                 
         #if we have a muilt-colour stack, 
         chnum = self.chChannel.GetSelection()
-                
+        t = self.do.tp
+
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         #print self.do.xp-rsx, self.do.xp+rsx + 1, self.do.yp-rsy, self.do.yp+rsy+1, chnum
         #print self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum]
-        dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum])
-        self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
+
+        z0 = max(int(self.do.zp-rsz), 0)
+        dx, dy, dz = extractImages.getIntCenter(self.image.data_xyztc[int(self.do.xp-rsx):int(self.do.xp+rsx + 1), int(self.do.yp-rsy):int(self.do.yp+rsy+1), z0:min(int(self.do.zp+rsz + 1), self.image.data.shape[2]), t, chnum].squeeze())
+        self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, z0 + dz))
         self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
     def OnTagPoints(self, event):
         from PYME.Analysis.PSFEst import extractImages
         chnum = self.chChannel.GetSelection()
+        t = self.do.tp # TODO - fix time point handling
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         try:
             pts = self.dsviewer.blobFinding.points
@@ -210,12 +214,13 @@ class PsfExtractor(Plugin):
             raise AttributeError('Could not find blobFinding.points, make sure the `blobFinding` module is loaded and you have clicked `Find`')
 
         for xp, yp, zp in pts:
-            if ((xp > rsx) and (xp < (self.image.data.shape[0] - rsx)) and
-                (yp > rsy) and (yp < (self.image.data.shape[1] - rsy))):
-                    
-                    dx, dy, dz = extractImages.getIntCenter(self.image.data[(xp-rsx):(xp+rsx + 1),(yp-rsy):(yp+rsy+1), :, chnum])
-                    self.PSFLocs.append((xp + dx, yp + dy, dz))
-        
+            if ((xp > rsx) and (xp < (self.image.data_xyztc.shape[0] - rsx)) and
+                (yp > rsy) and (yp < (self.image.data_xyztc.shape[1] - rsy))):
+
+                    z0 = max(int(zp-rsz), 0)
+                    dx, dy, dz = extractImages.getIntCenter(self.image.data_xyztc[int(xp-rsx):int(xp+rsx + 1),int(yp-rsy):int(yp+rsy+1), z0:min(int(zp+rsz + 1), self.image.data.shape[2]), t, chnum].squeeze())
+                    self.PSFLocs.append((xp + dx, yp + dy, z0 + dz))
+
         #self.view.psfROIs = self.PSFLocs
         self.view.Refresh()
 
