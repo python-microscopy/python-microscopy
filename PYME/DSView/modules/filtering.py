@@ -56,7 +56,7 @@ class Filterer(Plugin):
             sigmas = eval(dlg.GetValue())
             #print sigmas
             #print self.images[0].img.shape
-            filt_ims = [np.atleast_3d(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze(), sigmas)) for chanNum in range(self.image.data.shape[3])]
+            filt_ims = [np.atleast_3d(gaussian_filter(self.image.data[:,:,:,chanNum].squeeze().astype('f'), sigmas)) for chanNum in range(self.image.data.shape[3])]
             
             im = ImageStack(filt_ims, titleStub = 'Filtered Image')
             im.mdh.copyEntriesFrom(self.image.mdh)

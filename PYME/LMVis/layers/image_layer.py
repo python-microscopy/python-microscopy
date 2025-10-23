@@ -187,10 +187,10 @@ class ImageRenderLayer(EngineLayer):
         # define responses to changes in various traits
         #self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname, channel, z_pos, t_pos')
         self.on_trait_change(self._set_method, 'method')
 
-        # update any of our traits which were passed as command line arguments
+        # update any of our traits which were passed as command line argumessssnts
         self.trait_set(**kwargs)
 
         # update datasource and method
@@ -351,6 +351,9 @@ class ImageRenderLayer(EngineLayer):
                      #Item('method'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'),
+                            Item('z_pos', label='Z'),
+                            Item('t_pos', label='T'),
+                            Item('channel', label='Channel'),
                             Item('alpha', visible_when='method in ["flat", "tessel"]')
                             ])
                      ], )

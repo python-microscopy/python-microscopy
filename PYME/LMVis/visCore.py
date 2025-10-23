@@ -104,7 +104,7 @@ class VisGUICore(object):
             #from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas        
 
             try:
-                if PYME.config.get('VisGUI-opengl-core-profile', False):
+                if PYME.config.get('VisGUI-opengl-core-profile', True):
                     from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
                 else:
                     logger.debug('Using legacy GLCanvas')
@@ -498,6 +498,20 @@ class VisGUICore(object):
             ds_name = mesh_ds[-1]
         
         l = QuiverRenderLayer(self.pipeline, dsname=ds_name)
+        self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
+        return l
+    
+    def add_image_layer(self, ds_name=None, channel=0, **kwargs):
+        from .layers import image_layer
+        if ds_name is None:
+            image_ds = [k for k, d in self.pipeline.dataSources.items() if hasattr(d, 'data_xyztc')]
+            if len(image_ds) == 0:
+                raise ValueError('No suitable image datasource found')
+            ds_name = image_ds[-1]
+        
+        l = image_layer.ImageRenderLayer(self.pipeline, dsname=ds_name, channel=channel, **kwargs)
         self.add_layer(l)
 
         logger.debug('Added layer, datasouce=%s' % l.dsname)

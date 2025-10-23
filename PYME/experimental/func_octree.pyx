@@ -258,8 +258,9 @@ cdef class FOctree:
         cdef int new_idx
         cdef float scale
         cdef np.int32_t *children
-        cdef node_d *new_node, *parent
-        
+        cdef node_d *new_node
+        cdef node_d *parent
+
         
         if self._next_node >= self._resize_limit:
             self._resize_nodes()

@@ -58,8 +58,15 @@ class FractionalThreshold(Filter):
         
 @register_module('Threshold')
 class Threshold(Filter):
-    """ catch all class for automatic thresholding
+    """ Catch all class for automatic thresholding
     
+    Currently offers 'otsu' and 'isodata' methods, which are probably the most useful
+    for biological data, but could be expanded.
+
+    For preformance reasons, the algorithms work on a histogram of the data to determine the threshold.
+    If the data has a very large dynamic range (as in a lot of single molecule localisation reconstructions), 
+    linear binning may not be optimal as the best threshold may not be resolved in the histogram. In this case
+    consider using 'log' or 'adaptive' bin spacing.
     """
     
     method = Enum(['isodata', 'otsu'])
@@ -82,6 +89,8 @@ class Threshold(Filter):
 class Label(Filter):
     """Asigns a unique integer label to each contiguous region in the input mask.
     Optionally throws away all regions which are smaller than a cutoff size.
+
+    Labelling is generally reqired before operations such as measuring object properties.
 
     NB - minRegionPixels is currently ignored when running chunked
     """
@@ -163,6 +172,11 @@ class SelectLargestLabel(Filter):
 
 @register_module('LocalMaxima')         
 class LocalMaxima(Filter):
+    """Detect local maxima in an image.
+
+    Uses `skimage.feature.peak_local_max` to identify local maxima in an image.
+
+    """
     threshold = Float(.3)
     minDistance = Int(10)
     
@@ -1453,17 +1467,49 @@ class PSFFile(FileOrURI):
 
 @register_module('Deconvolve')         
 class Deconvolve(Filter):
-    offset = Float(0)
+    """
+    Deconvolves an image using either Richardson-Lucy or Iterative Constrained Tikhonov-Miller (ICTM) deconvolution.
+    
+    In general, Richardson-Lucy is preferred for images which are photon limited (e.g. most fluorescence microscopy), while ICTM can be better when the
+    noise is more Gaussian in nature. ICTM has a regularisation parameter which can be adjusted to trade off resolution and noise amplification, and is stable
+    at high iteration numbers. Richardson-Lucy has no regularisation parameter, and is effectively regularised by stopping the iterations early. Our RL implementation
+    starts with a uniform image (which makes for a strong reularisation prior at low iteration counts), and is pretty safe to ~20-50 iterations. 
+
+    In addition to resolution enhancement / deblurring, deconvolution can also be a very effective denoising method as
+    it icorporates knowledge of the PSF and noise model. If you are using deconvolution for denoising, 10-20 iterations of RL
+    are usually about right.
+
+    The PSF can be specified in 4 ways:
+    1) Load from a file - this should be a 3D PSF measured from sub-resolution beads, or a synthetically generated PSF. The PSF should be
+       normalised such that it sums to 1. The pixel size of the PSF should ideally match that of the image being deconvolved, but code will 
+       resample the PSF to match the image voxel size if necessary.
+    4) Bead - this is a bit special and is provided so that the deconvolution can be used to remove the effect of bead size on a PSF measurement. 
+       This PSF is a binary sphere of the specified diameter, sampled at the image voxel size.
+    2) Lorentzian - a 2D Lorentzian PSF is generated with the specified FWHM this is a somewhat crude approximation to a 2D plane through STED PSF 
+       and is only supported for 2D deconvolution. Although crude, this can work quite well in practice, especially as propper STED PSFs can be hard to 
+       measure (PSF depends on fluorophore and local environment, so beads are not ideal).
+    3) Gaussian - a 2D Gaussian PSF is generated with the specified FWHM - this is an *extremely* crude approximation to a confocal PSF and is only 
+       supported for 2D deconvolution (movies). It should only be used for noise removal, not resolution enhancement, but will kill noise with better
+       structural preservation than simple fltering. 
+
+    TODO - support synthetic 3D PSFs 
+
+
+    Images can be padded to reduce edge artefacts during deconvolution. Padding is performed by mirroring the image content at the edges, and the padding
+    is cropped off after deconvolution. Padding is particularly important for widefield images where there is significant out of focus light, or when the
+    background intensity varies from one side of the image to the other. A width of around 3-5 times the PSF extent is usually sufficient.  
+    """
+    offset = Float(0, desc='Offset to remove from image before deconvolution - this should be an estimate of the background level. Allows the positivity constraint to kick in properly. Use with some care, as if you overestimate the offset you will get artifacts') 
     method = Enum('Richardson-Lucy', 'ICTM') 
-    iterations = Int(10)
+    iterations = Int(10, desc='Number of iterations to perform') #number of iterations to perform
     psfType = Enum('file', 'bead', 'Lorentzian', 'Gaussian')
-    psfFilename = PSFFile('', exists=True) #only used for psfType == 'file'
-    lorentzianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
-    gaussianFWHM = Float(50.) #only used for psfType == 'Lorentzian'
-    beadDiameter = Float(200.) #only used for psfType == 'bead'
-    regularisationLambda = Float(0.1) #Regularisation - ICTM only
-    padding = Int(0) #how much to pad the image by (to reduce edge effects)
-    zPadding = Int(0) # padding along the z axis
+    psfFilename = PSFFile('', exists=True, desc='Filename or cluster URI of PSF file. Only used for psfType == file') #only used for psfType == 'file'
+    lorentzianFWHM = Float(50., desc='Lorentzian FWHM in nm, only used for psfType=Lorentzian') #only used for psfType == 'Lorentzian'
+    gaussianFWHM = Float(50., desc='Gaussian FWHM in nm, only used for PSF tupe == Gaussian') #only used for psfType == 'Lorentzian'
+    beadDiameter = Float(200., desc='Bead diameter [nm], only used for psf type bead') #only used for psfType == 'bead'
+    regularisationLambda = Float(0.1, desc='Regularisation parameter [ICTM only]') #Regularisation - ICTM only
+    padding = Int(0, desc='How much to pad the image by (iin pixels) to reduce edge effects') #how much to pad the image by (to reduce edge effects)
+    zPadding = Int(0, desc='Axial padding in pixels (to reduce edge effects)') # padding along the z axis
 
     overlap = Int(30, descr='Amount to overlap neighbouring blocks by (ignored when not using blocking)') 
 

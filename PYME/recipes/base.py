@@ -48,6 +48,19 @@ all_modules = {}
 _legacy_modules = {}
 module_names = {}
 
+def get_parsable_module_info():
+    """
+    Returns a dictionary of all modules, suitable for parsing by an LLM or similar.
+    
+    The dictionary contains the module name, its docstring, and a list of inputs, outputs, and parameters.
+    
+    Returns
+    -------
+    dict
+        A dictionary with module names as keys and their schema as values.
+    """
+    return {k: v.module_schema() for k, v in all_modules.items()}
+
 def register_module(moduleName, prefix=None):
     """
     Register a module so that it is discoverable by the recipe architecture
@@ -232,6 +245,59 @@ class ModuleBase(HasStrictTraits):
         from PYME.recipes import traits
         """Return a list of FileOrURI traits, as these can require special handling (potentially warn if this list is not empty)"""
         return [k for k, v in cls.class_traits().items() if isinstance(v.trait_type, traits.FileOrURI)]
+
+    @classmethod
+    def module_schema(cls):
+        """Return a dictionary, suitable for feeding to an LLM or similar which describes the module, its inputs, outputs, and parameters."""
+
+        from PYME.recipes import traits
+
+        ct = cls.class_traits()
+
+        schema = {
+            'name': module_names[cls],
+            'docstring': cls.__doc__,
+            'baseclass': cls.__bases__[0].__name__, # Useful to know if it derives from Filter, OutputModule etc ...
+            'inputs': [],
+            'outputs': [],
+            'parameters': [],
+        }
+
+        for k in cls.class_editable_traits(): 
+            if not k.startswith('_'):
+                v = ct[k]
+                if isinstance(v.trait_type, traits.Input):
+                    schema['inputs'].append({
+                        'name': k,
+                        #'type': v.trait_type.type,
+                        'description': v.desc,
+                    })
+                elif isinstance(v.trait_type, traits.Output):
+                    schema['outputs'].append({
+                        'name': k,
+                        #'type': v.trait_type.type,
+                        'description': v.desc,
+                    })
+                else:   
+                    default = v.trait_type.default_value if hasattr(v.trait_type, 'default_value') else None
+                    if isinstance(default, range):
+                        default = str(default) # handle unserialisable range objects
+
+                    pd = {
+                        'name': k,
+                        'type': str(v.trait_type.__class__.__name__),
+                        'default': default,
+                        'description': v.desc,
+                    }
+
+
+                    if hasattr(v.trait_type, 'values') and (v.trait_type.values is not None):
+                        # if the trait has a set of possible values (e.g. Enum), add to the schema
+                        pd['accepted_values'] = list(v.trait_type.values)
+
+                    schema['parameters'].append(pd)
+
+        return schema
 
     def check_inputs(self, namespace):
         """
@@ -1125,6 +1191,25 @@ class Scale(Filter):
     
     def applyFilter(self, data, chanNum, i, image0):
         return self.scale * data
+    
+@register_module('Offset')
+class Offset(Filter):
+    """Offset an image intensities by a constant"""
+    
+    offset = Float(0)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        return data + self.offset
+    
+@register_module('Clip')
+class Clip(Filter):
+    """Clip an image to a given range"""
+    
+    min = Float(0)
+    max = Float(np.finfo(np.float32).max)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        return np.clip(data, self.min, self.max)
 
 
 @register_module('Normalize')    
@@ -1279,7 +1364,7 @@ class Redimension(ModuleBase):
     input = Input('imput')
     output = Output('redimensioned')
 
-    dim_order = Enum(values=['XYZTC', 'XYTZC', 'XYCZT', 'XYCTZ', 'XYZCT', 'XYTCZ'])
+    dim_order = Enum('XYZTC', values=['XYZTC', 'XYTZC', 'XYCZT', 'XYCTZ', 'XYZCT', 'XYTCZ'])
     size_z = Int(-1)
     size_t = Int(1)
     size_c = Int(1)

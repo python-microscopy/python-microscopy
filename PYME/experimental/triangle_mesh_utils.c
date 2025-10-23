@@ -247,30 +247,30 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         PyErr_Format(PyExc_RuntimeError, "expecting an sequence  eg ... (xvals, yvals) or (xvals, yvals, zvals)");
         return NULL;
     }
-    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)halfedges))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
         return NULL;
     }
-    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS((PyArrayObject*)vertices)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
         return NULL;
     }
-    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS((PyArrayObject*)faces)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
         return NULL;
     } 
 
     n_idxs = (int32_t)PySequence_Length(v_idxs);
-    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1((PyArrayObject*)vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1((PyArrayObject*)halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1((PyArrayObject*)faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
-        v_idx = (int32_t)PyArray_DATA(PySequence_GetItem(v_idxs, (Py_ssize_t) j));
+        v_idx = ((int32_t*)PyArray_DATA((PyArrayObject*)PySequence_GetItem(v_idxs, (Py_ssize_t) j)))[0];
         if (v_idx == -1)
             continue;
                 
@@ -292,25 +292,25 @@ static PyObject *update_all_vertex_neighbors(PyObject *self, PyObject *args)
     n_idxs = 0;
 
     if (!PyArg_ParseTuple(args, "iOOO", &n_idxs, &halfedges, &vertices, &faces)) return NULL;
-    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)halfedges))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
         return NULL;
     }
-    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS((PyArrayObject*)vertices)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
         return NULL;
     }
-    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS((PyArrayObject*)faces)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
         return NULL;
     } 
 
-    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1((PyArrayObject*)vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1((PyArrayObject*)halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1((PyArrayObject*)faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
@@ -412,30 +412,32 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         PyErr_Format(PyExc_RuntimeError, "expecting an sequence  eg ... (xvals, yvals) or (xvals, yvals, zvals)");
         return NULL;
     }
-    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)halfedges))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
         return NULL;
     }
-    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS((PyArrayObject*)vertices)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
         return NULL;
     }
-    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS((PyArrayObject*)faces)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
         return NULL;
     } 
 
     n_idxs = (int32_t)PySequence_Length(f_idxs);
-    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1((PyArrayObject*)vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1((PyArrayObject*)halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1((PyArrayObject*)faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
-        f_idx = (int32_t)PyArray_DATA(PySequence_GetItem(f_idxs, (Py_ssize_t) j));
+        
+        //FIXMEME - this doesn't seem right
+        f_idx = ((int32_t*)PyArray_DATA((PyArrayObject*)PySequence_GetItem(f_idxs, (Py_ssize_t) j)))[0];
         if (f_idx == -1)
             continue;
 
@@ -458,25 +460,25 @@ static PyObject *update_all_face_normals(PyObject *self, PyObject *args)
     n_idxs = 0;
 
     if (!PyArg_ParseTuple(args, "iOOO", &n_idxs, &halfedges, &vertices, &faces)) return NULL;
-    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS(halfedges))
+    if (!PyArray_Check(halfedges) || !PyArray_ISCONTIGUOUS((PyArrayObject*)halfedges))
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the edge data.");
         return NULL;
     }
-    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS(vertices)) 
+    if (!PyArray_Check(vertices) || !PyArray_ISCONTIGUOUS((PyArrayObject*)vertices)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the vertex data.");
         return NULL;
     }
-    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS(faces)) 
+    if (!PyArray_Check(faces) || !PyArray_ISCONTIGUOUS((PyArrayObject*)faces)) 
     {
         PyErr_Format(PyExc_RuntimeError, "Expecting a contiguous numpy array for the face data.");
         return NULL;
     } 
 
-    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1((PyArrayObject*)vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1((PyArrayObject*)halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1((PyArrayObject*)faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {

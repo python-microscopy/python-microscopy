@@ -141,6 +141,17 @@ def update_version():
     f.write(version_template.format(version=new_version, changeset=id))
 
     f.close()
+
+    # udeate version in pyproject.toml
+    fn = os.path.join(os.path.split(__file__)[0], '..', 'pyproject.toml')
+    import re
+    with open(fn, 'r') as f:
+        s = f.read()
+    
+    s = re.sub(r'version\s*=\s*".*?"', 'version = "%s"' % new_version, s)
+    print('Updating version in %s to %s' % (fn, new_version))
+    with open(fn, 'w') as f:
+        f.write(s)
     
     print('PYMEVERSION=%s' % new_version)
     

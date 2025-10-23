@@ -6,6 +6,8 @@ TODO - Adapt for VisGUI / make dsviewer and VisGUI plugins use the same base cla
 
 """
 import weakref
+from PYME.DSView import displayOptions
+from PYME.IO import image
 
 class Plugin(object):
     """
@@ -23,11 +25,11 @@ class Plugin(object):
         return self._dsviewer() # type: PYME.DSView.dsviewer
         
     @property
-    def do(self):
+    def do(self) -> displayOptions.DisplayOpts:
         return self.dsviewer.do # type: PYME.DSView.displayOptions.DisplayOpts
     
     @property
-    def image(self):
+    def image(self) -> image.ImageStack:
         return self.dsviewer.image # type: PYME.IO.image.ImageStack
     
     @property

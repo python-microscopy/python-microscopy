@@ -32,7 +32,7 @@ from PYME.DSView.arrayViewPanel import ArrayViewPanel
 
 import PYME.config
 
-if PYME.config.get('VisGUI-opengl-core-profile', False):
+if PYME.config.get('VisGUI-opengl-core-profile', True):
     from PYME.LMVis.glcanvas_core import LMGLShaderCanvas
 else:
     from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas

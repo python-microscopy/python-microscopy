@@ -401,7 +401,7 @@ static PyObject * py_quad_surf_mf_pos_fixed(PyObject *self, PyObject *args, PyOb
     if (aZ == NULL) ABORT("Bad Z")
 
     aP = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_FLOAT, 0, 1);
-    printf("aP: %d, PyArray_Size(aP): %d\n", (int)aP, PyArray_Size((PyObject*)aP));
+    //printf("aP: %d, PyArray_Size(aP): %d\n", (int)aP, PyArray_Size((PyObject*)aP));
     if ((aP == NULL) || (PyArray_Size((PyObject*)aP) < 5)) ABORT("Bad P")
 
     aPos = (PyArrayObject *) PyArray_ContiguousFromObject(oPos, NPY_FLOAT, 0, 1);
@@ -432,8 +432,8 @@ static PyObject * py_quad_surf_mf_pos_fixed(PyObject *self, PyObject *args, PyOb
     if (out == NULL) ABORT("Failed to allocate memory for output")
 
 
-    printf("calc mf\n");
-    printf("nPts: %d, PyArray_Size(oX): %d, , PyArray_Size(oY): %d, , PyArray_Size(oZ): %d, PyArray_Size(out): %d\n", nPts, PyArray_Size((PyObject*)aX), PyArray_Size((PyObject*)aY), PyArray_Size((PyObject*)aZ), PyArray_Size((PyObject*)out));
+    //printf("calc mf\n");
+    //printf("nPts: %d, PyArray_Size(oX): %d, , PyArray_Size(oY): %d, , PyArray_Size(oZ): %d, PyArray_Size(out): %d\n", nPts, PyArray_Size((PyObject*)aX), PyArray_Size((PyObject*)aY), PyArray_Size((PyObject*)aZ), PyArray_Size((PyObject*)out));
     quad_surf_mf(x0, y0, z0, theta, phi, psi, A, B, C, nPts, (float *) PyArray_DATA(aX), (float *) PyArray_DATA(aY),
                 (float *) PyArray_DATA(aZ), (float *) PyArray_DATA(out));
 
