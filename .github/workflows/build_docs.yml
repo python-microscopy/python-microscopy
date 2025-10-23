@@ -47,9 +47,9 @@ jobs:
       run: |
         cd docs
         curl -u "${DOCS_USERNAME}:${DOCS_PASSWORD}" -T doc_html.tar.bz2 https://python-microscopy.org:2078/
-    - name: Artifact
-      uses: actions/upload-artifact@v1
-      with:
-        name: docs_html.tar.bz2
-        path: docs/doc_html.tar.bz2
+    # - name: Artifact
+    #   uses: actions/upload-artifact@v1
+    #   with:
+    #     name: docs_html.tar.bz2
+    #     path: docs/doc_html.tar.bz2
         
