@@ -101,8 +101,8 @@ class PointDisplayOverlay(Overlay):
 
         if self.visible and ('filter' in dir(self) or len(self.points) > 0):
             #print('plotting points')
-            
-            if 'filter' in dir(self):
+
+            if ('filter' in dir(self) and hasattr(self.filter, 'keys')):
                 f_keys = self.filter.keys()
 
                 t = self.filter['t'] #prob safe as int
