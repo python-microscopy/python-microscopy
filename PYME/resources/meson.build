@@ -10,12 +10,12 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/resources')
 
-#install_subdir('icons', install_dir: install_dir / 'icons', strip_directory: true)
-icon_files = run_command(py, ['-c', 'import glob; print(" ".join(glob.glob("icons/*.*")))'], check: true).stdout().strip().split()
-py.install_sources(icon_files, subdir: 'PYME/resources/icons')
+install_subdir('icons', install_dir: install_dir / 'icons', strip_directory: true)
+#icon_files = run_command(py, ['-c', 'import glob; print(" ".join(glob.glob("icons/*.*")))'], check: true).stdout().strip().split()
+#py.install_sources(icon_files, subdir: 'PYME/resources/icons')
 install_subdir('config_template', install_dir: install_dir  / 'config_template', strip_directory: true)
 
 install_subdir('web', install_dir: install_dir )
-#install_subdir('test_datasets', install_dir: install_dir )
-dataset_files = run_command(py, ['-c', 'import glob; print(" ".join(glob.glob("test_datasets/*.*")))'], check: true).stdout().strip().split()
-py.install_sources(dataset_files, subdir: 'PYME/resources/test_datasets')
+install_subdir('test_datasets', install_dir: install_dir )
+#dataset_files = run_command(py, ['-c', 'import glob; print(" ".join(glob.glob("test_datasets/*.*")))'], check: true).stdout().strip().split()
+#sspy.install_sources(dataset_files, subdir: 'PYME/resources/test_datasets')

@@ -122,3 +122,18 @@ py_sources = files(
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Piezos')
 
+# Install other hardware subdirs (Coherent, GCS, HamamatsuDCAM, MPBCommunications, Mercury, Tango, arduino, focus_locks, pco, uc480, AAOptoelectronics, ARCoptix)
+# TODO: This hacks around  actually specifying the directories and files explicitly as we have done above
+# Expedient for now, but in keeping with how you are "supposed" to use meson... 
+install_subdir('Coherent', install_dir: install_dir / 'Coherent', strip_directory: true)
+install_subdir('GCS', install_dir: install_dir / 'GCS', strip_directory: true)
+install_subdir('HamamatsuDCAM', install_dir: install_dir / 'HamamatsuDCAM', strip_directory: true)
+install_subdir('MPBCommunications', install_dir: install_dir / 'MPBCommunications', strip_directory: true)
+install_subdir('Mercury', install_dir: install_dir / 'Mercury', strip_directory: true)
+install_subdir('Tango', install_dir: install_dir / 'Tango', strip_directory: true)
+install_subdir('arduino', install_dir: install_dir / 'arduino', strip_directory: true)
+install_subdir('focus_locks', install_dir: install_dir / 'focus_locks', strip_directory: true)
+install_subdir('pco', install_dir: install_dir / 'pco', strip_directory: true)
+install_subdir('uc480', install_dir: install_dir / 'uc480', strip_directory: true)
+install_subdir('AAOptoelectronics', install_dir: install_dir / 'AAOptoelectronics', strip_directory: true)
+install_subdir('ARCoptix', install_dir: install_dir / 'ARCoptix', strip_directory: true)

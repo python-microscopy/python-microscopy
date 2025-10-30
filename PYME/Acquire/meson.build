@@ -139,7 +139,7 @@ py_sources = files(
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire/htsms')
 
-#install_subdir('Scripts', install_dir: install_dir )
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/Acquire/Scripts/*.*\'))"'], check: true)
-script_files = gl.stdout().strip().split()
-py.install_sources(script_files, subdir: 'PYME/Acquire/Scripts', pure: false, preserve_path: true)
+install_subdir('Scripts', install_dir: install_dir )
+#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/Acquire/Scripts/*.*\'))"'], check: true)
+#script_files = gl.stdout().strip().split()
+#py.install_sources(script_files, subdir: 'PYME/Acquire/Scripts', pure: false, preserve_path: true)

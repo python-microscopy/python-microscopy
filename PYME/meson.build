@@ -223,23 +223,24 @@ py_sources = files(
 py.install_sources(py_sources, subdir:'PYME/tileviewer')
 
 
+
 # use glob to find static files
-#install_subdir('util/fProfile/html', install_dir: install_dir / 'util/fProfile/html', strip_directory: true)
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/util/fProfile/html/*.*\'))"'], check: true)
-html_files = gl.stdout().strip().split()
-py.install_sources(html_files, subdir: 'PYME/util/fProfile/html', pure: false, preserve_path: true)
-#install_subdir('recipes/Recipes', install_dir: install_dir / 'recipes/Recipes', strip_directory: true)
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/recipes/Recipes/*.*\'))"'], check: true)
-recipe_files = gl.stdout().strip().split()
-py.install_sources(recipe_files, subdir: 'PYME/recipes/Recipes', pure: false, preserve_path: true)
-#install_subdir('cluster/clusterUI', install_dir: install_dir / 'cluster/clusterUI', strip_directory: true)
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/cluster/clusterUI/*.*\'))"'], check: true)
-cluster_ui_files = gl.stdout().strip().split()
-py.install_sources(cluster_ui_files, subdir: 'PYME/cluster/clusterUI', pure: false, preserve_path: true)
-#install_subdir('tileviewer/templates', install_dir: install_dir / 'tileviewer/templates', strip_directory: true)
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/tileviewer/templates/*.*\'))"'], check: true)
-tileviewer_templates = gl.stdout().strip().split()
-py.install_sources(tileviewer_templates, subdir: 'PYME/tileviewer/templates', pure: false, preserve_path: true)
+install_subdir('util/fProfile/html', install_dir: install_dir / 'util/fProfile/html', strip_directory: true)
+#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/util/fProfile/html/*.*\'))"'], check: true)
+#html_files = gl.stdout().strip().split()
+#sspy.install_sources(html_files, subdir: 'PYME/util/fProfile/html', pure: false, preserve_path: true)
+install_subdir('recipes/Recipes', install_dir: install_dir / 'recipes/Recipes', strip_directory: true)
+#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/recipes/Recipes/*.*\'))"'], check: true)
+#recipe_files = gl.stdout().strip().split()
+#py.install_sources(recipe_files, subdir: 'PYME/recipes/Recipes', pure: false, preserve_path: true)
+install_subdir('cluster/clusterUI', install_dir: install_dir / 'cluster/clusterUI', strip_directory: true)
+#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/cluster/clusterUI/*.*\'))"'], check: true)
+#cluster_ui_files = gl.stdout().strip().split()
+#py.install_sources(cluster_ui_files, subdir: 'PYME/cluster/clusterUI', pure: false, preserve_path: true)
+install_subdir('tileviewer/templates', install_dir: install_dir / 'tileviewer/templates', strip_directory: true)
+#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/tileviewer/templates/*.*\'))"'], check: true)
+#tileviewer_templates = gl.stdout().strip().split()
+#py.install_sources(tileviewer_templates, subdir: 'PYME/tileviewer/templates', pure: false, preserve_path: true)
 
 # data_files = files(
 #     '__init__.pxd',
