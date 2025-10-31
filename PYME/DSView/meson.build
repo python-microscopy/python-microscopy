@@ -92,4 +92,11 @@ template_files = files(
     'modules/templates/trackView.html',
     'modules/templates/tracksOverview.html',
 )
-py.install_sources(template_files, subdir: 'PYME/DSView/modules/templates', pure: false, preserve_path: true)
+py.install_sources(template_files, subdir: 'PYME/DSView/modules/templates', pure: false, preserve_path: false)
+
+#modules/measure
+measure_files = files(
+    'modules/measure/__init__.py',
+    'modules/measure/filterPan.py',
+)
+py.install_sources(measure_files, subdir:'PYME/DSView/modules/measure')

@@ -77,7 +77,7 @@ data_files = files(
     'buffer_helpers.pyx',
 )
 
-install_data(data_files, install_dir: install_dir)
+py.install_sources(data_files, subdir:'PYME/IO')
 #FIXME - Extension()
 
 py.extension_module(

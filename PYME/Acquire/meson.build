@@ -128,8 +128,25 @@ py.install_sources(py_sources, subdir:'PYME/Acquire/Utils')
 py_sources = files(
     'webui/__init__.py',
     'webui/ipy.py',
+    
+
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire/webui')
+webui_static_files = files(
+    'webui/static/css/pyme-bootstrap.css',
+    'webui/static/css/pyme-bootstrap.css.map',
+    'webui/static/css/pymeacquire.css',
+    'webui/static/js/pymeacquire.js',
+    'webui/static/js/pzf.js',
+)
+py.install_sources(webui_static_files, subdir:'PYME/Acquire', preserve_path: true)
+
+webui_template_files = files(
+    'webui/templates/PYMEAcquire.html',
+    'webui/templates/login.html',
+    'webui/templates/xtermpage.html',
+)
+py.install_sources(webui_template_files, subdir:'PYME/Acquire', preserve_path: true)
 
 py_sources = files(
     'htsms/tweeter.py',
@@ -181,4 +198,4 @@ scripts_files = files(
      'scripts/init_uc480.py',
      'scripts/init_ueye.py',
 )
-py.install_sources(scripts_files, subdir:'PYME/Acquire/scripts')
+py.install_sources(scripts_files, subdir:'PYME/Acquire/Scripts')
