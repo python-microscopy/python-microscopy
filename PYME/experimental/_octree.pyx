@@ -1,3 +1,17 @@
+# attempt to suppress warnings about taking the address of packed struct members
+# we know our struct is aligned correctly for int4
+cdef extern from *:
+    """
+    #ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Waddress-of-packed-member"
+    #endif
+    #ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+    #endif
+    """
+
 cimport numpy as np
 import numpy as np
 cimport cython
@@ -206,6 +220,7 @@ cdef class Octree:
         while node.nPoints >= self._samples_per_node:
             children = &node.child0
             new_idx = children[child_idx]
+
             if new_idx == 0:
                 #node subdivided but child is not yet allocated, no need to subdivide
                 return node_idx,  child_idx, False
@@ -297,6 +312,7 @@ cdef class Octree:
         new_node.point_idx = point_idx
         
         children = &parent.child0
+
         children[child_idx] = new_idx
         
         return new_idx
@@ -425,7 +441,8 @@ def _has_children(node_d[:] nodes):
     #_subdiv = &subdiv[0]
     
     any_have_children = False
-    
+
+
     for i in range(N):
         children = &_cnodes[i].child0
         _node_children = False
@@ -439,10 +456,22 @@ def _has_children(node_d[:] nodes):
             j+=1
                 
         subdiv[i] = _node_children
-        
+
+
+
     return subdiv, any_have_children
             
         
         
 def has_children(nodes):
     return _has_children(nodes.view(NODE_DTYPE2))
+
+cdef extern from *:
+    """
+    #ifdef __clang__
+    #pragma clang diagnostic pop
+    #endif
+    #ifdef __GNUC__
+    #pragma GCC diagnostic pop
+    #endif
+    """

@@ -136,7 +136,7 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
 {
     npy_intp outDimensions[1];
     int nPts=0;
-    int nViews = 0;
+    int nViews = 0; 
     int nCalPts = 0;
 
     int i, j, k;
@@ -171,6 +171,11 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
     //TODO - add checks on input dimensionality
     nPts = PyArray_DIM(osX, 0);
     nViews = PyArray_DIM(osX, 1);
+
+    if nViews != N_VIEWS {
+        PyErr_Format(PyExc_RuntimeError, "Input arrays must have %d views", N_VIEWS);
+        return NULL;
+    }
 
     nCalPts = PyArray_DIM(os_calX, 0);
 
