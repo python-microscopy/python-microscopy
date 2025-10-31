@@ -62,7 +62,6 @@ py.install_sources(config_template_files, subdir:'PYME/resources/config_template
 
 # web
 web_files = files(
-    'web/.DS_Store',
     'web/rule_inline.html',
     'web/ruleserver.html',
 )
@@ -70,7 +69,6 @@ py.install_sources(web_files, subdir:'PYME/resources/web')
 
 # web/static
 web_static_files = files(
-    'web/static/.DS_Store',
     'web/static/bootstrap.min.js',
     'web/static/cluster.css',
     'web/static/dashboard.css',
@@ -90,7 +88,6 @@ py.install_sources(web_static_files, subdir:'PYME/resources/web/static')
 
 # web/static/css
 web_static_css_files = files(
-    'web/static/css/.DS_Store',
     'web/static/css/bootstrap-theme.css',
     'web/static/css/bootstrap-theme.min.css',
     'web/static/css/bootstrap.css',

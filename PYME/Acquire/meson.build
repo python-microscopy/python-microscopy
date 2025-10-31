@@ -139,7 +139,47 @@ py_sources = files(
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire/htsms')
 
-install_subdir('Scripts', install_dir: install_dir )
-#gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/Acquire/Scripts/*.*\'))"'], check: true)
-#script_files = gl.stdout().strip().split()
-#py.install_sources(script_files, subdir: 'PYME/Acquire/Scripts', pure: false, preserve_path: true)
+scripts_files = files(
+     'scripts/.cvsignore',
+     'scripts/init.py',
+     'scripts/init_N1_Ti_Exeter_ZIx.py',
+     'scripts/init_N2_Ti_Zyla_lasers.py',
+     'scripts/init_Neo.py',
+     'scripts/init_NeoSim.py',
+     'scripts/init_TIRF.py',
+     'scripts/init_TIRF_Neo.py',
+     'scripts/init_TIRF_NeoO.py',
+     'scripts/init_TIRF_onecam.py',
+     'scripts/init_Ti.py',
+     'scripts/init_UOA_n.py',
+     'scripts/init_UOA_n2.py',
+     'scripts/init_Y1.py',
+     'scripts/init_Zyla.py',
+     'scripts/init_drift_tracking.py',
+     'scripts/init_emccd_basic.py',
+     'scripts/init_htsms.py',
+     'scripts/init_htsms_focus_lock.py',
+     'scripts/init_micrpi.py',
+     'scripts/init_orca.py',
+     'scripts/init_pco.py',
+     'scripts/init_rev.py',
+     'scripts/init_sim100.py',
+     'scripts/init_sim103.py',
+     'scripts/init_sim2.py',
+     'scripts/init_sim50.py',
+     'scripts/init_sim75.py',
+     'scripts/init_sim_drift_tracking.py',
+     'scripts/init_sim_htsms.py',
+     'scripts/init_sim_htsms_n.py',
+     'scripts/init_sim_main.py',
+     'scripts/init_sim_min.py',
+     'scripts/init_sim_rem.py',
+     'scripts/init_smi1.py',
+     'scripts/init_spectro.py',
+     'scripts/init_spim.py',
+     'scripts/init_thorcam.py',
+     'scripts/init_twophoton.py',
+     'scripts/init_uc480.py',
+     'scripts/init_ueye.py',
+)
+py.install_sources(scripts_files, subdir:'PYME/Acquire/scripts')

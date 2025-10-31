@@ -118,7 +118,33 @@ py_sources = files(
 
 py.install_sources(py_sources, subdir:'PYME/LMVis/shader_programs')
 
-#install_subdir('shader_programs/shaders', install_dir: install_dir /'shader_programs/shaders', strip_directory: true)
-gl = run_command(py, ['-c', '"import glob; print(glob.glob(\'PYME/LMVis/shader_programs/shaders/*.*\'))"'], check: true)
-shaders_files = gl.stdout().strip().split()
+shaders_files = files(
+    'shader_programs/shaders/bigflatpoints_fs.glsl',
+    'shader_programs/shaders/bigpoints_gs.glsl',
+    'shader_programs/shaders/bigpointsprites_fs.glsl',
+    'shader_programs/shaders/bigspheres_fs.glsl',
+    'shader_programs/shaders/compose_fs.glsl',
+    'shader_programs/shaders/compose_vs.glsl',
+    'shader_programs/shaders/default_fs.glsl',
+    'shader_programs/shaders/default_vs.glsl',
+    'shader_programs/shaders/flatpoints_fs.glsl',
+    'shader_programs/shaders/gouraud_flatpoints_fs.glsl',
+    'shader_programs/shaders/gouraud_fs.glsl',
+    'shader_programs/shaders/gouraud_oit_fs.glsl',
+    'shader_programs/shaders/gouraud_vs.glsl',
+    'shader_programs/shaders/image_fs.glsl',
+    'shader_programs/shaders/image_vs.glsl',
+    'shader_programs/shaders/phong_fs.glsl',
+    'shader_programs/shaders/phong_vs.glsl',
+    'shader_programs/shaders/pointsprites_fs.glsl',
+    'shader_programs/shaders/pointsprites_vs.glsl',
+    'shader_programs/shaders/spheres_fs.glsl',
+    'shader_programs/shaders/tessel_fs.glsl',
+    'shader_programs/shaders/tessel_vs.glsl',
+    'shader_programs/shaders/text_fs.glsl',
+    'shader_programs/shaders/text_vs.glsl',
+    'shader_programs/shaders/widelines_fs.glsl',
+    'shader_programs/shaders/widelines_gs.glsl',
+    'shader_programs/shaders/widelines_vs.glsl',
+)
 py.install_sources(shaders_files, subdir:'PYME/LMVis/shader_programs/shaders', pure: false, preserve_path: true)
