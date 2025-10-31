@@ -172,7 +172,7 @@ static PyObject * astiglookup4(PyObject *self, PyObject *args, PyObject *keywds)
     nPts = PyArray_DIM(osX, 0);
     nViews = PyArray_DIM(osX, 1);
 
-    if nViews != N_VIEWS {
+    if (nViews != N_VIEWS) {
         PyErr_Format(PyExc_RuntimeError, "Input arrays must have %d views", N_VIEWS);
         return NULL;
     }

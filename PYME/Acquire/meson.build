@@ -140,7 +140,6 @@ py_sources = files(
 py.install_sources(py_sources, subdir:'PYME/Acquire/htsms')
 
 scripts_files = files(
-     'scripts/.cvsignore',
      'scripts/init.py',
      'scripts/init_N1_Ti_Exeter_ZIx.py',
      'scripts/init_N2_Ti_Zyla_lasers.py',

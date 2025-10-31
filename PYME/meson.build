@@ -238,7 +238,7 @@ fprofile_html_files = files(
     'util/fProfile/html/js/vendor/modernizr-2.8.3.min.js',
     'util/fProfile/html/js/vendor/tinycolor-min.js',
 )
-py.install_sources(fprofile_html_files, subdir:'PYME/util/fProfile/html')
+py.install_sources(fprofile_html_files, subdir:'PYME/', preserve_path:true)
 
 recipes_files = files(
     'recipes/Recipes/STEDDeconvolution.yaml',

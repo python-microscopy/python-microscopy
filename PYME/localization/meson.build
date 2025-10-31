@@ -156,4 +156,4 @@ test_files = files(
     'Test/wf_theory.psf',
     'Test/wf_theory2.psf',
 )
-py.install_sources(test_files, subdir: 'PYME/localization/Test', pure:false, preserve_path: true)
+py.install_sources(test_files, subdir: 'PYME/localization/Test', pure:false, preserve_path: false)

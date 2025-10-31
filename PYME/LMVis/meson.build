@@ -147,4 +147,4 @@ shaders_files = files(
     'shader_programs/shaders/widelines_gs.glsl',
     'shader_programs/shaders/widelines_vs.glsl',
 )
-py.install_sources(shaders_files, subdir:'PYME/LMVis/shader_programs/shaders', pure: false, preserve_path: true)
+py.install_sources(shaders_files, subdir:'PYME/LMVis/shader_programs/shaders', pure: false, preserve_path: false)
