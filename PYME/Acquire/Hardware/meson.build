@@ -122,18 +122,102 @@ py_sources = files(
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Piezos')
 
-# Install other hardware subdirs (Coherent, GCS, HamamatsuDCAM, MPBCommunications, Mercury, Tango, arduino, focus_locks, pco, uc480, AAOptoelectronics, ARCoptix)
-# TODO: This hacks around  actually specifying the directories and files explicitly as we have done above
-# Expedient for now, but in keeping with how you are "supposed" to use meson... 
-install_subdir('Coherent', install_dir: install_dir / 'Coherent', strip_directory: true)
-install_subdir('GCS', install_dir: install_dir / 'GCS', strip_directory: true)
-install_subdir('HamamatsuDCAM', install_dir: install_dir / 'HamamatsuDCAM', strip_directory: true)
-install_subdir('MPBCommunications', install_dir: install_dir / 'MPBCommunications', strip_directory: true)
-install_subdir('Mercury', install_dir: install_dir / 'Mercury', strip_directory: true)
-install_subdir('Tango', install_dir: install_dir / 'Tango', strip_directory: true)
-install_subdir('arduino', install_dir: install_dir / 'arduino', strip_directory: true)
-install_subdir('focus_locks', install_dir: install_dir / 'focus_locks', strip_directory: true)
-install_subdir('pco', install_dir: install_dir / 'pco', strip_directory: true)
-install_subdir('uc480', install_dir: install_dir / 'uc480', strip_directory: true)
-install_subdir('AAOptoelectronics', install_dir: install_dir / 'AAOptoelectronics', strip_directory: true)
-install_subdir('ARCoptix', install_dir: install_dir / 'ARCoptix', strip_directory: true)
+
+# Coherent
+py_sources = files(
+    'Coherent/OBIS.py',
+    'Coherent/Sapphire.py',
+    'Coherent/__init__.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Coherent')
+
+# GCS
+py_sources = files(
+    'GCS/GCS_DLL.py',
+    'GCS/__init__.py',
+    'GCS/gcs.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/GCS')
+
+# HamamatsuDCAM
+py_sources = files(
+    'HamamatsuDCAM/HamamatsuDCAM.py',
+    'HamamatsuDCAM/HamamatsuORCA.py',
+    'HamamatsuDCAM/Hamamatsu_control_panel.py',
+    'HamamatsuDCAM/__init__.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/HamamatsuDCAM')
+
+# MPBCommunications
+py_sources = files(
+    'MPBCommunications/MPBCW.py',
+    'MPBCommunications/__init__.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/MPBCommunications')
+
+# Mercury
+py_sources = files(
+    'Mercury/Mercury.py',
+    'Mercury/PI_Mercury_GCS_DLL.py',
+    'Mercury/__init__.py',
+    'Mercury/mercuryStepper.py',
+    'Mercury/mercuryStepperGCS.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Mercury')
+
+# Tango
+py_sources = files(
+    'Tango/__init__.py',
+    'Tango/marzhauser_tango.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/Tango')
+
+# arduino
+# Only io_slave/ subdir present, skipping as no .py files at top level
+
+# focus_locks
+py_sources = files(
+    'focus_locks/__init__.py',
+    'focus_locks/reflection_focus_lock.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/focus_locks')
+
+# pco
+py_sources = files(
+    'pco/__init__.py',
+    'pco/pco_cam.py',
+    'pco/pco_edge_42_lt.py',
+    'pco/pco_sdk.py',
+    'pco/pco_sdk_cam.py',
+    'pco/pco_sdk_cam_control_panel.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/pco')
+
+# uc480
+py_sources = files(
+    'uc480/AndorControlFrame.py',
+    'uc480/__init__.py',
+    'uc480/uCam480.py',
+    'uc480/uc480.py',
+    'uc480/uc480Deprecated.py',
+    'uc480/uc480_h.py',
+    'uc480/uc480_h_gen.py',
+    'uc480/ucCamControlFrame.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/uc480')
+
+# AAOptoelectronics
+py_sources = files(
+    'AAOptoelectronics/MDS.py',
+    'AAOptoelectronics/__init__.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/AAOptoelectronics')
+
+# ARCoptix
+py_sources = files(
+    'ARCoptix/__init__.py',
+    'ARCoptix/lcdriver.py',
+    'ARCoptix/lcserver32.py',
+)
+py.install_sources(py_sources, subdir:'PYME/Acquire/Hardware/ARCoptix')
+
