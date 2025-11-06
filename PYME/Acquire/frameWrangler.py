@@ -424,7 +424,7 @@ class FrameWrangler(object):
                 # See if we need to restart the exposure. This will happen if
                 # a) we are in single shot mode
                 # or b) the camera buffer overflowed
-                if self.needExposureStart and self.checkHardware():
+                if self.needExposureStart and self.checkHardware() and not self._idle_mode:
                     self.needExposureStart = False
                     self.bufferOverflowed = False
                     self.cam.StartExposure() #restart aquisition - this should purge buffer
