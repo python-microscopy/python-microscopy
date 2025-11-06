@@ -125,6 +125,12 @@ class FrameWrangler(object):
         self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()
+        self.onIdleChange = dispatch.Signal(['idle']) #called when idle state changes
+        
+        # Idle mode: allows microscope to be 'paused' between acquisitions
+        # stops the camera if it is in MODE_CONTINUOUS. Does not automatically retrigger
+        # cameras that aren't in continuous mode.
+        self._idle_mode = False
 
         # should the thread which polls the camera still be running?
         self._poll_camera = True
@@ -140,6 +146,47 @@ class FrameWrangler(object):
         
     def destroy(self):
         self._poll_camera = False
+    
+    def set_idle(self, idle=True):
+        """Set the idle state of the frameWrangler.
+        
+        When idle, the camera is paused. If the camera is in MODE_CONTINUOUS, it will be stopped.
+        Otherwise, idle pauses the re-triggering of non-continuous acquisition modes (MODE_SINGLE_SHOT).
+        
+        Parameters
+        ----------
+        idle : bool
+            True to enter idle mode, False to exit idle mode
+        
+        Notes
+        -----
+        During spooling (acquisition) the frameWrangler will need idle=False.
+        """
+        if idle != self._idle_mode:
+            self._idle_mode = idle
+            logger.info('FrameWrangler idle mode: %s' % ('ON' if idle else 'OFF'))
+            
+            # If entering idle mode and currently running, stop the acquisition
+            if idle and self.aqOn:
+                logger.debug('Entering idle mode')
+                if self.cam.GetAcquisitionMode() == self.cam.MODE_CONTINUOUS:
+                    logger.debug('stopping camera')
+                    self.cam.StopAq()
+                    self.needExposureStart = True
+                # self.stop()
+            
+            # Notify listeners of idle state change
+            self.onIdleChange.send(self, idle=idle)
+    
+    def get_idle(self):
+        """Query whether the frameWrangler is in idle mode.
+        
+        Returns
+        -------
+        bool
+            True if in idle mode, False otherwise
+        """
+        return self._idle_mode
         
 
     def Prepare(self, keepds=True):
@@ -241,7 +288,7 @@ class FrameWrangler(object):
             traceback.print_exc()
 
         finally:       
-            if not contMode:
+            if not contMode and not self._idle_mode:
                 #flag the need to start a new exposure
                 #the exposure will be started in the main Notify method after 
                 #any hardware movements etc that are triggered by the onFrame 
