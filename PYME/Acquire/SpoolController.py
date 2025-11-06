@@ -557,6 +557,14 @@ class SpoolController(object):
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
 
+        # unpause frameWrangler if idle
+        if self.scope.frameWrangler.get_idle():
+            logger.info('Exiting idle mode to start spooling')
+            self.scope.frameWrangler.set_idle(False)
+            self._return_to_idle = True
+        else:  # flag that we don't need to return to idle after spooling
+            self._return_to_idle = False
+
         
         try:
             self.spooler = self.acquisition_cls.from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
@@ -721,6 +729,9 @@ class SpoolController(object):
 
         if self.analysis_launch_mode == 'series-end':
             self.LaunchAnalysis()
+        
+        # return to same idle state as before spooling
+        self.scope.frameWrangler.set_idle(self._return_to_idle)
 
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)
