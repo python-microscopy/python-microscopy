@@ -169,7 +169,8 @@ class FrameWrangler(object):
             # If entering idle mode and currently running, stop the acquisition
             if idle and self.aqOn:
                 logger.debug('Entering idle mode')
-                if self.cam.GetAcquisitionMode() == self.cam.MODE_CONTINUOUS:
+                acq_mode = self.cam.GetAcquisitionMode()
+                if acq_mode  == self.cam.MODE_CONTINUOUS or acq_mode == self.cam.MODE_SINGLE_SHOT:
                     logger.debug('stopping camera')
                     self.cam.StopAq()
                     self.needExposureStart = True
