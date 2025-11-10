@@ -924,7 +924,12 @@ class Camera(object):
         bool
             True if in idle mode
         """
-        return self._idle
+        try:
+            return self._idle
+        except AttributeError:
+            logger.warning("Camera idle flag was not initialized - Did custom camera class call super().__init__() ?")
+            self._idle = False
+            return self._idle
 
     def Shutdown(self):
         """Shutdown and clean up the camera"""
