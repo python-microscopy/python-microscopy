@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class IdleModeControl(wx.Panel):
     """
-    Two-button (Play/Stop) control for setting microscope idle/active state.
+    Two-button (Play/Stop) control for setting camera idle/active state.
 
     - ▶ Play: exit Idle (set active).
     - ⏹ Stop: enter Idle. 
@@ -23,7 +23,7 @@ class IdleModeControl(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # Label
-        hsizer.Add(wx.StaticText(self, -1, "Microscope:"), 0,
+        hsizer.Add(wx.StaticText(self, -1, "Camera:"), 0,
                    wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
         
         green = wx.Colour(0, 170, 0)
@@ -45,10 +45,8 @@ class IdleModeControl(wx.Panel):
 
         self.SetSizerAndFit(hsizer)
 
-        # Listen for state changes from the frameWrangler
-        self.scope.frameWrangler.onIdleChange.connect(self.on_idle_changed)
-        self.scope.frameWrangler.onStart.connect(lambda *_args, **_kw: wx.CallAfter(self.update))
-        self.scope.frameWrangler.onStop.connect(lambda *_args, **_kw: wx.CallAfter(self.update))
+        # Listen for state changes from the camera
+        self.scope.cam.on_idle_change.connect(self.on_idle_changed)
 
         # Initial state
         self.update()
@@ -56,10 +54,10 @@ class IdleModeControl(wx.Panel):
     def on_play(self, event=None):
         """Exit idle mode (set Active)."""
         try:
-            if not self.scope.frameWrangler.get_idle():
+            if not self.scope.cam.GetIdle():
                 return  # already active -> no-op
-            logger.info('User setting microscope to ACTIVE')
-            self.scope.frameWrangler.set_idle(False)
+            logger.info('User setting camera to ACTIVE')
+            self.scope.cam.SetIdle(False)
         except Exception:
             logger.exception('Error setting Active state from IdleModeControl')
         finally:
@@ -68,10 +66,10 @@ class IdleModeControl(wx.Panel):
     def on_stop(self, event=None):
         """Enter idle mode (pause camera)."""
         try:
-            if self.scope.frameWrangler.get_idle():
+            if self.scope.cam.GetIdle():
                 return  # already idle -> no-op
-            logger.info('User setting microscope to IDLE')
-            self.scope.frameWrangler.set_idle(True)
+            logger.info('User setting camera to IDLE')
+            self.scope.cam.SetIdle(True)
         except Exception:
             logger.exception('Error setting Idle state from IdleModeControl')
         finally:
@@ -83,15 +81,15 @@ class IdleModeControl(wx.Panel):
 
     def update(self):
         """enable/disable buttons based on idle/active."""
-        idle = self.scope.frameWrangler.get_idle()
+        idle = self.scope.cam.GetIdle()
 
         if idle:  # Idle state
             self.btnPlay.SetToolTip(wx.ToolTip("Set Active (exit Idle)"))
-            self.btnStop.SetToolTip(wx.ToolTip("Microscope is idle"))
+            self.btnStop.SetToolTip(wx.ToolTip("Camera is idle"))
             self.btnPlay.Enable()
             self.btnStop.Disable()
         else:  # Active state
-            self.btnPlay.SetToolTip(wx.ToolTip("Microscope is active"))
+            self.btnPlay.SetToolTip(wx.ToolTip("Camera is active"))
             self.btnStop.SetToolTip(wx.ToolTip("Set Idle (pause camera)"))
             self.btnPlay.Disable()
             self.btnStop.Enable()

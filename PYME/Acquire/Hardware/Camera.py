@@ -34,7 +34,7 @@ from PYME.Acquire import eventLog
 from PYME import config
 from . import camera_noise
 import warnings
-
+from PYME.contrib import dispatch
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -152,6 +152,10 @@ class Camera(object):
         # this is important so that the camera settings get recorded
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
+        # create flag for idle state, allowing different behavior between spooling
+        self._idle = False
+        self.on_idle_change = dispatch.Signal(['idle'])
+
     def Init(self):
         """
         Optional intialization function. Also called from the init script.
@@ -174,6 +178,10 @@ class Camera(object):
         -------
         exposureReady : bool
             True if there are frames waiting
+        
+        Notes
+        -----
+        For cameras with an "Idle" mode, this should return False when in idle mode.
 
         """
 
@@ -888,7 +896,35 @@ class Camera(object):
             return self.noise_properties['SaturationThreshold']
         except (KeyError, RuntimeError):
             return self._saturation_threshold
-            
+
+    def SetIdle(self, idle=True):
+        """
+        Set the camera to idle mode. This allows cameras to support different behavior during
+        spooling vs while waiting to spool. For cameras which can run continuously between acquisitions,
+        idle mode might not do anything.
+
+        Parameters
+        ----------
+        idle : bool
+            True to set idle, False to exit idle
+
+        Returns
+        -------
+        None
+        """
+        self._idle = bool(idle)
+        self.on_idle_change.send(self, idle=self._idle)
+    
+    def GetIdle(self):
+        """
+        Get whether the camera is in idle mode.
+
+        Returns
+        -------
+        bool
+            True if in idle mode
+        """
+        return self._idle
 
     def Shutdown(self):
         """Shutdown and clean up the camera"""
