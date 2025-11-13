@@ -134,7 +134,6 @@ py_sources = files(
 py.install_sources(py_sources, subdir:'PYME/Acquire/webui')
 webui_static_files = files(
     'webui/static/css/pyme-bootstrap.css',
-    'webui/static/css/pyme-bootstrap.css.map',
     'webui/static/css/pymeacquire.css',
     'webui/static/js/pymeacquire.js',
     'webui/static/js/pzf.js',
