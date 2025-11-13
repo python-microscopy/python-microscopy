@@ -171,6 +171,8 @@ class LayerPane(afp.foldingPane):
                 self.visFr.add_mesh_layer()
             elif type == 'quiver':
                 self.visFr.add_quiver_layer()
+            elif type == 'image':
+                self.visFr.add_image_layer()
             else:
                 raise NotImplementedError('Layer type "%s" not supported yet' % type)
         

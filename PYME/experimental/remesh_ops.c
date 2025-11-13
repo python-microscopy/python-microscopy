@@ -73,12 +73,12 @@ int remesh_delete_face(halfedge_t * halfedges, face_t * faces, int32_t e_idx){
 int remesh_edge_flip(halfedge_t * halfedges, vertex_t *vertices, face_t * faces, int idx, int n_halfedges, int live_update)
 {
     halfedge_t * curr_edge, * twin_edge;
-    int32_t twin_idx, _prev, _twin, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1;
+    int32_t twin_idx, _prev, _next, _twin_prev, _twin_next, vc, vt, new_v0, new_v1;
     
     int locally_manifold, fast_collapse_bool, i;
-    int32_t * neighbours;
+    //int32_t * neighbours;
 
-    float f, p, flipped_dot;
+    //float f, p, flipped_dot;
     
     // do some sanity checking on the edge to be flipped
     if (idx == -1) return 0;

@@ -302,6 +302,10 @@ class NthPointIsosurface(ModuleBase):
 
 @register_module('Isosurface')
 class Isosurface(ModuleBase):
+    """
+    Generate a surface mesh from a 3D image using the Marching Cubes algorithm.
+    
+    """
     input = Input('input')
     output = Output('mesh')
 
@@ -318,6 +322,10 @@ class Isosurface(ModuleBase):
 
 @register_module('DelaunayMarchingTetrahedra')
 class DelaunayMarchingTetrahedra(ModuleBase):
+    """
+    Generate a surface mesh from a Delaunay tesselation of a set of points using the Marching Tetrahedra algorithm.
+    
+    """
     input = Input('delaunay0')
     output = Output('mesh')
     

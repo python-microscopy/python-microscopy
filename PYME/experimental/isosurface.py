@@ -27,7 +27,13 @@ def isosurface(data, isolevel, voxel_size=None, origin=None, remesh=False):
     T = triangle_mesh.TriangleMesh.from_np_stl(MC.march(), origin=origin)
     
     if remesh:
-        T.remesh()
+        # remesh to get a more uniform triangle size
+        # target edge length = 1/2 voxel size
+        if np.isscalar(voxel_size):
+            target_edge_length = voxel_size
+        else:
+            target_edge_length = np.min(voxel_size)      
+        T.remesh(target_edge_length=target_edge_length)
     
     return T
 

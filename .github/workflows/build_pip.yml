@@ -12,31 +12,39 @@ on:
 jobs:
   deploy_source:
     runs-on: 'ubuntu-latest'
-    
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python }}
-    - name: Install dependencies
+        python-version: '3.11'
+    - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine cython numpy==1.21 pyyaml
-    - name: Build and publish
+        pip install build twine
+    - name: Build source distribution
+      run: |
+        python -m build --sdist
+    - name: Publish source distribution
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        python setup.py sdist
-        python -m twine upload --skip-existing dist/*
+        twine upload --skip-existing dist/*.tar.gz
     
   deploy_wheel:
     needs: deploy_source #don't build wheels unless we successfully built source package.
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
-        python: ['3.7'] #,2.7] - # 2.7 disabled for now due to missing VC9
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        python: ['3.9',] # '3.10', '3.11', '3.12', '3.13']
+        arch: [x86_64, arm64]
+        exclude:
+          - os: windows-latest
+            arch: arm64
+          - os: ubuntu-latest
+            arch: arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -46,14 +54,20 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
-    - name: Install dependencies
+    - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel twine cython numpy==1.21 pyyaml
-    - name: Build and publish
+        pip install build twine
+    - name: Build wheel
+      run: |
+        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+          arch -${{ matrix.arch }} python -m build --wheel
+        else
+          python -m build --wheel
+        fi
+    - name: Publish wheel
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        python setup.py bdist_wheel
-        twine upload --skip-existing dist/*
+        twine upload --skip-existing dist/*.whl

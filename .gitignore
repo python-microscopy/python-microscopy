@@ -11,6 +11,7 @@ build/*
 */_build/*
 */dist/*
 dist\*
+dist/*
 *_hidden*
 *.so
 *.o
@@ -58,3 +59,6 @@ PYME/experimental/_octree.html
 PYME/experimental/_treap.html
 PYME/experimental/_triangle_mesh.html
 PYME/experimental/func_octree.c
+*.egg
+*.whl
+*.log

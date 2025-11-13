@@ -1,0 +1,61 @@
+[build-system]
+#requires = ["setuptools>=61.0", "numpy==1.21", "cython"]
+#build-backend = "setuptools.build_meta"
+build-backend = 'mesonpy'
+requires = ['meson-python', 'numpy', 'cython']
+
+[project]
+name = "python-microscopy"
+version = "25.06.05" # will be updated automatically
+authors = [
+  { name="David Baddeley", email="d.baddeley@auckland.ac.nz" },
+]
+description = "Tools for (super-resolution) microscopy data analysis and microsope control"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy>=1.22",
+  "scipy",
+  "matplotlib",
+  "wxpython",
+  "cython",
+  "pytables",
+  "pyopengl",
+  "traits",
+  "traitsui>=7.6.0",
+  "pyface>=7.6.0",
+  "pillow",
+  "toposort",
+  "networkx",
+  "pyfftw",
+  "cherrypy",
+  "scikit-image",
+  "scikit-learn",
+  "zeroconf", #[py3k] #<=0.26.3 [py3k]
+  "requests",
+  "pandas",
+  "pyyaml",
+  "psutil",
+  "docutils",
+  "sphinx",
+  "ujson>=3.0.0",
+  "jinja2",
+  "pycairo",
+  "pymecompress>=0.2.0",
+  "six",
+  "future",
+  #"pywin32 [win]"
+  "blosc", 
+  "django>=2.1",
+  #"mpld3", #TODO - optional?
+  #"tifffile", [optional - we ship an internal (but old) version]
+
+]
+
+[project.urls]
+"Homepage" = "https://github.com/python-microscopy/pymecompress"

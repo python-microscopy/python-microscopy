@@ -1,0 +1,43 @@
+# Still a WIP
+requires = ["tox >= 4.0.0"]
+envlist = ["py39"]
+#envlist = ["py38", "py39", "py310", "py311", "py312"]
+
+[testenv]
+#usedevelop = true
+deps = [
+    "meson-python",
+    "numpy",
+    "cython",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-asyncio",
+    "scipy", 
+    "matplotlib",  #<=3.2.* # matplotlib >=3.3.0 requires numpy >=1.15 (and pip isn't sensible enough to recognise this)
+    "tables", 
+    "traits",
+    "traitsui",
+    "pillow",
+    "cython",
+    "toposort",
+    "pyfftw", 
+    "cherrypy",
+    "scikit-image",
+    "scikit-learn",
+    "zeroconf", 
+    "requests",
+    "pyyaml",
+    "psutil",
+    "ujson",
+    "jinja2",
+    "six",
+    "future",
+    "cython",
+]
+
+commands =[["pytest", "--cov=PYME", "--cov-report=term-missing", "--cov-report=html", "tests"],
+]
+
+[testenv.py39]
+           

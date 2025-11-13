@@ -475,7 +475,7 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     //out = (PyArrayObject *)oOut;
     //fprintf("array size")
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN((PyArrayObject*)oOut) || PyArray_TYPE((PyArrayObject*)oOut) != NPY_DOUBLE|| PyArray_DIM((PyArrayObject*)oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM((PyArrayObject*)oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -497,7 +497,7 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
 
-    res = (double*) PyArray_DATA(oOut);
+    res = (double*) PyArray_DATA((PyArrayObject*)oOut);
 
     ts2 = 2*sigma*sigma;
 
@@ -607,7 +607,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
     }
 
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN((PyArrayObject*)oOut) || PyArray_TYPE((PyArrayObject*)oOut) != NPY_DOUBLE|| PyArray_DIM((PyArrayObject*)oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM((PyArrayObject*)oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -631,7 +631,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
 
-    res = (double*) PyArray_DATA(oOut);
+    res = (double*) PyArray_DATA((PyArrayObject*)oOut);
 
     ts2 = 2*sigma*sigma;
 
@@ -791,7 +791,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     }
 
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN((PyArrayObject*)oOut) || PyArray_TYPE((PyArrayObject*)oOut) != NPY_DOUBLE|| PyArray_DIM((PyArrayObject*)oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM((PyArrayObject*)oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -816,7 +816,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
 
-    res = (double*) PyArray_DATA(oOut);
+    res = (double*) PyArray_DATA((PyArrayObject*)oOut);
 
     ts2 = 2*sigma*sigma;
 
@@ -984,7 +984,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
-    if (!PyArray_ISFORTRAN(oData) || PyArray_TYPE(oData) != NPY_DOUBLE|| PyArray_DIM(oData,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oData, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN((PyArrayObject*)oData) || PyArray_TYPE((PyArrayObject*)oData) != NPY_DOUBLE|| PyArray_DIM((PyArrayObject*)oData,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM((PyArrayObject*)oData, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -995,7 +995,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
-    if (!PyArray_ISFORTRAN(oWeights) || PyArray_TYPE(oWeights) != NPY_DOUBLE|| PyArray_DIM(oWeights,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oWeights, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN((PyArrayObject*)oWeights) || PyArray_TYPE((PyArrayObject*)oWeights) != NPY_DOUBLE|| PyArray_DIM((PyArrayObject*)oWeights,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM((PyArrayObject*)oWeights, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -1027,7 +1027,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
 
 
-    if (PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_SIZE(oOut) != PyArray_SIZE(oData))
+    if (PyArray_TYPE((PyArrayObject*)oOut) != NPY_DOUBLE|| PyArray_SIZE((PyArrayObject*)oOut) != PyArray_SIZE((PyArrayObject*)oData))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -1052,24 +1052,24 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
 
-    res = (double*) PyArray_DATA(oOut);
-    data = (double*) PyArray_DATA(oData);
-    weights = (double*) PyArray_DATA(oWeights);
+    res = (double*) PyArray_DATA((PyArrayObject*)oOut);
+    data = (double*) PyArray_DATA((PyArrayObject*)oData);
+    weights = (double*) PyArray_DATA((PyArrayObject*)oWeights);
 
     ts2 = 2*sigma*sigma;
 
     for (iy = 0; iy < size[1]; iy++)
       {
-	byY = b_y*(pYvals[iy]- y0) + b;
-	for (ix = 0; ix < size[0]; ix++)
-	  {
-	    *res = (*weights)*(*data - A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
-	    //*res = 1.0;
-	    res++;
-            data++;
-            weights++;
-            
-	  }
+        byY = b_y*(pYvals[iy]- y0) + b;
+        for (ix = 0; ix < size[0]; ix++)
+          {
+            *res = (*weights)*(*data - A*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
+            //*res = 1.0;
+            res++;
+                  data++;
+                  weights++;
+                  
+          }
 
       }
 
@@ -1078,15 +1078,15 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
     for (iy = 0; iy < size[1]; iy++)
       {
-	byY = b_y*(pYvals[iy]- y0) + b1;
-	for (ix = 0; ix < size[0]; ix++)
-	  {
-	    *res = (*weights)*(*data -A2*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
-	    //*res = 1.0;
-	    res++;
-            data++;
-            weights++;
-	  }
+        byY = b_y*(pYvals[iy]- y0) + b1;
+        for (ix = 0; ix < size[0]; ix++)
+          {
+            *res = (*weights)*(*data -A2*exp(-(((pXvals[ix] - x0) * (pXvals[ix] - x0)) + ((pYvals[iy]-y0) * (pYvals[iy]-y0)))/ts2) + b_x*(pXvals[ix]-x0) + byY);
+            //*res = 1.0;
+            res++;
+                  data++;
+                  weights++;
+          }
 
       }
 
@@ -1618,7 +1618,7 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
     if (weights == NULL)
     {
         Py_DECREF(Xvals);
-	Py_DECREF(Yvals);
+	      Py_DECREF(Yvals);
         PyErr_Format(PyExc_RuntimeError, "Bad weights");
         return NULL;
     }
@@ -1631,11 +1631,11 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
     size[2] = PyArray_Size((PyObject*)Yvals);
     size[0] = 7;
 
-    if (!PyArray_Size((PyObject*)weights) == size[1]*size[2])
+    if (PyArray_Size((PyObject*)weights) != (size[1]*size[2]))
     {
         Py_DECREF(Xvals);
-	Py_DECREF(Yvals);
-	Py_DECREF(weights);
+	      Py_DECREF(Yvals);
+	      Py_DECREF(weights);
         PyErr_Format(PyExc_RuntimeError, "size of weights does not match that of data");
         return NULL;
     }

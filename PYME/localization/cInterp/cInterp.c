@@ -9,6 +9,7 @@
 #
 ##################
  */
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include "Python.h"
 //#include <complex.h>
@@ -86,7 +87,7 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
     }
     
     Py_BEGIN_ALLOW_THREADS;
-    res = (float*) out->data;
+    res = (float*) PyArray_DATA(out);
 
     //Initialise our histogram
     for (j =0; j < nx*ny; j++)
@@ -235,7 +236,7 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     }
     
 
-    res = (float*) out->data;
+    res = (float*) PyArray_DATA(out);
 
     //Initialise our histogram
     for (j =0; j < nx*ny; j++)
@@ -364,14 +365,15 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
         return NULL; 
 
     /* Do the calculations */ 
-        
-    if (PyArray_TYPE(amod) != NPY_FLOAT)
+    
+    /* FIXME - check these are contiguous?*/
+    if (PyArray_TYPE((PyArrayObject*)amod) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
       return NULL;
     }
 
-    if (PyArray_TYPE(out) != NPY_FLOAT)
+    if (PyArray_TYPE((PyArrayObject*)out) != NPY_FLOAT)
     {
         PyErr_Format(PyExc_RuntimeError, "bad output array");
         return NULL;
@@ -380,12 +382,12 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
     
     //pmod = (double*)amod->data;
 
-    sizeX = PyArray_DIM(amod, 0);
-    sizeY = PyArray_DIM(amod, 1);
-    sizeZ = PyArray_DIM(amod, 2);
+    sizeX = PyArray_DIM((PyArrayObject*)amod, 0);
+    sizeY = PyArray_DIM((PyArrayObject*)amod, 1);
+    sizeZ = PyArray_DIM((PyArrayObject*)amod, 2);
 
-    oSizeX = PyArray_DIM(out, 0) - 1;
-    oSizeY = PyArray_DIM(out, 1) - 1;
+    oSizeX = PyArray_DIM((PyArrayObject*)out, 0) - 1;
+    oSizeY = PyArray_DIM((PyArrayObject*)out, 1) - 1;
     
     
     Py_BEGIN_ALLOW_THREADS;
@@ -423,16 +425,16 @@ static PyObject * InterpolateInplace(PyObject *self, PyObject *args, PyObject *k
         {
             yi = yo + cy;
             
-            res = (float*)PyArray_GETPTR2(out, xo,   yo); 
+            res = (float*)PyArray_GETPTR2((PyArrayObject*)out, xo,   yo); 
            
-            *res += r000 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz);
-            *res += r100 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz);
-            *res += r010 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz);
-            *res += r110 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz);
-            *res += r001 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz+1);
-            *res += r101 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1);
-            *res += r011 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1);
-            *res += r111 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1);
+            *res += r000 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi,   fz);
+            *res += r100 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi,   fz);
+            *res += r010 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi+1, fz);
+            *res += r110 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi+1, fz);
+            *res += r001 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi,   fz+1);
+            *res += r101 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi,   fz+1);
+            *res += r011 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi+1, fz+1);
+            *res += r111 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi+1, fz+1);
 
 	  }
        
@@ -488,46 +490,46 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 
     /* Do the calculations */ 
         
-    if (PyArray_TYPE(amod) != NPY_FLOAT)
+    if (PyArray_TYPE((PyArrayObject*)amod) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad model");
       return NULL;
     }
 
-    if (PyArray_TYPE(out) != NPY_FLOAT)
+    if (PyArray_TYPE((PyArrayObject*)out) != NPY_FLOAT)
     {
         PyErr_Format(PyExc_RuntimeError, "bad output array");
         return NULL;
     }
 
-    if (PyArray_TYPE(xv) != NPY_FLOAT)
+    if (PyArray_TYPE((PyArrayObject*)xv) != NPY_FLOAT)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad x");
       return NULL;
     }
 
-    npts = PyArray_DIM(xv, 0);
+    npts = PyArray_DIM((PyArrayObject*)xv, 0);
     //printf("n: %d\n", npts);
 
-    if (PyArray_TYPE(yv) != NPY_FLOAT || PyArray_DIM(yv, 0) != npts)
+    if (PyArray_TYPE((PyArrayObject*)yv) != NPY_FLOAT || PyArray_DIM((PyArrayObject*)yv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad y");
       return NULL;
     }
 
-    if (PyArray_TYPE(zv) != NPY_FLOAT || PyArray_DIM(zv, 0) != npts)
+    if (PyArray_TYPE((PyArrayObject*)zv) != NPY_FLOAT || PyArray_DIM((PyArrayObject*)zv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad z");
       return NULL;
     }
 
-    if (PyArray_TYPE(Av) != NPY_FLOAT || PyArray_DIM(Av, 0) != npts)
+    if (PyArray_TYPE((PyArrayObject*)Av) != NPY_FLOAT || PyArray_DIM((PyArrayObject*)Av, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad A");
       return NULL;
     }
 
-    if (PyArray_TYPE(nv) != NPY_INT || PyArray_DIM(nv, 0) != npts)
+    if (PyArray_TYPE((PyArrayObject*)nv) != NPY_INT || PyArray_DIM((PyArrayObject*)nv, 0) != npts)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad nx");
       return NULL;
@@ -536,12 +538,12 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
     
     //pmod = (double*)amod->data;
 
-    sizeX = PyArray_DIM(amod, 0);
-    sizeY = PyArray_DIM(amod, 1);
-    sizeZ = PyArray_DIM(amod, 2);
+    sizeX = PyArray_DIM((PyArrayObject*)amod, 0);
+    sizeY = PyArray_DIM((PyArrayObject*)amod, 1);
+    sizeZ = PyArray_DIM((PyArrayObject*)amod, 2);
 
-    oSizeX = PyArray_DIM(out, 0) - 1;
-    oSizeY = PyArray_DIM(out, 1) - 1;
+    oSizeX = PyArray_DIM((PyArrayObject*)out, 0) - 1;
+    oSizeY = PyArray_DIM((PyArrayObject*)out, 1) - 1;
 
     //npts = PyArray_DIM(xv, 0);
     
@@ -550,11 +552,11 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
 
     for (i=0; i < npts; i++)
     {
-        x0 = *(float*)PyArray_GETPTR1(xv, i);
-        y0 = *(float*)PyArray_GETPTR1(yv, i);
-        z0 = *(float*)PyArray_GETPTR1(zv, i);
-        A = *(float*)PyArray_GETPTR1(Av, i);
-        nx = *(int*)PyArray_GETPTR1(nv, i);
+        x0 = *(float*)PyArray_GETPTR1((PyArrayObject*)xv, i);
+        y0 = *(float*)PyArray_GETPTR1((PyArrayObject*)yv, i);
+        z0 = *(float*)PyArray_GETPTR1((PyArrayObject*)zv, i);
+        A = *(float*)PyArray_GETPTR1((PyArrayObject*)Av, i);
+        nx = *(int*)PyArray_GETPTR1((PyArrayObject*)nv, i);
 
         //printf("p: %d\t", nx);
         
@@ -591,16 +593,16 @@ static PyObject * InterpolateInplaceM(PyObject *self, PyObject *args, PyObject *
         {
             yi = yo + cy;
             
-            res = (float*)PyArray_GETPTR2(out, xo,   yo); 
+            res = (float*)PyArray_GETPTR2((PyArrayObject*)out, xo,   yo); 
            
-            *res += r000 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz);
-            *res += r100 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz);
-            *res += r010 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz);
-            *res += r110 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz);
-            *res += r001 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz+1);
-            *res += r101 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1);
-            *res += r011 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1);
-            *res += r111 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1);
+            *res += r000 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi,   fz);
+            *res += r100 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi,   fz);
+            *res += r010 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi+1, fz);
+            *res += r110 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi+1, fz);
+            *res += r001 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi,   fz+1);
+            *res += r101 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi,   fz+1);
+            *res += r011 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi,   yi+1, fz+1);
+            *res += r111 * *(float*)PyArray_GETPTR3((PyArrayObject*)amod, xi+1, yi+1, fz+1);
 
 	  }
        
