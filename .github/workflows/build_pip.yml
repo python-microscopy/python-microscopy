@@ -37,7 +37,7 @@ jobs:
     needs: deploy_source #don't build wheels unless we successfully built source package.
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest] #, ubuntu-latest]
         python: ['3.9',] # '3.10', '3.11', '3.12', '3.13']
         arch: [x86_64, arm64]
         exclude:
