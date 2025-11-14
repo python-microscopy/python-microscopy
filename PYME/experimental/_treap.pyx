@@ -1,3 +1,4 @@
+from libc.stdint cimport int32_t
 cimport numpy as np
 import numpy as np
 cimport cython
@@ -6,11 +7,11 @@ INITIAL_NODES = 1000
 NODE_DTYPE = [('left', 'i4'), ('right', 'i4'), ('parent', 'i4'), ('priority', 'f4'), ('key', 'i4')]
 
 cdef packed struct node_d:
-    np.int32_t left
-    np.int32_t right
-    np.int32_t parent
+    int32_t left
+    int32_t right
+    int32_t parent
     np.float32_t priority
-    np.int32_t key
+    int32_t key
 
 cdef class Treap:
     """
@@ -27,7 +28,7 @@ cdef class Treap:
     """
     cdef public object _nodes
     cdef list _empty
-    cdef public np.int32_t _root_node
+    cdef public int32_t _root_node
     cdef node_d * _cnodes
     
     def __init__(self):
@@ -41,7 +42,7 @@ cdef class Treap:
     def _set_cnodes(self, node_d[:] nodes):
         self._cnodes = &nodes[0]
 
-    def _search(self, np.int32_t key, np.int32_t starting_node=-2):
+    def _search(self, int32_t key, int32_t starting_node=-2):
         """
         Return the index _curr of the node with key key.
 
@@ -57,7 +58,7 @@ cdef class Treap:
             _curr : int
                 Index of node with key key.
         """
-        cdef np.int32_t _curr
+        cdef int32_t _curr
         cdef node_d * curr_node
 
         if starting_node == -2:
@@ -84,7 +85,7 @@ cdef class Treap:
         self._empty.extend(list(np.arange(old_nodes.shape[0], new_size)))
         self._empty = self._empty[::-1]
 
-    def _rotate(self, np.int32_t v):
+    def _rotate(self, int32_t v):
         """
         Rotate (left or right) the node ordering of the node at index v.
         
@@ -94,7 +95,7 @@ cdef class Treap:
                 Index of node to rotate.
         """
 
-        cdef np.int32_t parent, grandparent
+        cdef int32_t parent, grandparent
 
         parent = self._cnodes[v].parent
         grandparent = self._cnodes[parent].parent
@@ -139,7 +140,7 @@ cdef class Treap:
             key : int
                 Searchable key for this node
         """
-        cdef np.int32_t _curr
+        cdef int32_t _curr
         cdef node_d *curr_node
 
         if key == -1:
@@ -185,7 +186,7 @@ cdef class Treap:
         while (self._cnodes[_curr].parent != -1) and ((priority) < (self._cnodes[self._cnodes[_curr].parent].priority)):
             self._rotate(_curr)
     
-    def delete(self, np.int32_t key):
+    def delete(self, int32_t key):
         """
         Delete node with key key.
 
@@ -195,7 +196,7 @@ cdef class Treap:
                 Searchable key identifying node to delete
         """
 
-        cdef np.int32_t _curr
+        cdef int32_t _curr
         cdef node_d *curr_node
 
         # Find the node with key key

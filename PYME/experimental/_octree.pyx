@@ -11,7 +11,7 @@ cdef extern from *:
     #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
     #endif
     """
-
+from libc.stdint cimport int32_t
 cimport numpy as np
 import numpy as np
 cimport cython
@@ -43,25 +43,25 @@ NODE_DTYPE2 = [('depth', 'i4'),
 
 #the struct that the above dtype maps to in c
 cdef packed struct node_d:
-    np.int32_t depth
-    np.int32_t n_children
-    np.int32_t child0
-    np.int32_t child1
-    np.int32_t child2
-    np.int32_t child3
-    np.int32_t child4
-    np.int32_t child5
-    np.int32_t child6
-    np.int32_t child7
-    np.int32_t parent
-    np.int32_t nPoints
+    int32_t depth
+    int32_t n_children
+    int32_t child0
+    int32_t child1
+    int32_t child2
+    int32_t child3
+    int32_t child4
+    int32_t child5
+    int32_t child6
+    int32_t child7
+    int32_t parent
+    int32_t nPoints
     np.float32_t centre_x
     np.float32_t centre_y
     np.float32_t centre_z
     np.float32_t centroid_x
     np.float32_t centroid_y
     np.float32_t centroid_z
-    np.int32_t point_idx
+    int32_t point_idx
     
     
 cdef float[8] _octant_sign_x
@@ -209,7 +209,7 @@ cdef class Octree:
         cdef int node_idx, child_idx
         #cdef node_d * p_nodes
         cdef node_d node
-        cdef np.int32_t *children
+        cdef int32_t *children
         #p_nodes = <node_d*>&nodes[0]
         node_idx = 0
         node = self._cnodes[node_idx]
@@ -275,7 +275,7 @@ cdef class Octree:
                   int child_idx, int point_idx):
         cdef int new_idx
         cdef float scale
-        cdef np.int32_t *children
+        cdef int32_t *children
         cdef node_d *new_node
         cdef node_d *parent
         
@@ -431,7 +431,7 @@ def _has_children(node_d[:] nodes):
     cdef bint any_have_children, _node_children
     cdef int i, j, N
     cdef node_d * _cnodes
-    cdef np.int32_t *children
+    cdef int32_t *children
     #cdef bool * _subdiv
     cdef np.uint8_t[:] subdiv
     
