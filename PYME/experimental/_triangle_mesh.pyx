@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 # cython: profile=True
+from libc.stdint cimport int32_t
 cimport numpy as np
 import numpy as np
 cimport cython
@@ -24,12 +25,12 @@ DEF VALENCE = 6
 DEF BOUNDARY_VALENCE = 4
     
 cdef extern from "triangle_mesh_utils.c":
-    void _update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
+    void _update_face_normals(int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
     
     void update_face_normal(int f_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
     void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vertex_d *vertices, face_d *faces)
 
-    int flood_fill_star_component(np.int32_t h_idx, int component, halfedge_t *halfedges)
+    int flood_fill_star_component(int32_t h_idx, int component, halfedge_t *halfedges)
     float norm(const float *pos)
     void cross(const float *a, const float *b, float *n)
     void difference(const float *a, const float *b, float *out)
@@ -40,14 +41,14 @@ cdef extern from "triangle_mesh_utils.c":
 cdef extern from "remesh_ops.c":
     int remesh_edge_flip(halfedge_t * halfedges, vertex_t *vertices, face_t * faces, int idx, int n_halfedges, int live_update);
     int remesh_relax(halfedge_t *halfedges, vertex_t *vertices, int n_vertices, face_t* faces, int n_faces, float l, int n_iterations);
-    void remesh_edge_zipper(halfedge_t * halfedges, np.int32_t edge1, np.int32_t edge2);
-    int remesh_check_neighour_twins(halfedge_t * halfedges, vertex_t * vertices, np.int32_t vertex_id);
-    int remesh_edge_collapse(halfedge_t * halfedges, np.int32_t n_halfedges, vertex_t * vertices, face_t* faces, np.int32_t idx, int live_update);
-    int remesh_delete_vertex(vertex_t * vertices, np.int32_t v_idx);
-    int remesh_delete_edge(halfedge_t * halfedges, np.int32_t e_idx);
-    int remesh_delete_face(halfedge_t * halfedges, face_t * faces, np.int32_t e_idx);
-    int remesh_split_edge(halfedge_t * halfedges, np.int32_t n_halfedges, vertex_t * vertices, face_t* faces, np.int32_t idx, np.int32_t * new_edges,
-                      np.int32_t *new_vertices, np.int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx, int live_update, int upsample)
+    void remesh_edge_zipper(halfedge_t * halfedges, int32_t edge1, int32_t edge2);
+    int remesh_check_neighour_twins(halfedge_t * halfedges, vertex_t * vertices, int32_t vertex_id);
+    int remesh_edge_collapse(halfedge_t * halfedges, int32_t n_halfedges, vertex_t * vertices, face_t* faces, int32_t idx, int live_update);
+    int remesh_delete_vertex(vertex_t * vertices, int32_t v_idx);
+    int remesh_delete_edge(halfedge_t * halfedges, int32_t e_idx);
+    int remesh_delete_face(halfedge_t * halfedges, face_t * faces, int32_t e_idx);
+    int remesh_split_edge(halfedge_t * halfedges, int32_t n_halfedges, vertex_t * vertices, face_t* faces, int32_t idx, int32_t * new_edges,
+                      int32_t *new_vertices, int32_t * new_faces, int n_edge_idx, int n_vertex_idx, int n_face_idx, int live_update, int upsample)
 
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4'), ('locally_manifold', 'i4')], align=True)
@@ -96,27 +97,27 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
 #
 
 # cdef packed struct halfedge_d:
-#     np.int32_t vertex
-#     np.int32_t face
-#     np.int32_t twin
-#     np.int32_t next
-#     np.int32_t prev
+#     int32_t vertex
+#     int32_t face
+#     int32_t twin
+#     int32_t next
+#     int32_t prev
 #     np.float32_t length
-#     np.int32_t component
+#     int32_t component
 #
 # cdef packed struct face_d:
-#     np.int32_t halfedge
+#     int32_t halfedge
 #     np.float32_t normal0
 #     np.float32_t normal1
 #     np.float32_t normal2
 #     np.float32_t area
-#     np.int32_t component
+#     int32_t component
     
 # cdef packed struct face_t: #non flattened type from triangle_mesh_utils.h
-#     np.int32_t halfedge
+#     int32_t halfedge
 #     float normal[VECTORSIZE]
 #     float area
-#     np.int32_t component
+#     int32_t component
 
 # cdef packed struct vertex_d:
 #     np.float32_t position0
@@ -125,37 +126,37 @@ VERTEX_DTYPE2 = np.dtype([('position0', 'f4'),
 #     np.float32_t normal0
 #     np.float32_t normal1
 #     np.float32_t normal2
-#     np.int32_t halfedge
-#     np.int32_t valence
-#     np.int32_t neighbor0
-#     np.int32_t neighbor1
-#     np.int32_t neighbor2
-#     np.int32_t neighbor3
-#     np.int32_t neighbor4
-#     np.int32_t neighbor5
-#     np.int32_t neighbor6
-#     np.int32_t neighbor7
-#     np.int32_t neighbor8
-#     np.int32_t neighbor9
-#     np.int32_t neighbor10
-#     np.int32_t neighbor11
-#     np.int32_t neighbor12
-#     np.int32_t neighbor13
-#     np.int32_t neighbor14
-#     np.int32_t neighbor15
-#     np.int32_t neighbor16
-#     np.int32_t neighbor17
-#     np.int32_t neighbor18
-#     np.int32_t neighbor19
-#     np.int32_t component
+#     int32_t halfedge
+#     int32_t valence
+#     int32_t neighbor0
+#     int32_t neighbor1
+#     int32_t neighbor2
+#     int32_t neighbor3
+#     int32_t neighbor4
+#     int32_t neighbor5
+#     int32_t neighbor6
+#     int32_t neighbor7
+#     int32_t neighbor8
+#     int32_t neighbor9
+#     int32_t neighbor10
+#     int32_t neighbor11
+#     int32_t neighbor12
+#     int32_t neighbor13
+#     int32_t neighbor14
+#     int32_t neighbor15
+#     int32_t neighbor16
+#     int32_t neighbor17
+#     int32_t neighbor18
+#     int32_t neighbor19
+#     int32_t component
 
 # cdef packed struct vertex_t:  # non-flattened version from triangle_mesh_utils.c
 #     float position[VECTORSIZE];
 #     float normal[VECTORSIZE];
-#     np.int32_t halfedge;
-#     np.int32_t valence;
-#     np.int32_t neighbors[NEIGHBORSIZE];
-#     np.int32_t component;
+#     int32_t halfedge;
+#     int32_t valence;
+#     int32_t neighbors[NEIGHBORSIZE];
+#     int32_t component;
 
 #cdef union halfedge_d:
 #ctypedef halfedge_t halfedge_d
@@ -852,7 +853,7 @@ cdef class TriangleMesh(TrianglesBase):
         if isinstance(f_idxs, list):
             f_idxs = np.int32(f_idxs)
         #triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
-        cdef np.int32_t [:] idxs = f_idxs
+        cdef int32_t [:] idxs = f_idxs
         
         _update_face_normals(&(idxs[0]), self._chalfedges, <vertex_t *> self._cvertices, <face_t *> self._cfaces, idxs.shape[0])
 
@@ -1041,7 +1042,7 @@ cdef class TriangleMesh(TrianglesBase):
 
     cdef bint _check_neighbour_twins(self, int vertex_id):
         cdef int i
-        cdef np.int32_t *neighbours = &(self._cvertices[vertex_id].neighbor0)
+        cdef int32_t *neighbours = &(self._cvertices[vertex_id].neighbor0)
         for i in range(NEIGHBORSIZE):
             nn = neighbours[i]
             if (nn != -1) and (self._chalfedges[nn].twin == -1):
@@ -1049,7 +1050,7 @@ cdef class TriangleMesh(TrianglesBase):
             
         return 1
 
-    cdef int _face_delete(self, np.int32_t _edge):
+    cdef int _face_delete(self, int32_t _edge):
         """
         Delete a face defined by the halfedge _edge.
 
@@ -1086,7 +1087,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return 1
 
-    cdef int _edge_delete(self, np.int32_t _edge):
+    cdef int _edge_delete(self, int32_t _edge):
         """
         Delete edge _edge in place from self._halfedges.
 
@@ -1115,7 +1116,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return 1
 
-    cdef int _vertex_delete(self, np.int32_t v_idx):
+    cdef int _vertex_delete(self, int32_t v_idx):
         if v_idx == -1:
             return 0
 
@@ -1225,7 +1226,7 @@ cdef class TriangleMesh(TrianglesBase):
 
         return np.array(idx, np.int32)
     
-    cpdef int edge_flip(self, np.int32_t _curr, bint live_update=1):
+    cpdef int edge_flip(self, int32_t _curr, bint live_update=1):
         cdef int ret
         ret = remesh_edge_flip(self._chalfedges, <vertex_t *>&self._cvertices[0], <face_t *> &self._cfaces[0], _curr, self._n_edges, live_update)
         self._invalidate_cached_properties()
@@ -1277,15 +1278,15 @@ cdef class TriangleMesh(TrianglesBase):
             e = edges_to_split[i]
             #print(i, e, n_edge_idx, n_edges)
             # self.edge_split_2(e, 
-            #                  <np.int32_t *> np.PyArray_DATA(n_edges), 
-            #                  <np.int32_t *> np.PyArray_DATA(n_vertices), 
-            #                  <np.int32_t *> np.PyArray_DATA(n_faces), 
+            #                  <int32_t *> np.PyArray_DATA(n_edges), 
+            #                  <int32_t *> np.PyArray_DATA(n_vertices), 
+            #                  <int32_t *> np.PyArray_DATA(n_faces), 
             #                  n_edge_idx, n_vertex_idx, n_face_idx)
 
             remesh_split_edge(self._chalfedges, n_halfedges, <vertex_t *> self._cvertices, <face_t *>self._cfaces, int(e),
-                              <np.int32_t *> np.PyArray_DATA(n_edges), 
-                             <np.int32_t *> np.PyArray_DATA(n_vertices), 
-                             <np.int32_t *> np.PyArray_DATA(n_faces), 
+                              <int32_t *> np.PyArray_DATA(n_edges), 
+                             <int32_t *> np.PyArray_DATA(n_vertices), 
+                             <int32_t *> np.PyArray_DATA(n_faces), 
                              n_edge_idx, n_vertex_idx, n_face_idx, 1, 0)
             #self.edge_split(e)
             n_edge_idx += 6
@@ -1337,7 +1338,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int i, flip_count, target_valence, r, failed_flip_count
         cdef halfedge_t *curr_edge
         cdef halfedge_t *twin_edge
-        cdef np.int32_t _twin
+        cdef int32_t _twin
         cdef int v1, v2, v3, v4, score_post, score_pre
 
         flip_count = 0
@@ -1574,14 +1575,14 @@ cdef class TriangleMesh(TrianglesBase):
                 new_vertex_idxs.append(j)
                 #self.edge_split(i, upsample=True)
                 # self.edge_split_2(i, 
-                #              <np.int32_t *> np.PyArray_DATA(n_edges), 
-                #              <np.int32_t *> np.PyArray_DATA(n_vertices), 
-                #              <np.int32_t *> np.PyArray_DATA(n_faces), 
+                #              <int32_t *> np.PyArray_DATA(n_edges), 
+                #              <int32_t *> np.PyArray_DATA(n_vertices), 
+                #              <int32_t *> np.PyArray_DATA(n_faces), 
                 #              n_edge_idx, n_vertex_idx, n_face_idx, 1,1)
                 remesh_split_edge(self._chalfedges, n_halfedges, <vertex_t *> self._cvertices, <face_t *>self._cfaces, int(i),
-                              <np.int32_t *> np.PyArray_DATA(n_edges), 
-                             <np.int32_t *> np.PyArray_DATA(n_vertices), 
-                             <np.int32_t *> np.PyArray_DATA(n_faces), 
+                              <int32_t *> np.PyArray_DATA(n_edges), 
+                             <int32_t *> np.PyArray_DATA(n_vertices), 
+                             <int32_t *> np.PyArray_DATA(n_faces), 
                              n_edge_idx, n_vertex_idx, n_face_idx, 1, 0)
     
                 n_edge_idx += 6
@@ -1973,7 +1974,7 @@ cdef class TriangleMesh(TrianglesBase):
         cdef int n_edges = boundary_edges.shape[0]
         cdef int max_iters = 6*n_edges  # FIXME: Not clear what this upper bound should be. Seems low.
         cdef int i, j, k, poly, safety, n_poly, new_poly, n_left
-        cdef np.int32_t _orig, _curr, _twin
+        cdef int32_t _orig, _curr, _twin
         cdef halfedge_t *curr_edge
 
         # keep track of already visited edges in components
@@ -2060,7 +2061,7 @@ cdef class TriangleMesh(TrianglesBase):
 
 
     cdef int _disconnect_pinched_polygons(self, np.ndarray boundary_polygons, int curr_poly, int n_poly, int n_edges):
-        cdef np.int32_t _orig, _curr
+        cdef int32_t _orig, _curr
         cdef int j, jj, kk, n_new_polygons
         cdef halfedge_t *curr_edge
 
@@ -2130,7 +2131,7 @@ cdef class TriangleMesh(TrianglesBase):
         """
         cdef int j, k, n_edges, n_pinch
         cdef bint odd
-        cdef np.int32_t _edge0, _edge1
+        cdef int32_t _edge0, _edge1
         cdef int n_poly = boundary_polygons.shape[0]
         cdef int max_edges = boundary_polygons.shape[1]
 
@@ -2183,12 +2184,12 @@ cdef class TriangleMesh(TrianglesBase):
         
         self._invalidate_cached_properties()
 
-    cdef _pinch_edges(self, np.int32_t _edge0, np.int32_t _edge1, bint live_update=1):
+    cdef _pinch_edges(self, int32_t _edge0, int32_t _edge1, bint live_update=1):
         """
         Pinch two (boundary) edges together to stitch part of the mesh.
         """
         cdef int i
-        cdef np.int32_t _vertex0, _vertex1
+        cdef int32_t _vertex0, _vertex1
         cdef vertex_d *vertex0
         cdef vertex_d *vertex1
         cdef float pos0, pos1, pos2
@@ -2281,7 +2282,7 @@ cdef class TriangleMesh(TrianglesBase):
                 n_edges += 1
             j += 1
 
-    def _fill_triangle(self, np.int32_t h0, np.int32_t h1, np.int32_t h2, bint live_update=1):
+    def _fill_triangle(self, int32_t h0, int32_t h1, int32_t h2, bint live_update=1):
         """
         Make a triangle from the three open edges to seal a boundary
         """
@@ -2313,7 +2314,7 @@ cdef class TriangleMesh(TrianglesBase):
             update_single_vertex_neighbours(int(edge1.vertex), self._chalfedges, self._cvertices, self._cfaces)
             update_single_vertex_neighbours(int(edge0.vertex), self._chalfedges, self._cvertices, self._cfaces)
 
-    cdef _zig_zag_triangulation(self, np.ndarray boundary_polygons, np.int32_t *n_edges, np.int32_t *n_faces, int row, int len_poly, bint live_update=1):
+    cdef _zig_zag_triangulation(self, np.ndarray boundary_polygons, int32_t *n_edges, int32_t *n_faces, int row, int len_poly, bint live_update=1):
         """
         Triangulate a (boundary) polygon (an array of halfedges) by zig-zagging 
         between its edges.
@@ -2417,8 +2418,8 @@ cdef class TriangleMesh(TrianglesBase):
                 # 200-205. SGP '03. Goslar, DEU: Eurographics Association, 2003.
 
                 self._zig_zag_triangulation(boundary_polygons, 
-                                            <np.int32_t *> np.PyArray_DATA(new_edges), 
-                                            <np.int32_t *> np.PyArray_DATA(new_faces), 
+                                            <int32_t *> np.PyArray_DATA(new_edges), 
+                                            <int32_t *> np.PyArray_DATA(new_faces), 
                                             j, n_edges, live_update=live_update)
 
             j += 1
@@ -2437,7 +2438,7 @@ cdef class TriangleMesh(TrianglesBase):
         COMPUTER GRAPHICS, 2001.
         """
         cdef int i, j, k, component, n_v
-        cdef np.int32_t twin_idx, next_idx
+        cdef int32_t twin_idx, next_idx
 
         # Iterate over vertices that are endpoints of a singular edge or are
         # isolated singular vertices (number of incident edges =/= number of
