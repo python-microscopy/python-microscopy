@@ -557,6 +557,7 @@ class SpoolController(object):
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
 
+
         
         try:
             self.spooler = self.acquisition_cls.from_spool_settings(self.scope, settings, backend=backends[self.spoolType], backend_kwargs=backend_kwargs, series_name=self.queueName, spool_controller=self)
@@ -583,6 +584,8 @@ class SpoolController(object):
         # restart frame wrangler
         #self.scope.frameWrangler.Prepare()
         #self.scope.frameWrangler.start()
+        self._cam_was_idle = self.scope.cam.GetIdle()
+        self.scope.cam.SetIdle(False)
         
         self.onSpoolStart.send(self)
 
@@ -716,11 +719,14 @@ class SpoolController(object):
         self.seriesName = self._GenSeriesName()
 
         logger.info('Spooling stopped')
+
+        self.scope.cam.SetIdle(self._cam_was_idle)
         
         self.on_stop.send(self)
 
         if self.analysis_launch_mode == 'series-end':
             self.LaunchAnalysis()
+        
 
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)

@@ -125,7 +125,7 @@ class FrameWrangler(object):
         self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()
-
+        
         # should the thread which polls the camera still be running?
         self._poll_camera = True
 
@@ -140,6 +140,7 @@ class FrameWrangler(object):
         
     def destroy(self):
         self._poll_camera = False
+
         
 
     def Prepare(self, keepds=True):
@@ -427,7 +428,6 @@ class FrameWrangler(object):
 
     def stop(self):
         "Stop sequence aquisition"
-
         self.timer.stop()
         self.aqOn = False
 
