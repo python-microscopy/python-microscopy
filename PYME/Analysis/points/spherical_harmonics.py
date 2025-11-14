@@ -342,8 +342,8 @@ class ScaledShell(object):
             y0 = self.y0,
             z0 = self.z0,
             sampling_fraction = self.sampling_fraction,
-            modes = self.modes.astype('i4'), 
-            coefficients=self.coefficients.astype('f4)'),
+            modes = np.asarray(self.modes, dtype='i4'), 
+            coefficients=np.asarray(self.coefficients, dtype='f4'),
         ) 
     
     def to_recarray(self, keys=None):

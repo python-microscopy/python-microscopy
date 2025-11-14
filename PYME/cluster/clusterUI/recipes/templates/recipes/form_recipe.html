@@ -49,16 +49,28 @@
             $('.cu-hidden-filename').remove();
             var fileNames=[];
             $('.cu-selected').each(function(index, item){
-                var sn = item.getAttribute('data-cu-filename').text();
+                var sn = item.getAttribute('data-cu-filename');
                 if (sn != null) {
                     fileNames.push(sn);
-                    f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                    // f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                    f.append($('<input>', {
+                        name: 'files',
+                        type: 'hidden',
+                        class: 'cu-hidden-filename',
+                        value: sn
+                    }));
                 }
                 // Also check for series, e.g. pcs extensions
-                var sn = item.getAttribute('data-cu-seriesname').text();
+                var sn = item.getAttribute('data-cu-seriesname');
                 if (sn != null) {
                     fileNames.push(sn);
-                    f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                    // f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                    f.append($('<input>', {
+                        name: 'files',
+                        type: 'hidden',
+                        class: 'cu-hidden-filename',
+                        value: sn
+                    }));
                 }
             });
             console.log(fileNames);

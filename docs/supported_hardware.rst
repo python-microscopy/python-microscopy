@@ -17,6 +17,7 @@ Stages / Translation
 * PI stepper motor stages using the Mercury command set
 * Marzhauser Tango translation stages and joystick
 * Thorlabs MG17?? piezos (this was a 3-axis stage, somewhat dated now)
+* Thorlabs Elliptec linear and rotation stages
 
 Lasers / Light Sources
 ======================
