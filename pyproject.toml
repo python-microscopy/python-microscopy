@@ -58,15 +58,15 @@ dependencies = [
 ]
 
 [project.scripts]
-dh5view = "PYME.DSView.dsviewer:main"
-PYMEImage = "PYME.DSView.dsviewer:main"
+dh5view = "PYME.DSView.PYMEImage:main"
+PYMEImage = "PYME.DSView.PYMEImage:main"
 PYMEAcquire = "PYME.Acquire.PYMEAcquire:main"
-VisGUI = "PYME.LMVis.VisGUI:main"
-PYMEVis = "PYME.LMVis.VisGUI:main"
-PYMEVisualize = "PYME.LMVis.VisGUI:main"
-PYMEVisualise = "PYME.LMVis.VisGUI:main"
+VisGUI = "PYME.LMVis.PYMEVisualise:main"
+PYMEVis = "PYME.LMVis.PYMEVisualise:main"
+PYMEVisualize = "PYME.LMVis.PYMEVisualise:main"
+PYMEVisualise = "PYME.LMVis.PYMEVisualise:main"
 PYMEBatch = "PYME.recipes.batchProcess:main"
-bakeshop = "PYME.recipes.bakeshop:main"
+bakeshop = "PYME.recipes.bakeshop_app:main"
 PYMEDataServer = "PYME.cluster.HTTPDataServer:main"
 PYMEClusterDup = "PYME.io.clusterDuplication:main"
 PYMERuleServer = "PYME.cluster.PYMERuleServer:main"
