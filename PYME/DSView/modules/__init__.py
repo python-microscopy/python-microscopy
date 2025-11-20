@@ -27,7 +27,7 @@ import os
 import weakref
 import time
 
-from imp import reload
+from importlib import reload
 
 from PYME import config
 import logging

@@ -163,6 +163,7 @@ py_sources = files(
     'util/install_dependencies.py',
     'util/execfile.py',
     'util/authenticate.py',
+    'util/uilaunch.py',
 )
 py.install_sources(py_sources, subdir:'PYME/util')
 

@@ -22,7 +22,7 @@ py_sources = files(
     'DisplayOptionsPanel.py',
     'eventLogViewer.py',
     'dsviewer.py',
-)
+    'PYMEImage.py',
 
 py.install_sources(py_sources, subdir:'PYME/DSView')
 
