@@ -5,6 +5,8 @@ import sys
 import os
 import webbrowser
 
+from PYME.util.uilaunch import ensure_macos_framework_build
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -121,6 +123,8 @@ class ClusterOfOne(object):
             
             
 def main():
+    ensure_macos_framework_build()
+
     logging.basicConfig(level=logging.DEBUG)
     import wx
     import PYME.resources

@@ -149,7 +149,7 @@ def update_version():
         s = f.read()
     
     s = re.sub(r'version\s*=\s*".*?"', 'version = "%s"' % new_version, s)
-    print('Updating version in %s to %s' % (fn, new_version))
+    #print('Updating version in %s to %s' % (fn, new_version))
     with open(fn, 'w') as f:
         f.write(s)
     

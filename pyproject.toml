@@ -57,5 +57,28 @@ dependencies = [
 
 ]
 
+[project.scripts]
+dh5view = "PYME.DSView.PYMEImage:main"
+PYMEImage = "PYME.DSView.PYMEImage:main"
+PYMEAcquire = "PYME.Acquire.PYMEAcquire:main"
+VisGUI = "PYME.LMVis.PYMEVisualise:main"
+PYMEVis = "PYME.LMVis.PYMEVisualise:main"
+PYMEVisualize = "PYME.LMVis.PYMEVisualise:main"
+PYMEVisualise = "PYME.LMVis.PYMEVisualise:main"
+PYMEBatch = "PYME.recipes.batchProcess:main"
+bakeshop = "PYME.recipes.bakeshop_app:main"
+PYMEDataServer = "PYME.cluster.HTTPDataServer:main"
+PYMEClusterDup = "PYME.io.clusterDuplication:main"
+PYMERuleServer = "PYME.cluster.PYMERuleServer:main"
+PYMENodeServer = "PYME.cluster.PYMENodeServer:main"
+PYMERuleNodeServer = "PYME.cluster.PYMERuleNodeServer:main"
+PYMEClusterOfOne = "PYME.cluster.cluster_of_one:main"
+#PYMEWebDav = "PYME.cluster.webdav:main"
+PYMEscmosmapgen = "PYME.Analysis.gen_sCMOS_maps:main"
+#fitMonP = "PYME.ParallelTasks.fitMonP:main"
+#taskWorkerZC = "PYME.ParallelTasks.taskWorkerZC:main"
+#taskServerZC = "PYME.ParallelTasks.taskServerZC:main"
+#slaunchWorkers = "PYME.ParallelTasks.launchWorkers:main"
+
 [project.urls]
-"Homepage" = "https://github.com/python-microscopy/pymecompress"
+"Homepage" = "https://www.python-microscopy.org"
