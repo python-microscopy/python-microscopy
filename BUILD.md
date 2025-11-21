@@ -47,7 +47,7 @@ pip install --no-build-isolation --editable .
 To recompile extension modules:
 
 ```bash
-meson compile -C build/cp313
+pip install --no-deps --no-build-isolation --editable . 
 ```
 
 replacing the build subdir (e.g. `cp313`) with the one appropriate for your python version (i.e. the one that was generated with `pip install -e` above)
