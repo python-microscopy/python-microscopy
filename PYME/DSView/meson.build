@@ -23,7 +23,7 @@ py_sources = files(
     'eventLogViewer.py',
     'dsviewer.py',
     'PYMEImage.py',
-
+)
 py.install_sources(py_sources, subdir:'PYME/DSView')
 
 subdir('LUT')
