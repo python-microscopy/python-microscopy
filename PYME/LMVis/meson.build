@@ -41,6 +41,7 @@ py_sources = files(
     'pipelineView.py',
     'views.py',
     'gl_offScreenHandler.py',
+    'PYMEVisualise.py'
 )
 
 py.install_sources(py_sources, subdir:'PYME/LMVis')

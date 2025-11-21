@@ -35,6 +35,7 @@ py_sources = files(
     'base.py',
     'filters.py',
     'output.py',
+    'bakeshop_app.py',
 )
 
 py.install_sources(py_sources, subdir:'PYME/recipes')

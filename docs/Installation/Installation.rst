@@ -7,8 +7,58 @@ The best PYME installation method will depend on your background and whether you
 
 If you have an existing PYME installation, we recommend :ref:`removing it <removing>` before installing a new one.
 
+Installing using pip
+================================
+
+After struggling to maintain conda packages (largely due to stupid build times while conda tries to resolve an environment) 
+we have completely overhauled the package build process and the default installation method is now pip based. Conda packages
+might return, but for now the most up to date packages are on pip.
+
+The current recommended installation method is as follows:
+
+1) download and install `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ or miniforge.
+2) create and activate a new conda environment with python 3.9 to 3.13 (3.9 or 3.10 are probably the most well tested at present)
+    .. code-block:: bash
+    
+          conda create -n pyme python=3.10
+          conda activate pyme
+3) [optional] install any dependencies you want conda to manage (e.g. numpy, scipy, pandas, scikit-image, scikit-learn etc ...) using conda/mamba.
+   This can help with performance if you install optimized versions of these packages (e.g. mkl linked numpy on windows). `conda install -c david_baddeley pyme-depends` will install the core pyme dependencies.
+   Anything not installed here will be installed using pip in the next step. 
+4) install PYME using pip:
+    .. code-block:: bash
+
+          pip install python-microscopy
+
+Compiled pip wheels are available for python 3.9 to 3.13 (win x86_64, mac x86_64 and mac arm64). On other platforms (e.g. linux or windows arm)
+`pip install` will attempt to build from source which will require a suitable build environment.
+
+
+Development installs using pip
+--------------------------------
+For development installs, after creating and activating a conda environment as above, clone the repository and do a development install:
+
+.. code-block:: bash
+
+      git clone https://github.com/yourusername/python-microscopy.git
+      cd python-microscopy
+      pip install build  meson meson-python
+      pip install --no-build-isolation -e .
+
+To rebuild after making changes, run
+
+.. code-block:: bash
+
+      pip install --no-deps --no-build-isolation --editable . 
+
+
+** NOTE: ** everything below this line is out of date, and will be revisited once we have the 
+conda packages and executable installers working again.
+
 Executable installers (Windows and Mac)
 =======================================
+
+**Note:** These are currently rather out of date.
 
 Recommended if you don't already have Python on your computer and/or are unfamiliar with Python. Download the latest
 installer from https://python-microscopy.org/downloads/. Double-click the installer and follow instructions.
@@ -176,33 +226,7 @@ Additional resources
 - A step by step walkthough of installation using anaconda along with some troubleshooting tips can be found at :ref:`installationanaconda`
 
 
-.. _pip:
 
-pip installation [EXPERIMENTAL]
-===============================
-
-You can also install PYME using pip, although we recommend this as a last resort as a conda based installation will generally give better performance and should be easier. When using pip, you might need to manually hunt down some dependencies, and for dependencies which don't have binary wheels, you might need to spend a lot of time setting up the development evironment and finding the DLLs etc which dependencies link against. Some of our dependencies also need to be compiled using gcc (rather than MSVCC), even on windows. Because we view this as a fallback when, e.g. conda can't come up
-with a resolvable set of dependencies, or when you are installing on top of a bunch of existing packages, the pip packages depend only on numpy, with the rest of the dependencies being installed separately through the use of a requirements.txt file. 
-
-.. code-block:: bash
-
-    pip install -r https://raw.githubusercontent.com/python-microscopy/python-microscopy/master/requirements.txt
-    pip install python-microscopy
-
-
-If installing in a tricky evironment, you can manually edit requirements.txt before installing. You can also use the top line to setup for a development install.
-
-Installation on python 2.7
-==========================
-
-On some instrument control computers, or when debugging potential regressions, it still makes sense to install PYME on
-python 2.7. We have stopped building packages on py2.7, so you'll need a source install to get the most recent functionality
-and fixes. Unfortunately it is becoming increasingly difficult to `conda` install a consistent environment on python 2.7.
-As we are now focussed on py3 and things seem to change every couple of weeks we have given up on maintaining updated
-py 2.7 installation instructions. It is still possible to get things running, but it will be a bit of trial and error and you will need to manually
-up or downgrade some of the dependency packages. Good candidates for package conflicts would be `traitsui`, `pyface`, and
-`wxpython`. You might also need to use the full MS visual studio (community edition should suffice) rather than the stripped down
-msvc for python.
 
 .. rubric:: Footnotes
 

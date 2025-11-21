@@ -32,6 +32,7 @@ py_sources = files(
     'acquiremainframe.py',
     'acquirewx.py',
     'sampleInformationDjangoDirect.py',
+    'acquire_app.py'
 )
 py.install_sources(py_sources, subdir:'PYME/Acquire')
 
