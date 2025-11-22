@@ -236,8 +236,11 @@ class dispSettingsPanel2(wx.Panel):
         from PYME.DSView.LUT import minmax_u16
         #if self.hlDispMapping.dragging == None:
         dsa = self.do.ds[:,:,0].ravel('F')
-
-        _min, _max = minmax_u16(dsa)
+        # ducktype the data source to get min and max efficiently if it is uint16
+        if str(dsa.dtype) == 'uint16':
+            _min, _max = minmax_u16(dsa)
+        else:  # otherwise, just use numpy
+            _min, _max = dsa.min(), dsa.max()
 
         #only perform histogramming on a subset of data points to improve performance
         ##note that this may result in strange behaviour of auto-optimise
@@ -250,9 +253,10 @@ class dispSettingsPanel2(wx.Panel):
 
         # if we are saturating, change the background
         try:
-            if _max >= self.scope.cam.SaturationThreshold:
+            # double sided checks in case of float (or potentially signed int) data
+            if _max >= self.scope.cam.SaturationThreshold or _min <= -self.scope.cam.SaturationThreshold:
                 self.hlDispMapping.SetBackgroundColour(wx.Colour(0xFF, 0x8F, 0x8F))
-            elif _max >= self.scope.cam.SaturationThreshold/2:
+            elif _max >= self.scope.cam.SaturationThreshold/2 or _min<= -self.scope.cam.SaturationThreshold/2:
                 self.hlDispMapping.SetBackgroundColour(wx.YELLOW)
             else:
                 self.hlDispMapping.SetBackgroundColour(wx.WHITE)
