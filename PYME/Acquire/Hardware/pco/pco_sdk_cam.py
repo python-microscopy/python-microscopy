@@ -67,6 +67,9 @@ MAX_BUFFERS = 100
 MAX_TIMEOUTS = 100
 MAX_QUEUED_BUFFERS = 16  # pco. has a hard limit on attaching no 
                          # more than 16 buffers at a time to the camera
+WAIT_OBJECT_0 = 0x00000000
+WAIT_TIMEOUT  = 0x00000102
+MAX_CONSECUTIVE_ERRORS = 10  # max consecutive wait/buffer errors before we abort recording
 
 class PcoSdkCam(Camera):
     def __init__(self, camNum, debuglevel='off'):
@@ -107,11 +110,14 @@ class PcoSdkCam(Camera):
         self._binning_x = 1
         self._binning_y = 1
         self._n_timeouts = 0
+        self.hardware_overflowed = False  # used by frameWrangler to know camera is unhappy
         self._i = 0
         self._buffers_to_queue = queue.Queue()
         self._queued_buffers = queue.Queue()
         self._full_buffers = queue.Queue()
         self.SetROI(1, 1, self.GetCCDWidth(), self.GetCCDHeight())
+        self._consecutive_errors = 0
+        self._max_consecutive_errors = MAX_CONSECUTIVE_ERRORS
         self.SetIntegTime(0.025)
         self.SetAcquisitionMode(self.MODE_CONTINUOUS)
         self._cam_type = pco_sdk.get_camera_type(self._handle)
@@ -155,24 +161,74 @@ class PcoSdkCam(Camera):
                         
                         # wait for the buffer
                         wait_status = k32_dll.WaitForSingleObject(self._buf_event[_curr_buf], self._timeout)
-                        if wait_status:
-                            logger.warning(f"Waited too long for buffer ({self._timeout} ms).") 
-                            
-                            #TODO: we currently continue as if we got the buffer - is this the right thing to do?
-                            # Presumably the status will be non-zero and we will drop the buffer?, but then what 
-                            # happens to those buffers? do they just dissapear?
+                        if wait_status == WAIT_TIMEOUT:
+                            # Timeout: do NOT deliver a frame; recycle the buffer
+                            self._n_timeouts += 1
+                            self._consecutive_errors += 1
+
+                            logger.warning(
+                                f"PCO: WaitForSingleObject timeout after {self._timeout} ms "
+                                f"(timeouts={self._n_timeouts}, consecutive_errors={self._consecutive_errors}) "
+                                f"on buffer {_curr_buf}. Recycling."
+                            )
+
+                            k32_dll.ResetEvent(self._buf_event[_curr_buf])
+                            self._buffers_to_queue.put(_curr_buf)
+
+                            # After a few consecutive timeouts, flag for higher-level recovery logic
+                            if self._n_timeouts >= 3:
+                                logger.error("PCO: repeated buffer timeouts -> hardware_overflowed=True")
+                                self.hardware_overflowed = True
                         
-                        k32_dll.ResetEvent(self._buf_event[_curr_buf])
-                        # make sure this buffer is safe to use
-                        status = self._buffer_status[_curr_buf]
-                        if status:
-                            logger.warning(f"Error {status} during check of buffer {_curr_buf}.")
-                            #DB: Do you see a lot of these warnings? IE - do we get one every time we have a timeout?
-                            # drop this buffer
+                        elif wait_status == WAIT_OBJECT_0:
+                            # Normal case
+                            self._n_timeouts = 0
+                            self._consecutive_errors = 0
+
+                            k32_dll.ResetEvent(self._buf_event[_curr_buf])
+
+                            status = self._buffer_status[_curr_buf]
+                            if status != 0:
+                                # Bad buffer -> recycle it, don't deliver
+                                logger.warning(f"PCO: error {status} during check of buffer {_curr_buf}. Recycling.")
+                                self._consecutive_errors += 1
+                                self._buffers_to_queue.put(_curr_buf)
+                            else:
+                                # use it
+                                self._full_buffers.put(_curr_buf)
+                                self._n_buffered += 1
+
                         else:
-                            # use it
-                            self._full_buffers.put(_curr_buf)
-                            self._n_buffered += 1
+                            # Other wait error: recycle buffer, flag error
+                            self._consecutive_errors += 1
+                            logger.error(
+                                "PCO: WaitForSingleObject returned unexpected status 0x%08X for buffer %d. Recycling.",
+                                wait_status, _curr_buf
+                            )
+
+                            k32_dll.ResetEvent(self._buf_event[_curr_buf])
+                            self._buffers_to_queue.put(_curr_buf)
+
+                    # If things look persistently bad, stop recording to avoid hard SDK crashes.
+                    if self._consecutive_errors >= self._max_consecutive_errors:
+                        logger.error(
+                            "PCO: too many consecutive buffer errors (%d) -> stopping recording to avoid crash",
+                            self._consecutive_errors
+                        )
+                        try:
+                            pco_sdk.set_recording_state(self._handle, pco_sdk.PCO_CAMERA_STOPPED)
+                            pco_sdk.cancel_images(self._handle)
+                        except Exception:
+                            logger.exception("PCO: error while stopping camera after repeated buffer errors")
+
+                        # Mark stopped on our side; FrameWrangler/UI can restart cleanly.
+                        self._recording = False
+                        self.hardware_overflowed = True
+                        self._n_buffered = 0
+                        self._n_queued = 0
+                        self._n_timeouts = 0
+                        self._consecutive_errors = 0
+                    
                     else:
                         # sleep for a bit longer if there were no buffers queued
                         sleep_time = 0.01
@@ -433,7 +489,9 @@ class PcoSdkCam(Camera):
 
     @property
     def _timeout(self):
-        return int(max(2*100*self.GetCycleTime(), 100))
+        # set the time longer for all hardware check
+        # for example, LC settling time is usually set at 300 ms (current minimum is 150 ms)
+        return int(max(2*100*self.GetCycleTime(), 1000))
     
     def StartExposure(self):
         #logger.debug(f'PcoSdkCam: StartExposure called from thread {threading.current_thread().name} at {time.time()}')
@@ -448,6 +506,8 @@ class PcoSdkCam(Camera):
             if self._recording == False:
                 self._init_buffers()
             self._recording = True
+            self.hardware_overflowed = False
+            self._n_timeouts = 0
 
         self._log_exposure_start()
         
@@ -472,6 +532,7 @@ class PcoSdkCam(Camera):
             self._n_buffered = 0
             self._n_queued = 0
             self._n_timeouts = 0
+            self.hardware_overflowed = False
             self._buf_event = []
             self._buf_addr = []
             self._buf_status_addr = []

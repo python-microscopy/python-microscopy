@@ -419,9 +419,18 @@ class FrameWrangler(object):
         NB: This is largely legacy code, as the camera is usually used in 
         free-running mode."""
         for callback in self.HardwareChecks:
-            if not callback():
-                logger.debug('Waiting for hardware')
+            try:
+                ready = callback()
+            except Exception:
+                logger.exception('Hardware check %r raised an exception', callback)
                 return False
+
+            if not ready:
+                logger.debug('Waiting for hardware: %r reported not-ready', callback)
+                return False
+            # if not callback():
+            #     logger.debug('Waiting for hardware')
+            #     return False
 
         return True
 
