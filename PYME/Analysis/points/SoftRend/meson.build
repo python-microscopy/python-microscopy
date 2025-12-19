@@ -26,13 +26,19 @@ srcs = ['triRend.c','drawTriang.c', 'triangRend.c']
 
 #message('numpy include dir:', np_include_dir)
 
+if host_machine.system() == 'windows'
+  copts = ['/fp:fast']
+else
+  copts = ['-O3', '-fno-exceptions', '-ffast-math', '-Wno-unused-but-set-variable']
+endif
+
 py.extension_module(
     'triRend',
     srcs + qhullSources,
     include_directories: [np_include_dir, 'qhull'],
     subdir: 'PYME/Analysis/points/SoftRend',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math', '-Wno-unused-but-set-variable'],
+    c_args: copts,
     install: true,
     #cpp_args: ['-std=c++17'],
 )

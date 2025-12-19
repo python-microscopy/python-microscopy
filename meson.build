@@ -22,16 +22,17 @@ np_include_dir = include_directories(run_command(py,  ['-c',  'import numpy; pri
 #message('numpy include dir:', np_include_dir)
 message('install_dir:', py.get_install_dir())
 
-add_global_arguments(
- #'-fcompare-debug-secondary',
- #'-wno'
- '-ffast-math',
- '-Wno-unused-parameter',
- '-Wno-unused-variable',
- '-Wno-unused-function',
- language: 'c'
- )
-
+if host_machine.system() != 'windows'
+   add_global_arguments(
+     #'-fcompare-debug-secondary',
+     #'-wno'
+     '-ffast-math',
+     '-Wno-unused-parameter',
+     '-Wno-unused-variable',
+     '-Wno-unused-function',
+     language: 'c'
+   )
+endif
 
 
 subdir('PYME')
