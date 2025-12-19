@@ -24,6 +24,8 @@ import time
 k32_dll = ctypes.windll.kernel32  # lets us use the recommended WaitForSingleObject call (see pco.sdk)
                                   # instead of the not-recommended-for-polling pco_sdk.get_buffer_status()
 
+
+
 # Define event handle type (needed for pco_sdk.add_buffer_extern())
 # Generally we will want to use k32_dll.CreateEventA(None, 1, 0, None)
 # See https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-createeventa
@@ -67,8 +69,13 @@ MAX_BUFFERS = 100
 MAX_TIMEOUTS = 100
 MAX_QUEUED_BUFFERS = 16  # pco. has a hard limit on attaching no 
                          # more than 16 buffers at a time to the camera
+
+# Windows WaitForSingleObject return codes
 WAIT_OBJECT_0 = 0x00000000
 WAIT_TIMEOUT  = 0x00000102
+WAIT_ABANDONED = 0x00000080
+WAIT_FAILED    = 0xFFFFFFFF
+
 MAX_CONSECUTIVE_ERRORS = 10  # max consecutive wait/buffer errors before we abort recording
 
 class PcoSdkCam(Camera):
@@ -173,10 +180,13 @@ class PcoSdkCam(Camera):
                             )
 
                             k32_dll.ResetEvent(self._buf_event[_curr_buf])
-                            self._buffers_to_queue.put(_curr_buf)
-
-                            # After a few consecutive timeouts, flag for higher-level recovery logic
-                            if self._n_timeouts >= 3:
+                            
+                            if (self._n_timeouts < MAX_TIMEOUTS) and (self.contMode == self.MODE_CONTINUOUS):
+                                # In continuous mode, we can try and re-queue the buffer and carry on
+                                # In single-shot mode, requeuing won't work as we will also need to retrigger - just flag overflow
+                                # and let the FrameWrangler handle a restart
+                                self._buffers_to_queue.put(_curr_buf)
+                            else:
                                 logger.error("PCO: repeated buffer timeouts -> hardware_overflowed=True")
                                 self.hardware_overflowed = True
                         
@@ -192,7 +202,12 @@ class PcoSdkCam(Camera):
                                 # Bad buffer -> recycle it, don't deliver
                                 logger.warning(f"PCO: error {status} during check of buffer {_curr_buf}. Recycling.")
                                 self._consecutive_errors += 1
-                                self._buffers_to_queue.put(_curr_buf)
+                                if (self.contMode == self.MODE_CONTINUOUS):
+                                    self._buffers_to_queue.put(_curr_buf)
+                                else:
+                                    # single shot mode - just flag overflow
+                                    logger.error("PCO: buffer error in single-shot mode -> hardware_overflowed=True")
+                                    self.hardware_overflowed = True
                             else:
                                 # use it
                                 self._full_buffers.put(_curr_buf)
@@ -201,9 +216,23 @@ class PcoSdkCam(Camera):
                         else:
                             # Other wait error: recycle buffer, flag error
                             self._consecutive_errors += 1
+
+                            # use GetLastError and FormatMessage to get more info
+                            err_code = k32_dll.GetLastError()
+                            msg_buffer = ctypes.create_string_buffer(256)
+                            k32_dll.FormatMessageA(
+                                0x00000000,
+                                None,
+                                err_code,
+                                0,
+                                msg_buffer,
+                                len(msg_buffer),
+                                None
+                            )
+
                             logger.error(
-                                "PCO: WaitForSingleObject returned unexpected status 0x%08X for buffer %d. Recycling.",
-                                wait_status, _curr_buf
+                                "PCO: WaitForSingleObject returned unexpected status 0x%08X for buffer %d.\n GetLastError: %d\n Message: %s\n Recycling buffer.",
+                                wait_status, _curr_buf, err_code, msg_buffer.value.decode()
                             )
 
                             k32_dll.ResetEvent(self._buf_event[_curr_buf])
@@ -533,7 +562,13 @@ class PcoSdkCam(Camera):
             self._n_queued = 0
             self._n_timeouts = 0
             self.hardware_overflowed = False
+            
+            # close and clear buffer events
+            # (Prevents us from leaking handles when running for a long time with many start/stops)
+            for ev in self._buf_event:
+                k32_dll.CloseHandle(ev)
             self._buf_event = []
+
             self._buf_addr = []
             self._buf_status_addr = []
             self._buffer = None
