@@ -26,7 +26,7 @@ srcs = ['triRend.c','drawTriang.c', 'triangRend.c']
 
 #message('numpy include dir:', np_include_dir)
 
-if host_machine.system() == 'windows'
+if cc.get_id() == 'msvc'
   copts = ['/fp:fast']
 else
   copts = ['-O3', '-fno-exceptions', '-ffast-math', '-Wno-unused-but-set-variable']

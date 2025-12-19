@@ -22,7 +22,14 @@ np_include_dir = include_directories(run_command(py,  ['-c',  'import numpy; pri
 #message('numpy include dir:', np_include_dir)
 message('install_dir:', py.get_install_dir())
 
-if host_machine.system() != 'windows'
+# we define cc here and can then use it in lower level meson.build files
+# traversed via the subdir command
+cc = meson.get_compiler('c')
+# for examples how to test for compiler specific flags
+# see also https://github.com/GNOME/gtk/blob/main/meson.build
+# especially use of "cc.get_supported_arguments(test_cflags)"
+
+if cc.get_id() != 'msvc'
    add_global_arguments(
      #'-fcompare-debug-secondary',
      #'-wno'

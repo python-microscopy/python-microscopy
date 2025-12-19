@@ -54,7 +54,7 @@ install_data(data_files, install_dir: install_dir)
 #FIXME - Extension()
 #FIXME - Extension()
 
-if host_machine.system() == 'windows'
+if cc.get_id() == 'msvc'
   copts = ['/fp:fast']
 else
   copts = ['-O3', '-fno-exceptions', '-ffast-math']
@@ -106,7 +106,7 @@ py.extension_module(
     install: true,
 )
 
-if host_machine.system() == 'windows'
+if cc.get_id() == 'msvc'
   copts2 = ['/fp:fast']
 else
   copts2 = ['-O3', '-ffast-math']
