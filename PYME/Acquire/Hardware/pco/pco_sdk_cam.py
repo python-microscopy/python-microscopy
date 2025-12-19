@@ -20,6 +20,7 @@ import ctypes.wintypes
 import queue
 import threading
 import time
+import copy
 
 k32_dll = ctypes.windll.kernel32  # lets us use the recommended WaitForSingleObject call (see pco.sdk)
                                   # instead of the not-recommended-for-polling pco_sdk.get_buffer_status()
@@ -580,7 +581,7 @@ class PcoSdkCam(Camera):
             res = pco_sdk.force_trigger(self._handle)
             # FIFO queue the queable buffers so we don't
             # grab images before a trigger in _poll_loop
-            self._buffers_to_queue.put(self._i)
+            self._buffers_to_queue.put(copy.deepcopy(self._i)) # ensure we put a copy of the index, not a reference
             self._i += 1
             if self._i >= self._n_buffers:
                 self._i = 0
