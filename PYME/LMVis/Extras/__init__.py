@@ -32,7 +32,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py') + glob.glob(__path__[0] + '/[a-zA-Z]*.pyc')]))
+#mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py') + glob.glob(__path__[0] + '/[a-zA-Z]*.pyc')]))
+from PYME.util.packageutils import package_files_matching
+mods = package_files_matching(__package__,['[a-zA-Z]*.py','[a-zA-Z]*.pyc'])
+
 mods.sort()
 
 

@@ -37,13 +37,8 @@ logger = logging.getLogger(__name__)
 # with those installs __path__ resolves to some stub that cannot be parsed in the usual way
 # localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
 
-# import.resources should be used instead, see also https://mesonbuild.com/meson-python/how-to-guides/editable-installs.html#data-files
-# the code below should be fully backwards compatible with other installs and newer py3s
-import importlib.resources
-localmodules = []
-for file in importlib.resources.files(__package__).iterdir():
-    if not file.name.startswith('_') and file.name.endswith('.py'):
-        localmodules.append(file.stem)
+from PYME.util.packageutils import package_files_matching
+localmodules = package_files_matching(__package__,'[a-zA-Z]*.py')
 
 modLocations = {}
 for m in localmodules:

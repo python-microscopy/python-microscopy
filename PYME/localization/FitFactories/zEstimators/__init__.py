@@ -23,7 +23,9 @@
 import glob
 import os
 
-__all__ = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+#__all__ = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+from PYME.util.packageutils import package_files_matching
+__all__ = package_files_matching(__package__,'[a-zA-Z]*.py')
 
 estimatorList = [i for i in __all__]
 estimatorList.sort()
