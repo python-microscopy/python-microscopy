@@ -519,9 +519,12 @@ class PcoSdkCam(Camera):
 
     @property
     def _timeout(self):
-        # set the time longer for all hardware check
-        # for example, LC settling time is usually set at 300 ms (current minimum is 150 ms)
-        return int(max(2*100*self.GetCycleTime(), 1000))
+        # set the timeout (ms)based on cycle time
+        # timeout should be longer than cycle time + readout time + some margin for windows timing uncertainty (default to 2x cycle time)
+        # timeout should not be too long, otherwise one bad buffer can block things and cause overflows.
+        # TODO: reduce the minimum timeout to something more reasonable (e.g. 100 ms)?? Current hardcoded value of 1s is very likely excessive
+        # and may cause issues, especially if the camera is running at a high frame rate.
+        return int(max(2*1000*self.GetCycleTime(), 1000))
     
     def StartExposure(self):
         #logger.debug(f'PcoSdkCam: StartExposure called from thread {threading.current_thread().name} at {time.time()}')
