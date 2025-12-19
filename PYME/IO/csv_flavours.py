@@ -3,7 +3,7 @@ from PYME.IO import MetaDataHandler
 from PYME import pyme_warnings as warnings
 
 import logging
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 def isnumber(s):
     try:
