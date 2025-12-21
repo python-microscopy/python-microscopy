@@ -581,10 +581,11 @@ class PcoSdkCam(Camera):
 
     def TriggerAq(self):
         if (self._mode == self.MODE_SINGLE_SHOT) or (self._mode == self.MODE_SOFTWARE_TRIGGER):
-            res = pco_sdk.force_trigger(self._handle)
+            # res = pco_sdk.force_trigger(self._handle)
             # FIFO queue the queable buffers so we don't
             # grab images before a trigger in _poll_loop
             self._buffers_to_queue.put(copy.deepcopy(self._i)) # ensure we put a copy of the index, not a reference
+            res = pco_sdk.force_trigger(self._handle)
             self._i += 1
             if self._i >= self._n_buffers:
                 self._i = 0
