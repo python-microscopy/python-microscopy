@@ -1134,26 +1134,30 @@ class MappingFilter(TabularBase):
 
         #get all the variables needed for evaluation into local namespace
         varnames = map.co_names
+        local_vars = locals().copy()
         for vname in varnames:
             if vname in globals():
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
-                locals()[vname] = self.resultsSource[vname][sl]
+                local_vars[vname] = self.resultsSource[vname][sl]
             elif vname in self.new_columns.keys():
-                locals()[vname] = self.new_columns[vname][sl]
+                local_vars[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():
-                locals()[vname] = self.variables[vname]
+                local_vars[vname] = self.variables[vname]
             elif vname in self.__dict__.keys(): #look for constants
                 #FIXME - do we still need this now we have variables
-                locals()[vname] = self.__dict__[vname]
+                local_vars[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings
                 #try to prevent infinite recursion here if mappings have circular references
                 if not vname == key and not key in self.mappings[vname].co_names:
-                    locals()[vname] = self.getMappedResults(vname, sl)
+                    local_vars[vname] = self.getMappedResults(vname, sl)
                 else:
                     raise RuntimeError('Circular reference detected in mapping')
 
-        return eval(map)
+        # required change for Python 3.13, see https://docs.python.org/3/whatsnew/3.13.html#defined-mutation-semantics-for-locals
+        # need to explicitly provide globals and locals in calls to eval, exec
+        # should be backwards compatible
+        return eval(map,globals(),local_vars)
 
 class _ChannelFilter(TabularBase):
     def __init__(self, colour_filter, channel):
