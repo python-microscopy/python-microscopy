@@ -1017,7 +1017,7 @@ class MappingFilter(TabularBase):
     def __init__(self, resultsSource, **kwargs):
         """Class to permit transformations (e.g. drift correction) of fit results
         - masquarades as a dictionary. Takes mappings as keyword arguments, eg:
-        f = resultsFliter(source, xp='x + a*tIndex', yp=compile('y + b*tIndex', '/tmp/test1', 'eval'), a=1, b=2)
+        f = resultsFilter(source, xp='x + a*tIndex', yp=compile('y + b*tIndex', '<string>', 'eval'), a=1, b=2)
         will return an object that behaves like source, but has additional members
         xp and yp.
 
@@ -1124,7 +1124,7 @@ class MappingFilter(TabularBase):
         if type(mapping) == types.CodeType:
             self.mappings[key] = mapping
         elif isinstance(mapping, six.string_types):
-            self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
+            self.mappings[key] = compile(mapping, '<string>', 'eval')
         else:
             warnings.warn('setMapping should not be used to add a variable/data column', DeprecationWarning)
             self.__dict__[key] = mapping
@@ -1134,7 +1134,7 @@ class MappingFilter(TabularBase):
 
         #get all the variables needed for evaluation into local namespace
         varnames = map.co_names
-        local_vars = locals().copy()
+        local_vars = locals().copy() # or should this be an empty dict?
         for vname in varnames:
             if vname in globals():
                 pass
@@ -1156,7 +1156,8 @@ class MappingFilter(TabularBase):
 
         # required change for Python 3.13, see https://docs.python.org/3/whatsnew/3.13.html#defined-mutation-semantics-for-locals
         # need to explicitly provide globals and locals in calls to eval, exec
-        # should be backwards compatible
+        # assigning as local()[varname] is apparently not ok any more
+        # should be backwards compatible (at least Python 3.9 if not earlier)
         return eval(map,globals(),local_vars)
 
 class _ChannelFilter(TabularBase):
