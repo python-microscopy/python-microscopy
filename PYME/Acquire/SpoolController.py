@@ -548,6 +548,7 @@ class SpoolController(object):
                     'Tiff folder': acquisition_backends.TiffFolderBackend,}
         
         backend_kwargs = {}
+        backend_kwargs['dtype'] = self.scope.cam.dtype
         if self.spoolType == 'Cluster':
             backend_kwargs['cluster_h5'] = settings.get('cluster_h5', self.cluster_h5)
             backend_kwargs['compression_settings'] = settings.get('pzf_compression_settings', self.pzf_compression_settings)
