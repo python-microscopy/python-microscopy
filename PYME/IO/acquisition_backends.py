@@ -256,7 +256,13 @@ class ClusterBackend(Backend):
 
 
 class HDFBackend(Backend):
-    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, **kwargs):
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, dtype='uint16', **kwargs):
+        """
+        Parameters
+        ----------
+        dtype : str, optional
+            dtype of image data, in PyTables type str format. Default is 'uint16'.
+        """
         import tables
 
         self.h5File = tables.open_file(series_name, 'w')
@@ -267,6 +273,7 @@ class HDFBackend(Backend):
         self._complevel = complevel
         self._complib = complib
         self.series_name = series_name
+        self.dtype = dtype
         
 
     def store_frame(self, n, frame_data):
@@ -275,7 +282,7 @@ class HDFBackend(Backend):
         if n == 0:
             fs = frame_data.squeeze().shape
             filt = tables.Filters(self._complevel, self._complib, shuffle=True)
-            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,fs[0],fs[1]), filters=filt)
+            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.atom.Atom.from_type(self.dtype), (0,fs[0],fs[1]), filters=filt)
 
         if frame_data.shape[0] == 1:
             self.imageData.append(frame_data)
