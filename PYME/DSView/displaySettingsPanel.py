@@ -23,6 +23,7 @@
 
 import wx
 from PYME.ui import histLimits
+import numpy as np
 
 class dispSettingsFrame(wx.Frame):
     def __init__(self, parent, vp):
@@ -238,7 +239,7 @@ class dispSettingsPanel2(wx.Panel):
         dsa = self.do.ds[:,:,0].ravel('F')
 
         # get min and max efficiently if it is uint16
-        if str(dsa.dtype) == 'uint16':
+        if dsa.dtype == np.uint16:
             _min, _max = minmax_u16(dsa)
         else:  # otherwise, just use numpy
             _min, _max = dsa.min(), dsa.max()

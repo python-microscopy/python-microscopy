@@ -273,7 +273,7 @@ class HDFBackend(Backend):
         self._complevel = complevel
         self._complib = complib
         self.series_name = series_name
-        self.dtype = dtype
+        self.dtype = np.dtype(dtype)
         
 
     def store_frame(self, n, frame_data):
@@ -282,7 +282,7 @@ class HDFBackend(Backend):
         if n == 0:
             fs = frame_data.squeeze().shape
             filt = tables.Filters(self._complevel, self._complib, shuffle=True)
-            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.atom.Atom.from_type(self.dtype), (0,fs[0],fs[1]), filters=filt)
+            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.Atom.from_dtype(self.dtype), (0,fs[0],fs[1]), filters=filt)
 
         if frame_data.shape[0] == 1:
             self.imageData.append(frame_data)

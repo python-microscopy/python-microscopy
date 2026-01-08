@@ -114,7 +114,7 @@ class Camera(object):
     
     # what data type is returned by the camera? For full support it is recommended to use 
     # a format supported in `PYME.IO.PZFFormat`
-    dtype = 'uint16'  # uint16 is the default for PYME, and historically the only supported dtype of PYMEAcquire
+    dtype = np.dtype('uint16')  # uint16 is the default for PYME, and historically the only supported dtype of PYMEAcquire
 
     # Acquisition modes
     MODE_SINGLE_SHOT = 0
