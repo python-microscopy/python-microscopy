@@ -11,12 +11,14 @@ changeset = _release_changeset # Git changeset ID
 # note this duplicates the logic in PYME.misc.check_for_updates, but is reproduced verbatim here
 # so that the version.py works even if PYME is not already installed (ie when you are running python setup.py develop)
 import os
-pyme_parent_dir = os.path.dirname(os.path.dirname(__file__))
-    
-if os.path.exists(os.path.join(pyme_parent_dir, '.git')):
-    print('Detected a .git folder, assuming a development install')
-    dev_install = True
-else:
+
+try:
+    pyme_parent_dir = os.path.dirname(os.path.dirname(__file__))
+    dev_install = os.path.exists(os.path.join(pyme_parent_dir, '.git'))
+    if dev_install:
+        print('Detected a .git folder, assuming a development install')
+except (NameError, TypeError):
+    # __file__ doesn't exist (frozen/zipped install) - definitely not a dev install
     dev_install = False
 
 if dev_install:
