@@ -139,8 +139,8 @@ class IntegrationSliders(wx.Panel):
         #for c in range(nsliders):
         c = 1
         
-        itime = 1e3*self.scope.state['Camera.IntegrationTime']
-
+        # slider works in integer ms, ensure at least 1 ms to avoid 0 range error
+        itime = max([1e3*self.scope.state['Camera.IntegrationTime'], 1])
         
         sl = wx.Slider(self, -1, int(itime), 1, int(min(5*itime, 10000)), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
         
