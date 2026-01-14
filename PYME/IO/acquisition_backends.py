@@ -19,7 +19,10 @@ class Backend(abc.ABC):
     Base class for acquisition backends.
 
     """
-    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1], spoof_timestamps=False, cycle_time=None, **kwargs):
+    
+    supported_dtypes = [np.dtype('uint16'),]
+
+    def __init__(self, dim_order='XYCZT', shape=[-1, -1,-1,1,1], spoof_timestamps=False, cycle_time=None, dtype=np.dtype('uint16'), **kwargs):
         if not hasattr(self, 'mdh'):
             self.mdh = MetaDataHandler.DictMDHandler()
         self.mdh['imageID'] = self.sequence_id
@@ -27,6 +30,9 @@ class Backend(abc.ABC):
         self._dim_order=dim_order
         self._shape=shape
         self._finished = False
+        self.dtype = np.dtype(dtype)
+        if self.dtype not in self.supported_dtypes:
+            raise ValueError(f'Data type {self.dtype} not supported by this backend. Supported types are: {self.supported_dtypes}')
         
         self.mdh['DimOrder'] = dim_order
         self.mdh['SizeC'] =  shape[4]
@@ -124,7 +130,7 @@ class Backend(abc.ABC):
 
 class MemoryBackend(Backend):
     def __init__(self, size_x, size_y, n_frames, dtype='uint16', series_name=None, dim_order='XYCZT', shape=[-1, -1,1,1,1], **kwargs):
-        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None), dtype=dtype)
         self.data = np.empty([size_x, size_y, n_frames], dtype=dtype)
         
         # once we have proper xyztc support in the image viewer
@@ -158,6 +164,8 @@ def distfcn_random(n_servers, i=None):
         return random.randrange(n_servers)
 
 class ClusterBackend(Backend):
+
+    supported_dtypes = [np.dtype(f) for f in PZFFormat.DATA_FMTS]
     default_compression_settings = {
         'compression' : PZFFormat.DATA_COMP_HUFFCODE,
         'quantization' : PZFFormat.DATA_QUANT_NONE,
@@ -166,11 +174,11 @@ class ClusterBackend(Backend):
     }
 
     def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], distribution_fcn=None, compression_settings={}, 
-                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, **kwargs):
+                cluster_h5=False, serverfilter=clusterIO.local_serverfilter, dtype='uint16', **kwargs):
         from PYME.IO import cluster_streaming
         from PYME.IO import PZFFormat
 
-        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None), dtype=dtype)
 
         self.series_name = series_name
         self.serverfilter = serverfilter
@@ -256,13 +264,23 @@ class ClusterBackend(Backend):
 
 
 class HDFBackend(Backend):
-    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, **kwargs):
+
+    supported_dtypes = [np.dtype('uint8'), np.dtype('uint16'), 
+                        np.dtype('float32'), np.dtype('float64')]
+
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], complevel=6, complib='zlib', evt_time_fcn=time.time, dtype='uint16', **kwargs):
+        """
+        Parameters
+        ----------
+        dtype : str, optional
+            dtype of image data, in PyTables type str format. Default is 'uint16'.
+        """
         import tables
 
         self.h5File = tables.open_file(series_name, 'w')
         self.mdh = MetaDataHandler.HDFMDHandler(self.h5File)
         self.event_logger = HDFEventLogger(self, self.h5File, time_fcn=self._timestamp)
-        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None), dtype=dtype)
            
         self._complevel = complevel
         self._complib = complib
@@ -275,7 +293,7 @@ class HDFBackend(Backend):
         if n == 0:
             fs = frame_data.squeeze().shape
             filt = tables.Filters(self._complevel, self._complib, shuffle=True)
-            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,fs[0],fs[1]), filters=filt)
+            self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.Atom.from_dtype(self.dtype), (0,fs[0],fs[1]), filters=filt)
 
         if frame_data.shape[0] == 1:
             self.imageData.append(frame_data)
@@ -304,8 +322,9 @@ class HDFBackend(Backend):
     
 
 class TiffFolderBackend(Backend):
-    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1],  **kwargs):
-        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None))
+    def __init__(self, series_name, dim_order='XYCZT', shape=[-1, -1,-1,1,1], dtype='uint16', **kwargs):
+        Backend.__init__(self, dim_order, shape, spoof_timestamps=kwargs.pop('spoof_timestamps', False), cycle_time=kwargs.pop('cycle_time', None),
+                         dtype=dtype)
 
         self.series_name = series_name
 
