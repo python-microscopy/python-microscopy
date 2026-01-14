@@ -29,7 +29,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # discover PYME-internal fitfactories
-_pyme_ff = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+#_pyme_ff = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+from PYME.util.packageutils import package_files_matching
+_pyme_ff = package_files_matching(__package__,'[a-zA-Z]*.py')
 _pyme_ff.sort() #sort builtin and plugins before combining so that builtins always appear at the top.
 _pyme_ff_pkg = 'PYME.localization.FitFactories'
 

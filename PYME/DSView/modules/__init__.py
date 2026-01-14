@@ -33,7 +33,12 @@ from PYME import config
 import logging
 logger = logging.getLogger(__name__)
 
-localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+# this fails with meson "develop" installs AKA editable installs
+# with those installs __path__ resolves to some stub that cannot be parsed in the usual way
+# localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
+
+from PYME.util.packageutils import package_files_matching
+localmodules = package_files_matching(__package__,'[a-zA-Z]*.py')
 
 modLocations = {}
 for m in localmodules:
