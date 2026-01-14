@@ -140,6 +140,7 @@ class IntegrationSliders(wx.Panel):
         c = 1
         
         # slider works in integer ms, ensure at least 1 ms to avoid 0 range error
+        # TODO - do we need to revisit the UI for cameras where you might routinely want to set sub ms exposure times?
         itime = max([1e3*self.scope.state['Camera.IntegrationTime'], 1])
         
         sl = wx.Slider(self, -1, int(itime), 1, int(min(5*itime, 10000)), size=wx.Size(100,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS)#|wx.SL_LABELS)
