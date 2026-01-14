@@ -53,6 +53,13 @@ install_data(data_files, install_dir: install_dir)
 #FIXME - Extension()
 #FIXME - Extension()
 #FIXME - Extension()
+
+if cc.get_id() == 'msvc'
+  copts = ['/fp:fast']
+else
+  copts = ['-O3', '-fno-exceptions', '-ffast-math']
+endif
+
 py.extension_module(
     '_triangle_mesh',
     [
@@ -61,7 +68,7 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: copts,
     install: true,
 )
 
@@ -73,7 +80,7 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: copts,
     install: true,
 )
 py.extension_module(
@@ -84,7 +91,7 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: copts,
     install: true,
 )
 py.extension_module(
@@ -95,9 +102,15 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-fno-exceptions', '-ffast-math'],
+    c_args: copts,
     install: true,
 )
+
+if cc.get_id() == 'msvc'
+  copts2 = ['/fp:fast']
+else
+  copts2 = ['-O3', '-ffast-math']
+endif
 
 py.extension_module(
     'triangle_mesh_utils',
@@ -107,6 +120,6 @@ py.extension_module(
     include_directories: [np_include_dir],
     subdir: 'PYME/experimental',
     dependencies: py.dependency(),
-    c_args: ['-O3', '-ffast-math'],
+    c_args: copts2,
     install: true,
 )
