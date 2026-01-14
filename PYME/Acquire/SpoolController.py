@@ -573,6 +573,10 @@ class SpoolController(object):
 
         # NOTE - stopping and starting the framewrangler has moved to the spooler .start() method
         #self.scope.frameWrangler.stop()
+
+        # log idle state and un-idle camera before starting spool
+        self._cam_was_idle = self.scope.cam.GetIdle()
+        self.scope.cam.SetIdle(False)
         
         try:
             self.spooler.on_stop.connect(self.SpoolStopped)
@@ -584,8 +588,6 @@ class SpoolController(object):
         # restart frame wrangler
         #self.scope.frameWrangler.Prepare()
         #self.scope.frameWrangler.start()
-        self._cam_was_idle = self.scope.cam.GetIdle()
-        self.scope.cam.SetIdle(False)
         
         self.onSpoolStart.send(self)
 
