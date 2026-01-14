@@ -389,10 +389,6 @@ class ThorlabsMFF(FilterWheelBase):
     def GetPosName(self):
         return self.GetFilterNames()[self.GetCurrentIndex()]
     
-    def SetPosByName(self, position_name):
-        ind = self.position_names.index(position_name)
-        self.SetPos(self.positions[ind])
-    
     def register(self, scope_state):
         scope_state.registerHandler('Flippers.%s.Position' % self.name, 
                                     self._get_physical_position, self._set_physical_position)
