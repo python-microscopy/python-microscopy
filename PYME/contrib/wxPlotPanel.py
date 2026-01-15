@@ -17,6 +17,9 @@ matplotlib.interactive( True )
 import numpy as num
 import wx
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PlotPanel (wx.Panel):
     """The PlotPanel has a Figure and a Canvas. OnSize events simply set a
 flag, and the actual resizing of the figure is triggered by an Idle event."""
@@ -79,11 +82,24 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
 
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
+
+        # currently just a hack which (somehow) achieves that
+        # the 'Pipeline Recipe' Tab scales properly with post 3.6 (3.8+?) matplotlib on macOS high DPI displays
+        # (without it the 'Pipeline Recipe' plot is only a quarter of the canvas size on
+        #     macOS high DPI displays and matplotlib>=3.8)
+        # hack seems to work fine with matplotlib <= 3.6
+        # needs testing on windows
+        logger.debug("pixels[0] %d" % pixels[0])
+        logger.debug("dpi %.1f" % self.figure.get_dpi())
+        dpi = self.figure.get_dpi()
+        if dpi == 200.0: # bad hack for now
+            dpi = 100.0
+
         if not tuple(self.canvas.GetSize()) == pixels:
             self.SetSize( pixels )
             self.canvas.SetSize( pixels )
-            self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
-                                         float( pixels[1] )/self.figure.get_dpi() )
+            self.figure.set_size_inches( float( pixels[0] )/dpi,
+                                         float( pixels[1] )/dpi )
             try:
                 if self.IsShownOnScreen():
                     self.draw()
