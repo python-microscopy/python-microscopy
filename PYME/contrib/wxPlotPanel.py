@@ -83,16 +83,18 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
 
-        # currently just a hack which (somehow) achieves that
-        # the 'Pipeline Recipe' Tab scales properly with post 3.6 (3.8+?) matplotlib on macOS high DPI displays
+        # currently mainly a hack which (somehow) achieves that
+        # the 'Pipeline Recipe' Tab scales properly with > 3.8.X (3.10.X+?) matplotlib
+        # on macOS high DPI displays
         # (without it the 'Pipeline Recipe' plot is only a quarter of the canvas size on
-        #     macOS high DPI displays and matplotlib>=3.8)
-        # hack seems to work fine with matplotlib <= 3.6
-        # needs testing on windows
+        #     macOS high DPI displays and matplotlib>=3.10)
+        # hack seems to work fine with matplotlib <= 3.8 as dpi seems firm on 100.0
+        # tests ok on windows as well
         logger.debug("pixels[0] %d" % pixels[0])
         logger.debug("dpi %.1f" % self.figure.get_dpi())
+
         dpi = self.figure.get_dpi()
-        if dpi == 200.0: # bad hack for now
+        if abs(dpi - 200.0) < 0.5: # bad hack for now; now a little more robust in comparison
             dpi = 100.0
 
         if not tuple(self.canvas.GetSize()) == pixels:
