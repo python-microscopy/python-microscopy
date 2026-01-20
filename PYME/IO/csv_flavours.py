@@ -87,6 +87,18 @@ csv_flavours = {
             'column_7': 't'
         }
     },
+    'smap' : {
+        'idnames' : ['xnm','locprecnm', 'phot', 'layer'],
+        'delimiter' : ',',
+        'column_name_mappings' : {
+            'xnm': 'x',
+            'ynm': 'y',
+            'znm': 'z',
+            'locprecnm': 'error_x',
+            'phot': 'A',
+            'frame': 't'
+        }
+    },
     'default' : {
         'column_name_mappings' : {},
     },
