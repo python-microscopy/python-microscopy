@@ -457,7 +457,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         
         im2 = wx_compat.BitmapFromImage(im)
-        dc.DrawBitmap(im2,int(-sc2/2),int(-sc2/2))
+        # dc.DrawBitmap(im2,int(-sc2/2),int(-sc2/2))  # starts from the center of the ulc pixel, which is weird
+        dc.DrawBitmap(im2, 0, 0)  # starts from the edge of the ulc pixel, which displays the entire image
         
         self._draw_selection(self, dc) 
         self._draw_contours(self, dc)
