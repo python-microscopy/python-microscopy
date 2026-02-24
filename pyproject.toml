@@ -49,7 +49,7 @@ dependencies = [
   "pymecompress>=0.2.0",
   "six",
   "future",
-  #"pywin32 [win]"
+  "pywin32; platform_system=='Windows'",
   "blosc", 
   "django>=2.1",
   #"mpld3", #TODO - optional?
