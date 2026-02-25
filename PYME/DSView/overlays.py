@@ -264,15 +264,16 @@ class CrosshairsOverlay(Overlay):
             sX, sY = vp.imagepanel.Size
             
             dc.SetPen(wx.Pen(wx.CYAN,1))
+            # 0.5 pixel offset is to draw through center of pixels
             if(vp.do.slice == vp.do.SLICE_XY):
-                lx = vp.do.xp
-                ly = vp.do.yp
+                lx = vp.do.xp + 0.5
+                ly = vp.do.yp + 0.5
             elif(vp.do.slice == vp.do.SLICE_XZ):
-                lx = vp.do.xp
-                ly = vp.do.zp
+                lx = vp.do.xp + 0.5
+                ly = vp.do.zp + 0.5
             elif(vp.do.slice == vp.do.SLICE_YZ):
-                lx = vp.do.yp
-                ly = vp.do.zp
+                lx = vp.do.yp + 0.5
+                ly = vp.do.zp + 0.5
         
             
             xc, yc = vp.pixel_to_screen_coordinates(lx, ly)            
