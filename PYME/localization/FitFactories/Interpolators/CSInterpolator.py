@@ -50,7 +50,7 @@ class CSInterpolator(__interpolator):
 
         ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
-        oz = Z #[0]
+        oz = Z[0]
 
         #rx = (ox % self.dx)/self.dx
         #ry = (oy % self.dy)/self.dy
@@ -87,7 +87,7 @@ class CSInterpolator(__interpolator):
 
         ox = X[0] - 0.5*self.PSF2Offset
         oy = Y[0]
-        oz = Z #[0]
+        oz = Z[0]
 
         #rx = (ox % self.dx)/self.dx
         #ry = (oy % self.dy)/self.dy
