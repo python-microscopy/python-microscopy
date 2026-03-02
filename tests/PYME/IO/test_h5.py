@@ -93,5 +93,5 @@ def test_h5r():
     
         assert (np.allclose(data['x'], inp['x']))
     finally:
-        shutil.rmtree(tempdir, ignore_errors=True)
+        shutil.rmtree(tempdir)
     
