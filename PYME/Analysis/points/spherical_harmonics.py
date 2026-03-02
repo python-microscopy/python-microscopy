@@ -4,7 +4,15 @@ Initial fitting/conversions ripped 100% from David Baddeley / scipy
 """
 from PYME.IO.image import ImageBounds
 import numpy as np
-from scipy.special import sph_harm
+try:
+    # scipy >= 1.15, use sph_harm_y with swapped arg order.
+    from scipy.special import sph_harm_y
+    def sph_harm(m, n, azimuth, zenith):
+        # sph_harm(m, n, azimuth, zenith)  ->  sph_harm_y(n, m, zenith, azimuth)
+        return sph_harm_y(n, m, zenith, azimuth)
+except ImportError:
+    # scipy < 1.15
+    from scipy.special import sph_harm
 from scipy import linalg
 from PYME.Analysis.points import coordinate_tools
 from scipy import optimize
