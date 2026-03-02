@@ -429,7 +429,8 @@ class ScaledShell(object):
         self._fitting_point_bounds = ImageBounds(self.x.min(), self.y.min(),
                                                  self.x.max(), self.y.max(),
                                                  self.z.min(), self.z.max())
-        self.x0, self.y0, self.z0 = self.x.mean(), self.y.mean(), self.z.mean()
+        # Store float64 so arithmetic with COM remains high precision in numpy >= 2.0
+        self.x0, self.y0, self.z0 = float(self.x.mean()), float(self.y.mean()), float(self.z.mean())
 
         self.x_c, self.y_c, self.z_c = self.x - self.x0, self.y - self.y0, self.z - self.z0
 
