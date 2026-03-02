@@ -349,7 +349,7 @@ def loads(datastring):
     
     if header['DataCompression'] == DATA_COMP_RAW:
         #no need to decompress
-        data = np.fromstring(data_s, 'u1')
+        data = np.frombuffer(data_s, 'u1')
     elif header['DataCompression'] == DATA_COMP_HUFFCODE:
         #logging.debug('Decompressing ...')
         # need to copy else buffer source will be read only
