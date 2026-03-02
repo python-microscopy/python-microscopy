@@ -65,12 +65,12 @@ def ChunkedHuffmanCompress(data, quantization=None):
     
     #comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
     
-    s = np.array([num_chunks], 'u2').tostring()
+    s = np.array([num_chunks], 'u2').tobytes()
     
     for j, r in enumerate(raw_chunks):
         c = comp_chunk_d[j]
-        s += np.array([len(c), len(r)], 'u4').tostring()
-        s += c.tostring()
+        s += np.array([len(c), len(r)], 'u4').tobytes()
+        s += c.tobytes()
         
     return s
 
@@ -84,11 +84,11 @@ def ChunkedHuffmanCompress_o(data):
     
     comp_chunks = compPool.map(bcl.HuffmanCompress, raw_chunks) 
     
-    s = np.array([num_chunks], 'u2').tostring()
+    s = np.array([num_chunks], 'u2').tobytes()
     
     for c, r in zip(comp_chunks, raw_chunks):
-        s += np.array([len(c), len(r)], 'u4').tostring()
-        s += c.tostring()
+        s += np.array([len(c), len(r)], 'u4').tobytes()
+        s += c.tobytes()
         
     return s
 
@@ -271,10 +271,10 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         header['DataCompression'] = DATA_COMP_HUFFCODE
 
         if quantization:
-            dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tostring()
+            dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tobytes()
         else:
             d2 = bcl.HuffmanCompress(d1)
-            dataString = d2.tostring()
+            dataString = d2.tobytes()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
@@ -282,9 +282,9 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     else:
         #print('saving raw')
         #print(header['DimOrder'][0])
-        dataString = d1.tostring(order=header['DimOrder'][0])
+        dataString = d1.tobytes(order=header['DimOrder'][0])
         
-    return header.tostring() + dataString
+    return header.tobytes() + dataString
  
 
 def load_header(datastring):
