@@ -798,7 +798,7 @@ class ScaledShell(object):
         errors = np.zeros_like(guess_distances)
         # guess = guess_distances[np.argmin(np.abs(self._distance_error(guess_distances, starting_point, vector)))]
         for ind, query in enumerate(guess_distances):
-            errors[ind] = self._distance_error(query, vector, starting_point)
+            errors[ind] = float(np.squeeze(self._distance_error(query, vector, starting_point)))
 
         return guess_distances[np.argmin(np.abs(errors))]
     
