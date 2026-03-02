@@ -93,5 +93,11 @@ def test_h5r():
     
         assert (np.allclose(data['x'], inp['x']))
     finally:
-        shutil.rmtree(tempdir)
+        def wait_for_keepalive(func, path, exc_info):
+            import time
+            from PYME.IO.h5rFile import H5RFile
+            time.sleep(H5RFile.KEEP_ALIVE_TIMEOUT + 1)
+            func(path)
+        # we can't delete the file until the thread releases it, so wait for the keep alive timeout
+        shutil.rmtree(tempdir, onerror=wait_for_keepalive)
     
