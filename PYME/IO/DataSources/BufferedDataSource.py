@@ -52,6 +52,7 @@ class DataSource(XYZTCDataSource): #buffer our io to avoid decompressing multipl
                 #print int(numpy.where(self.bufferedSlices == ind)[0])
                 #print self.bufferedSlices
                 # add explicit squeeze to hopefully ensure 0d (required for int conversion with numpy >= 2.4 or so)
+                # TODO? np.where is notoriously slow. Is there a better way of managing the index? Probably doesn't matter if we keep buffer sizes small (say < 50 frames).
                 ret = self.buffer[int(numpy.where(self.bufferedSlices == ind)[0].squeeze()), :, :].copy()
                 #print 'buf'
             else: #get from our data source and store in buffer
