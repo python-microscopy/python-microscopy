@@ -43,7 +43,7 @@ PRE_FLIP_H_FACE = np.array([0,0,1,1,0,1])
 PRE_FLIP_H_TWIN = np.array([-1,-1,4,-1,2,-1])
 PRE_FLIP_H_NEXT = np.array([1,4,3,5,0,2])
 PRE_FLIP_H_PREV = np.array([4,0,5,2,1,3])
-PRE_FLIP_NEIGHBORS = np.array([[1,3],[0,2,3],[1,3],[0,1,2]])
+PRE_FLIP_NEIGHBORS = np.array([[1,3],[0,2,3],[1,3],[0,1,2]], dtype=object)
 
 POST_FLIP_FACES = np.array([[2,0,1],[0,2,3]])
 POST_FLIP_H_VERTEX = np.array([0,0,1,2,2,3])
@@ -51,7 +51,7 @@ POST_FLIP_H_FACE = np.array([0,1,0,0,1,1])
 POST_FLIP_H_TWIN = np.array([4,-1,-1,-1,0,-1])
 POST_FLIP_H_NEXT = np.array([2,4,3,0,5,1])
 POST_FLIP_H_PREV = np.array([3,5,0,2,1,4])
-POST_FLIP_NEIGHBORS = np.array([[1,2,3],[0,2],[0,1,3],[0,2]])
+POST_FLIP_NEIGHBORS = np.array([[1,2,3],[0,2],[0,1,3],[0,2]], dtype=object)
 
 # Ground truth for pre- and post-split
 PRE_SPLIT_FACES = np.array([[3,0,1],[3,1,2]])
@@ -60,7 +60,7 @@ PRE_SPLIT_H_FACE = np.array([0,0,1,1,0,1])
 PRE_SPLIT_H_TWIN = np.array([-1,-1,4,-1,2,-1])
 PRE_SPLIT_H_NEXT = np.array([1,4,3,5,0,2])
 PRE_SPLIT_H_PREV = np.array([4,0,5,2,1,3])
-PRE_SPLIT_NEIGHBORS = np.array([[1,3],[0,2,3],[1,3],[0,1,2]])
+PRE_SPLIT_NEIGHBORS = np.array([[1,3],[0,2,3],[1,3],[0,1,2]], dtype=object)
 
 POST_SPLIT_FACES = np.array([[4,0,1],[4,1,2],[4,2,3],[3,0,4]])
 POST_SPLIT_H_VERTEX = np.array([0,0,1,1,2,2,3,3,4,4,4,4])
@@ -68,7 +68,7 @@ POST_SPLIT_H_FACE = np.array([0,3,0,1,1,2,2,3,0,1,2,3])
 POST_SPLIT_H_TWIN = np.array([11,-1,-1,8,-1,9,-1,10,3,5,7,0])
 POST_SPLIT_H_NEXT = np.array([2,11,8,4,9,6,10,1,0,3,5,7])
 POST_SPLIT_H_PREV = np.array([8,7,0,9,3,10,5,11,2,4,6,1])
-POST_SPLIT_NEIGHBORS = np.array([[1,3,4],[0,2,4],[1,3,4],[0,2,4],[0,1,2,3]])
+POST_SPLIT_NEIGHBORS = np.array([[1,3,4],[0,2,4],[1,3,4],[0,2,4],[0,1,2,3]], dtype=object)
 
 PRE_SNAP_FACES = np.array([[2,0,1],[1,0,3],[2,1,4],[5,0,2],[8,6,7],[7,6,9],[8,7,10],[11,6,8]])
                             # 0,1, 2,3, 4, 5,6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
@@ -77,7 +77,7 @@ PRE_SNAP_H_FACE =   np.array([0,1, 3,0, 1, 2,0, 2, 3, 1, 2, 3, 4, 5, 7, 4, 5, 6,
 PRE_SNAP_H_TWIN =   np.array([8,3,-1,1,-1, 6,5,-1, 0,-1,-1,-1,20,15,-1,13,-1,18,17,-1,12,-1,-1,-1])
 PRE_SNAP_H_NEXT =   np.array([3,9, 8,6, 1,10,0, 5,11, 4, 7, 2,15,21,20,18,13,22,12,17,23,16,19,14])
 PRE_SNAP_H_PREV =   np.array([6,4,11,0, 9, 7,3,10, 2, 1, 5, 8,18,16,23,12,21,19,15,22,14,13,17,20])
-PRE_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]])
+PRE_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]], dtype=object)
 
 POST_SNAP_FACES = np.array([[1,0,3],[2,1,4],[5,0,2],[7,6,9],[8,7,10],[11,6,8]])
                             #  0,  1,  2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
@@ -86,7 +86,7 @@ POST_SNAP_H_FACE =   np.array([1,  3,  1, 2, 2, 3, 1, 2, 3, 5, 7, 5, 6, 6, 7, 5,
 POST_SNAP_H_TWIN =   np.array([14,-1, -1,12,-1, 9,-1,-1,-1, 5,-1,-1, 3,-1, 0,-1,-1,-1])
 POST_SNAP_H_NEXT =   np.array([6,  5,  0, 7, 3, 8, 2, 4, 1,15,14, 9,16,12,17,11,13,10])
 POST_SNAP_H_PREV =   np.array([2,  8,  6, 4, 7, 1, 0, 3, 5,11,17,15,13,16,10, 9,12,14])
-POST_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[ 0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]])
+POST_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[ 0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]], dtype=object)
 
 def _generate_vertices(num=4):
     """
