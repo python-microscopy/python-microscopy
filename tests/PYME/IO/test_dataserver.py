@@ -39,7 +39,8 @@ def setup_module():
     
 def teardown_module():
     global proc, tmp_root
-    proc.send_signal(signal.SIGINT)
+    sig = signal.SIGINT if sys.platform != 'win32' else signal.CTRL_BREAK_EVENT
+    proc.send_signal(sig)
     time.sleep(5)
     proc.kill()
     
