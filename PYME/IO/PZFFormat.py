@@ -328,17 +328,21 @@ def loads(datastring):
         
     w, h, d = header['Width'][0], header['Height'][0], header['Depth'][0]
 
-    if header['DataQuantization'] == DATA_QUANT_SQRT:
+    data_format = int(header['DataFormat'][0])
+    data_compression = int(header['DataCompression'][0])
+    data_quantization = int(header['DataQuantization'][0])
+
+    if data_quantization == DATA_QUANT_SQRT:
         #quantized data is always 8 bit
         outsize = w * h * d
     else:
-        outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
+        outsize = w*h*d*DATA_FMTS_SIZES[data_format]
     
     
     if header['Version'] < 3:
         data_offset = HEADER_LENGTH
     else:
-        data_offset = int(header['DataOffset'])
+        data_offset = int(header['DataOffset'][0])
         
     data_s = datastring[data_offset:]
 
@@ -347,21 +351,21 @@ def loads(datastring):
 
     #logging.debug('Compressed size: %s' % len(data_s))
     
-    if header['DataCompression'] == DATA_COMP_RAW:
+    if data_compression == DATA_COMP_RAW:
         #no need to decompress
         data = np.frombuffer(data_s, 'u1')
-    elif header['DataCompression'] == DATA_COMP_HUFFCODE:
+    elif data_compression == DATA_COMP_HUFFCODE:
         #logging.debug('Decompressing ...')
         # need to copy else buffer source will be read only
         data = bcl.HuffmanDecompress(np.frombuffer(data_s, 'u1').copy(), outsize)
-    elif header['DataCompression'] == DATA_COMP_HUFFCODE_CHUNKS:
+    elif data_compression == DATA_COMP_HUFFCODE_CHUNKS:
         data = ChunkedHuffmanDecompress(data_s)
     else:
         raise RuntimeError('Compression type not understood')
 
     #logging.debug('Uncompressed shape: %s, %s, (%d, %d, %d)' % (data.shape, w * h * d, w, h, d))
         
-    if header['DataQuantization'] == DATA_QUANT_SQRT:
+    if data_quantization == DATA_QUANT_SQRT:
         #un-quantize data
         #logging.debug('Dequantizing')
         
