@@ -37,12 +37,16 @@ jobs:
 
       - name: Install runtime dependencies (excluding wxpython)
         run: |
-          # Read deps from pyproject.toml and skip wxpython
+          # pymecompress must be built with --no-build-isolation to see the already-installed numpy.
+          pip install --no-build-isolation pymecompress
+          # Read remaining deps from pyproject.toml; skip wxpython (requires a display)
+          # and pymecompress.
           python - <<'EOF'
           import tomllib, subprocess, sys
           with open('pyproject.toml', 'rb') as f:
               deps = tomllib.load(f)['project']['dependencies']
-          deps = [d for d in deps if not d.lower().startswith('wxpython')]
+          skip = {'wxpython', 'pymecompress'}
+          deps = [d for d in deps if not any(d.lower().startswith(s) for s in skip)]
           subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + deps)
           EOF
 
