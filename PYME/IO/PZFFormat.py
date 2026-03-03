@@ -373,9 +373,9 @@ def loads(datastring):
 
         data = data.astype('f')*header['QuantScale']
         #print('data dtype: %s' % data.dtype)
-        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
+        data = (data*data + header['QuantOffset']).astype(DATA_FMTS[data_format])
     
     #print(dimOrder, [w, h, d])
-    data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
+    data = data.view(DATA_FMTS[data_format]).reshape([w,h,d], order=dimOrder)
     
     return data, header
