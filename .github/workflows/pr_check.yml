@@ -35,10 +35,22 @@ jobs:
           # that --no-build-isolation works (avoids a redundant isolated env).
           pip install "meson-python" "meson" "cython" "numpy"
 
+      - name: Install runtime dependencies (excluding wxpython)
+        run: |
+          # Read deps from pyproject.toml and skip wxpython
+          python - <<'EOF'
+          import tomllib, subprocess, sys
+          with open('pyproject.toml', 'rb') as f:
+              deps = tomllib.load(f)['project']['dependencies']
+          deps = [d for d in deps if not d.lower().startswith('wxpython')]
+          subprocess.check_call([sys.executable, '-m', 'pip', 'install'] + deps)
+          EOF
+
       - name: Build and install package
         run: |
           # --no-build-isolation reuses the build deps installed above.
-          pip install --no-build-isolation .
+          # --no-deps avoids pip trying to install wxpython at this stage.
+          pip install --no-build-isolation --no-deps .
 
       - name: Install test dependencies
         run: |
