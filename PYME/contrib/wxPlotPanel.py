@@ -83,19 +83,21 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
 
-        # currently mainly a hack which forces the "calculation dpi" to 100 and achieves that
-        # the 'Pipeline Recipe' Tab scales properly with > 3.8.X (3.10.X+?) matplotlib
-        # on macOS high DPI displays
-        # (without it the 'Pipeline Recipe' plot is only a quarter of the canvas size on
-        #     macOS high DPI displays and matplotlib>=3.10)
-        # hack seems to work fine with matplotlib <= 3.8 as dpi seems firm on 100.0
-        # tests ok on windows as well
-        logger.debug("pixels[0] %d" % pixels[0])
-        logger.debug("dpi %.1f" % self.figure.get_dpi())
+        # matplotlib dpi calculation seems to be *odd* (historically dpi seems to have been fixed to 100 for gui plots, 
+        # this has changed with recent (>3.8.X) releases on high dpi displays, but it seems that the
+        # change is only partial, so get_dpi is no longer a good reflection of how the figure
+        # scaling will actually be performed. This is likely a matplotlib bug.
+        # Workaround for now is to fix dpi we use for scaling to 100, but there is a fair chance this will
+        # break again if the matplotlib bug gets fixed.
+        
+        # TODO - keep an eye on this with new matplotlib versions
+        
+        # TODO - what happens if we call set_dpi() on the figure (potentially important if we plan both dsplaying
+        # and printing/exporting the figure).
 
-        dpi = self.figure.get_dpi()
-        if abs(dpi - 100.0) > 0.5: # force dpi value for calculation to 100
-            dpi = 100.0
+        # dpi = self.figure.get_dpi()
+        # force dpi value for calculation to 100
+        dpi = 100.0
 
         if not tuple(self.canvas.GetSize()) == pixels:
             self.SetSize( pixels )
