@@ -17,6 +17,9 @@ matplotlib.interactive( True )
 import numpy as num
 import wx
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PlotPanel (wx.Panel):
     """The PlotPanel has a Figure and a Canvas. OnSize events simply set a
 flag, and the actual resizing of the figure is triggered by an Idle event."""
@@ -79,11 +82,28 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
 
     def _SetSize( self ):
         pixels = tuple( self.GetClientSize() )
+
+        # matplotlib dpi calculation seems to be *odd* (historically dpi seems to have been fixed to 100 for gui plots, 
+        # this has changed with recent (>3.8.X) releases on high dpi displays, but it seems that the
+        # change is only partial, so get_dpi is no longer a good reflection of how the figure
+        # scaling will actually be performed. This is likely a matplotlib bug.
+        # Workaround for now is to fix dpi we use for scaling to 100, but there is a fair chance this will
+        # break again if the matplotlib bug gets fixed.
+        
+        # TODO - keep an eye on this with new matplotlib versions
+        
+        # TODO - what happens if we call set_dpi() on the figure (potentially important if we plan both dsplaying
+        # and printing/exporting the figure).
+
+        # dpi = self.figure.get_dpi()
+        # force dpi value for calculation to 100
+        dpi = 100.0
+
         if not tuple(self.canvas.GetSize()) == pixels:
             self.SetSize( pixels )
             self.canvas.SetSize( pixels )
-            self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
-                                         float( pixels[1] )/self.figure.get_dpi() )
+            self.figure.set_size_inches( float( pixels[0] )/dpi,
+                                         float( pixels[1] )/dpi )
             try:
                 if self.IsShownOnScreen():
                     self.draw()
