@@ -900,8 +900,12 @@ class Camera(object):
     def SetIdle(self, idle=True):
         """
         Set the camera to idle mode. This allows cameras to support different behavior during
-        spooling vs while waiting to spool. For cameras which can run continuously between acquisitions,
-        idle mode might not do anything.
+        spooling vs while waiting to spool. 
+        
+        Most cameras probably can (and probably should) ignore idle mode, as keeping the camera running between
+        acquisitions will lead to the most consistent temperature and noise behaviour. For cameras which either
+        have a *really* long exposure or involve hardware motion in constructing a frame (e.g. confocal scanners)
+        implementing an idle mode could be useful.
 
         Parameters
         ----------
@@ -1238,3 +1242,4 @@ class MultiviewCameraMixin(object):
                                           lambda : [self.size_x, self.size_y],
                                           lambda p : self.ChangeMultiviewROISize(p[0], p[1]),
                                           True)
+
