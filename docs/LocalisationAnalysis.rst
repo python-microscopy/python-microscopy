@@ -29,8 +29,7 @@ python through the firewall, which you should accept.
    We previously used a slightly different analysis architecture, launched with the ``launchWorkers`` command. If you are familiar with
    ``launchWorkers``, ``PYMEClusterOfOne`` should be a drop in replacement. The most noticeable differences will be a different
    task monitoring window, and that analysis results now go in an ``analysis`` subdirectory of the image directory
-   rather than a higher level analysis directory. We've done a reasonable ammount of testing, but if something doesn't
-   work ``launchWorkers`` is still available (for now, python 2.7 only). Please also let us know so we can fix it.
+   rather than a higher level analysis directory. 
 
 
 Loading data
