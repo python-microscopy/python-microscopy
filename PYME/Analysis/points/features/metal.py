@@ -23,8 +23,16 @@ class Backend(object, metaclass=Singleton):
         
         self.dev = mc.Device()
         # keep the actual shader code in a separate file to get syntax highlighting etc ...
-        with open(os.path.join(os.path.dirname(__file__), 'shaders', 'vect_feat_3d.metal')) as f:
-            code = f.read()
+        try:
+            # Python 3.9+
+            import importlib.resources
+            shader_file = importlib.resources.files('PYME.Analysis.points.features.shaders').joinpath('vect_feat_3d.metal')
+            code = shader_file.read_text()
+        except AttributeError:
+            # Python 3.7-3.8 fallback
+            import importlib_resources
+            shader_file = importlib_resources.files('PYME.Analysis.points.features.shaders').joinpath('vect_feat_3d.metal')
+            code = shader_file.read_text()
 
         self._vect_polar_feat_3d = self.dev.kernel(code).function('vect_polar_feat_3d')
 

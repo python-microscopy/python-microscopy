@@ -2,28 +2,43 @@ import jinja2
 from . import filters
 
 import os
-from PYME.config import get_plugin_template_dirs
+from PYME.config import get_plugin_template_paths
 import logging
+import importlib
 
 logger = logging.getLogger(__name__)
 
-def _plugin_template_path(template):
-    plugin_template_dirs = get_plugin_template_dirs()  # get templates from plugins
-    try:
-        t_plugin, t_template = template.replace(os.sep, '/').split('/')
-        return os.path.join(plugin_template_dirs[t_plugin], t_template)
-    except (ValueError, KeyError):
-        return ''
+# def _plugin_template_path(template):
+#     plugin_template_dirs = get_plugin_template_dirs()  # get templates from plugins
+#     try:
+#         t_plugin, t_template = template.replace(os.sep, '/').split('/')
+#         return os.path.join(plugin_template_dirs[t_plugin], t_template)
+#     except (ValueError, KeyError):
+#         return ''
 
 class UnifiedLoader(jinja2.BaseLoader):
     def get_source(self, environment, template):
         from PYME.IO import unifiedIO
         try:
-            if os.path.exists(os.path.join(os.path.dirname(__file__), 'templates', template)):
-                source = unifiedIO.read(os.path.join(os.path.dirname(__file__), template)).decode('utf-8')
-            elif os.path.exists(_plugin_template_path(template)):
-                source = unifiedIO.read(_plugin_template_path(template)).decode('utf-8')
-            else:
+            source = None
+
+            # First try to load from built-in templates
+            try:
+                source = importlib.resources.read_text(__package__, 'templates/' + template)
+            except:
+                pass
+
+            # Next try to load from plugin templates
+            if source is None:
+                for template_module in get_plugin_template_paths():
+                    try:
+                        source = importlib.resources.read_text(template_module, template)
+                        break
+                    except:
+                        pass
+
+            # Finally, try to load from filesystem path or PYMECluster URI
+            if source is None:
                 source = unifiedIO.read(template).decode('utf-8')
         except:
             logger.exception('Error loading template')

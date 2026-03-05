@@ -35,7 +35,7 @@ from matplotlib.figure import Figure
 from PYME.DSView.displayOptions import DisplayOpts
 
 import logging
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
         
 class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
