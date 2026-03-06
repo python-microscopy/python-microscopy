@@ -4,7 +4,15 @@ Initial fitting/conversions ripped 100% from David Baddeley / scipy
 """
 from PYME.IO.image import ImageBounds
 import numpy as np
-from scipy.special import sph_harm
+try:
+    # scipy >= 1.15, use sph_harm_y with swapped arg order.
+    from scipy.special import sph_harm_y
+    def sph_harm(m, n, azimuth, zenith):
+        # sph_harm(m, n, azimuth, zenith)  ->  sph_harm_y(n, m, zenith, azimuth)
+        return sph_harm_y(n, m, zenith, azimuth)
+except ImportError:
+    # scipy < 1.15
+    from scipy.special import sph_harm
 from scipy import linalg
 from PYME.Analysis.points import coordinate_tools
 from scipy import optimize
@@ -421,7 +429,8 @@ class ScaledShell(object):
         self._fitting_point_bounds = ImageBounds(self.x.min(), self.y.min(),
                                                  self.x.max(), self.y.max(),
                                                  self.z.min(), self.z.max())
-        self.x0, self.y0, self.z0 = self.x.mean(), self.y.mean(), self.z.mean()
+        # Store float64 so arithmetic with COM remains high precision in numpy >= 2.0
+        self.x0, self.y0, self.z0 = float(self.x.mean()), float(self.y.mean()), float(self.z.mean())
 
         self.x_c, self.y_c, self.z_c = self.x - self.x0, self.y - self.y0, self.z - self.z0
 
@@ -790,7 +799,7 @@ class ScaledShell(object):
         errors = np.zeros_like(guess_distances)
         # guess = guess_distances[np.argmin(np.abs(self._distance_error(guess_distances, starting_point, vector)))]
         for ind, query in enumerate(guess_distances):
-            errors[ind] = self._distance_error(query, vector, starting_point)
+            errors[ind] = float(np.squeeze(self._distance_error(query, vector, starting_point)))
 
         return guess_distances[np.argmin(np.abs(errors))]
     

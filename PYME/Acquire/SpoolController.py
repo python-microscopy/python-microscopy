@@ -548,6 +548,7 @@ class SpoolController(object):
                     'Tiff folder': acquisition_backends.TiffFolderBackend,}
         
         backend_kwargs = {}
+        backend_kwargs['dtype'] = self.scope.cam.dtype
         if self.spoolType == 'Cluster':
             backend_kwargs['cluster_h5'] = settings.get('cluster_h5', self.cluster_h5)
             backend_kwargs['compression_settings'] = settings.get('pzf_compression_settings', self.pzf_compression_settings)
@@ -556,6 +557,7 @@ class SpoolController(object):
         
         # put preflight mode into settings so we can pass it to the protocol acquisition
         settings['preflight_mode'] = preflight_mode
+
 
         
         try:
@@ -572,6 +574,10 @@ class SpoolController(object):
 
         # NOTE - stopping and starting the framewrangler has moved to the spooler .start() method
         #self.scope.frameWrangler.stop()
+
+        # log idle state and un-idle camera before starting spool
+        self._cam_was_idle = self.scope.cam.GetIdle()
+        self.scope.cam.SetIdle(False)
         
         try:
             self.spooler.on_stop.connect(self.SpoolStopped)
@@ -716,11 +722,14 @@ class SpoolController(object):
         self.seriesName = self._GenSeriesName()
 
         logger.info('Spooling stopped')
+
+        self.scope.cam.SetIdle(self._cam_was_idle)
         
         self.on_stop.send(self)
 
         if self.analysis_launch_mode == 'series-end':
             self.LaunchAnalysis()
+        
 
         try:
             self.spooler.on_progress.disconnect(self._ProgressUpate)

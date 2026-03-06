@@ -3,7 +3,7 @@ from PYME.IO import MetaDataHandler
 from PYME import pyme_warnings as warnings
 
 import logging
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 def isnumber(s):
     try:
@@ -85,6 +85,18 @@ csv_flavours = {
             'column_5': 'error_z',
             'column_6': 'A',
             'column_7': 't'
+        }
+    },
+    'smap' : {
+        'idnames' : ['xnm','locprecnm', 'phot', 'layer'],
+        'delimiter' : ',',
+        'column_name_mappings' : {
+            'xnm': 'x',
+            'ynm': 'y',
+            'znm': 'z',
+            'locprecnm': 'error_x',
+            'phot': 'A',
+            'frame': 't'
         }
     },
     'default' : {

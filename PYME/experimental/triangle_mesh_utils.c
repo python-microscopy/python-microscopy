@@ -8,7 +8,7 @@
 
 #define EPS 1e-12
 
-inline float norm(const float *pos)
+inline float vnorm(const float *pos)
 {
     float n = 0;
     int i = 0;
@@ -137,7 +137,7 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
         // calculate the edge length of this halfedge
         loop_vertex = &(vertices[(curr_edge->vertex)]);
         difference((curr_vertex->position), (loop_vertex->position), position);
-        l = norm(position);
+        l = vnorm(position);
         curr_edge->length = l;
 
         // traverse to twin, if possible
@@ -189,7 +189,7 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
             // calculate the edge length
             loop_vertex = &(vertices[(next_edge->vertex)]);
             difference((curr_vertex->position), (loop_vertex->position), position);
-            l = norm(position);
+            l = vnorm(position);
             twin_edge->length = l;
 
             // traverse to twin (the next emanating halfedge)
@@ -219,7 +219,7 @@ static void update_single_vertex_neighbours(int v_idx, halfedge_t *halfedges, vo
 
     curr_vertex->valence = i;
 
-    nn = norm(normal);
+    nn = vnorm(normal);
     if (nn > EPS) {
         for (k = 0; k < VECTORSIZE; ++k)
             (curr_vertex->normal)[k] = normal[k]/nn;
@@ -373,7 +373,7 @@ static void update_face_normal(int f_idx, halfedge_t *halfedges, void *vertices_
     difference((next_vertex->position), v1, v);
 
     cross(u, v, n);
-    nn = norm(n);
+    nn = vnorm(n);
     curr_face->area = 0.5*nn;
 
     if (nn > EPS){

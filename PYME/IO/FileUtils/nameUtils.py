@@ -33,13 +33,13 @@ seps = re.compile('[\\\\/*]')
 
 def getUsername():
     """
-    Returns the user name in a platform independant way
+    Returns the user name in a platform dependant way: Windows users get underscores
+    to replace spaces for potential sample database backwards compatibility.
     """
+    import getpass
     if sys.platform == 'win32':
-        import win32api
-        return '_'.join(win32api.GetUserName().split(' '))
+        return '_'.join(getpass.getuser().split(' '))
     else: # OSX / linux
-        import getpass
         #return os.getlogin() #broken when not runing from command line
         #return os.environ.get('USER', 'nobody')
         return getpass.getuser()

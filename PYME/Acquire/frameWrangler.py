@@ -125,7 +125,7 @@ class FrameWrangler(object):
         self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()
-
+        
         # should the thread which polls the camera still be running?
         self._poll_camera = True
 
@@ -140,6 +140,7 @@ class FrameWrangler(object):
         
     def destroy(self):
         self._poll_camera = False
+
         
 
     def Prepare(self, keepds=True):
@@ -175,7 +176,7 @@ class FrameWrangler(object):
 
         if not keepds:
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                                1], dtype = 'uint16', order = self.order)
+                                1], dtype =self.cam.dtype, order = self.order)
             
         self._cf = self.currentFrame
    
@@ -186,7 +187,7 @@ class FrameWrangler(object):
         #logger.debug('acquire _current_frame_lock in getFrame()')
         with self._current_frame_lock:
             self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(),
-	                                ], dtype = 'uint16', order = self.order)
+	                                ], dtype =self.cam.dtype, order = self.order)
 	        
             if getattr(self.cam, 'numpy_frames', False):
                 cs = self._cf[0,:,:] #self.currentFrame[:,:,0]
@@ -427,7 +428,6 @@ class FrameWrangler(object):
 
     def stop(self):
         "Stop sequence aquisition"
-
         self.timer.stop()
         self.aqOn = False
 

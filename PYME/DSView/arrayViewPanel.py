@@ -193,8 +193,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def _screen_to_pixel_coordinates(self, x, y):
         xp, yp = self._screen_to_abs_coordinates(x, y)
-        
-        return xp/self.scale, yp/(self.scale*self.aspect)
+
+        return (xp/self.scale) - 0.5, (yp/(self.scale*self.aspect)) - 0.5
 
     def _evt_pixel_coords(self, event, three_d=False):
         dc = wx.ClientDC(self.imagepanel)
@@ -208,12 +208,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         xp, yp = self._screen_to_abs_coordinates(x, y)
 
         if (self.do.slice == self.do.SLICE_XY):
-            return xp/self.scale, yp/(self.scale*self.aspect), self.do.zp
+            return xp/self.scale - 0.5, yp/(self.scale*self.aspect) - 0.5, self.do.zp
         elif (self.do.slice == self.do.SLICE_XZ):
-            return xp/self.scale, self.do.yp, yp/(self.scale*self.aspect)
+            return xp/self.scale - 0.5, self.do.yp, yp/(self.scale*self.aspect) - 0.5
         elif (self.do.slice == self.do.SLICE_YZ):
-            return self.do.xp, xp/self.scale, yp/(self.scale*self.aspect)
-        
+            return self.do.xp, xp/self.scale - 0.5, yp/(self.scale*self.aspect) - 0.5
+
 
     def _abs_to_screen_coordinates(self, x, y):
         x0,y0 = self.CalcUnscrolledPosition(0,0)
@@ -249,7 +249,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             y position(s) in device context (drawing) coordinates
 
         """
-        return self._abs_to_screen_coordinates(x*self.scale, y*self.scale*self.aspect)
+        return self._abs_to_screen_coordinates((x + 0.5)*self.scale, (y+0.5)*self.scale*self.aspect)
         
     def pixel_to_screen_coordinates3D(self, x, y, z):
         """
@@ -345,11 +345,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             dc.SetPen(wx.Pen(col,1))
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-            lx, ly, hx, hy = self.do.GetSliceSelection()
-            lx, ly = self.pixel_to_screen_coordinates(lx, ly)
-            hx, hy = self.pixel_to_screen_coordinates(hx, hy)
-            
             if self.do.selection.mode == selection.SELECTION_RECTANGLE:
+                # draw the selection box so that it sits on the outside edge of the selection, rather than through the middle of pixels.
+                lx, ly, hx, hy = self.do.GetSliceSelection()
+                lx, ly = self.pixel_to_screen_coordinates(lx-0.5, ly-0.5)
+                hx, hy = self.pixel_to_screen_coordinates(hx+0.5, hy+0.5)
                 dc.DrawRectangle(int(lx),int(ly),int( (hx-lx)),int((hy-ly)))
                 
             elif self.do.selection.mode == selection.SELECTION_SQUIGGLE:
@@ -457,7 +457,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         
         im2 = wx_compat.BitmapFromImage(im)
-        dc.DrawBitmap(im2,int(-sc2/2),int(-sc2/2))
+        dc.DrawBitmap(im2,0, 0)#int(-sc2/2),int(-sc2/2))
         
         self._draw_selection(self, dc) 
         self._draw_contours(self, dc)

@@ -41,7 +41,8 @@ class dataBuffer: #buffer our io to avoid decompressing multiple times
         #return self.dataSource.getSlice(ind)
         if ind in self.bufferedSlices: #return from buffer
             #print int(numpy.where(self.bufferedSlices == ind)[0])
-            return self.buffer[int(np.where(self.bufferedSlices == ind)[0]),:,:]
+            # TODO - consider alternative to numpy.where for speed
+            return self.buffer[int(np.where(self.bufferedSlices == ind)[0].squeeze()),:,:]
         else: #get from our data source and store in buffer
             sl = self.dataSource.getSlice(ind)
             self.bufferedSlices[self.insertAt] = ind
