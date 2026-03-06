@@ -78,12 +78,12 @@ def f_J_Interp3d2c(p,interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShif
     y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
     z0 = min(max(z0, safeRegion[2][0] + axialShift), safeRegion[2][1] - axialShift)
 
-    g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)
-    r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)
-    
-    gx, gy, gz = interpolator.interpG(Xg - x0 + 1, Yg - y0 + 1, Zg[0] - z0 + 1)
-    rx, ry, rz = interpolator.interpG(Xr - x0 + 1, Yr - y0 + 1, Zr[0] - z0 + 1)
-    
+    g = interpolator.interp(Xg - x0 + 1, Yg - y0 + 1, Zg - z0 + 1)
+    r = interpolator.interp(Xr - x0 + 1, Yr - y0 + 1, Zr - z0 + 1)
+
+    gx, gy, gz = interpolator.interpG(Xg - x0 + 1, Yg - y0 + 1, Zg - z0 + 1)
+    rx, ry, rz = interpolator.interpG(Xr - x0 + 1, Yr - y0 + 1, Zr - z0 + 1)
+
     bg = np.ones_like(gx)
     zb = np.zeros_like(gx)
     
