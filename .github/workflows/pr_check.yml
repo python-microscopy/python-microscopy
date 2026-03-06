@@ -41,7 +41,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y ninja-build libmvec-dev
+          sudo apt-get install -y ninja-build 
 
       - name: Install build dependencies
         run: |
@@ -85,7 +85,7 @@ jobs:
         env:
           GITHUB_CI: "1"
           # Workaround for SVML symbols
-          LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libmvec.so.1
+          #LD_PRELOAD: /usr/lib/x86_64-linux-gnu/libmvec.so.1
 
       # Upload with unique name per matrix job
       - name: Upload test results
