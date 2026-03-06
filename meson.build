@@ -39,6 +39,11 @@ if cc.get_id() != 'msvc'
      '-Wno-unused-function',
      language: 'c'
    )
+
+   add_global_link_arguments(
+     '-lm',
+     language: 'c'
+   )
 endif
 
 
